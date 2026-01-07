@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/navbar";
 import { SupabaseProvider } from "@/components/providers/supabase-provider";
+import { LanguageProvider } from "@/contexts/language-context";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,10 +24,12 @@ export default function RootLayout({
           supabaseUrl={process.env.SUPABASE_URL!}
           supabaseAnonKey={process.env.SUPABASE_ANON_KEY!}
         >
-          <Navbar />
-          <div className="pt-16">
-            {children}
-          </div>
+          <LanguageProvider>
+            <Navbar />
+            <div className="pt-16">
+              {children}
+            </div>
+          </LanguageProvider>
         </SupabaseProvider>
       </body>
     </html>

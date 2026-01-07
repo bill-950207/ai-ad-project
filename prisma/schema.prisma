@@ -10,9 +10,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
 }
 
 model Profile {
@@ -22,5 +20,60 @@ model Profile {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  avatars Avatar[]
+
   @@map("profiles")
+}
+
+// Avatar generation status
+enum AvatarStatus {
+  PENDING      // Request submitted, waiting in queue
+  IN_QUEUE     // In fal.ai queue
+  IN_PROGRESS  // Currently generating
+  COMPLETED    // Generation completed successfully
+  FAILED       // Generation failed
+  CANCELLED    // Cancelled by user
+}
+
+model Avatar {
+  id        String       @id @default(uuid()) @db.Uuid
+  userId    String       @map("user_id") @db.Uuid
+  name      String       // User-given name for the avatar
+  status    AvatarStatus @default(PENDING)
+
+  // fal.ai request tracking
+  falRequestId  String?  @map("fal_request_id")
+  falResponseUrl String? @map("fal_response_url")
+  falStatusUrl   String? @map("fal_status_url")
+  falCancelUrl   String? @map("fal_cancel_url")
+
+  // Generation parameters (stored for reference/regeneration)
+  prompt           String   @db.Text
+  promptExpanded   String?  @map("prompt_expanded") @db.Text // Expanded prompt from fal.ai
+
+  // Avatar options (JSON for flexibility)
+  options Json? // Stores gender, age, ethnicity, hair, outfit, etc.
+
+  // Generated image data
+  imageUrl      String?  @map("image_url")       // R2 URL after upload
+  imageWidth    Int?     @map("image_width")
+  imageHeight   Int?     @map("image_height")
+  seed          Int?
+  hasNsfw       Boolean? @map("has_nsfw")
+
+  // Error tracking
+  errorMessage String? @map("error_message") @db.Text
+
+  // Timestamps
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  completedAt DateTime? @map("completed_at")
+
+  // Relations
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([falRequestId])
+  @@map("avatars")
 }
