@@ -490,12 +490,13 @@ enum one_time_token_type {
 }
 
 enum avatar_status {
-  PENDING
-  IN_QUEUE
-  IN_PROGRESS
-  COMPLETED
-  FAILED
-  CANCELLED
+  PENDING      // 요청 대기
+  IN_QUEUE     // fal.ai 큐 대기
+  IN_PROGRESS  // 이미지 생성 중
+  UPLOADING    // 클라이언트에서 R2 업로드 중
+  COMPLETED    // 완료
+  FAILED       // 실패
+  CANCELLED    // 취소됨
 
   @@schema("public")
 }

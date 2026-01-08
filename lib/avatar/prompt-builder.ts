@@ -16,6 +16,10 @@ export interface AvatarOptions {
   age?: 'teen' | 'early20s' | 'late20s' | '30s' | '40plus'  // 나이대
   ethnicity?: 'korean' | 'eastAsian' | 'western' | 'southeastAsian' | 'black' | 'hispanic' | 'mixed'  // 인종
 
+  // 체형
+  height?: 'short' | 'average' | 'tall'  // 키
+  bodyType?: 'slim' | 'average' | 'athletic' | 'curvy'  // 체형
+
   // 외모
   hairStyle?: 'longStraight' | 'bob' | 'wavy' | 'ponytail' | 'short'  // 헤어스타일
   hairColor?: 'black' | 'brown' | 'blonde' | 'custom'  // 머리 색상
@@ -57,6 +61,21 @@ const ethnicityMap: Record<string, string> = {
   black: 'African',
   hispanic: 'Hispanic',
   mixed: 'mixed ethnicity',
+}
+
+/** 키 매핑 */
+const heightMap: Record<string, string> = {
+  short: 'petite',
+  average: 'average height',
+  tall: 'tall',
+}
+
+/** 체형 매핑 */
+const bodyTypeMap: Record<string, string> = {
+  slim: 'slim build',
+  average: 'average build',
+  athletic: 'athletic build',
+  curvy: 'curvy figure',
 }
 
 /** 헤어스타일 매핑 */
@@ -125,6 +144,18 @@ export function buildPromptFromOptions(options: AvatarOptions): string {
   if (age) subject += ` ${age}`
   parts.push(subject)
 
+  // 체형 (키와 체형)
+  const bodyDescParts: string[] = []
+  if (options.height) {
+    bodyDescParts.push(heightMap[options.height])
+  }
+  if (options.bodyType) {
+    bodyDescParts.push(bodyTypeMap[options.bodyType])
+  }
+  if (bodyDescParts.length > 0) {
+    parts.push(bodyDescParts.join(' with '))
+  }
+
   // 헤어스타일
   if (options.hairStyle) {
     let hair = hairStyleMap[options.hairStyle]
@@ -160,9 +191,6 @@ export function buildPromptFromOptions(options: AvatarOptions): string {
     parts.push(`wearing ${outfit}`)
   }
 
-  // 품질 향상을 위한 수식어 추가
-  parts.push('high quality portrait, studio lighting, clean background')
-
   return parts.join(', ')
 }
 
@@ -184,6 +212,8 @@ export function validateAvatarOptions(options: unknown): options is AvatarOption
   const validGenders = ['female', 'male', 'nonbinary']
   const validAges = ['teen', 'early20s', 'late20s', '30s', '40plus']
   const validEthnicities = ['korean', 'eastAsian', 'western', 'southeastAsian', 'black', 'hispanic', 'mixed']
+  const validHeights = ['short', 'average', 'tall']
+  const validBodyTypes = ['slim', 'average', 'athletic', 'curvy']
   const validHairStyles = ['longStraight', 'bob', 'wavy', 'ponytail', 'short']
   const validHairColors = ['black', 'brown', 'blonde', 'custom']
   const validVibes = ['natural', 'sophisticated', 'cute', 'professional']
@@ -194,6 +224,8 @@ export function validateAvatarOptions(options: unknown): options is AvatarOption
   if (o.gender && !validGenders.includes(o.gender as string)) return false
   if (o.age && !validAges.includes(o.age as string)) return false
   if (o.ethnicity && !validEthnicities.includes(o.ethnicity as string)) return false
+  if (o.height && !validHeights.includes(o.height as string)) return false
+  if (o.bodyType && !validBodyTypes.includes(o.bodyType as string)) return false
   if (o.hairStyle && !validHairStyles.includes(o.hairStyle as string)) return false
   if (o.hairColor && !validHairColors.includes(o.hairColor as string)) return false
   if (o.vibe && !validVibes.includes(o.vibe as string)) return false

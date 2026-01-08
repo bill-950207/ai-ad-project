@@ -7,6 +7,7 @@
 
 'use client'
 
+import Link from 'next/link'
 import { useLanguage } from '@/contexts/language-context'
 import { AvatarCard } from './avatar-card'
 import { Plus, Sparkles } from 'lucide-react'
@@ -19,7 +20,7 @@ import { Plus, Sparkles } from 'lucide-react'
 interface Avatar {
   id: string
   name: string
-  status: 'PENDING' | 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'CANCELLED'
+  status: 'PENDING' | 'IN_QUEUE' | 'IN_PROGRESS' | 'UPLOADING' | 'COMPLETED' | 'FAILED' | 'CANCELLED'
   image_url: string | null
   created_at: string
   error_message?: string | null
@@ -28,7 +29,6 @@ interface Avatar {
 /** 컴포넌트 Props */
 interface AvatarListProps {
   avatars: Avatar[]                          // 아바타 목록
-  onCreateNew: () => void                    // 새 아바타 만들기 핸들러
   onDelete: (id: string) => void             // 아바타 삭제 핸들러
   onStatusUpdate: (avatar: Avatar) => void   // 상태 업데이트 핸들러
 }
@@ -37,7 +37,7 @@ interface AvatarListProps {
 // 컴포넌트
 // ============================================================
 
-export function AvatarList({ avatars, onCreateNew, onDelete, onStatusUpdate }: AvatarListProps) {
+export function AvatarList({ avatars, onDelete, onStatusUpdate }: AvatarListProps) {
   const { t } = useLanguage()
 
   // 아바타가 없는 경우 빈 상태 UI 표시
@@ -54,13 +54,13 @@ export function AvatarList({ avatars, onCreateNew, onDelete, onStatusUpdate }: A
         <p className="text-muted-foreground mb-6">{t.avatar.startCreating}</p>
 
         {/* 새 아바타 만들기 버튼 */}
-        <button
-          onClick={onCreateNew}
+        <Link
+          href="/dashboard/avatar/new"
           className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
         >
           <Plus className="w-5 h-5" />
           {t.avatar.createNew}
-        </button>
+        </Link>
       </div>
     )
   }

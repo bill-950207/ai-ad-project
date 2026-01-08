@@ -1,20 +1,23 @@
 /**
  * 아바타 상태 조회 API 라우트
  *
- * 아바타 생성 상태를 폴링하고, 완료 시 이미지를 R2에 저장합니다.
+ * 아바타 생성 상태를 폴링합니다.
+ * fal.ai 생성이 완료되면 임시 이미지 URL을 반환하고,
+ * 클라이언트에서 R2로 직접 업로드합니다.
  *
  * GET /api/avatars/[id]/status - 아바타 생성 상태 조회
  *
- * 이미지 저장 정책:
- * - image_url: WebP 압축 이미지 (조회용)
- * - image_url_original: 원본 이미지 (재가공용)
+ * 이미지 업로드 흐름:
+ * 1. 클라이언트가 status API 폴링
+ * 2. COMPLETED 상태 + tempImageUrl 반환
+ * 3. 클라이언트가 이미지 다운로드 → 압축 → R2 업로드
+ * 4. 클라이언트가 complete API 호출하여 URL 저장
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { getQueueStatus, getQueueResponse } from '@/lib/fal/client'
-import { uploadImageToR2, generateAvatarFileName } from '@/lib/storage/r2'
 import { avatar_status } from '@/lib/generated/prisma/client'
 
 /** 라우트 파라미터 타입 */
@@ -81,38 +84,31 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     } else if (falStatus.status === 'IN_PROGRESS') {
       newStatus = 'IN_PROGRESS'
     } else if (falStatus.status === 'COMPLETED') {
-      // 생성 완료 - 결과 처리
+      // 생성 완료 - fal.ai 결과 반환 (클라이언트에서 R2 업로드 처리)
       try {
         const response = await getQueueResponse(avatar.fal_request_id)
 
         if (response.images && response.images.length > 0) {
           const image = response.images[0]
 
-          // 생성된 이미지를 R2에 업로드 (원본 + 압축본)
-          const fileName = generateAvatarFileName(avatar.id)
-          const { originalUrl, compressedUrl } = await uploadImageToR2({
-            imageUrl: image.url,
-            fileName,
-            folder: 'avatars',
-          })
-
-          // 아바타 레코드 업데이트 (완료 정보)
+          // 상태를 UPLOADING으로 변경 (클라이언트 업로드 대기)
           const updatedAvatar = await prisma.avatars.update({
             where: { id },
             data: {
-              status: 'COMPLETED',
-              image_url: compressedUrl,           // 압축 WebP URL (조회용)
-              image_url_original: originalUrl,    // 원본 URL (재가공용)
+              status: 'UPLOADING',
               image_width: image.width,           // 이미지 너비
               image_height: image.height,         // 이미지 높이
               seed: response.seed,                // 생성 시드값
               prompt_expanded: response.prompt,   // 확장된 프롬프트
               has_nsfw: response.has_nsfw_concepts?.[0] || false,  // NSFW 감지 여부
-              completed_at: new Date(),           // 완료 시간
             },
           })
 
-          return NextResponse.json({ avatar: updatedAvatar })
+          // 임시 이미지 URL을 함께 반환 (클라이언트 업로드용)
+          return NextResponse.json({
+            avatar: updatedAvatar,
+            tempImageUrl: image.url,  // fal.ai 임시 URL (클라이언트가 다운로드하여 R2에 업로드)
+          })
         } else {
           // 이미지가 없는 경우 실패 처리
           const updatedAvatar = await prisma.avatars.update({

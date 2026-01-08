@@ -82,6 +82,10 @@ export async function submitToQueue(prompt: string): Promise<FalQueueSubmitRespo
     prompt,
     num_inference_steps: 8,        // 추론 단계 수
     enable_prompt_expansion: true, // 프롬프트 자동 확장 활성화
+    image_size: {
+      width: 1152,
+      height: 2048,
+    },
     // LoRA 모델 설정 (필요시 활성화)
     // loras: [
     //   {

@@ -201,6 +201,53 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
             </div>
           </div>
 
+          {/* 체형 섹션 */}
+          <div className="bg-secondary/20 rounded-lg p-4 space-y-4">
+            <h3 className="text-sm font-semibold text-foreground">{t.avatar.bodyInfo}</h3>
+
+            {/* 키 선택 */}
+            <div>
+              <label className="block text-xs text-muted-foreground mb-2">{t.avatar.height}</label>
+              <div className="flex gap-2 flex-wrap">
+                {(['short', 'average', 'tall'] as const).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => updateOption('height', v)}
+                    className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                      options.height === v
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary/50 text-foreground hover:bg-secondary'
+                    }`}
+                  >
+                    {getOptionLabel(`height${v.charAt(0).toUpperCase() + v.slice(1)}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 체형 선택 */}
+            <div>
+              <label className="block text-xs text-muted-foreground mb-2">{t.avatar.bodyType}</label>
+              <div className="flex gap-2 flex-wrap">
+                {(['slim', 'average', 'athletic', 'curvy'] as const).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => updateOption('bodyType', v)}
+                    className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                      options.bodyType === v
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary/50 text-foreground hover:bg-secondary'
+                    }`}
+                  >
+                    {getOptionLabel(`body${v.charAt(0).toUpperCase() + v.slice(1)}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {/* 외모 섹션 */}
           <div className="bg-secondary/20 rounded-lg p-4 space-y-4">
             <h3 className="text-sm font-semibold text-foreground">{t.avatar.appearance}</h3>

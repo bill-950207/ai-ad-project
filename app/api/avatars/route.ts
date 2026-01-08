@@ -93,14 +93,16 @@ export async function POST(request: NextRequest) {
     }
 
     // 프롬프트 생성: 직접 입력 또는 옵션 기반
-    const prompt = directPrompt || (options ? buildPromptFromOptions(options) : '')
+    const rawPrompt = directPrompt || (options ? buildPromptFromOptions(options) : '')
 
-    if (!prompt || prompt.trim().length === 0) {
+    if (!rawPrompt || rawPrompt.trim().length === 0) {
       return NextResponse.json(
         { error: 'Prompt or options are required' },
         { status: 400 }
       )
     }
+    // AI 이미지 생성에 최적화된 프롬프트 (품질 향상 문구 추가)
+    const finalPrompt = `${rawPrompt}, high quality portrait, studio lighting, clean background, Full body view`
 
     // 사용자 크레딧 확인
     const profile = await prisma.profiles.findUnique({
@@ -115,7 +117,7 @@ export async function POST(request: NextRequest) {
     }
 
     // fal.ai 큐에 생성 요청 제출
-    const queueResponse = await submitToQueue(prompt)
+    const queueResponse = await submitToQueue(finalPrompt)
 
     // 트랜잭션으로 크레딧 차감 및 아바타 레코드 생성
     const avatar = await prisma.$transaction(async (tx) => {
@@ -130,7 +132,8 @@ export async function POST(request: NextRequest) {
         data: {
           user_id: user.id,
           name: name.trim(),
-          prompt,
+          prompt: rawPrompt,                // 원본 프롬프트
+          prompt_expanded: finalPrompt,     // 품질 향상 문구가 추가된 프롬프트
           options: options ? JSON.parse(JSON.stringify(options)) : undefined,
           status: 'IN_QUEUE',
           fal_request_id: queueResponse.request_id,
