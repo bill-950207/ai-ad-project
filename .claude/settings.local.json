@@ -8,7 +8,13 @@
       "Bash(mkdir:*)",
       "Bash(npm run build:*)",
       "Bash(npx prisma generate:*)",
-      "Bash(npx prisma migrate:*)"
+      "Bash(npx prisma migrate:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(PGPASSWORD='jocoding123!' psql:*)",
+      "Bash(brew list:*)",
+      "Bash(npx supabase db execute:*)",
+      "Bash(node scripts/run-migration.mjs:*)",
+      "Bash(npx supabase:*)"
     ]
   }
 }

@@ -224,3 +224,80 @@ export async function uploadAvatarImage(
     compressedUrl: uploadUrls.compressed.publicUrl,
   }
 }
+
+// ============================================================
+// 의상 이미지 업로드 함수
+// ============================================================
+
+/** 의상 업로드 URL 세트 */
+interface OutfitUploadUrls {
+  original: PresignedUrlResult
+  compressed: PresignedUrlResult
+}
+
+/**
+ * 의상 결과 이미지용 Presigned URL 요청
+ *
+ * @param avatarId - 아바타 ID
+ * @param outfitId - 의상 ID
+ * @param originalExt - 원본 이미지 확장자
+ * @returns 업로드 URL 세트
+ */
+export async function requestOutfitUploadUrls(
+  avatarId: string,
+  outfitId: string,
+  originalExt: string = 'png'
+): Promise<OutfitUploadUrls> {
+  const response = await fetch(`/api/avatars/${avatarId}/outfits/${outfitId}/upload-url`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ originalExt }),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || '업로드 URL 요청 실패')
+  }
+
+  const { uploadUrls } = await response.json()
+  return uploadUrls
+}
+
+/**
+ * 의상 결과 이미지를 R2에 업로드
+ *
+ * fal.ai에서 생성된 의상 교체 이미지를 다운로드하고:
+ * 1. 원본 이미지를 R2에 직접 업로드
+ * 2. WebP로 압축한 이미지를 R2에 직접 업로드
+ *
+ * @param avatarId - 아바타 ID
+ * @param outfitId - 의상 ID
+ * @param imageUrl - 원본 이미지 URL (fal.ai 생성 이미지)
+ * @returns 업로드된 이미지 URL (원본 + 압축)
+ */
+export async function uploadOutfitImage(
+  avatarId: string,
+  outfitId: string,
+  imageUrl: string
+): Promise<ImageUploadResult> {
+  // 1. 이미지 다운로드
+  const { blob: originalBlob, contentType } = await fetchImageAsBlob(imageUrl)
+  const originalExt = getExtensionFromContentType(contentType)
+
+  // 2. WebP로 압축
+  const compressedBlob = await compressToWebP(originalBlob)
+
+  // 3. Presigned URL 요청
+  const uploadUrls = await requestOutfitUploadUrls(avatarId, outfitId, originalExt)
+
+  // 4. 원본 및 압축 이미지 병렬 업로드
+  await Promise.all([
+    uploadToPresignedUrl(uploadUrls.original.uploadUrl, originalBlob, contentType),
+    uploadToPresignedUrl(uploadUrls.compressed.uploadUrl, compressedBlob, 'image/webp'),
+  ])
+
+  return {
+    originalUrl: uploadUrls.original.publicUrl,
+    compressedUrl: uploadUrls.compressed.publicUrl,
+  }
+}

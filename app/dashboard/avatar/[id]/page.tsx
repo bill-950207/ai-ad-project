@@ -11,10 +11,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useLanguage } from '@/contexts/language-context'
-import { uploadAvatarImage } from '@/lib/client/image-upload'
+import { uploadAvatarImage, uploadOutfitImage } from '@/lib/client/image-upload'
 import {
   ArrowLeft,
   ImageIcon,
@@ -26,6 +25,12 @@ import {
   Palette,
   Layers,
   MoreVertical,
+  Shirt,
+  Loader2,
+  Plus,
+  X,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { AvatarOptions } from '@/lib/avatar/prompt-builder'
 
@@ -48,6 +53,24 @@ interface Avatar {
   created_at: string
   completed_at: string | null
   error_message: string | null
+}
+
+interface Outfit {
+  id: string
+  avatar_id: string
+  name: string
+  status: 'PENDING' | 'IN_QUEUE' | 'IN_PROGRESS' | 'UPLOADING' | 'COMPLETED' | 'FAILED' | 'CANCELLED'
+  image_url: string | null
+  created_at: string
+  updated_at: string
+}
+
+/**
+ * 이미지 URL에 캐시 타임스탬프 추가
+ */
+function getCachedImageUrl(url: string, timestamp: string): string {
+  const t = new Date(timestamp).getTime()
+  return `${url}?t=${t}`
 }
 
 // ============================================================
@@ -232,10 +255,13 @@ export default function AvatarDetailPage() {
   const { t } = useLanguage()
   const router = useRouter()
   const [avatar, setAvatar] = useState<Avatar | null>(null)
+  const [outfits, setOutfits] = useState<Outfit[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
+  const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null)
   const uploadingRef = useRef(false)
+  const outfitUploadingRef = useRef<Set<string>>(new Set())
   const menuRef = useRef<HTMLDivElement>(null)
 
   // 메뉴 외부 클릭 시 닫기
@@ -272,6 +298,47 @@ export default function AvatarDetailPage() {
   }
 
   /**
+   * 의상 목록 조회
+   */
+  const fetchOutfits = async () => {
+    try {
+      const res = await fetch(`/api/avatars/${id}/outfits`)
+      if (res.ok) {
+        const data = await res.json()
+        setOutfits(data.outfits)
+      }
+    } catch (error) {
+      console.error('의상 목록 조회 오류:', error)
+    }
+  }
+
+  /**
+   * 의상 클라이언트 업로드 처리
+   */
+  const handleOutfitClientUpload = async (outfitId: string, tempImageUrl: string) => {
+    if (outfitUploadingRef.current.has(outfitId)) return
+    outfitUploadingRef.current.add(outfitId)
+
+    try {
+      const { originalUrl, compressedUrl } = await uploadOutfitImage(id, outfitId, tempImageUrl)
+      const res = await fetch(`/api/avatars/${id}/outfits/${outfitId}/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ originalUrl, compressedUrl }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setOutfits(prev => prev.map(o => o.id === outfitId ? data.outfit : o))
+      }
+    } catch (error) {
+      console.error('의상 업로드 오류:', error)
+    } finally {
+      outfitUploadingRef.current.delete(outfitId)
+    }
+  }
+
+  /**
    * 클라이언트 업로드 처리
    */
   const handleClientUpload = async (avatarId: string, tempImageUrl: string) => {
@@ -302,8 +369,10 @@ export default function AvatarDetailPage() {
   // 초기 로드 및 상태 폴링
   useEffect(() => {
     fetchAvatar()
+    fetchOutfits()
   }, [id])
 
+  // 아바타 상태 폴링
   useEffect(() => {
     if (!avatar) return
     if (!['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(avatar.status)) return
@@ -330,6 +399,41 @@ export default function AvatarDetailPage() {
     const interval = setInterval(pollStatus, 2000)
     return () => clearInterval(interval)
   }, [avatar?.status, id])
+
+  // 의상 상태 폴링
+  useEffect(() => {
+    // 진행 중인 의상이 있는지 확인
+    const pendingOutfits = outfits.filter(o =>
+      ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(o.status)
+    )
+
+    if (pendingOutfits.length === 0) return
+
+    const pollOutfitStatus = async () => {
+      for (const outfit of pendingOutfits) {
+        try {
+          const res = await fetch(`/api/avatars/${id}/outfits/${outfit.id}/status`)
+          if (res.ok) {
+            const data = await res.json()
+
+            // UPLOADING 상태이고 tempImageUrl이 있으면 클라이언트 업로드 시작
+            if (data.outfit.status === 'UPLOADING' && data.tempImageUrl) {
+              setOutfits(prev => prev.map(o => o.id === outfit.id ? data.outfit : o))
+              handleOutfitClientUpload(outfit.id, data.tempImageUrl)
+            } else {
+              // 상태만 업데이트
+              setOutfits(prev => prev.map(o => o.id === outfit.id ? data.outfit : o))
+            }
+          }
+        } catch (error) {
+          console.error('의상 상태 폴링 오류:', error)
+        }
+      }
+    }
+
+    const interval = setInterval(pollOutfitStatus, 2000)
+    return () => clearInterval(interval)
+  }, [outfits, id])
 
   /**
    * 삭제 핸들러
@@ -465,16 +569,14 @@ export default function AvatarDetailPage() {
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* 이미지 영역 - 1152:2048 (9:16) 비율 */}
+        {/* 이미지 영역 - 1024:1536 (1:1.5) 비율 */}
         <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <div className="aspect-[9/16] relative bg-secondary/30">
+          <div className="aspect-[1024/1536] relative bg-secondary/30">
             {avatar.image_url && (
-              <Image
+              <img
                 src={avatar.image_url}
                 alt={avatar.name}
-                fill
-                className="object-contain"
-                priority
+                className="absolute inset-0 w-full h-full object-contain"
               />
             )}
           </div>
@@ -560,8 +662,121 @@ export default function AvatarDetailPage() {
               영상 광고 만들기
             </Link>
           </div>
+
+          {/* 의상 목록 */}
+          <div className="bg-card border border-border rounded-xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <Shirt className="w-5 h-5" />
+                {t.avatar.outfits}
+              </h3>
+              <Link
+                href={`/dashboard/avatar/${avatar.id}/outfit`}
+                className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                {t.avatar.changeOutfit}
+              </Link>
+            </div>
+
+            {outfits.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                {t.avatar.noOutfits}
+              </p>
+            ) : (
+              <div className="grid grid-cols-3 gap-3">
+                {outfits.map((outfit) => (
+                  <div
+                    key={outfit.id}
+                    className="relative aspect-[1024/1536] rounded-lg overflow-hidden bg-secondary/30 border border-border cursor-pointer hover:border-primary/50 transition-colors"
+                    onClick={() => outfit.status === 'COMPLETED' && outfit.image_url && setSelectedOutfit(outfit)}
+                  >
+                    {outfit.status === 'COMPLETED' && outfit.image_url ? (
+                      <img
+                        src={getCachedImageUrl(outfit.image_url, outfit.updated_at)}
+                        alt={outfit.name}
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        {['PENDING', 'IN_QUEUE', 'IN_PROGRESS', 'UPLOADING'].includes(outfit.status) ? (
+                          <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                        ) : (
+                          <Shirt className="w-6 h-6 text-muted-foreground" />
+                        )}
+                      </div>
+                    )}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                      <p className="text-xs text-white truncate">{outfit.name}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* 의상 전체보기 모달 */}
+      {selectedOutfit && selectedOutfit.image_url && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setSelectedOutfit(null)}
+        >
+          <div
+            className="relative w-auto max-h-[90vh] bg-card rounded-xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 헤더 */}
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h3 className="font-semibold text-foreground">{selectedOutfit.name}</h3>
+              <button
+                onClick={() => setSelectedOutfit(null)}
+                className="p-2 rounded-lg hover:bg-secondary transition-colors"
+              >
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+
+            {/* 이미지 */}
+            <div className="relative h-[70vh] aspect-[1024/1536] bg-secondary/30">
+              <img
+                src={getCachedImageUrl(selectedOutfit.image_url, selectedOutfit.updated_at)}
+                alt={selectedOutfit.name}
+                className="absolute inset-0 w-full h-full object-contain"
+              />
+            </div>
+
+            {/* 네비게이션 버튼 */}
+            {outfits.filter(o => o.status === 'COMPLETED' && o.image_url).length > 1 && (
+              <>
+                <button
+                  onClick={() => {
+                    const completedOutfits = outfits.filter(o => o.status === 'COMPLETED' && o.image_url)
+                    const currentIndex = completedOutfits.findIndex(o => o.id === selectedOutfit.id)
+                    const prevIndex = (currentIndex - 1 + completedOutfits.length) % completedOutfits.length
+                    setSelectedOutfit(completedOutfits[prevIndex])
+                  }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+                >
+                  <ChevronLeft className="w-6 h-6 text-white" />
+                </button>
+                <button
+                  onClick={() => {
+                    const completedOutfits = outfits.filter(o => o.status === 'COMPLETED' && o.image_url)
+                    const currentIndex = completedOutfits.findIndex(o => o.id === selectedOutfit.id)
+                    const nextIndex = (currentIndex + 1) % completedOutfits.length
+                    setSelectedOutfit(completedOutfits[nextIndex])
+                  }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+                >
+                  <ChevronRight className="w-6 h-6 text-white" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

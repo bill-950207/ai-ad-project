@@ -399,6 +399,7 @@ model avatars {
   updated_at       DateTime      @default(now()) @db.Timestamptz(6)
   completed_at     DateTime?     @db.Timestamptz(6)
   profiles         profiles      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  outfits          avatar_outfits[]
 
   @@index([fal_request_id], map: "idx_avatars_fal_request_id")
   @@index([status], map: "idx_avatars_status")
@@ -408,13 +409,15 @@ model avatars {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model profiles {
-  id         String    @id @db.Uuid
-  email      String?
-  credits    Int?      @default(5)
-  created_at DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at DateTime? @default(now()) @db.Timestamptz(6)
-  avatars    avatars[]
-  users      users     @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id          String           @id @db.Uuid
+  email       String?
+  credits     Int?             @default(5)
+  created_at  DateTime?        @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?        @default(now()) @db.Timestamptz(6)
+  avatars     avatars[]
+  outfits     avatar_outfits[]
+  ad_products ad_products[]
+  users       users            @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@schema("public")
 }
@@ -498,5 +501,102 @@ enum avatar_status {
   FAILED       // 실패
   CANCELLED    // 취소됨
 
+  @@schema("public")
+}
+
+enum outfit_status {
+  PENDING      // 요청 대기
+  IN_QUEUE     // fal.ai 큐 대기
+  IN_PROGRESS  // 이미지 생성 중
+  UPLOADING    // 클라이언트에서 R2 업로드 중
+  COMPLETED    // 완료
+  FAILED       // 실패
+  CANCELLED    // 취소됨
+
+  @@schema("public")
+}
+
+enum ad_product_status {
+  PENDING      // 요청 대기
+  IN_QUEUE     // fal.ai 큐 대기
+  IN_PROGRESS  // 배경 제거 중
+  EDITING      // 크기 편집 대기 (배경 제거 완료, 사용자 편집 대기)
+  UPLOADING    // 클라이언트에서 R2 업로드 중
+  COMPLETED    // 완료
+  FAILED       // 실패
+
+  @@schema("public")
+}
+
+/// 아바타 의상 교체 결과 저장
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model avatar_outfits {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  avatar_id          String        @db.Uuid
+  user_id            String        @db.Uuid
+  name               String        // 의상 이름
+  status             outfit_status @default(PENDING)
+  fal_request_id     String?
+
+  // 입력 의상 이미지 (R2에 업로드된 URL)
+  outfit_type        String        // 'combined' | 'separate'
+  outfit_image_url   String?       // combined일 때 전체 의상 이미지
+  top_image_url      String?       // separate일 때 상의 이미지
+  bottom_image_url   String?       // separate일 때 하의 이미지
+  shoes_image_url    String?       // separate일 때 신발 이미지
+
+  // 출력 결과 이미지
+  image_url          String?       // 압축된 WebP 이미지 URL (조회용)
+  image_url_original String?       // 원본 이미지 URL (재가공용)
+  image_width        Int?
+  image_height       Int?
+
+  error_message      String?
+  created_at         DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime      @default(now()) @db.Timestamptz(6)
+  completed_at       DateTime?     @db.Timestamptz(6)
+
+  avatars            avatars       @relation(fields: [avatar_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  profiles           profiles      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([avatar_id], map: "idx_avatar_outfits_avatar_id")
+  @@index([user_id], map: "idx_avatar_outfits_user_id")
+  @@index([status], map: "idx_avatar_outfits_status")
+  @@schema("public")
+}
+
+/// 광고 제품 (배경 제거된 제품 이미지)
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ad_products {
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            String            @db.Uuid
+  name               String            // 제품 이름
+  status             ad_product_status @default(PENDING)
+  fal_request_id     String?
+
+  // 원본 이미지 (배경 제거 전)
+  source_image_url   String?
+
+  // 배경 제거 임시 이미지 (fal.ai 결과 URL, 임시)
+  rembg_temp_url     String?
+
+  // 배경 제거된 원본 이미지 (R2 저장, 크기 조절 전)
+  rembg_image_url    String?           // 카드 표시용
+
+  // 결과 이미지 (배경 제거 후, 크기 조절 완료)
+  image_url          String?           // 압축 WebP (조회용)
+  image_url_original String?           // 원본 PNG (재가공용)
+  image_width        Int?
+  image_height       Int?
+
+  error_message      String?
+  created_at         DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime          @default(now()) @db.Timestamptz(6)
+  completed_at       DateTime?         @db.Timestamptz(6)
+
+  profiles           profiles          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_ad_products_user_id")
+  @@index([status], map: "idx_ad_products_status")
   @@schema("public")
 }

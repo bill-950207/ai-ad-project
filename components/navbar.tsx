@@ -11,6 +11,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
 import { Button } from './ui/button'
@@ -20,6 +21,7 @@ import { Button } from './ui/button'
 // ============================================================
 
 export function Navbar() {
+  const pathname = usePathname()
   // 상태 관리
   const [user, setUser] = useState<User | null>(null)      // 현재 로그인한 사용자
   const [loading, setLoading] = useState(true)              // 로딩 상태
@@ -50,6 +52,11 @@ export function Navbar() {
   const handleLogout = async () => {
     await supabase.auth.signOut()
     setUser(null)
+  }
+
+  // 대시보드에서는 Navbar 숨김
+  if (pathname?.startsWith('/dashboard')) {
+    return null
   }
 
   return (

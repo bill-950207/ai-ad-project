@@ -9,10 +9,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
-import { Loader2, MoreVertical, Trash2, ImageIcon } from 'lucide-react'
+import { Loader2, MoreVertical, Trash2, ImageIcon, Video, Shirt } from 'lucide-react'
 import { uploadAvatarImage } from '@/lib/client/image-upload'
 
 // ============================================================
@@ -185,6 +184,30 @@ export function AvatarCard({ avatar, onDelete, onStatusUpdate }: AvatarCardProps
     setShowMenu(!showMenu)
   }
 
+  /**
+   * 이미지 광고 클릭 핸들러
+   */
+  const handleImageAdClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    router.push(`/dashboard/image-ad?avatar=${avatar.id}`)
+  }
+
+  /**
+   * 영상 광고 클릭 핸들러
+   */
+  const handleVideoAdClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    router.push(`/dashboard/video-ad?avatar=${avatar.id}`)
+  }
+
+  /**
+   * 의상 교체 클릭 핸들러
+   */
+  const handleOutfitClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    router.push(`/dashboard/avatar/${avatar.id}/outfit`)
+  }
+
   const isProcessing = isPolling || isUploading
 
   return (
@@ -195,12 +218,10 @@ export function AvatarCard({ avatar, onDelete, onStatusUpdate }: AvatarCardProps
       {/* 이미지 영역 */}
       <div className="aspect-square relative bg-secondary/30">
         {avatar.image_url ? (
-          <Image
+          <img
             src={avatar.image_url}
             alt={avatar.name}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-            className="object-cover object-top group-hover:scale-105 transition-transform duration-300"
+            className="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -223,6 +244,15 @@ export function AvatarCard({ avatar, onDelete, onStatusUpdate }: AvatarCardProps
             )}
           </div>
         )}
+
+        {/* 상태 배지 (완료 상태가 아닐 때만 이미지 우측 상단에 표시) */}
+        {avatar.status !== 'COMPLETED' && (
+          <div className="absolute top-2 right-2">
+            <span className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${getStatusColor()}`}>
+              {getStatusLabel()}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* 정보 영역 */}
@@ -235,38 +265,58 @@ export function AvatarCard({ avatar, onDelete, onStatusUpdate }: AvatarCardProps
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* 상태 배지 */}
-            <span className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${getStatusColor()}`}>
-              {getStatusLabel()}
-            </span>
+          {/* 미트볼 메뉴 (완료 상태일 때만) */}
+          {avatar.status === 'COMPLETED' && (
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={handleMenuClick}
+                className="p-1 hover:bg-secondary/50 rounded-lg transition-colors"
+              >
+                <MoreVertical className="w-4 h-4 text-muted-foreground" />
+              </button>
 
-            {/* 미트볼 메뉴 (완료 상태일 때만) */}
-            {avatar.status === 'COMPLETED' && (
-              <div className="relative" ref={menuRef}>
-                <button
-                  onClick={handleMenuClick}
-                  className="p-1 hover:bg-secondary/50 rounded-lg transition-colors"
-                >
-                  <MoreVertical className="w-4 h-4 text-muted-foreground" />
-                </button>
-
-                {/* 드롭다운 메뉴 */}
-                {showMenu && (
-                  <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg py-1 z-10 min-w-[120px]">
-                    <button
-                      onClick={handleDelete}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      {t.avatar.delete}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+              {/* 드롭다운 메뉴 */}
+              {showMenu && (
+                <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg py-1 z-10 min-w-[120px]">
+                  <button
+                    onClick={handleDelete}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    {t.avatar.delete}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
+
+        {/* 액션 버튼 영역 (완료 상태일 때만) */}
+        {avatar.status === 'COMPLETED' && (
+          <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+            <button
+              onClick={handleImageAdClick}
+              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium text-foreground bg-secondary/50 hover:bg-secondary rounded-lg transition-colors"
+              title={t.avatar.createImageAd}
+            >
+              {t.avatar.createImageAd}
+            </button>
+            <button
+              onClick={handleVideoAdClick}
+              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium text-foreground bg-secondary/50 hover:bg-secondary rounded-lg transition-colors"
+              title={t.avatar.createVideoAd}
+            >
+              {t.avatar.createVideoAd}
+            </button>
+            <button
+              onClick={handleOutfitClick}
+              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium text-foreground bg-secondary/50 hover:bg-secondary rounded-lg transition-colors"
+              title={t.avatar.changeOutfit}
+            >
+              {t.avatar.changeOutfit}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

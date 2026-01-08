@@ -177,3 +177,201 @@ export function generateAvatarFileName(avatarId: string): string {
 export function getPublicUrl(key: string): string {
   return `${R2_PUBLIC_URL}/${key}`
 }
+
+// ============================================================
+// 의상 교체 관련 함수
+// ============================================================
+
+/** 의상 이미지 업로드 URL 세트 */
+export interface OutfitUploadUrls {
+  outfit?: PresignedUrlResult       // 전체 의상 (combined)
+  top?: PresignedUrlResult          // 상의 (separate)
+  bottom?: PresignedUrlResult       // 하의 (separate)
+  shoes?: PresignedUrlResult        // 신발 (separate)
+  result: {
+    original: PresignedUrlResult    // 결과 원본 이미지
+    compressed: PresignedUrlResult  // 결과 압축 이미지
+  }
+}
+
+/**
+ * 의상 이미지용 업로드 URL 생성
+ *
+ * @param outfitId - 의상 ID
+ * @param type - 이미지 유형 ('outfit' | 'top' | 'bottom' | 'shoes')
+ * @param ext - 이미지 확장자
+ * @returns Presigned URL 정보
+ */
+export async function generateOutfitInputUploadUrl(
+  outfitId: string,
+  type: 'outfit' | 'top' | 'bottom' | 'shoes',
+  ext: string = 'png'
+): Promise<PresignedUrlResult> {
+  const timestamp = Date.now()
+  const fileName = `${outfitId}_${type}_${timestamp}.${ext}`
+
+  return generatePresignedUrl({
+    fileName,
+    contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+    folder: 'outfits/input',
+    type: 'original',
+  })
+}
+
+/**
+ * 의상 결과 이미지용 업로드 URL 세트 생성
+ *
+ * @param outfitId - 의상 ID
+ * @param originalExt - 원본 이미지 확장자
+ * @returns 원본 및 압축 이미지 업로드 URL
+ */
+export async function generateOutfitResultUploadUrls(
+  outfitId: string,
+  originalExt: string = 'png'
+): Promise<{ original: PresignedUrlResult; compressed: PresignedUrlResult }> {
+  const timestamp = Date.now()
+  const baseFileName = `${outfitId}_result_${timestamp}`
+
+  const original = await generatePresignedUrl({
+    fileName: `${baseFileName}.${originalExt}`,
+    contentType: `image/${originalExt === 'jpg' ? 'jpeg' : originalExt}`,
+    folder: 'outfits/result',
+    type: 'original',
+  })
+
+  const compressed = await generatePresignedUrl({
+    fileName: `${baseFileName}.webp`,
+    contentType: 'image/webp',
+    folder: 'outfits/result',
+    type: 'compressed',
+  })
+
+  return { original, compressed }
+}
+
+// ============================================================
+// 광고 제품 관련 함수
+// ============================================================
+
+/** 광고 제품 업로드 URL 세트 */
+export interface AdProductUploadUrls {
+  source: PresignedUrlResult          // 원본 이미지 (배경 있음)
+  result: {
+    original: PresignedUrlResult      // 결과 원본 이미지 (배경 없음)
+    compressed: PresignedUrlResult    // 결과 압축 이미지
+  }
+}
+
+/**
+ * 광고 제품 소스 이미지용 업로드 URL 생성
+ *
+ * @param productId - 광고 제품 ID
+ * @param ext - 이미지 확장자
+ * @returns Presigned URL 정보
+ */
+export async function generateAdProductSourceUploadUrl(
+  productId: string,
+  ext: string = 'png'
+): Promise<PresignedUrlResult> {
+  const timestamp = Date.now()
+  const fileName = `${productId}_source_${timestamp}.${ext}`
+
+  return generatePresignedUrl({
+    fileName,
+    contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+    folder: 'ad-products',
+    type: 'original',
+  })
+}
+
+/**
+ * 광고 제품 결과 이미지용 업로드 URL 세트 생성
+ *
+ * @param productId - 광고 제품 ID
+ * @param originalExt - 원본 이미지 확장자
+ * @returns 원본 및 압축 이미지 업로드 URL
+ */
+export async function generateAdProductResultUploadUrls(
+  productId: string,
+  originalExt: string = 'png'
+): Promise<{ original: PresignedUrlResult; compressed: PresignedUrlResult }> {
+  const timestamp = Date.now()
+  const baseFileName = `${productId}_result_${timestamp}`
+
+  const original = await generatePresignedUrl({
+    fileName: `${baseFileName}.${originalExt}`,
+    contentType: `image/${originalExt === 'jpg' ? 'jpeg' : originalExt}`,
+    folder: 'ad-products',
+    type: 'original',
+  })
+
+  const compressed = await generatePresignedUrl({
+    fileName: `${baseFileName}.webp`,
+    contentType: 'image/webp',
+    folder: 'ad-products',
+    type: 'compressed',
+  })
+
+  return { original, compressed }
+}
+
+// ============================================================
+// 서버 직접 업로드 함수
+// ============================================================
+
+/**
+ * Data URL을 R2에 직접 업로드
+ *
+ * 서버에서 Data URL 형식의 이미지를 R2에 직접 업로드합니다.
+ *
+ * @param dataUrl - Data URL 형식의 이미지 (data:image/png;base64,...)
+ * @param key - R2 저장 키
+ * @returns 공개 URL
+ */
+export async function uploadDataUrlToR2(
+  dataUrl: string,
+  key: string
+): Promise<string> {
+  // Data URL 파싱
+  const matches = dataUrl.match(/^data:([^;]+);base64,(.+)$/)
+  if (!matches) {
+    throw new Error('Invalid data URL format')
+  }
+
+  const contentType = matches[1]
+  const base64Data = matches[2]
+  const buffer = Buffer.from(base64Data, 'base64')
+
+  // R2에 업로드
+  const command = new PutObjectCommand({
+    Bucket: R2_BUCKET_NAME,
+    Key: key,
+    Body: buffer,
+    ContentType: contentType,
+  })
+
+  await r2Client.send(command)
+
+  return `${R2_PUBLIC_URL}/${key}`
+}
+
+/**
+ * 광고 제품 소스 이미지를 Data URL에서 R2로 직접 업로드
+ *
+ * @param productId - 광고 제품 ID
+ * @param dataUrl - Data URL 형식의 이미지
+ * @returns 공개 URL
+ */
+export async function uploadAdProductSourceFromDataUrl(
+  productId: string,
+  dataUrl: string
+): Promise<string> {
+  // Data URL에서 확장자 추출
+  const mimeMatch = dataUrl.match(/^data:image\/([^;]+);/)
+  const ext = mimeMatch ? (mimeMatch[1] === 'jpeg' ? 'jpg' : mimeMatch[1]) : 'png'
+
+  const timestamp = Date.now()
+  const key = `ad-products/original/${productId}_source_${timestamp}.${ext}`
+
+  return uploadDataUrlToR2(dataUrl, key)
+}

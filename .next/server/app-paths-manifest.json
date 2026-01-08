@@ -1,4 +1,8 @@
 {
+  "/api/avatars/[id]/route": "app/api/avatars/[id]/route.js",
+  "/api/ad-products/route": "app/api/ad-products/route.js",
+  "/dashboard/avatar/[id]/outfit/page": "app/dashboard/avatar/[id]/outfit/page.js",
+  "/dashboard/avatar/page": "app/dashboard/avatar/page.js",
   "/dashboard/avatar/[id]/page": "app/dashboard/avatar/[id]/page.js",
-  "/dashboard/avatar/page": "app/dashboard/avatar/page.js"
+  "/dashboard/image-ad/page": "app/dashboard/image-ad/page.js"
 }

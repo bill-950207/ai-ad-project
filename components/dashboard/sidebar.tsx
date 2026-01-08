@@ -86,18 +86,31 @@ export function Sidebar() {
   const [user, setUser] = useState<User | null>(null)              // 현재 사용자
   const [showProfileMenu, setShowProfileMenu] = useState(false)    // 프로필 메뉴 표시 여부
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)  // 언어 메뉴 표시 여부
-  const [credits] = useState(5)  // 크레딧 (TODO: 데이터베이스에서 조회)
+  const [credits, setCredits] = useState<number | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
-  // 사용자 정보 조회
+  // 사용자 정보 및 크레딧 조회
   useEffect(() => {
-    const getUser = async () => {
+    const getUserAndCredits = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
+
+      if (user) {
+        // 프로필에서 크레딧 조회
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('credits')
+          .eq('id', user.id)
+          .single()
+
+        if (profile) {
+          setCredits(profile.credits ?? 0)
+        }
+      }
     }
-    getUser()
-  }, [supabase.auth])
+    getUserAndCredits()
+  }, [supabase])
 
   // 메뉴 외부 클릭 시 닫기
   useEffect(() => {
@@ -158,7 +171,17 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-64 bg-card border-r border-border h-[calc(100vh-4rem)] fixed left-0 top-16 flex flex-col">
+    <aside className="w-64 bg-card border-r border-border h-screen fixed left-0 top-0 flex flex-col">
+      {/* 로고 */}
+      <div className="h-16 flex items-center px-4 border-b border-border">
+        <Link href="/dashboard" className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-primary to-purple-400 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-sm">AD</span>
+          </div>
+          <span className="text-xl font-bold text-foreground">ADAI</span>
+        </Link>
+      </div>
+
       {/* 네비게이션 메뉴 */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {navItems.map((item) => (
@@ -214,7 +237,7 @@ export function Sidebar() {
             <CreditCard className="w-4 h-4" />
             <span>{t.common.credits}</span>
           </div>
-          <span className="text-sm font-semibold text-primary">{credits}</span>
+          <span className="text-sm font-semibold text-primary">{credits ?? '-'}</span>
         </div>
 
         {/* 프로필 버튼 */}

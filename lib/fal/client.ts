@@ -83,8 +83,8 @@ export async function submitToQueue(prompt: string): Promise<FalQueueSubmitRespo
     num_inference_steps: 8,        // 추론 단계 수
     enable_prompt_expansion: true, // 프롬프트 자동 확장 활성화
     image_size: {
-      width: 1152,
-      height: 2048,
+      width: 1024,
+      height: 1536,
     },
     // LoRA 모델 설정 (필요시 활성화)
     // loras: [
@@ -155,6 +155,210 @@ export async function getQueueResponse(requestId: string): Promise<FalZImageResp
 export async function cancelQueueRequest(requestId: string): Promise<boolean> {
   try {
     await fal.queue.cancel(MODEL_ID, {
+      requestId,
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
+// ============================================================
+// 의상 교체 관련 타입 및 함수
+// ============================================================
+
+/** 의상 교체 모델 ID (qwen-image-edit with LoRA) */
+const OUTFIT_MODEL_ID = 'fal-ai/qwen-image-edit-2511/lora'
+
+/** 의상 교체용 LoRA 설정 */
+const OUTFIT_LORA = {
+  path: 'https://civitai.com/api/download/models/2388664?type=Model&format=SafeTensor',
+  scale: 1,
+}
+
+/** 의상 교체 입력 타입 */
+export interface OutfitChangeInput {
+  human_image: string        // 아바타 원본 이미지 URL
+  garment_image: string      // 의상 이미지 URL
+  prompt?: string            // 의상 교체 프롬프트
+}
+
+/** 의상 교체 출력 타입 */
+export interface OutfitChangeOutput {
+  images: FalImageOutput[]    // 생성된 이미지 목록
+  seed: number
+  prompt: string
+  has_nsfw_concepts: boolean[]
+  timings?: Record<string, number>
+}
+
+/**
+ * 의상 교체 요청을 fal.ai 큐에 제출
+ *
+ * qwen-image-edit-2511/lora 모델을 사용하여 의상 교체 수행
+ *
+ * @param input - 의상 교체 입력 데이터
+ * @returns 큐 제출 응답 (request_id 포함)
+ */
+export async function submitOutfitChangeToQueue(input: OutfitChangeInput): Promise<FalQueueSubmitResponse> {
+  // 기본 프롬프트: 의상 이미지를 참조하여 입혀달라는 지시
+  const defaultPrompt = 'Change the clothes of the person in the first image to match the outfit shown in the second image. Keep the same pose, face, and background.'
+
+  const falInput = {
+    prompt: input.prompt || defaultPrompt,
+    image_urls: [input.human_image, input.garment_image],
+    num_inference_steps: 28,
+    guidance_scale: 4.5,
+    output_format: 'png' as const,
+    loras: [OUTFIT_LORA],
+  }
+
+  const { request_id } = await fal.queue.submit(OUTFIT_MODEL_ID, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${OUTFIT_MODEL_ID}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${OUTFIT_MODEL_ID}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${OUTFIT_MODEL_ID}/requests/${request_id}/cancel`,
+  }
+}
+
+/**
+ * 의상 교체 큐 상태 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 현재 상태 정보
+ */
+export async function getOutfitQueueStatus(requestId: string): Promise<FalQueueStatusResponse> {
+  const status = await fal.queue.status(OUTFIT_MODEL_ID, {
+    requestId,
+    logs: true,
+  })
+
+  const statusObj = status as unknown as Record<string, unknown>
+
+  return {
+    status: status.status as 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED',
+    queue_position: statusObj.queue_position as number | undefined,
+    logs: statusObj.logs as FalLog[] | undefined,
+  }
+}
+
+/**
+ * 의상 교체 결과 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 생성된 이미지 정보
+ */
+export async function getOutfitQueueResponse(requestId: string): Promise<OutfitChangeOutput> {
+  const result = await fal.queue.result(OUTFIT_MODEL_ID, {
+    requestId,
+  })
+
+  return result.data as OutfitChangeOutput
+}
+
+/**
+ * 의상 교체 요청 취소
+ *
+ * @param requestId - 요청 ID
+ * @returns 취소 성공 여부
+ */
+export async function cancelOutfitQueueRequest(requestId: string): Promise<boolean> {
+  try {
+    await fal.queue.cancel(OUTFIT_MODEL_ID, {
+      requestId,
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
+// ============================================================
+// 배경 제거 (rembg) 관련 타입 및 함수
+// ============================================================
+
+/** 배경 제거 모델 ID */
+const REMBG_MODEL_ID = 'smoretalk-ai/rembg-enhance'
+
+/** 배경 제거 입력 타입 */
+export interface RembgInput {
+  image_url: string
+}
+
+/** 배경 제거 출력 타입 */
+export interface RembgOutput {
+  image: FalImageOutput
+}
+
+/**
+ * 배경 제거 요청을 fal.ai 큐에 제출
+ *
+ * @param input - 배경 제거 입력 데이터
+ * @returns 큐 제출 응답 (request_id 포함)
+ */
+export async function submitRembgToQueue(input: RembgInput): Promise<FalQueueSubmitResponse> {
+  const { request_id } = await fal.queue.submit(REMBG_MODEL_ID, {
+    input: {
+      image_url: input.image_url,
+    },
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${REMBG_MODEL_ID}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${REMBG_MODEL_ID}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${REMBG_MODEL_ID}/requests/${request_id}/cancel`,
+  }
+}
+
+/**
+ * 배경 제거 큐 상태 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 현재 상태 정보
+ */
+export async function getRembgQueueStatus(requestId: string): Promise<FalQueueStatusResponse> {
+  const status = await fal.queue.status(REMBG_MODEL_ID, {
+    requestId,
+    logs: true,
+  })
+
+  const statusObj = status as unknown as Record<string, unknown>
+
+  return {
+    status: status.status as 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED',
+    queue_position: statusObj.queue_position as number | undefined,
+    logs: statusObj.logs as FalLog[] | undefined,
+  }
+}
+
+/**
+ * 배경 제거 결과 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 배경이 제거된 이미지 정보
+ */
+export async function getRembgQueueResponse(requestId: string): Promise<RembgOutput> {
+  const result = await fal.queue.result(REMBG_MODEL_ID, {
+    requestId,
+  })
+
+  return result.data as RembgOutput
+}
+
+/**
+ * 배경 제거 요청 취소
+ *
+ * @param requestId - 요청 ID
+ * @returns 취소 성공 여부
+ */
+export async function cancelRembgQueueRequest(requestId: string): Promise<boolean> {
+  try {
+    await fal.queue.cancel(REMBG_MODEL_ID, {
       requestId,
     })
     return true
