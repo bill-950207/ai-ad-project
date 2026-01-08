@@ -1,12 +1,27 @@
+/**
+ * 아바타 API 라우트
+ *
+ * 아바타 목록 조회 및 새 아바타 생성을 처리합니다.
+ *
+ * GET  /api/avatars - 사용자의 아바타 목록 조회
+ * POST /api/avatars - 새 아바타 생성 요청
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { submitToQueue } from '@/lib/fal/client'
 import { buildPromptFromOptions, validateAvatarOptions, AvatarOptions } from '@/lib/avatar/prompt-builder'
 
-// GET /api/avatars - List user's avatars
+/**
+ * GET /api/avatars
+ *
+ * 현재 로그인한 사용자의 모든 아바타를 조회합니다.
+ * 최신순으로 정렬하여 반환합니다.
+ */
 export async function GET() {
   try {
+    // Supabase 인증 확인
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -14,14 +29,15 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const avatars = await prisma.avatar.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'desc' },
+    // 사용자의 아바타 목록 조회 (최신순)
+    const avatars = await prisma.avatars.findMany({
+      where: { user_id: user.id },
+      orderBy: { created_at: 'desc' },
     })
 
     return NextResponse.json({ avatars })
   } catch (error) {
-    console.error('Error fetching avatars:', error)
+    console.error('아바타 목록 조회 오류:', error)
     return NextResponse.json(
       { error: 'Failed to fetch avatars' },
       { status: 500 }
@@ -29,9 +45,22 @@ export async function GET() {
   }
 }
 
-// POST /api/avatars - Create new avatar
+/**
+ * POST /api/avatars
+ *
+ * 새 아바타 생성을 요청합니다.
+ * 크레딧을 차감하고 fal.ai 큐에 생성 요청을 제출합니다.
+ *
+ * 요청 본문:
+ * - name: 아바타 이름 (필수)
+ * - prompt: 직접 입력 프롬프트 (선택)
+ * - options: 아바타 옵션 객체 (선택)
+ *
+ * prompt 또는 options 중 하나는 필수입니다.
+ */
 export async function POST(request: NextRequest) {
   try {
+    // Supabase 인증 확인
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -39,6 +68,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // 요청 본문 파싱
     const body = await request.json()
     const { name, prompt: directPrompt, options } = body as {
       name: string
@@ -46,7 +76,7 @@ export async function POST(request: NextRequest) {
       options?: AvatarOptions
     }
 
-    // Validate required fields
+    // 필수 필드 검증: 이름
     if (!name || name.trim().length === 0) {
       return NextResponse.json(
         { error: 'Name is required' },
@@ -54,7 +84,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate options if provided
+    // 옵션 유효성 검증
     if (options && !validateAvatarOptions(options)) {
       return NextResponse.json(
         { error: 'Invalid avatar options' },
@@ -62,7 +92,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Build prompt from options or use direct prompt
+    // 프롬프트 생성: 직접 입력 또는 옵션 기반
     const prompt = directPrompt || (options ? buildPromptFromOptions(options) : '')
 
     if (!prompt || prompt.trim().length === 0) {
@@ -72,48 +102,48 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check user credits
-    const profile = await prisma.profile.findUnique({
+    // 사용자 크레딧 확인
+    const profile = await prisma.profiles.findUnique({
       where: { id: user.id },
     })
 
-    if (!profile || profile.credits < 1) {
+    if (!profile || (profile.credits ?? 0) < 1) {
       return NextResponse.json(
         { error: 'Insufficient credits' },
-        { status: 402 }
+        { status: 402 }  // 402 Payment Required
       )
     }
 
-    // Submit to fal.ai queue
+    // fal.ai 큐에 생성 요청 제출
     const queueResponse = await submitToQueue(prompt)
 
-    // Create avatar record and deduct credit in transaction
+    // 트랜잭션으로 크레딧 차감 및 아바타 레코드 생성
     const avatar = await prisma.$transaction(async (tx) => {
-      // Deduct credit
-      await tx.profile.update({
+      // 크레딧 1 차감
+      await tx.profiles.update({
         where: { id: user.id },
         data: { credits: { decrement: 1 } },
       })
 
-      // Create avatar record
-      return tx.avatar.create({
+      // 아바타 레코드 생성
+      return tx.avatars.create({
         data: {
-          userId: user.id,
+          user_id: user.id,
           name: name.trim(),
           prompt,
           options: options ? JSON.parse(JSON.stringify(options)) : undefined,
           status: 'IN_QUEUE',
-          falRequestId: queueResponse.request_id,
-          falResponseUrl: queueResponse.response_url,
-          falStatusUrl: queueResponse.status_url,
-          falCancelUrl: queueResponse.cancel_url,
+          fal_request_id: queueResponse.request_id,
+          fal_response_url: queueResponse.response_url,
+          fal_status_url: queueResponse.status_url,
+          fal_cancel_url: queueResponse.cancel_url,
         },
       })
     })
 
     return NextResponse.json({ avatar }, { status: 201 })
   } catch (error) {
-    console.error('Error creating avatar:', error)
+    console.error('아바타 생성 오류:', error)
     return NextResponse.json(
       { error: 'Failed to create avatar' },
       { status: 500 }

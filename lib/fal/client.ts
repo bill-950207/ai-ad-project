@@ -1,167 +1,160 @@
-const FAL_KEY = process.env.FAL_KEY!
+/**
+ * fal.ai 클라이언트
+ *
+ * AI 이미지 생성을 위한 fal.ai Queue API 클라이언트입니다.
+ * z-image-turbo-lora 모델을 사용하여 아바타 이미지를 생성합니다.
+ */
+
+import { fal } from "@fal-ai/client"
+
+// 환경 변수에서 LoRA 설정 로드
 const FAL_LORA_PATH = process.env.FAL_LORA_PATH!
 const FAL_LORA_SCALE = parseFloat(process.env.FAL_LORA_SCALE || '0.7')
 
-const FAL_QUEUE_BASE_URL = 'https://queue.fal.run'
+// 사용할 모델 ID
 const MODEL_ID = 'fal-ai/z-image/turbo/lora'
 
-// fal.ai Queue API response types
+// fal 클라이언트 API 키 설정
+fal.config({
+  credentials: process.env.FAL_KEY!,
+})
+
+// ============================================================
+// 타입 정의
+// ============================================================
+
+/** 큐 제출 응답 */
 export interface FalQueueSubmitResponse {
-  request_id: string
-  response_url: string
-  status_url: string
-  cancel_url: string
+  request_id: string      // 요청 고유 ID
+  response_url: string    // 결과 조회 URL
+  status_url: string      // 상태 확인 URL
+  cancel_url: string      // 취소 요청 URL
 }
 
+/** 큐 상태 응답 */
 export interface FalQueueStatusResponse {
-  status: 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED'
-  queue_position?: number
-  response_url: string
-  logs?: FalLog[]
-  metrics?: Record<string, number>
+  status: 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED'  // 현재 상태
+  queue_position?: number   // 큐에서의 대기 순서
+  response_url?: string     // 결과 조회 URL
+  logs?: FalLog[]           // 처리 로그
+  metrics?: Record<string, number>  // 성능 지표
 }
 
+/** 로그 항목 */
 export interface FalLog {
-  timestamp: string
-  message: string
-  level?: string
-  source?: string
+  timestamp: string   // 로그 시간
+  message: string     // 로그 메시지
+  level?: string      // 로그 레벨 (info, warn, error 등)
+  source?: string     // 로그 출처
 }
 
+/** 생성된 이미지 정보 */
 export interface FalImageOutput {
-  url: string
-  content_type: string
-  file_name?: string
-  file_size?: number
-  width: number
-  height: number
+  url: string           // 이미지 URL
+  content_type: string  // MIME 타입 (예: image/png)
+  file_name?: string    // 파일명
+  file_size?: number    // 파일 크기 (bytes)
+  width: number         // 이미지 너비 (px)
+  height: number        // 이미지 높이 (px)
 }
 
+/** z-image 모델 응답 */
 export interface FalZImageResponse {
-  images: FalImageOutput[]
-  seed: number
-  prompt: string
-  has_nsfw_concepts: boolean[]
-  timings?: Record<string, number>
+  images: FalImageOutput[]      // 생성된 이미지 목록
+  seed: number                  // 생성에 사용된 시드값
+  prompt: string                // 확장된 프롬프트
+  has_nsfw_concepts: boolean[]  // NSFW 감지 여부
+  timings?: Record<string, number>  // 처리 시간 정보
 }
 
-export interface FalCompletedResponse {
-  status: 'COMPLETED'
-  logs?: FalLog[]
-  response: FalZImageResponse
-}
-
-export interface FalErrorResponse {
-  detail?: string
-  message?: string
-}
-
-// Request payload for z-image-turbo-lora
-export interface ZImageGenerateRequest {
-  prompt: string
-  num_inference_steps?: number
-  enable_prompt_expansion?: boolean
-  acceleration?: 'regular' | 'fast' | 'turbo'
-  loras?: {
-    path: string
-    scale: number
-  }[]
-  image_size?: {
-    width: number
-    height: number
-  }
-  seed?: number
-}
+// ============================================================
+// API 함수
+// ============================================================
 
 /**
- * Submit a generation request to fal.ai queue
+ * 이미지 생성 요청을 fal.ai 큐에 제출
+ *
+ * @param prompt - 이미지 생성 프롬프트
+ * @returns 큐 제출 응답 (request_id 포함)
  */
 export async function submitToQueue(prompt: string): Promise<FalQueueSubmitResponse> {
-  const payload: ZImageGenerateRequest = {
+  const input = {
     prompt,
-    num_inference_steps: 8,
-    enable_prompt_expansion: true,
-    acceleration: 'regular',
-    loras: [
-      {
-        path: FAL_LORA_PATH,
-        scale: FAL_LORA_SCALE,
-      },
-    ],
+    num_inference_steps: 8,        // 추론 단계 수
+    enable_prompt_expansion: true, // 프롬프트 자동 확장 활성화
+    // LoRA 모델 설정 (필요시 활성화)
+    // loras: [
+    //   {
+    //     path: FAL_LORA_PATH,
+    //     scale: FAL_LORA_SCALE,
+    //   },
+    // ],
   }
 
-  const response = await fetch(`${FAL_QUEUE_BASE_URL}/${MODEL_ID}`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Key ${FAL_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
+  // 큐에 요청 제출
+  const { request_id } = await fal.queue.submit(MODEL_ID, {
+    input,
   })
 
-  if (!response.ok) {
-    const error = await response.json() as FalErrorResponse
-    throw new Error(`Failed to submit to fal.ai queue: ${error.detail || error.message || response.statusText}`)
+  // 응답 URL 생성
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${MODEL_ID}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${MODEL_ID}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${MODEL_ID}/requests/${request_id}/cancel`,
   }
-
-  return response.json()
 }
 
 /**
- * Get the status of a queued request
+ * 큐에 제출된 요청의 상태 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 현재 상태 정보
  */
 export async function getQueueStatus(requestId: string): Promise<FalQueueStatusResponse> {
-  const response = await fetch(
-    `${FAL_QUEUE_BASE_URL}/${MODEL_ID}/requests/${requestId}/status?logs=1`,
-    {
-      headers: {
-        'Authorization': `Key ${FAL_KEY}`,
-      },
-    }
-  )
+  const status = await fal.queue.status(MODEL_ID, {
+    requestId,
+    logs: true,  // 로그 포함
+  })
 
-  if (!response.ok) {
-    throw new Error(`Failed to get queue status: ${response.statusText}`)
+  // 상태 객체에서 속성 안전하게 추출 (타입이 상태에 따라 다름)
+  const statusObj = status as unknown as Record<string, unknown>
+
+  return {
+    status: status.status as 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED',
+    queue_position: statusObj.queue_position as number | undefined,
+    logs: statusObj.logs as FalLog[] | undefined,
   }
-
-  return response.json()
 }
 
 /**
- * Get the completed response from a queued request
+ * 완료된 요청의 결과 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 생성된 이미지 정보
  */
 export async function getQueueResponse(requestId: string): Promise<FalZImageResponse> {
-  const response = await fetch(
-    `${FAL_QUEUE_BASE_URL}/${MODEL_ID}/requests/${requestId}`,
-    {
-      headers: {
-        'Authorization': `Key ${FAL_KEY}`,
-      },
-    }
-  )
+  const result = await fal.queue.result(MODEL_ID, {
+    requestId,
+  })
 
-  if (!response.ok) {
-    const error = await response.json() as FalErrorResponse
-    throw new Error(`Failed to get response: ${error.detail || error.message || response.statusText}`)
-  }
-
-  const data = await response.json() as FalCompletedResponse
-  return data.response
+  return result.data as FalZImageResponse
 }
 
 /**
- * Cancel a queued request (only works if not yet started)
+ * 큐에 대기 중인 요청 취소
+ * (이미 처리가 시작된 경우 취소 불가)
+ *
+ * @param requestId - 요청 ID
+ * @returns 취소 성공 여부
  */
 export async function cancelQueueRequest(requestId: string): Promise<boolean> {
-  const response = await fetch(
-    `${FAL_QUEUE_BASE_URL}/${MODEL_ID}/requests/${requestId}/cancel`,
-    {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Key ${FAL_KEY}`,
-      },
-    }
-  )
-
-  return response.status === 202
+  try {
+    await fal.queue.cancel(MODEL_ID, {
+      requestId,
+    })
+    return true
+  } catch {
+    return false
+  }
 }

@@ -1,3 +1,14 @@
+/**
+ * 대시보드 사이드바 컴포넌트
+ *
+ * 대시보드 레이아웃의 좌측 사이드바를 담당합니다.
+ * - 네비게이션 메뉴 (광고 생성 도구, 광고 워크플로우)
+ * - 크레딧 표시
+ * - 사용자 프로필 메뉴
+ * - 언어 설정
+ * - 로그아웃 기능
+ */
+
 'use client'
 
 import Link from 'next/link'
@@ -25,44 +36,61 @@ import {
   ChevronUp
 } from 'lucide-react'
 
+// ============================================================
+// 타입 정의
+// ============================================================
+
+/** 네비게이션 아이템 타입 */
 interface NavItem {
-  labelKey: 'adCreationTools' | 'adWorkflow'
-  icon: React.ReactNode
-  children: { labelKey: string; href: string; icon: React.ReactNode }[]
+  labelKey: 'adCreationTools' | 'adWorkflow'  // 번역 키
+  icon: React.ReactNode                        // 아이콘
+  children: { labelKey: string; href: string; icon: React.ReactNode }[]  // 하위 메뉴
 }
 
+// ============================================================
+// 상수 정의
+// ============================================================
+
+/** 네비게이션 메뉴 구조 */
 const navItems: NavItem[] = [
   {
-    labelKey: 'adCreationTools',
+    labelKey: 'adCreationTools',  // 광고 생성 도구
     icon: <Wand2 className="w-4 h-4" />,
     children: [
-      { labelKey: 'avatarGeneration', href: '/dashboard/avatar', icon: <Sparkles className="w-4 h-4" /> },
-      { labelKey: 'musicGeneration', href: '/dashboard/music', icon: <Music className="w-4 h-4" /> },
-      { labelKey: 'backgroundGeneration', href: '/dashboard/background', icon: <Image className="w-4 h-4" /> },
+      { labelKey: 'avatarGeneration', href: '/dashboard/avatar', icon: <Sparkles className="w-4 h-4" /> },  // 아바타 생성
+      { labelKey: 'musicGeneration', href: '/dashboard/music', icon: <Music className="w-4 h-4" /> },        // 음악 생성
+      { labelKey: 'backgroundGeneration', href: '/dashboard/background', icon: <Image className="w-4 h-4" /> },  // 배경 생성
     ]
   },
   {
-    labelKey: 'adWorkflow',
+    labelKey: 'adWorkflow',  // 광고 워크플로우
     icon: <Workflow className="w-4 h-4" />,
     children: [
-      { labelKey: 'imageAd', href: '/dashboard/image-ad', icon: <Image className="w-4 h-4" /> },
-      { labelKey: 'videoAd', href: '/dashboard/video-ad', icon: <Video className="w-4 h-4" /> },
+      { labelKey: 'imageAd', href: '/dashboard/image-ad', icon: <Image className="w-4 h-4" /> },  // 이미지 광고
+      { labelKey: 'videoAd', href: '/dashboard/video-ad', icon: <Video className="w-4 h-4" /> },  // 영상 광고
     ]
   }
 ]
+
+// ============================================================
+// 컴포넌트
+// ============================================================
 
 export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const { language, setLanguage, t } = useLanguage()
-  const [expandedItems, setExpandedItems] = useState<string[]>(['adCreationTools', 'adWorkflow'])
-  const [user, setUser] = useState<User | null>(null)
-  const [showProfileMenu, setShowProfileMenu] = useState(false)
-  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
-  const [credits] = useState(5) // TODO: fetch from database
+
+  // 상태 관리
+  const [expandedItems, setExpandedItems] = useState<string[]>(['adCreationTools', 'adWorkflow'])  // 펼쳐진 메뉴 목록
+  const [user, setUser] = useState<User | null>(null)              // 현재 사용자
+  const [showProfileMenu, setShowProfileMenu] = useState(false)    // 프로필 메뉴 표시 여부
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false)  // 언어 메뉴 표시 여부
+  const [credits] = useState(5)  // 크레딧 (TODO: 데이터베이스에서 조회)
   const menuRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
+  // 사용자 정보 조회
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -71,6 +99,7 @@ export function Sidebar() {
     getUser()
   }, [supabase.auth])
 
+  // 메뉴 외부 클릭 시 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -82,6 +111,9 @@ export function Sidebar() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  /**
+   * 메뉴 펼침/접힘 토글
+   */
   const toggleExpand = (labelKey: string) => {
     setExpandedItems(prev =>
       prev.includes(labelKey)
@@ -90,17 +122,27 @@ export function Sidebar() {
     )
   }
 
+  /**
+   * 로그아웃 핸들러
+   */
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/login')
   }
 
+  /**
+   * 언어 변경 핸들러
+   */
   const handleLanguageChange = (code: 'ko' | 'en' | 'ja') => {
     setLanguage(code)
     setShowLanguageMenu(false)
     setShowProfileMenu(false)
   }
 
+  /**
+   * 사용자 표시 이름 가져오기
+   * 우선순위: full_name > name > 이메일 ID
+   */
   const getUserDisplayName = () => {
     if (!user) return 'User'
     if (user.user_metadata?.full_name) return user.user_metadata.full_name
@@ -108,17 +150,20 @@ export function Sidebar() {
     return user.email?.split('@')[0] || 'User'
   }
 
+  /**
+   * 네비게이션 라벨 가져오기 (번역)
+   */
   const getNavLabel = (key: string) => {
     return t.nav[key as keyof typeof t.nav] || key
   }
 
   return (
     <aside className="w-64 bg-card border-r border-border h-[calc(100vh-4rem)] fixed left-0 top-16 flex flex-col">
-      {/* Navigation */}
+      {/* 네비게이션 메뉴 */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {navItems.map((item) => (
           <div key={item.labelKey}>
-            {/* Parent Item */}
+            {/* 상위 메뉴 아이템 */}
             <button
               onClick={() => toggleExpand(item.labelKey)}
               className={cn(
@@ -137,7 +182,7 @@ export function Sidebar() {
               )}
             </button>
 
-            {/* Children Items */}
+            {/* 하위 메뉴 아이템 */}
             {item.children && expandedItems.includes(item.labelKey) && (
               <div className="ml-4 mt-1 space-y-1">
                 {item.children.map((child) => (
@@ -161,9 +206,9 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* User Profile Section */}
+      {/* 사용자 프로필 섹션 */}
       <div className="border-t border-border p-4" ref={menuRef}>
-        {/* Credits Display */}
+        {/* 크레딧 표시 */}
         <div className="flex items-center justify-between px-3 py-2 mb-2 bg-secondary/30 rounded-lg">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <CreditCard className="w-4 h-4" />
@@ -172,7 +217,7 @@ export function Sidebar() {
           <span className="text-sm font-semibold text-primary">{credits}</span>
         </div>
 
-        {/* Profile Button */}
+        {/* 프로필 버튼 */}
         <div className="relative">
           <button
             onClick={() => setShowProfileMenu(!showProfileMenu)}
@@ -197,7 +242,7 @@ export function Sidebar() {
             )} />
           </button>
 
-          {/* Profile Dropdown Menu */}
+          {/* 프로필 드롭다운 메뉴 */}
           {showProfileMenu && (
             <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-50">
               <div className="py-1">
@@ -218,7 +263,7 @@ export function Sidebar() {
                   <span>{t.common.settings}</span>
                 </Link>
 
-                {/* Language Submenu */}
+                {/* 언어 서브메뉴 */}
                 <div className="relative">
                   <button
                     onClick={() => setShowLanguageMenu(!showLanguageMenu)}

@@ -1,25 +1,50 @@
+/**
+ * 아바타 생성 폼 컴포넌트
+ *
+ * 아바타 생성을 위한 입력 폼을 제공합니다.
+ * 두 가지 입력 방식 지원:
+ * 1. 옵션 기반: 성별, 나이, 헤어스타일 등 선택
+ * 2. 직접 프롬프트: 자유롭게 프롬프트 입력
+ */
+
 'use client'
 
 import { useState } from 'react'
 import { useLanguage } from '@/contexts/language-context'
 import { AvatarOptions } from '@/lib/avatar/prompt-builder'
 
+// ============================================================
+// 타입 정의
+// ============================================================
+
+/** 컴포넌트 Props */
 interface AvatarFormProps {
   onSubmit: (data: { name: string; prompt?: string; options?: AvatarOptions }) => Promise<void>
   isLoading: boolean
 }
 
+/** 입력 방식 */
 type InputMethod = 'prompt' | 'options'
+
+// ============================================================
+// 컴포넌트
+// ============================================================
 
 export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
   const { t } = useLanguage()
-  const [name, setName] = useState('')
-  const [inputMethod, setInputMethod] = useState<InputMethod>('options')
-  const [prompt, setPrompt] = useState('')
-  const [options, setOptions] = useState<AvatarOptions>({})
 
+  // 폼 상태
+  const [name, setName] = useState('')                           // 아바타 이름
+  const [inputMethod, setInputMethod] = useState<InputMethod>('options')  // 입력 방식
+  const [prompt, setPrompt] = useState('')                       // 직접 프롬프트
+  const [options, setOptions] = useState<AvatarOptions>({})      // 옵션 객체
+
+  /**
+   * 폼 제출 핸들러
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
     if (inputMethod === 'prompt') {
       await onSubmit({ name, prompt })
     } else {
@@ -27,17 +52,23 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
     }
   }
 
+  /**
+   * 옵션 값 업데이트 헬퍼
+   */
   const updateOption = <K extends keyof AvatarOptions>(key: K, value: AvatarOptions[K]) => {
     setOptions(prev => ({ ...prev, [key]: value }))
   }
 
+  /**
+   * 옵션 라벨 텍스트 가져오기
+   */
   const getOptionLabel = (key: string): string => {
     return (t.avatar.options as Record<string, string>)?.[key] || key
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Avatar Name */}
+      {/* 아바타 이름 입력 */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
           {t.avatar.name}
@@ -52,12 +83,13 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
         />
       </div>
 
-      {/* Input Method Toggle */}
+      {/* 입력 방식 선택 토글 */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
           {t.avatar.inputMethod}
         </label>
         <div className="flex gap-2">
+          {/* 옵션 선택 방식 */}
           <button
             type="button"
             onClick={() => setInputMethod('options')}
@@ -69,6 +101,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
           >
             {t.avatar.useOptions}
           </button>
+          {/* 직접 입력 방식 */}
           <button
             type="button"
             onClick={() => setInputMethod('prompt')}
@@ -84,7 +117,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
       </div>
 
       {inputMethod === 'prompt' ? (
-        /* Direct Prompt Input */
+        /* 직접 프롬프트 입력 영역 */
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">
             {t.avatar.prompt}
@@ -98,13 +131,13 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
           />
         </div>
       ) : (
-        /* Options-based Input */
+        /* 옵션 기반 입력 영역 */
         <div className="space-y-6">
-          {/* Basic Info Section */}
+          {/* 기본 정보 섹션 */}
           <div className="bg-secondary/20 rounded-lg p-4 space-y-4">
             <h3 className="text-sm font-semibold text-foreground">{t.avatar.basicInfo}</h3>
 
-            {/* Gender */}
+            {/* 성별 선택 */}
             <div>
               <label className="block text-xs text-muted-foreground mb-2">{t.avatar.gender}</label>
               <div className="flex gap-2 flex-wrap">
@@ -125,7 +158,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
               </div>
             </div>
 
-            {/* Age */}
+            {/* 나이대 선택 */}
             <div>
               <label className="block text-xs text-muted-foreground mb-2">{t.avatar.age}</label>
               <div className="flex gap-2 flex-wrap">
@@ -146,7 +179,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
               </div>
             </div>
 
-            {/* Ethnicity */}
+            {/* 인종 선택 */}
             <div>
               <label className="block text-xs text-muted-foreground mb-2">{t.avatar.ethnicity}</label>
               <div className="flex gap-2 flex-wrap">
@@ -168,11 +201,11 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
             </div>
           </div>
 
-          {/* Appearance Section */}
+          {/* 외모 섹션 */}
           <div className="bg-secondary/20 rounded-lg p-4 space-y-4">
             <h3 className="text-sm font-semibold text-foreground">{t.avatar.appearance}</h3>
 
-            {/* Hair Style */}
+            {/* 헤어스타일 선택 */}
             <div>
               <label className="block text-xs text-muted-foreground mb-2">{t.avatar.hairStyle}</label>
               <div className="flex gap-2 flex-wrap">
@@ -193,7 +226,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
               </div>
             </div>
 
-            {/* Hair Color */}
+            {/* 머리 색상 선택 */}
             <div>
               <label className="block text-xs text-muted-foreground mb-2">{t.avatar.hairColor}</label>
               <div className="flex gap-2 flex-wrap items-center">
@@ -211,6 +244,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
                     {getOptionLabel(v)}
                   </button>
                 ))}
+                {/* 커스텀 색상 입력 */}
                 {options.hairColor === 'custom' && (
                   <input
                     type="text"
@@ -223,7 +257,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
               </div>
             </div>
 
-            {/* Vibe */}
+            {/* 분위기/느낌 선택 */}
             <div>
               <label className="block text-xs text-muted-foreground mb-2">{t.avatar.vibe}</label>
               <div className="flex gap-2 flex-wrap">
@@ -245,11 +279,11 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
             </div>
           </div>
 
-          {/* Outfit Section */}
+          {/* 의상 섹션 */}
           <div className="bg-secondary/20 rounded-lg p-4 space-y-4">
             <h3 className="text-sm font-semibold text-foreground">{t.avatar.outfit}</h3>
 
-            {/* Outfit Style */}
+            {/* 의상 스타일 선택 */}
             <div>
               <label className="block text-xs text-muted-foreground mb-2">{t.avatar.outfitStyle}</label>
               <div className="flex gap-2 flex-wrap">
@@ -270,7 +304,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
               </div>
             </div>
 
-            {/* Color Tone */}
+            {/* 색상 톤 선택 */}
             <div>
               <label className="block text-xs text-muted-foreground mb-2">{t.avatar.colorTone}</label>
               <div className="flex gap-2 flex-wrap items-center">
@@ -288,6 +322,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
                     {getOptionLabel(v)}
                   </button>
                 ))}
+                {/* 브랜드 색상 입력 */}
                 {options.colorTone === 'brandColor' && (
                   <input
                     type="text"
@@ -303,7 +338,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
         </div>
       )}
 
-      {/* Submit Button */}
+      {/* 제출 버튼 */}
       <button
         type="submit"
         disabled={isLoading || !name.trim() || (inputMethod === 'prompt' && !prompt.trim())}
