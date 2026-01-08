@@ -1,6 +1,5 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
   "/api/avatars/route": "app/api/avatars/route.js",
-  "/dashboard/image-ad/page": "app/dashboard/image-ad/page.js",
+  "/api/avatars/[id]/status/route": "app/api/avatars/[id]/status/route.js",
   "/dashboard/avatar/page": "app/dashboard/avatar/page.js"
 }

@@ -5,9 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
-  schemas   = ["auth", "public"]
+  schemas  = ["auth", "public"]
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -390,7 +388,8 @@ model avatars {
   prompt           String
   prompt_expanded  String?
   options          Json?
-  image_url        String?
+  image_url        String?       // 압축된 WebP 이미지 URL (조회용)
+  image_url_original String?     // 원본 이미지 URL (재가공용)
   image_width      Int?
   image_height     Int?
   seed             Int?

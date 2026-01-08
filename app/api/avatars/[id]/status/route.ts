@@ -4,6 +4,10 @@
  * 아바타 생성 상태를 폴링하고, 완료 시 이미지를 R2에 저장합니다.
  *
  * GET /api/avatars/[id]/status - 아바타 생성 상태 조회
+ *
+ * 이미지 저장 정책:
+ * - image_url: WebP 압축 이미지 (조회용)
+ * - image_url_original: 원본 이미지 (재가공용)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -84,9 +88,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         if (response.images && response.images.length > 0) {
           const image = response.images[0]
 
-          // 생성된 이미지를 R2에 업로드
+          // 생성된 이미지를 R2에 업로드 (원본 + 압축본)
           const fileName = generateAvatarFileName(avatar.id)
-          const r2Url = await uploadImageToR2({
+          const { originalUrl, compressedUrl } = await uploadImageToR2({
             imageUrl: image.url,
             fileName,
             folder: 'avatars',
@@ -97,13 +101,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             where: { id },
             data: {
               status: 'COMPLETED',
-              image_url: r2Url,              // R2 공개 URL
-              image_width: image.width,       // 이미지 너비
-              image_height: image.height,     // 이미지 높이
-              seed: response.seed,            // 생성 시드값
-              prompt_expanded: response.prompt,  // 확장된 프롬프트
+              image_url: compressedUrl,           // 압축 WebP URL (조회용)
+              image_url_original: originalUrl,    // 원본 URL (재가공용)
+              image_width: image.width,           // 이미지 너비
+              image_height: image.height,         // 이미지 높이
+              seed: response.seed,                // 생성 시드값
+              prompt_expanded: response.prompt,   // 확장된 프롬프트
               has_nsfw: response.has_nsfw_concepts?.[0] || false,  // NSFW 감지 여부
-              completed_at: new Date(),       // 완료 시간
+              completed_at: new Date(),           // 완료 시간
             },
           })
 
