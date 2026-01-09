@@ -201,6 +201,131 @@
     "title": "Video Ad",
     "subtitle": "Create video ads with AI"
   },
+  "imageAdTypes": {
+    "selectType": "Select Ad Type",
+    "selectTypeDesc": "Choose the image ad type you want to create",
+    "productOnly": {
+      "title": "Product Only",
+      "description": "Clean background, product showcase",
+      "examples": "Showcase, catalog, thumbnail"
+    },
+    "holding": {
+      "title": "Product Holding",
+      "description": "Model holding the product",
+      "examples": "Cosmetics, skincare, beverages, food, accessories"
+    },
+    "using": {
+      "title": "Product Usage",
+      "description": "Model using the product",
+      "examples": "Applying makeup, skincare routine, drinking"
+    },
+    "wearing": {
+      "title": "Wearing Shot",
+      "description": "Model wearing the product",
+      "examples": "Clothing, accessories, glasses, hats, watches, bags"
+    },
+    "beforeAfter": {
+      "title": "Before/After",
+      "description": "Before and after comparison",
+      "examples": "Skincare, diet, hair care"
+    },
+    "lifestyle": {
+      "title": "Lifestyle",
+      "description": "Daily life scenes with the product",
+      "examples": "Exercise, cooking, reading, travel, relaxation"
+    },
+    "unboxing": {
+      "title": "Unboxing/Review",
+      "description": "Product unboxing or review concept",
+      "examples": "Box opening, product intro, first impression"
+    },
+    "comparison": {
+      "title": "Comparison Shot",
+      "description": "Comparing two products",
+      "examples": "Product comparison, choosing, recommendations"
+    },
+    "seasonal": {
+      "title": "Seasonal/Theme",
+      "description": "Seasonal or themed atmosphere",
+      "examples": "Christmas, summer, Valentine's, Halloween"
+    }
+  },
+  "imageAdCreate": {
+    "title": "Create Image Ad",
+    "selectProduct": "Select Product",
+    "selectAvatar": "Select Avatar",
+    "prompt": "Prompt",
+    "generate": "Generate",
+    "generating": "Generating...",
+    "result": "Result",
+    "exampleImages": "Example Images",
+    "noProductSelected": "Please select a product",
+    "noAvatarSelected": "Please select an avatar",
+    "creditsRequired": "Credits Required",
+    "promptPlaceholders": {
+      "productOnly": "Product placed on a luxurious marble table with soft lighting in a minimal studio setting",
+      "holding": "Model naturally holding the product, smiling at the camera, bright studio background",
+      "using": "Model using the product in front of a mirror, vanity area with bright lighting",
+      "wearing": "Model wearing the product with a stylish pose, clean background",
+      "beforeAfter": "Before: Showing skin concerns / After: Transformed with clear, healthy skin",
+      "lifestyle": "Model casually enjoying the product at a cafe, warm atmosphere",
+      "unboxing": "Model excitedly opening the product box on a clean desk",
+      "comparison": "Model holding two products in each hand, contemplating choice",
+      "seasonal": "Model with the product in a Christmas-themed warm setting"
+    },
+    "aspectRatio": "Image Ratio",
+    "aspectRatios": {
+      "1:1": "1:1 Square",
+      "16:9": "16:9 Landscape",
+      "9:16": "9:16 Portrait"
+    },
+    "quality": "Quality",
+    "qualityOptions": {
+      "medium": {
+        "label": "Standard",
+        "description": "Faster generation"
+      },
+      "high": {
+        "label": "High",
+        "description": "Higher quality output"
+      }
+    },
+    "numImages": "Number of Images",
+    "recentAds": "Recent Ads",
+    "viewOriginal": "View Original",
+    "options": {
+      "background": "Background Style",
+      "lighting": "Lighting",
+      "mood": "Mood",
+      "angle": "Camera Angle",
+      "backgrounds": {
+        "studio": "Studio",
+        "marble": "Marble",
+        "nature": "Nature",
+        "gradient": "Gradient",
+        "minimal": "Minimal"
+      },
+      "lightings": {
+        "soft": "Soft",
+        "dramatic": "Dramatic",
+        "natural": "Natural",
+        "neon": "Neon"
+      },
+      "moods": {
+        "luxury": "Luxury",
+        "fresh": "Fresh",
+        "warm": "Warm",
+        "cool": "Cool",
+        "playful": "Playful"
+      },
+      "angles": {
+        "front": "Front",
+        "side": "Side",
+        "top": "Top View",
+        "closeup": "Close-up"
+      }
+    }
+  },
   "profile": {
     "title": "My Profile",
     "subtitle": "Manage your account information",

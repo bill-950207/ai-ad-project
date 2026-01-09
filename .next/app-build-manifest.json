@@ -1,9 +1,9 @@
 {
   "pages": {
-    "/dashboard/image-ad/page": [
+    "/dashboard/image-ad/create/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/image-ad/page.js"
+      "static/chunks/app/dashboard/image-ad/create/page.js"
     ],
     "/dashboard/layout": [
       "static/chunks/webpack.js",
@@ -16,20 +16,10 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/dashboard/avatar/page": [
+    "/_not-found/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/avatar/page.js"
-    ],
-    "/dashboard/avatar/[id]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/avatar/[id]/page.js"
-    ],
-    "/dashboard/avatar/[id]/outfit/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/avatar/[id]/outfit/page.js"
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

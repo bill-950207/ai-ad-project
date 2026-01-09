@@ -366,3 +366,111 @@ export async function cancelRembgQueueRequest(requestId: string): Promise<boolea
     return false
   }
 }
+
+// ============================================================
+// GPT-Image 1.5 Edit (이미지 광고 생성)
+// ============================================================
+
+/** GPT-Image 1.5 Edit 모델 ID */
+const GPT_IMAGE_EDIT_MODEL_ID = 'fal-ai/gpt-image-1.5/edit'
+
+/** 이미지 크기 enum */
+export type ImageAdSize = '1024x1024' | '1536x1024' | '1024x1536'
+
+/** 이미지 광고 생성 입력 타입 */
+export interface ImageAdInput {
+  prompt: string                    // 생성 프롬프트
+  image_urls: string[]              // 참조 이미지 URL들 (제품, 아바타 등)
+  image_size?: ImageAdSize          // 이미지 크기 (기본값: 1024x1024)
+  quality?: 'low' | 'medium' | 'high'  // 품질 (기본값: high)
+  num_images?: number               // 생성할 이미지 수 (1-5, 기본값: 1)
+  background?: 'auto' | 'transparent' | 'opaque'  // 배경 (기본값: auto)
+}
+
+/** 이미지 광고 생성 출력 타입 */
+export interface ImageAdOutput {
+  images: FalImageOutput[]
+}
+
+/**
+ * 이미지 광고 생성 요청을 fal.ai 큐에 제출
+ *
+ * GPT-Image 1.5 Edit 모델을 사용하여 이미지 광고 생성
+ *
+ * @param input - 이미지 광고 생성 입력 데이터
+ * @returns 큐 제출 응답 (request_id 포함)
+ */
+export async function submitImageAdToQueue(input: ImageAdInput): Promise<FalQueueSubmitResponse> {
+  const falInput = {
+    prompt: input.prompt,
+    image_urls: input.image_urls,
+    image_size: input.image_size || '1024x1024',
+    quality: input.quality || 'high',
+    background: input.background || 'auto',
+    num_images: input.num_images || 1,
+    output_format: 'png' as const,
+  }
+
+  const { request_id } = await fal.queue.submit(GPT_IMAGE_EDIT_MODEL_ID, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${GPT_IMAGE_EDIT_MODEL_ID}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${GPT_IMAGE_EDIT_MODEL_ID}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${GPT_IMAGE_EDIT_MODEL_ID}/requests/${request_id}/cancel`,
+  }
+}
+
+/**
+ * 이미지 광고 생성 큐 상태 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 현재 상태 정보
+ */
+export async function getImageAdQueueStatus(requestId: string): Promise<FalQueueStatusResponse> {
+  const status = await fal.queue.status(GPT_IMAGE_EDIT_MODEL_ID, {
+    requestId,
+    logs: true,
+  })
+
+  const statusObj = status as unknown as Record<string, unknown>
+
+  return {
+    status: status.status as 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED',
+    queue_position: statusObj.queue_position as number | undefined,
+    logs: statusObj.logs as FalLog[] | undefined,
+  }
+}
+
+/**
+ * 이미지 광고 생성 결과 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 생성된 이미지 정보
+ */
+export async function getImageAdQueueResponse(requestId: string): Promise<ImageAdOutput> {
+  const result = await fal.queue.result(GPT_IMAGE_EDIT_MODEL_ID, {
+    requestId,
+  })
+
+  return result.data as ImageAdOutput
+}
+
+/**
+ * 이미지 광고 생성 요청 취소
+ *
+ * @param requestId - 요청 ID
+ * @returns 취소 성공 여부
+ */
+export async function cancelImageAdQueueRequest(requestId: string): Promise<boolean> {
+  try {
+    await fal.queue.cancel(GPT_IMAGE_EDIT_MODEL_ID, {
+      requestId,
+    })
+    return true
+  } catch {
+    return false
+  }
+}

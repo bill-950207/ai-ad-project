@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
 import { Plus, Package, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 import { AdProductCard } from './ad-product-card'
+import { ImageAdTypeModal, ImageAdType } from './image-ad-type-modal'
 
 interface AdProduct {
   id: string
@@ -30,6 +31,7 @@ export function ImageAdPageContent() {
   const router = useRouter()
   const [products, setProducts] = useState<AdProduct[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [showTypeModal, setShowTypeModal] = useState(false)
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -60,7 +62,13 @@ export function ImageAdPageContent() {
   }
 
   const handleCreateAd = () => {
-    // TODO: 이미지 광고 생성 페이지로 이동
+    setShowTypeModal(true)
+  }
+
+  const handleSelectAdType = (type: ImageAdType) => {
+    setShowTypeModal(false)
+    // TODO: 해당 타입의 이미지 광고 생성 페이지로 이동
+    router.push(`/dashboard/image-ad/create?type=${type}`)
   }
 
   return (
@@ -152,6 +160,13 @@ export function ImageAdPageContent() {
           </button>
         </div>
       </section>
+
+      {/* 광고 유형 선택 모달 */}
+      <ImageAdTypeModal
+        isOpen={showTypeModal}
+        onClose={() => setShowTypeModal(false)}
+        onSelect={handleSelectAdType}
+      />
     </div>
   )
 }

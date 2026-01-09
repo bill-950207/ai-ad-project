@@ -201,6 +201,131 @@
     "title": "動画広告",
     "subtitle": "AIで動画広告を作成します"
   },
+  "imageAdTypes": {
+    "selectType": "広告タイプを選択",
+    "selectTypeDesc": "作成したい画像広告のタイプを選択してください",
+    "productOnly": {
+      "title": "製品単独",
+      "description": "きれいな背景で製品を引き立てる",
+      "examples": "ショーケース、カタログ、サムネイル"
+    },
+    "holding": {
+      "title": "製品ホールディング",
+      "description": "モデルが製品を持っている広告",
+      "examples": "化粧品、スキンケア、飲料、食品、アクセサリー"
+    },
+    "using": {
+      "title": "製品使用",
+      "description": "モデルが製品を使用している広告",
+      "examples": "化粧品を塗る、スキンケア、飲料を飲む"
+    },
+    "wearing": {
+      "title": "着用ショット",
+      "description": "モデルが製品を着用した広告",
+      "examples": "衣装、アクセサリー、眼鏡、帽子、時計、バッグ"
+    },
+    "beforeAfter": {
+      "title": "Before/After",
+      "description": "使用前後の比較広告",
+      "examples": "スキンケア、ダイエット、ヘアケア"
+    },
+    "lifestyle": {
+      "title": "ライフスタイル",
+      "description": "製品と一緒の日常シーン",
+      "examples": "運動、料理、読書、旅行、リラックス"
+    },
+    "unboxing": {
+      "title": "開封/レビュー",
+      "description": "製品開封またはレビューコンセプト",
+      "examples": "ボックス開封、製品紹介、ファーストインプレッション"
+    },
+    "comparison": {
+      "title": "比較ショット",
+      "description": "2つの製品を比較するコンセプト",
+      "examples": "製品比較、選択、おすすめ"
+    },
+    "seasonal": {
+      "title": "シーズン/テーマ",
+      "description": "季節やテーマの雰囲気",
+      "examples": "クリスマス、夏、バレンタイン、ハロウィン"
+    }
+  },
+  "imageAdCreate": {
+    "title": "画像広告作成",
+    "selectProduct": "製品を選択",
+    "selectAvatar": "アバターを選択",
+    "prompt": "プロンプト",
+    "generate": "生成する",
+    "generating": "生成中...",
+    "result": "結果",
+    "exampleImages": "サンプル画像",
+    "noProductSelected": "製品を選択してください",
+    "noAvatarSelected": "アバターを選択してください",
+    "creditsRequired": "必要クレジット",
+    "promptPlaceholders": {
+      "productOnly": "高級感のある大理石テーブルの上に製品が置かれ、柔らかい照明が当たるミニマルなスタジオ背景",
+      "holding": "モデルが自然に製品を手に持ちカメラに微笑む姿、明るいスタジオ背景",
+      "using": "モデルが鏡の前で製品を使用する自然な姿、明るい化粧台エリア",
+      "wearing": "モデルが製品を着用しスタイリッシュなポーズをとる姿、きれいな背景",
+      "beforeAfter": "Before: 肌の悩みがある姿 / After: 透明で健康的な肌に変化した姿",
+      "lifestyle": "モデルがカフェでゆっくり製品と一緒に過ごす日常的な姿、温かい雰囲気",
+      "unboxing": "モデルがワクワクした表情で製品ボックスを開封する姿、きれいなデスクの上",
+      "comparison": "モデルが両手に2つの製品を持ち比較しながら悩む姿",
+      "seasonal": "クリスマスムードの背景でモデルが製品と一緒にいる温かい姿"
+    },
+    "aspectRatio": "画像比率",
+    "aspectRatios": {
+      "1:1": "1:1 正方形",
+      "16:9": "16:9 横長",
+      "9:16": "9:16 縦長"
+    },
+    "quality": "クオリティ",
+    "qualityOptions": {
+      "medium": {
+        "label": "普通",
+        "description": "より速く生成されます"
+      },
+      "high": {
+        "label": "高い",
+        "description": "より高いクオリティで出力されます"
+      }
+    },
+    "numImages": "生成枚数",
+    "recentAds": "最近生成した広告",
+    "viewOriginal": "原本を見る",
+    "options": {
+      "background": "背景スタイル",
+      "lighting": "照明",
+      "mood": "雰囲気",
+      "angle": "撮影角度",
+      "backgrounds": {
+        "studio": "スタジオ",
+        "marble": "大理石",
+        "nature": "自然",
+        "gradient": "グラデーション",
+        "minimal": "ミニマル"
+      },
+      "lightings": {
+        "soft": "ソフト",
+        "dramatic": "ドラマチック",
+        "natural": "自然光",
+        "neon": "ネオン"
+      },
+      "moods": {
+        "luxury": "ラグジュアリー",
+        "fresh": "フレッシュ",
+        "warm": "温かい",
+        "cool": "クール",
+        "playful": "遊び心"
+      },
+      "angles": {
+        "front": "正面",
+        "side": "側面",
+        "top": "トップビュー",
+        "closeup": "クローズアップ"
+      }
+    }
+  },
   "profile": {
     "title": "マイプロフィール",
     "subtitle": "アカウント情報を管理します",

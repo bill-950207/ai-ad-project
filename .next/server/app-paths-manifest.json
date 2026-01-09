@@ -1,8 +1,5 @@
 {
-  "/api/avatars/[id]/route": "app/api/avatars/[id]/route.js",
-  "/api/ad-products/route": "app/api/ad-products/route.js",
-  "/dashboard/avatar/[id]/outfit/page": "app/dashboard/avatar/[id]/outfit/page.js",
-  "/dashboard/avatar/page": "app/dashboard/avatar/page.js",
-  "/dashboard/avatar/[id]/page": "app/dashboard/avatar/[id]/page.js",
-  "/dashboard/image-ad/page": "app/dashboard/image-ad/page.js"
+  "/api/image-ads/route": "app/api/image-ads/route.js",
+  "/api/image-ads/[requestId]/status/route": "app/api/image-ads/[requestId]/status/route.js",
+  "/dashboard/image-ad/create/page": "app/dashboard/image-ad/create/page.js"
 }
