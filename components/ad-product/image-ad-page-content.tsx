@@ -195,6 +195,7 @@ export function ImageAdPageContent() {
             {imageAds.map(ad => (
               <div
                 key={ad.id}
+                onClick={() => router.push(`/dashboard/image-ad/${ad.id}`)}
                 className="relative group bg-card border border-border rounded-xl overflow-hidden aspect-square cursor-pointer hover:border-primary/50 transition-colors"
               >
                 {ad.image_url ? (
@@ -210,15 +211,9 @@ export function ImageAdPageContent() {
                 )}
                 {/* 호버 오버레이 */}
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <a
-                    href={ad.image_url || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 bg-white text-black rounded-lg text-sm font-medium hover:bg-white/90 transition-colors"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {(t.imageAdCreate as { viewOriginal?: string })?.viewOriginal || '원본 보기'}
-                  </a>
+                  <span className="px-4 py-2 bg-white text-black rounded-lg text-sm font-medium">
+                    {t.imageAdDetail?.viewDetail || '상세보기'}
+                  </span>
                 </div>
                 {/* 광고 타입 뱃지 */}
                 <div className="absolute top-2 left-2">

@@ -14,7 +14,12 @@
       "Bash(brew list:*)",
       "Bash(npx supabase db execute:*)",
       "Bash(node scripts/run-migration.mjs:*)",
-      "Bash(npx supabase:*)"
+      "Bash(npx supabase:*)",
+      "Bash(export PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\")",
+      "Bash(node scripts/migrate-video-ads.mjs:*)",
+      "Bash(brew install:*)",
+      "Bash(export PATH=\"/opt/homebrew/opt/postgresql@17/bin:$PATH\")",
+      "Bash(__NEW_LINE__ export PATH=\"/opt/homebrew/opt/postgresql@17/bin:$PATH\")"
     ]
   }
 }

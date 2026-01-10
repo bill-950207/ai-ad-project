@@ -8,7 +8,7 @@ import { LanguageProvider } from "@/contexts/language-context";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "ADAI - AI-Powered Ad Content Generator",
+  title: "AIAD - AI-Powered Ad Content Generator",
   description: "Create stunning ad content with AI. Generate images and videos for your marketing campaigns in minutes.",
 };
 

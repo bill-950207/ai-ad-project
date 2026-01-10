@@ -401,6 +401,7 @@ model avatars {
   profiles         profiles      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   outfits          avatar_outfits[]
   image_ads        image_ads[]
+  video_ads        video_ads[]
 
   @@index([fal_request_id], map: "idx_avatars_fal_request_id")
   @@index([status], map: "idx_avatars_status")
@@ -419,6 +420,7 @@ model profiles {
   outfits     avatar_outfits[]
   ad_products ad_products[]
   image_ads   image_ads[]
+  video_ads   video_ads[]
   users       users            @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@schema("public")
@@ -541,6 +543,21 @@ enum image_ad_status {
   @@schema("public")
 }
 
+enum video_ad_status {
+  PENDING              // 요청 대기
+  GENERATING_PROMPTS   // 프롬프트 생성 중 (Gemini)
+  GENERATING_IMAGE     // 첫 씬 이미지 생성 중 (gpt-image-1.5)
+  IMAGE_IN_QUEUE       // 이미지 생성 큐 대기
+  IMAGE_IN_PROGRESS    // 이미지 생성 중
+  IN_QUEUE             // 영상 생성 큐 대기
+  IN_PROGRESS          // 영상 생성 중
+  UPLOADING            // 클라이언트에서 R2 업로드 중
+  COMPLETED            // 완료
+  FAILED               // 실패
+
+  @@schema("public")
+}
+
 /// 아바타 의상 교체 결과 저장
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model avatar_outfits {
@@ -610,6 +627,7 @@ model ad_products {
 
   profiles           profiles          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   image_ads          image_ads[]
+  video_ads          video_ads[]
 
   @@index([user_id], map: "idx_ad_products_user_id")
   @@index([status], map: "idx_ad_products_status")
@@ -655,5 +673,57 @@ model image_ads {
   @@index([avatar_id], map: "idx_image_ads_avatar_id")
   @@index([status], map: "idx_image_ads_status")
   @@index([ad_type], map: "idx_image_ads_ad_type")
+  @@schema("public")
+}
+
+/// 영상 광고 (생성된 광고 영상)
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model video_ads {
+  id                 String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            String          @db.Uuid
+  product_id         String?         @db.Uuid
+  avatar_id          String?         @db.Uuid
+
+  status             video_ad_status @default(PENDING)
+  fal_request_id     String?
+  fal_image_request_id String?       // 첫 씬 이미지 생성 fal request ID
+
+  // 생성 옵션
+  prompt             String?         // 영상 생성 프롬프트
+  first_scene_prompt String?         // 첫 씬 이미지 생성 프롬프트
+  prompt_expanded    String?         // fal.ai에서 확장된 프롬프트
+  duration           Int?            // 영상 길이 (5, 10, 15초)
+  resolution         String?         // 해상도 (720p, 1080p)
+
+  // 제품 정보 (Gemini로 요약됨)
+  product_info       String?         // 사용자 입력 제품 정보
+  product_url        String?         // 제품 상세페이지 URL
+  product_summary    String?         // Gemini로 요약된 제품 정보
+
+  // 첫 씬 이미지 (gpt-image-1.5로 생성)
+  first_scene_image_url String?      // 첫 씬 이미지 URL
+
+  // 결과 영상
+  video_url          String?         // 영상 URL
+  video_width        Int?
+  video_height       Int?
+  video_fps          Int?
+  video_duration     Float?          // 실제 영상 길이 (초)
+  thumbnail_url      String?         // 썸네일 이미지 URL
+
+  seed               Int?
+  error_message      String?
+  created_at         DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime        @default(now()) @db.Timestamptz(6)
+  completed_at       DateTime?       @db.Timestamptz(6)
+
+  profiles           profiles        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ad_products        ad_products?    @relation(fields: [product_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  avatars            avatars?        @relation(fields: [avatar_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_video_ads_user_id")
+  @@index([product_id], map: "idx_video_ads_product_id")
+  @@index([avatar_id], map: "idx_video_ads_avatar_id")
+  @@index([status], map: "idx_video_ads_status")
   @@schema("public")
 }

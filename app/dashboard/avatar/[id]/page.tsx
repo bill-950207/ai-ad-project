@@ -746,7 +746,7 @@ export default function AvatarDetailPage() {
                 className="absolute inset-0 w-full h-full object-contain"
               />
             </div>
-
+ 
             {/* 네비게이션 버튼 */}
             {outfits.filter(o => o.status === 'COMPLETED' && o.image_url).length > 1 && (
               <>

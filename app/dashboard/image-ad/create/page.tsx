@@ -373,7 +373,7 @@ export default function ImageAdCreatePage() {
       let attempts = 0
 
       const pollStatus = async (): Promise<string[]> => {
-        const statusRes = await fetch(`/api/image-ads/${requestId}/status`)
+        const statusRes = await fetch(`/api/image-ads/status/${requestId}`)
         if (!statusRes.ok) {
           throw new Error('상태 확인 실패')
         }

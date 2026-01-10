@@ -474,3 +474,131 @@ export async function cancelImageAdQueueRequest(requestId: string): Promise<bool
     return false
   }
 }
+
+// ============================================================
+// Wan 2.6 Image-to-Video (영상 광고 생성)
+// ============================================================
+
+/** Wan 2.6 Image-to-Video 모델 ID */
+const WAN_VIDEO_MODEL_ID = 'wan/v2.6/image-to-video'
+
+/** 영상 해상도 타입 */
+export type VideoResolution = '720p' | '1080p'
+
+/** 영상 길이 타입 (초) */
+export type VideoDuration = 5 | 10 | 15
+
+/** 영상 광고 생성 입력 타입 */
+export interface VideoAdInput {
+  prompt: string                    // 생성 프롬프트 (최대 800자)
+  image_url: string                 // 첫 프레임으로 사용할 이미지 URL
+  resolution?: VideoResolution      // 해상도 (기본값: 1080p)
+  duration?: VideoDuration          // 영상 길이 (기본값: 5초)
+  negative_prompt?: string          // 피해야 할 내용 (최대 500자)
+  enable_prompt_expansion?: boolean // 프롬프트 확장 (기본값: true)
+  seed?: number                     // 시드값 (재현성)
+}
+
+/** 영상 출력 정보 */
+export interface FalVideoOutput {
+  url: string           // 영상 URL
+  content_type: string  // MIME 타입 (video/mp4)
+  file_name?: string    // 파일명
+  file_size?: number    // 파일 크기 (bytes)
+  width: number         // 영상 너비 (px)
+  height: number        // 영상 높이 (px)
+  fps?: number          // 프레임 레이트
+  duration?: number     // 영상 길이 (초)
+  frame_count?: number  // 총 프레임 수
+}
+
+/** 영상 광고 생성 출력 타입 */
+export interface VideoAdOutput {
+  video: FalVideoOutput       // 생성된 영상
+  seed: number                // 생성에 사용된 시드값
+  actual_prompt?: string      // 확장된 프롬프트 (enable_prompt_expansion이 true일 때)
+}
+
+/**
+ * 영상 광고 생성 요청을 fal.ai 큐에 제출
+ *
+ * Wan 2.6 Image-to-Video 모델을 사용하여 영상 광고 생성
+ *
+ * @param input - 영상 광고 생성 입력 데이터
+ * @returns 큐 제출 응답 (request_id 포함)
+ */
+export async function submitVideoAdToQueue(input: VideoAdInput): Promise<FalQueueSubmitResponse> {
+  const falInput = {
+    prompt: input.prompt,
+    image_url: input.image_url,
+    resolution: input.resolution || '1080p',
+    duration: input.duration || 5,
+    negative_prompt: input.negative_prompt,
+    enable_prompt_expansion: input.enable_prompt_expansion ?? true,
+    seed: input.seed,
+    enable_safety_checker: true,
+  }
+
+  const { request_id } = await fal.queue.submit(WAN_VIDEO_MODEL_ID, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${WAN_VIDEO_MODEL_ID}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${WAN_VIDEO_MODEL_ID}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${WAN_VIDEO_MODEL_ID}/requests/${request_id}/cancel`,
+  }
+}
+
+/**
+ * 영상 광고 생성 큐 상태 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 현재 상태 정보
+ */
+export async function getVideoAdQueueStatus(requestId: string): Promise<FalQueueStatusResponse> {
+  const status = await fal.queue.status(WAN_VIDEO_MODEL_ID, {
+    requestId,
+    logs: true,
+  })
+
+  const statusObj = status as unknown as Record<string, unknown>
+
+  return {
+    status: status.status as 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED',
+    queue_position: statusObj.queue_position as number | undefined,
+    logs: statusObj.logs as FalLog[] | undefined,
+  }
+}
+
+/**
+ * 영상 광고 생성 결과 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 생성된 영상 정보
+ */
+export async function getVideoAdQueueResponse(requestId: string): Promise<VideoAdOutput> {
+  const result = await fal.queue.result(WAN_VIDEO_MODEL_ID, {
+    requestId,
+  })
+
+  return result.data as VideoAdOutput
+}
+
+/**
+ * 영상 광고 생성 요청 취소
+ *
+ * @param requestId - 요청 ID
+ * @returns 취소 성공 여부
+ */
+export async function cancelVideoAdQueueRequest(requestId: string): Promise<boolean> {
+  try {
+    await fal.queue.cancel(WAN_VIDEO_MODEL_ID, {
+      requestId,
+    })
+    return true
+  } catch {
+    return false
+  }
+}
