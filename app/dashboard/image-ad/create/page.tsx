@@ -27,8 +27,11 @@ import {
   Coffee,
   Scale,
   Calendar,
+  Plus,
+  X,
 } from 'lucide-react'
 import { ImageAdType, PRODUCT_ONLY_TYPES } from '@/components/ad-product/image-ad-type-modal'
+import { CATEGORY_OPTIONS, buildPromptFromOptions, getDefaultOptions } from '@/lib/image-ad/category-options'
 
 // 카테고리 목록 (아이콘 포함)
 const AD_TYPE_LIST: { type: ImageAdType; icon: typeof Box }[] = [
@@ -58,6 +61,13 @@ interface Avatar {
   id: string
   name: string
   image_url: string | null
+}
+
+interface Outfit {
+  id: string
+  name: string
+  image_url: string | null
+  status: string
 }
 
 // 카테고리별 예시 이미지 (실제로는 R2나 public에서 로드)
@@ -113,8 +123,7 @@ export default function ImageAdCreatePage() {
   const [products, setProducts] = useState<AdProduct[]>([])
   const [avatars, setAvatars] = useState<Avatar[]>([])
   const [selectedProduct, setSelectedProduct] = useState<AdProduct | null>(null)
-  const [selectedAvatar, setSelectedAvatar] = useState<Avatar | null>(null)
-  const [prompt, setPrompt] = useState('')
+  const [selectedAvatars, setSelectedAvatars] = useState<Avatar[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
   const [resultImages, setResultImages] = useState<string[]>([])
@@ -129,16 +138,24 @@ export default function ImageAdCreatePage() {
   // 드롭다운 상태
   const [showProductDropdown, setShowProductDropdown] = useState(false)
   const [showAvatarDropdown, setShowAvatarDropdown] = useState(false)
+  const [showOutfitDropdown, setShowOutfitDropdown] = useState(false)
+
+  // 의상 관련 상태 (착용샷용)
+  const [outfits, setOutfits] = useState<Outfit[]>([])
+  const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null)
+  const isWearingType = adType === 'wearing'
 
   // 예시 이미지 슬라이드
   const [currentExampleIndex, setCurrentExampleIndex] = useState(0)
   const exampleImages = EXAMPLE_IMAGES[adType] || []
 
-  // 옵션 상태 (제품 단독용)
-  const [background, setBackground] = useState('studio')
-  const [lighting, setLighting] = useState('soft')
-  const [mood, setMood] = useState('luxury')
-  const [angle, setAngle] = useState('front')
+  // 카테고리별 구조화된 옵션 상태
+  const [categoryOptions, setCategoryOptions] = useState<Record<string, string>>(() =>
+    getDefaultOptions(adType)
+  )
+
+  // 추가 프롬프트 (자유 입력)
+  const [additionalPrompt, setAdditionalPrompt] = useState('')
 
   // 이미지 비율 상태
   type AspectRatio = '1:1' | '16:9' | '9:16'
@@ -205,9 +222,31 @@ export default function ImageAdCreatePage() {
     }
   }, [])
 
+  // 선택된 아바타의 의상 목록 로드 (착용샷용)
+  const fetchOutfits = useCallback(async (avatarId: string) => {
+    try {
+      const res = await fetch(`/api/avatars/${avatarId}/outfits`)
+      if (res.ok) {
+        const data = await res.json()
+        const completedOutfits = (data.outfits || []).filter(
+          (o: Outfit) => o.status === 'COMPLETED'
+        )
+        setOutfits(completedOutfits)
+      }
+    } catch (error) {
+      console.error('의상 목록 로드 오류:', error)
+    }
+  }, [])
+
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  // adType 변경 시 카테고리 옵션 초기화
+  useEffect(() => {
+    setCategoryOptions(getDefaultOptions(adType))
+    setAdditionalPrompt('')
+  }, [adType])
 
   // 선택된 제품이 변경되면 최근 광고 로드
   useEffect(() => {
@@ -217,6 +256,18 @@ export default function ImageAdCreatePage() {
       setRecentAds([])
     }
   }, [selectedProduct, fetchRecentAds])
+
+  // 선택된 아바타가 변경되면 의상 목록 로드 (착용샷일 때만)
+  // 착용샷은 단일 아바타 선택만 가능하므로 첫 번째 아바타만 사용
+  useEffect(() => {
+    if (isWearingType && selectedAvatars.length > 0) {
+      fetchOutfits(selectedAvatars[0].id)
+      setSelectedOutfit(null)  // 아바타 변경 시 의상 선택 초기화
+    } else {
+      setOutfits([])
+      setSelectedOutfit(null)
+    }
+  }, [selectedAvatars, isWearingType, fetchOutfits])
 
   // 예시 이미지 자동 슬라이드
   useEffect(() => {
@@ -235,48 +286,71 @@ export default function ImageAdCreatePage() {
     return creditPerImage * numImages
   }
 
-  // 프롬프트 플레이스홀더
-  const getPromptPlaceholder = () => {
-    const placeholders = (t.imageAdCreate as { promptPlaceholders: Record<string, string> })?.promptPlaceholders
-    return placeholders?.[adType] || ''
-  }
-
   // 광고 유형 제목
   const getAdTypeTitle = () => {
     const types = t.imageAdTypes as unknown as Record<string, { title: string }>
     return types[adType]?.title || adType
   }
 
+  // 아바타 선택/해제 토글
+  const toggleAvatarSelection = (avatar: Avatar) => {
+    // 착용샷은 단일 선택만 허용
+    if (isWearingType) {
+      setSelectedAvatars([avatar])
+      setShowAvatarDropdown(false)
+      return
+    }
+
+    setSelectedAvatars(prev => {
+      const isSelected = prev.some(a => a.id === avatar.id)
+      if (isSelected) {
+        return prev.filter(a => a.id !== avatar.id)
+      } else {
+        return [...prev, avatar]
+      }
+    })
+  }
+
+  // 선택된 아바타 제거
+  const removeSelectedAvatar = (avatarId: string) => {
+    setSelectedAvatars(prev => prev.filter(a => a.id !== avatarId))
+  }
+
   // 생성 가능 여부
   const canGenerate = () => {
-    if (!selectedProduct) return false
-    if (!isProductOnly && !selectedAvatar) return false
-    return true
+    // 착용샷: 아바타 + 의상 필수 (제품 불필요)
+    if (isWearingType) {
+      return selectedAvatars.length > 0 && !!selectedOutfit
+    }
+    // 제품 단독: 제품만 필수
+    if (isProductOnly) {
+      return !!selectedProduct
+    }
+    // 나머지: 제품 + 아바타 필수
+    return !!selectedProduct && selectedAvatars.length > 0
   }
 
   // 생성 핸들러
   const handleGenerate = async () => {
-    if (!canGenerate() || !selectedProduct) return
+    if (!canGenerate()) return
 
     setIsGenerating(true)
     setResultImages([])
 
     try {
+      // 구조화된 옵션으로 프롬프트 생성
+      const generatedPrompt = buildPromptFromOptions(adType, categoryOptions, additionalPrompt)
+
       // API 요청 데이터 구성
       const requestBody = {
         adType,
-        productId: selectedProduct.id,
-        avatarId: selectedAvatar?.id,
-        prompt: prompt || getPromptPlaceholder(),
+        productId: isWearingType ? undefined : selectedProduct?.id,
+        avatarIds: selectedAvatars.map(a => a.id),  // 다중 아바타 ID 배열
+        outfitId: isWearingType ? selectedOutfit?.id : undefined,
+        prompt: generatedPrompt,
         imageSize: getImageSize(aspectRatio),
         quality,
         numImages,
-        options: isProductOnly ? {
-          background,
-          lighting,
-          mood,
-          angle,
-        } : undefined,
       }
 
       // 이미지 광고 생성 요청
@@ -353,6 +427,8 @@ export default function ImageAdCreatePage() {
     }
     numImages?: string
     recentAds?: string
+    additionalPrompt?: string
+    additionalPromptPlaceholder?: string
     options: {
       background: string
       lighting: string
@@ -362,6 +438,10 @@ export default function ImageAdCreatePage() {
       lightings: Record<string, string>
       moods: Record<string, string>
       angles: Record<string, string>
+    }
+    categoryOptions?: {
+      groups: Record<string, string>
+      options: Record<string, string>
     }
   }
 
@@ -409,9 +489,9 @@ export default function ImageAdCreatePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-200px)]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-8">
         {/* 왼쪽: 사이드바 */}
-        <div className="space-y-4 overflow-y-auto pr-2">
+        <div className="space-y-4">
           {/* 카테고리 탭 */}
           <div className="bg-card border border-border rounded-xl p-3">
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
@@ -437,123 +517,60 @@ export default function ImageAdCreatePage() {
             </div>
           </div>
 
-          {/* 제품 선택 */}
-          <div className="bg-card border border-border rounded-xl p-4">
-            <label className="block text-sm font-medium text-foreground mb-2">
-              <Package className="w-4 h-4 inline mr-2" />
-              {imageAdCreate.selectProduct}
-            </label>
-            <div className="relative">
-              <button
-                onClick={() => setShowProductDropdown(!showProductDropdown)}
-                className="w-full flex items-center justify-between px-4 py-3 bg-secondary/50 border border-border rounded-lg text-left hover:border-primary/50 transition-colors"
-              >
-                {selectedProduct ? (
-                  <div className="flex items-center gap-3">
-                    {(selectedProduct.rembg_image_url || selectedProduct.image_url) && (
-                      <img
-                        src={selectedProduct.rembg_image_url || selectedProduct.image_url || ''}
-                        alt={selectedProduct.name}
-                        className="w-8 h-8 object-contain rounded"
-                      />
-                    )}
-                    <span className="text-foreground">{selectedProduct.name}</span>
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground">{imageAdCreate.noProductSelected}</span>
-                )}
-                <ChevronDown className="w-4 h-4 text-muted-foreground" />
-              </button>
-
-              {showProductDropdown && (
-                <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {products.length === 0 ? (
-                    <div className="p-4 text-center text-muted-foreground text-sm">
-                      등록된 제품이 없습니다
-                    </div>
-                  ) : (
-                    products.map((product) => (
-                      <button
-                        key={product.id}
-                        onClick={() => {
-                          setSelectedProduct(product)
-                          setShowProductDropdown(false)
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors"
-                      >
-                        {(product.rembg_image_url || product.image_url) && (
-                          <img
-                            src={product.rembg_image_url || product.image_url || ''}
-                            alt={product.name}
-                            className="w-10 h-10 object-contain rounded bg-secondary/30"
-                          />
-                        )}
-                        <span className="text-foreground">{product.name}</span>
-                        {selectedProduct?.id === product.id && (
-                          <Check className="w-4 h-4 text-primary ml-auto" />
-                        )}
-                      </button>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* 아바타 선택 (모델 필요 타입만) */}
-          {!isProductOnly && (
+          {/* 제품 선택 (착용샷 제외) */}
+          {!isWearingType && (
             <div className="bg-card border border-border rounded-xl p-4">
               <label className="block text-sm font-medium text-foreground mb-2">
-                <User className="w-4 h-4 inline mr-2" />
-                {imageAdCreate.selectAvatar}
+                <Package className="w-4 h-4 inline mr-2" />
+                {imageAdCreate.selectProduct}
               </label>
               <div className="relative">
                 <button
-                  onClick={() => setShowAvatarDropdown(!showAvatarDropdown)}
+                  onClick={() => setShowProductDropdown(!showProductDropdown)}
                   className="w-full flex items-center justify-between px-4 py-3 bg-secondary/50 border border-border rounded-lg text-left hover:border-primary/50 transition-colors"
                 >
-                  {selectedAvatar ? (
+                  {selectedProduct ? (
                     <div className="flex items-center gap-3">
-                      {selectedAvatar.image_url && (
+                      {(selectedProduct.rembg_image_url || selectedProduct.image_url) && (
                         <img
-                          src={selectedAvatar.image_url}
-                          alt={selectedAvatar.name}
-                          className="w-8 h-8 object-cover rounded"
+                          src={selectedProduct.rembg_image_url || selectedProduct.image_url || ''}
+                          alt={selectedProduct.name}
+                          className="w-8 h-8 object-contain rounded"
                         />
                       )}
-                      <span className="text-foreground">{selectedAvatar.name}</span>
+                      <span className="text-foreground">{selectedProduct.name}</span>
                     </div>
                   ) : (
-                    <span className="text-muted-foreground">{imageAdCreate.noAvatarSelected}</span>
+                    <span className="text-muted-foreground">{imageAdCreate.noProductSelected}</span>
                   )}
                   <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 </button>
 
-                {showAvatarDropdown && (
+                {showProductDropdown && (
                   <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {avatars.length === 0 ? (
+                    {products.length === 0 ? (
                       <div className="p-4 text-center text-muted-foreground text-sm">
-                        생성된 아바타가 없습니다
+                        등록된 제품이 없습니다
                       </div>
                     ) : (
-                      avatars.map((avatar) => (
+                      products.map((product) => (
                         <button
-                          key={avatar.id}
+                          key={product.id}
                           onClick={() => {
-                            setSelectedAvatar(avatar)
-                            setShowAvatarDropdown(false)
+                            setSelectedProduct(product)
+                            setShowProductDropdown(false)
                           }}
                           className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors"
                         >
-                          {avatar.image_url && (
+                          {(product.rembg_image_url || product.image_url) && (
                             <img
-                              src={avatar.image_url}
-                              alt={avatar.name}
-                              className="w-10 h-10 object-cover rounded bg-secondary/30"
+                              src={product.rembg_image_url || product.image_url || ''}
+                              alt={product.name}
+                              className="w-10 h-10 object-contain rounded bg-secondary/30"
                             />
                           )}
-                          <span className="text-foreground">{avatar.name}</span>
-                          {selectedAvatar?.id === avatar.id && (
+                          <span className="text-foreground">{product.name}</span>
+                          {selectedProduct?.id === product.id && (
                             <Check className="w-4 h-4 text-primary ml-auto" />
                           )}
                         </button>
@@ -565,112 +582,251 @@ export default function ImageAdCreatePage() {
             </div>
           )}
 
-          {/* 프롬프트 입력 */}
-          <div className="bg-card border border-border rounded-xl p-4">
-            <label className="block text-sm font-medium text-foreground mb-2">
-              {imageAdCreate.prompt}
-            </label>
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder={getPromptPlaceholder()}
-              rows={4}
-              className="w-full px-4 py-3 bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground resize-none"
-            />
-          </div>
+          {/* 아바타 선택 (모델 필요 타입만) */}
+          {!isProductOnly && (
+            <div className="bg-card border border-border rounded-xl p-4">
+              <label className="block text-sm font-medium text-foreground mb-2">
+                <User className="w-4 h-4 inline mr-2" />
+                {imageAdCreate.selectAvatar}
+                {!isWearingType && (
+                  <span className="text-xs text-muted-foreground ml-2">(다중 선택 가능)</span>
+                )}
+              </label>
 
-          {/* 제품 단독일 때 추가 옵션 */}
-          {isProductOnly && (
-            <div className="bg-card border border-border rounded-xl p-4 space-y-4">
-              {/* 배경 스타일 */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  {imageAdCreate.options.background}
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(imageAdCreate.options.backgrounds).map(([key, label]) => (
-                    <button
-                      key={key}
-                      onClick={() => setBackground(key)}
-                      className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
-                        background === key
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border text-muted-foreground hover:border-primary/50'
-                      }`}
+              {/* 선택된 아바타 목록 (다중 선택 시) */}
+              {selectedAvatars.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {selectedAvatars.map((avatar) => (
+                    <div
+                      key={avatar.id}
+                      className="flex items-center gap-2 px-2 py-1 bg-primary/10 border border-primary/30 rounded-lg"
                     >
-                      {label}
-                    </button>
+                      {avatar.image_url && (
+                        <img
+                          src={avatar.image_url}
+                          alt={avatar.name}
+                          className="w-6 h-6 object-cover rounded"
+                        />
+                      )}
+                      <span className="text-sm text-foreground">{avatar.name}</span>
+                      <button
+                        onClick={() => removeSelectedAvatar(avatar.id)}
+                        className="p-0.5 hover:bg-primary/20 rounded transition-colors"
+                      >
+                        <X className="w-3 h-3 text-muted-foreground" />
+                      </button>
+                    </div>
                   ))}
                 </div>
-              </div>
+              )}
 
-              {/* 조명 */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  {imageAdCreate.options.lighting}
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(imageAdCreate.options.lightings).map(([key, label]) => (
-                    <button
-                      key={key}
-                      onClick={() => setLighting(key)}
-                      className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
-                        lighting === key
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border text-muted-foreground hover:border-primary/50'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <div className="relative">
+                <button
+                  onClick={() => setShowAvatarDropdown(!showAvatarDropdown)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-secondary/50 border border-border rounded-lg text-left hover:border-primary/50 transition-colors"
+                >
+                  {selectedAvatars.length === 0 ? (
+                    <span className="text-muted-foreground">{imageAdCreate.noAvatarSelected}</span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      {isWearingType ? '다른 아바타 선택' : '아바타 추가 선택'}
+                    </span>
+                  )}
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                </button>
 
-              {/* 분위기 */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  {imageAdCreate.options.mood}
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(imageAdCreate.options.moods).map(([key, label]) => (
-                    <button
-                      key={key}
-                      onClick={() => setMood(key)}
-                      className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
-                        mood === key
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border text-muted-foreground hover:border-primary/50'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 촬영 각도 */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  {imageAdCreate.options.angle}
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(imageAdCreate.options.angles).map(([key, label]) => (
-                    <button
-                      key={key}
-                      onClick={() => setAngle(key)}
-                      className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
-                        angle === key
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border text-muted-foreground hover:border-primary/50'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
+                {showAvatarDropdown && (
+                  <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {avatars.length === 0 ? (
+                      <div className="p-4 text-center text-muted-foreground text-sm">
+                        생성된 아바타가 없습니다
+                      </div>
+                    ) : (
+                      avatars.map((avatar) => {
+                        const isSelected = selectedAvatars.some(a => a.id === avatar.id)
+                        return (
+                          <button
+                            key={avatar.id}
+                            onClick={() => toggleAvatarSelection(avatar)}
+                            className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors ${
+                              isSelected ? 'bg-primary/5' : ''
+                            }`}
+                          >
+                            {avatar.image_url && (
+                              <img
+                                src={avatar.image_url}
+                                alt={avatar.name}
+                                className="w-10 h-10 object-cover rounded bg-secondary/30"
+                              />
+                            )}
+                            <span className="text-foreground">{avatar.name}</span>
+                            {isSelected && (
+                              <Check className="w-4 h-4 text-primary ml-auto" />
+                            )}
+                          </button>
+                        )
+                      })
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
+
+          {/* 의상 선택 (착용샷일 때만, 아바타 선택 후) */}
+          {isWearingType && selectedAvatars.length > 0 && (
+            <div className="bg-card border border-border rounded-xl p-4">
+              <label className="block text-sm font-medium text-foreground mb-2">
+                <Shirt className="w-4 h-4 inline mr-2" />
+                {(t.avatar as { outfits?: string })?.outfits || '의상 선택'}
+              </label>
+              <div className="relative">
+                <button
+                  onClick={() => setShowOutfitDropdown(!showOutfitDropdown)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-secondary/50 border border-border rounded-lg text-left hover:border-primary/50 transition-colors"
+                >
+                  {selectedOutfit ? (
+                    <div className="flex items-center gap-3">
+                      {selectedOutfit.image_url && (
+                        <img
+                          src={selectedOutfit.image_url}
+                          alt={selectedOutfit.name}
+                          className="w-8 h-8 object-cover rounded"
+                        />
+                      )}
+                      <span className="text-foreground">{selectedOutfit.name}</span>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      {(t.imageAdCreate as { selectOutfit?: string })?.selectOutfit || '의상을 선택하세요'}
+                    </span>
+                  )}
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                </button>
+
+                {showOutfitDropdown && (
+                  <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {outfits.length === 0 ? (
+                      <div className="p-4 text-center">
+                        <p className="text-muted-foreground text-sm mb-3">
+                          {(t.avatar as { noOutfits?: string })?.noOutfits || '생성된 의상이 없습니다'}
+                        </p>
+                        <button
+                          onClick={() => {
+                            setShowOutfitDropdown(false)
+                            router.push(`/dashboard/avatar/${selectedAvatars[0].id}/outfit`)
+                          }}
+                          className="flex items-center gap-2 mx-auto px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                          {(t.avatar as { changeOutfit?: string })?.changeOutfit || '의상 추가'}
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        {outfits.map((outfit) => (
+                          <button
+                            key={outfit.id}
+                            onClick={() => {
+                              setSelectedOutfit(outfit)
+                              setShowOutfitDropdown(false)
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors"
+                          >
+                            {outfit.image_url && (
+                              <img
+                                src={outfit.image_url}
+                                alt={outfit.name}
+                                className="w-10 h-10 object-cover rounded bg-secondary/30"
+                              />
+                            )}
+                            <span className="text-foreground">{outfit.name}</span>
+                            {selectedOutfit?.id === outfit.id && (
+                              <Check className="w-4 h-4 text-primary ml-auto" />
+                            )}
+                          </button>
+                        ))}
+                        {/* 의상 추가 버튼 */}
+                        <button
+                          onClick={() => {
+                            setShowOutfitDropdown(false)
+                            router.push(`/dashboard/avatar/${selectedAvatars[0].id}/outfit`)
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-3 border-t border-border hover:bg-secondary/50 transition-colors text-primary"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>{(t.avatar as { changeOutfit?: string })?.changeOutfit || '의상 추가'}</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 카테고리별 구조화된 옵션 */}
+          {CATEGORY_OPTIONS[adType] && (
+            <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+              {CATEGORY_OPTIONS[adType].groups.map((group) => {
+                const groupLabel = (imageAdCreate.categoryOptions as {
+                  groups: Record<string, string>
+                  options: Record<string, string>
+                })?.groups?.[group.key] || group.labelKey
+
+                return (
+                  <div key={group.key}>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      {groupLabel}
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {group.options.map((option) => {
+                        const optionLabel = (imageAdCreate.categoryOptions as {
+                          groups: Record<string, string>
+                          options: Record<string, string>
+                        })?.options?.[option.labelKey] || option.labelKey
+
+                        const isSelected = categoryOptions[group.key] === option.key
+
+                        return (
+                          <button
+                            key={option.key}
+                            onClick={() =>
+                              setCategoryOptions((prev) => ({
+                                ...prev,
+                                [group.key]: option.key,
+                              }))
+                            }
+                            className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
+                              isSelected
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'border-border text-muted-foreground hover:border-primary/50'
+                            }`}
+                          >
+                            {optionLabel}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* 추가 프롬프트 (선택) */}
+          <div className="bg-card border border-border rounded-xl p-4">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              {(imageAdCreate as { additionalPrompt?: string }).additionalPrompt || '추가 설명 (선택)'}
+            </label>
+            <textarea
+              value={additionalPrompt}
+              onChange={(e) => setAdditionalPrompt(e.target.value)}
+              placeholder={(imageAdCreate as { additionalPromptPlaceholder?: string }).additionalPromptPlaceholder || '원하는 스타일이나 분위기를 자유롭게 설명해주세요...'}
+              rows={3}
+              className="w-full px-4 py-3 bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground resize-none"
+            />
+          </div>
 
           {/* 이미지 비율 선택 */}
           <div className="bg-card border border-border rounded-xl p-4">

@@ -22,6 +22,16 @@ interface AdProduct {
   error_message?: string | null
 }
 
+interface ImageAd {
+  id: string
+  image_url: string | null
+  product_id: string | null
+  avatar_id: string | null
+  ad_type: string
+  status: string
+  created_at: string
+}
+
 interface AdProductDetailProps {
   productId: string
 }
@@ -30,7 +40,9 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
   const { t } = useLanguage()
   const router = useRouter()
   const [product, setProduct] = useState<AdProduct | null>(null)
+  const [productAds, setProductAds] = useState<ImageAd[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isAdsLoading, setIsAdsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
 
   const fetchProduct = useCallback(async () => {
@@ -50,9 +62,24 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
     }
   }, [productId, router])
 
+  const fetchProductAds = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/image-ads?productId=${productId}&limit=20`)
+      if (res.ok) {
+        const data = await res.json()
+        setProductAds(data.ads || [])
+      }
+    } catch (error) {
+      console.error('제품 광고 조회 오류:', error)
+    } finally {
+      setIsAdsLoading(false)
+    }
+  }, [productId])
+
   useEffect(() => {
     fetchProduct()
-  }, [fetchProduct])
+    fetchProductAds()
+  }, [fetchProduct, fetchProductAds])
 
   const handleDelete = async () => {
     if (!confirm(t.adProduct.confirmDelete)) return
@@ -74,7 +101,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
   }
 
   const handleCreateAd = () => {
-    // TODO: 이미지 광고 생성 페이지로 이동
+    router.push('/dashboard/image-ad/create?type=productOnly')
   }
 
   if (isLoading) {
@@ -146,21 +173,78 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
         {/* 광고 목록 */}
         <div className="lg:col-span-2">
           <div className="bg-card border border-border rounded-xl p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4">{t.adProduct.myProductAds}</h2>
-
-            {/* 빈 상태 */}
-            <div className="py-12 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                <ImageIcon className="w-8 h-8 text-primary" />
-              </div>
-              <p className="text-muted-foreground mb-4">{t.adProduct.emptyAds}</p>
-              <button
-                onClick={handleCreateAd}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-              >
-                {t.adProduct.createAd}
-              </button>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-foreground">{t.adProduct.myProductAds}</h2>
+              {productAds.length > 0 && (
+                <button
+                  onClick={handleCreateAd}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  {t.adProduct.createAd}
+                </button>
+              )}
             </div>
+
+            {isAdsLoading ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {[1, 2, 3, 4, 5, 6].map(i => (
+                  <div key={i} className="aspect-square bg-secondary/30 rounded-lg animate-pulse" />
+                ))}
+              </div>
+            ) : productAds.length === 0 ? (
+              <div className="py-12 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                  <ImageIcon className="w-8 h-8 text-primary" />
+                </div>
+                <p className="text-muted-foreground mb-4">{t.adProduct.emptyAds}</p>
+                <button
+                  onClick={handleCreateAd}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  {t.adProduct.createAd}
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {productAds.map(ad => (
+                  <div
+                    key={ad.id}
+                    className="relative group bg-secondary/30 rounded-lg overflow-hidden aspect-square cursor-pointer"
+                  >
+                    {ad.image_url ? (
+                      <img
+                        src={ad.image_url}
+                        alt="Generated ad"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                    )}
+                    {/* 호버 오버레이 */}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <a
+                        href={ad.image_url || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-white text-black rounded-lg text-sm font-medium hover:bg-white/90 transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {(t.imageAdCreate as { viewOriginal?: string })?.viewOriginal || '원본 보기'}
+                      </a>
+                    </div>
+                    {/* 광고 타입 뱃지 */}
+                    <div className="absolute top-2 left-2">
+                      <span className="px-2 py-1 text-xs font-medium bg-black/50 text-white rounded">
+                        {(t.imageAdTypes as Record<string, { title?: string }>)?.[ad.ad_type]?.title || ad.ad_type}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

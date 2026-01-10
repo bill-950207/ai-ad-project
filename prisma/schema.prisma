@@ -400,6 +400,7 @@ model avatars {
   completed_at     DateTime?     @db.Timestamptz(6)
   profiles         profiles      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   outfits          avatar_outfits[]
+  image_ads        image_ads[]
 
   @@index([fal_request_id], map: "idx_avatars_fal_request_id")
   @@index([status], map: "idx_avatars_status")
@@ -417,6 +418,7 @@ model profiles {
   avatars     avatars[]
   outfits     avatar_outfits[]
   ad_products ad_products[]
+  image_ads   image_ads[]
   users       users            @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@schema("public")
@@ -528,6 +530,17 @@ enum ad_product_status {
   @@schema("public")
 }
 
+enum image_ad_status {
+  PENDING      // 요청 대기
+  IN_QUEUE     // fal.ai 큐 대기
+  IN_PROGRESS  // 이미지 생성 중
+  UPLOADING    // 클라이언트에서 R2 업로드 중
+  COMPLETED    // 완료
+  FAILED       // 실패
+
+  @@schema("public")
+}
+
 /// 아바타 의상 교체 결과 저장
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model avatar_outfits {
@@ -558,6 +571,7 @@ model avatar_outfits {
 
   avatars            avatars       @relation(fields: [avatar_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   profiles           profiles      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  image_ads          image_ads[]
 
   @@index([avatar_id], map: "idx_avatar_outfits_avatar_id")
   @@index([user_id], map: "idx_avatar_outfits_user_id")
@@ -595,8 +609,51 @@ model ad_products {
   completed_at       DateTime?         @db.Timestamptz(6)
 
   profiles           profiles          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  image_ads          image_ads[]
 
   @@index([user_id], map: "idx_ad_products_user_id")
   @@index([status], map: "idx_ad_products_status")
+  @@schema("public")
+}
+
+/// 이미지 광고 (생성된 광고 이미지)
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model image_ads {
+  id                 String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            String          @db.Uuid
+  product_id         String?         @db.Uuid  // 착용샷은 제품 없음
+  avatar_id          String?         @db.Uuid  // 제품 단독은 아바타 없음
+  outfit_id          String?         @db.Uuid  // 착용샷일 때만 사용
+
+  ad_type            String          // productOnly, holding, using, wearing, etc.
+  status             image_ad_status @default(PENDING)
+  fal_request_id     String?
+
+  // 생성 옵션
+  prompt             String?
+  image_size         String?         // 1024x1024, 1536x1024, 1024x1536
+  quality            String?         // medium, high
+
+  // 결과 이미지
+  image_url          String?         // 압축된 WebP 이미지 URL (조회용)
+  image_url_original String?         // 원본 이미지 URL (재가공용)
+  image_width        Int?
+  image_height       Int?
+
+  error_message      String?
+  created_at         DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime        @default(now()) @db.Timestamptz(6)
+  completed_at       DateTime?       @db.Timestamptz(6)
+
+  profiles           profiles        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ad_products        ad_products?    @relation(fields: [product_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  avatars            avatars?        @relation(fields: [avatar_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  avatar_outfits     avatar_outfits? @relation(fields: [outfit_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_image_ads_user_id")
+  @@index([product_id], map: "idx_image_ads_product_id")
+  @@index([avatar_id], map: "idx_image_ads_avatar_id")
+  @@index([status], map: "idx_image_ads_status")
+  @@index([ad_type], map: "idx_image_ads_ad_type")
   @@schema("public")
 }
