@@ -7,11 +7,11 @@
  * POST /api/ad-products - 새 광고 제품 생성 요청 (배경 제거)
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { submitRembgToQueue } from '@/lib/fal/client'
 import { uploadAdProductSourceFromDataUrl } from '@/lib/storage/r2'
+import { createClient } from '@/lib/supabase/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * GET /api/ad-products
