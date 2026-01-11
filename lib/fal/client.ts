@@ -405,7 +405,7 @@ export async function submitImageAdToQueue(input: ImageAdInput): Promise<FalQueu
     prompt: input.prompt,
     image_urls: input.image_urls,
     image_size: input.image_size || '1024x1024',
-    quality: input.quality || 'high',
+    quality: input.quality || 'medium',
     background: input.background || 'auto',
     num_images: input.num_images || 1,
     output_format: 'png' as const,

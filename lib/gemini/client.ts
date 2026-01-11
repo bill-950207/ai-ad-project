@@ -7,7 +7,7 @@
  * - 영상 광고 프롬프트 생성
  */
 
-import { GoogleGenAI } from '@google/genai'
+import { GenerateContentConfig, GoogleGenAI, ThinkingLevel, Type } from '@google/genai'
 
 // Gemini 클라이언트 초기화
 const genAI = new GoogleGenAI({
@@ -70,6 +70,8 @@ export interface VideoPromptResult {
 export interface VideoAdPromptInput {
   productInfo?: string      // 제품 정보 (직접 입력)
   productUrl?: string       // 제품 URL (Gemini가 직접 접근)
+  productImageUrl?: string  // 제품 이미지 URL (외형 참고용)
+  avatarImageUrl?: string   // 아바타 이미지 URL (외형 참고용)
   duration: number          // 영상 길이 (5, 10, 15초)
   style?: string            // 광고 스타일
   additionalInstructions?: string  // 추가 지시사항
@@ -278,83 +280,128 @@ ${input.additionalInstructions ? `추가 요청: ${input.additionalInstructions}
  */
 export async function generateVideoAdPrompts(input: VideoAdPromptInput): Promise<VideoAdPromptResult> {
   const durationDesc =
-    input.duration === 5 ? '짧고 임팩트 있는 5초'
-      : input.duration === 10 ? '적당한 길이의 10초'
-        : '충분한 스토리를 담은 15초'
+    input.duration === 5 ? 'short and impactful 5 seconds'
+      : input.duration === 10 ? 'moderate length 10 seconds'
+        : 'full story 15 seconds'
 
-  // URL이 있으면 URL 정보를 포함
+  // Include URL info if available
   const productInfoSection = input.productUrl
-    ? `제품 정보 URL: ${input.productUrl}
-위 URL에서 제품 정보를 직접 확인하세요.
+    ? `Product Info URL: ${input.productUrl}
+Please retrieve and analyze the product information directly from the URL above.
 
-추가 제품 정보:
-${input.productInfo || '없음'}`
-    : `제품 정보:
-${input.productInfo || '정보 없음'}`
+Additional Product Info:
+${input.productInfo || 'None'}`
+    : `Product Info:
+${input.productInfo || 'No information provided'}`
 
-  const prompt = `당신은 영상 광고 전문가입니다. 제품 정보를 분석하고, AI 모델을 위한 프롬프트를 생성해주세요.
+  // Image reference instructions (if images are attached)
+  const imageReferenceSection = (input.productImageUrl || input.avatarImageUrl)
+    ? `
+IMPORTANT: Please carefully analyze the attached images.
+${input.productImageUrl ? '- First image: This is the PRODUCT image. Describe the product\'s exact appearance including color, shape, material, and design details accurately.' : ''}
+${input.avatarImageUrl ? '- ' + (input.productImageUrl ? 'Second' : 'First') + ' image: This is the MODEL (avatar) image. Reference the model\'s appearance, clothing, pose, and style.' : ''}
+You MUST describe the product and model appearances in detail so the image generation model can reproduce them identically to the originals.`
+    : ''
+
+  const prompt = `You are a video advertisement expert. Analyze the product information and generate prompts for AI models.
 
 ${productInfoSection}
+${imageReferenceSection}
 
-영상 길이: ${durationDesc}
-광고 스타일: ${input.style || '전문적이고 매력적인'}
-${input.additionalInstructions ? `추가 요청: ${input.additionalInstructions}` : ''}
+Video Duration: ${durationDesc}
+Ad Style: ${input.style || 'professional and attractive'}
+${input.additionalInstructions ? `Additional Instructions: ${input.additionalInstructions}` : ''}
 
-두 가지 프롬프트를 생성해주세요:
+Generate TWO prompts:
 
-1. **첫 씬 이미지 프롬프트 (firstScenePrompt)**:
-   - GPT-Image-1.5 모델에 입력할 이미지 생성 프롬프트
-   - 제품과 모델(아바타)이 함께 있는 광고 이미지 묘사
-   - 모델이 제품을 들고 있거나, 사용하거나, 제품 옆에 있는 장면
-   - 제품의 특징이 잘 보이도록 구성
-   - 조명, 배경, 분위기 등 구체적으로 묘사
-   - 영어로 작성, 500자 이내
+1. **First Scene Image Prompt (firstScenePrompt)**:
+   - Image generation prompt for GPT-Image-1.5 model
+   - Describe an advertising image featuring both the product and model (avatar)
+   - Scene where the model is holding, using, or positioned next to the product
+   - **CRITICAL: Reference the attached product/model images and describe their exact appearance (color, shape, material, design) in detail**
+   - Describe lighting, background, and atmosphere specifically
+   - Write in English, max 500 characters
 
-2. **영상 생성 프롬프트 (videoPrompt)**:
-   - Wan 2.6 Image-to-Video 모델에 입력할 프롬프트
-   - 첫 씬 이미지에서 시작하여 ${input.duration}초 동안의 자연스러운 움직임 묘사
-   - 카메라 움직임, 모델의 동작, 제품 하이라이트 등
-   - 텍스트, 글자, 로고는 포함하지 않도록
-   - 영어로 작성, 800자 이내
+2. **Video Generation Prompt (videoPrompt)**:
+   - Prompt for Wan 2.6 Image-to-Video model
+   - Describe natural movement starting from the first scene image for ${input.duration} seconds
+   - Include camera movement, model actions, product highlights
+   - Do NOT include any text, letters, or logos
+   - Write in English, max 800 characters`
 
-다음 JSON 형식으로 응답해주세요:
-{
-  "productSummary": "제품의 핵심 가치를 2-3문장으로 요약 (한국어)",
-  "firstScenePrompt": "첫 씬 이미지 생성 프롬프트 (영어, 500자 이내)",
-  "videoPrompt": "영상 생성 프롬프트 (영어, 800자 이내)",
-  "negativePrompt": "피해야 할 요소들 (영어, 200자 이내)"
-}
-
-반드시 유효한 JSON으로만 응답하세요.`
-
-  // URL이 있으면 urlContext 도구 사용
-  const config = input.productUrl
-    ? {
-        tools: [
-          { urlContext: {} },
-          { googleSearch: {} },
-        ],
-      }
+  // Use urlContext tool if URL is provided
+  const tools = input.productUrl
+    ? [{ urlContext: {} }, { googleSearch: {} }]
     : undefined
+
+  const config: GenerateContentConfig = {
+    tools,
+    thinkingConfig: {
+      thinkingLevel: ThinkingLevel.HIGH,
+    },
+    responseMimeType: 'application/json',
+    responseSchema: {
+      type: Type.OBJECT,
+      required: ['productSummary', 'firstScenePrompt', 'videoPrompt', 'negativePrompt'],
+      properties: {
+        productSummary: {
+          type: Type.STRING,
+          description: 'Summarize the core value of the product in 2-3 sentences (in Korean)',
+        },
+        firstScenePrompt: {
+          type: Type.STRING,
+          description: 'First scene image generation prompt (English, max 500 characters)',
+        },
+        videoPrompt: {
+          type: Type.STRING,
+          description: 'Video generation prompt (English, max 800 characters)',
+        },
+        negativePrompt: {
+          type: Type.STRING,
+          description: 'Elements to avoid (English, max 200 characters)',
+        },
+      },
+    },
+  }
+
+  // Build multimodal contents (including images)
+  const parts: Array<{ text: string } | { fileData: { mimeType: string; fileUri: string } }> = []
+
+  // Add image URLs to parts
+  if (input.productImageUrl) {
+    parts.push({
+      fileData: {
+        mimeType: 'image/jpeg',
+        fileUri: input.productImageUrl,
+      },
+    })
+  }
+  if (input.avatarImageUrl) {
+    parts.push({
+      fileData: {
+        mimeType: 'image/jpeg',
+        fileUri: input.avatarImageUrl,
+      },
+    })
+  }
+
+  // Add text prompt
+  parts.push({ text: prompt })
 
   const response = await genAI.models.generateContent({
     model: MODEL_NAME,
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    contents: [{ role: 'user', parts }],
     config,
   })
 
   const responseText = response.text || ''
 
   try {
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/)
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]) as VideoAdPromptResult
-    }
-    throw new Error('JSON 형식 응답 없음')
+    return JSON.parse(responseText) as VideoAdPromptResult
   } catch {
-    // 파싱 실패 시 기본 응답
+    // Fallback response on parse failure
     return {
-      productSummary: '제품 정보를 분석했습니다.',
+      productSummary: 'Product information has been analyzed.',
       firstScenePrompt: 'Professional advertising scene. A model elegantly holds the product in a well-lit studio setting. Clean background, soft shadows, commercial photography style. The product is prominently displayed with clear details visible. High-end fashion advertisement aesthetic.',
       videoPrompt: `Professional product advertisement video. The scene begins with a static shot of the model holding the product. Camera slowly zooms in to reveal product details. Smooth lighting transitions highlight the product features. The model shows subtle natural movements. Cinematic quality, ${input.duration} seconds duration.`,
       negativePrompt: 'text, letters, words, watermark, logo, blurry, low quality, distorted, deformed, ugly',

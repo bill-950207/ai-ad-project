@@ -25,6 +25,7 @@ import {
   Clock,
   Monitor,
   Play,
+  RatioIcon,
 } from 'lucide-react'
 
 interface AdProduct {
@@ -42,6 +43,7 @@ interface Avatar {
 
 type VideoDuration = 5 | 10 | 15
 type VideoResolution = '720p' | '1080p'
+type AspectRatio = '1:1' | '16:9' | '9:16'
 type ProductInputMode = 'direct' | 'url'
 
 export default function VideoAdCreatePage() {
@@ -75,6 +77,7 @@ export default function VideoAdCreatePage() {
   // 영상 옵션
   const [duration, setDuration] = useState<VideoDuration>(5)
   const [resolution, setResolution] = useState<VideoResolution>('720p')
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>('9:16')
 
   // 영상 생성
   const [isGenerating, setIsGenerating] = useState(false)
@@ -161,6 +164,7 @@ export default function VideoAdCreatePage() {
           style: adTone || undefined,
           duration,
           resolution,
+          aspectRatio,
         }),
       })
 
@@ -262,6 +266,7 @@ export default function VideoAdCreatePage() {
     productUrlPlaceholder?: string
     duration?: string
     resolution?: string
+    aspectRatio?: string
     generate?: string
     generating?: string
     creditsRequired?: string
@@ -593,6 +598,28 @@ export default function VideoAdCreatePage() {
                 ))}
               </div>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                <RatioIcon className="w-4 h-4 inline mr-2" />
+                {videoAd?.aspectRatio || '화면 비율'}
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {(['1:1', '16:9', '9:16'] as AspectRatio[]).map((ratio) => (
+                  <button
+                    key={ratio}
+                    onClick={() => setAspectRatio(ratio)}
+                    className={`py-2 rounded-lg border text-sm font-medium transition-colors ${
+                      aspectRatio === ratio
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border text-muted-foreground hover:border-primary/50'
+                    }`}
+                  >
+                    {ratio === '1:1' ? '1:1' : ratio === '16:9' ? '16:9' : '9:16'}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* 생성 버튼 */}
@@ -637,7 +664,9 @@ export default function VideoAdCreatePage() {
                 미리보기
               </h3>
             </div>
-            <div className="aspect-[9/16] max-h-[500px] bg-secondary/30 flex items-center justify-center relative overflow-hidden">
+            <div className={`${
+              aspectRatio === '1:1' ? 'aspect-square' : aspectRatio === '16:9' ? 'aspect-video' : 'aspect-[9/16]'
+            } max-h-[500px] bg-secondary/30 flex items-center justify-center relative overflow-hidden`}>
               {/* 첫 씬 이미지가 있으면 표시 */}
               {firstSceneImageUrl ? (
                 <div className="absolute inset-0">
@@ -651,7 +680,7 @@ export default function VideoAdCreatePage() {
                   </div>
                 </div>
               ) : (selectedProduct || selectedAvatar) ? (
-                <div className="flex flex-col items-center gap-4 p-6">
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6">
                   <div className="flex gap-4">
                     {selectedProduct && (selectedProduct.rembg_image_url || selectedProduct.image_url) && (
                       <div className="text-center">
@@ -683,8 +712,8 @@ export default function VideoAdCreatePage() {
                   </div>
                 </div>
               ) : (
-                <div className="text-center text-muted-foreground p-6">
-                  <Video className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
+                  <Video className="w-12 h-12 mb-2 opacity-50" />
                   <p>제품 또는 아바타를 선택하세요</p>
                 </div>
               )}

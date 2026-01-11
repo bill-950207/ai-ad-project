@@ -10,8 +10,11 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { submitImageAdToQueue, type VideoResolution, type VideoDuration } from '@/lib/fal/client'
+import { submitImageAdToQueue, type VideoResolution, type VideoDuration, type ImageAdSize } from '@/lib/fal/client'
 import { generateVideoAdPrompts } from '@/lib/gemini/client'
+
+// 화면 비율 타입
+type AspectRatio = '1:1' | '16:9' | '9:16'
 
 // 요청 바디 타입
 interface VideoAdRequestBody {
@@ -19,6 +22,7 @@ interface VideoAdRequestBody {
   avatarId?: string
   duration: VideoDuration
   resolution: VideoResolution
+  aspectRatio?: AspectRatio
   productInfo?: string
   productUrl?: string
   style?: string
@@ -92,7 +96,18 @@ export async function POST(request: NextRequest) {
 
     // 요청 바디 파싱
     const body: VideoAdRequestBody = await request.json()
-    const { productId, avatarId, duration, resolution, productInfo, productUrl, style, additionalInstructions } = body
+    const { productId, avatarId, duration, resolution, aspectRatio, productInfo, productUrl, style, additionalInstructions } = body
+
+    // aspectRatio에 따른 이미지 사이즈 결정
+    const getImageSize = (ratio: AspectRatio = '9:16'): ImageAdSize => {
+      switch (ratio) {
+        case '1:1': return '1024x1024'
+        case '16:9': return '1536x1024'
+        case '9:16': return '1024x1536'
+        default: return '1024x1536'
+      }
+    }
+    const imageSize = getImageSize(aspectRatio)
 
     // 필수 필드 검증
     if (!duration || !resolution) {
@@ -222,12 +237,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Step 1: Gemini로 프롬프트 생성
+    // Step 1: Gemini로 프롬프트 생성 (제품/아바타 이미지 포함)
     let promptResult
     try {
       promptResult = await generateVideoAdPrompts({
         productInfo,
         productUrl,
+        productImageUrl: productImageUrl || undefined,
+        avatarImageUrl: avatarImageUrl || undefined,
         duration,
         style,
         additionalInstructions,
@@ -267,8 +284,8 @@ export async function POST(request: NextRequest) {
     const imageQueueResponse = await submitImageAdToQueue({
       prompt: promptResult.firstScenePrompt,
       image_urls: imageUrls,
-      image_size: '1024x1536',  // 세로 영상용
-      quality: 'high',
+      image_size: imageSize,
+      quality: 'medium',
     })
 
     // 이미지 요청 ID 저장
