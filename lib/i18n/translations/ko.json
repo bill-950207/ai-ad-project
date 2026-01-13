@@ -10,9 +10,10 @@
   "nav": {
     "adCreationTools": "광고 생성 도구",
     "adWorkflow": "광고 워크플로우",
-    "avatarGeneration": "아바타 생성",
-    "musicGeneration": "광고음악 생성",
-    "backgroundGeneration": "배경 생성",
+    "avatarGeneration": "아바타 관리",
+    "musicGeneration": "광고음악 관리",
+    "backgroundGeneration": "광고 배경 관리",
+    "adProducts": "광고 제품 관리",
     "imageAd": "이미지 광고",
     "videoAd": "영상 광고"
   },
@@ -60,7 +61,7 @@
     "generating": "생성 중...",
     "status": {
       "pending": "대기 중",
-      "inQueue": "큐에서 대기 중",
+      "inQueue": "생성 중",
       "inProgress": "생성 중",
       "uploading": "업로드 중",
       "completed": "완료",
@@ -95,9 +96,9 @@
       "wavy": "웨이브",
       "ponytail": "묶은머리",
       "short": "짧은머리",
-      "black": "검정",
       "brown": "갈색",
       "blonde": "금발",
+      "blackhair": "검은색",
       "custom": "커스텀",
       "natural": "자연스러운",
       "sophisticated": "세련된",
@@ -110,8 +111,20 @@
       "light": "밝은톤",
       "dark": "어두운톤",
       "neutral": "뉴트럴",
-      "brandColor": "브랜드컬러"
+      "brandColor": "브랜드컬러",
+      "bgStudio": "스튜디오",
+      "bgHome": "홈오피스",
+      "bgOffice": "사무실",
+      "bgOutdoor": "야외",
+      "bgCafe": "카페",
+      "poseModel": "모델 포즈",
+      "poseNatural": "자연스러운",
+      "poseCasual": "편안한",
+      "poseWorking": "업무 중"
     },
+    "backgroundPose": "배경 및 포즈",
+    "background": "배경",
+    "pose": "포즈",
     "createImageAd": "이미지 광고",
     "createVideoAd": "영상 광고",
     "changeOutfit": "의상 교체",
@@ -143,7 +156,7 @@
     "creditsRequired": "2 크레딧 소모",
     "status": {
       "pending": "대기 중",
-      "inQueue": "큐에서 대기 중",
+      "inQueue": "생성 중",
       "inProgress": "생성 중",
       "uploading": "업로드 중",
       "completed": "완료",
@@ -153,8 +166,53 @@
     "confirmDelete": "정말 이 의상을 삭제하시겠습니까?"
   },
   "music": {
-    "title": "광고음악 생성",
+    "title": "광고음악 관리",
     "subtitle": "광고에 어울리는 배경 음악을 생성하세요"
+  },
+  "adMusic": {
+    "title": "광고 음악 관리",
+    "subtitle": "광고에 사용할 배경 음악을 생성하세요",
+    "createNew": "새 음악 생성",
+    "emptyList": "생성된 음악이 없습니다",
+    "emptyDescription": "새 음악을 생성하여 광고에 활용하세요",
+    "name": "음악 이름",
+    "namePlaceholder": "예: 봄 시즌 광고 음악",
+    "mood": "분위기",
+    "genre": "장르",
+    "productType": "제품 유형",
+    "cancel": "취소",
+    "generate": "생성하기",
+    "generating": "생성 중...",
+    "download": "다운로드",
+    "failed": "생성 실패",
+    "moods": {
+      "bright": "밝은",
+      "calm": "차분한",
+      "emotional": "감성적인",
+      "professional": "프로페셔널",
+      "exciting": "신나는",
+      "trendy": "트렌디"
+    },
+    "genres": {
+      "pop": "팝",
+      "electronic": "일렉트로닉",
+      "classical": "클래식",
+      "jazz": "재즈",
+      "rock": "록",
+      "hiphop": "힙합",
+      "ambient": "앰비언트",
+      "acoustic": "어쿠스틱"
+    },
+    "productTypes": {
+      "cosmetics": "화장품",
+      "food": "식품",
+      "tech": "테크",
+      "fashion": "패션",
+      "health": "헬스",
+      "automobile": "자동차",
+      "finance": "금융",
+      "lifestyle": "라이프스타일"
+    }
   },
   "background": {
     "title": "배경 생성",
@@ -165,8 +223,8 @@
     "subtitle": "AI로 이미지 광고를 제작하세요"
   },
   "adProduct": {
-    "title": "이미지 광고",
-    "subtitle": "AI로 이미지 광고를 제작하세요",
+    "title": "광고 제품 관리",
+    "subtitle": "광고에 사용할 제품을 등록하고 관리하세요",
     "myProducts": "내 광고 제품",
     "myAds": "내 이미지 광고",
     "registerProduct": "광고 제품 등록",
@@ -188,7 +246,7 @@
     "myProductAds": "제품 광고",
     "status": {
       "pending": "대기 중",
-      "inQueue": "큐에서 대기 중",
+      "inQueue": "생성 중",
       "inProgress": "처리 중",
       "editing": "크기 조절 대기",
       "uploading": "업로드 중",
@@ -196,7 +254,8 @@
       "failed": "실패"
     },
     "adjustSize": "제품 크기 조절",
-    "adjustSizeDesc": "아바타와 비교하면서 제품 크기를 조절하세요"
+    "adjustSizeDesc": "아바타와 비교하면서 제품 크기를 조절하세요",
+    "retryRembg": "누끼따기 재시도"
   },
   "videoAd": {
     "title": "영상 광고",
@@ -247,7 +306,7 @@
     "processingDesc": "약 2-5분 소요됩니다",
     "status": {
       "pending": "대기 중",
-      "inQueue": "큐 대기",
+      "inQueue": "생성 중",
       "inProgress": "생성 중",
       "completed": "완료",
       "failed": "실패"

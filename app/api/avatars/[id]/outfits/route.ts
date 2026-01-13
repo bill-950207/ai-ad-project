@@ -9,7 +9,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { generateOutfitInputUploadUrl } from '@/lib/storage/r2'
-import { submitOutfitChangeToQueue } from '@/lib/fal/client'
+import { submitOutfitEditToQueue } from '@/lib/kie/client'
+import { submitOutfitChangeToQueue as submitOutfitChangeToFalQueue } from '@/lib/fal/client'
+
+// AI 프로바이더 설정 (기본값: kie, fallback: fal)
+const AI_PROVIDER = process.env.OUTFIT_AI_PROVIDER || 'kie'
 
 /** 의상 교체 크레딧 비용 */
 const OUTFIT_CREDIT_COST = 2
@@ -152,8 +156,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       },
     })
 
-    // fal.ai 요청 제출
-    // qwen-image-edit 모델은 프롬프트 기반으로 의상 교체를 수행
+    // 의상 이미지 URL 결정
     let garmentImageUrl: string
 
     if (outfitType === 'combined' && outfitImageUrl) {
@@ -168,17 +171,30 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'No valid garment image' }, { status: 400 })
     }
 
-    const falResponse = await submitOutfitChangeToQueue({
-      human_image: avatar.image_url_original,
-      garment_image: garmentImageUrl,
-    })
+    // AI 프로바이더에 따라 요청 제출
+    let queueResponse: { request_id: string }
 
-    // fal 요청 ID 저장 및 크레딧 차감
+    if (AI_PROVIDER === 'kie') {
+      // Kie.ai 4.5 Edit 모델 사용
+      queueResponse = await submitOutfitEditToQueue(
+        avatar.image_url_original,
+        garmentImageUrl,
+        '9:16'  // 아바타용 세로 비율
+      )
+    } else {
+      // fal.ai fallback
+      queueResponse = await submitOutfitChangeToFalQueue({
+        human_image: avatar.image_url_original,
+        garment_image: garmentImageUrl,
+      })
+    }
+
+    // 요청 ID 저장 및 크레딧 차감
     await prisma.$transaction([
       prisma.avatar_outfits.update({
         where: { id: outfit.id },
         data: {
-          fal_request_id: falResponse.request_id,
+          fal_request_id: queueResponse.request_id,
           status: 'IN_PROGRESS',
         },
       }),

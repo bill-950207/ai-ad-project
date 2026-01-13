@@ -7,10 +7,6 @@
 
 import { fal } from "@fal-ai/client"
 
-// 환경 변수에서 LoRA 설정 로드
-const FAL_LORA_PATH = process.env.FAL_LORA_PATH!
-const FAL_LORA_SCALE = parseFloat(process.env.FAL_LORA_SCALE || '0.7')
-
 // 사용할 모델 ID
 const MODEL_ID = 'fal-ai/z-image/turbo/lora'
 
@@ -83,16 +79,9 @@ export async function submitToQueue(prompt: string): Promise<FalQueueSubmitRespo
     num_inference_steps: 8,        // 추론 단계 수
     enable_prompt_expansion: true, // 프롬프트 자동 확장 활성화
     image_size: {
-      width: 1024,
-      height: 1536,
+      width: 960 * 1.5,
+      height: 1704 * 1.5,
     },
-    // LoRA 모델 설정 (필요시 활성화)
-    // loras: [
-    //   {
-    //     path: FAL_LORA_PATH,
-    //     scale: FAL_LORA_SCALE,
-    //   },
-    // ],
   }
 
   // 큐에 요청 제출
@@ -595,6 +584,128 @@ export async function getVideoAdQueueResponse(requestId: string): Promise<VideoA
 export async function cancelVideoAdQueueRequest(requestId: string): Promise<boolean> {
   try {
     await fal.queue.cancel(WAN_VIDEO_MODEL_ID, {
+      requestId,
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
+// ============================================================
+// Seedance 1.5 Pro Image-to-Video (UGC 영상 생성)
+// ============================================================
+
+/** Seedance 1.5 Pro 모델 ID */
+const SEEDANCE_MODEL_ID = 'fal-ai/bytedance/seedance/v1.5/pro/image-to-video'
+
+/** Seedance 화면 비율 타입 */
+export type SeedanceAspectRatio = '21:9' | '16:9' | '4:3' | '1:1' | '3:4' | '9:16'
+
+/** Seedance 해상도 타입 */
+export type SeedanceResolution = '480p' | '720p'
+
+/** Seedance 영상 길이 타입 (초) - UI에서 제공하는 옵션 */
+export type SeedanceDuration = 5 | 8 | 12
+
+/** Seedance 입력 타입 */
+export interface SeedanceInput {
+  prompt: string                      // 영상 설명
+  image_url: string                   // 첫 프레임 이미지 URL
+  aspect_ratio?: SeedanceAspectRatio  // 화면 비율 (기본값: 16:9)
+  resolution?: SeedanceResolution     // 해상도 (기본값: 720p)
+  duration?: number                   // 영상 길이 4-12초 (기본값: 5)
+  camera_fixed?: boolean              // 카메라 고정 여부
+  generate_audio?: boolean            // 오디오 자동 생성 (기본값: true)
+  seed?: number                       // 시드값 (재현성)
+  end_image_url?: string              // 끝 프레임 이미지 URL (선택)
+}
+
+/** Seedance 출력 타입 */
+export interface SeedanceOutput {
+  video: FalVideoOutput       // 생성된 영상
+  seed: number                // 생성에 사용된 시드값
+}
+
+/**
+ * Seedance UGC 영상 생성 요청을 fal.ai 큐에 제출
+ *
+ * Seedance 1.5 Pro 모델을 사용하여 UGC 스타일 영상 생성
+ * 오디오 자동 생성 지원
+ *
+ * @param input - Seedance 입력 데이터
+ * @returns 큐 제출 응답 (request_id 포함)
+ */
+export async function submitSeedanceToQueue(input: SeedanceInput): Promise<FalQueueSubmitResponse> {
+  const falInput = {
+    prompt: input.prompt,
+    image_url: input.image_url,
+    aspect_ratio: input.aspect_ratio || '9:16',
+    resolution: input.resolution || '720p',
+    duration: input.duration || 5,
+    camera_fixed: input.camera_fixed,
+    generate_audio: input.generate_audio ?? true,
+    seed: input.seed,
+    end_image_url: input.end_image_url,
+    enable_safety_checker: true,
+  }
+
+  const { request_id } = await fal.queue.submit(SEEDANCE_MODEL_ID, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${SEEDANCE_MODEL_ID}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${SEEDANCE_MODEL_ID}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${SEEDANCE_MODEL_ID}/requests/${request_id}/cancel`,
+  }
+}
+
+/**
+ * Seedance 영상 생성 큐 상태 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 현재 상태 정보
+ */
+export async function getSeedanceQueueStatus(requestId: string): Promise<FalQueueStatusResponse> {
+  const status = await fal.queue.status(SEEDANCE_MODEL_ID, {
+    requestId,
+    logs: true,
+  })
+
+  const statusObj = status as unknown as Record<string, unknown>
+
+  return {
+    status: status.status as 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED',
+    queue_position: statusObj.queue_position as number | undefined,
+    logs: statusObj.logs as FalLog[] | undefined,
+  }
+}
+
+/**
+ * Seedance 영상 생성 결과 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 생성된 영상 정보
+ */
+export async function getSeedanceQueueResponse(requestId: string): Promise<SeedanceOutput> {
+  const result = await fal.queue.result(SEEDANCE_MODEL_ID, {
+    requestId,
+  })
+
+  return result.data as SeedanceOutput
+}
+
+/**
+ * Seedance 영상 생성 요청 취소
+ *
+ * @param requestId - 요청 ID
+ * @returns 취소 성공 여부
+ */
+export async function cancelSeedanceQueueRequest(requestId: string): Promise<boolean> {
+  try {
+    await fal.queue.cancel(SEEDANCE_MODEL_ID, {
       requestId,
     })
     return true

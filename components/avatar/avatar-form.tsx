@@ -277,7 +277,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
             <div>
               <label className="block text-xs text-muted-foreground mb-2">{t.avatar.hairColor}</label>
               <div className="flex gap-2 flex-wrap items-center">
-                {(['black', 'brown', 'blonde', 'custom'] as const).map((v) => (
+                {(['blackhair', 'brown', 'blonde', 'custom'] as const).map((v) => (
                   <button
                     key={v}
                     type="button"
@@ -379,6 +379,53 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
                     className="px-3 py-1.5 bg-secondary/50 border border-border rounded-md text-sm w-28"
                   />
                 )}
+              </div>
+            </div>
+          </div>
+
+          {/* 배경 및 포즈 섹션 */}
+          <div className="bg-secondary/20 rounded-lg p-4 space-y-4">
+            <h3 className="text-sm font-semibold text-foreground">{t.avatar.backgroundPose || '배경 및 포즈'}</h3>
+
+            {/* 배경 선택 */}
+            <div>
+              <label className="block text-xs text-muted-foreground mb-2">{t.avatar.background || '배경'}</label>
+              <div className="flex gap-2 flex-wrap">
+                {(['studio', 'home', 'office', 'outdoor', 'cafe'] as const).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => updateOption('background', v)}
+                    className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                      options.background === v
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary/50 text-foreground hover:bg-secondary'
+                    }`}
+                  >
+                    {getOptionLabel(`bg${v.charAt(0).toUpperCase() + v.slice(1)}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 포즈 선택 */}
+            <div>
+              <label className="block text-xs text-muted-foreground mb-2">{t.avatar.pose || '포즈'}</label>
+              <div className="flex gap-2 flex-wrap">
+                {(['model', 'natural', 'casual', 'working'] as const).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => updateOption('pose', v)}
+                    className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                      options.pose === v
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary/50 text-foreground hover:bg-secondary'
+                    }`}
+                  >
+                    {getOptionLabel(`pose${v.charAt(0).toUpperCase() + v.slice(1)}`)}
+                  </button>
+                ))}
               </div>
             </div>
           </div>

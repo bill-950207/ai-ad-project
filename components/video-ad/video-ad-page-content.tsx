@@ -1,8 +1,7 @@
 /**
  * 영상 광고 페이지 콘텐츠 컴포넌트
  *
- * 상단: 광고 제품 가로 스크롤 목록
- * 하단: 영상 광고 그리드
+ * 영상 광고 목록을 표시합니다.
  */
 
 'use client'
@@ -10,54 +9,30 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
-import { Plus, Package, Video, Play, Loader2 } from 'lucide-react'
-import { AdProductCard } from '../ad-product/ad-product-card'
-
-interface AdProduct {
-  id: string
-  name: string
-  status: 'PENDING' | 'IN_QUEUE' | 'IN_PROGRESS' | 'EDITING' | 'UPLOADING' | 'COMPLETED' | 'FAILED'
-  image_url: string | null
-  source_image_url: string | null
-  rembg_temp_url?: string | null
-  rembg_image_url?: string | null
-  created_at: string
-  error_message?: string | null
-}
+import { Plus, Video, Play, Loader2, Edit3, ArrowRight } from 'lucide-react'
+import { VideoAdTypeModal, VideoAdCategory } from './video-ad-type-modal'
 
 interface VideoAd {
   id: string
   video_url: string | null
   thumbnail_url: string | null
+  first_scene_image_url: string | null
   product_id: string | null
   avatar_id: string | null
   duration: number | null
   resolution: string | null
   status: string
+  category: string | null
+  wizard_step: number | null
   created_at: string
 }
 
 export function VideoAdPageContent() {
   const { t } = useLanguage()
   const router = useRouter()
-  const [products, setProducts] = useState<AdProduct[]>([])
   const [videoAds, setVideoAds] = useState<VideoAd[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [isAdsLoading, setIsAdsLoading] = useState(true)
-
-  const fetchProducts = useCallback(async () => {
-    try {
-      const res = await fetch('/api/ad-products')
-      if (res.ok) {
-        const data = await res.json()
-        setProducts(data.products)
-      }
-    } catch (error) {
-      console.error('광고 제품 목록 조회 오류:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
+  const [showTypeModal, setShowTypeModal] = useState(false)
 
   const fetchVideoAds = useCallback(async () => {
     try {
@@ -74,30 +49,38 @@ export function VideoAdPageContent() {
   }, [])
 
   useEffect(() => {
-    fetchProducts()
     fetchVideoAds()
-  }, [fetchProducts, fetchVideoAds])
-
-  const handleProductStatusUpdate = (updatedProduct: AdProduct) => {
-    setProducts(prev =>
-      prev.map(p => p.id === updatedProduct.id ? updatedProduct : p)
-    )
-  }
-
-  const handleRegisterProduct = () => {
-    router.push('/dashboard/image-ad/product/new')
-  }
+  }, [fetchVideoAds])
 
   const handleCreateVideoAd = () => {
-    router.push('/dashboard/video-ad/create')
+    setShowTypeModal(true)
   }
 
-  const handleVideoClick = (videoId: string) => {
-    router.push(`/dashboard/video-ad/${videoId}`)
+  const handleSelectCategory = (category: VideoAdCategory) => {
+    setShowTypeModal(false)
+    router.push(`/dashboard/video-ad/create?category=${category}`)
   }
 
-  const getStatusBadge = (status: string) => {
+  const handleVideoClick = (video: VideoAd) => {
+    // DRAFT 상태면 마법사로 이동하여 이어서 진행
+    if (video.status === 'DRAFT' && video.category) {
+      router.push(`/dashboard/video-ad/create?category=${video.category}&videoAdId=${video.id}`)
+      return
+    }
+
+    // 생성 중인 상태면 마법사의 생성 단계로 이동
+    if ((video.status === 'IN_QUEUE' || video.status === 'IN_PROGRESS') && video.category) {
+      router.push(`/dashboard/video-ad/create?category=${video.category}&videoAdId=${video.id}`)
+      return
+    }
+
+    // 완료된 영상이면 상세 페이지로 이동
+    router.push(`/dashboard/video-ad/${video.id}`)
+  }
+
+  const getStatusBadge = (status: string, wizardStep?: number | null) => {
     const statusConfig: Record<string, { label: string; className: string }> = {
+      'DRAFT': { label: `임시저장 (${wizardStep || 1}단계)`, className: 'bg-orange-500/20 text-orange-500' },
       'PENDING': { label: t.videoAd?.status?.pending || '대기 중', className: 'bg-yellow-500/20 text-yellow-500' },
       'IN_QUEUE': { label: t.videoAd?.status?.inQueue || '큐 대기', className: 'bg-blue-500/20 text-blue-500' },
       'IN_PROGRESS': { label: t.videoAd?.status?.inProgress || '생성 중', className: 'bg-purple-500/20 text-purple-500' },
@@ -112,74 +95,35 @@ export function VideoAdPageContent() {
     )
   }
 
+  const getCategoryLabel = (category: string | null) => {
+    const categoryLabels: Record<string, string> = {
+      'productDescription': '제품 설명',
+      'productShowcase': '제품 쇼케이스',
+      'lifestyle': '라이프스타일',
+      'testimonial': '후기/추천',
+    }
+    return categoryLabels[category || ''] || '영상 광고'
+  }
+
   return (
     <div className="space-y-8">
       {/* 헤더 */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground mb-2">{t.videoAd?.title || '영상 광고'}</h1>
-        <p className="text-muted-foreground">{t.videoAd?.subtitle || 'AI로 영상 광고를 제작하세요'}</p>
-      </div>
-
-      {/* 광고 제품 섹션 */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-foreground">{t.adProduct?.myProducts || '내 광고 제품'}</h2>
-          <button
-            onClick={handleRegisterProduct}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            {t.adProduct?.registerProduct || '광고 제품 등록'}
-          </button>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">{t.videoAd?.title || '영상 광고'}</h1>
+          <p className="text-muted-foreground">{t.videoAd?.subtitle || 'AI로 영상 광고를 제작하세요'}</p>
         </div>
-
-        {isLoading ? (
-          <div className="flex gap-4 overflow-hidden">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="flex-shrink-0 w-32 h-40 bg-secondary/30 rounded-xl animate-pulse" />
-            ))}
-          </div>
-        ) : products.length === 0 ? (
-          <div className="bg-card border border-border rounded-xl p-8 text-center">
-            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-primary/10 flex items-center justify-center">
-              <Package className="w-6 h-6 text-primary" />
-            </div>
-            <p className="text-muted-foreground mb-4">{t.adProduct?.emptyProducts || '등록된 광고 제품이 없습니다'}</p>
-            <button
-              onClick={handleRegisterProduct}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-            >
-              {t.adProduct?.registerProduct || '광고 제품 등록'}
-            </button>
-          </div>
-        ) : (
-          <div className="relative group">
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-              {products.map(product => (
-                <AdProductCard
-                  key={product.id}
-                  product={product}
-                  onStatusUpdate={handleProductStatusUpdate}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-      </section>
+        <button
+          onClick={handleCreateVideoAd}
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          {t.videoAd?.createAd || '영상 광고 생성'}
+        </button>
+      </div>
 
       {/* 영상 광고 섹션 */}
       <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-foreground">{t.videoAd?.myVideos || '내 영상 광고'}</h2>
-          <button
-            onClick={handleCreateVideoAd}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            {t.videoAd?.createAd || '영상 광고 생성'}
-          </button>
-        </div>
-
         {isAdsLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map(i => (
@@ -192,18 +136,12 @@ export function VideoAdPageContent() {
               <Video className="w-8 h-8 text-primary" />
             </div>
             <h3 className="text-lg font-medium text-foreground mb-2">{t.videoAd?.emptyAds || '생성된 영상 광고가 없습니다'}</h3>
-            <p className="text-muted-foreground mb-4">
-              {products.some(p => p.status === 'COMPLETED')
-                ? (t.videoAd?.createFirstAd || '첫 영상 광고를 만들어보세요')
-                : (t.adProduct?.registerProduct || '광고 제품을 먼저 등록해주세요')}
-            </p>
+            <p className="text-muted-foreground mb-4">영상 광고를 생성해보세요</p>
             <button
-              onClick={products.some(p => p.status === 'COMPLETED') ? handleCreateVideoAd : handleRegisterProduct}
+              onClick={handleCreateVideoAd}
               className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
             >
-              {products.some(p => p.status === 'COMPLETED')
-                ? (t.videoAd?.createAd || '영상 광고 생성')
-                : (t.adProduct?.registerProduct || '광고 제품 등록')}
+              {t.videoAd?.createAd || '영상 광고 생성'}
             </button>
           </div>
         ) : (
@@ -211,8 +149,12 @@ export function VideoAdPageContent() {
             {videoAds.map(video => (
               <div
                 key={video.id}
-                onClick={() => handleVideoClick(video.id)}
-                className="relative group bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => handleVideoClick(video)}
+                className={`relative group bg-card border rounded-xl overflow-hidden cursor-pointer transition-colors ${
+                  video.status === 'DRAFT'
+                    ? 'border-orange-500/50 hover:border-orange-500'
+                    : 'border-border hover:border-primary/50'
+                }`}
               >
                 {/* 비디오 썸네일 또는 플레이스홀더 */}
                 <div className="aspect-video relative bg-[#1a1a2e]">
@@ -220,7 +162,7 @@ export function VideoAdPageContent() {
                     <>
                       <video
                         src={video.video_url}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                         muted
                         playsInline
                         onMouseEnter={(e) => e.currentTarget.play()}
@@ -236,10 +178,50 @@ export function VideoAdPageContent() {
                         </div>
                       </div>
                     </>
+                  ) : video.status === 'DRAFT' ? (
+                    // 초안 상태: 첫 프레임 이미지가 있으면 표시, 없으면 편집 아이콘
+                    <div className="w-full h-full relative">
+                      {video.first_scene_image_url ? (
+                        <>
+                          <img
+                            src={video.first_scene_image_url}
+                            alt="첫 프레임"
+                            className="w-full h-full object-contain opacity-70"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                            <div className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg font-medium">
+                              <Edit3 className="w-4 h-4" />
+                              이어서 작성
+                              <ArrowRight className="w-4 h-4" />
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center">
+                          <Edit3 className="w-8 h-8 text-orange-500 mb-2" />
+                          <span className="text-sm text-orange-500 font-medium">작성 중</span>
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       {video.status === 'IN_PROGRESS' || video.status === 'IN_QUEUE' ? (
-                        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                        <>
+                          {video.first_scene_image_url ? (
+                            <>
+                              <img
+                                src={video.first_scene_image_url}
+                                alt="첫 프레임"
+                                className="w-full h-full object-contain opacity-50"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                              </div>
+                            </>
+                          ) : (
+                            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                          )}
+                        </>
                       ) : (
                         <Video className="w-8 h-8 text-muted-foreground" />
                       )}
@@ -249,22 +231,34 @@ export function VideoAdPageContent() {
 
                 {/* 정보 */}
                 <div className="p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-foreground">
+                      {getCategoryLabel(video.category)}
+                    </span>
+                    {getStatusBadge(video.status, video.wizard_step)}
+                  </div>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       {video.duration && <span>{video.duration}초</span>}
                       {video.resolution && <span>{video.resolution}</span>}
                     </div>
-                    {getStatusBadge(video.status)}
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(video.created_at).toLocaleDateString()}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {new Date(video.created_at).toLocaleDateString()}
-                  </p>
                 </div>
               </div>
             ))}
           </div>
         )}
       </section>
+
+      {/* 영상 광고 유형 선택 모달 */}
+      <VideoAdTypeModal
+        isOpen={showTypeModal}
+        onClose={() => setShowTypeModal(false)}
+        onSelect={handleSelectCategory}
+      />
     </div>
   )
 }

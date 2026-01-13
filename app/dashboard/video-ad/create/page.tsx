@@ -1,16 +1,18 @@
 /**
  * 영상 광고 생성 페이지
  *
- * 왼쪽: 사이드바 (제품/아바타 선택, 제품 정보 입력, 옵션)
- * 오른쪽: 생성된 영상 미리보기 및 진행 상황
+ * 카테고리에 따라 다른 마법사 컴포넌트를 표시합니다.
+ * - productDescription: 제품 설명 영상 마법사
+ * - (기본): 기존 영상 광고 생성 폼
  */
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useLanguage } from '@/contexts/language-context'
+import { ProductDescriptionWizard } from '@/components/video-ad/product-description-wizard'
 import {
   ArrowLeft,
   Sparkles,
@@ -26,6 +28,8 @@ import {
   Monitor,
   Play,
   RatioIcon,
+  Upload,
+  X,
 } from 'lucide-react'
 
 interface AdProduct {
@@ -46,9 +50,19 @@ type VideoResolution = '720p' | '1080p'
 type AspectRatio = '1:1' | '16:9' | '9:16'
 type ProductInputMode = 'direct' | 'url'
 
-export default function VideoAdCreatePage() {
+function VideoAdCreateContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const category = searchParams.get('category')
   const { t } = useLanguage()
+
+  // 제품 설명 영상 카테고리인 경우 전용 마법사 표시
+  if (category === 'productDescription') {
+    return <ProductDescriptionWizard />
+  }
+
+  // 파일 입력 ref
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // 기본 상태
   const [products, setProducts] = useState<AdProduct[]>([])
@@ -56,6 +70,10 @@ export default function VideoAdCreatePage() {
   const [selectedProduct, setSelectedProduct] = useState<AdProduct | null>(null)
   const [selectedAvatar, setSelectedAvatar] = useState<Avatar | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+
+  // 로컬 이미지 파일 상태
+  const [localImageFile, setLocalImageFile] = useState<File | null>(null)
+  const [localImagePreview, setLocalImagePreview] = useState<string | null>(null)
 
   // 드롭다운 상태
   const [showProductDropdown, setShowProductDropdown] = useState(false)
@@ -127,9 +145,32 @@ export default function VideoAdCreatePage() {
     }
   }, [selectedProduct, productName])
 
+  // 로컬 이미지 파일 선택 핸들러
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setLocalImageFile(file)
+      setLocalImagePreview(URL.createObjectURL(file))
+      setSelectedProduct(null) // 기존 제품 선택 해제
+      setShowProductDropdown(false)
+    }
+  }
+
+  // 로컬 이미지 선택 해제
+  const clearLocalImage = () => {
+    setLocalImageFile(null)
+    if (localImagePreview) {
+      URL.revokeObjectURL(localImagePreview)
+    }
+    setLocalImagePreview(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
   // 생성 가능 여부
   const canGenerate = () => {
-    const hasAsset = selectedProduct || selectedAvatar
+    const hasAsset = selectedProduct || selectedAvatar || localImageFile
     const hasProductInfo = productInputMode === 'url' ? productUrl.trim() : productName.trim()
     return hasAsset && hasProductInfo
   }
@@ -315,12 +356,31 @@ export default function VideoAdCreatePage() {
               <Package className="w-4 h-4 inline mr-2" />
               {videoAd?.selectProduct || '제품 선택'}
             </label>
+
+            {/* 숨겨진 파일 입력 */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+
             <div className="relative">
               <button
                 onClick={() => setShowProductDropdown(!showProductDropdown)}
                 className="w-full flex items-center justify-between px-4 py-3 bg-secondary/50 border border-border rounded-lg text-left hover:border-primary/50 transition-colors"
               >
-                {selectedProduct ? (
+                {localImagePreview ? (
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={localImagePreview}
+                      alt="로컬 이미지"
+                      className="w-8 h-8 object-contain rounded"
+                    />
+                    <span className="text-foreground">{localImageFile?.name || '로컬 이미지'}</span>
+                  </div>
+                ) : selectedProduct ? (
                   <div className="flex items-center gap-3">
                     {(selectedProduct.rembg_image_url || selectedProduct.image_url) && (
                       <img
@@ -336,11 +396,36 @@ export default function VideoAdCreatePage() {
                     {videoAd?.noProductSelected || '제품을 선택하세요'}
                   </span>
                 )}
-                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                {localImagePreview ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      clearLocalImage()
+                    }}
+                    className="p-1 hover:bg-secondary rounded transition-colors"
+                  >
+                    <X className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                )}
               </button>
 
               {showProductDropdown && (
                 <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {/* 이미지 파일 선택 옵션 (최상단) */}
+                  <button
+                    onClick={() => {
+                      fileInputRef.current?.click()
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors border-b border-border"
+                  >
+                    <div className="w-10 h-10 flex items-center justify-center rounded bg-primary/10">
+                      <Upload className="w-5 h-5 text-primary" />
+                    </div>
+                    <span className="text-foreground font-medium">이미지 파일 선택</span>
+                  </button>
+
                   {products.length === 0 ? (
                     <div className="p-4 text-center text-muted-foreground text-sm">
                       등록된 제품이 없습니다
@@ -351,6 +436,7 @@ export default function VideoAdCreatePage() {
                         key={product.id}
                         onClick={() => {
                           setSelectedProduct(product)
+                          clearLocalImage() // 로컬 이미지 선택 해제
                           setShowProductDropdown(false)
                         }}
                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors"
@@ -679,10 +765,19 @@ export default function VideoAdCreatePage() {
                     <p className="text-white text-sm font-medium">첫 씬 이미지 생성 완료</p>
                   </div>
                 </div>
-              ) : (selectedProduct || selectedAvatar) ? (
+              ) : (selectedProduct || selectedAvatar || localImagePreview) ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6">
                   <div className="flex gap-4">
-                    {selectedProduct && (selectedProduct.rembg_image_url || selectedProduct.image_url) && (
+                    {localImagePreview ? (
+                      <div className="text-center">
+                        <img
+                          src={localImagePreview}
+                          alt="로컬 이미지"
+                          className="w-20 h-20 object-contain rounded-lg bg-secondary/50"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">로컬 이미지</p>
+                      </div>
+                    ) : selectedProduct && (selectedProduct.rembg_image_url || selectedProduct.image_url) && (
                       <div className="text-center">
                         <img
                           src={selectedProduct.rembg_image_url || selectedProduct.image_url || ''}
@@ -823,5 +918,14 @@ export default function VideoAdCreatePage() {
         </div>
       </div>
     </div>
+  )
+}
+
+// Suspense로 감싸서 useSearchParams 사용 가능하게 함
+export default function VideoAdCreatePage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+      <VideoAdCreateContent />
+    </Suspense>
   )
 }

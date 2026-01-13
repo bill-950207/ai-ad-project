@@ -39,4 +39,18 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* 프로그레스바 shimmer 애니메이션 */
+  .animate-shimmer {
+    animation: shimmer 1.5s infinite;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }

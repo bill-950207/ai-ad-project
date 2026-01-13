@@ -9,12 +9,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
-import { ArrowLeft, Trash2, Plus, Image as ImageIcon, Loader2 } from 'lucide-react'
+import { ArrowLeft, Trash2, Plus, Image as ImageIcon, Loader2, RefreshCw } from 'lucide-react'
 
 interface AdProduct {
   id: string
   name: string
-  status: 'PENDING' | 'IN_QUEUE' | 'IN_PROGRESS' | 'EDITING' | 'UPLOADING' | 'COMPLETED' | 'FAILED'
+  status: 'PENDING' | 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED'
   image_url: string | null
   source_image_url: string | null
   rembg_image_url?: string | null  // 배경 제거된 원본 (표시용)
@@ -44,6 +44,8 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [isAdsLoading, setIsAdsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isRetrying, setIsRetrying] = useState(false)
+  const [isPolling, setIsPolling] = useState(false)
 
   const fetchProduct = useCallback(async () => {
     try {
@@ -80,6 +82,55 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
     fetchProduct()
     fetchProductAds()
   }, [fetchProduct, fetchProductAds])
+
+  // 배경 제거 상태 폴링
+  useEffect(() => {
+    if (!product) return
+    if (!['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(product.status)) {
+      setIsPolling(false)
+      return
+    }
+
+    setIsPolling(true)
+
+    const pollStatus = async () => {
+      try {
+        const res = await fetch(`/api/ad-products/${productId}/status`)
+        if (res.ok) {
+          const data = await res.json()
+          setProduct(data.product)
+          if (['COMPLETED', 'FAILED'].includes(data.product.status)) {
+            setIsPolling(false)
+          }
+        }
+      } catch (error) {
+        console.error('상태 폴링 오류:', error)
+      }
+    }
+
+    const interval = setInterval(pollStatus, 1000)
+    return () => clearInterval(interval)
+  }, [product?.status, productId])
+
+  const handleRetry = async () => {
+    if (isRetrying || !product?.source_image_url) return
+
+    setIsRetrying(true)
+    try {
+      const res = await fetch(`/api/ad-products/${productId}/retry`, {
+        method: 'POST',
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setProduct(data.product)
+      }
+    } catch (error) {
+      console.error('재시도 오류:', error)
+    } finally {
+      setIsRetrying(false)
+    }
+  }
 
   const handleDelete = async () => {
     if (!confirm(t.adProduct.confirmDelete)) return
@@ -149,7 +200,20 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
         <div className="lg:col-span-1">
           <div className="bg-card border border-border rounded-xl overflow-hidden">
             <div className="aspect-square relative bg-[#1a1a2e]">
-              {product.rembg_image_url ? (
+              {isPolling ? (
+                <>
+                  {product.source_image_url && (
+                    <img
+                      src={product.source_image_url}
+                      alt={product.name}
+                      className="absolute inset-0 w-full h-full object-contain p-4 opacity-50"
+                    />
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                  </div>
+                </>
+              ) : product.rembg_image_url ? (
                 <img
                   src={product.rembg_image_url}
                   alt={product.name}
@@ -167,6 +231,23 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
                 </div>
               )}
             </div>
+            {/* 누끼따기 재시도 버튼 */}
+            {product.source_image_url && !isPolling && (
+              <div className="p-3 border-t border-border">
+                <button
+                  onClick={handleRetry}
+                  disabled={isRetrying}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {isRetrying ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                  {t.adProduct.retryRembg || '누끼따기 재시도'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

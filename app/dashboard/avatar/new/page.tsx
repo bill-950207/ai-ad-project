@@ -46,9 +46,8 @@ export default function NewAvatarPage() {
         return
       }
 
-      const { avatar } = await res.json()
-      // 생성 중 상태 페이지로 이동
-      router.push(`/dashboard/avatar/${avatar.id}`)
+      // 아바타 리스트로 이동 (생성 중인 아바타는 카드에서 폴링)
+      router.push('/dashboard/avatar')
     } catch (err) {
       console.error('아바타 생성 오류:', err)
       setError(t.avatar.error)

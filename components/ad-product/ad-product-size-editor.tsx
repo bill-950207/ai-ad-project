@@ -1,14 +1,14 @@
 /**
  * 광고 제품 크기 편집 컴포넌트
  *
- * 배경 제거된 제품 이미지를 아바타와 비교하면서
- * 크기와 위치를 조절할 수 있습니다.
+ * 배경 제거된 제품 이미지를 아바타 위에 오버레이하여
+ * 크기를 비교하면서 조절할 수 있습니다.
+ * 위치는 가운데 고정입니다.
  */
 
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
 import { Loader2, ZoomIn, ZoomOut, RotateCcw, Check } from 'lucide-react'
 
@@ -23,14 +23,13 @@ const CANVAS_WIDTH = 1024
 const CANVAS_HEIGHT = 1536
 
 // 기본값
-const DEFAULT_SCALE = 0.8  // 캔버스 대비 80%
-const MIN_SCALE = 0.3
+const DEFAULT_SCALE = 1.0  // 캔버스 대비 100%
+const MIN_SCALE = 0.1      // 10%까지 축소 가능
 const MAX_SCALE = 1.2
 const SCALE_STEP = 0.05
 
 export function AdProductSizeEditor({ productId, rembgImageUrl, onComplete }: AdProductSizeEditorProps) {
   const { t } = useLanguage()
-  const router = useRouter()
   const canvasRef = useRef<HTMLDivElement>(null)
   const productRef = useRef<HTMLDivElement>(null)
 
@@ -42,12 +41,9 @@ export function AdProductSizeEditor({ productId, rembgImageUrl, onComplete }: Ad
 
   // 변환 상태 (캔버스 비율 기준, 0-1)
   const [scale, setScale] = useState(DEFAULT_SCALE)
-  const [positionX, setPositionX] = useState(0.5) // 0 = 왼쪽, 1 = 오른쪽
-  const [positionY, setPositionY] = useState(0.5) // 0 = 위, 1 = 아래
-
-  // 드래그 상태
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  // 위치는 가운데 고정
+  const positionX = 0.5
+  const positionY = 0.5
 
   // 아바타 이미지 URL (참조용)
   const referenceAvatarUrl = 'https://pub-ec68419ff8bc464ca734a0ddb80a2823.r2.dev/avatars/compressed/5e0f3953-0983-492c-9f47-0410e584849e_1767873505794.webp'
@@ -110,69 +106,6 @@ export function AdProductSizeEditor({ productId, rembgImageUrl, onComplete }: Ad
     return { x, y }
   }, [positionX, positionY, getDisplaySize, getProductDisplaySize])
 
-  // 드래그 시작
-  const handleDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
-
-    setDragStart({ x: clientX, y: clientY })
-  }, [])
-
-  // 드래그 중
-  const handleDragMove = useCallback((e: MouseEvent | TouchEvent) => {
-    if (!isDragging || !canvasRef.current) return
-
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
-
-    const displaySize = getDisplaySize()
-    const productSize = getProductDisplaySize()
-
-    const deltaX = clientX - dragStart.x
-    const deltaY = clientY - dragStart.y
-
-    // 이동 가능한 범위 계산
-    const maxMoveX = displaySize.width - productSize.width
-    const maxMoveY = displaySize.height - productSize.height
-
-    if (maxMoveX > 0) {
-      const newX = positionX + deltaX / maxMoveX
-      setPositionX(Math.max(0, Math.min(1, newX)))
-    }
-
-    if (maxMoveY > 0) {
-      const newY = positionY + deltaY / maxMoveY
-      setPositionY(Math.max(0, Math.min(1, newY)))
-    }
-
-    setDragStart({ x: clientX, y: clientY })
-  }, [isDragging, dragStart, positionX, positionY, getDisplaySize, getProductDisplaySize])
-
-  // 드래그 종료
-  const handleDragEnd = useCallback(() => {
-    setIsDragging(false)
-  }, [])
-
-  // 드래그 이벤트 리스너
-  useEffect(() => {
-    if (isDragging) {
-      window.addEventListener('mousemove', handleDragMove)
-      window.addEventListener('mouseup', handleDragEnd)
-      window.addEventListener('touchmove', handleDragMove)
-      window.addEventListener('touchend', handleDragEnd)
-    }
-
-    return () => {
-      window.removeEventListener('mousemove', handleDragMove)
-      window.removeEventListener('mouseup', handleDragEnd)
-      window.removeEventListener('touchmove', handleDragMove)
-      window.removeEventListener('touchend', handleDragEnd)
-    }
-  }, [isDragging, handleDragMove, handleDragEnd])
-
   // 확대
   const handleZoomIn = () => {
     setScale(Math.min(MAX_SCALE, scale + SCALE_STEP))
@@ -186,8 +119,6 @@ export function AdProductSizeEditor({ productId, rembgImageUrl, onComplete }: Ad
   // 리셋
   const handleReset = () => {
     setScale(DEFAULT_SCALE)
-    setPositionX(0.5)
-    setPositionY(0.5)
   }
 
   // 저장
@@ -249,36 +180,26 @@ export function AdProductSizeEditor({ productId, rembgImageUrl, onComplete }: Ad
 
         {/* 편집 영역 */}
         <div className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* 제품 편집 캔버스 */}
-            <div className="relative">
-              <p className="text-xs text-muted-foreground mb-2 text-center">제품</p>
+          <div className="flex justify-center">
+            {/* 아바타 위에 제품 오버레이 */}
+            <div className="relative max-w-md w-full">
+              <p className="text-xs text-muted-foreground mb-2 text-center">아바타 위에 제품 크기 비교</p>
               <div
                 ref={canvasRef}
                 className="relative aspect-[1024/1536] bg-[#1a1a2e] rounded-lg overflow-hidden"
               >
-                {/* 격자 패턴 (투명 영역 표시) */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    backgroundImage: `
-                      linear-gradient(45deg, #2a2a3e 25%, transparent 25%),
-                      linear-gradient(-45deg, #2a2a3e 25%, transparent 25%),
-                      linear-gradient(45deg, transparent 75%, #2a2a3e 75%),
-                      linear-gradient(-45deg, transparent 75%, #2a2a3e 75%)
-                    `,
-                    backgroundSize: '20px 20px',
-                    backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
-                  }}
+                {/* 참조 아바타 (배경) */}
+                <img
+                  src={referenceAvatarUrl}
+                  alt="Reference Avatar"
+                  className="absolute inset-0 w-full h-full object-contain opacity-70"
                 />
 
-                {/* 제품 이미지 */}
+                {/* 제품 이미지 (오버레이, 가운데 고정) */}
                 {productImage && (
                   <div
                     ref={productRef}
-                    onMouseDown={handleDragStart}
-                    onTouchStart={handleDragStart}
-                    className={`absolute cursor-move select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                    className="absolute select-none"
                     style={{
                       left: productPosition.x,
                       top: productPosition.y,
@@ -289,23 +210,11 @@ export function AdProductSizeEditor({ productId, rembgImageUrl, onComplete }: Ad
                     <img
                       src={rembgImageUrl}
                       alt="Product"
-                      className="w-full h-full object-contain pointer-events-none"
+                      className="w-full h-full object-contain pointer-events-none drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]"
                       draggable={false}
                     />
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* 참조 아바타 */}
-            <div className="relative">
-              <p className="text-xs text-muted-foreground mb-2 text-center">참조 아바타</p>
-              <div className="relative aspect-[1024/1536] bg-[#1a1a2e] rounded-lg overflow-hidden">
-                <img
-                  src={referenceAvatarUrl}
-                  alt="Reference Avatar"
-                  className="absolute inset-0 w-full h-full object-contain"
-                />
               </div>
             </div>
           </div>

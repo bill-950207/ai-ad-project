@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useLanguage } from '@/contexts/language-context'
@@ -27,11 +27,12 @@ import {
   Coffee,
   Scale,
   Calendar,
-  Plus,
   X,
+  Upload,
 } from 'lucide-react'
 import { ImageAdType, PRODUCT_ONLY_TYPES } from '@/components/ad-product/image-ad-type-modal'
 import { CATEGORY_OPTIONS, buildPromptFromOptions, getDefaultOptions } from '@/lib/image-ad/category-options'
+import { AvatarSelectModal, SelectedAvatarInfo } from '@/components/video-ad/avatar-select-modal'
 
 // 카테고리 목록 (아이콘 포함)
 const AD_TYPE_LIST: { type: ImageAdType; icon: typeof Box }[] = [
@@ -57,18 +58,6 @@ interface AdProduct {
   image_url: string | null
 }
 
-interface Avatar {
-  id: string
-  name: string
-  image_url: string | null
-}
-
-interface Outfit {
-  id: string
-  name: string
-  image_url: string | null
-  status: string
-}
 
 // 카테고리별 예시 이미지 (실제로는 R2나 public에서 로드)
 const EXAMPLE_IMAGES: Record<ImageAdType, string[]> = {
@@ -119,15 +108,22 @@ export default function ImageAdCreatePage() {
   const adType = (searchParams.get('type') as ImageAdType) || 'productOnly'
   const isProductOnly = PRODUCT_ONLY_TYPES.includes(adType)
 
+  // 파일 입력 ref
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   // 상태
   const [products, setProducts] = useState<AdProduct[]>([])
-  const [avatars, setAvatars] = useState<Avatar[]>([])
   const [selectedProduct, setSelectedProduct] = useState<AdProduct | null>(null)
-  const [selectedAvatars, setSelectedAvatars] = useState<Avatar[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
   const [resultImages, setResultImages] = useState<string[]>([])
   const [recentAds, setRecentAds] = useState<{ id: string; image_url: string; created_at: string }[]>([])
+  const [generationStartTime, setGenerationStartTime] = useState<number | null>(null)
+  const [generationProgress, setGenerationProgress] = useState(0)
+
+  // 로컬 이미지 파일 상태
+  const [localImageFile, setLocalImageFile] = useState<File | null>(null)
+  const [localImagePreview, setLocalImagePreview] = useState<string | null>(null)
 
   // 퀄리티 및 생성 개수 상태
   type Quality = 'medium' | 'high'
@@ -137,12 +133,11 @@ export default function ImageAdCreatePage() {
 
   // 드롭다운 상태
   const [showProductDropdown, setShowProductDropdown] = useState(false)
-  const [showAvatarDropdown, setShowAvatarDropdown] = useState(false)
-  const [showOutfitDropdown, setShowOutfitDropdown] = useState(false)
 
-  // 의상 관련 상태 (착용샷용)
-  const [outfits, setOutfits] = useState<Outfit[]>([])
-  const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null)
+  // 아바타 선택 모달 상태
+  const [showAvatarModal, setShowAvatarModal] = useState(false)
+  const [selectedAvatarInfo, setSelectedAvatarInfo] = useState<SelectedAvatarInfo | null>(null)
+
   const isWearingType = adType === 'wearing'
 
   // 예시 이미지 슬라이드
@@ -182,10 +177,7 @@ export default function ImageAdCreatePage() {
   // 데이터 로드
   const fetchData = useCallback(async () => {
     try {
-      const [productsRes, avatarsRes] = await Promise.all([
-        fetch('/api/ad-products'),
-        fetch('/api/avatars'),
-      ])
+      const productsRes = await fetch('/api/ad-products')
 
       if (productsRes.ok) {
         const data = await productsRes.json()
@@ -193,14 +185,6 @@ export default function ImageAdCreatePage() {
           (p: AdProduct & { status: string }) => p.status === 'COMPLETED'
         )
         setProducts(completedProducts)
-      }
-
-      if (avatarsRes.ok) {
-        const data = await avatarsRes.json()
-        const completedAvatars = data.avatars.filter(
-          (a: Avatar & { status: string }) => a.status === 'COMPLETED'
-        )
-        setAvatars(completedAvatars)
       }
     } catch (error) {
       console.error('데이터 로드 오류:', error)
@@ -222,21 +206,6 @@ export default function ImageAdCreatePage() {
     }
   }, [])
 
-  // 선택된 아바타의 의상 목록 로드 (착용샷용)
-  const fetchOutfits = useCallback(async (avatarId: string) => {
-    try {
-      const res = await fetch(`/api/avatars/${avatarId}/outfits`)
-      if (res.ok) {
-        const data = await res.json()
-        const completedOutfits = (data.outfits || []).filter(
-          (o: Outfit) => o.status === 'COMPLETED'
-        )
-        setOutfits(completedOutfits)
-      }
-    } catch (error) {
-      console.error('의상 목록 로드 오류:', error)
-    }
-  }, [])
 
   useEffect(() => {
     fetchData()
@@ -257,18 +226,6 @@ export default function ImageAdCreatePage() {
     }
   }, [selectedProduct, fetchRecentAds])
 
-  // 선택된 아바타가 변경되면 의상 목록 로드 (착용샷일 때만)
-  // 착용샷은 단일 아바타 선택만 가능하므로 첫 번째 아바타만 사용
-  useEffect(() => {
-    if (isWearingType && selectedAvatars.length > 0) {
-      fetchOutfits(selectedAvatars[0].id)
-      setSelectedOutfit(null)  // 아바타 변경 시 의상 선택 초기화
-    } else {
-      setOutfits([])
-      setSelectedOutfit(null)
-    }
-  }, [selectedAvatars, isWearingType, fetchOutfits])
-
   // 예시 이미지 자동 슬라이드
   useEffect(() => {
     if (resultImages.length > 0 || exampleImages.length <= 1) return
@@ -279,6 +236,22 @@ export default function ImageAdCreatePage() {
 
     return () => clearInterval(interval)
   }, [resultImages.length, exampleImages.length])
+
+  // 프로그레스바 업데이트 (Seedream: 60초 기준)
+  useEffect(() => {
+    if (!isGenerating || !generationStartTime) return
+
+    const TOTAL_DURATION = 60 * 1000 // 60초 (Seedream 기준)
+    const MAX_PROGRESS = 99 // 최대 99%까지만
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - generationStartTime
+      const progress = Math.min((elapsed / TOTAL_DURATION) * 100, MAX_PROGRESS)
+      setGenerationProgress(progress)
+    }, 100)
+
+    return () => clearInterval(interval)
+  }, [isGenerating, generationStartTime])
 
   // 크레딧 계산
   const calculateCredits = () => {
@@ -292,42 +265,47 @@ export default function ImageAdCreatePage() {
     return types[adType]?.title || adType
   }
 
-  // 아바타 선택/해제 토글
-  const toggleAvatarSelection = (avatar: Avatar) => {
-    // 착용샷은 단일 선택만 허용
-    if (isWearingType) {
-      setSelectedAvatars([avatar])
-      setShowAvatarDropdown(false)
-      return
-    }
-
-    setSelectedAvatars(prev => {
-      const isSelected = prev.some(a => a.id === avatar.id)
-      if (isSelected) {
-        return prev.filter(a => a.id !== avatar.id)
-      } else {
-        return [...prev, avatar]
-      }
-    })
+  // 아바타 선택 핸들러 (모달에서 호출)
+  const handleAvatarSelect = (avatar: SelectedAvatarInfo) => {
+    setSelectedAvatarInfo(avatar)
+    setShowAvatarModal(false)
   }
 
-  // 선택된 아바타 제거
-  const removeSelectedAvatar = (avatarId: string) => {
-    setSelectedAvatars(prev => prev.filter(a => a.id !== avatarId))
+  // 로컬 이미지 파일 선택 핸들러
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setLocalImageFile(file)
+      setLocalImagePreview(URL.createObjectURL(file))
+      setSelectedProduct(null) // 기존 제품 선택 해제
+      setShowProductDropdown(false)
+    }
+  }
+
+  // 로컬 이미지 선택 해제
+  const clearLocalImage = () => {
+    setLocalImageFile(null)
+    if (localImagePreview) {
+      URL.revokeObjectURL(localImagePreview)
+    }
+    setLocalImagePreview(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   // 생성 가능 여부
   const canGenerate = () => {
-    // 착용샷: 아바타 + 의상 필수 (제품 불필요)
+    // 착용샷: 아바타(의상 포함) 필수 (제품 불필요)
     if (isWearingType) {
-      return selectedAvatars.length > 0 && !!selectedOutfit
+      return !!selectedAvatarInfo
     }
-    // 제품 단독: 제품만 필수
+    // 제품 단독: 제품 또는 로컬 이미지 필수
     if (isProductOnly) {
-      return !!selectedProduct
+      return !!selectedProduct || !!localImageFile
     }
-    // 나머지: 제품 + 아바타 필수
-    return !!selectedProduct && selectedAvatars.length > 0
+    // 나머지: (제품 또는 로컬 이미지) + 아바타 필수
+    return (!!selectedProduct || !!localImageFile) && !!selectedAvatarInfo
   }
 
   // 생성 핸들러
@@ -336,6 +314,8 @@ export default function ImageAdCreatePage() {
 
     setIsGenerating(true)
     setResultImages([])
+    setGenerationStartTime(Date.now())
+    setGenerationProgress(0)
 
     try {
       // 구조화된 옵션으로 프롬프트 생성
@@ -345,8 +325,8 @@ export default function ImageAdCreatePage() {
       const requestBody = {
         adType,
         productId: isWearingType ? undefined : selectedProduct?.id,
-        avatarIds: selectedAvatars.map(a => a.id),  // 다중 아바타 ID 배열
-        outfitId: isWearingType ? selectedOutfit?.id : undefined,
+        avatarIds: selectedAvatarInfo ? [selectedAvatarInfo.avatarId] : [],
+        outfitId: selectedAvatarInfo?.outfitId,
         prompt: generatedPrompt,
         imageSize: getImageSize(aspectRatio),
         quality,
@@ -368,7 +348,7 @@ export default function ImageAdCreatePage() {
       const { requestId } = await createRes.json()
 
       // 폴링으로 결과 대기
-      const pollInterval = 2000
+      const pollInterval = 1000
       const maxAttempts = 90 // 최대 3분
       let attempts = 0
 
@@ -524,12 +504,31 @@ export default function ImageAdCreatePage() {
                 <Package className="w-4 h-4 inline mr-2" />
                 {imageAdCreate.selectProduct}
               </label>
+
+              {/* 숨겨진 파일 입력 */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+
               <div className="relative">
                 <button
                   onClick={() => setShowProductDropdown(!showProductDropdown)}
                   className="w-full flex items-center justify-between px-4 py-3 bg-secondary/50 border border-border rounded-lg text-left hover:border-primary/50 transition-colors"
                 >
-                  {selectedProduct ? (
+                  {localImagePreview ? (
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={localImagePreview}
+                        alt="로컬 이미지"
+                        className="w-8 h-8 object-contain rounded"
+                      />
+                      <span className="text-foreground">{localImageFile?.name || '로컬 이미지'}</span>
+                    </div>
+                  ) : selectedProduct ? (
                     <div className="flex items-center gap-3">
                       {(selectedProduct.rembg_image_url || selectedProduct.image_url) && (
                         <img
@@ -543,11 +542,36 @@ export default function ImageAdCreatePage() {
                   ) : (
                     <span className="text-muted-foreground">{imageAdCreate.noProductSelected}</span>
                   )}
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  {localImagePreview ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        clearLocalImage()
+                      }}
+                      className="p-1 hover:bg-secondary rounded transition-colors"
+                    >
+                      <X className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  )}
                 </button>
 
                 {showProductDropdown && (
                   <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {/* 이미지 파일 선택 옵션 (최상단) */}
+                    <button
+                      onClick={() => {
+                        fileInputRef.current?.click()
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors border-b border-border"
+                    >
+                      <div className="w-10 h-10 flex items-center justify-center rounded bg-primary/10">
+                        <Upload className="w-5 h-5 text-primary" />
+                      </div>
+                      <span className="text-foreground font-medium">이미지 파일 선택</span>
+                    </button>
+
                     {products.length === 0 ? (
                       <div className="p-4 text-center text-muted-foreground text-sm">
                         등록된 제품이 없습니다
@@ -558,6 +582,7 @@ export default function ImageAdCreatePage() {
                           key={product.id}
                           onClick={() => {
                             setSelectedProduct(product)
+                            clearLocalImage() // 로컬 이미지 선택 해제
                             setShowProductDropdown(false)
                           }}
                           className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors"
@@ -588,182 +613,45 @@ export default function ImageAdCreatePage() {
               <label className="block text-sm font-medium text-foreground mb-2">
                 <User className="w-4 h-4 inline mr-2" />
                 {imageAdCreate.selectAvatar}
-                {!isWearingType && (
-                  <span className="text-xs text-muted-foreground ml-2">(다중 선택 가능)</span>
+                {isWearingType && (
+                  <span className="text-xs text-muted-foreground ml-2">(의상 선택 가능)</span>
                 )}
               </label>
 
-              {/* 선택된 아바타 목록 (다중 선택 시) */}
-              {selectedAvatars.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {selectedAvatars.map((avatar) => (
-                    <div
-                      key={avatar.id}
-                      className="flex items-center gap-2 px-2 py-1 bg-primary/10 border border-primary/30 rounded-lg"
-                    >
-                      {avatar.image_url && (
-                        <img
-                          src={avatar.image_url}
-                          alt={avatar.name}
-                          className="w-6 h-6 object-cover rounded"
-                        />
+              <button
+                onClick={() => setShowAvatarModal(true)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-secondary/50 border border-border rounded-lg text-left hover:border-primary/50 transition-colors"
+              >
+                {selectedAvatarInfo ? (
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={selectedAvatarInfo.imageUrl}
+                      alt={selectedAvatarInfo.displayName}
+                      className="w-10 h-14 object-cover rounded"
+                    />
+                    <div>
+                      <span className="text-foreground block">{selectedAvatarInfo.displayName}</span>
+                      {selectedAvatarInfo.type === 'outfit' && (
+                        <span className="text-xs text-primary">의상 교체</span>
                       )}
-                      <span className="text-sm text-foreground">{avatar.name}</span>
-                      <button
-                        onClick={() => removeSelectedAvatar(avatar.id)}
-                        className="p-0.5 hover:bg-primary/20 rounded transition-colors"
-                      >
-                        <X className="w-3 h-3 text-muted-foreground" />
-                      </button>
                     </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="relative">
-                <button
-                  onClick={() => setShowAvatarDropdown(!showAvatarDropdown)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-secondary/50 border border-border rounded-lg text-left hover:border-primary/50 transition-colors"
-                >
-                  {selectedAvatars.length === 0 ? (
-                    <span className="text-muted-foreground">{imageAdCreate.noAvatarSelected}</span>
-                  ) : (
-                    <span className="text-muted-foreground">
-                      {isWearingType ? '다른 아바타 선택' : '아바타 추가 선택'}
-                    </span>
-                  )}
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                </button>
-
-                {showAvatarDropdown && (
-                  <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {avatars.length === 0 ? (
-                      <div className="p-4 text-center text-muted-foreground text-sm">
-                        생성된 아바타가 없습니다
-                      </div>
-                    ) : (
-                      avatars.map((avatar) => {
-                        const isSelected = selectedAvatars.some(a => a.id === avatar.id)
-                        return (
-                          <button
-                            key={avatar.id}
-                            onClick={() => toggleAvatarSelection(avatar)}
-                            className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors ${
-                              isSelected ? 'bg-primary/5' : ''
-                            }`}
-                          >
-                            {avatar.image_url && (
-                              <img
-                                src={avatar.image_url}
-                                alt={avatar.name}
-                                className="w-10 h-10 object-cover rounded bg-secondary/30"
-                              />
-                            )}
-                            <span className="text-foreground">{avatar.name}</span>
-                            {isSelected && (
-                              <Check className="w-4 h-4 text-primary ml-auto" />
-                            )}
-                          </button>
-                        )
-                      })
-                    )}
                   </div>
+                ) : (
+                  <span className="text-muted-foreground">{imageAdCreate.noAvatarSelected}</span>
                 )}
-              </div>
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              </button>
             </div>
           )}
 
-          {/* 의상 선택 (착용샷일 때만, 아바타 선택 후) */}
-          {isWearingType && selectedAvatars.length > 0 && (
-            <div className="bg-card border border-border rounded-xl p-4">
-              <label className="block text-sm font-medium text-foreground mb-2">
-                <Shirt className="w-4 h-4 inline mr-2" />
-                {(t.avatar as { outfits?: string })?.outfits || '의상 선택'}
-              </label>
-              <div className="relative">
-                <button
-                  onClick={() => setShowOutfitDropdown(!showOutfitDropdown)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-secondary/50 border border-border rounded-lg text-left hover:border-primary/50 transition-colors"
-                >
-                  {selectedOutfit ? (
-                    <div className="flex items-center gap-3">
-                      {selectedOutfit.image_url && (
-                        <img
-                          src={selectedOutfit.image_url}
-                          alt={selectedOutfit.name}
-                          className="w-8 h-8 object-cover rounded"
-                        />
-                      )}
-                      <span className="text-foreground">{selectedOutfit.name}</span>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">
-                      {(t.imageAdCreate as { selectOutfit?: string })?.selectOutfit || '의상을 선택하세요'}
-                    </span>
-                  )}
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                </button>
-
-                {showOutfitDropdown && (
-                  <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {outfits.length === 0 ? (
-                      <div className="p-4 text-center">
-                        <p className="text-muted-foreground text-sm mb-3">
-                          {(t.avatar as { noOutfits?: string })?.noOutfits || '생성된 의상이 없습니다'}
-                        </p>
-                        <button
-                          onClick={() => {
-                            setShowOutfitDropdown(false)
-                            router.push(`/dashboard/avatar/${selectedAvatars[0].id}/outfit`)
-                          }}
-                          className="flex items-center gap-2 mx-auto px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
-                        >
-                          <Plus className="w-4 h-4" />
-                          {(t.avatar as { changeOutfit?: string })?.changeOutfit || '의상 추가'}
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        {outfits.map((outfit) => (
-                          <button
-                            key={outfit.id}
-                            onClick={() => {
-                              setSelectedOutfit(outfit)
-                              setShowOutfitDropdown(false)
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors"
-                          >
-                            {outfit.image_url && (
-                              <img
-                                src={outfit.image_url}
-                                alt={outfit.name}
-                                className="w-10 h-10 object-cover rounded bg-secondary/30"
-                              />
-                            )}
-                            <span className="text-foreground">{outfit.name}</span>
-                            {selectedOutfit?.id === outfit.id && (
-                              <Check className="w-4 h-4 text-primary ml-auto" />
-                            )}
-                          </button>
-                        ))}
-                        {/* 의상 추가 버튼 */}
-                        <button
-                          onClick={() => {
-                            setShowOutfitDropdown(false)
-                            router.push(`/dashboard/avatar/${selectedAvatars[0].id}/outfit`)
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-3 border-t border-border hover:bg-secondary/50 transition-colors text-primary"
-                        >
-                          <Plus className="w-4 h-4" />
-                          <span>{(t.avatar as { changeOutfit?: string })?.changeOutfit || '의상 추가'}</span>
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          {/* 아바타 선택 모달 */}
+          <AvatarSelectModal
+            isOpen={showAvatarModal}
+            onClose={() => setShowAvatarModal(false)}
+            onSelect={handleAvatarSelect}
+            selectedAvatarId={selectedAvatarInfo?.avatarId}
+            selectedOutfitId={selectedAvatarInfo?.outfitId}
+          />
 
           {/* 카테고리별 구조화된 옵션 */}
           {CATEGORY_OPTIONS[adType] && (
@@ -975,7 +863,7 @@ export default function ImageAdCreatePage() {
 
           <div className="flex-1 relative bg-secondary/30 overflow-y-auto">
             {isGenerating ? (
-              <div className="flex flex-col items-center justify-center h-full gap-4">
+              <div className="flex flex-col items-center justify-center h-full gap-6 px-8">
                 <div className="relative w-24 h-24">
                   <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-pulse" />
                   <div className="absolute inset-2 rounded-full border-4 border-transparent border-t-primary animate-spin" />
@@ -984,6 +872,27 @@ export default function ImageAdCreatePage() {
                   </div>
                 </div>
                 <p className="text-muted-foreground">{imageAdCreate.generating}</p>
+
+                {/* 프로그레스바 */}
+                <div className="w-full max-w-sm">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-foreground">{Math.floor(generationProgress)}%</span>
+                  </div>
+                  <div className="h-3 bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all duration-300 ease-out relative"
+                      style={{ width: `${generationProgress}%` }}
+                    >
+                      {/* 99%에서 멈춰있을 때 애니메이션 */}
+                      {generationProgress >= 99 && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                      )}
+                    </div>
+                  </div>
+                  {generationProgress >= 99 && (
+                    <p className="text-xs text-muted-foreground mt-2 text-center">거의 완료되었습니다. 잠시만 기다려주세요...</p>
+                  )}
+                </div>
               </div>
             ) : resultImages.length > 0 ? (
               <div className="p-4 space-y-6">

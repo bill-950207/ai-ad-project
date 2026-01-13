@@ -1,12 +1,12 @@
 /**
  * 이미지 광고 생성 상태 확인 API
  *
- * GET: fal.ai 큐 상태 확인 및 결과 반환, DB 업데이트
+ * GET: kie.ai 큐 상태 확인 및 결과 반환, DB 업데이트
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getImageAdQueueStatus, getImageAdQueueResponse } from '@/lib/fal/client'
+import { getImageAdQueueStatus, getImageAdQueueResponse } from '@/lib/kie/client'
 
 export async function GET(
   request: NextRequest,
@@ -33,7 +33,7 @@ export async function GET(
       )
     }
 
-    // fal.ai 상태 조회
+    // kie.ai 상태 조회
     const status = await getImageAdQueueStatus(requestId)
 
     // 완료된 경우 결과 이미지 URL 반환 및 DB 업데이트
@@ -47,7 +47,7 @@ export async function GET(
         // 각 이미지에 대해 DB 업데이트
         for (let i = 0; i < result.images.length; i++) {
           const image = result.images[i]
-          const falRequestIdWithIndex = `${requestId}_${i}`
+          const kieRequestIdWithIndex = `${requestId}_${i}`
 
           // 해당 인덱스의 레코드 업데이트
           const { error: updateError } = await supabase
@@ -56,11 +56,9 @@ export async function GET(
               status: 'COMPLETED',
               image_url: image.url,
               image_url_original: image.url,
-              image_width: image.width,
-              image_height: image.height,
               completed_at: new Date().toISOString(),
             })
-            .eq('fal_request_id', falRequestIdWithIndex)
+            .eq('fal_request_id', kieRequestIdWithIndex)
             .eq('user_id', user.id)
 
           if (updateError) {
@@ -72,8 +70,6 @@ export async function GET(
           status: 'COMPLETED',
           imageUrl: result.images[0].url,  // 하위 호환성 유지
           imageUrls: imageUrls,            // 새로운 배열 필드
-          width: result.images[0].width,
-          height: result.images[0].height,
         })
       } else {
         // 실패 상태로 DB 업데이트

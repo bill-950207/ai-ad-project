@@ -2,12 +2,12 @@
  * 이미지 광고 생성 API
  *
  * GET: 이미지 광고 목록 조회 (productId로 필터링 가능)
- * POST: 이미지 광고 생성 요청 (fal.ai gpt-image-1.5/edit 사용)
+ * POST: 이미지 광고 생성 요청 (kie.ai GPT Image 1.5 우선, Seedream fallback)
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { submitImageAdToQueue, type ImageAdSize } from '@/lib/kie/client'
 import { createClient } from '@/lib/supabase/server'
-import { submitImageAdToQueue, type ImageAdSize } from '@/lib/fal/client'
+import { NextRequest, NextResponse } from 'next/server'
 
 // 이미지 광고 유형
 type ImageAdType =
@@ -94,6 +94,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
+
+/**
+ * POST /api/image-ads
+ * - 이미지 광고 생성 요청
+ * - fal.ai gpt-image-1.5/edit 사용
+ */
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -332,7 +338,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       requestId: queueResponse.request_id,
-      statusUrl: queueResponse.status_url,
       numImages: validNumImages,
       imageAdIds: imageAdRecords,
     })

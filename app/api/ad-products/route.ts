@@ -8,7 +8,7 @@
  */
 
 import { prisma } from '@/lib/db'
-import { submitRembgToQueue } from '@/lib/fal/client'
+import { submitRembgToQueue } from '@/lib/kie/client'
 import { uploadAdProductSourceFromDataUrl } from '@/lib/storage/r2'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
@@ -47,11 +47,12 @@ export async function GET() {
  * POST /api/ad-products
  *
  * 새 광고 제품을 생성합니다.
- * 이미지 Data URL을 받아 R2에 업로드 후 fal.ai rembg로 배경 제거 요청을 제출합니다.
+ * 이미지 Data URL을 받아 R2에 업로드 후 Kie.ai rembg로 배경 제거 요청을 제출합니다.
  *
  * 요청 본문:
  * - name: 제품 이름 (필수)
- * - imageDataUrl: 이미지 Data URL (필수)
+ * - imageDataUrl: 이미지 Data URL (새 업로드 시)
+ * - sourceImageUrl: 기존 이미지 URL (재시도 시)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -63,9 +64,27 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, imageDataUrl } = body as {
+    const {
+      name,
+      imageDataUrl,
+      sourceImageUrl: existingSourceUrl,
+      // 새 제품 정보 필드
+      description,
+      sellingPoints,
+      additionalPhotos,
+      sourceUrl,
+      price,
+      brand,
+    } = body as {
       name: string
-      imageDataUrl: string
+      imageDataUrl?: string
+      sourceImageUrl?: string
+      description?: string
+      sellingPoints?: string[]
+      additionalPhotos?: string[]
+      sourceUrl?: string
+      price?: string
+      brand?: string
     }
 
     if (!name || name.trim().length === 0) {
@@ -75,9 +94,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!imageDataUrl) {
+    if (!imageDataUrl && !existingSourceUrl) {
       return NextResponse.json(
-        { error: 'Image data URL is required' },
+        { error: 'Image is required' },
         { status: 400 }
       )
     }
@@ -88,17 +107,32 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         name: name.trim(),
         status: 'PENDING',
+        // 제품 정보 필드
+        description: description?.trim() || undefined,
+        selling_points: sellingPoints && sellingPoints.length > 0 ? sellingPoints : undefined,
+        additional_photos: additionalPhotos && additionalPhotos.length > 0 ? additionalPhotos : undefined,
+        source_url: sourceUrl?.trim() || undefined,
+        price: price?.trim() || undefined,
+        brand: brand?.trim() || undefined,
       },
     })
 
     try {
-      // 2. Data URL을 R2에 업로드
-      const sourceImageUrl = await uploadAdProductSourceFromDataUrl(
-        product.id,
-        imageDataUrl
-      )
+      // 2. 이미지 URL 결정 (새 업로드 또는 기존 URL 사용)
+      let sourceImageUrl: string
 
-      // 3. fal.ai rembg 큐에 배경 제거 요청 제출
+      if (imageDataUrl) {
+        // 새로운 이미지 업로드
+        sourceImageUrl = await uploadAdProductSourceFromDataUrl(
+          product.id,
+          imageDataUrl
+        )
+      } else {
+        // 재시도: 기존 이미지 URL 사용
+        sourceImageUrl = existingSourceUrl!
+      }
+
+      // 3. Kie.ai rembg 큐에 배경 제거 요청 제출
       const queueResponse = await submitRembgToQueue({
         image_url: sourceImageUrl,
       })
@@ -118,7 +152,7 @@ export async function POST(request: NextRequest) {
         sourceImageUrl,
       }, { status: 201 })
     } catch (uploadError) {
-      // 업로드 또는 fal.ai 요청 실패 시 제품 상태를 FAILED로 업데이트
+      // 업로드 또는 Kie.ai 요청 실패 시 제품 상태를 FAILED로 업데이트
       await prisma.ad_products.update({
         where: { id: product.id },
         data: {

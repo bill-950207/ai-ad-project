@@ -3,7 +3,7 @@
  *
  * 개별 아바타를 카드 형태로 표시합니다.
  * 클릭 시 상세 페이지로 이동합니다.
- * 생성 중인 아바타는 2초 간격으로 상태를 폴링합니다.
+ * 생성 중인 아바타는 1초 간격으로 상태를 폴링합니다.
  */
 
 'use client'
@@ -119,7 +119,7 @@ export function AvatarCard({ avatar, onDelete, onStatusUpdate }: AvatarCardProps
         }
       }
 
-      const interval = setInterval(pollStatus, 2000)
+      const interval = setInterval(pollStatus, 1000)
       return () => clearInterval(interval)
     }
   }, [avatar.id, avatar.status, onStatusUpdate])

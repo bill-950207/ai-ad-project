@@ -10,9 +10,10 @@
   "nav": {
     "adCreationTools": "広告作成ツール",
     "adWorkflow": "広告ワークフロー",
-    "avatarGeneration": "アバター生成",
-    "musicGeneration": "広告音楽生成",
-    "backgroundGeneration": "背景生成",
+    "avatarGeneration": "アバター管理",
+    "musicGeneration": "広告音楽管理",
+    "backgroundGeneration": "広告背景管理",
+    "adProducts": "広告商品管理",
     "imageAd": "画像広告",
     "videoAd": "動画広告"
   },
@@ -97,6 +98,7 @@
       "short": "ショート",
       "brown": "ブラウン",
       "blonde": "ブロンド",
+      "blackhair": "黒髪",
       "custom": "カスタム",
       "natural": "ナチュラル",
       "sophisticated": "洗練された",
@@ -109,8 +111,20 @@
       "light": "明るいトーン",
       "dark": "暗いトーン",
       "neutral": "ニュートラル",
-      "brandColor": "ブランドカラー"
+      "brandColor": "ブランドカラー",
+      "bgStudio": "スタジオ",
+      "bgHome": "ホームオフィス",
+      "bgOffice": "オフィス",
+      "bgOutdoor": "屋外",
+      "bgCafe": "カフェ",
+      "poseModel": "モデルポーズ",
+      "poseNatural": "自然体",
+      "poseCasual": "リラックス",
+      "poseWorking": "仕事中"
     },
+    "backgroundPose": "背景とポーズ",
+    "background": "背景",
+    "pose": "ポーズ",
     "createImageAd": "画像広告",
     "createVideoAd": "動画広告",
     "changeOutfit": "衣装変更",
@@ -152,8 +166,74 @@
     "confirmDelete": "この衣装を削除してもよろしいですか？"
   },
   "music": {
-    "title": "広告音楽生成",
+    "title": "広告音楽管理",
     "subtitle": "広告用のBGMを作成します"
+  },
+  "adMusic": {
+    "title": "広告音楽管理",
+    "subtitle": "広告用のBGMを作成します",
+    "createNew": "新規音楽作成",
+    "noMusic": "作成された音楽がありません",
+    "startCreating": "最初のBGMを作成しましょう",
+    "name": "音楽名",
+    "namePlaceholder": "音楽名を入力",
+    "selectOptions": "オプションを選択",
+    "mood": "雰囲気",
+    "genre": "ジャンル",
+    "productType": "製品タイプ",
+    "moods": {
+      "bright": "明るい",
+      "calm": "穏やか",
+      "exciting": "わくわくする",
+      "emotional": "感動的",
+      "hopeful": "希望に満ちた",
+      "luxurious": "高級感のある",
+      "playful": "遊び心のある",
+      "professional": "プロフェッショナル",
+      "refreshing": "爽やか",
+      "warm": "温かい"
+    },
+    "genres": {
+      "pop": "ポップ",
+      "electronic": "エレクトロニック",
+      "acoustic": "アコースティック",
+      "cinematic": "シネマティック",
+      "corporate": "コーポレート",
+      "hiphop": "ヒップホップ",
+      "jazz": "ジャズ",
+      "classical": "クラシック",
+      "lofi": "Lo-Fi",
+      "ambient": "アンビエント"
+    },
+    "productTypes": {
+      "cosmetics": "化粧品",
+      "fashion": "ファッション",
+      "food": "食品・飲料",
+      "tech": "テック・電子機器",
+      "lifestyle": "ライフスタイル",
+      "health": "ヘルス・ウェルネス",
+      "travel": "旅行",
+      "finance": "金融",
+      "education": "教育",
+      "general": "一般"
+    },
+    "generate": "音楽を生成",
+    "generating": "生成中...",
+    "creditsRequired": "2クレジット必要",
+    "myMusic": "マイ音楽",
+    "status": {
+      "pending": "待機中",
+      "inQueue": "キュー待機中",
+      "inProgress": "生成中",
+      "completed": "完了",
+      "failed": "失敗"
+    },
+    "confirmDelete": "この音楽を削除してもよろしいですか？",
+    "delete": "削除",
+    "download": "ダウンロード",
+    "play": "再生",
+    "pause": "一時停止",
+    "duration": "再生時間"
   },
   "background": {
     "title": "背景生成",
@@ -164,8 +244,8 @@
     "subtitle": "AIで画像広告を作成します"
   },
   "adProduct": {
-    "title": "画像広告",
-    "subtitle": "AIで画像広告を作成します",
+    "title": "広告商品管理",
+    "subtitle": "広告に使用する商品を登録・管理します",
     "myProducts": "広告製品",
     "myAds": "画像広告",
     "registerProduct": "製品登録",
@@ -195,7 +275,8 @@
       "failed": "失敗"
     },
     "adjustSize": "製品サイズ調整",
-    "adjustSizeDesc": "アバターと比較しながら製品サイズを調整します"
+    "adjustSizeDesc": "アバターと比較しながら製品サイズを調整します",
+    "retryRembg": "背景除去を再試行"
   },
   "videoAd": {
     "title": "動画広告",

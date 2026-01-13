@@ -240,7 +240,7 @@ model saml_relay_states {
   created_at      DateTime?     @db.Timestamptz(6)
   updated_at      DateTime?     @db.Timestamptz(6)
   flow_state_id   String?       @db.Uuid
-  // flow_state      flow_state?   @relation(fields: [flow_state_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  flow_state      flow_state?   @relation(fields: [flow_state_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   sso_providers   sso_providers @relation(fields: [sso_provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([created_at(sort: Desc)])
@@ -377,31 +377,31 @@ model users {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model avatars {
-  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id          String        @db.Uuid
-  name             String
-  status           avatar_status @default(PENDING)
-  fal_request_id   String?
-  fal_response_url String?
-  fal_status_url   String?
-  fal_cancel_url   String?
-  prompt           String
-  prompt_expanded  String?
-  options          Json?
-  image_url        String?       // 압축된 WebP 이미지 URL (조회용)
-  image_url_original String?     // 원본 이미지 URL (재가공용)
-  image_width      Int?
-  image_height     Int?
-  seed             Int?
-  has_nsfw         Boolean?
-  error_message    String?
-  created_at       DateTime      @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime      @default(now()) @db.Timestamptz(6)
-  completed_at     DateTime?     @db.Timestamptz(6)
-  profiles         profiles      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  outfits          avatar_outfits[]
-  image_ads        image_ads[]
-  video_ads        video_ads[]
+  id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            String           @db.Uuid
+  name               String
+  status             avatar_status    @default(PENDING)
+  fal_request_id     String?
+  fal_response_url   String?
+  fal_status_url     String?
+  fal_cancel_url     String?
+  prompt             String
+  prompt_expanded    String?
+  options            Json?
+  image_url          String?
+  image_width        Int?
+  image_height       Int?
+  seed               Int?
+  has_nsfw           Boolean?
+  error_message      String?
+  created_at         DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime         @default(now()) @db.Timestamptz(6)
+  completed_at       DateTime?        @db.Timestamptz(6)
+  image_url_original String?
+  outfits            avatar_outfits[]
+  profiles           profiles         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  image_ads          image_ads[]
+  video_ads          video_ads[]
 
   @@index([fal_request_id], map: "idx_avatars_fal_request_id")
   @@index([status], map: "idx_avatars_status")
@@ -409,21 +409,249 @@ model avatars {
   @@schema("public")
 }
 
+/// 서비스 기본 제공 아바타 (모든 사용자가 사용 가능)
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model default_avatars {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  description   String?
+  image_url     String
+  gender        String?
+  age_group     String?
+  style         String?
+  is_active     Boolean?  @default(true)
+  display_order Int?      @default(0)
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([is_active], map: "idx_default_avatars_is_active")
+  @@index([display_order], map: "idx_default_avatars_display_order")
+  @@schema("public")
+}
+
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model profiles {
-  id          String           @id @db.Uuid
-  email       String?
-  credits     Int?             @default(5)
-  created_at  DateTime?        @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime?        @default(now()) @db.Timestamptz(6)
-  avatars     avatars[]
-  outfits     avatar_outfits[]
-  ad_products ad_products[]
-  image_ads   image_ads[]
-  video_ads   video_ads[]
-  users       users            @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id              String           @id @db.Uuid
+  email           String?
+  credits         Int?             @default(5)
+  created_at      DateTime?        @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime?        @default(now()) @db.Timestamptz(6)
+  is_onboarded    Boolean?         @default(false)
+  name            String?
+  company         String?
+  job_title       String?
+  industry        String?
+  team_size       String?
+  referral_source String?
+  ad_music        ad_music[]
+  ad_products     ad_products[]
+  outfits         avatar_outfits[]
+  avatars         avatars[]
+  image_ads       image_ads[]
+  users           users            @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  video_ads       video_ads[]
 
   @@schema("public")
+}
+
+/// 아바타 의상 교체 결과 저장
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model avatar_outfits {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  avatar_id          String        @db.Uuid
+  user_id            String        @db.Uuid
+  name               String
+  status             outfit_status @default(PENDING)
+  fal_request_id     String?
+  outfit_type        String
+  outfit_image_url   String?
+  top_image_url      String?
+  bottom_image_url   String?
+  shoes_image_url    String?
+  image_url          String?
+  image_url_original String?
+  image_width        Int?
+  image_height       Int?
+  error_message      String?
+  created_at         DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime      @default(now()) @db.Timestamptz(6)
+  completed_at       DateTime?     @db.Timestamptz(6)
+  avatars            avatars       @relation(fields: [avatar_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_avatar_outfits_avatar")
+  profiles           profiles      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_avatar_outfits_profile")
+  image_ads          image_ads[]
+
+  @@index([avatar_id], map: "idx_avatar_outfits_avatar_id")
+  @@index([user_id], map: "idx_avatar_outfits_user_id")
+  @@index([status], map: "idx_avatar_outfits_status")
+  @@schema("public")
+}
+
+/// 광고 제품 (배경 제거된 제품 이미지)
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ad_products {
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            String            @db.Uuid
+  name               String
+  status             ad_product_status @default(PENDING)
+  fal_request_id     String?
+  source_image_url   String?
+  image_url          String?
+  image_url_original String?
+  image_width        Int?
+  image_height       Int?
+  error_message      String?
+  created_at         DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime          @default(now()) @db.Timestamptz(6)
+  completed_at       DateTime?         @db.Timestamptz(6)
+  rembg_temp_url     String?
+  rembg_image_url    String?
+  // 제품 정보 필드
+  description        String?           // 제품 설명
+  selling_points     Json?             // 셀링 포인트 배열 ["포인트1", "포인트2"]
+  additional_photos  Json?             // 추가 사진 URL 배열 ["url1", "url2"]
+  source_url         String?           // 제품 URL (URL 입력 방식 시)
+  price              String?           // 가격 정보
+  brand              String?           // 브랜드명
+  profiles           profiles          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_ad_products_profile")
+  image_ads          image_ads[]
+  video_ads          video_ads[]
+
+  @@index([user_id], map: "idx_ad_products_user_id")
+  @@index([status], map: "idx_ad_products_status")
+  @@schema("public")
+}
+
+/// 이미지 광고 (생성된 광고 이미지)
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model image_ads {
+  id                 String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            String          @db.Uuid
+  product_id         String?         @db.Uuid
+  avatar_id          String?         @db.Uuid
+  outfit_id          String?         @db.Uuid
+  ad_type            String
+  status             image_ad_status @default(PENDING)
+  fal_request_id     String?
+  prompt             String?
+  image_size         String?
+  quality            String?
+  image_url          String?
+  image_url_original String?
+  image_width        Int?
+  image_height       Int?
+  error_message      String?
+  created_at         DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime        @default(now()) @db.Timestamptz(6)
+  completed_at       DateTime?       @db.Timestamptz(6)
+  avatars            avatars?        @relation(fields: [avatar_id], references: [id], onUpdate: NoAction)
+  avatar_outfits     avatar_outfits? @relation(fields: [outfit_id], references: [id], onUpdate: NoAction)
+  ad_products        ad_products?    @relation(fields: [product_id], references: [id], onUpdate: NoAction)
+  profiles           profiles        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_image_ads_user_id")
+  @@index([product_id], map: "idx_image_ads_product_id")
+  @@index([avatar_id], map: "idx_image_ads_avatar_id")
+  @@index([status], map: "idx_image_ads_status")
+  @@index([ad_type], map: "idx_image_ads_ad_type")
+  @@schema("public")
+}
+
+/// 영상 광고 (생성된 광고 영상)
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model video_ads {
+  id                    String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id               String           @db.Uuid
+  product_id            String?          @db.Uuid
+  avatar_id             String?          @db.Uuid
+  status                video_ad_status? @default(PENDING)
+  fal_request_id        String?
+  prompt                String?
+  prompt_expanded       String?
+  duration              Int?
+  resolution            String?
+  product_info          String?
+  product_url           String?
+  product_summary       String?
+  video_url             String?
+  video_width           Int?
+  video_height          Int?
+  video_fps             Int?
+  video_duration        Float?
+  thumbnail_url         String?
+  seed                  Int?
+  error_message         String?
+  created_at            DateTime?        @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime?        @default(now()) @db.Timestamptz(6)
+  completed_at          DateTime?        @db.Timestamptz(6)
+  fal_image_request_id  String?
+  first_scene_prompt    String?
+  first_scene_image_url String?
+  outfit_id             String?          @db.Uuid
+  wizard_step           Int?
+  avatar_image_url      String?
+  first_frame_prompt    String?
+  category              String?          @default("productDescription")
+  video_type            String?          @default("UGC")
+  aspect_ratio          String?
+  location_prompt       String?
+  video_background      String?
+  camera_composition    String?
+  script                String?
+  script_style          String?
+  scripts_json          String?
+  suggested_script      String?
+  mood                  String?
+  generate_audio        Boolean?         @default(true)
+  voice_id              String?
+  voice_name            String?
+  audio_url             String?
+  kie_request_id        String?
+  avatars               avatars?         @relation(fields: [avatar_id], references: [id], onUpdate: NoAction)
+  ad_products           ad_products?     @relation(fields: [product_id], references: [id], onUpdate: NoAction)
+  profiles              profiles         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_video_ads_user_id")
+  @@index([product_id], map: "idx_video_ads_product_id")
+  @@index([avatar_id], map: "idx_video_ads_avatar_id")
+  @@index([status], map: "idx_video_ads_status")
+  @@index([category], map: "idx_video_ads_category")
+  @@schema("public")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model audit_log_entries {
+  instance_id String?   @db.Uuid
+  id          String    @id @db.Uuid
+  payload     Json?     @db.Json
+  created_at  DateTime? @db.Timestamptz(6)
+  ip_address  String    @default("") @db.VarChar(64)
+
+  @@index([instance_id], map: "audit_logs_instance_id_idx")
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model flow_state {
+  id                     String                @id @db.Uuid
+  user_id                String?               @db.Uuid
+  auth_code              String
+  code_challenge_method  code_challenge_method
+  code_challenge         String
+  provider_type          String
+  provider_access_token  String?
+  provider_refresh_token String?
+  created_at             DateTime?             @db.Timestamptz(6)
+  updated_at             DateTime?             @db.Timestamptz(6)
+  authentication_method  String
+  auth_code_issued_at    DateTime?             @db.Timestamptz(6)
+  saml_relay_states      saml_relay_states[]
+
+  @@index([created_at(sort: Desc)])
+  @@index([auth_code], map: "idx_auth_code")
+  @@index([user_id, authentication_method], map: "idx_user_id_auth_method")
+  @@schema("auth")
 }
 
 enum aal_level {
@@ -497,233 +725,104 @@ enum one_time_token_type {
 }
 
 enum avatar_status {
-  PENDING      // 요청 대기
-  IN_QUEUE     // fal.ai 큐 대기
-  IN_PROGRESS  // 이미지 생성 중
-  UPLOADING    // 클라이언트에서 R2 업로드 중
-  COMPLETED    // 완료
-  FAILED       // 실패
-  CANCELLED    // 취소됨
+  PENDING
+  IN_QUEUE
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+  UPLOADING
 
   @@schema("public")
 }
 
 enum outfit_status {
-  PENDING      // 요청 대기
-  IN_QUEUE     // fal.ai 큐 대기
-  IN_PROGRESS  // 이미지 생성 중
-  UPLOADING    // 클라이언트에서 R2 업로드 중
-  COMPLETED    // 완료
-  FAILED       // 실패
-  CANCELLED    // 취소됨
+  PENDING
+  IN_QUEUE
+  IN_PROGRESS
+  UPLOADING
+  COMPLETED
+  FAILED
+  CANCELLED
 
   @@schema("public")
 }
 
 enum ad_product_status {
-  PENDING      // 요청 대기
-  IN_QUEUE     // fal.ai 큐 대기
-  IN_PROGRESS  // 배경 제거 중
-  EDITING      // 크기 편집 대기 (배경 제거 완료, 사용자 편집 대기)
-  UPLOADING    // 클라이언트에서 R2 업로드 중
-  COMPLETED    // 완료
-  FAILED       // 실패
+  PENDING
+  IN_QUEUE
+  IN_PROGRESS
+  COMPLETED
+  FAILED
 
   @@schema("public")
 }
 
 enum image_ad_status {
-  PENDING      // 요청 대기
-  IN_QUEUE     // fal.ai 큐 대기
-  IN_PROGRESS  // 이미지 생성 중
-  UPLOADING    // 클라이언트에서 R2 업로드 중
-  COMPLETED    // 완료
-  FAILED       // 실패
+  PENDING
+  IN_QUEUE
+  IN_PROGRESS
+  UPLOADING
+  COMPLETED
+  FAILED
 
   @@schema("public")
 }
 
 enum video_ad_status {
-  PENDING              // 요청 대기
-  GENERATING_PROMPTS   // 프롬프트 생성 중 (Gemini)
-  GENERATING_IMAGE     // 첫 씬 이미지 생성 중 (gpt-image-1.5)
-  IMAGE_IN_QUEUE       // 이미지 생성 큐 대기
-  IMAGE_IN_PROGRESS    // 이미지 생성 중
-  IN_QUEUE             // 영상 생성 큐 대기
-  IN_PROGRESS          // 영상 생성 중
-  UPLOADING            // 클라이언트에서 R2 업로드 중
-  COMPLETED            // 완료
-  FAILED               // 실패
+  PENDING
+  IN_QUEUE
+  IN_PROGRESS
+  UPLOADING
+  COMPLETED
+  FAILED
+  GENERATING_PROMPTS
+  GENERATING_IMAGE
+  IMAGE_IN_QUEUE
+  IMAGE_IN_PROGRESS
+  AWAITING_REVIEW
+  DRAFT
+  GENERATING_SCRIPTS
+  GENERATING_AUDIO
 
   @@schema("public")
 }
 
-/// 아바타 의상 교체 결과 저장
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model avatar_outfits {
-  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  avatar_id          String        @db.Uuid
-  user_id            String        @db.Uuid
-  name               String        // 의상 이름
-  status             outfit_status @default(PENDING)
-  fal_request_id     String?
+enum ad_music_status {
+  PENDING
+  IN_QUEUE
+  IN_PROGRESS
+  COMPLETED
+  FAILED
 
-  // 입력 의상 이미지 (R2에 업로드된 URL)
-  outfit_type        String        // 'combined' | 'separate'
-  outfit_image_url   String?       // combined일 때 전체 의상 이미지
-  top_image_url      String?       // separate일 때 상의 이미지
-  bottom_image_url   String?       // separate일 때 하의 이미지
-  shoes_image_url    String?       // separate일 때 신발 이미지
-
-  // 출력 결과 이미지
-  image_url          String?       // 압축된 WebP 이미지 URL (조회용)
-  image_url_original String?       // 원본 이미지 URL (재가공용)
-  image_width        Int?
-  image_height       Int?
-
-  error_message      String?
-  created_at         DateTime      @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime      @default(now()) @db.Timestamptz(6)
-  completed_at       DateTime?     @db.Timestamptz(6)
-
-  avatars            avatars       @relation(fields: [avatar_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  profiles           profiles      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  image_ads          image_ads[]
-
-  @@index([avatar_id], map: "idx_avatar_outfits_avatar_id")
-  @@index([user_id], map: "idx_avatar_outfits_user_id")
-  @@index([status], map: "idx_avatar_outfits_status")
   @@schema("public")
 }
 
-/// 광고 제품 (배경 제거된 제품 이미지)
+/// 광고 음악 (생성된 배경 음악)
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model ad_products {
-  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id            String            @db.Uuid
-  name               String            // 제품 이름
-  status             ad_product_status @default(PENDING)
-  fal_request_id     String?
+model ad_music {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         String          @db.Uuid
+  name            String
+  status          ad_music_status @default(PENDING)
+  kie_task_id     String?
+  mood            String?
+  genre           String?
+  product_type    String?
+  style           String?
+  audio_url       String?
+  stream_audio_url String?
+  image_url       String?
+  duration        Float?
+  tracks          Json?           @db.JsonB  // 여러 오디오 트랙 저장
+  model           String?
+  error_message   String?
+  created_at      DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime        @default(now()) @db.Timestamptz(6)
+  completed_at    DateTime?       @db.Timestamptz(6)
+  profiles        profiles        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_ad_music_profile")
 
-  // 원본 이미지 (배경 제거 전)
-  source_image_url   String?
-
-  // 배경 제거 임시 이미지 (fal.ai 결과 URL, 임시)
-  rembg_temp_url     String?
-
-  // 배경 제거된 원본 이미지 (R2 저장, 크기 조절 전)
-  rembg_image_url    String?           // 카드 표시용
-
-  // 결과 이미지 (배경 제거 후, 크기 조절 완료)
-  image_url          String?           // 압축 WebP (조회용)
-  image_url_original String?           // 원본 PNG (재가공용)
-  image_width        Int?
-  image_height       Int?
-
-  error_message      String?
-  created_at         DateTime          @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime          @default(now()) @db.Timestamptz(6)
-  completed_at       DateTime?         @db.Timestamptz(6)
-
-  profiles           profiles          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  image_ads          image_ads[]
-  video_ads          video_ads[]
-
-  @@index([user_id], map: "idx_ad_products_user_id")
-  @@index([status], map: "idx_ad_products_status")
-  @@schema("public")
-}
-
-/// 이미지 광고 (생성된 광고 이미지)
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model image_ads {
-  id                 String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id            String          @db.Uuid
-  product_id         String?         @db.Uuid  // 착용샷은 제품 없음
-  avatar_id          String?         @db.Uuid  // 제품 단독은 아바타 없음
-  outfit_id          String?         @db.Uuid  // 착용샷일 때만 사용
-
-  ad_type            String          // productOnly, holding, using, wearing, etc.
-  status             image_ad_status @default(PENDING)
-  fal_request_id     String?
-
-  // 생성 옵션
-  prompt             String?
-  image_size         String?         // 1024x1024, 1536x1024, 1024x1536
-  quality            String?         // medium, high
-
-  // 결과 이미지
-  image_url          String?         // 압축된 WebP 이미지 URL (조회용)
-  image_url_original String?         // 원본 이미지 URL (재가공용)
-  image_width        Int?
-  image_height       Int?
-
-  error_message      String?
-  created_at         DateTime        @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime        @default(now()) @db.Timestamptz(6)
-  completed_at       DateTime?       @db.Timestamptz(6)
-
-  profiles           profiles        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  ad_products        ad_products?    @relation(fields: [product_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  avatars            avatars?        @relation(fields: [avatar_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  avatar_outfits     avatar_outfits? @relation(fields: [outfit_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
-
-  @@index([user_id], map: "idx_image_ads_user_id")
-  @@index([product_id], map: "idx_image_ads_product_id")
-  @@index([avatar_id], map: "idx_image_ads_avatar_id")
-  @@index([status], map: "idx_image_ads_status")
-  @@index([ad_type], map: "idx_image_ads_ad_type")
-  @@schema("public")
-}
-
-/// 영상 광고 (생성된 광고 영상)
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model video_ads {
-  id                 String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id            String          @db.Uuid
-  product_id         String?         @db.Uuid
-  avatar_id          String?         @db.Uuid
-
-  status             video_ad_status @default(PENDING)
-  fal_request_id     String?
-  fal_image_request_id String?       // 첫 씬 이미지 생성 fal request ID
-
-  // 생성 옵션
-  prompt             String?         // 영상 생성 프롬프트
-  first_scene_prompt String?         // 첫 씬 이미지 생성 프롬프트
-  prompt_expanded    String?         // fal.ai에서 확장된 프롬프트
-  duration           Int?            // 영상 길이 (5, 10, 15초)
-  resolution         String?         // 해상도 (720p, 1080p)
-
-  // 제품 정보 (Gemini로 요약됨)
-  product_info       String?         // 사용자 입력 제품 정보
-  product_url        String?         // 제품 상세페이지 URL
-  product_summary    String?         // Gemini로 요약된 제품 정보
-
-  // 첫 씬 이미지 (gpt-image-1.5로 생성)
-  first_scene_image_url String?      // 첫 씬 이미지 URL
-
-  // 결과 영상
-  video_url          String?         // 영상 URL
-  video_width        Int?
-  video_height       Int?
-  video_fps          Int?
-  video_duration     Float?          // 실제 영상 길이 (초)
-  thumbnail_url      String?         // 썸네일 이미지 URL
-
-  seed               Int?
-  error_message      String?
-  created_at         DateTime        @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime        @default(now()) @db.Timestamptz(6)
-  completed_at       DateTime?       @db.Timestamptz(6)
-
-  profiles           profiles        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  ad_products        ad_products?    @relation(fields: [product_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  avatars            avatars?        @relation(fields: [avatar_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
-
-  @@index([user_id], map: "idx_video_ads_user_id")
-  @@index([product_id], map: "idx_video_ads_product_id")
-  @@index([avatar_id], map: "idx_video_ads_avatar_id")
-  @@index([status], map: "idx_video_ads_status")
+  @@index([user_id], map: "idx_ad_music_user_id")
+  @@index([status], map: "idx_ad_music_status")
   @@schema("public")
 }

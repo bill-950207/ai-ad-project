@@ -2,8 +2,8 @@
  * 광고 제품 상태 조회 API 라우트
  *
  * 배경 제거 상태를 폴링합니다.
- * fal.ai rembg 처리가 완료되면 EDITING 상태로 전환하고
- * 배경 제거된 원본 이미지를 R2에 저장합니다.
+ * Kie.ai rembg 처리가 완료되면 COMPLETED 상태로 전환하고
+ * 배경 제거된 이미지를 R2에 저장합니다.
  *
  * GET /api/ad-products/[id]/status - 배경 제거 상태 조회
  */
@@ -11,7 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
-import { getRembgQueueStatus, getRembgQueueResponse } from '@/lib/fal/client'
+import { getRembgQueueStatus, getRembgQueueResponse } from '@/lib/kie/client'
 import { ad_product_status } from '@/lib/generated/prisma/client'
 import { uploadDataUrlToR2 } from '@/lib/storage/r2'
 
@@ -47,32 +47,32 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
 
-    // 이미 완료/실패/편집 대기 상태인 경우 현재 상태 반환
-    if (['COMPLETED', 'FAILED', 'EDITING'].includes(product.status)) {
+    // 이미 완료/실패 상태인 경우 현재 상태 반환
+    if (['COMPLETED', 'FAILED'].includes(product.status)) {
       return NextResponse.json({ product })
     }
 
-    // fal 요청 ID가 없는 경우
+    // Kie.ai 요청 ID가 없는 경우 (fal_request_id 필드에 taskId 저장)
     if (!product.fal_request_id) {
       return NextResponse.json({ product })
     }
 
-    // fal.ai에서 현재 상태 조회
-    const falStatus = await getRembgQueueStatus(product.fal_request_id)
+    // Kie.ai에서 현재 상태 조회
+    const kieStatus = await getRembgQueueStatus(product.fal_request_id)
 
     let newStatus: ad_product_status = product.status
 
-    if (falStatus.status === 'IN_QUEUE') {
+    if (kieStatus.status === 'IN_QUEUE') {
       newStatus = 'IN_QUEUE'
-    } else if (falStatus.status === 'IN_PROGRESS') {
+    } else if (kieStatus.status === 'IN_PROGRESS') {
       newStatus = 'IN_PROGRESS'
-    } else if (falStatus.status === 'COMPLETED') {
+    } else if (kieStatus.status === 'COMPLETED') {
       // 배경 제거 완료 - EDITING 상태로 전환
       try {
         const response = await getRembgQueueResponse(product.fal_request_id)
 
         if (response.image && response.image.url) {
-          // 1. fal.ai 결과 이미지를 R2에 업로드 (카드 표시용)
+          // 1. Kie.ai 결과 이미지를 R2에 업로드 (카드 표시용)
           const rembgImageResponse = await fetch(response.image.url)
           if (!rembgImageResponse.ok) {
             throw new Error('Failed to fetch rembg image')
@@ -93,13 +93,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             rembgKey
           )
 
-          // 2. DB 업데이트 - EDITING 상태로 전환
+          // 2. DB 업데이트 - COMPLETED 상태로 전환
           const updatedProduct = await prisma.ad_products.update({
             where: { id },
             data: {
-              status: 'EDITING',
-              rembg_temp_url: response.image.url,  // 크기 편집용 (fal.ai 임시 URL)
-              rembg_image_url: rembgImageUrl,       // 카드 표시용 (R2 영구 URL)
+              status: 'COMPLETED',
+              image_url: rembgImageUrl,       // 최종 이미지 URL (R2)
+              rembg_image_url: rembgImageUrl, // 배경 제거 이미지 URL (R2)
             },
           })
 

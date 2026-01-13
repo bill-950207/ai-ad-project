@@ -22,7 +22,7 @@ export interface AvatarOptions {
 
   // 외모
   hairStyle?: 'longStraight' | 'bob' | 'wavy' | 'ponytail' | 'short'  // 헤어스타일
-  hairColor?: 'black' | 'brown' | 'blonde' | 'custom'  // 머리 색상
+  hairColor?: 'blackhair' | 'brown' | 'blonde' | 'custom'  // 머리 색상
   customHairColor?: string  // 커스텀 머리 색상 (hairColor가 'custom'일 때)
   vibe?: 'natural' | 'sophisticated' | 'cute' | 'professional'  // 분위기/느낌
 
@@ -30,6 +30,10 @@ export interface AvatarOptions {
   outfitStyle?: 'casual' | 'office' | 'sporty' | 'homewear'  // 의상 스타일
   colorTone?: 'light' | 'dark' | 'neutral' | 'brandColor'  // 색상 톤
   brandColorHex?: string  // 브랜드 색상 (colorTone이 'brandColor'일 때)
+
+  // 배경 및 포즈
+  background?: 'studio' | 'home' | 'office' | 'outdoor' | 'cafe'  // 배경 환경
+  pose?: 'model' | 'natural' | 'casual' | 'working'  // 포즈 스타일
 }
 
 // ============================================================
@@ -89,7 +93,7 @@ const hairStyleMap: Record<string, string> = {
 
 /** 머리 색상 매핑 */
 const hairColorMap: Record<string, string> = {
-  black: 'black hair',
+  blackhair: 'black hair',
   brown: 'brown hair',
   blonde: 'blonde hair',
   custom: '',  // 커스텀 색상은 별도 처리
@@ -117,6 +121,23 @@ const colorToneMap: Record<string, string> = {
   dark: 'dark-colored',
   neutral: 'neutral-toned',
   brandColor: '',  // 브랜드 색상은 별도 처리
+}
+
+/** 배경 환경 매핑 */
+const backgroundMap: Record<string, string> = {
+  studio: 'in a professional photo studio with clean white background',
+  home: 'in a cozy home office with computer setup and ambient lighting',
+  office: 'in a modern office environment with natural lighting',
+  outdoor: 'in an outdoor urban setting with blurred city background',
+  cafe: 'in a stylish cafe with warm ambient lighting',
+}
+
+/** 포즈 스타일 매핑 */
+const poseMap: Record<string, string> = {
+  model: 'striking a professional model pose, looking at camera',
+  natural: 'in a relaxed natural pose, slightly smiling, candid shot',
+  casual: 'sitting comfortably in a casual relaxed position',
+  working: 'focused while working at desk, natural working pose',
 }
 
 // ============================================================
@@ -191,6 +212,16 @@ export function buildPromptFromOptions(options: AvatarOptions): string {
     parts.push(`wearing ${outfit}`)
   }
 
+  // 포즈
+  if (options.pose) {
+    parts.push(poseMap[options.pose])
+  }
+
+  // 배경
+  if (options.background) {
+    parts.push(backgroundMap[options.background])
+  }
+
   return parts.join(', ')
 }
 
@@ -215,10 +246,12 @@ export function validateAvatarOptions(options: unknown): options is AvatarOption
   const validHeights = ['short', 'average', 'tall']
   const validBodyTypes = ['slim', 'average', 'athletic', 'curvy']
   const validHairStyles = ['longStraight', 'bob', 'wavy', 'ponytail', 'short']
-  const validHairColors = ['black', 'brown', 'blonde', 'custom']
+  const validHairColors = ['blackhair', 'brown', 'blonde', 'custom']
   const validVibes = ['natural', 'sophisticated', 'cute', 'professional']
   const validOutfitStyles = ['casual', 'office', 'sporty', 'homewear']
   const validColorTones = ['light', 'dark', 'neutral', 'brandColor']
+  const validBackgrounds = ['studio', 'home', 'office', 'outdoor', 'cafe']
+  const validPoses = ['model', 'natural', 'casual', 'working']
 
   // 각 필드 검증
   if (o.gender && !validGenders.includes(o.gender as string)) return false
@@ -231,6 +264,8 @@ export function validateAvatarOptions(options: unknown): options is AvatarOption
   if (o.vibe && !validVibes.includes(o.vibe as string)) return false
   if (o.outfitStyle && !validOutfitStyles.includes(o.outfitStyle as string)) return false
   if (o.colorTone && !validColorTones.includes(o.colorTone as string)) return false
+  if (o.background && !validBackgrounds.includes(o.background as string)) return false
+  if (o.pose && !validPoses.includes(o.pose as string)) return false
 
   return true
 }

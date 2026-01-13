@@ -10,9 +10,10 @@
   "nav": {
     "adCreationTools": "Ad Creation Tools",
     "adWorkflow": "Ad Workflow",
-    "avatarGeneration": "Avatar Generation",
-    "musicGeneration": "Ad Music Generation",
-    "backgroundGeneration": "Background Generation",
+    "avatarGeneration": "Avatar Management",
+    "musicGeneration": "Ad Music Management",
+    "backgroundGeneration": "Ad Background Management",
+    "adProducts": "Ad Products Management",
     "imageAd": "Image Ad",
     "videoAd": "Video Ad"
   },
@@ -97,6 +98,7 @@
       "short": "Short",
       "brown": "Brown",
       "blonde": "Blonde",
+      "blackhair": "Black",
       "custom": "Custom",
       "natural": "Natural",
       "sophisticated": "Sophisticated",
@@ -109,8 +111,20 @@
       "light": "Light",
       "dark": "Dark",
       "neutral": "Neutral",
-      "brandColor": "Brand Color"
+      "brandColor": "Brand Color",
+      "bgStudio": "Studio",
+      "bgHome": "Home Office",
+      "bgOffice": "Office",
+      "bgOutdoor": "Outdoor",
+      "bgCafe": "Cafe",
+      "poseModel": "Model Pose",
+      "poseNatural": "Natural",
+      "poseCasual": "Casual",
+      "poseWorking": "Working"
     },
+    "backgroundPose": "Background & Pose",
+    "background": "Background",
+    "pose": "Pose",
     "createImageAd": "Image Ad",
     "createVideoAd": "Video Ad",
     "changeOutfit": "Change Outfit",
@@ -152,8 +166,74 @@
     "confirmDelete": "Are you sure you want to delete this outfit?"
   },
   "music": {
-    "title": "Ad Music Generation",
+    "title": "Ad Music Management",
     "subtitle": "Create background music for your ads"
+  },
+  "adMusic": {
+    "title": "Ad Music Management",
+    "subtitle": "Create background music for your ads",
+    "createNew": "Create New Music",
+    "noMusic": "No music created yet",
+    "startCreating": "Create your first background music",
+    "name": "Music Name",
+    "namePlaceholder": "Enter music name",
+    "selectOptions": "Select Options",
+    "mood": "Mood",
+    "genre": "Genre",
+    "productType": "Product Type",
+    "moods": {
+      "bright": "Bright",
+      "calm": "Calm",
+      "exciting": "Exciting",
+      "emotional": "Emotional",
+      "hopeful": "Hopeful",
+      "luxurious": "Luxurious",
+      "playful": "Playful",
+      "professional": "Professional",
+      "refreshing": "Refreshing",
+      "warm": "Warm"
+    },
+    "genres": {
+      "pop": "Pop",
+      "electronic": "Electronic",
+      "acoustic": "Acoustic",
+      "cinematic": "Cinematic",
+      "corporate": "Corporate",
+      "hiphop": "Hip-Hop",
+      "jazz": "Jazz",
+      "classical": "Classical",
+      "lofi": "Lo-Fi",
+      "ambient": "Ambient"
+    },
+    "productTypes": {
+      "cosmetics": "Cosmetics",
+      "fashion": "Fashion",
+      "food": "Food & Beverage",
+      "tech": "Tech & Electronics",
+      "lifestyle": "Lifestyle",
+      "health": "Health & Wellness",
+      "travel": "Travel",
+      "finance": "Finance",
+      "education": "Education",
+      "general": "General"
+    },
+    "generate": "Generate Music",
+    "generating": "Generating...",
+    "creditsRequired": "2 Credits Required",
+    "myMusic": "My Music",
+    "status": {
+      "pending": "Pending",
+      "inQueue": "In Queue",
+      "inProgress": "Generating",
+      "completed": "Completed",
+      "failed": "Failed"
+    },
+    "confirmDelete": "Are you sure you want to delete this music?",
+    "delete": "Delete",
+    "download": "Download",
+    "play": "Play",
+    "pause": "Pause",
+    "duration": "Duration"
   },
   "background": {
     "title": "Background Generation",
@@ -164,8 +244,8 @@
     "subtitle": "Create image ads with AI"
   },
   "adProduct": {
-    "title": "Image Ad",
-    "subtitle": "Create image ads with AI",
+    "title": "Ad Products Management",
+    "subtitle": "Register and manage products for your ads",
     "myProducts": "My Ad Products",
     "myAds": "My Image Ads",
     "registerProduct": "Register Product",
@@ -195,7 +275,8 @@
       "failed": "Failed"
     },
     "adjustSize": "Adjust Product Size",
-    "adjustSizeDesc": "Adjust the product size while comparing with the avatar"
+    "adjustSizeDesc": "Adjust the product size while comparing with the avatar",
+    "retryRembg": "Retry Background Removal"
   },
   "videoAd": {
     "title": "Video Ad",

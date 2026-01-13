@@ -19,6 +19,10 @@ import {
   type VideoResolution,
   type VideoDuration
 } from '@/lib/fal/client'
+import {
+  getInfinitalkQueueStatus,
+  getInfinitalkQueueResponse,
+} from '@/lib/kie/client'
 
 export async function GET(
   request: NextRequest,
@@ -54,13 +58,18 @@ export async function GET(
       // requestId가 video ad ID인 경우
       const { data: videoAd } = await supabase
         .from('video_ads')
-        .select('id, status, fal_image_request_id, fal_request_id, prompt, first_scene_image_url, duration, resolution')
+        .select('id, status, fal_image_request_id, fal_request_id, kie_request_id, prompt, first_scene_image_url, duration, resolution, category')
         .eq('id', requestId)
         .eq('user_id', user.id)
         .single()
 
       if (videoAd) {
-        // 현재 상태에 따라 분기
+        // 제품 설명 영상 (Kie Infinitalk) 처리
+        if (videoAd.category === 'productDescription' && videoAd.kie_request_id) {
+          return await handleInfinitalkPhase(supabase, user.id, videoAd)
+        }
+
+        // 현재 상태에 따라 분기 (기존 fal.ai 플로우)
         if (['IMAGE_IN_QUEUE', 'IMAGE_IN_PROGRESS'].includes(videoAd.status) && videoAd.fal_image_request_id) {
           return await handleImagePhase(supabase, user.id, videoAd)
         } else if (['IN_QUEUE', 'IN_PROGRESS'].includes(videoAd.status) && videoAd.fal_request_id) {
@@ -292,6 +301,85 @@ async function handleVideoPhase(
     status: status.status,
     phase: 'video',
     firstSceneImageUrl: existingAd?.first_scene_image_url,
+    queuePosition: status.queue_position,
+  })
+}
+
+// Kie Infinitalk (제품 설명 영상) 단계 처리
+async function handleInfinitalkPhase(
+  supabase: ReturnType<typeof import('@/lib/supabase/server').createClient> extends Promise<infer T> ? T : never,
+  userId: string,
+  videoAd: {
+    id: string
+    status: string
+    kie_request_id: string | null
+    first_scene_image_url: string | null
+  }
+) {
+  if (!videoAd.kie_request_id) {
+    return NextResponse.json({ error: 'No Infinitalk request found' }, { status: 400 })
+  }
+
+  const status = await getInfinitalkQueueStatus(videoAd.kie_request_id)
+
+  // 완료된 경우 결과 반환 및 DB 업데이트
+  if (status.status === 'COMPLETED') {
+    const result = await getInfinitalkQueueResponse(videoAd.kie_request_id)
+
+    if (result.videos && result.videos.length > 0) {
+      const videoUrl = result.videos[0].url
+      // DB 업데이트
+      const { error: updateError } = await supabase
+        .from('video_ads')
+        .update({
+          status: 'COMPLETED',
+          video_url: videoUrl,
+          completed_at: new Date().toISOString(),
+        })
+        .eq('id', videoAd.id)
+        .eq('user_id', userId)
+
+      if (updateError) {
+        console.error('영상 광고 DB 업데이트 오류:', updateError)
+      }
+
+      return NextResponse.json({
+        status: 'COMPLETED',
+        phase: 'infinitalk',
+        videoUrl: videoUrl,
+        firstSceneImageUrl: videoAd.first_scene_image_url,
+      })
+    } else {
+      // 실패 상태로 DB 업데이트
+      await supabase
+        .from('video_ads')
+        .update({
+          status: 'FAILED',
+          error_message: 'No video generated',
+        })
+        .eq('id', videoAd.id)
+        .eq('user_id', userId)
+
+      return NextResponse.json({
+        status: 'FAILED',
+        error: 'No video generated',
+      })
+    }
+  }
+
+  // 진행 중인 경우 상태 업데이트
+  if (status.status === 'IN_PROGRESS' && videoAd.status !== 'IN_PROGRESS') {
+    await supabase
+      .from('video_ads')
+      .update({ status: 'IN_PROGRESS' })
+      .eq('id', videoAd.id)
+      .eq('user_id', userId)
+  }
+
+  return NextResponse.json({
+    status: status.status,
+    phase: 'infinitalk',
+    firstSceneImageUrl: videoAd.first_scene_image_url,
     queuePosition: status.queue_position,
   })
 }

@@ -48,10 +48,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
 
-    // UPLOADING 상태인 경우에만 완료 처리 가능
-    if (product.status !== 'UPLOADING') {
+    // 이미 완료된 경우 에러 반환
+    if (product.status === 'COMPLETED') {
       return NextResponse.json(
-        { error: 'Product is not in uploading state' },
+        { error: 'Product is already completed' },
         { status: 400 }
       )
     }

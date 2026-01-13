@@ -20,8 +20,6 @@ import { User } from '@supabase/supabase-js'
 import { useLanguage } from '@/contexts/language-context'
 import { languages } from '@/lib/i18n'
 import {
-  ChevronDown,
-  ChevronRight,
   Sparkles,
   Music,
   Image,
@@ -33,7 +31,8 @@ import {
   Languages,
   LogOut,
   CreditCard,
-  ChevronUp
+  ChevronUp,
+  Package
 } from 'lucide-react'
 
 // ============================================================
@@ -44,7 +43,7 @@ import {
 interface NavItem {
   labelKey: 'adCreationTools' | 'adWorkflow'  // 번역 키
   icon: React.ReactNode                        // 아이콘
-  children: { labelKey: string; href: string; icon: React.ReactNode }[]  // 하위 메뉴
+  children: { labelKey: string; href: string; icon: React.ReactNode }[]  // 하위 메뉴 (항상 표시)
 }
 
 // ============================================================
@@ -60,6 +59,7 @@ const navItems: NavItem[] = [
       { labelKey: 'avatarGeneration', href: '/dashboard/avatar', icon: <Sparkles className="w-4 h-4" /> },  // 아바타 생성
       { labelKey: 'musicGeneration', href: '/dashboard/music', icon: <Music className="w-4 h-4" /> },        // 음악 생성
       { labelKey: 'backgroundGeneration', href: '/dashboard/background', icon: <Image className="w-4 h-4" /> },  // 배경 생성
+      { labelKey: 'adProducts', href: '/dashboard/ad-products', icon: <Package className="w-4 h-4" /> },  // 광고 제품
     ]
   },
   {
@@ -82,7 +82,6 @@ export function Sidebar() {
   const { language, setLanguage, t } = useLanguage()
 
   // 상태 관리
-  const [expandedItems, setExpandedItems] = useState<string[]>(['adCreationTools', 'adWorkflow'])  // 펼쳐진 메뉴 목록
   const [user, setUser] = useState<User | null>(null)              // 현재 사용자
   const [showProfileMenu, setShowProfileMenu] = useState(false)    // 프로필 메뉴 표시 여부
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)  // 언어 메뉴 표시 여부
@@ -123,17 +122,6 @@ export function Sidebar() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-
-  /**
-   * 메뉴 펼침/접힘 토글
-   */
-  const toggleExpand = (labelKey: string) => {
-    setExpandedItems(prev =>
-      prev.includes(labelKey)
-        ? prev.filter(item => item !== labelKey)
-        : [...prev, labelKey]
-    )
-  }
 
   /**
    * 로그아웃 핸들러
@@ -183,48 +171,33 @@ export function Sidebar() {
       </div>
 
       {/* 네비게이션 메뉴 */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-4 overflow-y-auto">
         {navItems.map((item) => (
           <div key={item.labelKey}>
-            {/* 상위 메뉴 아이템 */}
-            <button
-              onClick={() => toggleExpand(item.labelKey)}
-              className={cn(
-                "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                "hover:bg-secondary/50 text-foreground"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                {item.icon}
-                <span>{getNavLabel(item.labelKey)}</span>
-              </div>
-              {expandedItems.includes(item.labelKey) ? (
-                <ChevronDown className="w-4 h-4 text-muted-foreground" />
-              ) : (
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-              )}
-            </button>
+            {/* 상위 메뉴 라벨 (항상 표시) */}
+            <div className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground">
+              {item.icon}
+              <span>{getNavLabel(item.labelKey)}</span>
+            </div>
 
-            {/* 하위 메뉴 아이템 */}
-            {item.children && expandedItems.includes(item.labelKey) && (
-              <div className="ml-4 mt-1 space-y-1">
-                {item.children.map((child) => (
-                  <Link
-                    key={child.href}
-                    href={child.href}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-                      pathname === child.href
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
-                    )}
-                  >
-                    {child.icon}
-                    <span>{getNavLabel(child.labelKey)}</span>
-                  </Link>
-                ))}
-              </div>
-            )}
+            {/* 하위 메뉴 아이템 (항상 표시) */}
+            <div className="ml-4 mt-1 space-y-1">
+              {item.children.map((child) => (
+                <Link
+                  key={child.href}
+                  href={child.href}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                    pathname === child.href || pathname?.startsWith(child.href + '/')
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                  )}
+                >
+                  {child.icon}
+                  <span>{getNavLabel(child.labelKey)}</span>
+                </Link>
+              ))}
+            </div>
           </div>
         ))}
       </nav>

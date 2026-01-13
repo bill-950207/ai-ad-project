@@ -10,8 +10,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
-import { submitToQueue } from '@/lib/fal/client'
+import { submitToQueue as submitToFalQueue } from '@/lib/fal/client'
+import { submitZImageToQueue } from '@/lib/kie/client'
 import { buildPromptFromOptions, validateAvatarOptions, AvatarOptions } from '@/lib/avatar/prompt-builder'
+
+// AI 프로바이더 설정 (기본값: kie, fallback: fal)
+const AI_PROVIDER = process.env.AVATAR_AI_PROVIDER || 'kie'
 
 /**
  * GET /api/avatars
@@ -102,7 +106,17 @@ export async function POST(request: NextRequest) {
       )
     }
     // AI 이미지 생성에 최적화된 프롬프트 (품질 향상 문구 추가)
-    const finalPrompt = `${rawPrompt}, high quality portrait, studio lighting, clean background, Full body view`
+    // 배경/포즈 옵션이 있으면 프롬프트 빌더가 처리하므로 기본 배경 문구 제외
+    const hasBackground = options?.background
+    const hasPose = options?.pose
+
+    // 품질 향상 문구 (배경/포즈가 지정되지 않은 경우에만 기본값 추가)
+    const qualityEnhancers = 'high quality photo, realistic, professional photography, sharp focus'
+    const defaultBackground = hasBackground ? '' : ', clean studio background'
+    const defaultPose = hasPose ? '' : ', natural portrait pose'
+    const viewType = 'upper body shot'
+
+    const finalPrompt = `${rawPrompt}, ${qualityEnhancers}${defaultBackground}${defaultPose}, ${viewType}`
 
     // 사용자 크레딧 확인
     const profile = await prisma.profiles.findUnique({
@@ -116,8 +130,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // fal.ai 큐에 생성 요청 제출
-    const queueResponse = await submitToQueue(finalPrompt)
+    // AI 프로바이더에 따라 큐에 생성 요청 제출
+    let queueResponse: { request_id: string; response_url?: string; status_url?: string; cancel_url?: string }
+
+    if (AI_PROVIDER === 'kie') {
+      // Kie.ai Z Image 사용
+      const kieResponse = await submitZImageToQueue(finalPrompt, '9:16')
+      queueResponse = {
+        request_id: kieResponse.request_id,
+        // Kie.ai는 URL을 별도로 제공하지 않음 - taskId로 조회
+      }
+    } else {
+      // fal.ai 사용
+      queueResponse = await submitToFalQueue(finalPrompt)
+    }
 
     // 트랜잭션으로 크레딧 차감 및 아바타 레코드 생성
     const avatar = await prisma.$transaction(async (tx) => {
@@ -137,9 +163,9 @@ export async function POST(request: NextRequest) {
           options: options ? JSON.parse(JSON.stringify(options)) : undefined,
           status: 'IN_QUEUE',
           fal_request_id: queueResponse.request_id,
-          fal_response_url: queueResponse.response_url,
-          fal_status_url: queueResponse.status_url,
-          fal_cancel_url: queueResponse.cancel_url,
+          fal_response_url: queueResponse.response_url || null,
+          fal_status_url: queueResponse.status_url || null,
+          fal_cancel_url: queueResponse.cancel_url || null,
         },
       })
     })

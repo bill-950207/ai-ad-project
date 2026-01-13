@@ -61,7 +61,7 @@ export function AdProductScanner({ productId, sourceImageUrl, onComplete }: AdPr
       if (isDone) {
         clearInterval(interval)
       }
-    }, 2000)
+    }, 1000)
 
     // 초기 폴링
     pollStatus()

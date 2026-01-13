@@ -19,7 +19,15 @@
       "Bash(node scripts/migrate-video-ads.mjs:*)",
       "Bash(brew install:*)",
       "Bash(export PATH=\"/opt/homebrew/opt/postgresql@17/bin:$PATH\")",
-      "Bash(__NEW_LINE__ export PATH=\"/opt/homebrew/opt/postgresql@17/bin:$PATH\")"
+      "Bash(__NEW_LINE__ export PATH=\"/opt/homebrew/opt/postgresql@17/bin:$PATH\")",
+      "Bash(node -e \"\nconst pg = require\\(''pg''\\);\nconst client = new pg.Client\\({\n  connectionString: ''postgresql://postgres.ilwhkpoxzxokfmzvpkof:jocoding123!@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres''\n}\\);\n\nasync function check\\(\\) {\n  await client.connect\\(\\);\n  const result = await client.query\\(''SELECT id, name, description, gender, age_group, style, display_order FROM public.default_avatars ORDER BY display_order''\\);\n  console.log\\(''기본 아바타 목록:''\\);\n  console.table\\(result.rows\\);\n  await client.end\\(\\);\n}\ncheck\\(\\);\n\")",
+      "Bash(npx tsc:*)",
+      "Bash(node scripts/migrate-ad-product-status.mjs:*)",
+      "Bash(node:*)",
+      "Bash(lsof:*)",
+      "Bash(PGPASSWORD='jocoding123!' psql \"postgresql://postgres.ilwhkpoxzxokfmzvpkof:jocoding123!@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres\" -c \"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = ''video_ads'' AND table_schema = ''public'' ORDER BY ordinal_position;\")",
+      "Bash(npx prisma:*)",
+      "Bash(grep:*)"
     ]
   }
 }

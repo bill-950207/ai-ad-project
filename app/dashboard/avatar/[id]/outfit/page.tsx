@@ -309,7 +309,7 @@ export default function OutfitChangePage() {
           <div className="p-4 border-b border-border">
             <h3 className="font-medium text-foreground">현재 아바타</h3>
           </div>
-          <div className="aspect-[1024/1536] relative bg-secondary/30">
+          <div className="aspect-[9/16] relative bg-secondary/30">
             {avatar.image_url && (
               <img
                 src={avatar.image_url}

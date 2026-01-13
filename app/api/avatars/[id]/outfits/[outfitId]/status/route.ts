@@ -7,7 +7,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
-import { getOutfitQueueStatus, getOutfitQueueResponse } from '@/lib/fal/client'
+import { getEditQueueStatus, getEditQueueResponse } from '@/lib/kie/client'
+import { getOutfitQueueStatus as getFalOutfitQueueStatus, getOutfitQueueResponse as getFalOutfitQueueResponse } from '@/lib/fal/client'
+
+// AI 프로바이더 설정 (기본값: kie, fallback: fal)
+const AI_PROVIDER = process.env.OUTFIT_AI_PROVIDER || 'kie'
 
 /** 라우트 파라미터 타입 */
 interface RouteParams {
@@ -55,13 +59,23 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ outfit })
     }
 
-    // fal.ai 큐 상태 확인
-    const falStatus = await getOutfitQueueStatus(outfit.fal_request_id)
+    // AI 프로바이더에 따라 큐 상태 확인
+    const queueStatus = AI_PROVIDER === 'kie'
+      ? await getEditQueueStatus(outfit.fal_request_id)
+      : await getFalOutfitQueueStatus(outfit.fal_request_id)
 
     // 상태에 따른 처리
-    if (falStatus.status === 'COMPLETED') {
+    if (queueStatus.status === 'COMPLETED') {
       // 결과 조회
-      const falResult = await getOutfitQueueResponse(outfit.fal_request_id)
+      let resultImageUrl: string
+
+      if (AI_PROVIDER === 'kie') {
+        const kieResult = await getEditQueueResponse(outfit.fal_request_id)
+        resultImageUrl = kieResult.images[0].url
+      } else {
+        const falResult = await getFalOutfitQueueResponse(outfit.fal_request_id)
+        resultImageUrl = falResult.images[0].url
+      }
 
       // UPLOADING 상태로 업데이트
       const updatedOutfit = await prisma.avatar_outfits.update({
@@ -71,13 +85,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
       return NextResponse.json({
         outfit: updatedOutfit,
-        tempImageUrl: falResult.images[0].url,
+        tempImageUrl: resultImageUrl,
       })
     }
 
     // 진행 중인 경우 상태 업데이트
     let dbStatus: 'PENDING' | 'IN_QUEUE' | 'IN_PROGRESS' = 'IN_PROGRESS'
-    if (falStatus.status === 'IN_QUEUE') {
+    if (queueStatus.status === 'IN_QUEUE') {
       dbStatus = 'IN_QUEUE'
     }
 
@@ -90,7 +104,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({
       outfit: { ...outfit, status: dbStatus },
-      queuePosition: falStatus.queue_position,
+      queuePosition: queueStatus.queue_position,
     })
   } catch (error) {
     console.error('의상 상태 조회 오류:', error)

@@ -396,7 +396,7 @@ export default function AvatarDetailPage() {
       }
     }
 
-    const interval = setInterval(pollStatus, 2000)
+    const interval = setInterval(pollStatus, 1000)
     return () => clearInterval(interval)
   }, [avatar?.status, id])
 
@@ -431,7 +431,7 @@ export default function AvatarDetailPage() {
       }
     }
 
-    const interval = setInterval(pollOutfitStatus, 2000)
+    const interval = setInterval(pollOutfitStatus, 1000)
     return () => clearInterval(interval)
   }, [outfits, id])
 
@@ -569,9 +569,9 @@ export default function AvatarDetailPage() {
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* 이미지 영역 - 1024:1536 (1:1.5) 비율 */}
+        {/* 이미지 영역 - 9:16 비율 */}
         <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <div className="aspect-[1024/1536] relative bg-secondary/30">
+          <div className="aspect-[9/16] relative bg-secondary/30">
             {avatar.image_url && (
               <img
                 src={avatar.image_url}
@@ -688,7 +688,7 @@ export default function AvatarDetailPage() {
                 {outfits.map((outfit) => (
                   <div
                     key={outfit.id}
-                    className="relative aspect-[1024/1536] rounded-lg overflow-hidden bg-secondary/30 border border-border cursor-pointer hover:border-primary/50 transition-colors"
+                    className="relative aspect-[9/16] rounded-lg overflow-hidden bg-secondary/30 border border-border cursor-pointer hover:border-primary/50 transition-colors"
                     onClick={() => outfit.status === 'COMPLETED' && outfit.image_url && setSelectedOutfit(outfit)}
                   >
                     {outfit.status === 'COMPLETED' && outfit.image_url ? (
@@ -739,7 +739,7 @@ export default function AvatarDetailPage() {
             </div>
 
             {/* 이미지 */}
-            <div className="relative h-[70vh] aspect-[1024/1536] bg-secondary/30">
+            <div className="relative h-[70vh] aspect-[9/16] bg-secondary/30">
               <img
                 src={getCachedImageUrl(selectedOutfit.image_url, selectedOutfit.updated_at)}
                 alt={selectedOutfit.name}
