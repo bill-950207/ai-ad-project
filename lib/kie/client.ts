@@ -1216,6 +1216,154 @@ export async function submitAdMusicToQueue(
   return { taskId }
 }
 
+// ============================================================
+// Z Image Turbo (빠른 배경 이미지 생성)
+// ============================================================
+
+/** Z Image Turbo 입력 타입 */
+export interface KieZImageTurboInput {
+  prompt: string
+  aspect_ratio?: ZImageAspectRatio
+}
+
+/** Z Image Turbo 출력 타입 */
+export interface KieZImageTurboOutput {
+  taskId: string
+}
+
+/** Z Image Turbo 결과 타입 */
+export interface KieZImageTurboResult {
+  images: Array<{ url: string }>
+}
+
+/**
+ * Z Image Turbo 작업 생성
+ *
+ * @param input - 이미지 생성 입력 데이터
+ * @param callbackUrl - 완료 시 호출할 콜백 URL (선택)
+ * @returns Task ID
+ */
+export async function createZImageTurboTask(
+  input: KieZImageTurboInput,
+  callbackUrl?: string
+): Promise<KieZImageTurboOutput> {
+  const body: Record<string, unknown> = {
+    model: ZIMAGE_MODEL,
+    input: {
+      prompt: input.prompt,
+      aspect_ratio: input.aspect_ratio || '16:9',  // 배경용 기본 가로 비율
+    },
+  }
+
+  if (callbackUrl) {
+    body.callBackUrl = callbackUrl
+  }
+
+  const response = await fetch(`${KIE_API_BASE}/jobs/createTask`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`Kie.ai API 오류: ${response.status} - ${errorText}`)
+  }
+
+  const result: KieApiResponse<KieTaskData> = await response.json()
+
+  if (result.code !== 200) {
+    throw new Error(`Kie.ai API 오류: ${result.msg}`)
+  }
+
+  return {
+    taskId: result.data.taskId,
+  }
+}
+
+/**
+ * Z Image Turbo 요청을 큐에 제출
+ *
+ * @param prompt - 이미지 생성 프롬프트
+ * @param aspectRatio - 화면 비율 (선택)
+ * @returns 큐 제출 응답
+ */
+export async function submitZImageTurboToQueue(
+  prompt: string,
+  aspectRatio?: ZImageAspectRatio
+): Promise<KieQueueSubmitResponse> {
+  const { taskId } = await createZImageTurboTask({
+    prompt,
+    aspect_ratio: aspectRatio,
+  })
+
+  return {
+    request_id: taskId,
+  }
+}
+
+/**
+ * Z Image Turbo 큐 상태 조회
+ *
+ * @param requestId - Task ID
+ * @returns 큐 상태
+ */
+export async function getZImageTurboQueueStatus(requestId: string): Promise<KieQueueStatusResponse> {
+  const taskInfo = await getTaskInfo(requestId)
+
+  const statusMap: Record<KieTaskStatus, KieQueueStatusResponse['status']> = {
+    'waiting': 'IN_QUEUE',
+    'success': 'COMPLETED',
+    'fail': 'COMPLETED',
+  }
+
+  return {
+    status: statusMap[taskInfo.state] || 'IN_QUEUE',
+  }
+}
+
+/**
+ * Z Image Turbo 결과 조회
+ *
+ * @param requestId - Task ID
+ * @returns 생성된 이미지 정보
+ */
+export async function getZImageTurboQueueResponse(requestId: string): Promise<KieZImageTurboResult> {
+  const taskInfo = await getTaskInfo(requestId)
+
+  if (taskInfo.state === 'fail') {
+    throw new Error(`이미지 생성 실패: ${taskInfo.failMsg || '알 수 없는 오류'}`)
+  }
+
+  const resultUrls = parseResultJson(taskInfo.resultJson)
+  if (resultUrls.length === 0) {
+    throw new Error('생성된 이미지가 없습니다')
+  }
+
+  return {
+    images: resultUrls.map(url => ({ url })),
+  }
+}
+
+/**
+ * 광고 배경 생성 요청 제출
+ *
+ * @param prompt - 최적화된 프롬프트
+ * @param aspectRatio - 화면 비율
+ * @returns Task ID
+ */
+export async function submitAdBackgroundToQueue(
+  prompt: string,
+  aspectRatio: ZImageAspectRatio = '16:9'
+): Promise<{ taskId: string }> {
+  const { taskId } = await createZImageTurboTask({
+    prompt,
+    aspect_ratio: aspectRatio,
+  })
+
+  return { taskId }
+}
+
 /**
  * 음악 스타일 프롬프트 생성
  */

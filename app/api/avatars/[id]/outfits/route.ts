@@ -9,11 +9,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { generateOutfitInputUploadUrl } from '@/lib/storage/r2'
-import { submitOutfitEditToQueue } from '@/lib/kie/client'
-import { submitOutfitChangeToQueue as submitOutfitChangeToFalQueue } from '@/lib/fal/client'
-
-// AI 프로바이더 설정 (기본값: kie, fallback: fal)
-const AI_PROVIDER = process.env.OUTFIT_AI_PROVIDER || 'kie'
+import { submitSeedreamOutfitEditToQueue } from '@/lib/fal/client'
+import { submitOutfitEditToQueue as submitOutfitEditToKieQueue } from '@/lib/kie/client'
 
 /** 의상 교체 크레딧 비용 */
 const OUTFIT_CREDIT_COST = 2
@@ -171,22 +168,24 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'No valid garment image' }, { status: 400 })
     }
 
-    // AI 프로바이더에 따라 요청 제출
+    // fal.ai Seedream 4.5로 요청 제출 (실패 시 Kie.ai 폴백)
     let queueResponse: { request_id: string }
 
-    if (AI_PROVIDER === 'kie') {
-      // Kie.ai 4.5 Edit 모델 사용
-      queueResponse = await submitOutfitEditToQueue(
+    try {
+      // fal.ai Seedream 4.5 먼저 시도
+      queueResponse = await submitSeedreamOutfitEditToQueue(
         avatar.image_url_original,
         garmentImageUrl,
         '9:16'  // 아바타용 세로 비율
       )
-    } else {
-      // fal.ai fallback
-      queueResponse = await submitOutfitChangeToFalQueue({
-        human_image: avatar.image_url_original,
-        garment_image: garmentImageUrl,
-      })
+    } catch (falError) {
+      console.warn('fal.ai Seedream 실패, Kie.ai로 폴백:', falError)
+      // Kie.ai 폴백
+      queueResponse = await submitOutfitEditToKieQueue(
+        avatar.image_url_original,
+        garmentImageUrl,
+        '9:16'
+      )
     }
 
     // 요청 ID 저장 및 크레딧 차감

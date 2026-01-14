@@ -1,0 +1,806 @@
+/**
+ * WaveSpeed AI Minimax Speech 2.6 HD 클라이언트
+ *
+ * TTS (Text-to-Speech) 서비스를 위한 클라이언트 라이브러리
+ * - 다국어 음성 지원 (한국어, 영어, 일본어, 중국어)
+ * - 비동기 작업 제출 및 결과 폴링
+ */
+
+const WAVESPEED_API_KEY = process.env.WAVE_SPEED_AI_KEY || ''
+const BASE_URL = 'https://api.wavespeed.ai/api/v3/minimax/speech-2.6-hd'
+
+/**
+ * 음성 언어 타입
+ */
+export type VoiceLanguage = 'ko' | 'en' | 'ja' | 'zh'
+
+/**
+ * 음성 정보 인터페이스
+ */
+export interface VoiceInfo {
+  id: string
+  name: string
+  description: string
+  gender: 'male' | 'female'
+  style: string
+  sampleText: string
+}
+
+/**
+ * 한국어 음성 목록 (WaveSpeed Minimax 공식 Voice ID)
+ */
+export const KOREAN_VOICES: VoiceInfo[] = [
+  {
+    id: 'Korean_SweetGirl',
+    name: '달콤한 소녀',
+    description: '부드럽고 감미로운 중년 여성 목소리',
+    gender: 'female',
+    style: 'sweet',
+    sampleText: '안녕하세요! 오늘도 좋은 하루 되세요.',
+  },
+  {
+    id: 'Korean_PowerfulGirl',
+    name: '파워풀 걸',
+    description: '힘있고 당찬 성인 여성 목소리',
+    gender: 'female',
+    style: 'powerful',
+    sampleText: '여러분, 이 제품 정말 대박이에요!',
+  },
+  {
+    id: 'Korean_DecisiveQueen',
+    name: '단호한 여왕',
+    description: '달콤하면서도 단호한 젊은 여성 목소리',
+    gender: 'female',
+    style: 'decisive',
+    sampleText: '안녕하세요, 저희 제품을 소개해 드리겠습니다.',
+  },
+  {
+    id: 'Korean_EnchantingSister',
+    name: '매력적인 언니',
+    description: '매력적이고 친근한 성인 여성 목소리',
+    gender: 'female',
+    style: 'charming',
+    sampleText: '어머, 이거 정말 좋은 제품이에요!',
+  },
+  {
+    id: 'Korean_ThoughtfulWoman',
+    name: '사려깊은 여성',
+    description: '차분하고 신뢰감 있는 성인 여성 목소리',
+    gender: 'female',
+    style: 'thoughtful',
+    sampleText: '차근차근 설명해 드릴게요.',
+  },
+  {
+    id: 'Korean_WiseElf',
+    name: '현명한 요정',
+    description: '신비롭고 지적인 여성 목소리',
+    gender: 'female',
+    style: 'wise',
+    sampleText: '특별한 제품을 소개해 드릴게요.',
+  },
+  {
+    id: 'Korean_ColdYoungMan',
+    name: '차가운 청년',
+    description: '차분하고 냉철한 성인 남성 목소리',
+    gender: 'male',
+    style: 'cold',
+    sampleText: '안녕하십니까, 좋은 제품을 소개해 드리겠습니다.',
+  },
+  {
+    id: 'Korean_StrictBoss',
+    name: '엄격한 사장님',
+    description: '권위있고 신뢰감 있는 남성 목소리',
+    gender: 'male',
+    style: 'strict',
+    sampleText: '이 제품의 품질은 제가 보장합니다.',
+  },
+  {
+    id: 'Korean_FriendlyNeighbor_Male',
+    name: '친근한 이웃 (남)',
+    description: '편안하고 친근한 남성 목소리',
+    gender: 'male',
+    style: 'friendly',
+    sampleText: '안녕하세요! 좋은 제품 소개해 드릴게요.',
+  },
+  {
+    id: 'Korean_BrightYouth',
+    name: '밝은 청년',
+    description: '활기차고 긍정적인 젊은 남성 목소리',
+    gender: 'male',
+    style: 'bright',
+    sampleText: '여러분 반갑습니다! 좋은 소식이 있어요!',
+  },
+]
+
+/**
+ * 영어 음성 목록 (WaveSpeed Minimax 공식 Voice ID)
+ */
+export const ENGLISH_VOICES: VoiceInfo[] = [
+  {
+    id: 'English_radiant_girl',
+    name: 'Radiant Girl',
+    description: 'A radiant and lively young adult female voice',
+    gender: 'female',
+    style: 'radiant',
+    sampleText: 'Hey there! Check out this awesome product!',
+  },
+  {
+    id: 'English_CalmWoman',
+    name: 'Calm Woman',
+    description: 'A calm and soothing adult female voice',
+    gender: 'female',
+    style: 'calm',
+    sampleText: 'Good day, I would like to share something special with you.',
+  },
+  {
+    id: 'English_LovelyLady',
+    name: 'Lovely Lady',
+    description: 'A lovely and charming adult female voice',
+    gender: 'female',
+    style: 'lovely',
+    sampleText: 'Hello! Let me tell you about this amazing product.',
+  },
+  {
+    id: 'socialmedia_female_1_v1',
+    name: 'Social Media Girl',
+    description: 'Trendy and engaging social media style female voice',
+    gender: 'female',
+    style: 'social',
+    sampleText: 'OMG, you guys have to see this!',
+  },
+  {
+    id: 'conversational_female_1_v1',
+    name: 'Conversational Female',
+    description: 'Natural and conversational female voice',
+    gender: 'female',
+    style: 'conversational',
+    sampleText: 'So, let me tell you about this product.',
+  },
+  {
+    id: 'English_expressive_narrator',
+    name: 'Expressive Narrator',
+    description: 'An expressive adult male voice with British accent',
+    gender: 'male',
+    style: 'expressive',
+    sampleText: 'Hello, let me introduce this amazing product to you.',
+  },
+  {
+    id: 'English_magnetic_voiced_man',
+    name: 'Magnetic Man',
+    description: 'A magnetic and persuasive adult male voice',
+    gender: 'male',
+    style: 'magnetic',
+    sampleText: 'Trust me, this is exactly what you need.',
+  },
+  {
+    id: 'English_Trustworth_Man',
+    name: 'Trustworthy Man',
+    description: 'A trustworthy and reliable adult male voice',
+    gender: 'male',
+    style: 'trustworthy',
+    sampleText: 'I guarantee you will love this product.',
+  },
+  {
+    id: 'English_PatientMan',
+    name: 'Patient Man',
+    description: 'A patient and calm adult male voice',
+    gender: 'male',
+    style: 'patient',
+    sampleText: 'Let me explain this step by step.',
+  },
+  {
+    id: 'English_Comedian',
+    name: 'Comedian',
+    description: 'A fun and humorous male voice',
+    gender: 'male',
+    style: 'funny',
+    sampleText: 'Hi everyone! I have something exciting to show you!',
+  },
+]
+
+/**
+ * 일본어 음성 목록 (WaveSpeed Minimax 공식 Voice ID)
+ */
+export const JAPANESE_VOICES: VoiceInfo[] = [
+  {
+    id: 'Japanese_Whisper_Belle',
+    name: '囁く美女',
+    description: 'ASMRに最適な囁き声の大人の女性',
+    gender: 'female',
+    style: 'whisper',
+    sampleText: 'こんにちは、素敵な商品をご紹介しますね。',
+  },
+  {
+    id: 'Japanese_DecisivePrincess',
+    name: '決断力のあるプリンセス',
+    description: '毅然とした決断力のある大人の女性の声',
+    gender: 'female',
+    style: 'decisive',
+    sampleText: 'この商品、絶対おすすめです！',
+  },
+  {
+    id: 'Japanese_ColdQueen',
+    name: '冷たい女王',
+    description: 'クールで威厳のある大人の女性の声',
+    gender: 'female',
+    style: 'cold',
+    sampleText: 'ご紹介いたします。',
+  },
+  {
+    id: 'Japanese_CalmLady',
+    name: '穏やかな女性',
+    description: '落ち着いた優しい大人の女性の声',
+    gender: 'female',
+    style: 'calm',
+    sampleText: 'はじめまして、よろしくお願いします。',
+  },
+  {
+    id: 'Japanese_OptimisticYouth',
+    name: '楽観的な青年',
+    description: '明るく前向きな大人の男性の声',
+    gender: 'male',
+    style: 'optimistic',
+    sampleText: 'みなさん、こんにちは！',
+  },
+  {
+    id: 'Japanese_LoyalKnight',
+    name: '忠実な騎士',
+    description: '誠実で信頼できる大人の男性の声',
+    gender: 'male',
+    style: 'loyal',
+    sampleText: 'こんにちは、素晴らしい商品をご紹介します。',
+  },
+  {
+    id: 'Japanese_GentleButler',
+    name: '優しい執事',
+    description: '丁寧で上品な大人の男性の声',
+    gender: 'male',
+    style: 'gentle',
+    sampleText: 'お客様、こちらの商品をご覧ください。',
+  },
+  {
+    id: 'Japanese_WarmBigBrother',
+    name: '温かい兄貴',
+    description: '親しみやすく温かい大人の男性の声',
+    gender: 'male',
+    style: 'warm',
+    sampleText: 'やあ！いい商品があるんだよ！',
+  },
+]
+
+/**
+ * 중국어 음성 목록 (WaveSpeed Minimax 공식 Voice ID)
+ * 참고: 중국어 Voice ID는 "Chinese (Mandarin)_" 형식
+ */
+export const CHINESE_VOICES: VoiceInfo[] = [
+  {
+    id: 'Chinese (Mandarin)_Sweet_Lady',
+    name: '甜美女士',
+    description: '温柔甜美的成年女性声音',
+    gender: 'female',
+    style: 'sweet',
+    sampleText: '大家好！今天给大家介绍一款好产品。',
+  },
+  {
+    id: 'Chinese (Mandarin)_Warm_Girl',
+    name: '温暖女孩',
+    description: '温柔温暖的年轻女性声音',
+    gender: 'female',
+    style: 'warm',
+    sampleText: '你好呀，来看看这个好东西！',
+  },
+  {
+    id: 'Chinese (Mandarin)_News_Anchor',
+    name: '新闻主播',
+    description: '专业播音腔的中年女性声音',
+    gender: 'female',
+    style: 'professional',
+    sampleText: '各位观众朋友们，大家好。',
+  },
+  {
+    id: 'Chinese (Mandarin)_Arrogant_Miss',
+    name: '傲娇小姐',
+    description: '傲娇可爱的年轻女性声音',
+    gender: 'female',
+    style: 'arrogant',
+    sampleText: '哼，这个产品还不错啦！',
+  },
+  {
+    id: 'Chinese (Mandarin)_Reliable_Executive',
+    name: '可靠高管',
+    description: '稳重可靠的中年男性声音',
+    gender: 'male',
+    style: 'reliable',
+    sampleText: '您好，让我来为您介绍这款产品。',
+  },
+  {
+    id: 'Chinese (Mandarin)_Gentleman',
+    name: '绅士',
+    description: '优雅有魅力的成年男性声音',
+    gender: 'male',
+    style: 'gentleman',
+    sampleText: '很高兴为您服务。',
+  },
+  {
+    id: 'Chinese (Mandarin)_Sincere_Adult',
+    name: '真诚青年',
+    description: '真诚热情的年轻男性声音',
+    gender: 'male',
+    style: 'sincere',
+    sampleText: '大家好！我来给大家推荐一个好东西！',
+  },
+  {
+    id: 'Chinese (Mandarin)_Energetic_Elder_Brother',
+    name: '活力大哥',
+    description: '充满活力的成年男性声音',
+    gender: 'male',
+    style: 'energetic',
+    sampleText: '嘿！快来看看这个！',
+  },
+]
+
+/**
+ * 언어별 음성 목록 가져오기
+ */
+export function getVoicesByLanguage(language: VoiceLanguage): VoiceInfo[] {
+  switch (language) {
+    case 'ko':
+      return KOREAN_VOICES
+    case 'en':
+      return ENGLISH_VOICES
+    case 'ja':
+      return JAPANESE_VOICES
+    case 'zh':
+      return CHINESE_VOICES
+    default:
+      return KOREAN_VOICES
+  }
+}
+
+/**
+ * 모든 언어의 음성 목록 가져오기
+ */
+export function getAllVoices(): Record<VoiceLanguage, VoiceInfo[]> {
+  return {
+    ko: KOREAN_VOICES,
+    en: ENGLISH_VOICES,
+    ja: JAPANESE_VOICES,
+    zh: CHINESE_VOICES,
+  }
+}
+
+/**
+ * 음성 ID로 음성 정보 찾기
+ */
+export function findVoiceById(voiceId: string): VoiceInfo | null {
+  const allVoices = [
+    ...KOREAN_VOICES,
+    ...ENGLISH_VOICES,
+    ...JAPANESE_VOICES,
+    ...CHINESE_VOICES,
+  ]
+  return allVoices.find((v) => v.id === voiceId) || null
+}
+
+/**
+ * 언어 라벨
+ */
+export const LANGUAGE_LABELS: Record<VoiceLanguage, string> = {
+  ko: '한국어',
+  en: 'English',
+  ja: '日本語',
+  zh: '中文',
+}
+
+/**
+ * TTS 작업 응답
+ */
+interface TTSTaskResponse {
+  code: number
+  message: string
+  data: {
+    id: string
+    status: string
+  }
+}
+
+/**
+ * TTS 결과 응답 (predictions 엔드포인트 형식)
+ */
+interface TTSResultResponse {
+  code: number
+  message: string
+  data: {
+    id: string
+    status: 'created' | 'processing' | 'completed' | 'failed'
+    model?: string
+    outputs?: string[]  // 오디오 URL 배열
+    created_at?: string
+  }
+}
+
+/**
+ * TTS 작업 제출
+ *
+ * @param text 변환할 텍스트
+ * @param voiceId 음성 ID
+ * @param speed 속도 (0.5 ~ 2.0, 기본값 1.1)
+ * @returns 작업 ID
+ */
+export async function submitTTSTask(
+  text: string,
+  voiceId: string,
+  speed: number = 1.1
+): Promise<string> {
+  const response = await fetch(BASE_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${WAVESPEED_API_KEY}`,
+    },
+    body: JSON.stringify({
+      text,
+      voice_id: voiceId,
+      speed: Math.max(0.5, Math.min(2.0, speed)),
+    }),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`TTS 작업 제출 실패: ${response.status} - ${errorText}`)
+  }
+
+  const result: TTSTaskResponse = await response.json()
+
+  if (result.code !== 200) {
+    throw new Error(`TTS 작업 제출 오류: ${result.message}`)
+  }
+
+  return result.data.id
+}
+
+/**
+ * TTS 작업 상태 조회
+ *
+ * @param taskId 작업 ID
+ * @returns 상태 및 결과
+ */
+export async function getTTSTaskStatus(taskId: string): Promise<TTSResultResponse['data']> {
+  // TTS도 predictions 엔드포인트를 사용해야 함
+  const TTS_PREDICTION_URL = 'https://api.wavespeed.ai/api/v3/predictions'
+  const response = await fetch(`${TTS_PREDICTION_URL}/${taskId}/result`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${WAVESPEED_API_KEY}`,
+    },
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`TTS 상태 조회 실패: ${response.status} - ${errorText}`)
+  }
+
+  const result: TTSResultResponse = await response.json()
+
+  if (result.code !== 200) {
+    throw new Error(`TTS 상태 조회 오류: ${result.message}`)
+  }
+
+  return result.data
+}
+
+/**
+ * TTS 작업 완료까지 폴링
+ *
+ * @param taskId 작업 ID
+ * @param maxAttempts 최대 시도 횟수 (기본 20)
+ * @param intervalMs 폴링 간격 (기본 1000ms)
+ * @returns 오디오 URL
+ */
+export async function waitForTTSResult(
+  taskId: string,
+  maxAttempts: number = 20,
+  intervalMs: number = 1000
+): Promise<string> {
+  let attempts = 0
+
+  while (attempts < maxAttempts) {
+    const status = await getTTSTaskStatus(taskId)
+
+    if (status.status === 'completed' && status.outputs && status.outputs.length > 0) {
+      return status.outputs[0]
+    }
+
+    if (status.status === 'failed') {
+      throw new Error('TTS 작업 실패')
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, intervalMs))
+    attempts++
+  }
+
+  throw new Error('TTS 작업 시간 초과')
+}
+
+/**
+ * 텍스트를 음성으로 변환 (원스텝)
+ *
+ * @param text 변환할 텍스트
+ * @param voiceId 음성 ID
+ * @param speed 속도 (0.5 ~ 2.0, 기본값 1.1)
+ * @returns 오디오 URL
+ */
+export async function textToSpeech(
+  text: string,
+  voiceId: string,
+  speed: number = 1.1
+): Promise<string> {
+  const taskId = await submitTTSTask(text, voiceId, speed)
+  return await waitForTTSResult(taskId)
+}
+
+/**
+ * 음성 프리뷰 생성
+ * 샘플 텍스트로 짧은 오디오 생성
+ *
+ * @param voiceId 음성 ID
+ * @returns 오디오 URL
+ */
+export async function generateVoicePreview(voiceId: string): Promise<string> {
+  const voice = findVoiceById(voiceId)
+  if (!voice) {
+    throw new Error(`음성을 찾을 수 없습니다: ${voiceId}`)
+  }
+
+  return await textToSpeech(voice.sampleText, voiceId)
+}
+
+// ============================================================
+// InfiniteTalk (토킹 아바타 영상 생성)
+// ============================================================
+
+const INFINITETALK_URL = 'https://api.wavespeed.ai/api/v3/wavespeed-ai/infinitetalk'
+const PREDICTION_RESULT_URL = 'https://api.wavespeed.ai/api/v3/predictions'
+
+/**
+ * InfiniteTalk 해상도 타입
+ */
+export type InfiniteTalkResolution = '480p' | '720p'
+
+/**
+ * InfiniteTalk 입력 타입
+ */
+export interface InfiniteTalkInput {
+  audio: string           // 오디오 URL (TTS 결과)
+  image: string           // 첫 프레임 이미지 URL
+  mask_image?: string     // 마스크 이미지 (선택)
+  prompt?: string         // 영상 생성 프롬프트 (선택)
+  resolution?: InfiniteTalkResolution  // 해상도 (기본: 480p)
+  seed?: number           // 시드 값 (기본: -1)
+}
+
+/**
+ * InfiniteTalk 작업 응답
+ */
+interface InfiniteTalkTaskResponse {
+  code: number
+  message: string
+  data: {
+    id: string
+    status: string
+    model: string
+    created_at: string
+  }
+}
+
+/**
+ * InfiniteTalk 결과 응답
+ */
+interface InfiniteTalkResultResponse {
+  code: number
+  message: string
+  data: {
+    id: string
+    status: 'created' | 'processing' | 'completed' | 'failed'
+    model: string
+    outputs: string[]     // 영상 URL 배열
+    created_at: string
+    has_nsfw_contents?: boolean[]
+    urls?: Record<string, string>
+  }
+}
+
+/**
+ * InfiniteTalk 작업 제출
+ *
+ * @param input 입력 데이터
+ * @returns 작업 ID
+ */
+export async function submitInfiniteTalkTask(input: InfiniteTalkInput): Promise<string> {
+  const response = await fetch(INFINITETALK_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${WAVESPEED_API_KEY}`,
+    },
+    body: JSON.stringify({
+      audio: input.audio,
+      image: input.image,
+      mask_image: input.mask_image,
+      prompt: input.prompt,
+      resolution: input.resolution || '480p',
+      seed: input.seed ?? -1,
+    }),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`InfiniteTalk 작업 제출 실패: ${response.status} - ${errorText}`)
+  }
+
+  const result: InfiniteTalkTaskResponse = await response.json()
+
+  if (result.code !== 200) {
+    throw new Error(`InfiniteTalk 작업 제출 오류: ${result.message}`)
+  }
+
+  return result.data.id
+}
+
+/**
+ * InfiniteTalk 작업 결과 조회
+ *
+ * @param requestId 작업 ID
+ * @returns 결과 데이터
+ */
+export async function getInfiniteTalkResult(requestId: string): Promise<InfiniteTalkResultResponse['data']> {
+  const response = await fetch(`${PREDICTION_RESULT_URL}/${requestId}/result`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${WAVESPEED_API_KEY}`,
+    },
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`InfiniteTalk 결과 조회 실패: ${response.status} - ${errorText}`)
+  }
+
+  const result: InfiniteTalkResultResponse = await response.json()
+
+  if (result.code !== 200) {
+    throw new Error(`InfiniteTalk 결과 조회 오류: ${result.message}`)
+  }
+
+  return result.data
+}
+
+/**
+ * InfiniteTalk 작업 완료까지 폴링
+ *
+ * @param requestId 작업 ID
+ * @param maxAttempts 최대 시도 횟수 (기본 120, 10분)
+ * @param intervalMs 폴링 간격 (기본 5000ms)
+ * @returns 영상 URL
+ */
+export async function waitForInfiniteTalkResult(
+  requestId: string,
+  maxAttempts: number = 120,
+  intervalMs: number = 5000
+): Promise<string> {
+  let attempts = 0
+
+  while (attempts < maxAttempts) {
+    const result = await getInfiniteTalkResult(requestId)
+
+    if (result.status === 'completed' && result.outputs && result.outputs.length > 0) {
+      return result.outputs[0]
+    }
+
+    if (result.status === 'failed') {
+      throw new Error('InfiniteTalk 영상 생성 실패')
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, intervalMs))
+    attempts++
+  }
+
+  throw new Error('InfiniteTalk 작업 시간 초과')
+}
+
+/**
+ * InfiniteTalk 토킹 영상 생성 (원스텝)
+ *
+ * @param imageUrl 첫 프레임 이미지 URL
+ * @param audioUrl TTS 오디오 URL
+ * @param prompt 영상 생성 프롬프트 (선택)
+ * @param resolution 해상도 (기본: 480p)
+ * @returns 영상 URL
+ */
+export async function generateTalkingVideo(
+  imageUrl: string,
+  audioUrl: string,
+  prompt?: string,
+  resolution: InfiniteTalkResolution = '480p'
+): Promise<string> {
+  const requestId = await submitInfiniteTalkTask({
+    image: imageUrl,
+    audio: audioUrl,
+    prompt,
+    resolution,
+  })
+
+  return await waitForInfiniteTalkResult(requestId)
+}
+
+/**
+ * InfiniteTalk 큐 제출 (fal.ai 호환 인터페이스)
+ *
+ * @param imageUrl 이미지 URL
+ * @param audioUrl 오디오 URL
+ * @param prompt 프롬프트 (선택)
+ * @param resolution 해상도 (선택)
+ * @returns 큐 제출 응답 (request_id 포함)
+ */
+export async function submitInfiniteTalkToQueue(
+  imageUrl: string,
+  audioUrl: string,
+  prompt?: string,
+  resolution: InfiniteTalkResolution = '480p'
+): Promise<{ request_id: string }> {
+  const requestId = await submitInfiniteTalkTask({
+    image: imageUrl,
+    audio: audioUrl,
+    prompt,
+    resolution,
+  })
+
+  return { request_id: requestId }
+}
+
+/**
+ * InfiniteTalk 상태 조회 (fal.ai 호환 인터페이스)
+ *
+ * @param requestId 작업 ID
+ * @returns 상태 정보
+ */
+export async function getInfiniteTalkQueueStatus(
+  requestId: string
+): Promise<{ status: 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' }> {
+  const result = await getInfiniteTalkResult(requestId)
+
+  const statusMap: Record<string, 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED'> = {
+    'created': 'IN_QUEUE',
+    'processing': 'IN_PROGRESS',
+    'completed': 'COMPLETED',
+    'failed': 'FAILED',
+  }
+
+  return {
+    status: statusMap[result.status] || 'IN_QUEUE',
+  }
+}
+
+/**
+ * InfiniteTalk 결과 조회 (fal.ai 호환 인터페이스)
+ *
+ * @param requestId 작업 ID
+ * @returns 영상 정보
+ */
+export async function getInfiniteTalkQueueResponse(
+  requestId: string
+): Promise<{ videos: Array<{ url: string }> }> {
+  const result = await getInfiniteTalkResult(requestId)
+
+  if (result.status === 'failed') {
+    throw new Error('InfiniteTalk 영상 생성 실패')
+  }
+
+  if (!result.outputs || result.outputs.length === 0) {
+    throw new Error('생성된 영상이 없습니다')
+  }
+
+  return {
+    videos: result.outputs.map((url) => ({ url })),
+  }
+}

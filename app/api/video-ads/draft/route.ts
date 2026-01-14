@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
       id,  // 기존 초안 ID (없으면 새로 생성)
       category,
       wizardStep,
+      status,  // 상태 업데이트 (GENERATING_SCRIPTS, GENERATING_AUDIO, DRAFT 등)
       // Step 1 데이터
       avatarId,
       outfitId,
@@ -46,11 +47,16 @@ export async function POST(request: NextRequest) {
       scriptStyle,
       script,
       firstSceneImageUrl,
+      firstFrameUrls,  // 첫 프레임 이미지 URL 배열
       firstFramePrompt,
       // Step 4 데이터
       voiceId,
       voiceName,
     } = body
+
+    // 허용된 상태값 (DRAFT 계열 상태만 허용)
+    const allowedStatuses = ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO']
+    const validStatus = status && allowedStatuses.includes(status) ? status : undefined
 
     // 카테고리 필수
     if (!category) {
@@ -59,12 +65,12 @@ export async function POST(request: NextRequest) {
 
     // 기존 초안 업데이트 또는 새로 생성
     if (id) {
-      // 기존 초안 확인
+      // 기존 초안 확인 (DRAFT 또는 생성 중 상태)
       const existing = await prisma.video_ads.findFirst({
         where: {
           id,
           user_id: user.id,
-          status: 'DRAFT',
+          status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO'] },
         },
       })
 
@@ -76,6 +82,7 @@ export async function POST(request: NextRequest) {
       const updated = await prisma.video_ads.update({
         where: { id },
         data: {
+          ...(validStatus && { status: validStatus }),
           wizard_step: wizardStep,
           avatar_id: avatarId || null,
           outfit_id: outfitId || null,
@@ -90,6 +97,7 @@ export async function POST(request: NextRequest) {
           script_style: scriptStyle || null,
           script: script || null,
           first_scene_image_url: firstSceneImageUrl || null,
+          first_frame_urls: firstFrameUrls || null,
           first_frame_prompt: firstFramePrompt || null,
           voice_id: voiceId || null,
           voice_name: voiceName || null,
@@ -99,12 +107,12 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({ draft: updated })
     } else {
-      // 같은 카테고리의 기존 DRAFT 확인 (하나만 유지)
+      // 같은 카테고리의 기존 DRAFT 확인 (하나만 유지, 생성 중 상태도 포함)
       const existingDraft = await prisma.video_ads.findFirst({
         where: {
           user_id: user.id,
           category,
-          status: 'DRAFT',
+          status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO'] },
         },
       })
 
@@ -113,6 +121,7 @@ export async function POST(request: NextRequest) {
         const updated = await prisma.video_ads.update({
           where: { id: existingDraft.id },
           data: {
+            ...(validStatus && { status: validStatus }),
             wizard_step: wizardStep,
             avatar_id: avatarId || null,
             outfit_id: outfitId || null,
@@ -127,6 +136,7 @@ export async function POST(request: NextRequest) {
             script_style: scriptStyle || null,
             script: script || null,
             first_scene_image_url: firstSceneImageUrl || null,
+            first_frame_urls: firstFrameUrls || null,
             first_frame_prompt: firstFramePrompt || null,
             voice_id: voiceId || null,
             voice_name: voiceName || null,
@@ -157,6 +167,7 @@ export async function POST(request: NextRequest) {
           script_style: scriptStyle || null,
           script: script || null,
           first_scene_image_url: firstSceneImageUrl || null,
+          first_frame_urls: firstFrameUrls || null,
           first_frame_prompt: firstFramePrompt || null,
           voice_id: voiceId || null,
           voice_name: voiceName || null,
@@ -195,12 +206,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Category is required' }, { status: 400 })
     }
 
-    // DRAFT 상태의 초안 조회
+    // DRAFT 또는 생성 중 상태의 초안 조회
     const draft = await prisma.video_ads.findFirst({
       where: {
         user_id: user.id,
         category,
-        status: 'DRAFT',
+        status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO'] },
       },
       orderBy: {
         updated_at: 'desc',
@@ -236,21 +247,21 @@ export async function DELETE(request: NextRequest) {
     const category = searchParams.get('category')
 
     if (id) {
-      // 특정 초안 삭제
+      // 특정 초안 삭제 (생성 중 상태도 포함)
       await prisma.video_ads.deleteMany({
         where: {
           id,
           user_id: user.id,
-          status: 'DRAFT',
+          status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO'] },
         },
       })
     } else if (category) {
-      // 카테고리별 초안 삭제
+      // 카테고리별 초안 삭제 (생성 중 상태도 포함)
       await prisma.video_ads.deleteMany({
         where: {
           user_id: user.id,
           category,
-          status: 'DRAFT',
+          status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO'] },
         },
       })
     } else {

@@ -12,7 +12,7 @@
     "adWorkflow": "広告ワークフロー",
     "avatarGeneration": "アバター管理",
     "musicGeneration": "広告音楽管理",
-    "backgroundGeneration": "広告背景管理",
+    "backgroundGeneration": "商品撮影用背景",
     "adProducts": "広告商品管理",
     "imageAd": "画像広告",
     "videoAd": "動画広告"
@@ -236,8 +236,76 @@
     "duration": "再生時間"
   },
   "background": {
-    "title": "背景生成",
-    "subtitle": "広告用の背景画像を作成します"
+    "title": "商品撮影用背景",
+    "subtitle": "画像広告用の背景を作成します（商品単独撮影用）"
+  },
+  "adBackground": {
+    "title": "商品撮影用背景",
+    "subtitle": "画像広告用の背景を作成します（商品単独撮影用）",
+    "createNew": "新規背景作成",
+    "emptyList": "作成された背景がありません",
+    "emptyDescription": "新しい背景を作成して広告に活用しましょう",
+    "name": "背景名",
+    "namePlaceholder": "例: 春シーズン広告背景",
+    "selectMode": "生成方式",
+    "modeProduct": "商品ベース",
+    "modeOptions": "オプション選択",
+    "modePrompt": "プロンプト",
+    "selectProduct": "商品を選択",
+    "noProducts": "登録された商品がありません。先に商品を登録してください。",
+    "optional": "任意",
+    "style": "スタイル",
+    "location": "場所",
+    "mood": "雰囲気",
+    "color": "メインカラー",
+    "time": "時間帯",
+    "promptInput": "背景の説明",
+    "promptPlaceholder": "希望する背景を自由に説明してください。例: 暖かい照明のカフェテーブル、大理石の床に日差しが差し込む様子",
+    "promptHint": "AIが入力内容を分析し、最適な背景画像を生成します。",
+    "aspectRatio": "アスペクト比",
+    "cancel": "キャンセル",
+    "generate": "生成する",
+    "generating": "生成中...",
+    "download": "ダウンロード",
+    "failed": "生成失敗",
+    "styles": {
+      "modern": "モダン",
+      "natural": "ナチュラル",
+      "minimal": "ミニマル",
+      "luxurious": "ラグジュアリー",
+      "industrial": "インダストリアル",
+      "vintage": "ヴィンテージ"
+    },
+    "locations": {
+      "studio": "スタジオ",
+      "outdoor": "屋外",
+      "home": "自宅",
+      "cafe": "カフェ",
+      "office": "オフィス",
+      "nature": "自然"
+    },
+    "moods": {
+      "bright": "明るい",
+      "warm": "暖かい",
+      "cool": "涼しい",
+      "dramatic": "ドラマティック",
+      "soft": "ソフト",
+      "professional": "プロフェッショナル"
+    },
+    "colors": {
+      "white": "ホワイト",
+      "beige": "ベージュ",
+      "gray": "グレー",
+      "blue": "ブルー",
+      "green": "グリーン",
+      "pink": "ピンク"
+    },
+    "times": {
+      "day": "昼",
+      "night": "夜",
+      "sunset": "夕焼け",
+      "sunrise": "日の出"
+    }
   },
   "imageAd": {
     "title": "画像広告",

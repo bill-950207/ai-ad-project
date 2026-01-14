@@ -7,6 +7,7 @@
 
 import { submitImageAdToQueue, type ImageAdSize } from '@/lib/kie/client'
 import { createClient } from '@/lib/supabase/server'
+import { generateImageAdPrompt, type ImageAdType as GeminiImageAdType } from '@/lib/gemini/client'
 import { NextRequest, NextResponse } from 'next/server'
 
 // 이미지 광고 유형
@@ -139,11 +140,18 @@ export async function POST(request: NextRequest) {
     // 이미지 URL 수집
     const imageUrls: string[] = []
 
+    // Gemini 프롬프트 생성용 데이터
+    let productName: string | undefined
+    let productDescription: string | undefined
+    let productImageUrl: string | undefined
+    const avatarImageUrls: string[] = []
+    let outfitImageUrl: string | undefined
+
     // 제품 정보 조회 (wearing 타입이 아닐 때만)
     if (!isWearingType && productId) {
       const { data: product, error: productError } = await supabase
         .from('ad_products')
-        .select('id, name, rembg_image_url, image_url, status')
+        .select('id, name, description, rembg_image_url, image_url, status')
         .eq('id', productId)
         .eq('user_id', user.id)
         .single()
@@ -162,8 +170,12 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      // Gemini용 제품 정보 저장
+      productName = product.name
+      productDescription = product.description || undefined
+
       // 제품 이미지 추가 (배경 제거된 이미지 우선)
-      const productImageUrl = product.rembg_image_url || product.image_url
+      productImageUrl = product.rembg_image_url || product.image_url
       if (productImageUrl) {
         imageUrls.push(productImageUrl)
       }
@@ -207,6 +219,11 @@ export async function POST(request: NextRequest) {
           )
         }
 
+        // Gemini용 아바타 이미지 URL 저장
+        if (avatar.image_url) {
+          avatarImageUrls.push(avatar.image_url)
+        }
+
         const { data: outfit, error: outfitError } = await supabase
           .from('avatar_outfits')
           .select('id, name, image_url, status')
@@ -227,6 +244,9 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           )
         }
+
+        // Gemini용 의상 이미지 URL 저장
+        outfitImageUrl = outfit.image_url || undefined
 
         // 의상 이미지 사용 (아바타 + 의상이 합성된 이미지)
         if (outfit.image_url) {
@@ -264,6 +284,8 @@ export async function POST(request: NextRequest) {
           // 일반 아바타 이미지 추가
           if (avatar.image_url) {
             imageUrls.push(avatar.image_url)
+            // Gemini용 아바타 이미지 URL 저장
+            avatarImageUrls.push(avatar.image_url)
           }
         }
       }
@@ -276,26 +298,46 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 프롬프트 구성
+    // Gemini를 사용하여 최적화된 프롬프트 생성
     let finalPrompt = prompt
+    try {
+      console.log('Gemini 프롬프트 생성 시작:', { adType, productName, hasProductImage: !!productImageUrl, avatarCount: avatarImageUrls.length })
 
-    // 제품 단독일 경우 옵션 반영
-    if (adType === 'productOnly' && options) {
-      const optionParts: string[] = []
-      if (options.background) optionParts.push(`${options.background} background`)
-      if (options.lighting) optionParts.push(`${options.lighting} lighting`)
-      if (options.mood) optionParts.push(`${options.mood} mood`)
-      if (options.angle) optionParts.push(`${options.angle} angle`)
+      const geminiResult = await generateImageAdPrompt({
+        adType: adType as GeminiImageAdType,
+        productName,
+        productDescription,
+        productImageUrl,
+        avatarImageUrls: avatarImageUrls.length > 0 ? avatarImageUrls : undefined,
+        outfitImageUrl,
+        selectedOptions: options || {},
+        additionalPrompt: prompt,
+      })
 
-      if (optionParts.length > 0) {
-        finalPrompt = `${prompt}. Style: ${optionParts.join(', ')}.`
+      finalPrompt = geminiResult.optimizedPrompt
+      console.log('Gemini 프롬프트 생성 완료:', { koreanDescription: geminiResult.koreanDescription })
+    } catch (geminiError) {
+      console.error('Gemini 프롬프트 생성 실패, 기본 프롬프트 사용:', geminiError)
+
+      // Gemini 실패 시 기존 방식으로 폴백
+      // 제품 단독일 경우 옵션 반영
+      if (adType === 'productOnly' && options) {
+        const optionParts: string[] = []
+        if (options.background) optionParts.push(`${options.background} background`)
+        if (options.lighting) optionParts.push(`${options.lighting} lighting`)
+        if (options.mood) optionParts.push(`${options.mood} mood`)
+        if (options.angle) optionParts.push(`${options.angle} angle`)
+
+        if (optionParts.length > 0) {
+          finalPrompt = `${prompt}. Style: ${optionParts.join(', ')}.`
+        }
       }
-    }
 
-    // 광고 유형별 프롬프트 보강
-    const typePromptPrefix = getTypePromptPrefix(adType)
-    if (typePromptPrefix) {
-      finalPrompt = `${typePromptPrefix} ${finalPrompt}`
+      // 광고 유형별 프롬프트 보강
+      const typePromptPrefix = getTypePromptPrefix(adType)
+      if (typePromptPrefix) {
+        finalPrompt = `${typePromptPrefix} ${finalPrompt}`
+      }
     }
 
     // fal.ai에 요청 제출

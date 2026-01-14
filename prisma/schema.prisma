@@ -445,6 +445,7 @@ model profiles {
   referral_source String?
   ad_music        ad_music[]
   ad_products     ad_products[]
+  ad_backgrounds  ad_background[]
   outfits         avatar_outfits[]
   avatars         avatars[]
   image_ads       image_ads[]
@@ -515,6 +516,7 @@ model ad_products {
   profiles           profiles          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_ad_products_profile")
   image_ads          image_ads[]
   video_ads          video_ads[]
+  ad_backgrounds     ad_background[]
 
   @@index([user_id], map: "idx_ad_products_user_id")
   @@index([status], map: "idx_ad_products_status")
@@ -586,6 +588,7 @@ model video_ads {
   fal_image_request_id  String?
   first_scene_prompt    String?
   first_scene_image_url String?
+  first_frame_urls      Json?            // 첫 프레임 이미지 URL 배열 (복수 옵션 저장)
   outfit_id             String?          @db.Uuid
   wizard_step           Int?
   avatar_image_url      String?
@@ -824,5 +827,67 @@ model ad_music {
 
   @@index([user_id], map: "idx_ad_music_user_id")
   @@index([status], map: "idx_ad_music_status")
+  @@schema("public")
+}
+
+enum ad_background_status {
+  PENDING
+  IN_QUEUE
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+
+  @@schema("public")
+}
+
+enum ad_background_mode {
+  PRODUCT      // 제품 기반 생성
+  OPTIONS      // 옵션 선택 생성
+  PROMPT       // 프롬프트 직접 입력
+
+  @@schema("public")
+}
+
+/// 광고 배경 (생성된 배경 이미지)
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ad_background {
+  id                String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id           String               @db.Uuid
+  name              String
+  status            ad_background_status @default(PENDING)
+  mode              ad_background_mode   @default(OPTIONS)
+  kie_task_id       String?
+  ad_product_id     String?              @db.Uuid  // 제품 기반 생성 시 연결된 제품
+  original_prompt   String?              // 사용자 입력 프롬프트
+  optimized_prompt  String?              // Gemini로 최적화된 프롬프트
+  options           Json?                @db.JsonB  // 옵션 선택 시 선택한 옵션들
+  image_url         String?
+  thumbnail_url     String?
+  aspect_ratio      String?              @default("16:9")
+  model             String?              @default("z-image-turbo")
+  error_message     String?
+  created_at        DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime             @default(now()) @db.Timestamptz(6)
+  completed_at      DateTime?            @db.Timestamptz(6)
+  profiles          profiles             @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_ad_background_profile")
+  ad_products       ad_products?         @relation(fields: [ad_product_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_ad_background_product")
+
+  @@index([user_id], map: "idx_ad_background_user_id")
+  @@index([status], map: "idx_ad_background_status")
+  @@schema("public")
+}
+
+/// 음성 프리뷰 캐시 (TTS 음성 샘플 저장)
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model voice_previews {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  voice_id   String   @unique // 음성 ID (예: Korean_SweetGirl)
+  language   String   // 언어 코드 (ko, en, ja, zh)
+  audio_url  String   // 생성된 오디오 URL
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([voice_id], map: "idx_voice_previews_voice_id")
+  @@index([language], map: "idx_voice_previews_language")
   @@schema("public")
 }

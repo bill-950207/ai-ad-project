@@ -71,65 +71,236 @@ const DEFAULT_VOICE_SETTINGS: VoiceSettings = {
   use_speaker_boost: true,
 }
 
+/** 음성 언어 타입 */
+export type VoiceLanguage = 'ko' | 'en' | 'ja' | 'zh'
+
+/** 언어별 레이블 */
+export const LANGUAGE_LABELS: Record<VoiceLanguage, string> = {
+  ko: '한국어',
+  en: 'English',
+  ja: '日本語',
+  zh: '中文',
+}
+
 /** 한국어 추천 음성 목록 (미리 정의된 음성, ElevenLabs 제공 preview_url 포함) */
 export const KOREAN_RECOMMENDED_VOICES = [
   {
     voice_id: 'XB0fDUnXU5powFXDhCwa',
     name: 'Charlotte',
     description: '젊은 여성, 자연스러운 톤',
-    labels: { gender: 'female', age: 'young' },
+    labels: { gender: 'female', age: 'young', language: 'ko' },
     preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/XB0fDUnXU5powFXDhCwa/942356dc-f10d-4d89-bda5-4f8505ee038b.mp3',
   },
   {
     voice_id: '21m00Tcm4TlvDq8ikWAM',
     name: 'Rachel',
     description: '전문적인 여성 목소리',
-    labels: { gender: 'female', age: 'middle_aged' },
+    labels: { gender: 'female', age: 'middle_aged', language: 'ko' },
     preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/21m00Tcm4TlvDq8ikWAM/df6788f9-5c96-470d-8571-904e0f0de673.mp3',
   },
   {
     voice_id: 'AZnzlk1XvdvUeBnXmlld',
     name: 'Domi',
     description: '밝고 활기찬 여성',
-    labels: { gender: 'female', age: 'young' },
+    labels: { gender: 'female', age: 'young', language: 'ko' },
     preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/AZnzlk1XvdvUeBnXmlld/69c5373f-0dc2-4efd-9232-a0140182c0a9.mp3',
   },
   {
     voice_id: 'EXAVITQu4vr4xnSDxMaL',
     name: 'Bella',
     description: '부드럽고 따뜻한 여성',
-    labels: { gender: 'female', age: 'young' },
+    labels: { gender: 'female', age: 'young', language: 'ko' },
     preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/EXAVITQu4vr4xnSDxMaL/04a8d578-323e-4e2b-b247-fb524c2b4c38.mp3',
   },
   {
     voice_id: 'ErXwobaYiN019PkySvjV',
     name: 'Antoni',
     description: '젊은 남성, 친근한 톤',
-    labels: { gender: 'male', age: 'young' },
+    labels: { gender: 'male', age: 'young', language: 'ko' },
     preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/ErXwobaYiN019PkySvjV/32e46c56-71fc-4f66-85c7-3ed54a211dd5.mp3',
   },
   {
     voice_id: 'VR6AewLTigWG4xSOukaG',
     name: 'Arnold',
     description: '깊고 신뢰감 있는 남성',
-    labels: { gender: 'male', age: 'middle_aged' },
+    labels: { gender: 'male', age: 'middle_aged', language: 'ko' },
     preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/VR6AewLTigWG4xSOukaG/316050b7-c4e0-48de-acf9-a882bb7fc43b.mp3',
   },
   {
     voice_id: 'pNInz6obpgDQGcFmaJgB',
     name: 'Adam',
     description: '전문적인 남성 목소리',
-    labels: { gender: 'male', age: 'middle_aged' },
+    labels: { gender: 'male', age: 'middle_aged', language: 'ko' },
     preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/pNInz6obpgDQGcFmaJgB/4e1b1f53-11e5-4b90-9d10-c57f8c728148.mp3',
   },
   {
     voice_id: 'yoZ06aMxZJJ28mfd3POQ',
     name: 'Sam',
     description: '젊고 에너지 넘치는 남성',
-    labels: { gender: 'male', age: 'young' },
+    labels: { gender: 'male', age: 'young', language: 'ko' },
     preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/yoZ06aMxZJJ28mfd3POQ/524df8e1-26fb-4bb1-9a83-ab3fba9ea87d.mp3',
   },
 ]
+
+/** 영어 추천 음성 목록 */
+export const ENGLISH_RECOMMENDED_VOICES = [
+  {
+    voice_id: 'EXAVITQu4vr4xnSDxMaL',
+    name: 'Bella',
+    description: 'Soft and warm female voice',
+    labels: { gender: 'female', age: 'young', language: 'en' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/EXAVITQu4vr4xnSDxMaL/04a8d578-323e-4e2b-b247-fb524c2b4c38.mp3',
+  },
+  {
+    voice_id: '21m00Tcm4TlvDq8ikWAM',
+    name: 'Rachel',
+    description: 'Professional female voice',
+    labels: { gender: 'female', age: 'middle_aged', language: 'en' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/21m00Tcm4TlvDq8ikWAM/df6788f9-5c96-470d-8571-904e0f0de673.mp3',
+  },
+  {
+    voice_id: 'ThT5KcBeYPX3keUQqHPh',
+    name: 'Dorothy',
+    description: 'Pleasant British accent',
+    labels: { gender: 'female', age: 'young', language: 'en' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/ThT5KcBeYPX3keUQqHPh/981f0855-6598-48d2-9f8f-b6d92fbbe3fc.mp3',
+  },
+  {
+    voice_id: 'jBpfuIE2acCO8z3wKNLl',
+    name: 'Gigi',
+    description: 'Bright and energetic female',
+    labels: { gender: 'female', age: 'young', language: 'en' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/jBpfuIE2acCO8z3wKNLl/3a7e4339-78b6-45b1-8b4c-0aa3e29e4f4e.mp3',
+  },
+  {
+    voice_id: 'TxGEqnHWrfWFTfGW9XjX',
+    name: 'Josh',
+    description: 'Deep and warm male voice',
+    labels: { gender: 'male', age: 'young', language: 'en' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/TxGEqnHWrfWFTfGW9XjX/c6431f82-0bf1-4a56-8488-77bb7fd23f45.mp3',
+  },
+  {
+    voice_id: 'pNInz6obpgDQGcFmaJgB',
+    name: 'Adam',
+    description: 'Professional male voice',
+    labels: { gender: 'male', age: 'middle_aged', language: 'en' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/pNInz6obpgDQGcFmaJgB/4e1b1f53-11e5-4b90-9d10-c57f8c728148.mp3',
+  },
+  {
+    voice_id: 'ErXwobaYiN019PkySvjV',
+    name: 'Antoni',
+    description: 'Friendly young male',
+    labels: { gender: 'male', age: 'young', language: 'en' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/ErXwobaYiN019PkySvjV/32e46c56-71fc-4f66-85c7-3ed54a211dd5.mp3',
+  },
+  {
+    voice_id: 'GBv7mTt0atIp3Br8iCZE',
+    name: 'Thomas',
+    description: 'Calm and clear male',
+    labels: { gender: 'male', age: 'middle_aged', language: 'en' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/GBv7mTt0atIp3Br8iCZE/17e8fb20-c79f-4116-a3cd-de57fb1dcfb2.mp3',
+  },
+]
+
+/** 일본어 추천 음성 목록 */
+export const JAPANESE_RECOMMENDED_VOICES = [
+  {
+    voice_id: 'XB0fDUnXU5powFXDhCwa',
+    name: 'Charlotte',
+    description: '若い女性、自然なトーン',
+    labels: { gender: 'female', age: 'young', language: 'ja' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/XB0fDUnXU5powFXDhCwa/942356dc-f10d-4d89-bda5-4f8505ee038b.mp3',
+  },
+  {
+    voice_id: 'EXAVITQu4vr4xnSDxMaL',
+    name: 'Bella',
+    description: '柔らかく温かい女性',
+    labels: { gender: 'female', age: 'young', language: 'ja' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/EXAVITQu4vr4xnSDxMaL/04a8d578-323e-4e2b-b247-fb524c2b4c38.mp3',
+  },
+  {
+    voice_id: '21m00Tcm4TlvDq8ikWAM',
+    name: 'Rachel',
+    description: 'プロフェッショナルな女性',
+    labels: { gender: 'female', age: 'middle_aged', language: 'ja' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/21m00Tcm4TlvDq8ikWAM/df6788f9-5c96-470d-8571-904e0f0de673.mp3',
+  },
+  {
+    voice_id: 'AZnzlk1XvdvUeBnXmlld',
+    name: 'Domi',
+    description: '明るく活発な女性',
+    labels: { gender: 'female', age: 'young', language: 'ja' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/AZnzlk1XvdvUeBnXmlld/69c5373f-0dc2-4efd-9232-a0140182c0a9.mp3',
+  },
+  {
+    voice_id: 'ErXwobaYiN019PkySvjV',
+    name: 'Antoni',
+    description: '若い男性、親しみやすいトーン',
+    labels: { gender: 'male', age: 'young', language: 'ja' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/ErXwobaYiN019PkySvjV/32e46c56-71fc-4f66-85c7-3ed54a211dd5.mp3',
+  },
+  {
+    voice_id: 'pNInz6obpgDQGcFmaJgB',
+    name: 'Adam',
+    description: 'プロフェッショナルな男性',
+    labels: { gender: 'male', age: 'middle_aged', language: 'ja' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/pNInz6obpgDQGcFmaJgB/4e1b1f53-11e5-4b90-9d10-c57f8c728148.mp3',
+  },
+]
+
+/** 중국어 추천 음성 목록 */
+export const CHINESE_RECOMMENDED_VOICES = [
+  {
+    voice_id: 'XB0fDUnXU5powFXDhCwa',
+    name: 'Charlotte',
+    description: '年轻女性，自然语调',
+    labels: { gender: 'female', age: 'young', language: 'zh' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/XB0fDUnXU5powFXDhCwa/942356dc-f10d-4d89-bda5-4f8505ee038b.mp3',
+  },
+  {
+    voice_id: 'EXAVITQu4vr4xnSDxMaL',
+    name: 'Bella',
+    description: '柔和温暖的女性',
+    labels: { gender: 'female', age: 'young', language: 'zh' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/EXAVITQu4vr4xnSDxMaL/04a8d578-323e-4e2b-b247-fb524c2b4c38.mp3',
+  },
+  {
+    voice_id: '21m00Tcm4TlvDq8ikWAM',
+    name: 'Rachel',
+    description: '专业女性声音',
+    labels: { gender: 'female', age: 'middle_aged', language: 'zh' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/21m00Tcm4TlvDq8ikWAM/df6788f9-5c96-470d-8571-904e0f0de673.mp3',
+  },
+  {
+    voice_id: 'AZnzlk1XvdvUeBnXmlld',
+    name: 'Domi',
+    description: '明亮活泼的女性',
+    labels: { gender: 'female', age: 'young', language: 'zh' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/AZnzlk1XvdvUeBnXmlld/69c5373f-0dc2-4efd-9232-a0140182c0a9.mp3',
+  },
+  {
+    voice_id: 'ErXwobaYiN019PkySvjV',
+    name: 'Antoni',
+    description: '年轻男性，友好的语调',
+    labels: { gender: 'male', age: 'young', language: 'zh' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/ErXwobaYiN019PkySvjV/32e46c56-71fc-4f66-85c7-3ed54a211dd5.mp3',
+  },
+  {
+    voice_id: 'pNInz6obpgDQGcFmaJgB',
+    name: 'Adam',
+    description: '专业男性声音',
+    labels: { gender: 'male', age: 'middle_aged', language: 'zh' },
+    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/pNInz6obpgDQGcFmaJgB/4e1b1f53-11e5-4b90-9d10-c57f8c728148.mp3',
+  },
+]
+
+/** 언어별 음성 목록 */
+export const VOICES_BY_LANGUAGE: Record<VoiceLanguage, typeof KOREAN_RECOMMENDED_VOICES> = {
+  ko: KOREAN_RECOMMENDED_VOICES,
+  en: ENGLISH_RECOMMENDED_VOICES,
+  ja: JAPANESE_RECOMMENDED_VOICES,
+  zh: CHINESE_RECOMMENDED_VOICES,
+}
 
 // ============================================================
 // API 함수
@@ -179,6 +350,88 @@ export function getKoreanRecommendedVoices(): Voice[] {
     ...voice,
     category: 'premade',
   }))
+}
+
+/**
+ * 특정 언어에 적합한 추천 음성 목록을 반환합니다.
+ *
+ * @param language - 언어 코드 (ko, en, ja, zh)
+ * @returns 해당 언어의 추천 음성 목록
+ */
+export function getVoicesByLanguage(language: VoiceLanguage): Voice[] {
+  const voices = VOICES_BY_LANGUAGE[language] || KOREAN_RECOMMENDED_VOICES
+  return voices.map((voice) => ({
+    ...voice,
+    category: 'premade',
+  }))
+}
+
+/**
+ * 모든 언어의 음성 목록을 반환합니다.
+ *
+ * @returns 모든 언어의 음성 목록 (언어별로 그룹화)
+ */
+export function getAllVoices(): { language: VoiceLanguage; label: string; voices: Voice[] }[] {
+  return (Object.keys(VOICES_BY_LANGUAGE) as VoiceLanguage[]).map((lang) => ({
+    language: lang,
+    label: LANGUAGE_LABELS[lang],
+    voices: getVoicesByLanguage(lang),
+  }))
+}
+
+/**
+ * 텍스트에서 언어를 감지합니다.
+ * 간단한 문자 범위 기반 감지 (서버/클라이언트 공용)
+ *
+ * @param text - 감지할 텍스트
+ * @returns 감지된 언어 코드
+ */
+export function detectLanguage(text: string): VoiceLanguage {
+  if (!text || text.trim().length === 0) return 'ko'
+
+  // 문자 범위별 카운트
+  let korean = 0
+  let english = 0
+  let japanese = 0
+  let chinese = 0
+
+  for (const char of text) {
+    const code = char.charCodeAt(0)
+    // 한글 (가-힣, ㄱ-ㅎ, ㅏ-ㅣ)
+    if ((code >= 0xAC00 && code <= 0xD7AF) || (code >= 0x1100 && code <= 0x11FF) || (code >= 0x3130 && code <= 0x318F)) {
+      korean++
+    }
+    // 영어 (A-Z, a-z)
+    else if ((code >= 0x41 && code <= 0x5A) || (code >= 0x61 && code <= 0x7A)) {
+      english++
+    }
+    // 히라가나 (ぁ-ゟ) & 카타카나 (゠-ヿ)
+    else if ((code >= 0x3040 && code <= 0x309F) || (code >= 0x30A0 && code <= 0x30FF)) {
+      japanese++
+    }
+    // 한자 (CJK Unified Ideographs) - 일본어/중국어 공용
+    else if (code >= 0x4E00 && code <= 0x9FFF) {
+      // 히라가나/카타카나가 있으면 일본어로, 아니면 중국어로
+      chinese++
+    }
+  }
+
+  // 히라가나/카타카나가 있으면 한자도 일본어로 간주
+  if (japanese > 0) {
+    japanese += chinese
+    chinese = 0
+  }
+
+  // 가장 많은 언어 선택
+  const max = Math.max(korean, english, japanese, chinese)
+  if (max === 0) return 'ko' // 기본값
+
+  if (korean === max) return 'ko'
+  if (english === max) return 'en'
+  if (japanese === max) return 'ja'
+  if (chinese === max) return 'zh'
+
+  return 'ko'
 }
 
 /**

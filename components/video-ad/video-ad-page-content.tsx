@@ -52,6 +52,22 @@ export function VideoAdPageContent() {
     fetchVideoAds()
   }, [fetchVideoAds])
 
+  // 진행 중인 상태의 영상들을 폴링
+  useEffect(() => {
+    // 진행 중인 상태인 영상들 필터링
+    const inProgressStatuses = ['GENERATING_SCRIPTS', 'GENERATING_AUDIO', 'IN_QUEUE', 'IN_PROGRESS']
+    const inProgressVideos = videoAds.filter(v => inProgressStatuses.includes(v.status))
+
+    if (inProgressVideos.length === 0) return
+
+    // 5초마다 목록 새로고침
+    const intervalId = setInterval(() => {
+      fetchVideoAds()
+    }, 5000)
+
+    return () => clearInterval(intervalId)
+  }, [videoAds, fetchVideoAds])
+
   const handleCreateVideoAd = () => {
     setShowTypeModal(true)
   }
@@ -62,13 +78,14 @@ export function VideoAdPageContent() {
   }
 
   const handleVideoClick = (video: VideoAd) => {
-    // DRAFT 상태면 마법사로 이동하여 이어서 진행
-    if (video.status === 'DRAFT' && video.category) {
+    // DRAFT 또는 생성 중 상태면 마법사로 이동하여 이어서 진행
+    const draftStatuses = ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO']
+    if (draftStatuses.includes(video.status) && video.category) {
       router.push(`/dashboard/video-ad/create?category=${video.category}&videoAdId=${video.id}`)
       return
     }
 
-    // 생성 중인 상태면 마법사의 생성 단계로 이동
+    // 영상 생성 중인 상태면 마법사의 생성 단계로 이동
     if ((video.status === 'IN_QUEUE' || video.status === 'IN_PROGRESS') && video.category) {
       router.push(`/dashboard/video-ad/create?category=${video.category}&videoAdId=${video.id}`)
       return
@@ -81,6 +98,8 @@ export function VideoAdPageContent() {
   const getStatusBadge = (status: string, wizardStep?: number | null) => {
     const statusConfig: Record<string, { label: string; className: string }> = {
       'DRAFT': { label: `임시저장 (${wizardStep || 1}단계)`, className: 'bg-orange-500/20 text-orange-500' },
+      'GENERATING_SCRIPTS': { label: '대본 생성 중', className: 'bg-indigo-500/20 text-indigo-500' },
+      'GENERATING_AUDIO': { label: '음성 생성 중', className: 'bg-pink-500/20 text-pink-500' },
       'PENDING': { label: t.videoAd?.status?.pending || '대기 중', className: 'bg-yellow-500/20 text-yellow-500' },
       'IN_QUEUE': { label: t.videoAd?.status?.inQueue || '큐 대기', className: 'bg-blue-500/20 text-blue-500' },
       'IN_PROGRESS': { label: t.videoAd?.status?.inProgress || '생성 중', className: 'bg-purple-500/20 text-purple-500' },
@@ -153,6 +172,10 @@ export function VideoAdPageContent() {
                 className={`relative group bg-card border rounded-xl overflow-hidden cursor-pointer transition-colors ${
                   video.status === 'DRAFT'
                     ? 'border-orange-500/50 hover:border-orange-500'
+                    : video.status === 'GENERATING_SCRIPTS'
+                    ? 'border-indigo-500/50 hover:border-indigo-500'
+                    : video.status === 'GENERATING_AUDIO'
+                    ? 'border-pink-500/50 hover:border-pink-500'
                     : 'border-border hover:border-primary/50'
                 }`}
               >
@@ -200,6 +223,36 @@ export function VideoAdPageContent() {
                         <div className="w-full h-full flex flex-col items-center justify-center">
                           <Edit3 className="w-8 h-8 text-orange-500 mb-2" />
                           <span className="text-sm text-orange-500 font-medium">작성 중</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : video.status === 'GENERATING_SCRIPTS' ? (
+                    // 대본 생성 중 상태
+                    <div className="w-full h-full relative flex items-center justify-center bg-indigo-500/10">
+                      <div className="flex flex-col items-center">
+                        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-2" />
+                        <span className="text-sm text-indigo-500 font-medium">대본 생성 중...</span>
+                      </div>
+                    </div>
+                  ) : video.status === 'GENERATING_AUDIO' ? (
+                    // 음성 생성 중 상태
+                    <div className="w-full h-full relative">
+                      {video.first_scene_image_url ? (
+                        <>
+                          <img
+                            src={video.first_scene_image_url}
+                            alt="첫 프레임"
+                            className="w-full h-full object-contain opacity-50"
+                          />
+                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
+                            <Loader2 className="w-8 h-8 text-pink-500 animate-spin mb-2" />
+                            <span className="text-sm text-pink-500 font-medium">음성 생성 중...</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full bg-pink-500/10">
+                          <Loader2 className="w-8 h-8 text-pink-500 animate-spin mb-2" />
+                          <span className="text-sm text-pink-500 font-medium">음성 생성 중...</span>
                         </div>
                       )}
                     </div>

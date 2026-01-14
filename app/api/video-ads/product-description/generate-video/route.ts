@@ -2,7 +2,7 @@
  * 제품 설명 영상 - 토킹 비디오 생성 API
  *
  * POST /api/video-ads/product-description/generate-video
- * - Infinitalk (from-audio) API로 토킹 영상 생성
+ * - WaveSpeed InfiniteTalk API (우선) 또는 Kie.ai Kling Avatar API (fallback)으로 토킹 영상 생성
  * - video_ads 레코드 생성 및 큐 제출
  */
 
@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { submitTalkingVideoToQueue } from '@/lib/kie/client'
+import { submitInfiniteTalkToQueue } from '@/lib/wavespeed/client'
 
 /** 제품 설명 영상 크레딧 비용 */
 const PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST = 10
@@ -83,22 +84,45 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Kling V1 Avatar API에 립싱크 영상 생성 요청
-    // 프롬프트: 말하는 사람의 자연스러운 모습
+    // 영상 생성 프롬프트
     const videoPrompt = 'A person speaking naturally to camera with subtle head movements, facial expressions, and gestures. Natural conversation style, maintaining eye contact. The person is talking about a product in an engaging way.'
 
-    const queueResponse = await submitTalkingVideoToQueue(
-      firstFrameUrl,
-      audioUrl,
-      videoPrompt
-    )
+    let requestId: string
+    let provider: 'wavespeed' | 'kie' = 'wavespeed'
+
+    // WaveSpeed InfiniteTalk 우선 시도
+    try {
+      console.log('WaveSpeed InfiniteTalk 시도 중...')
+      const queueResponse = await submitInfiniteTalkToQueue(
+        firstFrameUrl,
+        audioUrl,
+        videoPrompt,
+        '480p'
+      )
+      requestId = queueResponse.request_id
+      provider = 'wavespeed'
+      console.log('WaveSpeed InfiniteTalk 성공:', requestId)
+    } catch (wavespeedError) {
+      // WaveSpeed 실패 시 Kie.ai fallback
+      console.warn('WaveSpeed InfiniteTalk 실패, Kie.ai로 fallback:', wavespeedError)
+
+      const queueResponse = await submitTalkingVideoToQueue(
+        firstFrameUrl,
+        audioUrl,
+        videoPrompt
+      )
+      requestId = queueResponse.request_id
+      provider = 'kie'
+      console.log('Kie.ai fallback 성공:', requestId)
+    }
 
     // 요청 ID 저장 및 크레딧 차감
+    // provider 정보를 kie_request_id 필드에 prefix로 저장 (wavespeed: 또는 kie:)
     await prisma.$transaction([
       prisma.video_ads.update({
         where: { id: videoAd.id },
         data: {
-          kie_request_id: queueResponse.request_id,
+          kie_request_id: `${provider}:${requestId}`,
           status: 'IN_PROGRESS',
         },
       }),
@@ -112,7 +136,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       videoAdId: videoAd.id,
-      requestId: queueResponse.request_id,
+      requestId: requestId,
+      provider,
     })
   } catch (error) {
     console.error('영상 생성 요청 오류:', error)

@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useLanguage } from '@/contexts/language-context'
@@ -27,17 +27,24 @@ import {
   VolumeX,
   Maximize,
   RefreshCw,
+  MapPin,
+  Camera,
+  Mic,
+  Shirt,
+  Settings,
 } from 'lucide-react'
 
 interface VideoAdDetail {
   id: string
   status: string
+  category: string | null
   video_url: string | null
   thumbnail_url: string | null
   prompt: string | null
   prompt_expanded: string | null
   duration: number | null
   resolution: string | null
+  aspect_ratio: string | null
   video_width: number | null
   video_height: number | null
   video_fps: number | null
@@ -48,13 +55,31 @@ interface VideoAdDetail {
   error_message: string | null
   created_at: string
   completed_at: string | null
-  product?: {
+  // 추가 필드
+  script: string | null
+  script_style: string | null
+  voice_id: string | null
+  voice_name: string | null
+  camera_composition: string | null
+  location_prompt: string | null
+  first_scene_image_url: string | null
+  first_frame_prompt: string | null
+  outfit_id: string | null
+  ad_products?: {
     id: string
     name: string
     image_url: string | null
     rembg_image_url: string | null
+    description: string | null
+    brand: string | null
+    price: string | null
   }
-  avatar?: {
+  avatars?: {
+    id: string
+    name: string
+    image_url: string | null
+  }
+  avatar_outfits?: {
     id: string
     name: string
     image_url: string | null
@@ -74,9 +99,31 @@ export default function VideoAdDetailPage() {
   // 비디오 컨트롤 상태
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   // 폴링을 위한 상태
   const [isPolling, setIsPolling] = useState(false)
+
+  // 영상 메타데이터 로드 시 실제 길이 업데이트
+  const handleVideoLoadedMetadata = useCallback(async () => {
+    if (!videoRef.current || !videoAd) return
+
+    const actualDuration = videoRef.current.duration
+    // 실제 길이가 저장된 길이와 다르면 업데이트
+    if (actualDuration > 0 && (!videoAd.video_duration || Math.abs(actualDuration - videoAd.video_duration) > 0.5)) {
+      try {
+        await fetch(`/api/video-ads/${videoAd.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ video_duration: actualDuration }),
+        })
+        // 로컬 상태 업데이트
+        setVideoAd(prev => prev ? { ...prev, video_duration: actualDuration } : null)
+      } catch (error) {
+        console.error('영상 길이 업데이트 오류:', error)
+      }
+    }
+  }, [videoAd])
 
   const fetchVideoAd = useCallback(async () => {
     try {
@@ -162,31 +209,26 @@ export default function VideoAdDetailPage() {
   }
 
   const togglePlay = () => {
-    const video = document.querySelector('video')
-    if (video) {
+    if (videoRef.current) {
       if (isPlaying) {
-        video.pause()
+        videoRef.current.pause()
       } else {
-        video.play()
+        videoRef.current.play()
       }
       setIsPlaying(!isPlaying)
     }
   }
 
   const toggleMute = () => {
-    const video = document.querySelector('video')
-    if (video) {
-      video.muted = !isMuted
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted
       setIsMuted(!isMuted)
     }
   }
 
   const handleFullscreen = () => {
-    const video = document.querySelector('video')
-    if (video) {
-      if (video.requestFullscreen) {
-        video.requestFullscreen()
-      }
+    if (videoRef.current?.requestFullscreen) {
+      videoRef.current.requestFullscreen()
     }
   }
 
@@ -287,6 +329,7 @@ export default function VideoAdDetailPage() {
               {videoAd.status === 'COMPLETED' && videoAd.video_url ? (
                 <>
                   <video
+                    ref={videoRef}
                     src={videoAd.video_url}
                     className="w-full h-full object-contain"
                     controls={false}
@@ -294,6 +337,7 @@ export default function VideoAdDetailPage() {
                     onPlay={() => setIsPlaying(true)}
                     onPause={() => setIsPlaying(false)}
                     onEnded={() => setIsPlaying(false)}
+                    onLoadedMetadata={handleVideoLoadedMetadata}
                   />
                   {/* 커스텀 컨트롤 */}
                   <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
@@ -394,79 +438,116 @@ export default function VideoAdDetailPage() {
               </p>
             </div>
           )}
+
+          {/* 대본 (왼쪽 영역에 표시) */}
+          {videoAd.script && (
+            <div className="bg-card border border-border rounded-xl p-4">
+              <h3 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                대본
+              </h3>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                {videoAd.script}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* 오른쪽: 정보 패널 */}
         <div className="space-y-4">
           {/* 제품 정보 */}
-          {videoAd.product && (
+          {videoAd.ad_products && (
             <div className="bg-card border border-border rounded-xl p-4">
               <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                 <Package className="w-4 h-4" />
                 {videoAdT?.product || '제품'}
               </h3>
               <Link
-                href={`/dashboard/image-ad/product/${videoAd.product.id}`}
+                href={`/dashboard/ad-products/${videoAd.ad_products.id}`}
                 className="flex items-center gap-3 p-2 -m-2 rounded-lg hover:bg-secondary/50 transition-colors"
               >
-                {(videoAd.product.rembg_image_url || videoAd.product.image_url) && (
+                {(videoAd.ad_products.rembg_image_url || videoAd.ad_products.image_url) && (
                   <img
-                    src={videoAd.product.rembg_image_url || videoAd.product.image_url || ''}
-                    alt={videoAd.product.name}
+                    src={videoAd.ad_products.rembg_image_url || videoAd.ad_products.image_url || ''}
+                    alt={videoAd.ad_products.name}
                     className="w-12 h-12 object-contain rounded bg-secondary/30"
                   />
                 )}
-                <span className="text-foreground">{videoAd.product.name}</span>
+                <div>
+                  <span className="text-foreground block">{videoAd.ad_products.name}</span>
+                  {videoAd.ad_products.brand && (
+                    <span className="text-xs text-muted-foreground">{videoAd.ad_products.brand}</span>
+                  )}
+                </div>
               </Link>
             </div>
           )}
 
           {/* 아바타 정보 */}
-          {videoAd.avatar && (
+          {videoAd.avatars && (
             <div className="bg-card border border-border rounded-xl p-4">
               <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                 <User className="w-4 h-4" />
                 {videoAdT?.avatar || '아바타'}
               </h3>
               <Link
-                href={`/dashboard/avatar/${videoAd.avatar.id}`}
+                href={`/dashboard/avatar/${videoAd.avatars.id}`}
                 className="flex items-center gap-3 p-2 -m-2 rounded-lg hover:bg-secondary/50 transition-colors"
               >
-                {videoAd.avatar.image_url && (
+                {videoAd.avatars.image_url && (
                   <img
-                    src={videoAd.avatar.image_url}
-                    alt={videoAd.avatar.name}
+                    src={videoAd.avatars.image_url}
+                    alt={videoAd.avatars.name}
                     className="w-12 h-12 object-cover rounded"
                   />
                 )}
-                <span className="text-foreground">{videoAd.avatar.name}</span>
+                <span className="text-foreground">{videoAd.avatars.name}</span>
               </Link>
             </div>
           )}
 
-          {/* 영상 정보 */}
+          {/* 의상 정보 */}
+          {videoAd.avatar_outfits && (
+            <div className="bg-card border border-border rounded-xl p-4">
+              <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                <Shirt className="w-4 h-4" />
+                의상
+              </h3>
+              <div className="flex items-center gap-3">
+                {videoAd.avatar_outfits.image_url && (
+                  <img
+                    src={videoAd.avatar_outfits.image_url}
+                    alt={videoAd.avatar_outfits.name}
+                    className="w-12 h-12 object-cover rounded"
+                  />
+                )}
+                <span className="text-foreground">{videoAd.avatar_outfits.name}</span>
+              </div>
+            </div>
+          )}
+
+          {/* 영상 설정 */}
           <div className="bg-card border border-border rounded-xl p-4">
-            <h3 className="text-sm font-medium text-foreground mb-3">
-              {videoAdT?.videoInfo || '영상 정보'}
+            <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              영상 설정
             </h3>
             <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  {videoAdT?.duration || '길이'}
-                </span>
-                <span className="text-foreground">
-                  {videoAd.video_duration
-                    ? `${videoAd.video_duration.toFixed(1)}초`
-                    : videoAd.duration
-                      ? `${videoAd.duration}초`
-                      : '-'}
-                </span>
-              </div>
+              {/* 실제 길이 */}
+              {videoAd.video_duration && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    영상 길이
+                  </span>
+                  <span className="text-foreground">{videoAd.video_duration.toFixed(1)}초</span>
+                </div>
+              )}
+              {/* 해상도 */}
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground flex items-center gap-2">
                   <Monitor className="w-4 h-4" />
-                  {videoAdT?.resolution || '해상도'}
+                  해상도
                 </span>
                 <span className="text-foreground">
                   {videoAd.video_width && videoAd.video_height
@@ -474,16 +555,70 @@ export default function VideoAdDetailPage() {
                     : videoAd.resolution || '-'}
                 </span>
               </div>
+              {/* FPS */}
               {videoAd.video_fps && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">FPS</span>
                   <span className="text-foreground">{videoAd.video_fps}</span>
                 </div>
               )}
+              {/* 카메라 구도 */}
+              {videoAd.camera_composition && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground flex items-center gap-2">
+                    <Camera className="w-4 h-4" />
+                    카메라 구도
+                  </span>
+                  <span className="text-foreground">
+                    {(() => {
+                      const compositionLabels: Record<string, string> = {
+                        'auto': '자동',
+                        'selfie-high': '셀카 (위에서)',
+                        'selfie-front': '셀카 (정면)',
+                        'selfie-side': '셀카 (측면)',
+                        'tripod': '삼각대',
+                        'closeup': '클로즈업',
+                        'fullbody': '전신',
+                      }
+                      return compositionLabels[videoAd.camera_composition || ''] || videoAd.camera_composition
+                    })()}
+                  </span>
+                </div>
+              )}
+              {/* 음성 */}
+              {videoAd.voice_name && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground flex items-center gap-2">
+                    <Mic className="w-4 h-4" />
+                    음성
+                  </span>
+                  <span className="text-foreground">{videoAd.voice_name}</span>
+                </div>
+              )}
+              {/* 대본 스타일 */}
+              {videoAd.script_style && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    대본 스타일
+                  </span>
+                  <span className="text-foreground">
+                    {(() => {
+                      const styleLabels: Record<string, string> = {
+                        'professional': '전문적',
+                        'friendly': '친근함',
+                        'luxury': '고급스러움',
+                      }
+                      return styleLabels[videoAd.script_style || ''] || videoAd.script_style
+                    })()}
+                  </span>
+                </div>
+              )}
+              {/* 생성일 */}
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  {videoAdT?.createdAt || '생성일'}
+                  생성일
                 </span>
                 <span className="text-foreground">
                   {new Date(videoAd.created_at).toLocaleDateString()}
@@ -492,12 +627,25 @@ export default function VideoAdDetailPage() {
             </div>
           </div>
 
+          {/* 촬영 장소 */}
+          {videoAd.location_prompt && (
+            <div className="bg-card border border-border rounded-xl p-4">
+              <h3 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                촬영 장소
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {videoAd.location_prompt}
+              </p>
+            </div>
+          )}
+
           {/* 제품 정보 (입력한 내용) */}
           {videoAd.product_info && (
             <div className="bg-card border border-border rounded-xl p-4">
               <h3 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                 <FileText className="w-4 h-4" />
-                {videoAdT?.productInfo || '입력한 제품 정보'}
+                입력한 제품 정보
               </h3>
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                 {videoAd.product_info}

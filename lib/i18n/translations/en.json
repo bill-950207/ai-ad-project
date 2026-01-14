@@ -12,7 +12,7 @@
     "adWorkflow": "Ad Workflow",
     "avatarGeneration": "Avatar Management",
     "musicGeneration": "Ad Music Management",
-    "backgroundGeneration": "Ad Background Management",
+    "backgroundGeneration": "Product Photo Backgrounds",
     "adProducts": "Ad Products Management",
     "imageAd": "Image Ad",
     "videoAd": "Video Ad"
@@ -236,8 +236,76 @@
     "duration": "Duration"
   },
   "background": {
-    "title": "Background Generation",
-    "subtitle": "Create background images for your ads"
+    "title": "Product Photo Backgrounds",
+    "subtitle": "Create backgrounds for image ads (product photography)"
+  },
+  "adBackground": {
+    "title": "Product Photo Backgrounds",
+    "subtitle": "Create backgrounds for image ads (product photography)",
+    "createNew": "Create New Background",
+    "emptyList": "No backgrounds created yet",
+    "emptyDescription": "Create new backgrounds for your ads",
+    "name": "Background Name",
+    "namePlaceholder": "e.g., Spring Season Ad Background",
+    "selectMode": "Generation Mode",
+    "modeProduct": "Product-Based",
+    "modeOptions": "Options",
+    "modePrompt": "Prompt",
+    "selectProduct": "Select Product",
+    "noProducts": "No products registered. Please register a product first.",
+    "optional": "Optional",
+    "style": "Style",
+    "location": "Location",
+    "mood": "Mood",
+    "color": "Main Color",
+    "time": "Time of Day",
+    "promptInput": "Background Description",
+    "promptPlaceholder": "Describe the background you want. e.g., Warm-lit cafe table, marble floor with sunlight",
+    "promptHint": "AI will analyze your input and generate the optimal background image.",
+    "aspectRatio": "Aspect Ratio",
+    "cancel": "Cancel",
+    "generate": "Generate",
+    "generating": "Generating...",
+    "download": "Download",
+    "failed": "Generation Failed",
+    "styles": {
+      "modern": "Modern",
+      "natural": "Natural",
+      "minimal": "Minimal",
+      "luxurious": "Luxurious",
+      "industrial": "Industrial",
+      "vintage": "Vintage"
+    },
+    "locations": {
+      "studio": "Studio",
+      "outdoor": "Outdoor",
+      "home": "Home",
+      "cafe": "Cafe",
+      "office": "Office",
+      "nature": "Nature"
+    },
+    "moods": {
+      "bright": "Bright",
+      "warm": "Warm",
+      "cool": "Cool",
+      "dramatic": "Dramatic",
+      "soft": "Soft",
+      "professional": "Professional"
+    },
+    "colors": {
+      "white": "White",
+      "beige": "Beige",
+      "gray": "Gray",
+      "blue": "Blue",
+      "green": "Green",
+      "pink": "Pink"
+    },
+    "times": {
+      "day": "Day",
+      "night": "Night",
+      "sunset": "Sunset",
+      "sunrise": "Sunrise"
+    }
   },
   "imageAd": {
     "title": "Image Ad",

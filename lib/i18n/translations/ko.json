@@ -12,7 +12,7 @@
     "adWorkflow": "광고 워크플로우",
     "avatarGeneration": "아바타 관리",
     "musicGeneration": "광고음악 관리",
-    "backgroundGeneration": "광고 배경 관리",
+    "backgroundGeneration": "제품 촬영 배경",
     "adProducts": "광고 제품 관리",
     "imageAd": "이미지 광고",
     "videoAd": "영상 광고"
@@ -215,8 +215,76 @@
     }
   },
   "background": {
-    "title": "배경 생성",
-    "subtitle": "광고 배경 이미지를 생성하세요"
+    "title": "제품 촬영 배경",
+    "subtitle": "이미지 광고용 배경을 생성하세요 (제품 단독 촬영용)"
+  },
+  "adBackground": {
+    "title": "제품 촬영 배경",
+    "subtitle": "이미지 광고용 배경을 생성하세요 (제품 단독 촬영용)",
+    "createNew": "새 배경 생성",
+    "emptyList": "생성된 배경이 없습니다",
+    "emptyDescription": "새 배경을 생성하여 광고에 활용하세요",
+    "name": "배경 이름",
+    "namePlaceholder": "예: 봄 시즌 광고 배경",
+    "selectMode": "생성 방식",
+    "modeProduct": "제품 기반",
+    "modeOptions": "옵션 선택",
+    "modePrompt": "프롬프트",
+    "selectProduct": "제품 선택",
+    "noProducts": "등록된 제품이 없습니다. 제품을 먼저 등록해주세요.",
+    "optional": "선택",
+    "style": "스타일",
+    "location": "장소",
+    "mood": "분위기",
+    "color": "주요 색상",
+    "time": "시간대",
+    "promptInput": "배경 설명",
+    "promptPlaceholder": "원하는 배경을 자유롭게 설명해주세요. 예: 따뜻한 조명의 카페 테이블, 대리석 바닥에 햇빛이 비치는 모습",
+    "promptHint": "AI가 입력하신 내용을 분석하여 최적의 배경 이미지를 생성합니다.",
+    "aspectRatio": "화면 비율",
+    "cancel": "취소",
+    "generate": "생성하기",
+    "generating": "생성 중...",
+    "download": "다운로드",
+    "failed": "생성 실패",
+    "styles": {
+      "modern": "모던",
+      "natural": "내추럴",
+      "minimal": "미니멀",
+      "luxurious": "럭셔리",
+      "industrial": "인더스트리얼",
+      "vintage": "빈티지"
+    },
+    "locations": {
+      "studio": "스튜디오",
+      "outdoor": "야외",
+      "home": "집",
+      "cafe": "카페",
+      "office": "사무실",
+      "nature": "자연"
+    },
+    "moods": {
+      "bright": "밝은",
+      "warm": "따뜻한",
+      "cool": "시원한",
+      "dramatic": "드라마틱",
+      "soft": "부드러운",
+      "professional": "프로페셔널"
+    },
+    "colors": {
+      "white": "화이트",
+      "beige": "베이지",
+      "gray": "그레이",
+      "blue": "블루",
+      "green": "그린",
+      "pink": "핑크"
+    },
+    "times": {
+      "day": "낮",
+      "night": "밤",
+      "sunset": "노을",
+      "sunrise": "일출"
+    }
   },
   "imageAd": {
     "title": "이미지 광고",
