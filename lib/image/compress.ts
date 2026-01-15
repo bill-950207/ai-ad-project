@@ -1,0 +1,133 @@
+/**
+ * 이미지 압축 유틸리티
+ *
+ * WebP 형식으로 이미지를 압축하고 R2에 업로드하는 유틸리티 함수
+ * 원본과 압축본을 분리하여 저장합니다.
+ */
+
+import sharp from 'sharp'
+import { uploadBufferToR2 } from '@/lib/storage/r2'
+
+/** 압축 옵션 */
+interface CompressOptions {
+  quality?: number  // WebP 품질 (0-100, 기본: 85)
+}
+
+/** R2 업로드 결과 */
+export interface ImageUploadResult {
+  originalUrl: string    // 원본 이미지 URL
+  compressedUrl: string  // 압축 이미지 URL
+}
+
+/**
+ * 이미지 URL에서 이미지를 다운로드하여 Buffer로 반환
+ *
+ * @param imageUrl - 이미지 URL
+ * @returns 이미지 Buffer
+ */
+export async function fetchImageAsBuffer(imageUrl: string): Promise<Buffer> {
+  const response = await fetch(imageUrl)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch image: ${response.status}`)
+  }
+  return Buffer.from(await response.arrayBuffer())
+}
+
+/**
+ * 이미지를 WebP로 압축
+ *
+ * @param buffer - 이미지 Buffer
+ * @param options - 압축 옵션
+ * @returns 압축된 WebP Buffer
+ */
+export async function compressToWebp(
+  buffer: Buffer,
+  options: CompressOptions = {}
+): Promise<Buffer> {
+  const { quality = 85 } = options
+
+  return sharp(buffer)
+    .webp({ quality })
+    .toBuffer()
+}
+
+/**
+ * 이미지를 PNG로 변환 (원본 보존용)
+ *
+ * @param buffer - 이미지 Buffer
+ * @returns PNG Buffer
+ */
+export async function convertToPng(buffer: Buffer): Promise<Buffer> {
+  return sharp(buffer)
+    .png()
+    .toBuffer()
+}
+
+/**
+ * 외부 URL 이미지를 R2에 원본/압축본으로 저장
+ *
+ * @param imageUrl - 원본 이미지 URL
+ * @param folder - R2 저장 폴더 (예: 'image-ads', 'video-ads')
+ * @param id - 고유 식별자 (예: image ad ID)
+ * @param options - 압축 옵션
+ * @returns 원본 및 압축 이미지 URL
+ */
+export async function uploadExternalImageToR2(
+  imageUrl: string,
+  folder: string,
+  id: string,
+  options: CompressOptions = {}
+): Promise<ImageUploadResult> {
+  const timestamp = Date.now()
+
+  // 1. 이미지 다운로드
+  const imageBuffer = await fetchImageAsBuffer(imageUrl)
+
+  // 2. 원본 PNG로 변환 후 R2 업로드
+  const pngBuffer = await convertToPng(imageBuffer)
+  const originalKey = `${folder}/original/${id}_${timestamp}.png`
+  const originalUrl = await uploadBufferToR2(pngBuffer, originalKey, 'image/png')
+
+  // 3. WebP로 압축 후 R2 업로드
+  const webpBuffer = await compressToWebp(imageBuffer, options)
+  const compressedKey = `${folder}/compressed/${id}_${timestamp}.webp`
+  const compressedUrl = await uploadBufferToR2(webpBuffer, compressedKey, 'image/webp')
+
+  return {
+    originalUrl,
+    compressedUrl,
+  }
+}
+
+/**
+ * Buffer 이미지를 R2에 원본/압축본으로 저장
+ *
+ * @param buffer - 이미지 Buffer
+ * @param folder - R2 저장 폴더
+ * @param id - 고유 식별자
+ * @param options - 압축 옵션
+ * @returns 원본 및 압축 이미지 URL
+ */
+export async function uploadBufferImageToR2(
+  buffer: Buffer,
+  folder: string,
+  id: string,
+  options: CompressOptions = {}
+): Promise<ImageUploadResult> {
+  const timestamp = Date.now()
+
+  // 1. 원본 PNG로 변환 후 R2 업로드
+  const pngBuffer = await convertToPng(buffer)
+  const originalKey = `${folder}/original/${id}_${timestamp}.png`
+  const originalUrl = await uploadBufferToR2(pngBuffer, originalKey, 'image/png')
+
+  // 2. WebP로 압축 후 R2 업로드
+  const webpBuffer = await compressToWebp(buffer, options)
+  const compressedKey = `${folder}/compressed/${id}_${timestamp}.webp`
+  const compressedUrl = await uploadBufferToR2(webpBuffer, compressedKey, 'image/webp')
+
+  return {
+    originalUrl,
+    compressedUrl,
+  }
+}

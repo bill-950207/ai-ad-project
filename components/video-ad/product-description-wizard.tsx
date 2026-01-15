@@ -153,6 +153,7 @@ interface DraftData {
   avatar_id: string | null
   outfit_id: string | null
   avatar_image_url: string | null
+  ai_avatar_options: string | null  // AI 아바타 옵션 JSON
   product_id: string | null
   product_info: string | null
   location_prompt: string | null
@@ -212,8 +213,10 @@ export function ProductDescriptionWizard() {
   const [selectedScriptIndex, setSelectedScriptIndex] = useState<number>(0)
   const [editedScript, setEditedScript] = useState('')
   const [isEditingScript, setIsEditingScript] = useState(false)
-  const [firstFrameUrl, setFirstFrameUrl] = useState<string | null>(null)
-  const [firstFrameUrls, setFirstFrameUrls] = useState<string[]>([])  // 2개의 이미지 URL
+  const [firstFrameUrl, setFirstFrameUrl] = useState<string | null>(null)  // 선택된 압축 URL (표시용)
+  const [firstFrameOriginalUrl, setFirstFrameOriginalUrl] = useState<string | null>(null)  // 선택된 원본 URL (영상 생성용)
+  const [firstFrameUrls, setFirstFrameUrls] = useState<string[]>([])  // 2개의 압축 이미지 URL (표시용)
+  const [firstFrameOriginalUrls, setFirstFrameOriginalUrls] = useState<string[]>([])  // 2개의 원본 이미지 URL (영상 생성용)
   const [selectedFirstFrameIndex, setSelectedFirstFrameIndex] = useState<number>(0)  // 선택된 이미지 인덱스
   const [locationDescription, setLocationDescription] = useState<string>('')
   const [isGeneratingScripts, setIsGeneratingScripts] = useState(false)
@@ -390,6 +393,7 @@ export function ProductDescriptionWizard() {
           avatarId: selectedAvatarInfo?.avatarId,
           outfitId: selectedAvatarInfo?.outfitId,
           avatarImageUrl: selectedAvatarInfo?.imageUrl,
+          aiAvatarOptions: selectedAvatarInfo?.type === 'ai-generated' ? selectedAvatarInfo.aiOptions : undefined,
           productId: selectedProduct?.id,
           productInfo,
           locationPrompt,
@@ -495,8 +499,24 @@ export function ProductDescriptionWizard() {
 
     setDraftId(draft.id)
 
-    // Step 1 데이터
-    if (draft.avatar_id && draft.avatar_image_url) {
+    // Step 1 데이터 - 아바타 복원
+    if (draft.ai_avatar_options) {
+      // AI 아바타 옵션 복원
+      try {
+        const aiOptions = JSON.parse(draft.ai_avatar_options)
+        setSelectedAvatarInfo({
+          type: 'ai-generated',
+          avatarId: 'ai-generated',
+          avatarName: 'AI 생성 모델',
+          imageUrl: '',
+          displayName: 'AI 자동 생성',
+          aiOptions,
+        })
+      } catch (e) {
+        console.error('AI 아바타 옵션 파싱 오류:', e)
+      }
+    } else if (draft.avatar_id && draft.avatar_image_url) {
+      // 기존 아바타/의상 복원
       setSelectedAvatarInfo({
         type: draft.outfit_id ? 'outfit' : 'avatar',
         avatarId: draft.avatar_id,
@@ -732,6 +752,8 @@ export function ProductDescriptionWizard() {
           locationPrompt: locationPrompt.trim() || undefined,
           durationSeconds: duration,
           cameraComposition: cameraComposition !== 'auto' ? cameraComposition : undefined,
+          // AI 아바타 옵션 (AI 생성 아바타일 때만)
+          aiAvatarOptions: selectedAvatarInfo.type === 'ai-generated' ? selectedAvatarInfo.aiOptions : undefined,
         }),
       })
 
@@ -744,14 +766,18 @@ export function ProductDescriptionWizard() {
 
       const generatedScripts = data.scripts || []
       const generatedFirstFrameUrls: string[] = data.firstFrameUrls || (data.firstFrameUrl ? [data.firstFrameUrl] : [])
+      const generatedFirstFrameOriginalUrls: string[] = data.firstFrameOriginalUrls || generatedFirstFrameUrls  // 원본 URL (없으면 압축본 사용)
       const generatedFirstFrameUrl = generatedFirstFrameUrls[0] || null
+      const generatedFirstFrameOriginalUrl = generatedFirstFrameOriginalUrls[0] || null
       const generatedLocationDesc = data.locationDescription || ''
       const generatedFirstFramePrompt = data.firstFramePrompt || ''
       const generatedEditedScript = generatedScripts.length > 0 ? generatedScripts[0].content : ''
 
       setScripts(generatedScripts)
       setFirstFrameUrls(generatedFirstFrameUrls)
+      setFirstFrameOriginalUrls(generatedFirstFrameOriginalUrls)
       setFirstFrameUrl(generatedFirstFrameUrl)
+      setFirstFrameOriginalUrl(generatedFirstFrameOriginalUrl)
       setSelectedFirstFrameIndex(0)
       setLocationDescription(generatedLocationDesc)
       setFirstFramePrompt(generatedFirstFramePrompt)
@@ -857,14 +883,14 @@ export function ProductDescriptionWizard() {
       setIsGeneratingAudio(false)
       setGenerationStatus('영상을 생성 중입니다...')
 
-      // 영상 생성 요청
+      // 영상 생성 요청 (원본 이미지 URL 사용 - 압축본은 표시용으로만)
       const videoRes = await fetch('/api/video-ads/product-description/generate-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productId: selectedProduct?.id,
           avatarId: selectedAvatarInfo.avatarId,
-          firstFrameUrl,
+          firstFrameUrl: firstFrameOriginalUrl || firstFrameUrl,  // 원본 우선, 없으면 압축본 fallback
           audioUrl,
           script: editedScript,
           scriptStyle: scripts[selectedScriptIndex]?.style || 'custom',
@@ -1109,15 +1135,26 @@ export function ProductDescriptionWizard() {
             >
               {selectedAvatarInfo ? (
                 <div className="flex items-center gap-3">
-                  <img
-                    src={selectedAvatarInfo.imageUrl}
-                    alt={selectedAvatarInfo.displayName}
-                    className="w-10 h-14 object-cover rounded"
-                  />
+                  {selectedAvatarInfo.type === 'ai-generated' ? (
+                    // AI 생성 아바타인 경우 아이콘 표시
+                    <div className="w-10 h-14 rounded bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center">
+                      <Sparkles className="w-5 h-5 text-white" />
+                    </div>
+                  ) : (
+                    // 기존 아바타인 경우 이미지 표시
+                    <img
+                      src={selectedAvatarInfo.imageUrl}
+                      alt={selectedAvatarInfo.displayName}
+                      className="w-10 h-14 object-cover rounded"
+                    />
+                  )}
                   <div>
                     <span className="text-foreground block">{selectedAvatarInfo.displayName}</span>
                     {selectedAvatarInfo.type === 'outfit' && (
                       <span className="text-xs text-primary">의상 교체</span>
+                    )}
+                    {selectedAvatarInfo.type === 'ai-generated' && (
+                      <span className="text-xs text-purple-500">AI 자동 생성</span>
                     )}
                   </div>
                 </div>
@@ -1138,6 +1175,7 @@ export function ProductDescriptionWizard() {
             }}
             selectedAvatarId={selectedAvatarInfo?.avatarId}
             selectedOutfitId={selectedAvatarInfo?.outfitId}
+            selectedType={selectedAvatarInfo?.type}
           />
 
           {/* 제품 선택 (선택 사항) */}
@@ -1488,7 +1526,8 @@ export function ProductDescriptionWizard() {
                         key={index}
                         onClick={() => {
                           setSelectedFirstFrameIndex(index)
-                          setFirstFrameUrl(url)
+                          setFirstFrameUrl(url)  // 압축본 (표시용)
+                          setFirstFrameOriginalUrl(firstFrameOriginalUrls[index] || url)  // 원본 (영상 생성용)
                         }}
                         className={`relative aspect-[2/3] rounded-lg overflow-hidden border-2 transition-all ${
                           selectedFirstFrameIndex === index

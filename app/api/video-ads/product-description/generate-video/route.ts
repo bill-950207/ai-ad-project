@@ -54,6 +54,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Audio URL is required' }, { status: 400 })
     }
 
+    // AI 생성 아바타인지 확인 (avatarId가 'ai-generated'일 경우 DB에는 null 저장)
+    const isAiGeneratedAvatar = avatarId === 'ai-generated'
+    const dbAvatarId = isAiGeneratedAvatar ? null : avatarId
+
     // 크레딧 확인
     const profile = await prisma.profiles.findUnique({
       where: { id: user.id },
@@ -68,7 +72,7 @@ export async function POST(request: NextRequest) {
       data: {
         user_id: user.id,
         product_id: productId || null,
-        avatar_id: avatarId,
+        avatar_id: dbAvatarId,  // AI 생성 아바타일 경우 null
         category: 'productDescription',
         status: 'IN_QUEUE',
         duration: duration || 30,

@@ -1,0 +1,528 @@
+'use client'
+
+import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { useLanguage } from '@/contexts/language-context'
+import {
+  ChevronLeft,
+  Sparkles,
+  Loader2,
+  Package,
+  User,
+  Settings,
+  Image as ImageIcon,
+  Download,
+  ExternalLink,
+  Check,
+  Coins,
+} from 'lucide-react'
+import { buildPromptFromOptions } from '@/lib/image-ad/category-options'
+import { useImageAdWizard, AspectRatio, Quality } from './wizard-context'
+import { compressImage } from '@/lib/image/compress-client'
+
+// 가격 계산
+const calculateCredits = (quality: Quality, numImages: number): number => {
+  const baseCredits = quality === 'high' ? 30 : 20
+  return baseCredits * numImages
+}
+
+// 이미지 사이즈 매핑
+const getImageSize = (ratio: AspectRatio): '1024x1024' | '1536x1024' | '1024x1536' => {
+  switch (ratio) {
+    case '1:1': return '1024x1024'
+    case '16:9': return '1536x1024'
+    case '9:16': return '1024x1536'
+  }
+}
+
+export function WizardStep4() {
+  const router = useRouter()
+  const { t } = useLanguage()
+  const {
+    adType,
+    selectedProduct,
+    localImageFile,
+    localImageUrl,
+    selectedAvatarInfo,
+    referenceUrl,
+    categoryOptions,
+    customOptions,
+    additionalPrompt,
+    aspectRatio,
+    setAspectRatio,
+    quality,
+    setQuality,
+    numImages,
+    setNumImages,
+    isGenerating,
+    setIsGenerating,
+    generationProgress,
+    setGenerationProgress,
+    resultImages,
+    setResultImages,
+    resultAdIds,
+    setResultAdIds,
+    goToPrevStep,
+    resetWizard,
+  } = useImageAdWizard()
+
+  const [generationStartTime, setGenerationStartTime] = useState<number | null>(null)
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  const isWearingType = adType === 'wearing'
+
+  // 진행률 업데이트
+  useEffect(() => {
+    if (isGenerating && generationStartTime) {
+      progressIntervalRef.current = setInterval(() => {
+        const elapsed = (Date.now() - generationStartTime) / 1000
+        const baseTime = 60 // 예상 시간 60초
+        const progress = Math.min((elapsed / baseTime) * 100, 99)
+        setGenerationProgress(progress)
+      }, 500)
+    }
+
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current)
+      }
+    }
+  }, [isGenerating, generationStartTime, setGenerationProgress])
+
+  // 로컬 이미지 업로드
+  const uploadLocalImage = async (): Promise<string | null> => {
+    if (!localImageFile) return null
+
+    try {
+      const compressedFile = await compressImage(localImageFile, {
+        maxWidth: 1024,
+        maxHeight: 1024,
+        quality: 0.9,
+      })
+
+      const formData = new FormData()
+      formData.append('file', compressedFile)
+      formData.append('type', 'product')
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!res.ok) throw new Error('업로드 실패')
+
+      const { url } = await res.json()
+      return url
+    } catch (error) {
+      console.error('이미지 업로드 오류:', error)
+      return null
+    }
+  }
+
+  // 광고 생성
+  const handleGenerate = async () => {
+    setIsGenerating(true)
+    setResultImages([])
+    setGenerationStartTime(Date.now())
+    setGenerationProgress(0)
+
+    try {
+      // 로컬 이미지 업로드 (있는 경우)
+      let productImageUrl: string | undefined
+      if (localImageFile) {
+        productImageUrl = (await uploadLocalImage()) || undefined
+      }
+
+      // 프롬프트 생성
+      const productNameForPrompt = isWearingType && selectedProduct ? selectedProduct.name : undefined
+      const generatedPrompt = buildPromptFromOptions(adType, categoryOptions, additionalPrompt, customOptions, productNameForPrompt)
+
+      // API 요청
+      const requestBody = {
+        adType,
+        productId: selectedProduct?.id,
+        productImageUrl,
+        avatarIds: selectedAvatarInfo ? [selectedAvatarInfo.avatarId] : [],
+        outfitId: selectedAvatarInfo?.outfitId,
+        prompt: generatedPrompt,
+        imageSize: getImageSize(aspectRatio),
+        quality,
+        numImages,
+        referenceStyleImageUrl: referenceUrl,
+        aiAvatarOptions: selectedAvatarInfo?.type === 'ai-generated' ? selectedAvatarInfo.aiOptions : undefined,
+      }
+
+      const createRes = await fetch('/api/image-ads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      })
+
+      if (!createRes.ok) {
+        const error = await createRes.json()
+        throw new Error(error.error || '생성 요청 실패')
+      }
+
+      const { requestIds, imageAdIds } = await createRes.json()
+
+      // 생성된 광고 ID 저장
+      if (imageAdIds && imageAdIds.length > 0) {
+        setResultAdIds(imageAdIds)
+      }
+
+      // 폴링
+      const pollInterval = 1000
+      const maxAttempts = 90
+
+      const pollSingleStatus = async (requestId: string): Promise<string | null> => {
+        let attempts = 0
+
+        const poll = async (): Promise<string | null> => {
+          const statusRes = await fetch(`/api/image-ads/status/${requestId}`)
+          if (!statusRes.ok) {
+            throw new Error('상태 확인 실패')
+          }
+
+          const status = await statusRes.json()
+
+          if (status.status === 'COMPLETED') {
+            return status.imageUrl || null
+          } else if (status.status === 'FAILED') {
+            console.error(`이미지 생성 실패 (${requestId}):`, status.error)
+            return null
+          }
+
+          attempts++
+          if (attempts >= maxAttempts) {
+            console.error(`이미지 생성 시간 초과 (${requestId})`)
+            return null
+          }
+
+          await new Promise(resolve => setTimeout(resolve, pollInterval))
+          return poll()
+        }
+
+        return poll()
+      }
+
+      const results = await Promise.all(requestIds.map(pollSingleStatus))
+      const imageUrls = results.filter((url): url is string => url !== null)
+
+      if (imageUrls.length === 0) {
+        throw new Error('모든 이미지 생성 실패')
+      }
+
+      setResultImages(imageUrls)
+      setGenerationProgress(100)
+    } catch (error) {
+      console.error('생성 오류:', error)
+      alert(error instanceof Error ? error.message : '생성 중 오류가 발생했습니다')
+    } finally {
+      setIsGenerating(false)
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current)
+      }
+    }
+  }
+
+  // 새로 만들기
+  const handleCreateNew = () => {
+    resetWizard()
+  }
+
+  // 비율 옵션
+  const ratioOptions: { ratio: AspectRatio; label: string; width: string; height: string }[] = [
+    { ratio: '1:1', label: '정사각형', width: 'w-8', height: 'h-8' },
+    { ratio: '16:9', label: '가로형', width: 'w-10', height: 'h-6' },
+    { ratio: '9:16', label: '세로형', width: 'w-6', height: 'h-10' },
+  ]
+
+  // 퀄리티 옵션
+  const qualityOptions: { quality: Quality; label: string; description: string }[] = [
+    { quality: 'medium', label: '보통', description: '빠른 생성' },
+    { quality: 'high', label: '높음', description: '고품질' },
+  ]
+
+  // 생성 결과 화면
+  if (resultImages.length > 0) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6 pt-8">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-2">광고 이미지 생성 완료!</h2>
+          <p className="text-muted-foreground">
+            {resultImages.length}개의 이미지가 생성되었습니다
+          </p>
+        </div>
+
+        <div className={`grid gap-4 ${resultImages.length === 1 ? 'grid-cols-1 max-w-md mx-auto' : 'grid-cols-2'}`}>
+          {resultImages.map((url, index) => (
+            <div key={index} className="relative group">
+              <div className="bg-secondary/30 rounded-xl overflow-hidden">
+                <img
+                  src={url}
+                  alt={`생성된 이미지 ${index + 1}`}
+                  className="w-full h-auto"
+                />
+              </div>
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-3">
+                <a
+                  href={url}
+                  download={`ad-image-${index + 1}.png`}
+                  className="p-3 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+                >
+                  <Download className="w-5 h-5 text-white" />
+                </a>
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-3 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+                >
+                  <ExternalLink className="w-5 h-5 text-white" />
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap justify-center gap-3 pt-4">
+          <button
+            onClick={handleCreateNew}
+            className="px-6 py-3 rounded-xl font-medium border border-border hover:bg-secondary/50 transition-colors"
+          >
+            새로운 광고 만들기
+          </button>
+          {resultAdIds.length > 0 && (
+            <button
+              onClick={() => router.push(`/dashboard/image-ad/${resultAdIds[0]}`)}
+              className="px-6 py-3 rounded-xl font-medium border border-primary text-primary hover:bg-primary/10 transition-colors"
+            >
+              광고 상세 보기
+            </button>
+          )}
+          <button
+            onClick={() => router.push('/dashboard/image-ad')}
+            className="px-6 py-3 rounded-xl font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            광고 목록으로
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // 생성 중 화면
+  if (isGenerating) {
+    return (
+      <div className="max-w-xl mx-auto">
+        <div className="bg-card border border-border rounded-xl p-8">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Loader2 className="w-10 h-10 text-primary animate-spin" />
+            </div>
+            <h2 className="text-xl font-bold text-foreground mb-2">광고 이미지 생성 중</h2>
+            <p className="text-muted-foreground">
+              AI가 {numImages}개의 이미지를 생성하고 있습니다...
+            </p>
+          </div>
+
+          {/* 프로그레스 바 */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">진행률</span>
+              <span className="font-medium text-foreground">{Math.round(generationProgress)}%</span>
+            </div>
+            <div className="h-3 bg-secondary rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-300"
+                style={{ width: `${generationProgress}%` }}
+              />
+            </div>
+            {generationProgress >= 99 && (
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                거의 완료되었습니다...
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // 설정 화면
+  return (
+    <div className="max-w-3xl mx-auto space-y-6">
+      {/* 미리보기 요약 */}
+      <div className="bg-card border border-border rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4">생성 미리보기</h2>
+        <div className="grid grid-cols-2 gap-4">
+          {/* 제품 */}
+          <div className="flex items-center gap-3 p-3 bg-secondary/30 rounded-lg">
+            <div className="w-12 h-12 bg-secondary rounded-lg overflow-hidden flex items-center justify-center">
+              {(selectedProduct?.rembg_image_url || selectedProduct?.image_url || localImageUrl) ? (
+                <img
+                  src={selectedProduct?.rembg_image_url || selectedProduct?.image_url || localImageUrl || ''}
+                  alt="제품"
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <Package className="w-5 h-5 text-muted-foreground" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground">제품</p>
+              <p className="text-sm font-medium text-foreground truncate">
+                {selectedProduct?.name || '직접 업로드'}
+              </p>
+            </div>
+          </div>
+
+          {/* 아바타 */}
+          <div className="flex items-center gap-3 p-3 bg-secondary/30 rounded-lg">
+            <div className="w-12 h-12 bg-secondary rounded-lg overflow-hidden flex items-center justify-center">
+              {selectedAvatarInfo ? (
+                <img
+                  src={selectedAvatarInfo.imageUrl}
+                  alt="아바타"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-5 h-5 text-muted-foreground" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground">아바타</p>
+              <p className="text-sm font-medium text-foreground truncate">
+                {selectedAvatarInfo?.displayName || '선택 안함'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 이미지 비율 */}
+      <div className="bg-card border border-border rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <ImageIcon className="w-5 h-5" />
+          이미지 비율
+        </h2>
+        <div className="grid grid-cols-3 gap-3">
+          {ratioOptions.map(({ ratio, label, width, height }) => (
+            <button
+              key={ratio}
+              onClick={() => setAspectRatio(ratio)}
+              className={`flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                aspectRatio === ratio
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/50'
+              }`}
+            >
+              <div
+                className={`border-2 rounded ${width} ${height} ${
+                  aspectRatio === ratio ? 'border-primary' : 'border-muted-foreground'
+                }`}
+              />
+              <div className="text-center">
+                <p className={`text-sm font-medium ${aspectRatio === ratio ? 'text-primary' : 'text-foreground'}`}>
+                  {ratio}
+                </p>
+                <p className="text-xs text-muted-foreground">{label}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 퀄리티 & 개수 */}
+      <div className="bg-card border border-border rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Settings className="w-5 h-5" />
+          생성 옵션
+        </h2>
+
+        <div className="space-y-4">
+          {/* 퀄리티 */}
+          <div>
+            <label className="text-sm font-medium text-foreground mb-2 block">퀄리티</label>
+            <div className="grid grid-cols-2 gap-3">
+              {qualityOptions.map(({ quality: q, label, description }) => (
+                <button
+                  key={q}
+                  onClick={() => setQuality(q)}
+                  className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all ${
+                    quality === q
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/50'
+                  }`}
+                >
+                  <p className={`font-medium ${quality === q ? 'text-primary' : 'text-foreground'}`}>
+                    {label}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 생성 개수 */}
+          <div>
+            <label className="text-sm font-medium text-foreground mb-2 block">생성 개수</label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((num) => (
+                <button
+                  key={num}
+                  onClick={() => setNumImages(num)}
+                  className={`flex-1 py-3 rounded-xl border-2 font-medium transition-all ${
+                    numImages === num
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-border hover:border-primary/50 text-foreground'
+                  }`}
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 가격 및 생성 */}
+      <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <Coins className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">예상 크레딧</p>
+              <p className="text-2xl font-bold text-primary">
+                {calculateCredits(quality, numImages)} 크레딧
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleGenerate}
+            className="flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl"
+          >
+            <Sparkles className="w-5 h-5" />
+            광고 생성하기
+          </button>
+        </div>
+      </div>
+
+      {/* 이전 버튼 */}
+      <div className="flex justify-start pt-4">
+        <button
+          onClick={goToPrevStep}
+          className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium border border-border hover:bg-secondary/50 transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5" />
+          이전 단계
+        </button>
+      </div>
+    </div>
+  )
+}

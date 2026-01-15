@@ -205,6 +205,7 @@ export interface ImageAdPromptInput {
   productImageUrl?: string               // 제품 이미지 URL
   avatarImageUrls?: string[]             // 아바타 이미지 URL 배열
   outfitImageUrl?: string                // 의상 이미지 URL (wearing 타입)
+  referenceStyleImageUrl?: string        // 참조 스타일 이미지 URL (분위기/스타일만 참조)
   selectedOptions: Record<string, string> // 사용자 선택 옵션
   additionalPrompt?: string              // 추가 프롬프트
 }
@@ -213,6 +214,35 @@ export interface ImageAdPromptInput {
 export interface ImageAdPromptResult {
   optimizedPrompt: string     // Seedream 4.5 최적화 프롬프트 (영어)
   koreanDescription: string   // 한국어 설명
+}
+
+/** 참조 스타일 이미지 분석 입력 */
+export interface ReferenceStyleAnalysisInput {
+  imageUrl: string            // 참조 이미지 URL
+  adType: ImageAdType         // 현재 선택된 광고 유형
+  availableOptions: {         // 현재 광고 유형에서 사용 가능한 옵션 목록
+    key: string
+    options: string[]
+  }[]
+}
+
+/** 분석된 옵션 값 (프리셋 또는 커스텀) */
+export interface AnalyzedOptionValue {
+  key: string                 // 옵션 그룹 키 (예: 'pose', 'background')
+  type: 'preset' | 'custom'   // 프리셋 선택 또는 직접 입력
+  value: string               // 선택된 프리셋 키 또는 커스텀 텍스트
+  customText?: string         // 커스텀인 경우 상세 설명
+  confidence: number          // 확신도 (0-1)
+}
+
+/** 참조 스타일 이미지 분석 결과 */
+export interface ReferenceStyleAnalysisResult {
+  analyzedOptions: AnalyzedOptionValue[]  // 분석된 옵션 값들
+  overallStyle: string        // 전체적인 스타일 설명 (한국어)
+  suggestedPrompt: string     // 추가 프롬프트 제안 (한국어)
+  recommendedAdType?: ImageAdType  // 이미지에 가장 적합한 광고 유형
+  adTypeMatchConfidence?: number   // 추천 광고 유형 확신도 (0-1)
+  adTypeMatchReason?: string       // 추천 이유 (한국어)
 }
 
 /** 첫 프레임 이미지 프롬프트 생성 입력 */
@@ -1007,7 +1037,13 @@ ByteDance의 Seedream 4.5 이미지 생성 모델에 최적화된 프롬프트�
 - 환경: 실제 장소의 디테일 (가구, 소품, 창문 등)을 구체적으로 묘사`
 
   const prompt = `당신은 Seedream 4.5 이미지 생성 모델을 위한 프롬프트 전문가입니다.
-제품 설명 영상의 첫 프레임 이미지 생성을 위한 최고 품질의 프롬프트를 작성해주세요.
+**제품 설명 토킹 영상의 첫 프레임** 이미지 생성을 위한 프롬프트를 작성해주세요.
+
+⚠️ 중요: 이것은 정적인 광고 포스터가 아닙니다!
+- 제품을 설명하는 토킹 영상의 시작 장면입니다
+- 모델이 곧 카메라를 향해 말을 시작할 것 같은 자연스러운 순간을 포착해야 합니다
+- 광고 포스터처럼 과장된 포즈나 텍스트 오버레이 없이 자연스럽게
+- UGC/인플루언서 영상 스타일로, 친근하고 편안한 느낌
 
 ${seedreamGuide}
 
@@ -1022,12 +1058,12 @@ ${cameraSection}
 
 ${imageReferenceSection}
 
-요구사항:
-1. 아바타가 카메라를 정면으로 바라보며 말하기 시작하는 포즈
+요구사항 (토킹 영상 첫 프레임):
+1. 아바타가 카메라를 정면으로 바라보며 막 말을 시작하려는 자연스러운 표정 (밝고 친근한 미소)
 2. 제품을 양손으로 들거나 옆에 자연스럽게 배치 (제품 특성에 맞게)
-3. 세로 비율(9:16) 구도
-4. 자연스럽고 전문적인 조명
-5. 상업 광고 품질의 포토리얼리스틱 이미지
+3. 세로 비율(9:16) 구도 - 영상용
+4. 유튜브/SNS 영상 촬영에 어울리는 자연스러운 조명
+5. UGC/인플루언서 영상 스타일의 포토리얼리스틱 이미지 (광고 포스터 스타일 금지)
 ${input.cameraComposition ? `6. 지정된 카메라 구도(${input.cameraComposition})를 반드시 반영` : ''}
 ${isSelfieMode ? `7. [필수] 셀피 구도이지만 카메라/스마트폰/손이 화면에 절대 보이지 않아야 함. 모델의 양손은 제품을 들고 있거나 자연스러운 포즈.` : ''}
 
@@ -1299,12 +1335,21 @@ export async function generateImageAdPrompt(input: ImageAdPromptInput): Promise<
 - 설명: ${input.productDescription || '없음'}`
     : '제품 정보: 첨부된 이미지 참고'
 
+  // 이미지 첨부 순서 계산
+  let imageIndex = 1
+  const productImageIndex = input.productImageUrl ? imageIndex++ : null
+  const avatarImageIndices = input.avatarImageUrls?.length ? Array.from({ length: input.avatarImageUrls.length }, () => imageIndex++) : []
+  const outfitImageIndex = input.outfitImageUrl ? imageIndex++ : null
+  const referenceStyleImageIndex = input.referenceStyleImageUrl ? imageIndex++ : null
+
   // 이미지 참조 안내
   const imageReferenceSection = `
-이미지 분석 안내:
-${input.productImageUrl ? '- 제품 이미지: 제품의 색상, 형태, 질감, 디자인을 정확히 묘사해야 합니다.' : ''}
-${input.avatarImageUrls?.length ? `- 모델 이미지 ${input.avatarImageUrls.length}장: 모델의 외모, 피부톤, 헤어스타일, 표정을 정확히 묘사해야 합니다.` : ''}
-${input.outfitImageUrl ? '- 의상 이미지: 의상의 색상, 스타일, 디테일을 정확히 묘사해야 합니다.' : ''}`
+첨부된 이미지 분석 안내:
+${productImageIndex ? `- ${productImageIndex}번째 이미지 (제품): 제품의 색상, 형태, 질감, 디자인을 정확히 묘사해야 합니다.` : ''}
+${avatarImageIndices.length ? `- ${avatarImageIndices.join(', ')}번째 이미지 (모델 ${avatarImageIndices.length}장): 모델의 외모, 피부톤, 헤어스타일, 표정을 정확히 묘사해야 합니다.` : ''}
+${outfitImageIndex ? `- ${outfitImageIndex}번째 이미지 (의상): 의상의 색상, 스타일, 디테일을 정확히 묘사해야 합니다.` : ''}
+${referenceStyleImageIndex ? `- ${referenceStyleImageIndex}번째 이미지 (참조 스타일): ⚠️ 이 이미지는 분위기, 색감, 조명, 구도 스타일만 참조합니다.
+  ※ 중요: 참조 스타일 이미지의 제품이나 모델은 절대 사용하지 마세요! 오직 스타일 요소(색감 팔레트, 조명 방향/강도, 분위기, 구도, 배경 스타일)만 추출하여 프롬프트에 반영하세요.` : ''}`
 
   const prompt = `당신은 Seedream 4.5 이미지 생성 모델을 위한 광고 프롬프트 전문가입니다.
 최고 품질의 상업 광고 이미지를 생성하기 위한 프롬프트를 작성해주세요.
@@ -1332,16 +1377,75 @@ ByteDance의 Seedream 4.5 이미지 편집/합성 모델에 최적화된 프롬�
 - comparison: 나란히 배치, 차이점 부각
 - seasonal: 계절 분위기, 테마 장식, 특별한 무드
 
-포토리얼리즘 필수 요소:
-- 피부: "natural skin texture with subtle imperfections, realistic pores"
-- 조명: 방향성 포함 (예: "soft natural daylight from large window on the left")
-- 눈: "realistic eye reflections with catchlights"
+포토리얼리즘 필수 요소 (AI 생성 티가 나지 않도록 반드시 포함):
+- 카메라 스펙: "Shot on [렌즈mm] lens at f/[조리개값]" (예: "Shot on 35mm lens at f/2.8", "Shot on 85mm lens at f/1.8")
+- 피부: "natural skin texture with visible pores and subtle imperfections" (매끄럽지 않은 자연스러운 피부)
+- 눈: "realistic eye reflections with catchlights" (눈에 빛 반사)
+- 조명 방향: "soft natural daylight from [방향]" (예: "streaming from a side window", "from large window on the left")
 - 머리카락: "individual hair strands catching light naturally"
+- 품질: "Hyperrealistic photograph, 8K RAW quality"
+
+프롬프트 예시:
+"[인종/외모] from the reference image looks directly into the camera from a [앵글] angle, holding the product from the reference image near her face. She is in a [장소] with [조명 설명]. Shot on [렌즈]mm lens at f/[조리개], showing natural skin texture with visible pores and realistic eye reflections. Hyperrealistic photograph, 8K RAW quality."
+
+제품 로고/라벨 보존 (중요):
+- 참조 이미지에 있는 제품의 로고, 라벨, 브랜드 마크는 반드시 그대로 유지
+- "Preserve all existing logos, labels, and brand marks on the product exactly as shown in the reference image"
+- 제품의 패키지 디자인, 라벨 텍스트, 브랜드 로고는 원본 그대로 표현
 
 절대 금지:
-- 텍스트, 글자, 로고, 워터마크 포함
-- "text", "letters", "words", "logo", "watermark" 등 문자 관련 표현
-- 브랜드명 직접 언급 (참조 이미지로 대체)
+- 새로운 텍스트, 워터마크, 오버레이 추가
+- 이미지에 존재하지 않는 새로운 글자나 숫자 생성
+- 브랜드명을 텍스트로 직접 추가 (참조 이미지에 있는 것만 유지)
+
+=== 참조 스타일 이미지 처리 (해당 시) - 매우 중요! ===
+
+참조 스타일 이미지가 제공된 경우, 생성되는 이미지가 참조 이미지와 **시각적으로 매우 유사하게** 느껴지도록 해야 합니다.
+
+🔍 1. 참조 이미지에서 다음 스타일 요소를 **상세하게** 분석하고 추출합니다:
+
+   [색상 분석 - Color Analysis]
+   - 지배적인 색상 (dominant colors): 이미지에서 가장 많이 차지하는 색상들
+   - 색상 온도 (color temperature): warm/cool/neutral - 구체적인 온도감
+   - 채도 수준 (saturation): 높음/중간/낮음/음소거된 톤
+   - 대비 수준 (contrast): 높은 대비/낮은 대비/부드러운 대비
+   - 색상 그레이딩 (color grading): 특정 색상 쪽으로 틸트된 느낌 (예: 청록색 그림자, 오렌지빛 하이라이트)
+   - 검정색 수준 (black levels): 깊은 검정/들린 검정/밀키한 그림자
+
+   [조명 분석 - Lighting Analysis]
+   - 광원 방향: 정면/측면/후면/상단/하단 (구체적 각도)
+   - 광원 유형: 자연광/인공광/스튜디오/창문광
+   - 조명 품질: hard/soft - 그림자의 경계가 날카로운지 부드러운지
+   - 그림자 특성: 그림자의 깊이, 색상, 부드러움
+   - 하이라이트 특성: 스페큘러 하이라이트의 강도와 위치
+   - 광비 (lighting ratio): 밝은 부분과 어두운 부분의 비율
+
+   [분위기 분석 - Mood/Atmosphere]
+   - 전체적인 무드: 따뜻한/차가운/고급스러운/캐주얼/드라마틱/미니멀
+   - 감성적 톤: 행복한/차분한/에너지틱/로맨틱/프로페셔널
+   - 시각적 밀도: 복잡한/심플한/미니멀
+
+   [구도 분석 - Composition]
+   - 여백 사용: 여백이 많은/빽빽한/균형잡힌
+   - 주체 배치: 중앙/삼등분/대칭/비대칭
+   - 피사계 심도: 얕은/깊은 - 배경 흐림 정도
+
+   [텍스처 분석 - Texture/Finish]
+   - 전체적인 질감: 매끈한/입자감 있는/필름 그레인
+   - 선명도: 날카로운/부드러운 포커스
+
+2. ⭐ 추출된 스타일을 프롬프트에 **매우 구체적으로** 통합합니다:
+
+   나쁜 예: "warm lighting with nice colors"
+   좋은 예: "warm golden hour color palette with orange-tinted highlights and lifted shadows creating a nostalgic film-like look, soft diffused lighting from the left at 45-degree angle with gentle wrap-around fill, low contrast with muted saturation reminiscent of Kodak Portra 400 film"
+
+3. 반드시 프롬프트에 포함할 스타일 문구 형식:
+   "[색온도] color palette with [색상 특성], [조명 방향] lighting creating [그림자 특성], [대비 수준] contrast with [채도 특성], [전체 무드] atmosphere"
+
+4. ⚠️ 절대 금지:
+   - 참조 이미지의 제품, 모델, 구체적인 피사체를 프롬프트에 포함하지 마세요
+   - 참조 이미지에 있는 특정 브랜드, 로고, 텍스트를 복사하지 마세요
+   - 오직 추상적인 스타일/분위기 요소만 추출하여 사용하세요
 
 === 생성 요청 ===
 
@@ -1358,7 +1462,9 @@ ${imageReferenceSection}
 위 정보를 바탕으로 Seedream 4.5에 최적화된 영어 프롬프트를 생성해주세요.
 프롬프트는 첨부된 참조 이미지들의 요소를 조합하여 새로운 광고 이미지를 만들도록 해야 합니다.
 
-중요: 이미지에 텍스트나 글자가 절대 포함되지 않도록 "Do not include any text, letters, words, numbers, or typography in the image." 문구를 프롬프트에 반드시 포함하세요.`
+중요:
+1. 제품의 기존 로고/라벨 보존을 위해 "Preserve all existing logos, labels, and brand marks on the product exactly as shown in the reference image." 문구를 반드시 포함하세요.
+2. 새로운 텍스트 추가 방지를 위해 "Do not add any new text, watermarks, or overlays that are not present in the original reference image." 문구를 포함하세요.`
 
   const config: GenerateContentConfig = {
     thinkingConfig: {
@@ -1371,7 +1477,7 @@ ${imageReferenceSection}
       properties: {
         optimizedPrompt: {
           type: Type.STRING,
-          description: 'Seedream 4.5 최적화 영어 프롬프트 (50-100 단어, 텍스트 금지 문구 필수 포함)',
+          description: 'Seedream 4.5 최적화 영어 프롬프트 (50-100 단어, 제품 로고 보존 문구와 새 텍스트 금지 문구 필수 포함)',
         },
         koreanDescription: {
           type: Type.STRING,
@@ -1425,6 +1531,19 @@ ${imageReferenceSection}
     }
   }
 
+  // Reference style image (for style/mood reference only)
+  if (input.referenceStyleImageUrl) {
+    const imageData = await fetchImageAsBase64(input.referenceStyleImageUrl)
+    if (imageData) {
+      parts.push({
+        inlineData: {
+          mimeType: imageData.mimeType,
+          data: imageData.base64,
+        },
+      })
+    }
+  }
+
   // Add text prompt
   parts.push({ text: prompt })
 
@@ -1439,22 +1558,650 @@ ${imageReferenceSection}
   try {
     return JSON.parse(responseText) as ImageAdPromptResult
   } catch {
-    // Fallback response based on ad type
+    // Fallback response based on ad type (enhanced photorealism + preserve product logos)
+    const logoPreserve = 'Preserve all existing logos, labels, and brand marks on the product exactly as shown in the reference image. Do not add any new text, watermarks, or overlays that are not present in the original reference image.'
     const fallbackPrompts: Record<ImageAdType, string> = {
-      productOnly: 'Professional product photography of the product from the reference image on a clean white studio background. Soft diffused lighting from above creates subtle shadows and highlights product details. Commercial advertisement quality with sharp focus. Do not include any text, letters, words, numbers, or typography in the image. Hyperrealistic photograph, 8K quality.',
-      holding: 'The model from the reference image naturally holds the product from the reference, presenting it to camera with a warm genuine smile. Natural skin texture with subtle imperfections, realistic eye reflections with catchlights. Soft studio lighting from the left creates gentle shadows. Medium shot composition. Do not include any text, letters, words, numbers, or typography in the image. Hyperrealistic photograph, 8K quality.',
-      using: 'The model from the reference image actively uses and demonstrates the product from the reference in a natural setting. Genuine expression showing satisfaction. Natural skin texture with realistic pores. Soft natural daylight from large window. Balanced focus on both model and product. Do not include any text, letters, words, numbers, or typography in the image. Hyperrealistic photograph, 8K quality.',
-      wearing: 'Fashion advertisement featuring the model from the reference wearing the outfit from the reference image. Full body shot in clean studio setting. Model strikes a confident pose showing the clothing fit and style. Professional fashion photography lighting. Do not include any text, letters, words, numbers, or typography in the image. Hyperrealistic photograph, 8K quality.',
-      beforeAfter: 'Before and after comparison layout showing transformation effect. Clean consistent lighting on both sides. Clear visual difference highlighting the product benefit. Professional commercial quality. Do not include any text, letters, words, numbers, or typography in the image. Hyperrealistic photograph, 8K quality.',
-      lifestyle: 'Lifestyle advertisement showing the model from the reference naturally incorporating the product into their daily routine in a cozy home setting. Authentic candid moment. Natural daylight streaming through window. Warm inviting atmosphere. Do not include any text, letters, words, numbers, or typography in the image. Hyperrealistic photograph, 8K quality.',
-      unboxing: 'The model from the reference excitedly reveals and presents the product from the reference, showing genuine enthusiasm. Unboxing style shot on a clean desk setup. Natural expressions of discovery and delight. Influencer content aesthetic. Do not include any text, letters, words, numbers, or typography in the image. Hyperrealistic photograph, 8K quality.',
-      comparison: 'Product comparison layout with the product from the reference prominently displayed. Side by side arrangement on clean neutral background. Clear professional lighting highlighting product features. Do not include any text, letters, words, numbers, or typography in the image. Hyperrealistic photograph, 8K quality.',
-      seasonal: 'Seasonal themed advertisement featuring the product from the reference with festive decorations and warm atmosphere. Cozy seasonal setting with appropriate props and lighting mood. Holiday commercial aesthetic. Do not include any text, letters, words, numbers, or typography in the image. Hyperrealistic photograph, 8K quality.',
+      productOnly: `Professional product photography of the product from the reference image on a clean white studio background. Soft diffused lighting from above creates subtle shadows and highlights product details. Shot on 50mm lens at f/2.8. Commercial advertisement quality with sharp focus. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
+      holding: `The model from the reference image naturally holds the product from the reference near her face, looking directly into the camera with a warm genuine smile. Shot on 35mm lens at f/2.8. Natural skin texture with visible pores and subtle imperfections, realistic eye reflections with catchlights. Soft studio lighting from the left creates gentle shadows. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
+      using: `The model from the reference image actively uses and demonstrates the product from the reference in a bright modern setting. Genuine expression showing satisfaction. Shot on 35mm lens at f/4.0. Natural skin texture with visible pores, realistic eye reflections. Soft natural daylight streaming from a side window. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
+      wearing: `Fashion advertisement featuring the model from the reference wearing the outfit from the reference image. Full body shot in clean studio setting. Model strikes a confident pose showing the clothing fit and style. Shot on 85mm lens at f/2.0. Natural skin texture with visible pores, realistic eye reflections with catchlights. Professional fashion photography lighting from the front. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
+      beforeAfter: `Before and after comparison layout showing transformation effect. Clean consistent lighting on both sides. Shot on 50mm lens at f/4.0. Natural skin texture with visible pores in both frames. Clear visual difference highlighting the product benefit. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
+      lifestyle: `Lifestyle advertisement showing the model from the reference naturally incorporating the product into their daily routine in a cozy home setting. Authentic candid moment. Shot on 35mm lens at f/2.8. Natural skin texture with visible pores, realistic eye reflections. Natural daylight streaming through window creates warm inviting atmosphere. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
+      unboxing: `The model from the reference excitedly reveals and presents the product from the reference, looking at the camera with genuine enthusiasm. Unboxing style shot on a clean desk setup. Shot on 28mm lens at f/3.5. Natural skin texture with visible pores, realistic eye reflections with catchlights. Soft natural daylight from window. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
+      comparison: `Product comparison layout with the product from the reference prominently displayed. Side by side arrangement on clean neutral background. Shot on 50mm lens at f/4.0. Clear professional lighting highlighting product features and textures. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
+      seasonal: `Seasonal themed advertisement featuring the product from the reference with festive decorations and warm atmosphere. Cozy seasonal setting with appropriate props. Shot on 35mm lens at f/2.8. Warm lighting mood with natural shadows. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
     }
 
     return {
       optimizedPrompt: fallbackPrompts[input.adType] || fallbackPrompts.productOnly,
       koreanDescription: `${adTypeDescriptions[input.adType]} 스타일의 광고 이미지가 생성됩니다.`,
+    }
+  }
+}
+
+/**
+ * 참조 스타일 이미지를 분석하여 카테고리 옵션을 추출합니다.
+ * 이미지의 스타일, 분위기, 구도 등을 분석하여 해당하는 옵션을 자동으로 선택합니다.
+ *
+ * @param input - 참조 스타일 분석 입력
+ * @returns 분석된 옵션 값들과 스타일 설명
+ */
+export async function analyzeReferenceStyleImage(input: ReferenceStyleAnalysisInput): Promise<ReferenceStyleAnalysisResult> {
+  // 옵션 목록을 프롬프트용 텍스트로 변환
+  const optionsDescription = input.availableOptions
+    .map(opt => `- ${opt.key}: [${opt.options.join(', ')}]`)
+    .join('\n')
+
+  // 광고 유형 목록
+  const adTypeDescriptions = {
+    productOnly: '제품 단독 - 제품만 보이는 스튜디오 촬영',
+    holding: '들고 있는 샷 - 모델이 제품을 손에 들고 있는 포즈',
+    using: '사용 중인 샷 - 모델이 제품을 사용/적용하는 모습',
+    wearing: '착용샷 - 모델이 의류/액세서리를 착용한 모습',
+    beforeAfter: '비포/애프터 - 제품 사용 전후 비교',
+    lifestyle: '라이프스타일 - 일상 속에서 제품을 사용하는 장면',
+    unboxing: '언박싱 - 제품 개봉/공개 장면',
+    comparison: '비교 - 여러 제품 비교',
+    seasonal: '시즌/테마 - 계절이나 특정 테마에 맞춘 광고',
+  }
+
+  const prompt = `당신은 광고 이미지 분석 전문가입니다.
+첨부된 참조 이미지를 분석하여, 해당 이미지의 스타일/분위기 요소를 추출하고
+주어진 옵션 목록에서 가장 적합한 값을 선택하거나 직접 입력 값을 제안해주세요.
+
+=== 분석 대상 이미지 ===
+첨부된 이미지를 분석해주세요.
+
+=== 현재 선택된 광고 유형 ===
+${input.adType}
+
+=== 사용 가능한 광고 유형들 ===
+${Object.entries(adTypeDescriptions).map(([key, desc]) => `- ${key}: ${desc}`).join('\n')}
+
+=== 사용 가능한 옵션 목록 ===
+각 옵션 그룹에 대해 프리셋 값이 제공됩니다. 이미지와 가장 잘 맞는 값을 선택하세요.
+프리셋 중 적합한 것이 없다면 커스텀(직접 입력) 값을 제안하세요.
+
+${optionsDescription}
+
+=== 분석 지침 ===
+
+1. **광고 유형 분석 (가장 중요!)**:
+   이미지가 어떤 광고 유형에 가장 적합한지 판단하세요.
+   - 이미지에 사람이 있는지, 제품만 있는지
+   - 사람이 있다면 제품을 어떻게 다루고 있는지 (들고 있음, 사용 중, 착용 중, 언박싱 등)
+   - 배경/컨텍스트가 라이프스타일인지, 스튜디오인지
+   - 비교 구도인지, 비포/애프터 구도인지
+
+2. 이미지에서 다음 요소들을 **상세하게** 분석하세요:
+
+   [기본 옵션 분석]
+   - 포즈/동작 (pose): 모델의 자세, 몸짓
+   - 시선 방향 (gaze): 모델의 눈이 향하는 방향 (카메라, 제품, 다른 곳, 아래, 위)
+   - 배경 (background/setting): 촬영 장소, 환경
+   - 표정 (expression): 얼굴 표정, 감정
+   - 프레이밍 (framing): 카메라 구도, 거리
+   - 조명 (lighting): 빛의 방향, 강도, 색온도
+   - 분위기 (mood): 전체적인 느낌, 감성
+   - 스타일 (style): 촬영 스타일, 톤앤매너
+
+   [심층 스타일 분석 - suggestedPrompt에 반영할 내용]
+   - 색상 분석: 지배적 색상, 색온도 (warm/cool/neutral), 채도 수준, 대비 수준
+   - 색상 그레이딩: 그림자와 하이라이트의 색조 틴트
+   - 조명 품질: hard light vs soft light, 그림자 경계의 선명도
+   - 광원 방향: 구체적인 각도 (예: 45도 측면광)
+   - 피사계 심도: 배경 흐림 정도
+   - 텍스처/질감: 필름 그레인, 선명도 등
+
+3. 각 옵션 그룹에 대해:
+   - 프리셋 목록에서 가장 적합한 값이 있으면 type: "preset"으로 선택
+   - 프리셋 중 적합한 것이 없거나 더 구체적인 설명이 필요하면 type: "custom"으로 직접 입력
+   - confidence: 해당 분석의 확신도 (0.0 ~ 1.0)
+
+4. **suggestedPrompt 작성 (매우 중요!)**:
+   참조 이미지의 스타일을 최대한 유사하게 재현하기 위한 상세한 스타일 설명을 작성하세요.
+
+   포함해야 할 내용:
+   - 색온도와 색감 특성 (예: "warm golden tones with orange-tinted highlights")
+   - 조명 방향과 품질 (예: "soft diffused lighting from the left at 45-degree angle")
+   - 대비와 채도 (예: "low contrast with muted saturation")
+   - 그림자 특성 (예: "lifted shadows creating a film-like look")
+   - 전체 무드 (예: "intimate cozy atmosphere")
+
+   좋은 예시:
+   "warm golden hour color palette with soft orange-tinted highlights and slightly lifted shadows, diffused lighting from the upper left creating gentle wrap-around illumination, low-medium contrast with slightly desaturated colors, intimate and cozy atmosphere with shallow depth of field"
+
+5. overallStyle은 한국어로 전체적인 스타일을 1-2문장으로 설명합니다.
+
+주의사항:
+- 이미지의 제품이나 모델 자체를 복사하지 마세요
+- 오직 스타일, 분위기, 구도, 조명 등 추상적 요소만 분석하세요
+- 한국어로 설명을 작성하세요 (suggestedPrompt는 영어)
+- 추천 광고 유형이 현재 선택된 유형과 다르면 반드시 recommendedAdType을 채워주세요`
+
+  const config: GenerateContentConfig = {
+    thinkingConfig: {
+      thinkingLevel: ThinkingLevel.MEDIUM,
+    },
+    responseMimeType: 'application/json',
+    responseSchema: {
+      type: Type.OBJECT,
+      required: ['analyzedOptions', 'overallStyle', 'suggestedPrompt'],
+      properties: {
+        analyzedOptions: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            required: ['key', 'type', 'value', 'confidence'],
+            properties: {
+              key: {
+                type: Type.STRING,
+                description: '옵션 그룹 키 (예: pose, background, expression)',
+              },
+              type: {
+                type: Type.STRING,
+                enum: ['preset', 'custom'],
+                description: '프리셋 선택 또는 직접 입력',
+              },
+              value: {
+                type: Type.STRING,
+                description: '선택된 프리셋 키 또는 커스텀 설명',
+              },
+              customText: {
+                type: Type.STRING,
+                nullable: true,
+                description: '커스텀인 경우 상세 설명 (한국어)',
+              },
+              confidence: {
+                type: Type.NUMBER,
+                description: '확신도 (0.0 ~ 1.0)',
+              },
+            },
+          },
+        },
+        overallStyle: {
+          type: Type.STRING,
+          description: '이미지의 전체적인 스타일/분위기 설명 (한국어, 1-2문장)',
+        },
+        suggestedPrompt: {
+          type: Type.STRING,
+          description: '참조 이미지의 스타일을 상세하게 설명하는 영어 프롬프트 (색온도, 조명, 대비, 채도, 분위기 포함). 예: "warm golden hour color palette with soft orange-tinted highlights and slightly lifted shadows, diffused lighting from the upper left, low-medium contrast with slightly desaturated colors, intimate cozy atmosphere"',
+        },
+        recommendedAdType: {
+          type: Type.STRING,
+          nullable: true,
+          enum: ['productOnly', 'holding', 'using', 'wearing', 'beforeAfter', 'lifestyle', 'unboxing', 'comparison', 'seasonal'],
+          description: '이미지에 가장 적합한 광고 유형 (현재 선택과 다를 경우에만)',
+        },
+        adTypeMatchConfidence: {
+          type: Type.NUMBER,
+          nullable: true,
+          description: '추천 광고 유형 확신도 (0.0 ~ 1.0)',
+        },
+        adTypeMatchReason: {
+          type: Type.STRING,
+          nullable: true,
+          description: '추천 이유 (한국어, 예: "이미지에 모델이 제품을 들고 있어 holding 유형이 더 적합합니다")',
+        },
+      },
+    },
+  }
+
+  // Build multimodal contents
+  const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []
+
+  // Add reference image
+  const imageData = await fetchImageAsBase64(input.imageUrl)
+  if (imageData) {
+    parts.push({
+      inlineData: {
+        mimeType: imageData.mimeType,
+        data: imageData.base64,
+      },
+    })
+  }
+
+  // Add text prompt
+  parts.push({ text: prompt })
+
+  const response = await genAI.models.generateContent({
+    model: MODEL_NAME,
+    contents: [{ role: 'user', parts }],
+    config,
+  })
+
+  const responseText = response.text || ''
+
+  try {
+    return JSON.parse(responseText) as ReferenceStyleAnalysisResult
+  } catch {
+    // Fallback response
+    return {
+      analyzedOptions: [],
+      overallStyle: '이미지 분석에 실패했습니다.',
+      suggestedPrompt: '',
+    }
+  }
+}
+
+// ============================================================
+// AI 아바타 프롬프트 생성 (GPT-Image용)
+// ============================================================
+
+/** AI 아바타 프롬프트 생성 입력 */
+export interface AiAvatarPromptInput {
+  productInfo: string              // 제품 정보
+  productImageUrl?: string         // 제품 이미지 URL (선택)
+  locationPrompt?: string          // 장소 지정 (선택)
+  cameraComposition?: CameraCompositionType  // 카메라 구도 (선택)
+  targetGender?: 'male' | 'female' | 'any'  // 타겟 성별 (선택)
+  targetAge?: 'young' | 'middle' | 'mature' | 'any'  // 타겟 연령대 (선택)
+  style?: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'  // 스타일 (선택)
+  ethnicity?: 'korean' | 'asian' | 'western' | 'any'  // 인종 (선택)
+}
+
+/** AI 아바타 프롬프트 생성 결과 */
+export interface AiAvatarPromptResult {
+  prompt: string                   // GPT-Image용 이미지 생성 프롬프트 (아바타 포함)
+  avatarDescription: string        // 생성될 아바타 설명 (한국어)
+  locationDescription: string      // 장소 설명 (한국어)
+}
+
+/**
+ * AI 아바타 프롬프트 생성
+ *
+ * 제품 정보를 바탕으로 제품에 어울리는 가상 아바타와 배경을 포함한
+ * GPT-Image 1.5용 이미지 생성 프롬프트를 생성합니다.
+ *
+ * @param input - AI 아바타 프롬프트 생성 입력
+ * @returns 이미지 생성 프롬프트와 아바타/장소 설명
+ */
+export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promise<AiAvatarPromptResult> {
+  const genderMap: Record<string, string> = {
+    male: '남성',
+    female: '여성',
+    any: '성별 무관',
+  }
+
+  const ageMap: Record<string, string> = {
+    young: '20-30대',
+    middle: '30-40대',
+    mature: '40-50대',
+    any: '연령대 무관',
+  }
+
+  const styleMap: Record<string, string> = {
+    natural: '자연스럽고 친근한',
+    professional: '전문적이고 세련된',
+    casual: '캐주얼하고 편안한',
+    elegant: '우아하고 고급스러운',
+    any: '스타일 무관',
+  }
+
+  const ethnicityMap: Record<string, string> = {
+    korean: '한국인',
+    asian: '아시아인',
+    western: '서양인',
+    any: '인종 무관',
+  }
+
+  const locationSection = input.locationPrompt
+    ? `사용자가 지정한 장소: ${input.locationPrompt}`
+    : `장소가 지정되지 않았습니다. 제품에 가장 적합한 장소를 선택해주세요.`
+
+  const targetGenderText = genderMap[input.targetGender || 'any']
+  const targetAgeText = ageMap[input.targetAge || 'any']
+  const styleText = styleMap[input.style || 'any']
+  const ethnicityText = ethnicityMap[input.ethnicity || 'any']
+
+  // 카메라 구도 설명
+  const cameraCompositionDescriptions: Record<CameraCompositionType, string> = {
+    'selfie-high': 'high angle selfie perspective, camera looking down from above eye level',
+    'selfie-front': 'eye-level frontal view, direct eye contact with camera',
+    'selfie-side': 'three-quarter angle, showing facial contours, slight side view',
+    tripod: 'stable tripod shot, medium distance, waist to head visible',
+    closeup: 'close-up portrait, face and upper body prominent',
+    fullbody: 'full body shot, entire person visible in frame',
+  }
+
+  const cameraSection = input.cameraComposition
+    ? `카메라 구도: ${cameraCompositionDescriptions[input.cameraComposition]}`
+    : ''
+
+  const prompt = `당신은 GPT-Image 1.5 이미지 생성을 위한 프롬프트 전문가입니다.
+**제품 설명 영상의 첫 프레임**에 사용될 이미지를 생성하기 위한 프롬프트를 작성해주세요.
+
+⚠️ 중요: 이것은 정적인 광고 포스터가 아니라, 제품을 설명하는 **토킹 영상의 시작 장면**입니다.
+인물이 곧 카메라를 향해 말을 시작할 것처럼 자연스럽고 편안한 모습이어야 합니다.
+
+=== GPT-Image 1.5 프롬프트 가이드라인 ===
+- 자연스러운 문장 형태로 작성
+- 인물이 카메라를 바라보며 대화를 시작하려는 자연스러운 순간 포착
+- 광고 포스터처럼 과장된 포즈나 텍스트 오버레이 없이 자연스럽게
+- 인물의 외모, 표정, 포즈를 상세히 묘사
+- 조명과 분위기를 구체적으로 설명
+- 50-100 단어 권장
+
+=== 제품 정보 ===
+${input.productInfo}
+
+=== 타겟 아바타 조건 (⚠️ 반드시 준수) ===
+- 성별: ${targetGenderText}
+- 연령대: ${targetAgeText}
+- 스타일: ${styleText}
+- 인종/민족: ${ethnicityText} ← ⭐ 이 인종 설정은 절대 변경하지 마세요!
+
+=== 장소/배경 ===
+${locationSection}
+
+${cameraSection}
+
+=== 작성 지침 (영상 첫 프레임용) ===
+
+⚠️ 인종/민족 필수 준수:
+위에서 지정된 인종(${ethnicityText})을 **반드시** 따라야 합니다. 다른 인종으로 변경하지 마세요.
+- 한국인: Korean person, East Asian features, typically black hair, warm skin tone
+- 아시아인: Asian person, East/Southeast Asian features
+- 서양인: Western/Caucasian person, European features
+- 인종 무관: 제품 타겟에 맞는 인종 자동 선택
+
+1. 아바타(인물) 묘사 필수 요소:
+   - 인종/민족: ⭐ **${ethnicityText}** (이 설정을 프롬프트 첫 부분에 명시!)
+   - 성별, 대략적 나이대
+   - 피부톤, 머리카락 색상/스타일 (인종에 맞게)
+   - 표정: 친근하고 자연스러운 미소, 카메라를 바라보는 눈빛 (곧 말하기 시작할 것 같은 느낌)
+   - 의상 (제품과 어울리는 일상적인 스타일)
+   - 포즈: 자연스럽고 편안한 자세, 과장되지 않은 모습
+
+2. 배경/장소 묘사:
+   - 제품 특성에 맞는 적절한 장소
+   - 영상 촬영에 적합한 자연스러운 조명
+   - 유튜브/SNS 영상에 어울리는 깔끔한 배경
+
+3. 제품 배치:
+   - 인물이 제품을 자연스럽게 들고 있거나 옆에 두고 있는 모습
+   - 제품 소개를 시작하려는 느낌
+
+4. 기술적 품질 (영상용):
+   - 포토리얼리스틱 스타일
+   - 영상 촬영에 적합한 자연스러운 조명
+   - UGC/인플루언서 영상 스타일 (광고 포스터 스타일 ❌)
+   - 텍스트, 로고, 그래픽 요소 없이 순수 촬영 이미지만
+
+다음 JSON 형식으로 응답하세요:
+{
+  "prompt": "영어로 작성된 GPT-Image 1.5 프롬프트 (50-100단어). ⭐ 반드시 인종을 프롬프트 첫 부분에 명시하세요! 예: 'A Korean woman...' 또는 'An Asian man...'",
+  "avatarDescription": "생성될 아바타에 대한 한국어 설명 (인종, 성별, 나이대, 외모, 스타일 등)",
+  "locationDescription": "장소/배경에 대한 한국어 설명"
+}
+
+⭐ 프롬프트 작성 예시 (인종별):
+- 한국인 여성: "A Korean woman in her 20s with black hair and warm skin tone..."
+- 한국인 남성: "A Korean man in his 30s with short black hair..."
+- 서양인 여성: "A Caucasian woman with blonde hair and fair skin..."
+- 아시아인: "An Asian person with East Asian features..."`
+
+  const config: GenerateContentConfig = {
+    responseMimeType: 'application/json',
+  }
+
+  const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []
+
+  // 제품 이미지가 있으면 추가
+  if (input.productImageUrl) {
+    const imageData = await fetchImageAsBase64(input.productImageUrl)
+    if (imageData) {
+      parts.push({
+        inlineData: {
+          mimeType: imageData.mimeType,
+          data: imageData.base64,
+        },
+      })
+    }
+  }
+
+  parts.push({ text: prompt })
+
+  const response = await genAI.models.generateContent({
+    model: MODEL_NAME,
+    contents: [{ role: 'user', parts }],
+    config,
+  })
+
+  const responseText = response.text || ''
+
+  try {
+    return JSON.parse(responseText) as AiAvatarPromptResult
+  } catch {
+    // Fallback response
+    return {
+      prompt: 'A professional looking person holding a product in a modern setting, natural lighting, photorealistic style, 8K quality',
+      avatarDescription: '제품에 어울리는 전문적인 모델',
+      locationDescription: '모던한 배경',
+    }
+  }
+}
+
+// ============================================================
+// AI 자동 카테고리 옵션 추천
+// ============================================================
+
+/** 카테고리 옵션 그룹 정보 */
+export interface CategoryOptionItem {
+  key: string
+  description: string  // 옵션에 대한 한국어 설명
+}
+
+export interface CategoryOptionGroup {
+  key: string
+  options: CategoryOptionItem[]  // 사용 가능한 옵션 (키 + 설명)
+}
+
+/** AI 자동 설정 입력 */
+export interface RecommendedOptionsInput {
+  adType: ImageAdType
+  productName?: string
+  productDescription?: string
+  categoryGroups: CategoryOptionGroup[]  // 해당 광고 유형의 카테고리 그룹들
+  language?: string  // 응답 언어 (ko, en, ja)
+}
+
+/** AI 자동 설정 결과 */
+export interface RecommendedOptionsResult {
+  recommendedOptions: Record<string, {
+    value: string      // 선택된 옵션 키 또는 '__custom__'
+    customText?: string  // 커스텀 옵션일 경우 텍스트
+    reason: string     // 선택 이유
+  }>
+  overallStrategy: string  // 전체 전략 설명
+  suggestedPrompt?: string  // 추가 프롬프트 제안
+}
+
+/**
+ * 제품 정보와 광고 유형에 맞는 최적의 카테고리 옵션을 AI가 추천합니다.
+ * 액션, 시선, 장소, 분위기 등 모든 설정을 자동으로 결정합니다.
+ *
+ * @param input - AI 자동 설정 입력
+ * @returns 추천된 옵션들과 선택 이유
+ */
+export async function generateRecommendedCategoryOptions(
+  input: RecommendedOptionsInput
+): Promise<RecommendedOptionsResult> {
+  const language = input.language || 'ko'
+
+  // 언어별 응답 지시문
+  const languageInstructions: Record<string, string> = {
+    ko: '모든 응답(reason, overallStrategy, suggestedPrompt)은 반드시 한국어로 작성해주세요.',
+    en: 'All responses (reason, overallStrategy, suggestedPrompt) must be written in English.',
+    ja: 'すべての応答（reason、overallStrategy、suggestedPrompt）は必ず日本語で作成してください。',
+  }
+
+  // 광고 유형별 한국어 설명
+  const adTypeDescriptions: Record<ImageAdType, string> = {
+    productOnly: '제품 단독 촬영 - 제품만 깔끔하게 보여주는 상품 사진',
+    holding: '들고 있는 샷 - 모델이 제품을 자연스럽게 들고 있는 광고',
+    using: '사용 중인 샷 - 모델이 제품을 실제로 사용하는 모습',
+    wearing: '착용샷 - 모델이 의상/액세서리를 착용한 패션 광고',
+    beforeAfter: '비포/애프터 - 사용 전후 비교 이미지',
+    lifestyle: '라이프스타일 - 일상에서 제품과 함께하는 자연스러운 모습',
+    unboxing: '언박싱 - 제품 개봉 및 첫인상 리뷰 스타일',
+    comparison: '비교샷 - 제품 비교 스타일 광고',
+    seasonal: '시즌/테마 - 계절감이나 특별한 테마가 있는 광고',
+  }
+
+  // 카테고리 그룹 정보를 텍스트로 변환 (키와 설명 포함)
+  const groupsDescription = input.categoryGroups.map(group => {
+    const optionsText = group.options.map(opt => `    - ${opt.key}: ${opt.description}`).join('\n')
+    return `[${group.key}]\n${optionsText}`
+  }).join('\n\n')
+
+  const prompt = `당신은 광고 이미지 제작 전문가입니다.
+제품 정보와 광고 유형을 분석하여 최적의 카테고리 옵션을 추천해주세요.
+
+${languageInstructions[language] || languageInstructions.ko}
+
+=== 제품 정보 ===
+제품명: ${input.productName || '미입력'}
+제품 설명: ${input.productDescription || '미입력'}
+
+=== 광고 유형 ===
+${input.adType}: ${adTypeDescriptions[input.adType]}
+
+=== 선택 가능한 카테고리 옵션 ===
+${groupsDescription}
+
+=== 추천 가이드라인 ===
+
+1. 제품 특성 분석:
+   - 제품의 카테고리 (뷰티, 패션, 식품, 전자기기 등)
+   - 제품의 타겟 고객층
+   - 제품의 주요 셀링 포인트
+
+2. 광고 유형별 최적 설정:
+   - productOnly: 제품이 가장 돋보이는 배경과 조명
+   - holding: 자연스럽고 친근한 포즈와 시선
+   - using: 제품 사용 동작에 맞는 액션과 장소
+   - wearing: 의상 스타일에 맞는 포즈와 배경
+   - lifestyle: 일상적이고 공감가는 장면과 분위기
+   - unboxing: 기대감을 주는 액션과 표정
+   - beforeAfter: 변화를 강조하는 레이아웃
+   - comparison: 명확한 비교가 되는 배경과 레이아웃
+   - seasonal: 시즌에 맞는 테마와 분위기
+
+3. 조화로운 조합:
+   - 선택된 옵션들이 서로 잘 어울려야 함
+   - 제품의 느낌과 일관성 유지
+   - 타겟 고객에게 어필하는 스타일
+
+4. 각 옵션 선택 시:
+   - 주어진 옵션 목록 중 하나를 선택하거나
+   - 더 적합한 커스텀 옵션이 필요하면 '__custom__'을 선택하고 customText에 구체적인 설명 입력
+
+5. 추가 프롬프트 제안 (suggestedPrompt):
+   - 선택한 옵션들을 보완하는 추가적인 스타일이나 분위기 설명
+   - 광고 이미지를 더 효과적으로 만들 수 있는 구체적인 지시사항
+   - 예: "부드러운 자연광 아래에서 제품의 고급스러움을 강조" 등
+
+중요: 각 카테고리 그룹에 대해 반드시 추천을 제공해야 합니다.
+선택한 옵션이 왜 이 제품에 적합한지 이유를 설명해주세요.`
+
+  const config: GenerateContentConfig = {
+    thinkingConfig: {
+      thinkingLevel: ThinkingLevel.MEDIUM,
+    },
+    responseMimeType: 'application/json',
+    responseSchema: {
+      type: Type.OBJECT,
+      required: ['recommendations', 'overallStrategy', 'suggestedPrompt'],
+      properties: {
+        recommendations: {
+          type: Type.ARRAY,
+          description: '각 카테고리 그룹별 추천 옵션 배열',
+          items: {
+            type: Type.OBJECT,
+            required: ['key', 'value', 'reason'],
+            properties: {
+              key: {
+                type: Type.STRING,
+                description: '카테고리 그룹 키 (예: pose, gaze, background 등)',
+              },
+              value: {
+                type: Type.STRING,
+                description: '선택된 옵션 키 또는 커스텀일 경우 "__custom__"',
+              },
+              customText: {
+                type: Type.STRING,
+                description: 'value가 "__custom__"일 때 커스텀 텍스트',
+              },
+              reason: {
+                type: Type.STRING,
+                description: '이 옵션을 선택한 이유 (1-2문장)',
+              },
+            },
+          },
+        },
+        overallStrategy: {
+          type: Type.STRING,
+          description: '전체 광고 전략 설명 (2-3문장)',
+        },
+        suggestedPrompt: {
+          type: Type.STRING,
+          description: '추가 프롬프트 제안 - 광고 이미지를 더 효과적으로 만들 수 있는 구체적인 스타일, 분위기, 지시사항 (1-2문장)',
+        },
+      },
+    },
+  }
+
+  const response = await genAI.models.generateContent({
+    model: MODEL_NAME,
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    config,
+  })
+
+  const responseText = response.text || ''
+
+  try {
+    // 배열 형태의 응답을 객체 형태로 변환
+    const rawResult = JSON.parse(responseText) as {
+      recommendations: Array<{
+        key: string
+        value: string
+        customText?: string
+        reason: string
+      }>
+      overallStrategy: string
+      suggestedPrompt?: string
+    }
+
+    // 배열을 Record 형태로 변환
+    const recommendedOptions: Record<string, { value: string; customText?: string; reason: string }> = {}
+    for (const rec of rawResult.recommendations) {
+      recommendedOptions[rec.key] = {
+        value: rec.value,
+        customText: rec.customText,
+        reason: rec.reason,
+      }
+    }
+
+    return {
+      recommendedOptions,
+      overallStrategy: rawResult.overallStrategy,
+      suggestedPrompt: rawResult.suggestedPrompt,
+    }
+  } catch {
+    // Fallback: 각 그룹의 첫 번째 옵션 선택
+    const fallbackOptions: Record<string, { value: string; reason: string }> = {}
+    for (const group of input.categoryGroups) {
+      fallbackOptions[group.key] = {
+        value: group.options[0]?.key || '',
+        reason: '기본 설정이 적용되었습니다.',
+      }
+    }
+
+    return {
+      recommendedOptions: fallbackOptions,
+      overallStrategy: '제품 정보를 기반으로 기본 설정이 적용되었습니다. 필요에 따라 수정해주세요.',
+      suggestedPrompt: undefined,
     }
   }
 }

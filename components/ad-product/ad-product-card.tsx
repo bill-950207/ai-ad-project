@@ -34,7 +34,10 @@ interface AdProductCardProps {
 export function AdProductCard({ product, onStatusUpdate, onDelete, onRetry }: AdProductCardProps) {
   const { t } = useLanguage()
   const router = useRouter()
-  const [isPolling, setIsPolling] = useState(false)
+  // 초기 상태를 제품 상태에 따라 설정 (첫 렌더링부터 로딩 표시)
+  const [isPolling, setIsPolling] = useState(
+    ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(product.status)
+  )
   const [showActions, setShowActions] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isRetrying, setIsRetrying] = useState(false)
@@ -156,6 +159,15 @@ export function AdProductCard({ product, onStatusUpdate, onDelete, onRetry }: Ad
             ) : (
               <Package className="w-10 h-10 text-muted-foreground" />
             )}
+          </div>
+        )}
+
+        {/* 진행 중 상태 태그 표시 */}
+        {isPolling && ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(product.status) && (
+          <div className="absolute top-2 right-2">
+            <span className="text-xs px-2 py-1 rounded-lg whitespace-nowrap text-primary bg-primary/10 font-medium animate-pulse">
+              배경 제거 중...
+            </span>
           </div>
         )}
 

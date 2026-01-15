@@ -18,6 +18,14 @@ export interface OptionGroup {
   labelKey: string  // 번역 키
   options: OptionItem[]
   defaultValue: string
+  allowCustom?: boolean  // 직접 입력 허용 여부
+}
+
+// 선택된 옵션 값 (일반 선택 또는 직접 입력)
+export interface SelectedOptionValue {
+  type: 'preset' | 'custom'
+  value: string
+  customText?: string  // type이 'custom'일 때 사용자 입력 텍스트
 }
 
 // 카테고리별 옵션 구조
@@ -54,6 +62,15 @@ const COMMON_MOOD: OptionItem[] = [
   { key: 'energetic', labelKey: 'energetic' },
 ]
 
+// 시선 방향 옵션 (아바타 사용 시)
+const COMMON_GAZE: OptionItem[] = [
+  { key: 'camera', labelKey: 'camera' },
+  { key: 'product', labelKey: 'product' },
+  { key: 'away', labelKey: 'away' },
+  { key: 'down', labelKey: 'down' },
+  { key: 'up', labelKey: 'up' },
+]
+
 // ============================================================
 // 카테고리별 특화 옵션
 // ============================================================
@@ -73,12 +90,14 @@ const PRODUCT_ONLY_OPTIONS: CategoryOptions = {
         { key: 'minimal', labelKey: 'minimal' },
       ],
       defaultValue: 'studio_white',
+      allowCustom: true,
     },
     {
       key: 'lighting',
       labelKey: 'lighting',
       options: COMMON_LIGHTING,
       defaultValue: 'soft',
+      allowCustom: true,
     },
     {
       key: 'angle',
@@ -91,6 +110,7 @@ const PRODUCT_ONLY_OPTIONS: CategoryOptions = {
         { key: 'low_angle', labelKey: 'lowAngle' },
       ],
       defaultValue: 'three_quarter',
+      allowCustom: true,
     },
     {
       key: 'style',
@@ -102,6 +122,7 @@ const PRODUCT_ONLY_OPTIONS: CategoryOptions = {
         { key: 'editorial', labelKey: 'editorial' },
       ],
       defaultValue: 'minimalist',
+      allowCustom: true,
     },
   ],
 }
@@ -120,12 +141,21 @@ const HOLDING_OPTIONS: CategoryOptions = {
         { key: 'casual_hold', labelKey: 'casualHold' },
       ],
       defaultValue: 'natural_hold',
+      allowCustom: true,
+    },
+    {
+      key: 'gaze',
+      labelKey: 'gaze',
+      options: COMMON_GAZE,
+      defaultValue: 'camera',
+      allowCustom: true,
     },
     {
       key: 'background',
       labelKey: 'background',
       options: COMMON_BACKGROUNDS,
       defaultValue: 'studio',
+      allowCustom: true,
     },
     {
       key: 'expression',
@@ -137,6 +167,7 @@ const HOLDING_OPTIONS: CategoryOptions = {
         { key: 'friendly', labelKey: 'friendly' },
       ],
       defaultValue: 'natural',
+      allowCustom: true,
     },
     {
       key: 'framing',
@@ -147,6 +178,7 @@ const HOLDING_OPTIONS: CategoryOptions = {
         { key: 'full_body', labelKey: 'fullBody' },
       ],
       defaultValue: 'medium',
+      allowCustom: true,
     },
   ],
 }
@@ -164,6 +196,14 @@ const USING_OPTIONS: CategoryOptions = {
         { key: 'testing', labelKey: 'testing' },
       ],
       defaultValue: 'applying',
+      allowCustom: true,
+    },
+    {
+      key: 'gaze',
+      labelKey: 'gaze',
+      options: COMMON_GAZE,
+      defaultValue: 'product',
+      allowCustom: true,
     },
     {
       key: 'setting',
@@ -175,12 +215,14 @@ const USING_OPTIONS: CategoryOptions = {
         { key: 'outdoor', labelKey: 'outdoor' },
       ],
       defaultValue: 'vanity',
+      allowCustom: true,
     },
     {
       key: 'mood',
       labelKey: 'mood',
       options: COMMON_MOOD,
       defaultValue: 'casual',
+      allowCustom: true,
     },
     {
       key: 'focus',
@@ -191,6 +233,7 @@ const USING_OPTIONS: CategoryOptions = {
         { key: 'balanced', labelKey: 'balanced' },
       ],
       defaultValue: 'balanced',
+      allowCustom: true,
     },
   ],
 }
@@ -208,6 +251,14 @@ const WEARING_OPTIONS: CategoryOptions = {
         { key: 'dynamic', labelKey: 'dynamic' },
       ],
       defaultValue: 'standing',
+      allowCustom: true,
+    },
+    {
+      key: 'gaze',
+      labelKey: 'gaze',
+      options: COMMON_GAZE,
+      defaultValue: 'camera',
+      allowCustom: true,
     },
     {
       key: 'setting',
@@ -219,6 +270,7 @@ const WEARING_OPTIONS: CategoryOptions = {
         { key: 'nature', labelKey: 'nature' },
       ],
       defaultValue: 'studio',
+      allowCustom: true,
     },
     {
       key: 'style',
@@ -230,6 +282,7 @@ const WEARING_OPTIONS: CategoryOptions = {
         { key: 'elegant', labelKey: 'elegant' },
       ],
       defaultValue: 'commercial',
+      allowCustom: true,
     },
     {
       key: 'framing',
@@ -240,6 +293,20 @@ const WEARING_OPTIONS: CategoryOptions = {
         { key: 'upper_body', labelKey: 'upperBody' },
       ],
       defaultValue: 'full_body',
+      allowCustom: true,
+    },
+    {
+      key: 'productPlacement',
+      labelKey: 'productPlacement',
+      options: [
+        { key: 'none', labelKey: 'noProduct' },
+        { key: 'holding', labelKey: 'holdingProduct' },
+        { key: 'bag', labelKey: 'inBag' },
+        { key: 'accessory', labelKey: 'asAccessory' },
+        { key: 'nearby', labelKey: 'nearbyProduct' },
+      ],
+      defaultValue: 'none',
+      allowCustom: true,
     },
   ],
 }
@@ -255,6 +322,14 @@ const BEFORE_AFTER_OPTIONS: CategoryOptions = {
         { key: 'split_screen', labelKey: 'splitScreen' },
       ],
       defaultValue: 'side_by_side',
+      allowCustom: true,
+    },
+    {
+      key: 'gaze',
+      labelKey: 'gaze',
+      options: COMMON_GAZE,
+      defaultValue: 'camera',
+      allowCustom: true,
     },
     {
       key: 'focus',
@@ -265,6 +340,7 @@ const BEFORE_AFTER_OPTIONS: CategoryOptions = {
         { key: 'overall', labelKey: 'overall' },
       ],
       defaultValue: 'overall',
+      allowCustom: true,
     },
     {
       key: 'lighting',
@@ -274,6 +350,7 @@ const BEFORE_AFTER_OPTIONS: CategoryOptions = {
         { key: 'natural', labelKey: 'natural' },
       ],
       defaultValue: 'consistent',
+      allowCustom: true,
     },
   ],
 }
@@ -292,6 +369,14 @@ const LIFESTYLE_OPTIONS: CategoryOptions = {
         { key: 'exercising', labelKey: 'exercising' },
       ],
       defaultValue: 'morning_routine',
+      allowCustom: true,
+    },
+    {
+      key: 'gaze',
+      labelKey: 'gaze',
+      options: COMMON_GAZE,
+      defaultValue: 'away',
+      allowCustom: true,
     },
     {
       key: 'location',
@@ -304,6 +389,7 @@ const LIFESTYLE_OPTIONS: CategoryOptions = {
         { key: 'coffee_shop', labelKey: 'coffeeShop' },
       ],
       defaultValue: 'living_room',
+      allowCustom: true,
     },
     {
       key: 'time',
@@ -315,6 +401,7 @@ const LIFESTYLE_OPTIONS: CategoryOptions = {
         { key: 'golden_hour', labelKey: 'goldenHour' },
       ],
       defaultValue: 'morning',
+      allowCustom: true,
     },
     {
       key: 'mood',
@@ -326,6 +413,7 @@ const LIFESTYLE_OPTIONS: CategoryOptions = {
         { key: 'sophisticated', labelKey: 'sophisticated' },
       ],
       defaultValue: 'cozy',
+      allowCustom: true,
     },
   ],
 }
@@ -343,6 +431,14 @@ const UNBOXING_OPTIONS: CategoryOptions = {
         { key: 'excited', labelKey: 'excited' },
       ],
       defaultValue: 'revealing',
+      allowCustom: true,
+    },
+    {
+      key: 'gaze',
+      labelKey: 'gaze',
+      options: COMMON_GAZE,
+      defaultValue: 'product',
+      allowCustom: true,
     },
     {
       key: 'setting',
@@ -354,6 +450,7 @@ const UNBOXING_OPTIONS: CategoryOptions = {
         { key: 'table', labelKey: 'table' },
       ],
       defaultValue: 'desk',
+      allowCustom: true,
     },
     {
       key: 'style',
@@ -364,6 +461,7 @@ const UNBOXING_OPTIONS: CategoryOptions = {
         { key: 'casual', labelKey: 'casual' },
       ],
       defaultValue: 'influencer',
+      allowCustom: true,
     },
   ],
 }
@@ -379,6 +477,7 @@ const COMPARISON_OPTIONS: CategoryOptions = {
         { key: 'stacked', labelKey: 'stacked' },
       ],
       defaultValue: 'side_by_side',
+      allowCustom: true,
     },
     {
       key: 'style',
@@ -389,6 +488,7 @@ const COMPARISON_OPTIONS: CategoryOptions = {
         { key: 'infographic', labelKey: 'infographic' },
       ],
       defaultValue: 'clean',
+      allowCustom: true,
     },
     {
       key: 'background',
@@ -399,6 +499,7 @@ const COMPARISON_OPTIONS: CategoryOptions = {
         { key: 'neutral', labelKey: 'neutral' },
       ],
       defaultValue: 'white',
+      allowCustom: true,
     },
   ],
 }
@@ -416,6 +517,7 @@ const SEASONAL_OPTIONS: CategoryOptions = {
         { key: 'winter', labelKey: 'winter' },
       ],
       defaultValue: 'spring',
+      allowCustom: true,
     },
     {
       key: 'theme',
@@ -428,6 +530,7 @@ const SEASONAL_OPTIONS: CategoryOptions = {
         { key: 'none', labelKey: 'none' },
       ],
       defaultValue: 'none',
+      allowCustom: true,
     },
     {
       key: 'atmosphere',
@@ -439,6 +542,7 @@ const SEASONAL_OPTIONS: CategoryOptions = {
         { key: 'bright', labelKey: 'bright' },
       ],
       defaultValue: 'warm',
+      allowCustom: true,
     },
   ],
 }
@@ -465,11 +569,18 @@ export const CATEGORY_OPTIONS: Record<ImageAdType, CategoryOptions> = {
 
 /**
  * 선택된 옵션들을 기반으로 프롬프트 생성
+ *
+ * @param adType - 광고 유형
+ * @param selectedOptions - 선택된 옵션 (키: 그룹 키, 값: 옵션 키 또는 '__custom__')
+ * @param additionalPrompt - 추가 프롬프트
+ * @param customOptions - 커스텀 옵션 (키: 그룹 키, 값: 사용자 입력 텍스트)
  */
 export function buildPromptFromOptions(
   adType: ImageAdType,
   selectedOptions: Record<string, string>,
-  additionalPrompt?: string
+  additionalPrompt?: string,
+  customOptions?: Record<string, string>,
+  productName?: string // 제품명 (착용샷에서 제품과 함께 촬영 시)
 ): string {
   const parts: string[] = []
 
@@ -477,7 +588,7 @@ export function buildPromptFromOptions(
   parts.push('Do not include any text, letters, words, numbers, or typography in the image.')
 
   // 카테고리별 기본 프롬프트
-  const basePrompt = getBasePrompt(adType)
+  const basePrompt = getBasePrompt(adType, productName)
   if (basePrompt) {
     parts.push(basePrompt)
   }
@@ -487,9 +598,17 @@ export function buildPromptFromOptions(
   if (categoryOptions) {
     for (const group of categoryOptions.groups) {
       const selectedValue = selectedOptions[group.key] || group.defaultValue
-      const optionPrompt = getOptionPrompt(adType, group.key, selectedValue)
-      if (optionPrompt) {
-        parts.push(optionPrompt)
+
+      // 커스텀 옵션 처리
+      if (selectedValue === '__custom__' && customOptions?.[group.key]) {
+        // 커스텀 텍스트를 직접 프롬프트에 추가
+        parts.push(customOptions[group.key])
+      } else {
+        // 프리셋 옵션 사용
+        const optionPrompt = getOptionPrompt(adType, group.key, selectedValue)
+        if (optionPrompt) {
+          parts.push(optionPrompt)
+        }
       }
     }
   }
@@ -505,7 +624,7 @@ export function buildPromptFromOptions(
 /**
  * 카테고리별 기본 프롬프트
  */
-function getBasePrompt(adType: ImageAdType): string {
+function getBasePrompt(adType: ImageAdType, productName?: string): string {
   switch (adType) {
     case 'productOnly':
       return 'Create a professional product photography showcasing the product from the reference image. High-quality commercial product shot.'
@@ -514,6 +633,9 @@ function getBasePrompt(adType: ImageAdType): string {
     case 'using':
       return 'Create an advertisement image where the model from the reference is actively using and demonstrating the product.'
     case 'wearing':
+      if (productName) {
+        return `Create a fashion advertisement image showcasing the model wearing the outfit from the reference image. The model should also be naturally holding or presenting "${productName}" as an accessory or complementary product in the shot.`
+      }
       return 'Create a fashion advertisement image showcasing the model wearing the outfit from the reference image.'
     case 'beforeAfter':
       return 'Create a before and after comparison image showing the transformation effect.'
@@ -581,6 +703,14 @@ function getOptionPrompt(adType: ImageAdType, groupKey: string, optionValue: str
       natural: 'Natural relaxed expression.',
       confident: 'Confident expression.',
       friendly: 'Friendly approachable look.',
+    },
+    // 시선 방향
+    gaze: {
+      camera: 'Looking directly at the camera with engaging eye contact.',
+      product: 'Looking at the product with interest and attention.',
+      away: 'Looking away naturally, candid and relaxed.',
+      down: 'Looking downward with a thoughtful or gentle expression.',
+      up: 'Looking upward with a hopeful or dreamy expression.',
     },
     // 프레이밍
     framing: {
@@ -682,7 +812,14 @@ function getOptionPrompt(adType: ImageAdType, groupKey: string, optionValue: str
       sophisticated: 'Sophisticated elegant feel.',
       warm: 'Warm inviting atmosphere.',
       fresh: 'Fresh clean feeling.',
-      bright: 'Bright cheerful mood.',
+    },
+    // 제품 배치 (착용샷에서 제품과 함께)
+    productPlacement: {
+      none: '', // 제품 없음 - 프롬프트 추가 안함
+      holding: 'The model is naturally holding and showcasing the product in their hands.',
+      bag: 'The product is visible inside the model\'s bag or being taken out from it.',
+      accessory: 'The product is styled as an accessory, complementing the outfit.',
+      nearby: 'The product is placed nearby the model, visible in the frame.',
     },
     // 레이아웃
     layout: {

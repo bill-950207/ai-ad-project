@@ -741,6 +741,33 @@ export async function getGPTImageQueueResponse(requestId: string): Promise<KieGP
   }
 }
 
+/**
+ * GPT Image 1.5 요청을 큐에 제출 (AI 아바타용 - 참조 이미지 포함)
+ *
+ * @param inputUrls - 참조 이미지 URL 배열 (제품 이미지 등)
+ * @param prompt - 이미지 생성 프롬프트
+ * @param aspectRatio - 화면 비율 (선택)
+ * @param quality - 이미지 품질 (선택)
+ * @returns 큐 제출 응답
+ */
+export async function submitGPTImageToQueue(
+  inputUrls: string[],
+  prompt: string,
+  aspectRatio?: GPTImageAspectRatio,
+  quality?: GPTImageQuality
+): Promise<KieQueueSubmitResponse> {
+  const { taskId } = await createGPTImageTask({
+    input_urls: inputUrls,
+    prompt,
+    aspect_ratio: aspectRatio || '2:3',
+    quality: quality || 'high',
+  })
+
+  return {
+    request_id: taskId,
+  }
+}
+
 // ============================================================
 // Kling V1 Avatar Standard (Lip-sync Talking Head Video)
 // ============================================================

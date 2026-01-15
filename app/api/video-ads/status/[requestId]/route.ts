@@ -20,6 +20,7 @@ import {
   type VideoResolution,
   type VideoDuration
 } from '@/lib/fal/client'
+import { uploadExternalImageToR2 } from '@/lib/image/compress'
 import {
   getInfinitalkQueueStatus as getKieInfinitalkQueueStatus,
   getInfinitalkQueueResponse as getKieInfinitalkQueueResponse,
@@ -170,7 +171,22 @@ async function handleImagePhase(
     const result = await getImageAdQueueResponse(videoAd.fal_image_request_id)
 
     if (result.images && result.images.length > 0) {
-      const firstSceneImageUrl = result.images[0].url
+      const falImageUrl = result.images[0].url
+      let firstSceneImageUrl = falImageUrl
+
+      // R2에 원본/압축본 업로드
+      try {
+        const uploadResult = await uploadExternalImageToR2(
+          falImageUrl,
+          'video-ads/first-scene',
+          videoAd.id
+        )
+        firstSceneImageUrl = uploadResult.compressedUrl
+        console.log('영상 광고 첫 씬 이미지 R2 업로드 완료:', { id: videoAd.id, compressedUrl: firstSceneImageUrl })
+      } catch (uploadError) {
+        console.error('영상 광고 첫 씬 이미지 R2 업로드 실패, fal.ai URL 사용:', uploadError)
+        // 업로드 실패 시 fal.ai URL 그대로 사용
+      }
 
       // 첫 씬 이미지 저장
       await supabase

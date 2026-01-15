@@ -46,7 +46,30 @@ export async function GET(request: NextRequest) {
     // 쿼리 파라미터
     const { searchParams } = new URL(request.url)
     const productId = searchParams.get('productId')
-    const limit = parseInt(searchParams.get('limit') || '20', 10)
+    const page = parseInt(searchParams.get('page') || '1', 10)
+    const pageSize = parseInt(searchParams.get('pageSize') || '12', 10)
+    const limit = searchParams.get('limit') // 레거시 지원
+
+    // 페이지네이션 사용 여부 (page 파라미터가 있으면 페이지네이션 사용)
+    const usePagination = searchParams.has('page') || searchParams.has('pageSize')
+    const actualPageSize = usePagination ? Math.min(pageSize, 50) : parseInt(limit || '20', 10)
+    const offset = usePagination ? (page - 1) * actualPageSize : 0
+
+    // 총 개수 조회 (페이지네이션 사용 시)
+    let totalCount = 0
+    if (usePagination) {
+      let countQuery = supabase
+        .from('video_ads')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+
+      if (productId) {
+        countQuery = countQuery.eq('product_id', productId)
+      }
+
+      const { count } = await countQuery
+      totalCount = count || 0
+    }
 
     // 쿼리 빌드
     let query = supabase
@@ -54,7 +77,7 @@ export async function GET(request: NextRequest) {
       .select('id, video_url, thumbnail_url, first_scene_image_url, product_id, avatar_id, duration, resolution, status, category, wizard_step, created_at, updated_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(limit)
+      .range(offset, offset + actualPageSize - 1)
 
     if (productId) {
       query = query.eq('product_id', productId)
@@ -70,7 +93,16 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ videos })
+    return NextResponse.json({
+      videos,
+      pagination: usePagination ? {
+        page,
+        pageSize: actualPageSize,
+        totalCount,
+        totalPages: Math.ceil(totalCount / actualPageSize),
+        hasMore: page * actualPageSize < totalCount,
+      } : undefined,
+    })
   } catch (error) {
     console.error('영상 광고 조회 오류:', error)
     return NextResponse.json(

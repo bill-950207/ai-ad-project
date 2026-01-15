@@ -525,7 +525,7 @@
       }
     },
     "additionalPrompt": "추가 설명 (선택)",
-    "additionalPromptPlaceholder": "원하는 스타일이나 분위기를 자유롭게 설명해주세요...",
+    "additionalPromptPlaceholder": "원하는 스타일이나 분위기 또는 제품 사용법 등을 자유롭게 설명해주세요...",
     "categoryOptions": {
       "groups": {
         "background": "배경",
@@ -534,6 +534,7 @@
         "style": "스타일",
         "pose": "포즈",
         "expression": "표정",
+        "gaze": "시선",
         "framing": "프레이밍",
         "action": "액션",
         "setting": "장소",
@@ -545,7 +546,8 @@
         "layout": "레이아웃",
         "season": "계절",
         "theme": "테마",
-        "atmosphere": "분위기"
+        "atmosphere": "분위기",
+        "productPlacement": "제품 배치"
       },
       "options": {
         "studioWhite": "화이트 스튜디오",
@@ -599,6 +601,11 @@
         "smile": "미소",
         "confident": "자신감",
         "friendly": "친근한",
+        "camera": "카메라 응시",
+        "product": "제품 바라보기",
+        "away": "다른 곳 바라보기",
+        "down": "아래 바라보기",
+        "up": "위 바라보기",
         "closeup": "클로즈업",
         "medium": "미디엄샷",
         "fullBody": "전신샷",
@@ -657,7 +664,12 @@
         "valentines": "발렌타인",
         "newYear": "새해",
         "festive": "축제",
-        "none": "없음"
+        "none": "없음",
+        "noProduct": "제품 없음",
+        "holdingProduct": "제품 들기",
+        "inBag": "가방에 넣기",
+        "asAccessory": "액세서리로",
+        "nearbyProduct": "옆에 배치"
       }
     }
   },

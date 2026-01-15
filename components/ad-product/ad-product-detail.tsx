@@ -152,7 +152,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
   }
 
   const handleCreateAd = () => {
-    router.push('/dashboard/image-ad/create?type=productOnly')
+    router.push('/image-ad-create?type=productOnly')
   }
 
   if (isLoading) {

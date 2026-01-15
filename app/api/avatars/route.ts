@@ -22,8 +22,11 @@ const AI_PROVIDER = process.env.AVATAR_AI_PROVIDER || 'kie'
  *
  * 현재 로그인한 사용자의 모든 아바타를 조회합니다.
  * 최신순으로 정렬하여 반환합니다.
+ *
+ * Query Parameters:
+ * - includeOutfits: true일 경우 아바타별 의상 목록도 함께 조회 (N+1 문제 해결)
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     // Supabase 인증 확인
     const supabase = await createClient()
@@ -33,10 +36,31 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // 쿼리 파라미터 확인
+    const { searchParams } = new URL(request.url)
+    const includeOutfits = searchParams.get('includeOutfits') === 'true'
+
     // 사용자의 아바타 목록 조회 (최신순)
     const avatars = await prisma.avatars.findMany({
       where: { user_id: user.id },
       orderBy: { created_at: 'desc' },
+      ...(includeOutfits && {
+        include: {
+          outfits: {
+            where: {
+              status: 'COMPLETED',
+              image_url: { not: null },
+            },
+            orderBy: { created_at: 'desc' },
+            select: {
+              id: true,
+              name: true,
+              image_url: true,
+              status: true,
+            },
+          },
+        },
+      }),
     })
 
     return NextResponse.json({ avatars })

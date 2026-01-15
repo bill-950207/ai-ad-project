@@ -1,12 +1,31 @@
 /**
  * 이미지 광고 생성 상태 확인 API
  *
- * GET: kie.ai 큐 상태 확인 및 결과 반환, DB 업데이트
+ * GET: fal.ai Seedream 4.5 또는 kie.ai GPT-Image 1.5 큐 상태 확인 및 결과 반환, DB 업데이트
+ * - 완료 시 원본 이미지를 R2에 저장 (원본/WebP 압축본 분리)
+ * - requestId 형식: "provider:actual_request_id" (예: "fal:xxx" 또는 "kie:xxx")
+ * - 하위 호환성: prefix 없으면 fal.ai로 간주
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getImageAdQueueStatus, getImageAdQueueResponse } from '@/lib/kie/client'
+import { getSeedreamEditQueueStatus, getSeedreamEditQueueResponse } from '@/lib/fal/client'
+import {
+  getGPTImageQueueStatus as getKieGptImageStatus,
+  getGPTImageQueueResponse as getKieGptImageResponse,
+} from '@/lib/kie/client'
+import { uploadExternalImageToR2 } from '@/lib/image/compress'
+
+/** requestId에서 provider와 실제 ID 파싱 */
+function parseRequestId(requestId: string): { provider: 'fal' | 'kie'; actualId: string } {
+  if (requestId.startsWith('kie:')) {
+    return { provider: 'kie', actualId: requestId.substring(4) }
+  } else if (requestId.startsWith('fal:')) {
+    return { provider: 'fal', actualId: requestId.substring(4) }
+  }
+  // 하위 호환성: prefix 없으면 fal로 간주
+  return { provider: 'fal', actualId: requestId }
+}
 
 export async function GET(
   request: NextRequest,
@@ -24,52 +43,89 @@ export async function GET(
       )
     }
 
-    const { requestId } = await params
+    const { requestId: rawRequestId } = await params
 
-    if (!requestId) {
+    if (!rawRequestId) {
       return NextResponse.json(
         { error: 'Request ID is required' },
         { status: 400 }
       )
     }
 
-    // kie.ai 상태 조회
-    const status = await getImageAdQueueStatus(requestId)
+    // provider와 실제 requestId 파싱
+    const { provider, actualId } = parseRequestId(rawRequestId)
+
+    // provider에 따라 상태 조회
+    let status: { status: 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED'; queue_position?: number }
+
+    if (provider === 'kie') {
+      status = await getKieGptImageStatus(actualId)
+    } else {
+      status = await getSeedreamEditQueueStatus(actualId)
+    }
 
     // 완료된 경우 결과 이미지 URL 반환 및 DB 업데이트
     if (status.status === 'COMPLETED') {
-      const result = await getImageAdQueueResponse(requestId)
+      // provider에 따라 결과 조회
+      let result: { images: Array<{ url: string }> }
+
+      if (provider === 'kie') {
+        result = await getKieGptImageResponse(actualId)
+      } else {
+        result = await getSeedreamEditQueueResponse(actualId)
+      }
 
       if (result.images && result.images.length > 0) {
-        // 모든 이미지 URL 배열로 반환
-        const imageUrls = result.images.map(img => img.url)
+        const generatedImageUrl = result.images[0].url
 
-        // 각 이미지에 대해 DB 업데이트
-        for (let i = 0; i < result.images.length; i++) {
-          const image = result.images[i]
-          const kieRequestIdWithIndex = `${requestId}_${i}`
+        // 해당 image_ad의 ID 조회 (rawRequestId로 조회 - prefix 포함)
+        const { data: imageAdData } = await supabase
+          .from('image_ads')
+          .select('id')
+          .eq('fal_request_id', rawRequestId)
+          .eq('user_id', user.id)
+          .single()
 
-          // 해당 인덱스의 레코드 업데이트
-          const { error: updateError } = await supabase
-            .from('image_ads')
-            .update({
-              status: 'COMPLETED',
-              image_url: image.url,
-              image_url_original: image.url,
-              completed_at: new Date().toISOString(),
-            })
-            .eq('fal_request_id', kieRequestIdWithIndex)
-            .eq('user_id', user.id)
+        let imageUrl = generatedImageUrl
+        let imageUrlOriginal = generatedImageUrl
 
-          if (updateError) {
-            console.error(`이미지 광고 DB 업데이트 오류 (${i}):`, updateError)
+        // R2에 원본/압축본 업로드
+        if (imageAdData?.id) {
+          try {
+            const uploadResult = await uploadExternalImageToR2(
+              generatedImageUrl,
+              'image-ads',
+              imageAdData.id
+            )
+            imageUrl = uploadResult.compressedUrl
+            imageUrlOriginal = uploadResult.originalUrl
+            console.log('이미지 광고 R2 업로드 완료:', { id: imageAdData.id, provider, compressedUrl: imageUrl })
+          } catch (uploadError) {
+            console.error('이미지 광고 R2 업로드 실패, 원본 URL 사용:', uploadError)
+            // 업로드 실패 시 원본 URL 그대로 사용
           }
+        }
+
+        // DB 업데이트
+        const { error: updateError } = await supabase
+          .from('image_ads')
+          .update({
+            status: 'COMPLETED',
+            image_url: imageUrl,
+            image_url_original: imageUrlOriginal,
+            completed_at: new Date().toISOString(),
+          })
+          .eq('fal_request_id', rawRequestId)
+          .eq('user_id', user.id)
+
+        if (updateError) {
+          console.error('이미지 광고 DB 업데이트 오류:', updateError)
         }
 
         return NextResponse.json({
           status: 'COMPLETED',
-          imageUrl: result.images[0].url,  // 하위 호환성 유지
-          imageUrls: imageUrls,            // 새로운 배열 필드
+          imageUrl: imageUrl,
+          imageUrls: [imageUrl],
         })
       } else {
         // 실패 상태로 DB 업데이트
@@ -79,7 +135,7 @@ export async function GET(
             status: 'FAILED',
             error_message: 'No images generated',
           })
-          .like('fal_request_id', `${requestId}_%`)
+          .eq('fal_request_id', rawRequestId)
           .eq('user_id', user.id)
 
         return NextResponse.json({
@@ -94,7 +150,7 @@ export async function GET(
       await supabase
         .from('image_ads')
         .update({ status: 'IN_PROGRESS' })
-        .like('fal_request_id', `${requestId}_%`)
+        .eq('fal_request_id', rawRequestId)
         .eq('user_id', user.id)
     }
 

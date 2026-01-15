@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
       outfitId,
       avatarImageUrl,
       productId,
+      aiAvatarOptions,  // AI 아바타 옵션 (avatarId가 'ai-generated'일 때)
       // Step 2 데이터
       productInfo,
       locationPrompt,
@@ -63,6 +64,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Category is required' }, { status: 400 })
     }
 
+    // AI 생성 아바타 처리 (avatarId가 'ai-generated'이면 DB에는 null 저장)
+    const isAiGeneratedAvatar = avatarId === 'ai-generated'
+    const dbAvatarId = isAiGeneratedAvatar ? null : (avatarId || null)
+
     // 기존 초안 업데이트 또는 새로 생성
     if (id) {
       // 기존 초안 확인 (DRAFT 또는 생성 중 상태)
@@ -84,10 +89,11 @@ export async function POST(request: NextRequest) {
         data: {
           ...(validStatus && { status: validStatus }),
           wizard_step: wizardStep,
-          avatar_id: avatarId || null,
-          outfit_id: outfitId || null,
+          avatar_id: dbAvatarId,
+          outfit_id: isAiGeneratedAvatar ? null : (outfitId || null),  // AI 아바타일 때 outfit도 null
           avatar_image_url: avatarImageUrl || null,
           product_id: productId || null,
+          ai_avatar_options: isAiGeneratedAvatar ? (aiAvatarOptions ? JSON.stringify(aiAvatarOptions) : null) : null,
           product_info: productInfo || null,
           location_prompt: locationPrompt || null,
           duration: duration || null,
@@ -123,10 +129,11 @@ export async function POST(request: NextRequest) {
           data: {
             ...(validStatus && { status: validStatus }),
             wizard_step: wizardStep,
-            avatar_id: avatarId || null,
-            outfit_id: outfitId || null,
+            avatar_id: dbAvatarId,
+            outfit_id: isAiGeneratedAvatar ? null : (outfitId || null),
             avatar_image_url: avatarImageUrl || null,
             product_id: productId || null,
+            ai_avatar_options: isAiGeneratedAvatar ? (aiAvatarOptions ? JSON.stringify(aiAvatarOptions) : null) : null,
             product_info: productInfo || null,
             location_prompt: locationPrompt || null,
             duration: duration || null,
@@ -154,10 +161,11 @@ export async function POST(request: NextRequest) {
           category,
           status: 'DRAFT',
           wizard_step: wizardStep || 1,
-          avatar_id: avatarId || null,
-          outfit_id: outfitId || null,
+          avatar_id: dbAvatarId,
+          outfit_id: isAiGeneratedAvatar ? null : (outfitId || null),
           avatar_image_url: avatarImageUrl || null,
           product_id: productId || null,
+          ai_avatar_options: isAiGeneratedAvatar ? (aiAvatarOptions ? JSON.stringify(aiAvatarOptions) : null) : null,
           product_info: productInfo || null,
           location_prompt: locationPrompt || null,
           duration: duration || null,

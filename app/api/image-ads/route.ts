@@ -2,13 +2,32 @@
  * 이미지 광고 생성 API
  *
  * GET: 이미지 광고 목록 조회 (productId로 필터링 가능)
- * POST: 이미지 광고 생성 요청 (kie.ai GPT Image 1.5 우선, Seedream fallback)
+ * POST: 이미지 광고 생성 요청 (fal.ai Seedream 4.5 Edit)
  */
 
-import { submitImageAdToQueue, type ImageAdSize } from '@/lib/kie/client'
+import { submitSeedreamEditToQueue, type SeedreamAspectRatio } from '@/lib/fal/client'
+import {
+  submitGPTImageToQueue as submitKieGptImageToQueue,
+  type GPTImageAspectRatio,
+} from '@/lib/kie/client'
 import { createClient } from '@/lib/supabase/server'
 import { generateImageAdPrompt, type ImageAdType as GeminiImageAdType } from '@/lib/gemini/client'
 import { NextRequest, NextResponse } from 'next/server'
+
+// 이미지 크기를 Seedream aspect_ratio로 변환
+type ImageAdSize = '1024x1024' | '1536x1024' | '1024x1536'
+function imageSizeToAspectRatio(size: ImageAdSize): SeedreamAspectRatio {
+  switch (size) {
+    case '1024x1024':
+      return '1:1'
+    case '1536x1024':
+      return '3:2'
+    case '1024x1536':
+      return '2:3'
+    default:
+      return '1:1'
+  }
+}
 
 // 이미지 광고 유형
 type ImageAdType =
@@ -35,15 +54,23 @@ interface ImageAdRequestBody {
   imageSize: ImageAdSize
   quality?: Quality
   numImages?: number
+  referenceStyleImageUrl?: string  // 참조 스타일 이미지 URL (분위기/스타일만 참조)
   options?: {
     background?: string
     lighting?: string
     mood?: string
     angle?: string
   }
+  // AI 아바타 옵션 (avatarIds[0]이 'ai-generated'일 때)
+  aiAvatarOptions?: {
+    targetGender?: 'male' | 'female' | 'any'
+    targetAge?: 'young' | 'middle' | 'mature' | 'any'
+    style?: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
+    ethnicity?: 'korean' | 'asian' | 'western' | 'any'
+  }
 }
 
-// GET: 이미지 광고 목록 조회
+// GET: 이미지 광고 목록 조회 (페이징 지원)
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -60,19 +87,63 @@ export async function GET(request: NextRequest) {
     // 쿼리 파라미터
     const { searchParams } = new URL(request.url)
     const productId = searchParams.get('productId')
-    const limit = parseInt(searchParams.get('limit') || '20', 10)
+    const page = parseInt(searchParams.get('page') || '1', 10)
+    const pageSize = parseInt(searchParams.get('pageSize') || '12', 10)
+    const limit = searchParams.get('limit') // legacy support
 
-    // 쿼리 빌드
+    // limit이 있으면 legacy 모드, 없으면 pagination 모드
+    const usePagination = !limit
+    const actualPageSize = limit ? parseInt(limit, 10) : pageSize
+
+    // offset 계산 (pagination 모드일 때만)
+    const offset = usePagination ? (page - 1) * actualPageSize : 0
+
+    // 먼저 총 개수 조회
+    let countQuery = supabase
+      .from('image_ads')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .in('status', ['COMPLETED', 'IN_QUEUE', 'IN_PROGRESS', 'FAILED'])
+
+    if (productId) {
+      countQuery = countQuery.eq('product_id', productId)
+    }
+
+    const { count: totalCount } = await countQuery
+
+    // 쿼리 빌드 - 모든 상태의 광고 반환 (COMPLETED, IN_QUEUE, IN_PROGRESS, FAILED)
+    // 제품 정보도 함께 조회
     let query = supabase
       .from('image_ads')
-      .select('id, image_url, product_id, avatar_id, ad_type, status, created_at')
+      .select(`
+        id,
+        image_url,
+        product_id,
+        avatar_id,
+        ad_type,
+        status,
+        fal_request_id,
+        created_at,
+        ad_products (
+          id,
+          name,
+          image_url,
+          rembg_image_url
+        )
+      `)
       .eq('user_id', user.id)
-      .eq('status', 'COMPLETED')
+      .in('status', ['COMPLETED', 'IN_QUEUE', 'IN_PROGRESS', 'FAILED'])
       .order('created_at', { ascending: false })
-      .limit(limit)
 
     if (productId) {
       query = query.eq('product_id', productId)
+    }
+
+    // pagination 또는 legacy limit 적용
+    if (usePagination) {
+      query = query.range(offset, offset + actualPageSize - 1)
+    } else {
+      query = query.limit(actualPageSize)
     }
 
     const { data: ads, error } = await query
@@ -85,7 +156,17 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ ads })
+    // pagination 정보 포함하여 반환
+    return NextResponse.json({
+      ads,
+      pagination: usePagination ? {
+        page,
+        pageSize: actualPageSize,
+        totalCount: totalCount || 0,
+        totalPages: Math.ceil((totalCount || 0) / actualPageSize),
+        hasMore: page * actualPageSize < (totalCount || 0),
+      } : undefined,
+    })
   } catch (error) {
     console.error('이미지 광고 조회 오류:', error)
     return NextResponse.json(
@@ -116,7 +197,7 @@ export async function POST(request: NextRequest) {
 
     // 요청 바디 파싱
     const body: ImageAdRequestBody = await request.json()
-    const { adType, productId, avatarIds = [], outfitId, prompt, imageSize, quality = 'medium', numImages = 2, options } = body
+    const { adType, productId, avatarIds = [], outfitId, prompt, imageSize, quality = 'medium', numImages = 2, referenceStyleImageUrl, options, aiAvatarOptions } = body
 
     // 필수 필드 검증
     // wearing 타입은 productId 불필요, 나머지는 필수
@@ -185,6 +266,9 @@ export async function POST(request: NextRequest) {
     // 첫 번째 아바타 ID (DB 저장용)
     let primaryAvatarId: string | null = null
 
+    // AI 생성 아바타 여부 확인
+    const isAiGeneratedAvatar = avatarIds.length > 0 && avatarIds[0] === 'ai-generated'
+
     if (adType !== 'productOnly') {
       if (avatarIds.length === 0) {
         return NextResponse.json(
@@ -193,8 +277,14 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      // AI 생성 아바타인 경우 - 아바타 이미지 없이 진행 (GPT-Image가 프롬프트만으로 생성)
+      if (isAiGeneratedAvatar) {
+        // AI 생성 아바타는 DB에 null로 저장
+        primaryAvatarId = null
+        // 아바타 이미지 URL은 추가하지 않음 - 프롬프트만으로 생성
+      }
       // 착용샷이고 의상이 선택된 경우, 의상 이미지 사용 (단일 아바타만)
-      if (adType === 'wearing' && outfitId) {
+      else if (adType === 'wearing' && outfitId) {
         const avatarId = avatarIds[0]
         primaryAvatarId = avatarId
 
@@ -291,7 +381,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (imageUrls.length === 0) {
+    // AI 생성 아바타가 아닌 경우에만 이미지 URL 필수
+    if (imageUrls.length === 0 && !isAiGeneratedAvatar) {
       return NextResponse.json(
         { error: 'No valid images found' },
         { status: 400 }
@@ -301,7 +392,7 @@ export async function POST(request: NextRequest) {
     // Gemini를 사용하여 최적화된 프롬프트 생성
     let finalPrompt = prompt
     try {
-      console.log('Gemini 프롬프트 생성 시작:', { adType, productName, hasProductImage: !!productImageUrl, avatarCount: avatarImageUrls.length })
+      console.log('Gemini 프롬프트 생성 시작:', { adType, productName, hasProductImage: !!productImageUrl, avatarCount: avatarImageUrls.length, hasReferenceStyle: !!referenceStyleImageUrl })
 
       const geminiResult = await generateImageAdPrompt({
         adType: adType as GeminiImageAdType,
@@ -310,6 +401,7 @@ export async function POST(request: NextRequest) {
         productImageUrl,
         avatarImageUrls: avatarImageUrls.length > 0 ? avatarImageUrls : undefined,
         outfitImageUrl,
+        referenceStyleImageUrl,
         selectedOptions: options || {},
         additionalPrompt: prompt,
       })
@@ -340,29 +432,87 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // fal.ai에 요청 제출
-    const queueResponse = await submitImageAdToQueue({
-      prompt: finalPrompt,
-      image_urls: imageUrls,
-      image_size: imageSize,
-      quality: quality,
-      num_images: validNumImages,
-      background: 'auto',
-    })
+    // 이미지 생성 요청 제출
+    const aspectRatio = imageSizeToAspectRatio(imageSize)
+    type QueueResponse = { request_id: string; provider: 'fal' | 'kie' }
+    let queueResponses: QueueResponse[]
 
-    // DB에 이미지 광고 레코드 생성 (numImages개 만큼)
+    if (isAiGeneratedAvatar) {
+      // AI 생성 아바타: kie.ai GPT-Image 1.5 사용 (참조 이미지 없이 프롬프트만으로 생성)
+      // 아바타 정보를 프롬프트에 추가
+      const genderMap: Record<string, string> = { male: 'male', female: 'female', any: '' }
+      const ageMap: Record<string, string> = { young: 'in their 20s-30s', middle: 'in their 30s-40s', mature: 'in their 40s-50s', any: '' }
+      const styleMap: Record<string, string> = { natural: 'natural and friendly', professional: 'professional and sophisticated', casual: 'casual and relaxed', elegant: 'elegant and luxurious', any: '' }
+      const ethnicityMap: Record<string, string> = { korean: 'Korean', asian: 'Asian', western: 'Western/Caucasian', any: '' }
+
+      const avatarParts: string[] = []
+      if (aiAvatarOptions?.ethnicity && ethnicityMap[aiAvatarOptions.ethnicity]) {
+        avatarParts.push(ethnicityMap[aiAvatarOptions.ethnicity])
+      }
+      if (aiAvatarOptions?.targetGender && genderMap[aiAvatarOptions.targetGender]) {
+        avatarParts.push(genderMap[aiAvatarOptions.targetGender])
+      }
+      if (aiAvatarOptions?.targetAge && ageMap[aiAvatarOptions.targetAge]) {
+        avatarParts.push(`person ${ageMap[aiAvatarOptions.targetAge]}`)
+      } else {
+        avatarParts.push('person')
+      }
+      if (aiAvatarOptions?.style && styleMap[aiAvatarOptions.style]) {
+        avatarParts.push(`with ${styleMap[aiAvatarOptions.style]} appearance`)
+      }
+
+      const avatarDescription = avatarParts.join(' ')
+      const aiAvatarPrompt = `A ${avatarDescription}. ${finalPrompt}`
+
+      // kie.ai aspect ratio 변환
+      const kieAspectRatio: GPTImageAspectRatio = aspectRatio === '1:1' ? '1:1' : aspectRatio === '3:2' ? '3:2' : '2:3'
+      const kieQuality = quality === 'high' ? 'high' : 'medium'
+
+      // AI 아바타용 입력 이미지 (제품 이미지가 있으면 사용)
+      const aiInputUrls = productImageUrl ? [productImageUrl] : []
+
+      console.log('AI 아바타 이미지 광고 생성 (kie.ai GPT-Image 1.5):', { avatarDescription, aspectRatio: kieAspectRatio, inputUrls: aiInputUrls })
+
+      const queuePromises = Array.from({ length: validNumImages }, async () => {
+        const response = await submitKieGptImageToQueue(aiInputUrls, aiAvatarPrompt, kieAspectRatio, kieQuality)
+        return { request_id: response.request_id, provider: 'kie' as const }
+      })
+
+      queueResponses = await Promise.all(queuePromises)
+    } else {
+      // 기존 아바타: fal.ai Seedream 4.5 Edit 사용
+      const seedreamQuality = quality === 'high' ? 'high' : 'basic'
+
+      const queuePromises = Array.from({ length: validNumImages }, async () => {
+        const response = await submitSeedreamEditToQueue({
+          prompt: finalPrompt,
+          image_urls: imageUrls,
+          aspect_ratio: aspectRatio,
+          quality: seedreamQuality,
+        })
+        return { request_id: response.request_id, provider: 'fal' as const }
+      })
+
+      queueResponses = await Promise.all(queuePromises)
+    }
+
+    // DB에 이미지 광고 레코드 생성 (각 요청별로)
     const imageAdRecords = []
     for (let i = 0; i < validNumImages; i++) {
+      // provider prefix 추가 (kie:xxx 또는 fal:xxx)
+      const { request_id, provider } = queueResponses[i]
+      const fal_request_id = `${provider}:${request_id}`
+
       const { data: imageAd, error: insertError } = await supabase
         .from('image_ads')
         .insert({
           user_id: user.id,
           product_id: productId || null,
-          avatar_id: primaryAvatarId,  // 다중 아바타 중 첫 번째 아바타 ID
+          avatar_id: primaryAvatarId,  // AI 아바타일 경우 null
           outfit_id: outfitId || null,
           ad_type: adType,
           status: 'IN_QUEUE',
-          fal_request_id: `${queueResponse.request_id}_${i}`,  // 인덱스로 구분
+          fal_request_id: fal_request_id,
           prompt: finalPrompt,
           image_size: imageSize,
           quality: quality,
@@ -379,7 +529,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      requestId: queueResponse.request_id,
+      requestIds: queueResponses.map(r => `${r.provider}:${r.request_id}`),
       numImages: validNumImages,
       imageAdIds: imageAdRecords,
     })

@@ -173,67 +173,46 @@
     "title": "広告音楽管理",
     "subtitle": "広告用のBGMを作成します",
     "createNew": "新規音楽作成",
-    "noMusic": "作成された音楽がありません",
-    "startCreating": "最初のBGMを作成しましょう",
+    "emptyList": "作成された音楽がありません",
+    "emptyDescription": "最初のBGMを作成しましょう",
     "name": "音楽名",
     "namePlaceholder": "音楽名を入力",
-    "selectOptions": "オプションを選択",
     "mood": "雰囲気",
     "genre": "ジャンル",
     "productType": "製品タイプ",
+    "cancel": "キャンセル",
+    "generate": "音楽を生成",
+    "generating": "生成中...",
+    "download": "ダウンロード",
+    "failed": "生成失敗",
     "moods": {
       "bright": "明るい",
       "calm": "穏やか",
-      "exciting": "わくわくする",
       "emotional": "感動的",
-      "hopeful": "希望に満ちた",
-      "luxurious": "高級感のある",
-      "playful": "遊び心のある",
       "professional": "プロフェッショナル",
-      "refreshing": "爽やか",
-      "warm": "温かい"
+      "exciting": "わくわくする",
+      "trendy": "トレンディ"
     },
     "genres": {
       "pop": "ポップ",
       "electronic": "エレクトロニック",
-      "acoustic": "アコースティック",
-      "cinematic": "シネマティック",
-      "corporate": "コーポレート",
-      "hiphop": "ヒップホップ",
-      "jazz": "ジャズ",
       "classical": "クラシック",
-      "lofi": "Lo-Fi",
-      "ambient": "アンビエント"
+      "jazz": "ジャズ",
+      "rock": "ロック",
+      "hiphop": "ヒップホップ",
+      "ambient": "アンビエント",
+      "acoustic": "アコースティック"
     },
     "productTypes": {
       "cosmetics": "化粧品",
-      "fashion": "ファッション",
       "food": "食品・飲料",
       "tech": "テック・電子機器",
-      "lifestyle": "ライフスタイル",
+      "fashion": "ファッション",
       "health": "ヘルス・ウェルネス",
-      "travel": "旅行",
+      "automobile": "自動車",
       "finance": "金融",
-      "education": "教育",
-      "general": "一般"
-    },
-    "generate": "音楽を生成",
-    "generating": "生成中...",
-    "creditsRequired": "2クレジット必要",
-    "myMusic": "マイ音楽",
-    "status": {
-      "pending": "待機中",
-      "inQueue": "キュー待機中",
-      "inProgress": "生成中",
-      "completed": "完了",
-      "failed": "失敗"
-    },
-    "confirmDelete": "この音楽を削除してもよろしいですか？",
-    "delete": "削除",
-    "download": "ダウンロード",
-    "play": "再生",
-    "pause": "一時停止",
-    "duration": "再生時間"
+      "lifestyle": "ライフスタイル"
+    }
   },
   "background": {
     "title": "商品撮影用背景",
@@ -555,6 +534,7 @@
         "style": "スタイル",
         "pose": "ポーズ",
         "expression": "表情",
+        "gaze": "視線",
         "framing": "フレーミング",
         "action": "アクション",
         "setting": "場所",
@@ -566,7 +546,8 @@
         "layout": "レイアウト",
         "season": "季節",
         "theme": "テーマ",
-        "atmosphere": "雰囲気"
+        "atmosphere": "雰囲気",
+        "productPlacement": "商品配置"
       },
       "options": {
         "studioWhite": "ホワイトスタジオ",
@@ -620,6 +601,11 @@
         "smile": "笑顔",
         "confident": "自信",
         "friendly": "フレンドリー",
+        "camera": "カメラを見る",
+        "product": "商品を見る",
+        "away": "よそを見る",
+        "down": "下を見る",
+        "up": "上を見る",
         "closeup": "クローズアップ",
         "medium": "ミディアムショット",
         "fullBody": "全身",
@@ -678,7 +664,12 @@
         "valentines": "バレンタイン",
         "newYear": "新年",
         "festive": "フェスティブ",
-        "none": "なし"
+        "none": "なし",
+        "noProduct": "商品なし",
+        "holdingProduct": "商品を持つ",
+        "inBag": "バッグに入れる",
+        "asAccessory": "アクセサリーとして",
+        "nearbyProduct": "近くに配置"
       }
     }
   },

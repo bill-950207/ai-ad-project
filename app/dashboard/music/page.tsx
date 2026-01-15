@@ -265,10 +265,10 @@ export default function MusicPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground mb-2">
-            {musicT?.title || '광고 음악 관리'}
+            {(musicT?.title as string) || '광고 음악 관리'}
           </h1>
           <p className="text-muted-foreground">
-            {musicT?.subtitle || '광고에 사용할 배경 음악을 생성하세요'}
+            {(musicT?.subtitle as string) || '광고에 사용할 배경 음악을 생성하세요'}
           </p>
         </div>
         <button
@@ -276,7 +276,7 @@ export default function MusicPage() {
           className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
         >
           <Plus className="w-4 h-4" />
-          {musicT?.createNew || '새 음악 생성'}
+          {(musicT?.createNew as string) || '새 음악 생성'}
         </button>
       </div>
 
@@ -293,16 +293,16 @@ export default function MusicPage() {
             <Music className="w-10 h-10 text-primary" />
           </div>
           <h3 className="text-xl font-semibold text-foreground mb-3">
-            {musicT?.emptyList || '생성된 음악이 없습니다'}
+            {(musicT?.emptyList as string) || '생성된 음악이 없습니다'}
           </h3>
           <p className="text-muted-foreground mb-6">
-            {musicT?.emptyDescription || '새 음악을 생성하여 광고에 활용하세요'}
+            {(musicT?.emptyDescription as string) || '새 음악을 생성하여 광고에 활용하세요'}
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
             className="px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors font-medium"
           >
-            {musicT?.createNew || '새 음악 생성'}
+            {(musicT?.createNew as string) || '새 음악 생성'}
           </button>
         </div>
       ) : (
@@ -335,7 +335,7 @@ export default function MusicPage() {
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                         <div className="text-center text-white">
                           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                          <p className="text-sm">{musicT?.generating || '생성 중...'}</p>
+                          <p className="text-sm">{(musicT?.generating as string) || '생성 중...'}</p>
                         </div>
                       </div>
                     )}
@@ -379,7 +379,7 @@ export default function MusicPage() {
                     {/* 실패 상태 */}
                     {music.status === 'FAILED' && (
                       <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center">
-                        <p className="text-red-500 font-medium">{musicT?.failed || '생성 실패'}</p>
+                        <p className="text-red-500 font-medium">{(musicT?.failed as string) || '생성 실패'}</p>
                       </div>
                     )}
                   </div>
@@ -405,12 +405,12 @@ export default function MusicPage() {
                     <div className="flex flex-wrap gap-1 mb-3">
                       {music.mood && (
                         <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded">
-                          {musicT?.moods?.[music.mood as keyof typeof musicT.moods] || music.mood}
+                          {((musicT?.moods as Record<string, string>)?.[music.mood]) || music.mood}
                         </span>
                       )}
                       {music.genre && (
                         <span className="text-xs px-2 py-0.5 bg-secondary text-secondary-foreground rounded">
-                          {musicT?.genres?.[music.genre as keyof typeof musicT.genres] || music.genre}
+                          {((musicT?.genres as Record<string, string>)?.[music.genre]) || music.genre}
                         </span>
                       )}
                       {(music.tracks?.length || 0) > 1 && (
@@ -428,7 +428,7 @@ export default function MusicPage() {
                           className="flex items-center gap-1 px-3 py-1.5 text-sm bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
                         >
                           <Download className="w-3.5 h-3.5" />
-                          {musicT?.download || '다운로드'}
+                          {(musicT?.download as string) || '다운로드'}
                         </button>
                       )}
                       <button
@@ -455,20 +455,20 @@ export default function MusicPage() {
           />
           <div className="relative bg-card border border-border rounded-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-foreground mb-6">
-              {musicT?.createNew || '새 음악 생성'}
+              {(musicT?.createNew as string) || '새 음악 생성'}
             </h2>
 
             <div className="space-y-4">
               {/* 이름 */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  {musicT?.name || '음악 이름'}
+                  {(musicT?.name as string) || '음악 이름'}
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder={musicT?.namePlaceholder || '예: 봄 시즌 광고 음악'}
+                  placeholder={(musicT?.namePlaceholder as string) || '예: 봄 시즌 광고 음악'}
                   className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
@@ -476,7 +476,7 @@ export default function MusicPage() {
               {/* 분위기 */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  {musicT?.mood || '분위기'}
+                  {(musicT?.mood as string) || '분위기'}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {MOOD_OPTIONS.map(option => (
@@ -489,7 +489,7 @@ export default function MusicPage() {
                           : 'bg-secondary border-border hover:border-primary/50'
                       }`}
                     >
-                      {musicT?.moods?.[option.labelKey as keyof typeof musicT.moods] || option.labelKey}
+                      {((musicT?.moods as Record<string, string>)?.[option.labelKey]) || option.labelKey}
                     </button>
                   ))}
                 </div>
@@ -498,7 +498,7 @@ export default function MusicPage() {
               {/* 장르 */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  {musicT?.genre || '장르'}
+                  {(musicT?.genre as string) || '장르'}
                 </label>
                 <div className="grid grid-cols-4 gap-2">
                   {GENRE_OPTIONS.map(option => (
@@ -511,7 +511,7 @@ export default function MusicPage() {
                           : 'bg-secondary border-border hover:border-primary/50'
                       }`}
                     >
-                      {musicT?.genres?.[option.labelKey as keyof typeof musicT.genres] || option.labelKey}
+                      {((musicT?.genres as Record<string, string>)?.[option.labelKey]) || option.labelKey}
                     </button>
                   ))}
                 </div>
@@ -520,7 +520,7 @@ export default function MusicPage() {
               {/* 제품 유형 */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  {musicT?.productType || '제품 유형'}
+                  {(musicT?.productType as string) || '제품 유형'}
                 </label>
                 <div className="grid grid-cols-4 gap-2">
                   {PRODUCT_TYPE_OPTIONS.map(option => (
@@ -533,7 +533,7 @@ export default function MusicPage() {
                           : 'bg-secondary border-border hover:border-primary/50'
                       }`}
                     >
-                      {musicT?.productTypes?.[option.labelKey as keyof typeof musicT.productTypes] || option.labelKey}
+                      {((musicT?.productTypes as Record<string, string>)?.[option.labelKey]) || option.labelKey}
                     </button>
                   ))}
                 </div>
@@ -546,7 +546,7 @@ export default function MusicPage() {
                 onClick={() => setShowCreateModal(false)}
                 className="flex-1 px-4 py-3 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-colors"
               >
-                {musicT?.cancel || '취소'}
+                {(musicT?.cancel as string) || '취소'}
               </button>
               <button
                 onClick={handleCreate}
@@ -556,10 +556,10 @@ export default function MusicPage() {
                 {isCreating ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    {musicT?.generating || '생성 중...'}
+                    {(musicT?.generating as string) || '생성 중...'}
                   </>
                 ) : (
-                  musicT?.generate || '생성하기'
+                  (musicT?.generate as string) || '생성하기'
                 )}
               </button>
             </div>

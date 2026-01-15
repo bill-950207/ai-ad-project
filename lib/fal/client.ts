@@ -868,3 +868,106 @@ export async function submitSeedreamFirstFrameToQueue(
     quality: 'high',
   })
 }
+
+// ============================================================
+// GPT-Image 1.5 Generate (아바타 없이 이미지 생성)
+// ============================================================
+
+/** GPT-Image 1.5 Generate 모델 ID */
+const GPT_IMAGE_GENERATE_MODEL_ID = 'fal-ai/gpt-image-1.5'
+
+/** GPT-Image 1.5 Generate 입력 타입 */
+export interface GptImageGenerateInput {
+  prompt: string                    // 생성 프롬프트
+  image_size?: ImageAdSize          // 이미지 크기 (기본값: 1024x1536)
+  quality?: 'low' | 'medium' | 'high'  // 품질 (기본값: high)
+  num_images?: number               // 생성할 이미지 수 (1-5, 기본값: 1)
+  background?: 'auto' | 'transparent' | 'opaque'  // 배경 (기본값: auto)
+}
+
+/** GPT-Image 1.5 Generate 출력 타입 */
+export interface GptImageGenerateOutput {
+  images: FalImageOutput[]
+}
+
+/**
+ * GPT-Image 1.5 Generate 요청을 fal.ai 큐에 제출
+ *
+ * 아바타 이미지 없이 프롬프트만으로 이미지 생성
+ *
+ * @param input - 이미지 생성 입력 데이터
+ * @returns 큐 제출 응답 (request_id 포함)
+ */
+export async function submitGptImageGenerateToQueue(input: GptImageGenerateInput): Promise<FalQueueSubmitResponse> {
+  const falInput = {
+    prompt: input.prompt,
+    image_size: input.image_size || '1024x1536',  // 세로 비율 기본값
+    quality: input.quality || 'high',
+    background: input.background || 'opaque',
+    num_images: input.num_images || 1,
+    output_format: 'png' as const,
+  }
+
+  const { request_id } = await fal.queue.submit(GPT_IMAGE_GENERATE_MODEL_ID, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${GPT_IMAGE_GENERATE_MODEL_ID}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${GPT_IMAGE_GENERATE_MODEL_ID}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${GPT_IMAGE_GENERATE_MODEL_ID}/requests/${request_id}/cancel`,
+  }
+}
+
+/**
+ * GPT-Image 1.5 Generate 큐 상태 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 현재 상태 정보
+ */
+export async function getGptImageGenerateQueueStatus(requestId: string): Promise<FalQueueStatusResponse> {
+  const status = await fal.queue.status(GPT_IMAGE_GENERATE_MODEL_ID, {
+    requestId,
+    logs: true,
+  })
+
+  const statusObj = status as unknown as Record<string, unknown>
+
+  return {
+    status: status.status as 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED',
+    queue_position: statusObj.queue_position as number | undefined,
+    logs: statusObj.logs as FalLog[] | undefined,
+  }
+}
+
+/**
+ * GPT-Image 1.5 Generate 결과 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 생성된 이미지 정보
+ */
+export async function getGptImageGenerateQueueResponse(requestId: string): Promise<GptImageGenerateOutput> {
+  const result = await fal.queue.result(GPT_IMAGE_GENERATE_MODEL_ID, {
+    requestId,
+  })
+
+  return result.data as GptImageGenerateOutput
+}
+
+/**
+ * GPT-Image 1.5 Generate 요청 취소
+ *
+ * @param requestId - 요청 ID
+ * @returns 취소 성공 여부
+ */
+export async function cancelGptImageGenerateQueueRequest(requestId: string): Promise<boolean> {
+  try {
+    await fal.queue.cancel(GPT_IMAGE_GENERATE_MODEL_ID, {
+      requestId,
+    })
+    return true
+  } catch {
+    return false
+  }
+}

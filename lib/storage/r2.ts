@@ -375,3 +375,54 @@ export async function uploadAdProductSourceFromDataUrl(
 
   return uploadDataUrlToR2(dataUrl, key)
 }
+
+// ============================================================
+// 참조 스타일 이미지 관련 함수
+// ============================================================
+
+/**
+ * 참조 스타일 이미지용 업로드 URL 생성
+ *
+ * @param userId - 사용자 ID
+ * @param ext - 이미지 확장자
+ * @returns Presigned URL 정보
+ */
+export async function generateReferenceStyleUploadUrl(
+  userId: string,
+  ext: string = 'png'
+): Promise<PresignedUrlResult> {
+  const timestamp = Date.now()
+  const fileName = `${userId}_reference_${timestamp}.${ext}`
+
+  return generatePresignedUrl({
+    fileName,
+    contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+    folder: 'reference-styles',
+    type: 'original',
+  })
+}
+
+/**
+ * 파일 버퍼를 R2에 직접 업로드
+ *
+ * @param buffer - 파일 버퍼
+ * @param key - R2 저장 키
+ * @param contentType - MIME 타입
+ * @returns 공개 URL
+ */
+export async function uploadBufferToR2(
+  buffer: Buffer,
+  key: string,
+  contentType: string
+): Promise<string> {
+  const command = new PutObjectCommand({
+    Bucket: R2_BUCKET_NAME,
+    Key: key,
+    Body: buffer,
+    ContentType: contentType,
+  })
+
+  await r2Client.send(command)
+
+  return `${R2_PUBLIC_URL}/${key}`
+}

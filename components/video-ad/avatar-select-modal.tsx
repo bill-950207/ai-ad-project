@@ -2,12 +2,13 @@
  * 아바타 선택 모달
  *
  * 기본 아바타와 의상 교체 아바타를 모두 보여주고 선택할 수 있습니다.
+ * AI가 제품에 어울리는 아바타를 자동 생성하는 옵션도 제공합니다.
  */
 
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { X, Loader2, Check, Shirt } from 'lucide-react'
+import { X, Loader2, Check, Shirt, Sparkles, ChevronDown } from 'lucide-react'
 
 interface Avatar {
   id: string
@@ -26,14 +27,24 @@ interface AvatarWithOutfits extends Avatar {
   outfits: AvatarOutfit[]
 }
 
+/** AI 아바타 생성 옵션 */
+export interface AiAvatarOptions {
+  targetGender: 'male' | 'female' | 'any'
+  targetAge: 'young' | 'middle' | 'mature' | 'any'
+  style: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
+  ethnicity: 'korean' | 'asian' | 'western' | 'any'
+}
+
 export interface SelectedAvatarInfo {
-  type: 'avatar' | 'outfit'
+  type: 'avatar' | 'outfit' | 'ai-generated'
   avatarId: string
   avatarName: string
   outfitId?: string
   outfitName?: string
   imageUrl: string
   displayName: string
+  // AI 생성 옵션 (type이 'ai-generated'일 때만)
+  aiOptions?: AiAvatarOptions
 }
 
 interface AvatarSelectModalProps {
@@ -42,7 +53,37 @@ interface AvatarSelectModalProps {
   onSelect: (avatar: SelectedAvatarInfo) => void
   selectedAvatarId?: string
   selectedOutfitId?: string
+  selectedType?: 'avatar' | 'outfit' | 'ai-generated'
 }
+
+// AI 아바타 옵션 라벨
+const GENDER_OPTIONS = [
+  { value: 'any', label: '성별 무관' },
+  { value: 'female', label: '여성' },
+  { value: 'male', label: '남성' },
+] as const
+
+const AGE_OPTIONS = [
+  { value: 'any', label: '연령 무관' },
+  { value: 'young', label: '20-30대' },
+  { value: 'middle', label: '30-40대' },
+  { value: 'mature', label: '40-50대' },
+] as const
+
+const STYLE_OPTIONS = [
+  { value: 'any', label: '무관' },
+  { value: 'natural', label: '자연스러운' },
+  { value: 'professional', label: '전문적인' },
+  { value: 'casual', label: '캐주얼' },
+  { value: 'elegant', label: '우아한' },
+] as const
+
+const ETHNICITY_OPTIONS = [
+  { value: 'any', label: '무관' },
+  { value: 'korean', label: '한국인' },
+  { value: 'asian', label: '아시아인' },
+  { value: 'western', label: '서양인' },
+] as const
 
 export function AvatarSelectModal({
   isOpen,
@@ -50,45 +91,38 @@ export function AvatarSelectModal({
   onSelect,
   selectedAvatarId,
   selectedOutfitId,
+  selectedType,
 }: AvatarSelectModalProps) {
   const [avatarsWithOutfits, setAvatarsWithOutfits] = useState<AvatarWithOutfits[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [expandedAvatarId, setExpandedAvatarId] = useState<string | null>(null)
 
-  // 아바타 및 의상 데이터 로드
+  // AI 아바타 옵션 상태
+  const [showAiOptions, setShowAiOptions] = useState(selectedType === 'ai-generated')
+  const [aiGender, setAiGender] = useState<'male' | 'female' | 'any'>('any')
+  const [aiAge, setAiAge] = useState<'young' | 'middle' | 'mature' | 'any'>('any')
+  const [aiStyle, setAiStyle] = useState<'natural' | 'professional' | 'casual' | 'elegant' | 'any'>('any')
+  const [aiEthnicity, setAiEthnicity] = useState<'korean' | 'asian' | 'western' | 'any'>('any')
+
+  // 아바타 및 의상 데이터 로드 (N+1 문제 해결: 단일 쿼리로 의상까지 조회)
   const fetchData = useCallback(async () => {
     if (!isOpen) return
 
     setIsLoading(true)
     try {
-      // 아바타 목록 조회
-      const avatarsRes = await fetch('/api/avatars')
+      // 아바타 + 의상 목록을 한 번의 API 호출로 조회
+      const avatarsRes = await fetch('/api/avatars?includeOutfits=true')
       if (!avatarsRes.ok) throw new Error('Failed to fetch avatars')
 
       const avatarsData = await avatarsRes.json()
-      const completedAvatars = avatarsData.avatars.filter(
-        (a: Avatar & { status: string }) => a.status === 'COMPLETED' && a.image_url
-      )
 
-      // 각 아바타의 의상 목록 조회
-      const avatarsWithOutfitsData: AvatarWithOutfits[] = await Promise.all(
-        completedAvatars.map(async (avatar: Avatar) => {
-          try {
-            const outfitsRes = await fetch(`/api/avatars/${avatar.id}/outfits`)
-            if (outfitsRes.ok) {
-              const outfitsData = await outfitsRes.json()
-              // COMPLETED 상태이고 image_url이 있는 의상만 필터링
-              const completedOutfits = (outfitsData.outfits || []).filter(
-                (o: AvatarOutfit) => o.status === 'COMPLETED' && o.image_url
-              )
-              return { ...avatar, outfits: completedOutfits }
-            }
-          } catch (err) {
-            console.error(`의상 로드 실패 (avatar ${avatar.id}):`, err)
-          }
-          return { ...avatar, outfits: [] }
-        })
-      )
+      // COMPLETED 상태이고 image_url이 있는 아바타만 필터링
+      const avatarsWithOutfitsData: AvatarWithOutfits[] = avatarsData.avatars
+        .filter((a: Avatar & { status: string }) => a.status === 'COMPLETED' && a.image_url)
+        .map((avatar: Avatar & { outfits?: AvatarOutfit[] }) => ({
+          ...avatar,
+          outfits: avatar.outfits || [],
+        }))
 
       setAvatarsWithOutfits(avatarsWithOutfitsData)
 
@@ -171,6 +205,146 @@ export function AvatarSelectModal({
 
         {/* 컨텐츠 */}
         <div className="flex-1 overflow-y-auto p-4">
+          {/* AI 아바타 생성 옵션 */}
+          <div className="mb-4">
+            <button
+              onClick={() => setShowAiOptions(!showAiOptions)}
+              className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                selectedType === 'ai-generated'
+                  ? 'border-primary bg-primary/10'
+                  : 'border-dashed border-primary/50 hover:border-primary hover:bg-primary/5'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-medium text-foreground">AI가 제품에 맞는 아바타 생성</h3>
+                  <p className="text-xs text-muted-foreground">제품 정보를 분석하여 어울리는 가상 아바타을 자동 생성합니다</p>
+                </div>
+              </div>
+              <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${showAiOptions ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* AI 옵션 펼침 */}
+            {showAiOptions && (
+              <div className="mt-3 p-4 bg-secondary/30 rounded-xl border border-border space-y-4">
+                <p className="text-sm text-muted-foreground">생성할 아바타의 특성을 선택하세요</p>
+
+                {/* 성별 선택 */}
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-2 block">성별</label>
+                  <div className="flex gap-2">
+                    {GENDER_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setAiGender(option.value)}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                          aiGender === option.value
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary/50 text-foreground hover:bg-secondary'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 연령대 선택 */}
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-2 block">연령대</label>
+                  <div className="flex gap-2">
+                    {AGE_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setAiAge(option.value)}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                          aiAge === option.value
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary/50 text-foreground hover:bg-secondary'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 스타일 선택 */}
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-2 block">스타일</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {STYLE_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setAiStyle(option.value)}
+                        className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                          aiStyle === option.value
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary/50 text-foreground hover:bg-secondary'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 인종 선택 */}
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-2 block">인종</label>
+                  <div className="flex gap-2">
+                    {ETHNICITY_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setAiEthnicity(option.value)}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                          aiEthnicity === option.value
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary/50 text-foreground hover:bg-secondary'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 선택 버튼 */}
+                <button
+                  onClick={() => {
+                    onSelect({
+                      type: 'ai-generated',
+                      avatarId: 'ai-generated',
+                      avatarName: 'AI 생성 모델',
+                      imageUrl: '',  // AI 생성은 이미지 URL이 없음
+                      displayName: 'AI 자동 생성',
+                      aiOptions: {
+                        targetGender: aiGender,
+                        targetAge: aiAge,
+                        style: aiStyle,
+                        ethnicity: aiEthnicity,
+                      },
+                    })
+                  }}
+                  className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  AI 모델로 선택하기
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* 구분선 */}
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs text-muted-foreground">또는 기존 아바타 선택</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />

@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
-import { Plus, Video, Play, Loader2, Edit3, ArrowRight } from 'lucide-react'
+import { Plus, Video, Play, Loader2, Edit3, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { VideoAdTypeModal, VideoAdCategory } from './video-ad-type-modal'
 
 interface VideoAd {
@@ -27,30 +27,56 @@ interface VideoAd {
   created_at: string
 }
 
+interface PaginationInfo {
+  page: number
+  pageSize: number
+  totalCount: number
+  totalPages: number
+  hasMore: boolean
+}
+
+const PAGE_SIZE = 12
+
 export function VideoAdPageContent() {
   const { t } = useLanguage()
   const router = useRouter()
   const [videoAds, setVideoAds] = useState<VideoAd[]>([])
   const [isAdsLoading, setIsAdsLoading] = useState(true)
   const [showTypeModal, setShowTypeModal] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null)
 
-  const fetchVideoAds = useCallback(async () => {
+  const fetchVideoAds = useCallback(async (page: number = 1, isPolling: boolean = false) => {
+    // 폴링이 아닌 경우에만 로딩 상태 표시
+    if (!isPolling) {
+      setIsAdsLoading(true)
+    }
     try {
-      const res = await fetch('/api/video-ads?limit=20')
+      const res = await fetch(`/api/video-ads?page=${page}&pageSize=${PAGE_SIZE}`)
       if (res.ok) {
         const data = await res.json()
         setVideoAds(data.videos || [])
+        setPagination(data.pagination || null)
       }
     } catch (error) {
       console.error('영상 광고 목록 조회 오류:', error)
     } finally {
-      setIsAdsLoading(false)
+      if (!isPolling) {
+        setIsAdsLoading(false)
+      }
     }
   }, [])
 
   useEffect(() => {
-    fetchVideoAds()
-  }, [fetchVideoAds])
+    fetchVideoAds(currentPage)
+  }, [fetchVideoAds, currentPage])
+
+  // 페이지 변경 핸들러
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || (pagination && newPage > pagination.totalPages)) return
+    setCurrentPage(newPage)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   // 진행 중인 상태의 영상들을 폴링
   useEffect(() => {
@@ -60,13 +86,13 @@ export function VideoAdPageContent() {
 
     if (inProgressVideos.length === 0) return
 
-    // 5초마다 목록 새로고침
+    // 5초마다 목록 새로고침 (폴링 모드로)
     const intervalId = setInterval(() => {
-      fetchVideoAds()
+      fetchVideoAds(currentPage, true)
     }, 5000)
 
     return () => clearInterval(intervalId)
-  }, [videoAds, fetchVideoAds])
+  }, [videoAds, fetchVideoAds, currentPage])
 
   const handleCreateVideoAd = () => {
     setShowTypeModal(true)
@@ -302,6 +328,65 @@ export function VideoAdPageContent() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* 페이지네이션 */}
+        {pagination && pagination.totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-8">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage <= 1}
+              className="p-2 rounded-lg border border-border hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-1">
+              {/* 페이지 버튼들 */}
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                .filter(page => {
+                  // 첫 페이지, 마지막 페이지, 현재 페이지 주변 2페이지만 표시
+                  if (page === 1 || page === pagination.totalPages) return true
+                  if (Math.abs(page - currentPage) <= 1) return true
+                  return false
+                })
+                .map((page, index, arr) => {
+                  // 생략 부호(...) 표시
+                  const showEllipsisBefore = index > 0 && page - arr[index - 1] > 1
+
+                  return (
+                    <div key={page} className="flex items-center">
+                      {showEllipsisBefore && (
+                        <span className="px-2 text-muted-foreground">...</span>
+                      )}
+                      <button
+                        onClick={() => handlePageChange(page)}
+                        className={`min-w-[40px] h-10 px-3 rounded-lg font-medium transition-colors ${
+                          currentPage === page
+                            ? 'bg-primary text-primary-foreground'
+                            : 'hover:bg-secondary text-foreground'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    </div>
+                  )
+                })}
+            </div>
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= pagination.totalPages}
+              className="p-2 rounded-lg border border-border hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+
+            {/* 총 개수 표시 */}
+            <span className="ml-4 text-sm text-muted-foreground">
+              총 {pagination.totalCount}개
+            </span>
           </div>
         )}
       </section>
