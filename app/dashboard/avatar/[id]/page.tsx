@@ -571,12 +571,12 @@ export default function AvatarDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* 이미지 영역 */}
         <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <div className="relative bg-secondary/30 flex items-center justify-center p-4" style={{ maxHeight: '500px' }}>
+          <div className="relative bg-secondary/30 flex items-center justify-center">
             {avatar.image_url && (
               <img
                 src={avatar.image_url}
                 alt={avatar.name}
-                className="max-w-full max-h-[468px] object-contain rounded-lg"
+                className="max-w-full max-h-[500px] object-contain"
               />
             )}
           </div>
