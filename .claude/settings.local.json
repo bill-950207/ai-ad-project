@@ -27,7 +27,15 @@
       "Bash(lsof:*)",
       "Bash(PGPASSWORD='jocoding123!' psql \"postgresql://postgres.ilwhkpoxzxokfmzvpkof:jocoding123!@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres\" -c \"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = ''video_ads'' AND table_schema = ''public'' ORDER BY ordinal_position;\")",
       "Bash(npx prisma:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npm run lint:*)",
+      "Bash(git add:*)",
+      "Bash(git reset:*)",
+      "Bash(git checkout:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npx next lint --strict)"
     ]
   }
 }

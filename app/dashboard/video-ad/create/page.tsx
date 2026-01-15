@@ -56,12 +56,7 @@ function VideoAdCreateContent() {
   const category = searchParams.get('category')
   const { t } = useLanguage()
 
-  // 제품 설명 영상 카테고리인 경우 전용 마법사 표시
-  if (category === 'productDescription') {
-    return <ProductDescriptionWizard />
-  }
-
-  // 파일 입력 ref
+  // 파일 입력 ref - hooks는 항상 동일한 순서로 호출되어야 함
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // 기본 상태
@@ -135,8 +130,10 @@ function VideoAdCreateContent() {
   }, [])
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    if (category !== 'productDescription') {
+      fetchData()
+    }
+  }, [fetchData, category])
 
   // 선택된 제품에서 이름 가져오기
   useEffect(() => {
@@ -144,6 +141,11 @@ function VideoAdCreateContent() {
       setProductName(selectedProduct.name)
     }
   }, [selectedProduct, productName])
+
+  // 제품 설명 영상 카테고리인 경우 전용 마법사 표시
+  if (category === 'productDescription') {
+    return <ProductDescriptionWizard />
+  }
 
   // 로컬 이미지 파일 선택 핸들러
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
