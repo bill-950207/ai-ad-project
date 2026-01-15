@@ -568,18 +568,16 @@ export default function AvatarDetailPage() {
         {t.avatar.myAvatars}
       </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         {/* 이미지 영역 */}
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <div className="relative bg-secondary/30 flex items-center justify-center">
-            {avatar.image_url && (
-              <img
-                src={avatar.image_url}
-                alt={avatar.name}
-                className="max-w-full max-h-[500px] object-contain"
-              />
-            )}
-          </div>
+        <div className="bg-card border border-border rounded-xl overflow-hidden h-fit">
+          {avatar.image_url && (
+            <img
+              src={avatar.image_url}
+              alt={avatar.name}
+              className="w-full max-h-[500px] object-contain"
+            />
+          )}
         </div>
 
         {/* 정보 영역 */}

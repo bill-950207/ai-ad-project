@@ -1,7 +1,7 @@
 {
   "/dashboard/image-ad/[id]/page": "app/dashboard/image-ad/[id]/page.js",
   "/dashboard/image-ad/product/[id]/page": "app/dashboard/image-ad/product/[id]/page.js",
-  "/dashboard/avatar/[id]/page": "app/dashboard/avatar/[id]/page.js",
   "/dashboard/avatar/new/page": "app/dashboard/avatar/new/page.js",
-  "/dashboard/avatar/page": "app/dashboard/avatar/page.js"
+  "/dashboard/avatar/page": "app/dashboard/avatar/page.js",
+  "/dashboard/avatar/[id]/page": "app/dashboard/avatar/[id]/page.js"
 }
