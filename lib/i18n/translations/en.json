@@ -445,7 +445,8 @@
     "createdAt": "Created",
     "prompt": "Prompt",
     "viewProduct": "View Product",
-    "viewAvatar": "View Avatar"
+    "viewAvatar": "View Avatar",
+    "detailSettings": "Detail Settings"
   },
   "imageAdCreate": {
     "title": "Create Image Ad",

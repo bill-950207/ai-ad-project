@@ -445,7 +445,8 @@
     "createdAt": "作成日",
     "prompt": "プロンプト",
     "viewProduct": "製品詳細を見る",
-    "viewAvatar": "アバター詳細を見る"
+    "viewAvatar": "アバター詳細を見る",
+    "detailSettings": "詳細設定"
   },
   "imageAdCreate": {
     "title": "画像広告作成",

@@ -445,7 +445,8 @@
     "createdAt": "생성일",
     "prompt": "프롬프트",
     "viewProduct": "제품 상세보기",
-    "viewAvatar": "아바타 상세보기"
+    "viewAvatar": "아바타 상세보기",
+    "detailSettings": "상세 설정"
   },
   "imageAdCreate": {
     "title": "이미지 광고 생성",
