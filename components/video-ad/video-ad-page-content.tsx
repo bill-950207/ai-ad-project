@@ -20,6 +20,7 @@ interface VideoAd {
   product_id: string | null
   avatar_id: string | null
   duration: number | null
+  video_duration: number | null  // 실제 영상 길이 (초)
   resolution: string | null
   status: string
   category: string | null
@@ -100,20 +101,20 @@ export function VideoAdPageContent() {
 
   const handleSelectCategory = (category: VideoAdCategory) => {
     setShowTypeModal(false)
-    router.push(`/dashboard/video-ad/create?category=${category}`)
+    router.push(`/video-ad-create?category=${category}`)
   }
 
   const handleVideoClick = (video: VideoAd) => {
     // DRAFT 또는 생성 중 상태면 마법사로 이동하여 이어서 진행
     const draftStatuses = ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO']
     if (draftStatuses.includes(video.status) && video.category) {
-      router.push(`/dashboard/video-ad/create?category=${video.category}&videoAdId=${video.id}`)
+      router.push(`/video-ad-create?category=${video.category}&videoAdId=${video.id}`)
       return
     }
 
     // 영상 생성 중인 상태면 마법사의 생성 단계로 이동
     if ((video.status === 'IN_QUEUE' || video.status === 'IN_PROGRESS') && video.category) {
-      router.push(`/dashboard/video-ad/create?category=${video.category}&videoAdId=${video.id}`)
+      router.push(`/video-ad-create?category=${video.category}&videoAdId=${video.id}`)
       return
     }
 
@@ -318,7 +319,13 @@ export function VideoAdPageContent() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      {video.duration && <span>{video.duration}초</span>}
+                      {(video.video_duration || video.duration) && (
+                        <span>
+                          {video.video_duration
+                            ? `${Math.round(video.video_duration)}초`
+                            : `${video.duration}초`}
+                        </span>
+                      )}
                       {video.resolution && <span>{video.resolution}</span>}
                     </div>
                     <p className="text-xs text-muted-foreground">

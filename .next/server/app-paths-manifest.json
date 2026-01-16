@@ -1,7 +1,8 @@
 {
-  "/dashboard/image-ad/[id]/page": "app/dashboard/image-ad/[id]/page.js",
-  "/dashboard/image-ad/product/[id]/page": "app/dashboard/image-ad/product/[id]/page.js",
-  "/dashboard/avatar/new/page": "app/dashboard/avatar/new/page.js",
-  "/dashboard/avatar/page": "app/dashboard/avatar/page.js",
-  "/dashboard/avatar/[id]/page": "app/dashboard/avatar/[id]/page.js"
+  "/api/image-ads/status/[requestId]/route": "app/api/image-ads/status/[requestId]/route.js",
+  "/api/ad-products/route": "app/api/ad-products/route.js",
+  "/api/image-ads/route": "app/api/image-ads/route.js",
+  "/api/video-ads/route": "app/api/video-ads/route.js",
+  "/dashboard/image-ad/page": "app/dashboard/image-ad/page.js",
+  "/dashboard/video-ad/page": "app/dashboard/video-ad/page.js"
 }

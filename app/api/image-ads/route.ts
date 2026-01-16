@@ -516,6 +516,7 @@ export async function POST(request: NextRequest) {
           prompt: finalPrompt,
           image_size: imageSize,
           quality: quality,
+          selected_options: options || null,  // 사용자 선택 옵션 저장
         })
         .select('id')
         .single()

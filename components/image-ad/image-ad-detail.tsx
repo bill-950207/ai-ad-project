@@ -41,6 +41,30 @@ interface Outfit {
   image_url: string | null
 }
 
+interface SelectedOptions {
+  pose?: string
+  gaze?: string
+  background?: string
+  expression?: string
+  framing?: string
+  lighting?: string
+  angle?: string
+  style?: string
+  action?: string
+  setting?: string
+  focus?: string
+  scene?: string
+  location?: string
+  time?: string
+  mood?: string
+  layout?: string
+  season?: string
+  theme?: string
+  atmosphere?: string
+  productPlacement?: string
+  [key: string]: string | undefined
+}
+
 interface ImageAd {
   id: string
   image_url: string | null
@@ -49,6 +73,7 @@ interface ImageAd {
   prompt: string | null
   image_size: string | null
   quality: string | null
+  selected_options: SelectedOptions | null
   created_at: string
   product_id: string | null
   avatar_id: string | null
@@ -150,6 +175,211 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
     }
     const ratio = sizeToRatio[size] || size
     return ratios?.[ratio] || ratio
+  }
+
+  // 옵션 그룹 라벨
+  const optionGroupLabels: Record<string, string> = {
+    pose: '포즈',
+    gaze: '시선',
+    background: '배경',
+    expression: '표정',
+    framing: '프레이밍',
+    lighting: '조명',
+    angle: '앵글',
+    style: '스타일',
+    action: '액션',
+    setting: '장소',
+    focus: '포커스',
+    scene: '씬',
+    location: '장소',
+    time: '시간대',
+    mood: '분위기',
+    layout: '레이아웃',
+    season: '계절',
+    theme: '테마',
+    atmosphere: '분위기',
+    productPlacement: '제품 배치',
+  }
+
+  // 옵션 값 라벨
+  const optionValueLabels: Record<string, Record<string, string>> = {
+    pose: {
+      natural_hold: '자연스럽게 들기',
+      showing_camera: '카메라에 보여주기',
+      near_face: '얼굴 근처',
+      both_hands: '양손으로 들기',
+      casual_hold: '캐주얼하게 들기',
+      standing: '서 있는 포즈',
+      walking: '걷는 포즈',
+      sitting: '앉은 포즈',
+      dynamic: '다이나믹 포즈',
+    },
+    gaze: {
+      camera: '카메라 응시',
+      product: '제품 응시',
+      away: '다른 곳 응시',
+      down: '아래 응시',
+      up: '위 응시',
+    },
+    background: {
+      studio: '스튜디오',
+      studio_white: '화이트 스튜디오',
+      studio_gradient: '그라데이션 스튜디오',
+      outdoor: '야외',
+      home: '집',
+      office: '오피스',
+      cafe: '카페',
+      nature: '자연',
+      marble: '대리석',
+      wood: '나무',
+      fabric: '패브릭',
+      minimal: '미니멀',
+      white: '화이트',
+      gradient: '그라데이션',
+      neutral: '중성색',
+    },
+    expression: {
+      smile: '미소',
+      natural: '자연스러움',
+      confident: '자신감',
+      friendly: '친근함',
+    },
+    framing: {
+      closeup: '클로즈업',
+      medium: '미디엄샷',
+      full_body: '전신샷',
+      three_quarter: '3/4 샷',
+      upper_body: '상반신',
+    },
+    lighting: {
+      soft: '소프트',
+      natural: '자연광',
+      dramatic: '드라마틱',
+      warm: '따뜻한 조명',
+      cool: '차가운 조명',
+      consistent: '일관된 조명',
+    },
+    angle: {
+      front: '정면',
+      three_quarter: '3/4 앵글',
+      side: '측면',
+      top_down: '탑다운',
+      low_angle: '로우 앵글',
+    },
+    style: {
+      minimalist: '미니멀리스트',
+      luxury: '럭셔리',
+      lifestyle: '라이프스타일',
+      editorial: '에디토리얼',
+      commercial: '커머셜',
+      streetwear: '스트릿웨어',
+      elegant: '엘레강스',
+      influencer: '인플루언서',
+      professional: '프로페셔널',
+      casual: '캐주얼',
+      clean: '클린',
+      detailed: '디테일',
+      infographic: '인포그래픽',
+    },
+    action: {
+      applying: '바르는 중',
+      demonstrating: '시연',
+      enjoying: '즐기는 중',
+      testing: '테스트',
+      opening: '오픈',
+      revealing: '공개',
+      presenting: '프레젠팅',
+      excited: '설레는',
+    },
+    setting: {
+      bathroom: '욕실',
+      vanity: '화장대',
+      bedroom: '침실',
+      desk: '책상',
+      bed: '침대',
+      couch: '소파',
+      table: '테이블',
+      street: '거리',
+      indoor: '실내',
+    },
+    focus: {
+      product_focus: '제품 중심',
+      model_focus: '모델 중심',
+      balanced: '균형',
+      skin: '피부',
+      hair: '헤어',
+      overall: '전체',
+    },
+    scene: {
+      morning_routine: '모닝 루틴',
+      relaxing: '휴식',
+      working: '업무',
+      socializing: '소셜',
+      exercising: '운동',
+    },
+    location: {
+      living_room: '거실',
+      kitchen: '주방',
+      bedroom: '침실',
+      outdoor_terrace: '야외 테라스',
+      coffee_shop: '커피숍',
+    },
+    time: {
+      morning: '아침',
+      afternoon: '오후',
+      evening: '저녁',
+      golden_hour: '골든아워',
+    },
+    mood: {
+      luxury: '럭셔리',
+      casual: '캐주얼',
+      professional: '프로페셔널',
+      friendly: '친근',
+      energetic: '활기찬',
+      cozy: '아늑한',
+      vibrant: '생동감',
+      peaceful: '평화로운',
+      sophisticated: '세련된',
+      warm: '따뜻한',
+      fresh: '상쾌한',
+    },
+    layout: {
+      side_by_side: '좌우 배치',
+      split_screen: '분할 화면',
+      stacked: '상하 배치',
+    },
+    season: {
+      spring: '봄',
+      summer: '여름',
+      fall: '가을',
+      winter: '겨울',
+    },
+    theme: {
+      holiday: '홀리데이',
+      valentines: '발렌타인',
+      new_year: '새해',
+      festive: '축제',
+      none: '없음',
+    },
+    atmosphere: {
+      warm: '따뜻한',
+      fresh: '상쾌한',
+      cozy: '아늑한',
+      bright: '밝은',
+    },
+    productPlacement: {
+      none: '제품 없음',
+      holding: '손에 들고',
+      bag: '가방에',
+      accessory: '액세서리로',
+      nearby: '근처에 배치',
+    },
+  }
+
+  const getOptionLabel = (key: string, value: string): string => {
+    // 커스텀 옵션인 경우 그대로 표시
+    if (value === '__custom__') return '커스텀'
+    return optionValueLabels[key]?.[value] || value
   }
 
   if (isLoading) {
@@ -379,15 +609,33 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
             </div>
           </div>
 
-          {/* 프롬프트 */}
-          {imageAd.prompt && (
+          {/* 상세 설정 */}
+          {imageAd.selected_options && Object.keys(imageAd.selected_options).length > 0 && (
             <div className="bg-card border border-border rounded-xl p-4">
-              <h3 className="font-medium text-foreground mb-2">
-                {t.imageAdDetail?.prompt || '프롬프트'}
-              </h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {imageAd.prompt}
-              </p>
+              <div className="flex items-center gap-2 mb-3">
+                <Settings2 className="w-4 h-4 text-primary" />
+                <h3 className="font-medium text-foreground">
+                  {t.imageAdDetail?.detailSettings || '상세 설정'}
+                </h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(imageAd.selected_options).map(([key, value]) => {
+                  if (!value || value === 'none') return null
+                  return (
+                    <div
+                      key={key}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-secondary/50 rounded-lg text-sm"
+                    >
+                      <span className="text-muted-foreground">
+                        {optionGroupLabels[key] || key}:
+                      </span>
+                      <span className="text-foreground font-medium">
+                        {getOptionLabel(key, value)}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
         </div>

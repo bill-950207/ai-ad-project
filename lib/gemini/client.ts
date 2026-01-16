@@ -469,12 +469,22 @@ ${input.productInfo || 'None'}`
     : `Product Info:
 ${input.productInfo || 'No information provided'}`
 
-  // Image reference instructions (if images are attached)
+  // Image reference instructions with explicit IMAGE index (if images are attached)
+  let videoImageIndex = 1
+  const videoProductImageIndex = input.productImageUrl ? videoImageIndex++ : null
+  const videoAvatarImageIndex = input.avatarImageUrl ? videoImageIndex++ : null
+
   const imageReferenceSection = (input.productImageUrl || input.avatarImageUrl)
     ? `
-IMPORTANT: Please carefully analyze the attached images.
-${input.productImageUrl ? '- First image: This is the PRODUCT image. Describe the product\'s exact appearance including color, shape, material, and design details accurately.' : ''}
-${input.avatarImageUrl ? '- ' + (input.productImageUrl ? 'Second' : 'First') + ' image: This is the MODEL (avatar) image. Reference the model\'s appearance, clothing, pose, and style.' : ''}
+=== ATTACHED IMAGES GUIDE ===
+${videoProductImageIndex ? `[IMAGE${videoProductImageIndex}] = PRODUCT IMAGE
+- This is the product to advertise. Describe its exact appearance including color, shape, material, and design.
+- IMPORTANT: The product may be a figurine, doll, or character merchandise with human-like form. Even if it looks like a person, it is a PRODUCT, NOT a real human. Do NOT transform it into a real person.
+- Reference as "the product in IMAGE${videoProductImageIndex}" in your prompt.` : ''}
+${videoAvatarImageIndex ? `[IMAGE${videoAvatarImageIndex}] = MODEL (AVATAR) IMAGE
+- This is the human model for the advertisement. Reference their appearance, clothing, pose, and style.
+- Reference as "the model in IMAGE${videoAvatarImageIndex}" in your prompt.` : ''}
+
 You MUST describe the product and model appearances in detail so the image generation model can reproduce them identically to the originals.`
     : ''
 
@@ -503,7 +513,7 @@ Generate TWO prompts:
      * Lighting (with direction): "soft natural daylight streaming from large window"
      * Background: describe actual background details instead of blur/bokeh for UGC style
    - End with (concise): "Hyperrealistic photograph, 8K RAW quality"
-   - Product reference: Use "the product from the reference image" instead of brand/product names
+   - Product reference: Use "the product in IMAGE1" (with correct index) instead of brand/product names
    - AVOID for UGC style: "shallow depth of field", "creamy bokeh", "85mm lens" (causes excessive blur)
    - Write in English, 50-80 words (max 100 words)
 
@@ -636,14 +646,22 @@ ${input.productInfo || 'No product information provided - this is a general UGC 
 "${input.script}"`
     : `No script provided - please generate a natural UGC-style script based on the product info.`
 
-  // Image reference instructions
-  const imageReferenceSection = `
-IMPORTANT: Please carefully analyze the attached avatar image.
-- This is the person who will appear in the video speaking to camera
-- Describe their exact appearance: face features, hair color/style, skin tone, clothing
-- The generated image must show this EXACT same person
+  // Image reference instructions with explicit IMAGE index
+  let ugcImageIndex = 1
+  const ugcAvatarImageIndex = input.avatarImageUrl ? ugcImageIndex++ : null
+  const ugcProductImageIndex = input.productImageUrl ? ugcImageIndex++ : null
 
-${input.productImageUrl ? 'Also analyze the product image and describe it accurately for consistent reproduction.' : ''}`
+  const imageReferenceSection = `
+=== ATTACHED IMAGES GUIDE ===
+${ugcAvatarImageIndex ? `[IMAGE${ugcAvatarImageIndex}] = AVATAR (MODEL) IMAGE
+- This is the person who will appear in the video speaking to camera.
+- Describe their exact appearance: face features, hair color/style, skin tone, clothing.
+- The generated image must show this EXACT same person.
+- Reference as "the person in IMAGE${ugcAvatarImageIndex}" in your prompt.` : ''}
+${ugcProductImageIndex ? `[IMAGE${ugcProductImageIndex}] = PRODUCT IMAGE
+- This is the product to feature in the video.
+- IMPORTANT: The product may be a figurine, doll, or character merchandise with human-like form. Even if it looks like a person, it is a PRODUCT, NOT a real human. Do NOT transform it into a real person.
+- Reference as "the product in IMAGE${ugcProductImageIndex}" in your prompt.` : ''}`
 
   const prompt = `You are a UGC (User Generated Content) video expert. Create prompts for an authentic, relatable video where a real person talks about a product.
 
@@ -1335,21 +1353,30 @@ export async function generateImageAdPrompt(input: ImageAdPromptInput): Promise<
 - 설명: ${input.productDescription || '없음'}`
     : '제품 정보: 첨부된 이미지 참고'
 
-  // 이미지 첨부 순서 계산
+  // 이미지 첨부 순서 계산 (IMAGE1, IMAGE2 형태로 명확히 인덱싱)
   let imageIndex = 1
   const productImageIndex = input.productImageUrl ? imageIndex++ : null
   const avatarImageIndices = input.avatarImageUrls?.length ? Array.from({ length: input.avatarImageUrls.length }, () => imageIndex++) : []
   const outfitImageIndex = input.outfitImageUrl ? imageIndex++ : null
   const referenceStyleImageIndex = input.referenceStyleImageUrl ? imageIndex++ : null
 
-  // 이미지 참조 안내
+  // 이미지 참조 안내 (IMAGE1, IMAGE2 형태로 명확히 구분)
   const imageReferenceSection = `
-첨부된 이미지 분석 안내:
-${productImageIndex ? `- ${productImageIndex}번째 이미지 (제품): 제품의 색상, 형태, 질감, 디자인을 정확히 묘사해야 합니다.` : ''}
-${avatarImageIndices.length ? `- ${avatarImageIndices.join(', ')}번째 이미지 (모델 ${avatarImageIndices.length}장): 모델의 외모, 피부톤, 헤어스타일, 표정을 정확히 묘사해야 합니다.` : ''}
-${outfitImageIndex ? `- ${outfitImageIndex}번째 이미지 (의상): 의상의 색상, 스타일, 디테일을 정확히 묘사해야 합니다.` : ''}
-${referenceStyleImageIndex ? `- ${referenceStyleImageIndex}번째 이미지 (참조 스타일): ⚠️ 이 이미지는 분위기, 색감, 조명, 구도 스타일만 참조합니다.
-  ※ 중요: 참조 스타일 이미지의 제품이나 모델은 절대 사용하지 마세요! 오직 스타일 요소(색감 팔레트, 조명 방향/강도, 분위기, 구도, 배경 스타일)만 추출하여 프롬프트에 반영하세요.` : ''}`
+=== ATTACHED IMAGES GUIDE ===
+${productImageIndex ? `[IMAGE${productImageIndex}] = PRODUCT IMAGE
+- This is the product to advertise. Describe its color, shape, texture, and design accurately.
+- IMPORTANT: The product may be a figurine, doll, character merchandise, or statue that has human-like form. Even if it looks like a person, it is a PRODUCT, NOT a real human model. Do NOT transform or animate it into a real person.
+- Reference as "the product in IMAGE${productImageIndex}" in your prompt.` : ''}
+${avatarImageIndices.length ? `[IMAGE${avatarImageIndices.join('], [IMAGE')}] = MODEL IMAGE(S) (${avatarImageIndices.length} image${avatarImageIndices.length > 1 ? 's' : ''})
+- This is the human model for the advertisement. Describe their appearance, skin tone, hairstyle, and expression accurately.
+- Reference as "the model in IMAGE${avatarImageIndices[0]}" in your prompt.` : ''}
+${outfitImageIndex ? `[IMAGE${outfitImageIndex}] = OUTFIT IMAGE
+- This shows the clothing/outfit the model should wear. Describe its color, style, and details.
+- Reference as "the outfit in IMAGE${outfitImageIndex}" in your prompt.` : ''}
+${referenceStyleImageIndex ? `[IMAGE${referenceStyleImageIndex}] = STYLE REFERENCE IMAGE (Style only!)
+- Use ONLY for mood, color palette, lighting, and composition style.
+- DO NOT copy any products or people from this image! Extract only abstract style elements.
+- Reference as "the style of IMAGE${referenceStyleImageIndex}" in your prompt.` : ''}`
 
   const prompt = `당신은 Seedream 4.5 이미지 생성 모델을 위한 광고 프롬프트 전문가입니다.
 최고 품질의 상업 광고 이미지를 생성하기 위한 프롬프트를 작성해주세요.
@@ -1364,7 +1391,7 @@ ByteDance의 Seedream 4.5 이미지 편집/합성 모델에 최적화된 프롬�
 2. 자연어 문장으로 작성 (키워드 나열 금지)
 3. 첫 5-8단어가 가장 중요 - 핵심 주제를 맨 앞에
 4. 50-100 단어가 최적
-5. 참조 이미지 요소는 "the product from the reference image", "the model from the reference" 형태로 지칭
+5. 참조 이미지 요소는 IMAGE 인덱스로 명확히 지칭 (예: "the product in IMAGE1", "the model in IMAGE2")
 
 광고 유형별 핵심 요소:
 - productOnly: 제품 중심, 깔끔한 배경, 제품 디테일 강조
@@ -1386,11 +1413,16 @@ ByteDance의 Seedream 4.5 이미지 편집/합성 모델에 최적화된 프롬�
 - 품질: "Hyperrealistic photograph, 8K RAW quality"
 
 프롬프트 예시:
-"[인종/외모] from the reference image looks directly into the camera from a [앵글] angle, holding the product from the reference image near her face. She is in a [장소] with [조명 설명]. Shot on [렌즈]mm lens at f/[조리개], showing natural skin texture with visible pores and realistic eye reflections. Hyperrealistic photograph, 8K RAW quality."
+"The model in IMAGE2 looks directly into the camera from a [앵글] angle, holding the product in IMAGE1 near her face. She is in a [장소] with [조명 설명]. Shot on [렌즈]mm lens at f/[조리개], showing natural skin texture with visible pores and realistic eye reflections. Hyperrealistic photograph, 8K RAW quality."
+
+⚠️ 피규어/캐릭터 상품 주의:
+- IMAGE1(제품)이 피규어, 인형, 캐릭터 상품, 조각상 등 인물 형태인 경우가 있습니다.
+- 이 경우 제품을 실제 사람으로 변환하거나 애니메이션화하지 마세요.
+- 제품은 그대로 "제품"으로 유지하고, 모델(IMAGE2)이 들거나 보여주는 형태로 광고하세요.
 
 제품 로고/라벨 보존 (중요):
-- 참조 이미지에 있는 제품의 로고, 라벨, 브랜드 마크는 반드시 그대로 유지
-- "Preserve all existing logos, labels, and brand marks on the product exactly as shown in the reference image"
+- 제품 이미지(IMAGE1)에 있는 로고, 라벨, 브랜드 마크는 반드시 그대로 유지
+- "Preserve all existing logos, labels, and brand marks on the product in IMAGE1"
 - 제품의 패키지 디자인, 라벨 텍스트, 브랜드 로고는 원본 그대로 표현
 
 절대 금지:
@@ -1463,8 +1495,10 @@ ${imageReferenceSection}
 프롬프트는 첨부된 참조 이미지들의 요소를 조합하여 새로운 광고 이미지를 만들도록 해야 합니다.
 
 중요:
-1. 제품의 기존 로고/라벨 보존을 위해 "Preserve all existing logos, labels, and brand marks on the product exactly as shown in the reference image." 문구를 반드시 포함하세요.
-2. 새로운 텍스트 추가 방지를 위해 "Do not add any new text, watermarks, or overlays that are not present in the original reference image." 문구를 포함하세요.`
+1. 각 이미지는 IMAGE1, IMAGE2 형태로 명확히 참조하세요 (예: "the product in IMAGE1", "the model in IMAGE2").
+2. 제품의 기존 로고/라벨 보존을 위해 "Preserve all existing logos, labels, and brand marks on the product in IMAGE1." 문구를 반드시 포함하세요.
+3. 새로운 텍스트 추가 방지를 위해 "Do not add any new text, watermarks, or overlays." 문구를 포함하세요.
+4. 제품(IMAGE1)이 피규어/인형/캐릭터 상품처럼 인물 형태인 경우, 이를 실제 사람으로 변환하지 말고 제품 그대로 유지하세요.`
 
   const config: GenerateContentConfig = {
     thinkingConfig: {
@@ -2029,81 +2063,80 @@ export async function generateRecommendedCategoryOptions(
 ): Promise<RecommendedOptionsResult> {
   const language = input.language || 'ko'
 
-  // 언어별 응답 지시문
-  const languageInstructions: Record<string, string> = {
-    ko: '모든 응답(reason, overallStrategy, suggestedPrompt)은 반드시 한국어로 작성해주세요.',
-    en: 'All responses (reason, overallStrategy, suggestedPrompt) must be written in English.',
-    ja: 'すべての応答（reason、overallStrategy、suggestedPrompt）は必ず日本語で作成してください。',
+  // Output language instructions
+  const outputLanguageInstructions: Record<string, string> = {
+    ko: 'Write all text responses (reason, overallStrategy, suggestedPrompt) in Korean.',
+    en: 'Write all text responses (reason, overallStrategy, suggestedPrompt) in English.',
+    ja: 'Write all text responses (reason, overallStrategy, suggestedPrompt) in Japanese.',
   }
 
-  // 광고 유형별 한국어 설명
+  // Ad type descriptions
   const adTypeDescriptions: Record<ImageAdType, string> = {
-    productOnly: '제품 단독 촬영 - 제품만 깔끔하게 보여주는 상품 사진',
-    holding: '들고 있는 샷 - 모델이 제품을 자연스럽게 들고 있는 광고',
-    using: '사용 중인 샷 - 모델이 제품을 실제로 사용하는 모습',
-    wearing: '착용샷 - 모델이 의상/액세서리를 착용한 패션 광고',
-    beforeAfter: '비포/애프터 - 사용 전후 비교 이미지',
-    lifestyle: '라이프스타일 - 일상에서 제품과 함께하는 자연스러운 모습',
-    unboxing: '언박싱 - 제품 개봉 및 첫인상 리뷰 스타일',
-    comparison: '비교샷 - 제품 비교 스타일 광고',
-    seasonal: '시즌/테마 - 계절감이나 특별한 테마가 있는 광고',
+    productOnly: 'Product only shot - Clean product photography showcasing the product alone',
+    holding: 'Holding shot - Model naturally holding the product',
+    using: 'Using shot - Model actively using/demonstrating the product',
+    wearing: 'Wearing shot - Fashion advertisement with model wearing clothing/accessories',
+    beforeAfter: 'Before/After - Comparison image showing transformation',
+    lifestyle: 'Lifestyle - Natural everyday scene with the product',
+    unboxing: 'Unboxing - Product reveal and first impression style',
+    comparison: 'Comparison - Product comparison advertisement',
+    seasonal: 'Seasonal/Theme - Advertisement with seasonal or themed atmosphere',
   }
 
-  // 카테고리 그룹 정보를 텍스트로 변환 (키와 설명 포함)
+  // Convert category groups to text (with keys and descriptions)
   const groupsDescription = input.categoryGroups.map(group => {
     const optionsText = group.options.map(opt => `    - ${opt.key}: ${opt.description}`).join('\n')
     return `[${group.key}]\n${optionsText}`
   }).join('\n\n')
 
-  const prompt = `당신은 광고 이미지 제작 전문가입니다.
-제품 정보와 광고 유형을 분석하여 최적의 카테고리 옵션을 추천해주세요.
+  const prompt = `You are an expert advertising image producer.
+Analyze the product information and ad type to recommend optimal category options.
 
-${languageInstructions[language] || languageInstructions.ko}
+OUTPUT LANGUAGE: ${outputLanguageInstructions[language] || outputLanguageInstructions.ko}
 
-=== 제품 정보 ===
-제품명: ${input.productName || '미입력'}
-제품 설명: ${input.productDescription || '미입력'}
+=== PRODUCT INFORMATION ===
+Product Name: ${input.productName || 'Not provided'}
+Product Description: ${input.productDescription || 'Not provided'}
 
-=== 광고 유형 ===
+=== AD TYPE ===
 ${input.adType}: ${adTypeDescriptions[input.adType]}
 
-=== 선택 가능한 카테고리 옵션 ===
+=== AVAILABLE CATEGORY OPTIONS ===
 ${groupsDescription}
 
-=== 추천 가이드라인 ===
+=== RECOMMENDATION GUIDELINES ===
 
-1. 제품 특성 분석:
-   - 제품의 카테고리 (뷰티, 패션, 식품, 전자기기 등)
-   - 제품의 타겟 고객층
-   - 제품의 주요 셀링 포인트
+1. Product Analysis:
+   - Product category (beauty, fashion, food, electronics, etc.)
+   - Target customer demographics
+   - Key selling points
 
-2. 광고 유형별 최적 설정:
-   - productOnly: 제품이 가장 돋보이는 배경과 조명
-   - holding: 자연스럽고 친근한 포즈와 시선
-   - using: 제품 사용 동작에 맞는 액션과 장소
-   - wearing: 의상 스타일에 맞는 포즈와 배경
-   - lifestyle: 일상적이고 공감가는 장면과 분위기
-   - unboxing: 기대감을 주는 액션과 표정
-   - beforeAfter: 변화를 강조하는 레이아웃
-   - comparison: 명확한 비교가 되는 배경과 레이아웃
-   - seasonal: 시즌에 맞는 테마와 분위기
+2. Optimal Settings by Ad Type:
+   - productOnly: Background and lighting that best highlights the product
+   - holding: Natural, friendly pose and gaze direction
+   - using: Action and setting that matches product usage
+   - wearing: Pose and background that suits the clothing style
+   - lifestyle: Relatable everyday scene and mood
+   - unboxing: Exciting action and expression
+   - beforeAfter: Layout that emphasizes transformation
+   - comparison: Clear comparison with appropriate background
+   - seasonal: Theme and atmosphere matching the season
 
-3. 조화로운 조합:
-   - 선택된 옵션들이 서로 잘 어울려야 함
-   - 제품의 느낌과 일관성 유지
-   - 타겟 고객에게 어필하는 스타일
+3. Harmonious Combination:
+   - Selected options should complement each other
+   - Maintain consistency with product feel
+   - Appeal to target customers
 
-4. 각 옵션 선택 시:
-   - 주어진 옵션 목록 중 하나를 선택하거나
-   - 더 적합한 커스텀 옵션이 필요하면 '__custom__'을 선택하고 customText에 구체적인 설명 입력
+4. Option Selection:
+   - Select from the given option list, OR
+   - Use '__custom__' with customText for specific requirements
 
-5. 추가 프롬프트 제안 (suggestedPrompt):
-   - 선택한 옵션들을 보완하는 추가적인 스타일이나 분위기 설명
-   - 광고 이미지를 더 효과적으로 만들 수 있는 구체적인 지시사항
-   - 예: "부드러운 자연광 아래에서 제품의 고급스러움을 강조" 등
+5. Additional Prompt Suggestion (suggestedPrompt):
+   - Complementary style or atmosphere description
+   - Specific instructions to enhance the ad image
 
-중요: 각 카테고리 그룹에 대해 반드시 추천을 제공해야 합니다.
-선택한 옵션이 왜 이 제품에 적합한지 이유를 설명해주세요.`
+IMPORTANT: Provide recommendations for ALL category groups.
+Explain why each option is suitable for this product.`
 
   const config: GenerateContentConfig = {
     thinkingConfig: {

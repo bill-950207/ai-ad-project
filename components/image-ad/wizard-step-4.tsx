@@ -150,6 +150,7 @@ export function WizardStep4() {
         numImages,
         referenceStyleImageUrl: referenceUrl,
         aiAvatarOptions: selectedAvatarInfo?.type === 'ai-generated' ? selectedAvatarInfo.aiOptions : undefined,
+        options: categoryOptions,  // 선택한 옵션 저장
       }
 
       const createRes = await fetch('/api/image-ads', {

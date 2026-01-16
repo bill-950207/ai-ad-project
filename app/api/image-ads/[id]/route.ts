@@ -41,6 +41,7 @@ export async function GET(
         prompt,
         image_size,
         quality,
+        selected_options,
         created_at,
         product_id,
         avatar_id,

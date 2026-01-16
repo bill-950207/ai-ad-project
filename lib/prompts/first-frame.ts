@@ -1,0 +1,222 @@
+/**
+ * 첫 프레임 이미지 프롬프트
+ *
+ * 영상 광고의 첫 장면 이미지 생성에 사용되는 프롬프트 템플릿들
+ */
+
+import { PromptTemplate } from './types'
+import {
+  PHOTOREALISM_ESSENTIALS,
+  CAMERA_COMPOSITION_PROMPTS,
+  SEEDREAM_FORBIDDEN_TERMS,
+  UGC_BACKGROUND_STYLE,
+  JSON_RESPONSE_INSTRUCTION,
+} from './common'
+
+// ============================================================
+// 첫 프레임 프롬프트 시스템 지시
+// ============================================================
+
+/** 첫 프레임 생성 시스템 프롬프트 (Gemini용) */
+export const FIRST_FRAME_SYSTEM_PROMPT = `You are an expert photographer specializing in UGC (User-Generated Content) style product photography. Your task is to create Seedream 4.5 optimized prompts for generating the first frame of a product video advertisement.
+
+GOAL: Generate a 100% photorealistic image that looks like a real photograph taken by an influencer or content creator.
+
+CRITICAL RULES:
+1. NEVER include these terms: ${SEEDREAM_FORBIDDEN_TERMS.join(', ')}
+2. Hands must be: holding product naturally or in relaxed pose
+3. Background must be: ${UGC_BACKGROUND_STYLE}
+4. Always end with: ${PHOTOREALISM_ESSENTIALS.quality}
+
+PROMPT STRUCTURE:
+Subject (who) → Action/Pose (what) → Environment (where) → Lighting (how lit) → Camera/Technical (specs)
+
+PHOTOREALISM CHECKLIST:
+- Skin: ${PHOTOREALISM_ESSENTIALS.skin}
+- Hair: ${PHOTOREALISM_ESSENTIALS.hair}
+- Eyes: ${PHOTOREALISM_ESSENTIALS.eyes}
+- Include camera specs: shot on [focal length] lens at f/[aperture]`
+
+// ============================================================
+// 카메라 구도별 프롬프트 생성
+// ============================================================
+
+/** 카메라 구도에 따른 프롬프트 세그먼트 생성 */
+export function getCameraCompositionSegment(composition: string): string {
+  const config = CAMERA_COMPOSITION_PROMPTS[composition]
+  if (!config) {
+    return 'natural pose at comfortable angle'
+  }
+
+  return `${config.angle}, ${config.description}, ${config.handPosition}`
+}
+
+/** 카메라 구도별 상세 가이드 */
+export const CAMERA_COMPOSITION_DETAILED_GUIDES: Record<string, {
+  promptSegment: string
+  lightingRecommendation: string
+  depthOfField: string
+}> = {
+  'selfie-high': {
+    promptSegment: 'captured from high angle approximately 30 degrees above eye level, subject looking up with naturally enlarged eyes, one hand holding product at chest level',
+    lightingRecommendation: 'soft overhead lighting with catchlights in eyes',
+    depthOfField: 'f/2.0 for slight background separation while keeping face sharp',
+  },
+  'selfie-front': {
+    promptSegment: 'eye-level straight-on frontal view, direct eye contact with camera, confident expression, product held forward at chest height',
+    lightingRecommendation: 'balanced front lighting with soft fill',
+    depthOfField: 'f/1.8 for pleasing bokeh while maintaining sharp focus on face and product',
+  },
+  'selfie-side': {
+    promptSegment: 'three-quarter view at 45-degree angle, showing facial contours and profile definition, product visible from angled perspective',
+    lightingRecommendation: 'side lighting to emphasize facial structure',
+    depthOfField: 'f/2.2 for dimensional depth while keeping key features sharp',
+  },
+  'tripod': {
+    promptSegment: 'stable fixed-camera composition at chest to eye level, professional framing as if on tripod, both hands free to hold product naturally',
+    lightingRecommendation: 'controlled studio-style lighting or well-lit interior',
+    depthOfField: 'f/2.8 for professional look with moderate background blur',
+  },
+  'closeup': {
+    promptSegment: 'intimate close framing on face and upper chest, filling most of frame, detailed facial features visible, product held near face',
+    lightingRecommendation: 'soft beauty lighting with subtle shadows',
+    depthOfField: 'f/1.4 for strong subject isolation and creamy bokeh',
+  },
+  'fullbody': {
+    promptSegment: 'full body visible in frame from head to feet, environmental context included, product held at waist level in natural standing pose',
+    lightingRecommendation: 'even full-body lighting, possibly natural outdoor light',
+    depthOfField: 'f/4.0 to keep entire body and some background in focus',
+  },
+}
+
+// ============================================================
+// 프롬프트 템플릿
+// ============================================================
+
+/** 첫 프레임 프롬프트 생성 요청 템플릿 */
+export const FIRST_FRAME_PROMPT_TEMPLATE: PromptTemplate = {
+  id: 'first-frame-prompt-v1',
+  name: '첫 프레임 이미지 프롬프트 생성',
+  description: '영상 광고의 첫 장면 이미지 생성용 프롬프트',
+  category: 'video-ad',
+  targetModel: 'gemini',
+  version: {
+    version: '1.0.0',
+    createdAt: '2025-01-16',
+  },
+  variables: [
+    'productInfo',
+    'cameraComposition',
+    'cameraGuide',
+    'locationPrompt',
+    'hasProductImage',
+    'hasAvatarImage',
+  ],
+  template: `${FIRST_FRAME_SYSTEM_PROMPT}
+
+PRODUCT INFO:
+{{productInfo}}
+
+CAMERA COMPOSITION: {{cameraComposition}}
+{{cameraGuide}}
+
+LOCATION/BACKGROUND: {{locationPrompt}}
+
+REFERENCE IMAGES PROVIDED:
+- Product image: {{hasProductImage}}
+- Avatar/Model image: {{hasAvatarImage}}
+
+Generate an optimized prompt for the first frame image.
+
+OUTPUT FORMAT (JSON):
+{
+  "prompt": "English prompt for Seedream 4.5 (50-80 words, max 100)",
+  "locationDescription": "사용된 장소/배경 설명 (한국어)"
+}
+
+Remember:
+- ${UGC_BACKGROUND_STYLE}
+- End with: ${PHOTOREALISM_ESSENTIALS.quality}
+- Include camera specs in the prompt
+
+${JSON_RESPONSE_INSTRUCTION}`,
+}
+
+/** AI 아바타용 첫 프레임 프롬프트 템플릿 (참조 이미지 없이) */
+export const AI_AVATAR_FIRST_FRAME_TEMPLATE: PromptTemplate = {
+  id: 'ai-avatar-first-frame-v1',
+  name: 'AI 아바타 첫 프레임 프롬프트',
+  description: 'AI로 아바타를 생성하는 첫 프레임 프롬프트',
+  category: 'video-ad',
+  targetModel: 'gemini',
+  version: {
+    version: '1.0.0',
+    createdAt: '2025-01-16',
+  },
+  variables: [
+    'productInfo',
+    'targetGender',
+    'targetAge',
+    'style',
+    'ethnicity',
+    'cameraComposition',
+    'locationPrompt',
+  ],
+  template: `${FIRST_FRAME_SYSTEM_PROMPT}
+
+SPECIAL TASK: Generate a first frame with an AI-created avatar (no reference person).
+
+AVATAR SPECIFICATIONS:
+- Gender: {{targetGender}}
+- Age range: {{targetAge}}
+- Style: {{style}}
+- Ethnicity: {{ethnicity}}
+
+PRODUCT INFO:
+{{productInfo}}
+
+CAMERA COMPOSITION: {{cameraComposition}}
+LOCATION: {{locationPrompt}}
+
+Create a prompt that:
+1. Describes a photorealistic person matching the specifications
+2. Shows them naturally presenting/holding the product
+3. Uses UGC-style authentic setting
+4. Includes all photorealism elements
+
+OUTPUT FORMAT (JSON):
+{
+  "prompt": "English prompt for GPT-Image 1.5 (60-90 words)",
+  "locationDescription": "사용된 장소/배경 설명 (한국어)",
+  "avatarDescription": "생성될 아바타 설명 (한국어)"
+}
+
+${JSON_RESPONSE_INSTRUCTION}`,
+}
+
+// ============================================================
+// 장소/배경 프롬프트 생성
+// ============================================================
+
+/** 기본 장소 옵션 */
+export const DEFAULT_LOCATION_OPTIONS = [
+  { key: 'modern_home', prompt: 'bright modern living room with minimalist decor and large windows', korean: '밝은 현대식 거실' },
+  { key: 'cozy_cafe', prompt: 'stylish cafe interior with warm ambient lighting and wooden accents', korean: '따뜻한 분위기의 카페' },
+  { key: 'clean_bathroom', prompt: 'clean bright bathroom with white marble surfaces and natural light', korean: '깔끔한 화이트 욕실' },
+  { key: 'outdoor_park', prompt: 'natural outdoor setting with greenery and soft daylight', korean: '푸른 야외 공원' },
+  { key: 'office', prompt: 'modern minimalist office space with clean desk and natural light', korean: '모던한 사무실' },
+  { key: 'bedroom', prompt: 'cozy bedroom with soft morning light streaming through sheer curtains', korean: '아늑한 침실' },
+  { key: 'kitchen', prompt: 'bright modern kitchen with natural materials and warm lighting', korean: '밝은 주방' },
+  { key: 'studio', prompt: 'professional photo studio with clean seamless background', korean: '전문 스튜디오' },
+]
+
+/** 제품 카테고리별 추천 장소 */
+export const PRODUCT_CATEGORY_LOCATIONS: Record<string, string[]> = {
+  skincare: ['clean_bathroom', 'bedroom', 'modern_home'],
+  makeup: ['bedroom', 'clean_bathroom', 'studio'],
+  food: ['kitchen', 'cozy_cafe', 'modern_home'],
+  fashion: ['modern_home', 'outdoor_park', 'cozy_cafe'],
+  tech: ['office', 'modern_home', 'cozy_cafe'],
+  fitness: ['outdoor_park', 'modern_home', 'studio'],
+  home: ['modern_home', 'bedroom', 'kitchen'],
+}

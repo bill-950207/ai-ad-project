@@ -537,6 +537,7 @@ model image_ads {
   prompt             String?
   image_size         String?
   quality            String?
+  selected_options   Json?           // 사용자 선택 옵션 {"pose": "holding", "background": "studio", ...}
   image_url          String?
   image_url_original String?
   image_width        Int?

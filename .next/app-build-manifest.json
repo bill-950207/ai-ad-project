@@ -1,21 +1,5 @@
 {
   "pages": {
-    "/(fullscreen)/image-ad-create/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(fullscreen)/image-ad-create/page.js"
-    ],
-    "/(fullscreen)/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(fullscreen)/layout.js"
-    ],
-    "/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/layout.css",
-      "static/chunks/app/layout.js"
-    ],
     "/dashboard/image-ad/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -26,30 +10,26 @@
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/layout.js"
     ],
-    "/dashboard/image-ad/[id]/page": [
+    "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/image-ad/[id]/page.js"
+      "static/css/app/layout.css",
+      "static/chunks/app/layout.js"
     ],
-    "/dashboard/image-ad/product/[id]/page": [
+    "/(fullscreen)/image-ad-create/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/image-ad/product/[id]/page.js"
+      "static/chunks/app/(fullscreen)/image-ad-create/page.js"
     ],
-    "/dashboard/avatar/page": [
+    "/(fullscreen)/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/avatar/page.js"
+      "static/chunks/app/(fullscreen)/layout.js"
     ],
-    "/dashboard/avatar/new/page": [
+    "/dashboard/video-ad/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/avatar/new/page.js"
-    ],
-    "/dashboard/avatar/[id]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/avatar/[id]/page.js"
+      "static/chunks/app/dashboard/video-ad/page.js"
     ]
   }
 }
