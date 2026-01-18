@@ -132,6 +132,7 @@ export interface ProductScriptInput {
   productInfo: string           // 제품 정보 (직접 입력)
   productUrl?: string           // 제품 URL (선택사항)
   durationSeconds: number       // 영상 길이 (초)
+  language?: 'ko' | 'en' | 'ja' | 'zh'  // 대본 생성 언어 (기본값: ko)
   additionalInstructions?: string  // 추가 지시사항
 }
 
@@ -208,6 +209,7 @@ export interface ImageAdPromptInput {
   referenceStyleImageUrl?: string        // 참조 스타일 이미지 URL (분위기/스타일만 참조)
   selectedOptions: Record<string, string> // 사용자 선택 옵션
   additionalPrompt?: string              // 추가 프롬프트
+  aiAvatarDescription?: string           // AI 생성 아바타 설명 (아바타 이미지 없이 텍스트로 생성할 때)
 }
 
 /** 이미지 광고 프롬프트 생성 결과 */
@@ -263,6 +265,22 @@ export interface FirstFramePromptResult {
 // ============================================================
 // API 함수
 // ============================================================
+
+/**
+ * 범용 텍스트 생성 함수
+ * 프롬프트를 받아서 Gemini로 텍스트를 생성합니다.
+ *
+ * @param prompt - 생성할 텍스트의 프롬프트
+ * @returns 생성된 텍스트
+ */
+export async function generateText(prompt: string): Promise<string> {
+  const response = await genAI.models.generateContent({
+    model: MODEL_NAME,
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+  })
+
+  return response.text || ''
+}
 
 /**
  * 제품 정보를 요약합니다.
@@ -811,66 +829,112 @@ Generate the following:
  * @returns 제품 요약과 3가지 스타일의 대본
  */
 export async function generateProductScripts(input: ProductScriptInput): Promise<ProductScriptResult> {
-  // 한국어 기준 1.1배속 TTS 사용 시 초당 약 5자
-  // (기본 속도 3.7자/초 × 1.35 보정 × 1.1 배속 = 약 5.5, 여유있게 5.0 적용)
-  const charsPerSecond = 5.0
+  // 언어별 TTS 속도 설정 (1.1배속 기준)
+  // - 한국어/일본어/중국어: 초당 약 5자
+  // - 영어: 초당 약 15자 (약 2.5-3 단어)
+  const language = input.language || 'ko'
+
+  const languageConfig: Record<string, {
+    charsPerSecond: number
+    name: string
+    formalExample: string
+    casualExample: string
+    energeticExample: string
+    styleName: { formal: string; casual: string; energetic: string }
+  }> = {
+    ko: {
+      charsPerSecond: 5.0,
+      name: '한국어',
+      formalExample: '안녕하세요. 오늘 소개해드릴 제품은...',
+      casualExample: '이거 진짜 써봤는데요, 솔직히...',
+      energeticExample: '여러분! 이거 진짜 대박이에요!',
+      styleName: { formal: '전문적', casual: '친근한', energetic: '활기찬' },
+    },
+    en: {
+      charsPerSecond: 15.0,
+      name: 'English',
+      formalExample: 'Hello. Today, I would like to introduce...',
+      casualExample: 'So I actually tried this, and honestly...',
+      energeticExample: 'Hey everyone! This is absolutely amazing!',
+      styleName: { formal: 'Professional', casual: 'Casual', energetic: 'Energetic' },
+    },
+    ja: {
+      charsPerSecond: 5.0,
+      name: '日本語',
+      formalExample: 'こんにちは。本日ご紹介する商品は...',
+      casualExample: 'これ実際に使ってみたんだけど、正直...',
+      energeticExample: 'みなさん！これ本当にすごいんです！',
+      styleName: { formal: 'プロフェッショナル', casual: 'カジュアル', energetic: 'エネルギッシュ' },
+    },
+    zh: {
+      charsPerSecond: 5.0,
+      name: '中文',
+      formalExample: '大家好。今天要为大家介绍的产品是...',
+      casualExample: '我实际用过这个，说实话...',
+      energeticExample: '大家！这个真的太棒了！',
+      styleName: { formal: '专业', casual: '亲切', energetic: '活力' },
+    },
+  }
+
+  const config_lang = languageConfig[language] || languageConfig.ko
+  const charsPerSecond = config_lang.charsPerSecond
   const targetChars = Math.round(input.durationSeconds * charsPerSecond)
   const minChars = Math.round(targetChars * 0.9)
   const maxChars = Math.round(targetChars * 1.1)
 
   const productSection = input.productUrl
-    ? `제품 URL: ${input.productUrl}
-위 URL에서 제품 정보를 직접 가져와서 분석해주세요.
+    ? `Product URL: ${input.productUrl}
+Please fetch and analyze product information from the URL above.
 
-추가 제품 정보:
+Additional product info:
 ${input.productInfo}`
-    : `제품 정보:
+    : `Product info:
 ${input.productInfo}`
 
-  const prompt = `당신은 광고 대본 전문 작가입니다. 다음 제품에 대한 설명 대본을 3가지 스타일로 작성해주세요.
+  const prompt = `You are a professional advertising script writer. Write 3 different style scripts for the following product.
 
 ${productSection}
 
-영상 길이: ${input.durationSeconds}초
-목표 글자 수: ${minChars}~${maxChars}자 (한국어 기준)
-${input.additionalInstructions ? `추가 지시사항: ${input.additionalInstructions}` : ''}
+Video duration: ${input.durationSeconds} seconds
+Target character count: ${minChars}~${maxChars} characters (for ${config_lang.name})
+${input.additionalInstructions ? `Additional instructions: ${input.additionalInstructions}` : ''}
 
-제품 정보 분석 지침:
-- 제품명, 브랜드, 가격, 설명, 핵심 특징 등 구조화된 정보가 제공된 경우 이를 활용하세요
-- 핵심 특징(셀링 포인트)은 대본에서 중요하게 다뤄야 합니다
-- 브랜드와 가격 정보가 있다면 자연스럽게 언급할 수 있습니다
+Product analysis guidelines:
+- Use structured information if provided (product name, brand, price, description, key features)
+- Key features (selling points) should be highlighted in the scripts
+- Brand and price information can be naturally mentioned if available
 
-3가지 스타일로 대본을 작성해주세요:
+Write scripts in 3 styles:
 
-1. **전문적 (formal)**:
-   - 신뢰감 있고 전문적인 톤
-   - 제품의 기능과 장점을 명확하게 설명
-   - 데이터나 수치를 활용
-   - 예: "안녕하세요. 오늘 소개해드릴 제품은..."
+1. **Professional (formal)**:
+   - Trustworthy and professional tone
+   - Clear explanation of product features and benefits
+   - Use data and numbers when appropriate
+   - Example: "${config_lang.formalExample}"
 
-2. **친근한 (casual)**:
-   - 친구에게 추천하는 듯한 자연스러운 대화체
-   - 개인적인 경험담 형식
-   - 솔직하고 편안한 분위기
-   - 예: "이거 진짜 써봤는데요, 솔직히..."
+2. **Friendly (casual)**:
+   - Natural conversational tone like recommending to a friend
+   - Personal experience format
+   - Honest and relaxed atmosphere
+   - Example: "${config_lang.casualExample}"
 
-3. **활기찬 (energetic)**:
-   - 열정적이고 에너지 넘치는 톤
-   - 감탄사와 강조 표현 활용
-   - 긍정적이고 신나는 분위기
-   - 예: "여러분! 이거 진짜 대박이에요!"
+3. **Lively (energetic)**:
+   - Enthusiastic and energetic tone
+   - Use exclamations and emphatic expressions
+   - Positive and exciting atmosphere
+   - Example: "${config_lang.energeticExample}"
 
-중요 지침:
-- 각 대본은 ${minChars}~${maxChars}자 범위 내로 작성
-- 자연스럽게 말할 수 있는 구어체로 작성
-- 제품의 핵심 가치와 셀링 포인트를 명확히 전달
-- 한국어로 작성`
+IMPORTANT:
+- Each script must be ${minChars}~${maxChars} characters
+- Write in natural spoken language
+- Clearly convey the product's core value and selling points
+- ALL SCRIPTS MUST BE WRITTEN IN ${config_lang.name.toUpperCase()}`
 
   const tools = input.productUrl
     ? [{ urlContext: {} }, { googleSearch: {} }]
     : undefined
 
-  const config: GenerateContentConfig = {
+  const genConfig: GenerateContentConfig = {
     tools,
     thinkingConfig: {
       thinkingLevel: ThinkingLevel.MEDIUM,
@@ -882,7 +946,7 @@ ${input.additionalInstructions ? `추가 지시사항: ${input.additionalInstruc
       properties: {
         productSummary: {
           type: Type.STRING,
-          description: '제품의 핵심 가치를 2-3문장으로 요약 (한국어)',
+          description: `Summarize the product's core value in 2-3 sentences (in ${config_lang.name})`,
         },
         scripts: {
           type: Type.ARRAY,
@@ -893,19 +957,19 @@ ${input.additionalInstructions ? `추가 지시사항: ${input.additionalInstruc
               style: {
                 type: Type.STRING,
                 enum: ['formal', 'casual', 'energetic'],
-                description: '대본 스타일 코드',
+                description: 'Script style code',
               },
               styleName: {
                 type: Type.STRING,
-                description: '스타일 이름 (한국어: 전문적, 친근한, 활기찬)',
+                description: `Style name in ${config_lang.name}`,
               },
               content: {
                 type: Type.STRING,
-                description: '대본 내용 (한국어)',
+                description: `Script content (must be in ${config_lang.name})`,
               },
               estimatedDuration: {
                 type: Type.NUMBER,
-                description: '예상 음성 길이 (초)',
+                description: 'Estimated speech duration (seconds)',
               },
             },
           },
@@ -917,7 +981,7 @@ ${input.additionalInstructions ? `추가 지시사항: ${input.additionalInstruc
   const response = await genAI.models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    config,
+    config: genConfig,
   })
 
   const responseText = response.text || ''
@@ -925,26 +989,60 @@ ${input.additionalInstructions ? `추가 지시사항: ${input.additionalInstruc
   try {
     return JSON.parse(responseText) as ProductScriptResult
   } catch {
-    // Fallback response
+    // Fallback responses by language
+    const fallbackByLanguage: Record<string, {
+      summary: string
+      formal: string
+      casual: string
+      energetic: string
+    }> = {
+      ko: {
+        summary: '제품 정보가 분석되었습니다.',
+        formal: '안녕하세요. 오늘 소개해드릴 제품에 대해 말씀드리겠습니다. 이 제품은 뛰어난 품질과 성능을 자랑합니다.',
+        casual: '안녕하세요! 오늘 정말 좋은 제품 하나 소개해드릴게요. 저도 써봤는데 정말 만족스러웠어요.',
+        energetic: '여러분! 이거 진짜 대박 제품이에요! 써보시면 왜 이렇게 인기 있는지 바로 아실 거예요!',
+      },
+      en: {
+        summary: 'Product information has been analyzed.',
+        formal: 'Hello. Today, I would like to introduce you to this product. It offers exceptional quality and performance.',
+        casual: 'Hey! Let me introduce you to this amazing product. I have tried it myself and I was really satisfied.',
+        energetic: 'Everyone! This product is absolutely amazing! Once you try it, you will understand why it is so popular!',
+      },
+      ja: {
+        summary: '製品情報が分析されました。',
+        formal: 'こんにちは。本日ご紹介する製品についてお話しします。この製品は優れた品質と性能を誇ります。',
+        casual: 'こんにちは！今日は本当に良い商品を紹介しますね。私も使ってみて、本当に満足でした。',
+        energetic: 'みなさん！これ本当にすごい商品なんです！使ってみれば、なぜこんなに人気があるのかすぐわかりますよ！',
+      },
+      zh: {
+        summary: '产品信息已分析完毕。',
+        formal: '大家好。今天我要为大家介绍这款产品。它具有卓越的品质和性能。',
+        casual: '大家好！今天给大家介绍一款很棒的产品。我自己用过，真的很满意。',
+        energetic: '大家！这款产品真的太棒了！用过之后你就会明白为什么这么受欢迎！',
+      },
+    }
+
+    const fallback = fallbackByLanguage[language] || fallbackByLanguage.ko
+
     return {
-      productSummary: '제품 정보가 분석되었습니다.',
+      productSummary: fallback.summary,
       scripts: [
         {
           style: 'formal',
-          styleName: '전문적',
-          content: '안녕하세요. 오늘 소개해드릴 제품에 대해 말씀드리겠습니다. 이 제품은 뛰어난 품질과 성능을 자랑합니다.',
+          styleName: config_lang.styleName.formal,
+          content: fallback.formal,
           estimatedDuration: input.durationSeconds,
         },
         {
           style: 'casual',
-          styleName: '친근한',
-          content: '안녕하세요! 오늘 정말 좋은 제품 하나 소개해드릴게요. 저도 써봤는데 정말 만족스러웠어요.',
+          styleName: config_lang.styleName.casual,
+          content: fallback.casual,
           estimatedDuration: input.durationSeconds,
         },
         {
           style: 'energetic',
-          styleName: '활기찬',
-          content: '여러분! 이거 진짜 대박 제품이에요! 써보시면 왜 이렇게 인기 있는지 바로 아실 거예요!',
+          styleName: config_lang.styleName.energetic,
+          content: fallback.energetic,
           estimatedDuration: input.durationSeconds,
         },
       ],
@@ -985,10 +1083,20 @@ export async function generateFirstFramePrompt(input: FirstFramePromptInput): Pr
 이 구도에 맞게 아바타의 포즈와 카메라 앵글을 설정해주세요.`
     : ''
 
+  // 이미지 인덱스 계산 (Seedream 4.5 Figure 형식)
+  const avatarImageIndex = 1
+  const productImageIndex = input.productImageUrl ? 2 : null
+
   const imageReferenceSection = `
-중요: 첨부된 이미지들을 주의 깊게 분석해주세요.
-- 첫 번째 이미지: 아바타(모델)입니다. 얼굴 특징, 머리 색상/스타일, 피부톤을 정확히 묘사해야 합니다.
-${input.productImageUrl ? '- 두 번째 이미지: 제품입니다. 제품의 색상, 형태, 디자인을 정확히 묘사해야 합니다.' : ''}`
+=== ATTACHED IMAGES GUIDE (Seedream 4.5 Figure Format) ===
+[Figure ${avatarImageIndex}] = AVATAR (MODEL) IMAGE
+- This is the human model for the video. Use this model's appearance in the generated image.
+- Reference as "the model from Figure ${avatarImageIndex}" in your prompt.
+${productImageIndex ? `[Figure ${productImageIndex}] = PRODUCT IMAGE
+- This is the product to feature.
+- ⚠️ IMPORTANT: The product may be a figurine, doll, character merchandise, or statue with human-like form. Even if it looks like a person, it is a PRODUCT, NOT a real human. Do NOT transform or animate it into a real person.
+- Reference as "the product from Figure ${productImageIndex}" in your prompt.
+- When the model holds or presents this product, write: "holding the product from Figure ${productImageIndex}"` : ''}`
 
   // 셀카 각도별 카메라 설정
   const selfieAngleSettings: Record<string, string> = {
@@ -997,19 +1105,23 @@ ${input.productImageUrl ? '- 두 번째 이미지: 제품입니다. 제품의 �
     'selfie-side': 'three-quarter angle selfie perspective (45 degrees from front), showing facial contours',
   }
 
-  // Seedream 4.5 최적화 가이드라인 (포토리얼리즘 강화 + 카메라/손 제거 강화)
+  // Seedream 4.5 최적화 가이드라인 (포토리얼리즘 강화 + 카메라/손 제거 강화 + Figure 형식)
   const seedreamGuide = `
 === Seedream 4.5 프롬프트 작성 가이드라인 (포토리얼리즘 필수) ===
-ByteDance의 Seedream 4.5 이미지 생성 모델에 최적화된 프롬프트를 작성해야 합니다.
+ByteDance의 Seedream 4.5 이미지-to-이미지 편집/합성 모델에 최적화된 프롬프트를 작성해야 합니다.
 목표: 실제 카메라로 촬영한 것처럼 보이는 100% 포토리얼리스틱 이미지
 
+⭐ 핵심 프롬프트 형식 (Seedream 4.5 공식 문서 기반):
+- 편집 명령 형태로 시작: "Place the model from Figure X holding the product from Figure Y in [환경]"
+- 반드시 "Figure 1", "Figure 2" 형식 사용 (IMAGE1, IMAGE2 아님!)
+- 예: "the model from Figure 1", "the product from Figure 2"
+- 예: "Place the model from Figure 1 holding the product from Figure 2"
+
 핵심 원칙:
-1. 구조: 주제(subject) → 스타일(style) → 구도(composition) → 조명(lighting) → 기술적 파라미터(technical) 순서
-2. 자연어 사용: "주제 + 행동 + 환경"을 자연스러운 문장으로 작성
-   - 좋은 예: "A woman in a casual dress holding a skincare product in a modern living room"
-   - 나쁜 예: "woman, dress, product, living room, modern" (키워드 나열 금지)
+1. 편집 명령 형태: "Place...", "Compose...", "Copy... and place..." 형식으로 시작
+2. Figure 참조: "the model from Figure 1", "the product from Figure 2" 형식 필수
 3. 간결성: 50-80단어가 최적. 복잡한 형용사를 쌓지 말고 3-5개의 강력한 서술어만 사용
-4. 첫 5-8단어가 가장 중요: 가장 중요한 주제/요소를 맨 앞에 배치
+4. 첫 문장에 편집 명령과 Figure 참조를 배치
 5. 조명 (방향성 필수): "soft natural daylight streaming from large window", "warm studio lighting from the left"
 6. 품질 키워드 (간결하게): "Hyperrealistic photograph, 8K RAW quality" (중복 표현 금지)
 
@@ -1033,7 +1145,7 @@ ByteDance의 Seedream 4.5 이미지 생성 모델에 최적화된 프롬프트�
 - "looking directly at camera from ${isSelfieMode ? selfieAngleSettings[input.cameraComposition || 'selfie-front'] : 'eye level'}"
 - 모델의 양손은 반드시 제품을 들고 있거나, 자연스러운 포즈(팔짱, 허리에 손 등)
 - 화면에는 모델의 상체/얼굴만 보이고, 카메라를 들고 있는 손은 프레임 밖에 있다고 가정
-- 첫 문장에 "both hands holding the product" 또는 "hands resting naturally" 명시
+- 첫 문장에 "both hands holding the product from Figure X" 명시
 
 셀피 앵글별 구도:
 - selfie-high (위에서): 카메라가 얼굴 위 30도에서 내려다보는 각도. 턱선이 슬림해보이고 눈이 커보임.
@@ -1045,14 +1157,17 @@ ByteDance의 Seedream 4.5 이미지 생성 모델에 최적화된 프롬프트�
 - 전문 촬영 스타일: 약간의 배경 블러 허용 (soft background 정도만)
 
 제품 참조 방식 (중요):
-- 제품 이미지가 제공된 경우: 제품명을 직접 쓰지 말고 "the product from the reference image" 형태로 참조
+- 제품 이미지가 제공된 경우: "the product from Figure X" 형식으로 참조 (브랜드명 직접 사용 금지)
 
 실제 사진처럼 보이게 하는 필수 요소:
 - 피부: "natural skin texture with subtle imperfections", "realistic skin with natural pores"
 - 머리카락: "individual hair strands catching light", "natural hair texture"
 - 눈: "realistic eye reflections with catchlights, natural iris detail"
 - 조명: "natural ambient lighting with soft shadows", 과도하게 균일한 조명 피하기
-- 환경: 실제 장소의 디테일 (가구, 소품, 창문 등)을 구체적으로 묘사`
+- 환경: 실제 장소의 디테일 (가구, 소품, 창문 등)을 구체적으로 묘사
+
+프롬프트 예시:
+"Place the model from Figure 1 holding the product from Figure 2 in a bright modern living room. The model looks directly at camera with a natural smile. Soft natural daylight from large window, shot on 50mm lens at f/4. Natural skin texture with subtle imperfections, realistic eye reflections. Hyperrealistic photograph, 8K RAW quality."`
 
   const prompt = `당신은 Seedream 4.5 이미지 생성 모델을 위한 프롬프트 전문가입니다.
 **제품 설명 토킹 영상의 첫 프레임** 이미지 생성을 위한 프롬프트를 작성해주세요.
@@ -1085,11 +1200,16 @@ ${imageReferenceSection}
 ${input.cameraComposition ? `6. 지정된 카메라 구도(${input.cameraComposition})를 반드시 반영` : ''}
 ${isSelfieMode ? `7. [필수] 셀피 구도이지만 카메라/스마트폰/손이 화면에 절대 보이지 않아야 함. 모델의 양손은 제품을 들고 있거나 자연스러운 포즈.` : ''}
 
-프롬프트 작성 지침 (Seedream 4.5 포토리얼리즘 최적화):
+프롬프트 작성 지침 (Seedream 4.5 Figure 형식 필수):
 - 영어로 작성, 50-80단어 권장 (최대 100단어)
-- 첫 문장에 가장 중요한 주제(아바타+제품)를 배치
-- 자연스러운 문장 형태로 작성 (키워드 나열 금지)
-${isSelfieMode ? `- 셀피 구도 시 반드시 "both hands holding the product" 또는 "hands visible and natural pose" 포함` : ''}
+- 반드시 편집 명령 형태로 시작: "Place the model from Figure 1 holding the product from Figure 2..."
+- "Figure 1", "Figure 2" 형식 필수 (IMAGE1, IMAGE2 형식 사용 금지!)
+${isSelfieMode ? `- 셀피 구도: "Place the model from Figure 1 with both hands holding the product from Figure 2..."` : ''}
+
+Figure 참조 형식:
+- 모델: "the model from Figure 1"
+- 제품: "the product from Figure 2"
+- 결합: "Place the model from Figure 1 holding the product from Figure 2 in [환경]"
 
 카메라 스펙 (구도에 따라 선택):
 - 셀피-위에서(selfie-high): "${selfieAngleSettings['selfie-high']}" + 배경 선명하게
@@ -1105,9 +1225,8 @@ ${isSelfieMode ? `- 셀피 구도 시 반드시 "both hands holding the product"
 - 눈: "realistic eye reflections with catchlights"
 - 마지막에 품질 키워드: "Hyperrealistic photograph, 8K RAW quality"
 
-제품 참조: 브랜드명/제품명 대신 "the product from the reference image" 형태로 작성
-
 절대 피해야 할 것:
+- IMAGE1, IMAGE2 형식 사용 (반드시 Figure 1, Figure 2 사용!)
 - 셀피/UGC 스타일에서 "shallow depth of field", "creamy bokeh" 사용 금지 (배경이 과하게 흐려짐)
 - "taking a selfie", "holding phone", "smartphone", "camera in hand" 등 카메라/폰 관련 표현
 - "extended arm", "arm reaching forward" 등 팔이 카메라 쪽으로 뻗는 묘사
@@ -1125,7 +1244,7 @@ ${isSelfieMode ? `- 셀피 구도 시 반드시 "both hands holding the product"
       properties: {
         prompt: {
           type: Type.STRING,
-          description: 'Seedream 4.5 포토리얼리즘 프롬프트 (영어, 50-80단어, 카메라 스펙/방향성 있는 조명/제품은 참조 형태로)',
+          description: 'Seedream 4.5 편집 명령 형태 프롬프트 (영어, 50-80단어, Figure 1/Figure 2 형식 필수, 편집 명령으로 시작)',
         },
         locationDescription: {
           type: Type.STRING,
@@ -1176,10 +1295,10 @@ ${isSelfieMode ? `- 셀피 구도 시 반드시 "both hands holding the product"
   try {
     return JSON.parse(responseText) as FirstFramePromptResult
   } catch {
-    // Seedream 4.5 포토리얼리즘 최적화 폴백 응답 (양손으로 제품 들고 있는 구도 - 카메라/폰 안보임)
+    // Seedream 4.5 Figure 형식 폴백 응답 (편집 명령 형태)
     const fallbackPrompt = isSelfieMode
-      ? `A young woman with natural skin texture and subtle imperfections holds the product from the reference image with both hands clearly visible, ${selfieAngleSettings[input.cameraComposition || 'selfie-front']} in a bright modern living room. Looking directly at the camera with realistic eye reflections and natural iris detail. Individual hair strands catching soft natural daylight from large window. The background shows clear details of minimalist furniture. Natural ambient lighting with soft shadows. Vertical 9:16 composition. Hyperrealistic photograph, 8K RAW quality.`
-      : 'A young woman with natural skin texture and subtle imperfections holds the product from the reference image with both hands in a bright modern living room, looking directly at the camera with realistic eye reflections and natural iris detail. Individual hair strands catching soft natural daylight streaming from large window, creating gentle shadows. The background shows clear details of minimalist furniture and decor. Shot on 50mm lens at f/4. Vertical 9:16 composition. Hyperrealistic photograph, 8K RAW quality.'
+      ? `Place the model from Figure 1 with both hands holding the product from Figure 2 in a bright modern living room. ${selfieAngleSettings[input.cameraComposition || 'selfie-front']}, looking directly at camera with realistic eye reflections. Natural skin texture with subtle imperfections. Soft natural daylight from large window, background shows clear details of minimalist furniture. Vertical 9:16 composition. Hyperrealistic photograph, 8K RAW quality.`
+      : 'Place the model from Figure 1 holding the product from Figure 2 in a bright modern living room. The model looks directly at camera with a natural smile, realistic eye reflections. Natural skin texture with subtle imperfections, individual hair strands catching soft daylight from large window. Background shows clear minimalist furniture. Shot on 50mm lens at f/4. Vertical 9:16. Hyperrealistic photograph, 8K RAW quality.'
 
     return {
       prompt: fallbackPrompt,
@@ -1353,82 +1472,127 @@ export async function generateImageAdPrompt(input: ImageAdPromptInput): Promise<
 - 설명: ${input.productDescription || '없음'}`
     : '제품 정보: 첨부된 이미지 참고'
 
-  // 이미지 첨부 순서 계산 (IMAGE1, IMAGE2 형태로 명확히 인덱싱)
+  // 이미지 첨부 순서 계산 (Figure 1, Figure 2 형태로 Seedream 4.5 문서 규격에 맞춤)
   let imageIndex = 1
   const productImageIndex = input.productImageUrl ? imageIndex++ : null
   const avatarImageIndices = input.avatarImageUrls?.length ? Array.from({ length: input.avatarImageUrls.length }, () => imageIndex++) : []
   const outfitImageIndex = input.outfitImageUrl ? imageIndex++ : null
   const referenceStyleImageIndex = input.referenceStyleImageUrl ? imageIndex++ : null
 
-  // 이미지 참조 안내 (IMAGE1, IMAGE2 형태로 명확히 구분)
+  // AI 생성 아바타 여부 확인 (아바타 이미지 없이 텍스트 설명만 있는 경우)
+  const isAiGeneratedAvatar = !!input.aiAvatarDescription && !input.avatarImageUrls?.length
+
+  // 이미지 참조 안내 (Figure 1, Figure 2 형태로 Seedream 4.5 문서 규격에 맞춤)
   const imageReferenceSection = `
 === ATTACHED IMAGES GUIDE ===
-${productImageIndex ? `[IMAGE${productImageIndex}] = PRODUCT IMAGE
-- This is the product to advertise. Describe its color, shape, texture, and design accurately.
+${productImageIndex ? `[Figure ${productImageIndex}] = PRODUCT IMAGE
+- This is the product to advertise.
 - IMPORTANT: The product may be a figurine, doll, character merchandise, or statue that has human-like form. Even if it looks like a person, it is a PRODUCT, NOT a real human model. Do NOT transform or animate it into a real person.
-- Reference as "the product in IMAGE${productImageIndex}" in your prompt.` : ''}
-${avatarImageIndices.length ? `[IMAGE${avatarImageIndices.join('], [IMAGE')}] = MODEL IMAGE(S) (${avatarImageIndices.length} image${avatarImageIndices.length > 1 ? 's' : ''})
-- This is the human model for the advertisement. Describe their appearance, skin tone, hairstyle, and expression accurately.
-- Reference as "the model in IMAGE${avatarImageIndices[0]}" in your prompt.` : ''}
-${outfitImageIndex ? `[IMAGE${outfitImageIndex}] = OUTFIT IMAGE
-- This shows the clothing/outfit the model should wear. Describe its color, style, and details.
-- Reference as "the outfit in IMAGE${outfitImageIndex}" in your prompt.` : ''}
-${referenceStyleImageIndex ? `[IMAGE${referenceStyleImageIndex}] = STYLE REFERENCE IMAGE (Style only!)
+- Reference as "the product in Figure ${productImageIndex}" in your prompt.` : ''}
+${avatarImageIndices.length ? `[Figure ${avatarImageIndices.join('], [Figure ')}] = MODEL IMAGE(S) (${avatarImageIndices.length} image${avatarImageIndices.length > 1 ? 's' : ''})
+- This is the human model for the advertisement.
+- Reference as "the model in Figure ${avatarImageIndices[0]}" in your prompt.` : ''}
+${isAiGeneratedAvatar ? `[NO MODEL IMAGE - AI-GENERATED AVATAR]
+- There is NO model image provided (no Figure for the model).
+- You MUST describe the model using TEXT description only.
+- AI Avatar Description: "${input.aiAvatarDescription}"
+- DO NOT reference any "Figure 2" or "model from Figure X" - there is no such image!
+- Instead, describe the model directly in the prompt using the description above.
+- Example: "A ${input.aiAvatarDescription} holding the product from Figure 1..."` : ''}
+${outfitImageIndex ? `[Figure ${outfitImageIndex}] = OUTFIT IMAGE
+- This shows the clothing/outfit the model should wear.
+- Reference as "the outfit in Figure ${outfitImageIndex}" in your prompt.` : ''}
+${referenceStyleImageIndex ? `[Figure ${referenceStyleImageIndex}] = STYLE REFERENCE IMAGE (Style only!)
 - Use ONLY for mood, color palette, lighting, and composition style.
 - DO NOT copy any products or people from this image! Extract only abstract style elements.
-- Reference as "the style of IMAGE${referenceStyleImageIndex}" in your prompt.` : ''}`
+- Apply the style from Figure ${referenceStyleImageIndex} to the final composition.` : ''}`
 
-  const prompt = `당신은 Seedream 4.5 이미지 생성 모델을 위한 광고 프롬프트 전문가입니다.
+  const prompt = `당신은 이미지 광고 프롬프트 전문가입니다.
 최고 품질의 상업 광고 이미지를 생성하기 위한 프롬프트를 작성해주세요.
 
-=== Seedream 4.5 프롬프트 최적화 가이드라인 ===
+=== 이미지 생성 프롬프트 가이드라인 ===
 
-ByteDance의 Seedream 4.5 이미지 편집/합성 모델에 최적화된 프롬프트를 작성합니다.
-이 모델은 참조 이미지의 요소들을 조합하여 새로운 이미지를 생성합니다.
+${isAiGeneratedAvatar ? `
+⭐⭐⭐ 중요: AI 생성 아바타 모드 ⭐⭐⭐
+이 요청은 **모델 이미지가 없이** AI가 모델을 생성해야 하는 케이스입니다.
+따라서 "Figure 2", "the model from Figure X" 같은 이미지 참조를 절대 사용하지 마세요!
 
-핵심 원칙:
-1. 구조: 주제(subject) → 행동(action) → 환경(environment) → 스타일(style) → 조명(lighting) → 기술적 품질
-2. 자연어 문장으로 작성 (키워드 나열 금지)
-3. 첫 5-8단어가 가장 중요 - 핵심 주제를 맨 앞에
-4. 50-100 단어가 최적
-5. 참조 이미지 요소는 IMAGE 인덱스로 명확히 지칭 (예: "the product in IMAGE1", "the model in IMAGE2")
+${input.aiAvatarDescription?.includes('automatically select') ? `
+🎯 자동 선택 모드: 모든 아바타 옵션이 '무관'으로 설정되었습니다.
+**당신이 제품에 가장 적합한 모델을 직접 설계해야 합니다!**
 
-광고 유형별 핵심 요소:
-- productOnly: 제품 중심, 깔끔한 배경, 제품 디테일 강조
-- holding: 모델이 제품을 자연스럽게 들고 있음, 시선 처리, 손 포즈
-- using: 제품 사용 동작, 자연스러운 상황, 제품 효과 암시
-- wearing: 패션 스타일, 전신 또는 상반신, 의상 핏 강조
-- lifestyle: 일상적 환경, 자연스러운 포즈, 제품과의 조화
-- unboxing: 개봉 동작, 기대감 표현, 제품 첫인상
-- beforeAfter: 대비 구도, 변화 강조, 명확한 차이
-- comparison: 나란히 배치, 차이점 부각
-- seasonal: 계절 분위기, 테마 장식, 특별한 무드
+제품 정보를 바탕으로 다음을 결정하세요:
+- 인종/민족: 제품의 타겟 시장에 맞게 (예: 한국 화장품 → Korean, 글로벌 전자제품 → 다양한 인종)
+- 성별: 제품 특성에 맞게 (예: 남성용 면도기 → male, 여성용 화장품 → female, 중립적 제품 → 어느 쪽이든)
+- 나이대: 제품 타겟에 맞게 (예: 안티에이징 → 30s-40s, 트렌디한 제품 → 20s-30s)
+- 스타일: 제품 이미지에 맞게 (예: 럭셔리 브랜드 → elegant, 일상 제품 → natural)
 
-포토리얼리즘 필수 요소 (AI 생성 티가 나지 않도록 반드시 포함):
-- 카메라 스펙: "Shot on [렌즈mm] lens at f/[조리개값]" (예: "Shot on 35mm lens at f/2.8", "Shot on 85mm lens at f/1.8")
-- 피부: "natural skin texture with visible pores and subtle imperfections" (매끄럽지 않은 자연스러운 피부)
-- 눈: "realistic eye reflections with catchlights" (눈에 빛 반사)
-- 조명 방향: "soft natural daylight from [방향]" (예: "streaming from a side window", "from large window on the left")
-- 머리카락: "individual hair strands catching light naturally"
-- 품질: "Hyperrealistic photograph, 8K RAW quality"
+프롬프트 예시: "A Korean woman in her late 20s with natural black hair and a friendly smile, naturally holding..."
+` : `
+AI 아바타 설명: "${input.aiAvatarDescription}"
+`}
 
-프롬프트 예시:
-"The model in IMAGE2 looks directly into the camera from a [앵글] angle, holding the product in IMAGE1 near her face. She is in a [장소] with [조명 설명]. Shot on [렌즈]mm lens at f/[조리개], showing natural skin texture with visible pores and realistic eye reflections. Hyperrealistic photograph, 8K RAW quality."
+프롬프트 형식 (AI 아바타용):
+- 모델을 텍스트로 상세히 묘사 (인종, 성별, 나이, 외모 특징 포함)
+- 제품만 "the product from Figure 1"으로 참조
+- 예: "A Korean woman in her 20s with black hair naturally holding the product from Figure 1..."
 
-⚠️ 피규어/캐릭터 상품 주의:
-- IMAGE1(제품)이 피규어, 인형, 캐릭터 상품, 조각상 등 인물 형태인 경우가 있습니다.
-- 이 경우 제품을 실제 사람으로 변환하거나 애니메이션화하지 마세요.
-- 제품은 그대로 "제품"으로 유지하고, 모델(IMAGE2)이 들거나 보여주는 형태로 광고하세요.
+광고 유형별 프롬프트 예시 (AI 아바타):
+- holding: "A [인종] [성별] in their [나이대] with [외모 특징] naturally holding and presenting the product from Figure 1 towards the camera in a [환경]. The model looks directly at the camera with a [표정]. [조명]. Shot on 85mm lens at f/2.8."
+- using: "A [인종] [성별] in their [나이대] actively using the product from Figure 1 in a [환경]. Authentic moment showing genuine product usage. [조명]."
+- lifestyle: "A [인종] [성별] in a [일상 환경] with the product from Figure 1 naturally placed nearby. Casual, authentic lifestyle moment."
 
-제품 로고/라벨 보존 (중요):
-- 제품 이미지(IMAGE1)에 있는 로고, 라벨, 브랜드 마크는 반드시 그대로 유지
-- "Preserve all existing logos, labels, and brand marks on the product in IMAGE1"
-- 제품의 패키지 디자인, 라벨 텍스트, 브랜드 로고는 원본 그대로 표현
+⚠️ 절대 금지:
+- "the model from Figure 2" - 모델 이미지가 없습니다!
+- "Copy the appearance from Figure 2" - 해당 Figure가 존재하지 않습니다!
+- 존재하지 않는 Figure 번호 참조
+- "A person" 같은 모호한 표현 - 반드시 구체적인 인물 묘사 필요!
+
+✅ 반드시 사용:
+- 구체적인 인물 묘사 (인종, 성별, 나이대, 외모 특징)
+- "the product from Figure 1" - 제품만 Figure로 참조
+` : `
+이미지-to-이미지 편집/합성을 위한 프롬프트입니다.
+자연어 편집 명령을 사용하여 참조 이미지들의 요소를 조합합니다.
+
+⭐ 핵심 프롬프트 형식:
+- "Place the model from Figure X holding the product from Figure Y in [환경]"
+- "Compose a scene with the model from Figure X naturally presenting the product from Figure Y"
+- "Copy the appearance of the model from Figure X and place them holding the product from Figure Y"
+
+참조 형식:
+- 반드시 "Figure 1", "Figure 2" 형식 사용 (IMAGE1, IMAGE2 아님!)
+- 예: "the product in Figure 1", "the model in Figure 2"
+- 예: "copy the model from Figure 2", "place the product from Figure 1"
+
+광고 유형별 편집 명령:
+- productOnly: "Place the product from Figure 1 in a [배경] with [조명]"
+- holding: "Place the model from Figure 2 holding the product from Figure 1 in [환경]"
+- using: "Compose the model from Figure 2 naturally using the product from Figure 1"
+- wearing: "Place the model from Figure 2 wearing the outfit, with [배경] and [조명]"
+- lifestyle: "Compose a lifestyle scene with the model from Figure 2 and the product from Figure 1 nearby"
+`}
+
+포토리얼리즘 요소 (자연스러운 결과물을 위해):
+- 카메라 스펙: "Shot on 85mm lens at f/2.8"
+- 피부: "natural skin texture"
+- 조명: "soft window light from left side"
+- 품질: "professional photograph, high quality"
+
+⚠️ 피규어/캐릭터 상품 중요 주의사항:
+- Figure 1(제품)이 피규어, 인형, 캐릭터 상품, 조각상 등 인물 형태인 경우가 있습니다.
+- 이 경우 제품을 실제 사람으로 변환하거나 애니메이션화하지 마세요!
+- 프롬프트에 반드시 포함: "Preserve the exact appearance of the product from Figure 1 and keep it as a physical figurine; do not transform it into a real person"
+${isAiGeneratedAvatar ? `- AI 생성 모델이 피규어를 손에 들고 있거나 보여주는 형태로 구성` : `- 모델(Figure 2)이 피규어를 손에 들고 있거나 보여주는 형태로 구성`}
+
+제품 보존 (중요):
+- "Preserve the exact appearance of the product from Figure 1"
+- 제품의 로고, 라벨, 브랜드 마크 원본 유지
 
 절대 금지:
 - 새로운 텍스트, 워터마크, 오버레이 추가
-- 이미지에 존재하지 않는 새로운 글자나 숫자 생성
-- 브랜드명을 텍스트로 직접 추가 (참조 이미지에 있는 것만 유지)
+- 피규어/인형 제품을 실제 사람으로 변환
+- "Do not add any new text, letters, words, or watermarks"
 
 === 참조 스타일 이미지 처리 (해당 시) - 매우 중요! ===
 
@@ -1491,14 +1655,34 @@ ${input.additionalPrompt ? `추가 요청: ${input.additionalPrompt}` : ''}
 
 ${imageReferenceSection}
 
-위 정보를 바탕으로 Seedream 4.5에 최적화된 영어 프롬프트를 생성해주세요.
-프롬프트는 첨부된 참조 이미지들의 요소를 조합하여 새로운 광고 이미지를 만들도록 해야 합니다.
+위 정보를 바탕으로 최적화된 영어 프롬프트를 생성해주세요.
 
-중요:
-1. 각 이미지는 IMAGE1, IMAGE2 형태로 명확히 참조하세요 (예: "the product in IMAGE1", "the model in IMAGE2").
-2. 제품의 기존 로고/라벨 보존을 위해 "Preserve all existing logos, labels, and brand marks on the product in IMAGE1." 문구를 반드시 포함하세요.
-3. 새로운 텍스트 추가 방지를 위해 "Do not add any new text, watermarks, or overlays." 문구를 포함하세요.
-4. 제품(IMAGE1)이 피규어/인형/캐릭터 상품처럼 인물 형태인 경우, 이를 실제 사람으로 변환하지 말고 제품 그대로 유지하세요.`
+${isAiGeneratedAvatar ? `
+=== AI 생성 아바타 모드 필수 규칙 ===
+⭐ 이것은 AI 아바타 모드입니다. 모델 이미지가 없으므로 Figure 2를 참조하면 안 됩니다!
+
+1. 모델은 텍스트로 설명: "A ${input.aiAvatarDescription}..." 형태로 시작
+2. 제품만 Figure 참조: "the product from Figure 1" 사용
+3. ❌ 절대 사용 금지: "Figure 2", "the model from Figure", "copy the model from Figure"
+4. 제품 보존: "Preserve the exact appearance of the product from Figure 1"
+5. 텍스트 금지: "Do not add any new text, letters, words, or watermarks"
+6. 피규어 제품인 경우: "keep it as a physical figurine; do not transform it into a real person"
+
+프롬프트 예시 (AI 아바타):
+"A ${input.aiAvatarDescription}. Compose the model naturally holding and presenting the product from Figure 1 towards the camera in a clean studio setting with a sophisticated museum-gallery atmosphere. The model looks directly at the camera with a confident expression in a close-up shot. Use soft, professional studio lighting that emphasizes the fine textures and detailed paintwork of the figurine. Shot on 85mm lens at f/2.8 for sharp focus and natural skin texture. Preserve the exact appearance of the product from Figure 1 and keep it as a physical figurine; do not transform it into a real person. Copy the appearance of the model from Figure 2. Do not add any new text, letters, words, or watermarks. Professional high-quality commercial photography."
+
+위 예시에서 "Copy the appearance of the model from Figure 2" 부분은 제거하고, 모델 설명은 텍스트로만 해야 합니다!
+` : `
+=== 필수 규칙 ===
+1. 반드시 "Figure 1", "Figure 2" 형식으로 이미지 참조 (IMAGE1, IMAGE2 형식 사용 금지!)
+2. 편집 명령 형태로 시작: "Place...", "Compose...", "Copy... and place..."
+3. 제품 보존: "Preserve the exact appearance of the product from Figure 1"
+4. 텍스트 금지: "Do not add any new text, letters, words, or watermarks"
+5. 피규어/인형 제품인 경우: "Preserve the exact appearance of the product from Figure 1 and keep it as a physical figurine; do not transform it into a real person"
+
+프롬프트 예시 형식:
+"Place the model from Figure 2 holding the product from Figure 1 in a clean studio. The model looks at the camera with a natural smile. Soft window light from the left side, shot on 85mm lens at f/2.8. Preserve the exact appearance of the product from Figure 1. Do not add any new text, letters, words, or watermarks. Professional photograph, high quality."
+`}`
 
   const config: GenerateContentConfig = {
     thinkingConfig: {
@@ -1511,7 +1695,9 @@ ${imageReferenceSection}
       properties: {
         optimizedPrompt: {
           type: Type.STRING,
-          description: 'Seedream 4.5 최적화 영어 프롬프트 (50-100 단어, 제품 로고 보존 문구와 새 텍스트 금지 문구 필수 포함)',
+          description: isAiGeneratedAvatar
+            ? '영어 프롬프트 (AI 아바타는 텍스트로 설명, 제품만 Figure 1 참조, Figure 2 사용 금지)'
+            : '편집 명령 형태 영어 프롬프트 (Figure 1, Figure 2 형식 사용, 편집 명령으로 시작)',
         },
         koreanDescription: {
           type: Type.STRING,
@@ -1594,16 +1780,31 @@ ${imageReferenceSection}
   } catch {
     // Fallback response based on ad type (enhanced photorealism + preserve product logos)
     const logoPreserve = 'Preserve all existing logos, labels, and brand marks on the product exactly as shown in the reference image. Do not add any new text, watermarks, or overlays that are not present in the original reference image.'
+
+    // AI 아바타 여부에 따라 모델 설명 방식 결정
+    // 자동 선택 모드인 경우 기본 아바타 설명 사용
+    let modelDescription: string
+    if (isAiGeneratedAvatar) {
+      if (input.aiAvatarDescription?.includes('automatically select')) {
+        // 자동 선택 모드 - 기본적으로 한국인 여성 모델 사용 (한국 시장 타겟)
+        modelDescription = 'A Korean woman in her late 20s with natural black hair and a friendly, approachable appearance'
+      } else {
+        modelDescription = `A ${input.aiAvatarDescription}`
+      }
+    } else {
+      modelDescription = 'The model from the reference image'
+    }
+
     const fallbackPrompts: Record<ImageAdType, string> = {
-      productOnly: `Professional product photography of the product from the reference image on a clean white studio background. Soft diffused lighting from above creates subtle shadows and highlights product details. Shot on 50mm lens at f/2.8. Commercial advertisement quality with sharp focus. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
-      holding: `The model from the reference image naturally holds the product from the reference near her face, looking directly into the camera with a warm genuine smile. Shot on 35mm lens at f/2.8. Natural skin texture with visible pores and subtle imperfections, realistic eye reflections with catchlights. Soft studio lighting from the left creates gentle shadows. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
-      using: `The model from the reference image actively uses and demonstrates the product from the reference in a bright modern setting. Genuine expression showing satisfaction. Shot on 35mm lens at f/4.0. Natural skin texture with visible pores, realistic eye reflections. Soft natural daylight streaming from a side window. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
-      wearing: `Fashion advertisement featuring the model from the reference wearing the outfit from the reference image. Full body shot in clean studio setting. Model strikes a confident pose showing the clothing fit and style. Shot on 85mm lens at f/2.0. Natural skin texture with visible pores, realistic eye reflections with catchlights. Professional fashion photography lighting from the front. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
+      productOnly: `Professional product photography of the product from Figure 1 on a clean white studio background. Soft diffused lighting from above creates subtle shadows and highlights product details. Shot on 50mm lens at f/2.8. Commercial advertisement quality with sharp focus. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
+      holding: `${modelDescription} naturally holds the product from Figure 1 near their face, looking directly into the camera with a warm genuine smile. Shot on 35mm lens at f/2.8. Natural skin texture with visible pores and subtle imperfections, realistic eye reflections with catchlights. Soft studio lighting from the left creates gentle shadows. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
+      using: `${modelDescription} actively uses and demonstrates the product from Figure 1 in a bright modern setting. Genuine expression showing satisfaction. Shot on 35mm lens at f/4.0. Natural skin texture with visible pores, realistic eye reflections. Soft natural daylight streaming from a side window. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
+      wearing: `Fashion advertisement featuring ${modelDescription.toLowerCase()} wearing the outfit from the reference image. Full body shot in clean studio setting. Model strikes a confident pose showing the clothing fit and style. Shot on 85mm lens at f/2.0. Natural skin texture with visible pores, realistic eye reflections with catchlights. Professional fashion photography lighting from the front. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
       beforeAfter: `Before and after comparison layout showing transformation effect. Clean consistent lighting on both sides. Shot on 50mm lens at f/4.0. Natural skin texture with visible pores in both frames. Clear visual difference highlighting the product benefit. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
-      lifestyle: `Lifestyle advertisement showing the model from the reference naturally incorporating the product into their daily routine in a cozy home setting. Authentic candid moment. Shot on 35mm lens at f/2.8. Natural skin texture with visible pores, realistic eye reflections. Natural daylight streaming through window creates warm inviting atmosphere. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
-      unboxing: `The model from the reference excitedly reveals and presents the product from the reference, looking at the camera with genuine enthusiasm. Unboxing style shot on a clean desk setup. Shot on 28mm lens at f/3.5. Natural skin texture with visible pores, realistic eye reflections with catchlights. Soft natural daylight from window. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
-      comparison: `Product comparison layout with the product from the reference prominently displayed. Side by side arrangement on clean neutral background. Shot on 50mm lens at f/4.0. Clear professional lighting highlighting product features and textures. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
-      seasonal: `Seasonal themed advertisement featuring the product from the reference with festive decorations and warm atmosphere. Cozy seasonal setting with appropriate props. Shot on 35mm lens at f/2.8. Warm lighting mood with natural shadows. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
+      lifestyle: `Lifestyle advertisement showing ${modelDescription.toLowerCase()} naturally incorporating the product from Figure 1 into their daily routine in a cozy home setting. Authentic candid moment. Shot on 35mm lens at f/2.8. Natural skin texture with visible pores, realistic eye reflections. Natural daylight streaming through window creates warm inviting atmosphere. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
+      unboxing: `${modelDescription} excitedly reveals and presents the product from Figure 1, looking at the camera with genuine enthusiasm. Unboxing style shot on a clean desk setup. Shot on 28mm lens at f/3.5. Natural skin texture with visible pores, realistic eye reflections with catchlights. Soft natural daylight from window. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
+      comparison: `Product comparison layout with the product from Figure 1 prominently displayed. Side by side arrangement on clean neutral background. Shot on 50mm lens at f/4.0. Clear professional lighting highlighting product features and textures. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
+      seasonal: `Seasonal themed advertisement featuring the product from Figure 1 with festive decorations and warm atmosphere. Cozy seasonal setting with appropriate props. Shot on 35mm lens at f/2.8. Warm lighting mood with natural shadows. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
     }
 
     return {
@@ -1915,9 +2116,17 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
 - 인물의 외모, 표정, 포즈를 상세히 묘사
 - 조명과 분위기를 구체적으로 설명
 - 50-100 단어 권장
+- 제품 이미지가 첨부된 경우 "the product from Figure 1" 형식으로 참조 (IMAGE1 형식 사용 금지)
 
 === 제품 정보 ===
 ${input.productInfo}
+
+${input.productImageUrl ? `=== ATTACHED PRODUCT IMAGE (Figure 1) ===
+- The attached image shows the PRODUCT to be featured.
+- ⚠️ IMPORTANT: The product may be a figurine, doll, character merchandise, or statue with human-like form. Even if it looks like a person, it is a PRODUCT, NOT a real human. Do NOT transform or animate it into a real person.
+- The AI-generated avatar should hold or present this product naturally.
+- Reference as "the product from Figure 1" when describing product placement.
+- Example: "holding the product from Figure 1", "presenting the product from Figure 1"` : ''}
 
 === 타겟 아바타 조건 (⚠️ 반드시 준수) ===
 - 성별: ${targetGenderText}
@@ -1952,9 +2161,10 @@ ${cameraSection}
    - 영상 촬영에 적합한 자연스러운 조명
    - 유튜브/SNS 영상에 어울리는 깔끔한 배경
 
-3. 제품 배치:
+3. 제품 배치 (Figure 형식 필수):
    - 인물이 제품을 자연스럽게 들고 있거나 옆에 두고 있는 모습
    - 제품 소개를 시작하려는 느낌
+   - 제품 참조: "holding the product from Figure 1" 형식 사용 (IMAGE1 형식 금지!)
 
 4. 기술적 품질 (영상용):
    - 포토리얼리스틱 스타일
@@ -1964,16 +2174,16 @@ ${cameraSection}
 
 다음 JSON 형식으로 응답하세요:
 {
-  "prompt": "영어로 작성된 GPT-Image 1.5 프롬프트 (50-100단어). ⭐ 반드시 인종을 프롬프트 첫 부분에 명시하세요! 예: 'A Korean woman...' 또는 'An Asian man...'",
+  "prompt": "영어로 작성된 GPT-Image 1.5 프롬프트 (50-100단어). ⭐ 반드시 인종을 프롬프트 첫 부분에 명시하세요! 제품 참조 시 'the product from Figure 1' 형식 필수!",
   "avatarDescription": "생성될 아바타에 대한 한국어 설명 (인종, 성별, 나이대, 외모, 스타일 등)",
   "locationDescription": "장소/배경에 대한 한국어 설명"
 }
 
-⭐ 프롬프트 작성 예시 (인종별):
-- 한국인 여성: "A Korean woman in her 20s with black hair and warm skin tone..."
-- 한국인 남성: "A Korean man in his 30s with short black hair..."
-- 서양인 여성: "A Caucasian woman with blonde hair and fair skin..."
-- 아시아인: "An Asian person with East Asian features..."`
+⭐ 프롬프트 작성 예시 (Figure 형식 적용):
+- 한국인 여성: "A Korean woman in her 20s with black hair holding the product from Figure 1 in a modern living room..."
+- 한국인 남성: "A Korean man in his 30s presenting the product from Figure 1 to the camera..."
+- 서양인 여성: "A Caucasian woman naturally holding the product from Figure 1 while looking at camera..."
+- 아시아인: "An Asian person with East Asian features holding the product from Figure 1..."`
 
   const config: GenerateContentConfig = {
     responseMimeType: 'application/json',

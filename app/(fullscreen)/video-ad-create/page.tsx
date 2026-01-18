@@ -1,20 +1,27 @@
 'use client'
 
 import { Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { ProductDescriptionWizard } from '@/components/video-ad/product-description-wizard'
+import { AvatarMotionWizard } from '@/components/video-ad/avatar-motion'
 
 function VideoAdCreateContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const category = searchParams.get('category')
 
-  // 현재는 productDescription만 지원
+  // 아바타 모션 영상
+  if (category === 'avatarMotion') {
+    return <AvatarMotionWizard onBack={() => router.push('/dashboard/video-ad')} />
+  }
+
+  // 제품 설명 영상
   if (category === 'productDescription') {
     return <ProductDescriptionWizard />
   }
 
-  // 다른 카테고리는 추후 추가
+  // 기본값: 제품 설명 영상
   return <ProductDescriptionWizard />
 }
 

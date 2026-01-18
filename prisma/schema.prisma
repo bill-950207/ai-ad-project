@@ -589,7 +589,8 @@ model video_ads {
   fal_image_request_id  String?
   first_scene_prompt    String?
   first_scene_image_url String?
-  first_frame_urls      Json?            // 첫 프레임 이미지 URL 배열 (복수 옵션 저장)
+  first_frame_urls      Json?            // 첫 프레임 이미지 URL 배열 (복수 옵션 저장, WebP 압축본)
+  first_frame_original_urls Json?        // 첫 프레임 원본 이미지 URL 배열 (PNG 원본, 영상 생성용)
   outfit_id             String?          @db.Uuid
   wizard_step           Int?
   avatar_image_url      String?
@@ -611,6 +612,14 @@ model video_ads {
   audio_url             String?
   kie_request_id        String?
   ai_avatar_options     String?          // AI 아바타 옵션 JSON (avatarId가 'ai-generated'일 때)
+  // Avatar Motion 전용 필드
+  story_method          String?          // 스토리 설정 방식: 'direct' | 'ai-auto' | 'reference'
+  story_info            Json?            // 스토리 정보 JSON (title, description, startFrame, endFrame 등)
+  start_frame_url       String?          // 시작 프레임 이미지 URL
+  end_frame_url         String?          // 끝 프레임 이미지 URL
+  start_frame_request_id String?         // 시작 프레임 fal request ID
+  end_frame_request_id  String?          // 끝 프레임 fal request ID
+  video_request_id      String?          // 영상 생성 fal request ID
   avatars               avatars?         @relation(fields: [avatar_id], references: [id], onUpdate: NoAction)
   ad_products           ad_products?     @relation(fields: [product_id], references: [id], onUpdate: NoAction)
   profiles              profiles         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -789,6 +798,11 @@ enum video_ad_status {
   DRAFT
   GENERATING_SCRIPTS
   GENERATING_AUDIO
+  // Avatar Motion 상태
+  GENERATING_STORY
+  GENERATING_FRAMES
+  GENERATING_AVATAR
+  FRAMES_COMPLETED
 
   @@schema("public")
 }

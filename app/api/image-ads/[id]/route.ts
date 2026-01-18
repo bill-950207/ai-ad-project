@@ -36,6 +36,7 @@ export async function GET(
       .select(`
         id,
         image_url,
+        image_url_original,
         ad_type,
         status,
         prompt,

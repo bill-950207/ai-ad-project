@@ -67,7 +67,8 @@ interface SelectedOptions {
 
 interface ImageAd {
   id: string
-  image_url: string | null
+  image_url: string | null  // WebP 압축본 (리스트/미리보기용)
+  image_url_original: string | null  // 원본 PNG (다운로드용)
   ad_type: string
   status: string
   prompt: string | null
@@ -135,15 +136,19 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
   }
 
   const handleDownload = async () => {
-    if (!imageAd?.image_url) return
+    // 원본 URL이 있으면 원본(PNG) 다운로드, 없으면 압축본(WebP) 다운로드
+    const downloadUrl = imageAd?.image_url_original || imageAd?.image_url
+    if (!downloadUrl) return
 
     try {
-      const res = await fetch(imageAd.image_url)
+      const res = await fetch(downloadUrl)
       const blob = await res.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `image-ad-${imageAdId}.png`
+      // 원본은 PNG, 압축본은 WebP
+      const extension = imageAd?.image_url_original ? 'png' : 'webp'
+      a.download = `image-ad-${imageAdId}.${extension}`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -418,7 +423,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
           {imageAd.image_url && (
             <>
               <a
-                href={imageAd.image_url}
+                href={imageAd.image_url_original || imageAd.image_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:bg-secondary/50 rounded-lg transition-colors"

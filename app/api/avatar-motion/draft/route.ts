@@ -1,8 +1,9 @@
 /**
- * 영상 광고 임시 저장 API
+ * 아바타 모션 영상 임시 저장 API
  *
- * POST /api/video-ads/draft - 마법사 진행 상태 저장 (생성 또는 업데이트)
- * GET /api/video-ads/draft - 현재 카테고리의 임시 저장된 초안 조회
+ * POST /api/avatar-motion/draft - 마법사 진행 상태 저장 (생성 또는 업데이트)
+ * GET /api/avatar-motion/draft - 현재 초안 조회
+ * DELETE /api/avatar-motion/draft - 초안 삭제
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -10,7 +11,7 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 
 /**
- * POST /api/video-ads/draft
+ * POST /api/avatar-motion/draft
  *
  * 마법사 진행 상태를 저장합니다.
  * - 기존 초안이 있으면 업데이트
@@ -28,42 +29,41 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const {
       id,  // 기존 초안 ID (없으면 새로 생성)
-      category,
+      status,  // 상태 업데이트
       wizardStep,
-      status,  // 상태 업데이트 (GENERATING_SCRIPTS, GENERATING_AUDIO, DRAFT 등)
       // Step 1 데이터
       avatarId,
       outfitId,
       avatarImageUrl,
       productId,
-      aiAvatarOptions,  // AI 아바타 옵션 (avatarId가 'ai-generated'일 때)
-      // Step 2 데이터
       productInfo,
-      locationPrompt,
-      duration,
-      videoBackground,
-      cameraComposition,
+      aiAvatarOptions,
+      // Step 2 데이터
+      storyMethod,
       // Step 3 데이터
-      scriptsJson,
-      scriptStyle,
-      script,
-      firstSceneImageUrl,
-      firstFrameUrls,  // 첫 프레임 이미지 URL 배열 (WebP 압축본, 표시용)
-      firstFrameOriginalUrls,  // 첫 프레임 원본 이미지 URL 배열 (PNG, 영상 생성용)
-      firstFramePrompt,
+      storyInfo,
       // Step 4 데이터
-      voiceId,
-      voiceName,
+      aspectRatio,
+      duration,
+      startFrameUrl,
+      endFrameUrl,
+      startFrameRequestId,
+      endFrameRequestId,
+      videoRequestId,
+      videoUrl,
     } = body
 
     // 허용된 상태값 (DRAFT 계열 상태만 허용)
-    const allowedStatuses = ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO']
+    const allowedStatuses = [
+      'DRAFT',
+      'GENERATING_STORY',
+      'GENERATING_FRAMES',
+      'GENERATING_AVATAR',
+      'FRAMES_COMPLETED',
+      'IN_QUEUE',
+      'IN_PROGRESS',
+    ]
     const validStatus = status && allowedStatuses.includes(status) ? status : undefined
-
-    // 카테고리 필수
-    if (!category) {
-      return NextResponse.json({ error: 'Category is required' }, { status: 400 })
-    }
 
     // AI 생성 아바타 처리 (avatarId가 'ai-generated'이면 DB에는 null 저장)
     const isAiGeneratedAvatar = avatarId === 'ai-generated'
@@ -71,12 +71,12 @@ export async function POST(request: NextRequest) {
 
     // 기존 초안 업데이트 또는 새로 생성
     if (id) {
-      // 기존 초안 확인 (DRAFT 또는 생성 중 상태)
+      // 기존 초안 확인
       const existing = await prisma.video_ads.findFirst({
         where: {
           id,
           user_id: user.id,
-          status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO'] },
+          category: 'avatarMotion',
         },
       })
 
@@ -91,36 +91,33 @@ export async function POST(request: NextRequest) {
           ...(validStatus && { status: validStatus }),
           wizard_step: wizardStep,
           avatar_id: dbAvatarId,
-          outfit_id: isAiGeneratedAvatar ? null : (outfitId || null),  // AI 아바타일 때 outfit도 null
+          outfit_id: isAiGeneratedAvatar ? null : (outfitId || null),
           avatar_image_url: avatarImageUrl || null,
           product_id: productId || null,
-          ai_avatar_options: isAiGeneratedAvatar ? (aiAvatarOptions ? JSON.stringify(aiAvatarOptions) : null) : null,
           product_info: productInfo || null,
-          location_prompt: locationPrompt || null,
+          ai_avatar_options: isAiGeneratedAvatar ? (aiAvatarOptions ? JSON.stringify(aiAvatarOptions) : null) : null,
+          story_method: storyMethod || null,
+          story_info: storyInfo || null,
+          aspect_ratio: aspectRatio || null,
           duration: duration || null,
-          video_background: videoBackground || null,
-          camera_composition: cameraComposition || null,
-          scripts_json: scriptsJson || null,
-          script_style: scriptStyle || null,
-          script: script || null,
-          first_scene_image_url: firstSceneImageUrl || null,
-          first_frame_urls: firstFrameUrls || null,
-          first_frame_original_urls: firstFrameOriginalUrls || null,
-          first_frame_prompt: firstFramePrompt || null,
-          voice_id: voiceId || null,
-          voice_name: voiceName || null,
+          start_frame_url: startFrameUrl || null,
+          end_frame_url: endFrameUrl || null,
+          start_frame_request_id: startFrameRequestId || null,
+          end_frame_request_id: endFrameRequestId || null,
+          video_request_id: videoRequestId || null,
+          video_url: videoUrl || null,
           updated_at: new Date(),
         },
       })
 
       return NextResponse.json({ draft: updated })
     } else {
-      // 같은 카테고리의 기존 DRAFT 확인 (하나만 유지, 생성 중 상태도 포함)
+      // 같은 카테고리의 기존 DRAFT 확인 (하나만 유지)
       const existingDraft = await prisma.video_ads.findFirst({
         where: {
           user_id: user.id,
-          category,
-          status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO'] },
+          category: 'avatarMotion',
+          status: { in: ['DRAFT', 'GENERATING_STORY', 'GENERATING_FRAMES', 'GENERATING_AVATAR', 'FRAMES_COMPLETED'] },
         },
       })
 
@@ -135,21 +132,18 @@ export async function POST(request: NextRequest) {
             outfit_id: isAiGeneratedAvatar ? null : (outfitId || null),
             avatar_image_url: avatarImageUrl || null,
             product_id: productId || null,
-            ai_avatar_options: isAiGeneratedAvatar ? (aiAvatarOptions ? JSON.stringify(aiAvatarOptions) : null) : null,
             product_info: productInfo || null,
-            location_prompt: locationPrompt || null,
+            ai_avatar_options: isAiGeneratedAvatar ? (aiAvatarOptions ? JSON.stringify(aiAvatarOptions) : null) : null,
+            story_method: storyMethod || null,
+            story_info: storyInfo || null,
+            aspect_ratio: aspectRatio || null,
             duration: duration || null,
-            video_background: videoBackground || null,
-            camera_composition: cameraComposition || null,
-            scripts_json: scriptsJson || null,
-            script_style: scriptStyle || null,
-            script: script || null,
-            first_scene_image_url: firstSceneImageUrl || null,
-            first_frame_urls: firstFrameUrls || null,
-            first_frame_original_urls: firstFrameOriginalUrls || null,
-            first_frame_prompt: firstFramePrompt || null,
-            voice_id: voiceId || null,
-            voice_name: voiceName || null,
+            start_frame_url: startFrameUrl || null,
+            end_frame_url: endFrameUrl || null,
+            start_frame_request_id: startFrameRequestId || null,
+            end_frame_request_id: endFrameRequestId || null,
+            video_request_id: videoRequestId || null,
+            video_url: videoUrl || null,
             updated_at: new Date(),
           },
         })
@@ -161,28 +155,25 @@ export async function POST(request: NextRequest) {
       const draft = await prisma.video_ads.create({
         data: {
           user_id: user.id,
-          category,
+          category: 'avatarMotion',
           status: 'DRAFT',
           wizard_step: wizardStep || 1,
           avatar_id: dbAvatarId,
           outfit_id: isAiGeneratedAvatar ? null : (outfitId || null),
           avatar_image_url: avatarImageUrl || null,
           product_id: productId || null,
-          ai_avatar_options: isAiGeneratedAvatar ? (aiAvatarOptions ? JSON.stringify(aiAvatarOptions) : null) : null,
           product_info: productInfo || null,
-          location_prompt: locationPrompt || null,
+          ai_avatar_options: isAiGeneratedAvatar ? (aiAvatarOptions ? JSON.stringify(aiAvatarOptions) : null) : null,
+          story_method: storyMethod || null,
+          story_info: storyInfo || null,
+          aspect_ratio: aspectRatio || null,
           duration: duration || null,
-          video_background: videoBackground || null,
-          camera_composition: cameraComposition || null,
-          scripts_json: scriptsJson || null,
-          script_style: scriptStyle || null,
-          script: script || null,
-          first_scene_image_url: firstSceneImageUrl || null,
-          first_frame_urls: firstFrameUrls || null,
-          first_frame_original_urls: firstFrameOriginalUrls || null,
-          first_frame_prompt: firstFramePrompt || null,
-          voice_id: voiceId || null,
-          voice_name: voiceName || null,
+          start_frame_url: startFrameUrl || null,
+          end_frame_url: endFrameUrl || null,
+          start_frame_request_id: startFrameRequestId || null,
+          end_frame_request_id: endFrameRequestId || null,
+          video_request_id: videoRequestId || null,
+          video_url: videoUrl || null,
         },
       })
 
@@ -198,9 +189,9 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET /api/video-ads/draft
+ * GET /api/avatar-motion/draft
  *
- * 현재 카테고리의 임시 저장된 초안을 조회합니다.
+ * 현재 초안을 조회합니다.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -212,18 +203,27 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const category = searchParams.get('category')
+    const id = searchParams.get('id')
 
-    if (!category) {
-      return NextResponse.json({ error: 'Category is required' }, { status: 400 })
+    if (id) {
+      // 특정 ID로 조회
+      const draft = await prisma.video_ads.findFirst({
+        where: {
+          id,
+          user_id: user.id,
+          category: 'avatarMotion',
+        },
+      })
+
+      return NextResponse.json({ draft })
     }
 
-    // DRAFT 또는 생성 중 상태의 초안 조회
+    // 가장 최근 DRAFT 조회
     const draft = await prisma.video_ads.findFirst({
       where: {
         user_id: user.id,
-        category,
-        status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO'] },
+        category: 'avatarMotion',
+        status: { in: ['DRAFT', 'GENERATING_STORY', 'GENERATING_FRAMES', 'GENERATING_AVATAR', 'FRAMES_COMPLETED'] },
       },
       orderBy: {
         updated_at: 'desc',
@@ -241,9 +241,9 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * DELETE /api/video-ads/draft
+ * DELETE /api/avatar-motion/draft
  *
- * 임시 저장된 초안을 삭제합니다.
+ * 초안을 삭제합니다.
  */
 export async function DELETE(request: NextRequest) {
   try {
@@ -256,28 +256,26 @@ export async function DELETE(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
-    const category = searchParams.get('category')
 
     if (id) {
-      // 특정 초안 삭제 (생성 중 상태도 포함)
+      // 특정 초안 삭제
       await prisma.video_ads.deleteMany({
         where: {
           id,
           user_id: user.id,
-          status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO'] },
-        },
-      })
-    } else if (category) {
-      // 카테고리별 초안 삭제 (생성 중 상태도 포함)
-      await prisma.video_ads.deleteMany({
-        where: {
-          user_id: user.id,
-          category,
-          status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO'] },
+          category: 'avatarMotion',
+          status: { in: ['DRAFT', 'GENERATING_STORY', 'GENERATING_FRAMES', 'GENERATING_AVATAR', 'FRAMES_COMPLETED'] },
         },
       })
     } else {
-      return NextResponse.json({ error: 'ID or category is required' }, { status: 400 })
+      // 모든 avatarMotion DRAFT 삭제
+      await prisma.video_ads.deleteMany({
+        where: {
+          user_id: user.id,
+          category: 'avatarMotion',
+          status: { in: ['DRAFT', 'GENERATING_STORY', 'GENERATING_FRAMES', 'GENERATING_AVATAR', 'FRAMES_COMPLETED'] },
+        },
+      })
     }
 
     return NextResponse.json({ success: true })

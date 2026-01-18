@@ -13,6 +13,13 @@ import {
 import { createClient } from '@/lib/supabase/server'
 import { generateImageAdPrompt, type ImageAdType as GeminiImageAdType } from '@/lib/gemini/client'
 import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
+
+/** 이미지 광고 생성 크레딧 비용 (퀄리티별) */
+const IMAGE_AD_CREDIT_COST = {
+  medium: 2,
+  high: 3,
+} as const
 
 // 이미지 크기를 Seedream aspect_ratio로 변환
 type ImageAdSize = '1024x1024' | '1536x1024' | '1024x1536'
@@ -199,6 +206,25 @@ export async function POST(request: NextRequest) {
     const body: ImageAdRequestBody = await request.json()
     const { adType, productId, avatarIds = [], outfitId, prompt, imageSize, quality = 'medium', numImages = 2, referenceStyleImageUrl, options, aiAvatarOptions } = body
 
+    // numImages 범위 제한 (1-5)
+    const validNumImages = Math.min(Math.max(1, numImages), 5)
+
+    // 크레딧 비용 계산
+    const creditCostPerImage = IMAGE_AD_CREDIT_COST[quality] || IMAGE_AD_CREDIT_COST.medium
+    const totalCreditCost = creditCostPerImage * validNumImages
+
+    // 크레딧 확인
+    const profile = await prisma.profiles.findUnique({
+      where: { id: user.id },
+    })
+
+    if (!profile || (profile.credits ?? 0) < totalCreditCost) {
+      return NextResponse.json(
+        { error: 'Insufficient credits', required: totalCreditCost, available: profile?.credits ?? 0 },
+        { status: 402 }
+      )
+    }
+
     // 필수 필드 검증
     // wearing 타입은 productId 불필요, 나머지는 필수
     const isWearingType = adType === 'wearing'
@@ -214,9 +240,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-
-    // numImages 범위 제한 (1-5)
-    const validNumImages = Math.min(Math.max(1, numImages), 5)
 
     // 이미지 URL 수집
     const imageUrls: string[] = []
@@ -389,10 +412,49 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // AI 생성 아바타 설명 문자열 생성 (Gemini에 전달용)
+    let aiAvatarDescription: string | undefined
+    if (isAiGeneratedAvatar) {
+      const genderMap: Record<string, string> = { male: 'male', female: 'female', any: '' }
+      const ageMap: Record<string, string> = { young: 'in their 20s-30s', middle: 'in their 30s-40s', mature: 'in their 40s-50s', any: '' }
+      const styleMap: Record<string, string> = { natural: 'natural and friendly', professional: 'professional and sophisticated', casual: 'casual and relaxed', elegant: 'elegant and luxurious', any: '' }
+      const ethnicityMap: Record<string, string> = { korean: 'Korean', asian: 'Asian', western: 'Western/Caucasian', any: '' }
+
+      const avatarParts: string[] = []
+
+      // 옵션이 있고 'any'가 아닌 값들만 추가
+      if (aiAvatarOptions) {
+        if (aiAvatarOptions.ethnicity && aiAvatarOptions.ethnicity !== 'any' && ethnicityMap[aiAvatarOptions.ethnicity]) {
+          avatarParts.push(ethnicityMap[aiAvatarOptions.ethnicity])
+        }
+        if (aiAvatarOptions.targetGender && aiAvatarOptions.targetGender !== 'any' && genderMap[aiAvatarOptions.targetGender]) {
+          avatarParts.push(genderMap[aiAvatarOptions.targetGender])
+        }
+        if (aiAvatarOptions.targetAge && aiAvatarOptions.targetAge !== 'any' && ageMap[aiAvatarOptions.targetAge]) {
+          avatarParts.push(`person ${ageMap[aiAvatarOptions.targetAge]}`)
+        }
+        if (aiAvatarOptions.style && aiAvatarOptions.style !== 'any' && styleMap[aiAvatarOptions.style]) {
+          avatarParts.push(`with ${styleMap[aiAvatarOptions.style]} appearance`)
+        }
+      }
+
+      // 모든 옵션이 '무관'이거나 설정되지 않은 경우 - Gemini가 제품에 맞게 자동 선택
+      if (avatarParts.length === 0) {
+        // 기본 설명을 제공하되, Gemini에게 제품에 맞게 구체화하도록 요청
+        aiAvatarDescription = 'a person suitable for this product advertisement (automatically select ethnicity, gender, age, and style based on the product and target market)'
+      } else {
+        // 'person'이 없으면 추가
+        if (!avatarParts.some(p => p.includes('person'))) {
+          avatarParts.push('person')
+        }
+        aiAvatarDescription = avatarParts.join(' ')
+      }
+    }
+
     // Gemini를 사용하여 최적화된 프롬프트 생성
     let finalPrompt = prompt
     try {
-      console.log('Gemini 프롬프트 생성 시작:', { adType, productName, hasProductImage: !!productImageUrl, avatarCount: avatarImageUrls.length, hasReferenceStyle: !!referenceStyleImageUrl })
+      console.log('Gemini 프롬프트 생성 시작:', { adType, productName, hasProductImage: !!productImageUrl, avatarCount: avatarImageUrls.length, hasReferenceStyle: !!referenceStyleImageUrl, isAiGeneratedAvatar, aiAvatarDescription })
 
       const geminiResult = await generateImageAdPrompt({
         adType: adType as GeminiImageAdType,
@@ -404,6 +466,7 @@ export async function POST(request: NextRequest) {
         referenceStyleImageUrl,
         selectedOptions: options || {},
         additionalPrompt: prompt,
+        aiAvatarDescription,
       })
 
       finalPrompt = geminiResult.optimizedPrompt
@@ -425,8 +488,8 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 광고 유형별 프롬프트 보강
-      const typePromptPrefix = getTypePromptPrefix(adType)
+      // 광고 유형별 프롬프트 보강 (AI 아바타 고려)
+      const typePromptPrefix = getTypePromptPrefix(adType, isAiGeneratedAvatar, aiAvatarDescription)
       if (typePromptPrefix) {
         finalPrompt = `${typePromptPrefix} ${finalPrompt}`
       }
@@ -437,32 +500,16 @@ export async function POST(request: NextRequest) {
     type QueueResponse = { request_id: string; provider: 'fal' | 'kie' }
     let queueResponses: QueueResponse[]
 
+    // DB에 저장할 최종 프롬프트 (AI 아바타인 경우 아바타 설명 포함)
+    let promptToSave = finalPrompt
+
     if (isAiGeneratedAvatar) {
       // AI 생성 아바타: kie.ai GPT-Image 1.5 사용 (참조 이미지 없이 프롬프트만으로 생성)
-      // 아바타 정보를 프롬프트에 추가
-      const genderMap: Record<string, string> = { male: 'male', female: 'female', any: '' }
-      const ageMap: Record<string, string> = { young: 'in their 20s-30s', middle: 'in their 30s-40s', mature: 'in their 40s-50s', any: '' }
-      const styleMap: Record<string, string> = { natural: 'natural and friendly', professional: 'professional and sophisticated', casual: 'casual and relaxed', elegant: 'elegant and luxurious', any: '' }
-      const ethnicityMap: Record<string, string> = { korean: 'Korean', asian: 'Asian', western: 'Western/Caucasian', any: '' }
+      // aiAvatarDescription은 이미 Gemini 호출 전에 생성됨
 
-      const avatarParts: string[] = []
-      if (aiAvatarOptions?.ethnicity && ethnicityMap[aiAvatarOptions.ethnicity]) {
-        avatarParts.push(ethnicityMap[aiAvatarOptions.ethnicity])
-      }
-      if (aiAvatarOptions?.targetGender && genderMap[aiAvatarOptions.targetGender]) {
-        avatarParts.push(genderMap[aiAvatarOptions.targetGender])
-      }
-      if (aiAvatarOptions?.targetAge && ageMap[aiAvatarOptions.targetAge]) {
-        avatarParts.push(`person ${ageMap[aiAvatarOptions.targetAge]}`)
-      } else {
-        avatarParts.push('person')
-      }
-      if (aiAvatarOptions?.style && styleMap[aiAvatarOptions.style]) {
-        avatarParts.push(`with ${styleMap[aiAvatarOptions.style]} appearance`)
-      }
-
-      const avatarDescription = avatarParts.join(' ')
-      const aiAvatarPrompt = `A ${avatarDescription}. ${finalPrompt}`
+      // AI 아바타 프롬프트를 DB에 저장 (Gemini가 이미 아바타 설명을 포함한 프롬프트 생성)
+      // finalPrompt는 이미 Gemini에서 AI 아바타 설명을 고려하여 생성됨
+      promptToSave = finalPrompt
 
       // kie.ai aspect ratio 변환
       const kieAspectRatio: GPTImageAspectRatio = aspectRatio === '1:1' ? '1:1' : aspectRatio === '3:2' ? '3:2' : '2:3'
@@ -471,10 +518,10 @@ export async function POST(request: NextRequest) {
       // AI 아바타용 입력 이미지 (제품 이미지가 있으면 사용)
       const aiInputUrls = productImageUrl ? [productImageUrl] : []
 
-      console.log('AI 아바타 이미지 광고 생성 (kie.ai GPT-Image 1.5):', { avatarDescription, aspectRatio: kieAspectRatio, inputUrls: aiInputUrls })
+      console.log('AI 아바타 이미지 광고 생성 (kie.ai GPT-Image 1.5):', { aiAvatarDescription, aspectRatio: kieAspectRatio, inputUrls: aiInputUrls })
 
       const queuePromises = Array.from({ length: validNumImages }, async () => {
-        const response = await submitKieGptImageToQueue(aiInputUrls, aiAvatarPrompt, kieAspectRatio, kieQuality)
+        const response = await submitKieGptImageToQueue(aiInputUrls, finalPrompt, kieAspectRatio, kieQuality)
         return { request_id: response.request_id, provider: 'kie' as const }
       })
 
@@ -503,6 +550,12 @@ export async function POST(request: NextRequest) {
       const { request_id, provider } = queueResponses[i]
       const fal_request_id = `${provider}:${request_id}`
 
+      // selected_options에 aiAvatarOptions도 함께 저장 (재시도 시 필요)
+      const selectedOptionsToSave = {
+        ...(options || {}),
+        ...(isAiGeneratedAvatar && aiAvatarOptions ? { _aiAvatarOptions: aiAvatarOptions } : {}),
+      }
+
       const { data: imageAd, error: insertError } = await supabase
         .from('image_ads')
         .insert({
@@ -513,10 +566,10 @@ export async function POST(request: NextRequest) {
           ad_type: adType,
           status: 'IN_QUEUE',
           fal_request_id: fal_request_id,
-          prompt: finalPrompt,
+          prompt: promptToSave,  // AI 아바타인 경우 아바타 설명 포함된 프롬프트
           image_size: imageSize,
           quality: quality,
-          selected_options: options || null,  // 사용자 선택 옵션 저장
+          selected_options: selectedOptionsToSave,  // 사용자 선택 옵션 + AI 아바타 옵션
         })
         .select('id')
         .single()
@@ -528,11 +581,22 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 크레딧 차감
+    await prisma.profiles.update({
+      where: { id: user.id },
+      data: {
+        credits: { decrement: totalCreditCost },
+      },
+    })
+
+    console.log('이미지 광고 크레딧 차감:', { userId: user.id, cost: totalCreditCost, numImages: validNumImages })
+
     return NextResponse.json({
       success: true,
       requestIds: queueResponses.map(r => `${r.provider}:${r.request_id}`),
       numImages: validNumImages,
       imageAdIds: imageAdRecords,
+      creditUsed: totalCreditCost,
     })
   } catch (error) {
     console.error('이미지 광고 생성 오류:', error)
@@ -543,23 +607,28 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// 광고 유형별 프롬프트 접두사
-function getTypePromptPrefix(adType: ImageAdType): string {
+// 광고 유형별 프롬프트 접두사 (AI 아바타 지원)
+function getTypePromptPrefix(adType: ImageAdType, isAiAvatar = false, avatarDescription?: string): string {
+  // AI 아바타인 경우 모델 설명을 텍스트로 대체
+  const modelRef = isAiAvatar && avatarDescription
+    ? `a ${avatarDescription}`
+    : 'the model from the reference'
+
   switch (adType) {
     case 'productOnly':
-      return 'Create a professional product photography showcasing the product from the reference image.'
+      return 'Create a professional product photography showcasing the product from Figure 1.'
     case 'holding':
-      return 'Create an advertisement image where the model from the reference is naturally holding the product.'
+      return `Create an advertisement image where ${modelRef} is naturally holding the product from Figure 1.`
     case 'using':
-      return 'Create an advertisement image where the model from the reference is actively using the product.'
+      return `Create an advertisement image where ${modelRef} is actively using the product from Figure 1.`
     case 'wearing':
-      return 'Create a fashion advertisement image showcasing the model wearing the outfit from the reference image.'
+      return `Create a fashion advertisement image showcasing ${modelRef} wearing the outfit from the reference image.`
     case 'beforeAfter':
       return 'Create a before/after comparison advertisement showing the transformation.'
     case 'lifestyle':
-      return 'Create a lifestyle advertisement showing the model naturally incorporating the product into daily life.'
+      return `Create a lifestyle advertisement showing ${modelRef} naturally incorporating the product from Figure 1 into daily life.`
     case 'unboxing':
-      return 'Create an unboxing/review style advertisement with the model opening or presenting the product.'
+      return `Create an unboxing/review style advertisement with ${modelRef} opening or presenting the product from Figure 1.`
     case 'comparison':
       return 'Create a product comparison style advertisement.'
     case 'seasonal':

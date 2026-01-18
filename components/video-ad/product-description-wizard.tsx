@@ -19,7 +19,7 @@ import {
   ChevronDown,
   Clock,
   Edit3,
-  FileText,
+  Globe,
   Loader2,
   MapPin,
   Minus,
@@ -164,7 +164,8 @@ interface DraftData {
   script_style: string | null
   script: string | null
   first_scene_image_url: string | null
-  first_frame_urls: string[] | null  // 첫 프레임 이미지 URL 배열
+  first_frame_urls: string[] | null  // 첫 프레임 이미지 URL 배열 (WebP 압축본, 표시용)
+  first_frame_original_urls: string[] | null  // 첫 프레임 원본 이미지 URL 배열 (PNG 원본, 영상 생성용)
   first_frame_prompt: string | null
   voice_id: string | null
   voice_name: string | null
@@ -174,7 +175,7 @@ interface DraftData {
 export function ProductDescriptionWizard() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
 
   // URL에서 videoAdId 파라미터 확인 (재개 시)
   const resumeVideoAdId = searchParams.get('videoAdId')
@@ -207,6 +208,9 @@ export function ProductDescriptionWizard() {
   const [locationPrompt, setLocationPrompt] = useState('')
   const [duration, setDuration] = useState<VideoDuration>(30)
   const [cameraComposition, setCameraComposition] = useState<CameraComposition>('auto')
+  const [scriptLanguage, setScriptLanguage] = useState<'ko' | 'en' | 'ja' | 'zh'>(
+    (language as 'ko' | 'en' | 'ja' | 'zh') || 'ko'
+  )
 
   // Step 3: 대본 및 이미지 + 음성 (통합)
   const [scripts, setScripts] = useState<Script[]>([])
@@ -344,7 +348,7 @@ export function ProductDescriptionWizard() {
   useEffect(() => {
     if (!isGeneratingVideo || !generationStartTime) return
 
-    const TOTAL_DURATION = 180 * 1000 // 180초 (Infinitalk 기준)
+    const TOTAL_DURATION = 120 * 1000 // 120초 (Infinitalk 기준)
     const MAX_PROGRESS = 99 // 최대 99%까지만
 
     const interval = setInterval(() => {
@@ -366,6 +370,7 @@ export function ProductDescriptionWizard() {
     locationDescription?: string
     firstFrameUrl?: string | null
     firstFrameUrls?: string[]
+    firstFrameOriginalUrls?: string[]
     firstFramePrompt?: string
     editedScript?: string
     selectedScriptIndex?: number
@@ -378,6 +383,7 @@ export function ProductDescriptionWizard() {
       const locationDescToSave = overrides?.locationDescription ?? locationDescription
       const firstFrameUrlToSave = overrides?.firstFrameUrl !== undefined ? overrides.firstFrameUrl : firstFrameUrl
       const firstFrameUrlsToSave = overrides?.firstFrameUrls ?? firstFrameUrls
+      const firstFrameOriginalUrlsToSave = overrides?.firstFrameOriginalUrls ?? firstFrameOriginalUrls
       const firstFramePromptToSave = overrides?.firstFramePrompt ?? firstFramePrompt
       const editedScriptToSave = overrides?.editedScript ?? editedScript
       const scriptIndexToSave = overrides?.selectedScriptIndex ?? selectedScriptIndex
@@ -404,6 +410,7 @@ export function ProductDescriptionWizard() {
           script: editedScriptToSave,
           firstSceneImageUrl: firstFrameUrlToSave,
           firstFrameUrls: firstFrameUrlsToSave.length > 0 ? firstFrameUrlsToSave : null,
+          firstFrameOriginalUrls: firstFrameOriginalUrlsToSave.length > 0 ? firstFrameOriginalUrlsToSave : null,
           firstFramePrompt: firstFramePromptToSave,
           voiceId: selectedVoice?.id,
           voiceName: selectedVoice?.name,
@@ -421,7 +428,7 @@ export function ProductDescriptionWizard() {
     } finally {
       setIsSavingDraft(false)
     }
-  }, [draftId, selectedAvatarInfo, selectedProduct, productInfo, locationPrompt, duration, cameraComposition, scripts, selectedScriptIndex, editedScript, firstFrameUrl, firstFrameUrls, firstFramePrompt, locationDescription, selectedVoice])
+  }, [draftId, selectedAvatarInfo, selectedProduct, productInfo, locationPrompt, duration, cameraComposition, scripts, selectedScriptIndex, editedScript, firstFrameUrl, firstFrameUrls, firstFrameOriginalUrls, firstFramePrompt, locationDescription, selectedVoice])
 
   // 기존 초안 또는 진행 중인 영상 광고 로드
   const loadExistingData = useCallback(async () => {
@@ -480,10 +487,8 @@ export function ProductDescriptionWizard() {
             const shouldRestore = confirm('이전에 저장된 작업이 있습니다. 이어서 진행하시겠습니까?')
             if (shouldRestore) {
               restoreDraftData(data.draft)
-            } else {
-              // 초안 삭제
-              await fetch(`/api/video-ads/draft?category=productDescription`, { method: 'DELETE' })
             }
+            // 이어서 하지 않아도 초안은 유지 (삭제하지 않음)
           }
         }
       } catch (error) {
@@ -569,13 +574,24 @@ export function ProductDescriptionWizard() {
     }
     if (draft.script) setEditedScript(draft.script)
     if (draft.first_scene_image_url) setFirstFrameUrl(draft.first_scene_image_url)
-    // 첫 프레임 이미지 URL 배열 복원
+    // 첫 프레임 이미지 URL 배열 복원 (압축본 - 표시용)
     if (draft.first_frame_urls && Array.isArray(draft.first_frame_urls)) {
       setFirstFrameUrls(draft.first_frame_urls)
       // 선택된 이미지 인덱스 복원
       if (draft.first_scene_image_url) {
         const selectedIdx = draft.first_frame_urls.indexOf(draft.first_scene_image_url)
         if (selectedIdx >= 0) setSelectedFirstFrameIndex(selectedIdx)
+      }
+    }
+    // 첫 프레임 원본 이미지 URL 배열 복원 (PNG 원본 - 영상 생성용)
+    if (draft.first_frame_original_urls && Array.isArray(draft.first_frame_original_urls)) {
+      setFirstFrameOriginalUrls(draft.first_frame_original_urls)
+      // 선택된 원본 이미지 URL 복원
+      if (draft.first_frame_urls && draft.first_scene_image_url) {
+        const selectedIdx = draft.first_frame_urls.indexOf(draft.first_scene_image_url)
+        if (selectedIdx >= 0 && draft.first_frame_original_urls[selectedIdx]) {
+          setFirstFrameOriginalUrl(draft.first_frame_original_urls[selectedIdx])
+        }
       }
     }
     if (draft.first_frame_prompt) setFirstFramePrompt(draft.first_frame_prompt)
@@ -684,18 +700,6 @@ export function ProductDescriptionWizard() {
     setEditableSellingPoints(updated)
   }
 
-  // 편집된 제품 정보를 productInfo로 반영
-  const buildProductInfoFromEditable = useCallback(() => {
-    const parts: string[] = []
-    if (selectedProduct) parts.push(`제품명: ${selectedProduct.name}`)
-    if (editableDescription) parts.push(`설명: ${editableDescription}`)
-    const validPoints = editableSellingPoints.filter(p => p.trim().length > 0)
-    if (validPoints.length > 0) {
-      parts.push(`핵심 특징:\n${validPoints.map(p => `- ${p}`).join('\n')}`)
-    }
-    setProductInfo(parts.join('\n'))
-  }, [selectedProduct, editableDescription, editableSellingPoints])
-
   // 대본 선택 시 편집 내용 초기화 (초안 복원 중에는 건너뜀)
   useEffect(() => {
     if (isRestoringDraft.current) {
@@ -752,6 +756,7 @@ export function ProductDescriptionWizard() {
           locationPrompt: locationPrompt.trim() || undefined,
           durationSeconds: duration,
           cameraComposition: cameraComposition !== 'auto' ? cameraComposition : undefined,
+          language: scriptLanguage,  // 대본 생성 언어
           // AI 아바타 옵션 (AI 생성 아바타일 때만)
           aiAvatarOptions: selectedAvatarInfo.type === 'ai-generated' ? selectedAvatarInfo.aiOptions : undefined,
         }),
@@ -798,6 +803,7 @@ export function ProductDescriptionWizard() {
         locationDescription: generatedLocationDesc,
         firstFrameUrl: generatedFirstFrameUrl,
         firstFrameUrls: generatedFirstFrameUrls,
+        firstFrameOriginalUrls: generatedFirstFrameOriginalUrls,
         firstFramePrompt: generatedFirstFramePrompt,
         editedScript: generatedEditedScript,
         selectedScriptIndex: 0,
@@ -898,6 +904,10 @@ export function ProductDescriptionWizard() {
           voiceName: selectedVoice.name,
           locationPrompt: locationPrompt || locationDescription,
           duration,
+          // 영상 프롬프트 생성을 위한 추가 정보
+          cameraComposition: cameraComposition !== 'auto' ? cameraComposition : undefined,
+          productName: selectedProduct?.name,
+          productDescription: productInfo,
         }),
       })
 
@@ -1072,8 +1082,8 @@ export function ProductDescriptionWizard() {
 
   // 단계 정보
   const STEPS = [
-    { step: 1, title: '아바타', description: '아바타 선택' },
-    { step: 2, title: '제품 정보', description: '제품 정보 입력' },
+    { step: 1, title: '제품/아바타', description: '제품 및 아바타 선택' },
+    { step: 2, title: '영상 정보', description: '영상 정보 입력' },
     { step: 3, title: '대본/음성', description: '대본 및 음성 선택' },
     { step: 4, title: '생성', description: '영상 생성' },
   ]
@@ -1154,12 +1164,6 @@ export function ProductDescriptionWizard() {
       {/* Step 1: 제품/아바타 선택 */}
       {step === 1 && (
         <div className="max-w-2xl mx-auto space-y-6">
-          <div className="text-center mb-8">
-            <h2 className="text-lg font-semibold text-foreground">아바타를 선택하세요</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              제품을 설명할 아바타를 선택해주세요. 제품은 선택 사항입니다.
-            </p>
-          </div>
 
           {/* 아바타 선택 (필수) */}
           <div className="bg-card border border-border rounded-xl p-4">
@@ -1286,6 +1290,74 @@ export function ProductDescriptionWizard() {
                 </div>
               )}
             </div>
+
+            {/* 선택된 제품 정보 편집 (제품 선택 시 바로 표시) */}
+            {selectedProduct && (
+              <div className="mt-4 p-4 bg-secondary/30 rounded-xl space-y-4">
+                <div className="flex items-center gap-3 pb-3 border-b border-border">
+                  <div className="w-12 h-12 bg-secondary rounded-lg overflow-hidden flex-shrink-0">
+                    <img
+                      src={selectedProduct.rembg_image_url || selectedProduct.image_url || ''}
+                      alt={selectedProduct.name}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-foreground text-sm">{selectedProduct.name}</h4>
+                    <p className="text-xs text-muted-foreground">제품 정보를 확인하고 편집하세요</p>
+                  </div>
+                </div>
+
+                {/* 설명 */}
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">제품 설명</label>
+                  <textarea
+                    value={editableDescription}
+                    onChange={(e) => setEditableDescription(e.target.value)}
+                    placeholder="제품에 대한 설명..."
+                    rows={2}
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                  />
+                </div>
+
+                {/* 셀링 포인트 */}
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">
+                    셀링 포인트 <span className="text-muted-foreground/70">(예: &quot;24시간 보습&quot;, &quot;피부과 추천&quot;)</span>
+                  </label>
+                  <div className="space-y-2">
+                    {editableSellingPoints.map((point, index) => (
+                      <div key={index} className="flex gap-2">
+                        <input
+                          type="text"
+                          value={point}
+                          onChange={(e) => updateSellingPoint(index, e.target.value)}
+                          placeholder="제품의 장점이나 특징"
+                          className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        />
+                        {editableSellingPoints.length > 1 && (
+                          <button
+                            onClick={() => removeSellingPoint(index)}
+                            className="p-2 text-muted-foreground hover:text-red-500 transition-colors"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    {editableSellingPoints.length < 10 && (
+                      <button
+                        onClick={addSellingPoint}
+                        className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
+                      >
+                        <Plus className="w-3 h-3" />
+                        포인트 추가
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 촬영 장소 입력 */}
@@ -1327,97 +1399,42 @@ export function ProductDescriptionWizard() {
         </div>
       )}
 
-      {/* Step 2: 제품 정보 입력 */}
+      {/* Step 2: 영상 정보 입력 */}
       {step === 2 && (
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="text-center mb-8">
-            <h2 className="text-lg font-semibold text-foreground">제품 정보를 입력하세요</h2>
+            <h2 className="text-lg font-semibold text-foreground">영상 정보를 입력하세요</h2>
             <p className="text-sm text-muted-foreground mt-1">
               AI가 이 정보를 바탕으로 대본을 생성합니다
             </p>
           </div>
 
-          {/* 선택된 제품 정보 또는 직접 입력 */}
-          {selectedProduct ? (
-            <div className="bg-card border border-border rounded-xl p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <label className="block text-sm font-medium text-foreground">
-                  <Edit3 className="w-4 h-4 inline mr-2" />
-                  {selectedProduct.name} 정보 (편집 가능)
-                </label>
+          {/* 대본 언어 선택 */}
+          <div className="bg-card border border-border rounded-xl p-4">
+            <label className="block text-sm font-medium text-foreground mb-3">
+              <Globe className="w-4 h-4 inline mr-2" />
+              대본 언어
+            </label>
+            <div className="grid grid-cols-4 gap-2">
+              {([
+                { code: 'ko', label: '한국어' },
+                { code: 'en', label: 'English' },
+                { code: 'ja', label: '日本語' },
+                { code: 'zh', label: '中文' },
+              ] as const).map((lang) => (
                 <button
-                  onClick={buildProductInfoFromEditable}
-                  className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
+                  key={lang.code}
+                  onClick={() => setScriptLanguage(lang.code)}
+                  className={`py-2.5 rounded-lg border text-sm font-medium transition-colors ${scriptLanguage === lang.code
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border text-muted-foreground hover:border-primary/50'
+                    }`}
                 >
-                  <RefreshCw className="w-3 h-3" />
-                  정보 반영
+                  {lang.label}
                 </button>
-              </div>
-
-              {/* 설명 */}
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1">제품 설명</label>
-                <textarea
-                  value={editableDescription}
-                  onChange={(e) => setEditableDescription(e.target.value)}
-                  placeholder="제품에 대한 설명..."
-                  rows={2}
-                  className="w-full px-3 py-2 bg-secondary/30 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
-                />
-              </div>
-
-              {/* 셀링 포인트 */}
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1">
-                  셀링 포인트 <span className="text-muted-foreground/70">(예: "24시간 보습", "피부과 추천")</span>
-                </label>
-                <div className="space-y-2">
-                  {editableSellingPoints.map((point, index) => (
-                    <div key={index} className="flex gap-2">
-                      <input
-                        type="text"
-                        value={point}
-                        onChange={(e) => updateSellingPoint(index, e.target.value)}
-                        placeholder="제품의 장점이나 특징"
-                        className="flex-1 px-3 py-2 bg-secondary/30 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                      />
-                      {editableSellingPoints.length > 1 && (
-                        <button
-                          onClick={() => removeSellingPoint(index)}
-                          className="p-2 text-muted-foreground hover:text-red-500 transition-colors"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  {editableSellingPoints.length < 10 && (
-                    <button
-                      onClick={addSellingPoint}
-                      className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
-                    >
-                      <Plus className="w-3 h-3" />
-                      포인트 추가
-                    </button>
-                  )}
-                </div>
-              </div>
+              ))}
             </div>
-          ) : (
-            <div className="bg-card border border-border rounded-xl p-4">
-              <label className="block text-sm font-medium text-foreground mb-2">
-                <FileText className="w-4 h-4 inline mr-2" />
-                제품 정보 <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={productInfo}
-                onChange={(e) => setProductInfo(e.target.value)}
-                placeholder="제품명, 특징, 장점 등을 자유롭게 입력해주세요.&#10;예: 프리미엄 에센스 세럼, 비타민C 성분, 피부 톤업 효과, 수분 공급"
-                rows={4}
-                className="w-full px-4 py-3 bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground resize-none"
-              />
-            </div>
-          )}
+          </div>
 
           {/* 영상 길이 */}
           <div className="bg-card border border-border rounded-xl p-4">
@@ -1557,7 +1574,7 @@ export function ProductDescriptionWizard() {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
+                <div className="grid grid-cols-3 gap-3 max-w-lg mx-auto">
                   {firstFrameUrls.length > 0 ? (
                     firstFrameUrls.map((url, index) => (
                       <button
@@ -1589,7 +1606,7 @@ export function ProductDescriptionWizard() {
                       </button>
                     ))
                   ) : firstFrameUrl ? (
-                    <div className="col-span-2 aspect-[2/3] max-w-[150px] mx-auto rounded-lg overflow-hidden border border-border">
+                    <div className="col-span-3 aspect-[2/3] max-w-[150px] mx-auto rounded-lg overflow-hidden border border-border">
                       <img
                         src={firstFrameUrl}
                         alt="첫 프레임"
@@ -1597,7 +1614,7 @@ export function ProductDescriptionWizard() {
                       />
                     </div>
                   ) : (
-                    <div className="col-span-2 aspect-[2/3] max-w-[150px] mx-auto rounded-lg bg-secondary/30 flex items-center justify-center">
+                    <div className="col-span-3 aspect-[2/3] max-w-[150px] mx-auto rounded-lg bg-secondary/30 flex items-center justify-center">
                       <p className="text-muted-foreground text-sm text-center px-2">이미지가 생성되면 여기에 표시됩니다</p>
                     </div>
                   )}

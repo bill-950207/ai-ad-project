@@ -25,6 +25,7 @@ export interface PromptTemplate {
 export type PromptCategory =
   | 'image-ad'
   | 'video-ad'
+  | 'avatar-motion'
   | 'script'
   | 'background'
   | 'avatar'

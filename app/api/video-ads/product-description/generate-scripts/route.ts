@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
       locationPrompt,
       durationSeconds,
       cameraComposition,  // 카메라 구도 (selfie, tripod, closeup, fullbody)
+      language = 'ko',  // 대본 생성 언어 (기본값: 한국어)
       // AI 아바타 옵션 (avatarId가 'ai-generated'일 때)
       aiAvatarOptions,
     } = body
@@ -107,6 +108,7 @@ export async function POST(request: NextRequest) {
     const scriptsResult = await generateProductScripts({
       productInfo: productInfo.trim(),
       durationSeconds: durationSeconds || 30,
+      language,  // 대본 생성 언어
     })
 
     // 2. 첫 프레임 프롬프트 생성 (Gemini) - AI 아바타와 기존 아바타 분기

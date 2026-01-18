@@ -3,16 +3,17 @@
  *
  * 영상 광고 카테고리 중 하나를 선택합니다:
  * 1. 제품 설명 영상 - 아바타가 제품을 말로 설명하는 영상
- * (추후 카테고리 추가 예정)
+ * 2. 아바타 모션 - 아바타가 특정 장면을 연기하는 영상
  */
 
 'use client'
 
 import { useLanguage } from '@/contexts/language-context'
-import { X, Mic } from 'lucide-react'
+import { X, Mic, Clapperboard } from 'lucide-react'
 
 export type VideoAdCategory =
   | 'productDescription'  // 제품 설명 영상 (음성으로 제품 설명)
+  | 'avatarMotion'        // 아바타 모션 영상 (아바타가 특정 장면 연기)
 
 interface VideoAdTypeModalProps {
   isOpen: boolean
@@ -40,14 +41,17 @@ const CATEGORIES: CategoryInfo[] = [
       '아바타가 말하는 영상 생성',
     ],
   },
-  // 추후 카테고리 추가
-  // {
-  //   category: 'productDemo',
-  //   icon: Play,
-  //   title: '제품 시연 영상',
-  //   description: '제품 사용 방법을 보여주는 영상',
-  //   features: [...],
-  // },
+  {
+    category: 'avatarMotion',
+    icon: Clapperboard,
+    title: '아바타 모션',
+    description: '아바타가 특정 장면을 연기하는 영상입니다',
+    features: [
+      '한 컷 연기 영상 생성',
+      '제품 사용, 포즈, 리액션 등 다양한 모션',
+      '짧고 임팩트 있는 광고 소재',
+    ],
+  },
 ]
 
 export function VideoAdTypeModal({ isOpen, onClose, onSelect }: VideoAdTypeModalProps) {
@@ -129,12 +133,6 @@ export function VideoAdTypeModal({ isOpen, onClose, onSelect }: VideoAdTypeModal
             ))}
           </div>
 
-          {/* 추후 추가될 카테고리 안내 */}
-          <div className="mt-4 p-3 bg-secondary/20 rounded-lg border border-dashed border-border">
-            <p className="text-xs text-muted-foreground text-center">
-              더 많은 영상 광고 유형이 곧 추가될 예정입니다
-            </p>
-          </div>
         </div>
       </div>
     </div>

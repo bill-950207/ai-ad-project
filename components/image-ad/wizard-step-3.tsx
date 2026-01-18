@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useLanguage } from '@/contexts/language-context'
 import {
   Bot,
@@ -45,17 +45,17 @@ export function WizardStep3() {
     goToPrevStep,
   } = useImageAdWizard()
 
-  // AI 자동 설정 로드 (Step 3 진입 시)
-  useEffect(() => {
-    if (settingMethod === 'ai-auto' && !hasLoadedAiRecommendation) {
-      loadAiRecommendation()
-    } else if (settingMethod === 'reference' && analysisResult?.analyzedOptions) {
-      applyAnalysisResult()
-    }
-  }, [settingMethod, hasLoadedAiRecommendation])
+  // 중복 요청 방지를 위한 ref
+  const aiRecommendationRequestedRef = useRef(false)
 
   // AI 추천 로드
-  const loadAiRecommendation = async () => {
+  const loadAiRecommendation = useCallback(async (isManualRefresh = false) => {
+    // 수동 새로고침이 아닌 경우, 중복 요청 체크
+    if (!isManualRefresh && aiRecommendationRequestedRef.current) {
+      return
+    }
+    aiRecommendationRequestedRef.current = true
+
     setIsAiRecommending(true)
     setHasLoadedAiRecommendation(true)
 
@@ -115,13 +115,17 @@ export function WizardStep3() {
       }
     } catch (error) {
       console.error('AI 자동 설정 오류:', error)
+      // 에러 시 ref 리셋하여 재시도 가능하게
+      if (!isManualRefresh) {
+        aiRecommendationRequestedRef.current = false
+      }
     } finally {
       setIsAiRecommending(false)
     }
-  }
+  }, [adType, selectedProduct, language, setIsAiRecommending, setHasLoadedAiRecommendation, setCategoryOptions, setCustomOptions, setCustomInputActive, setAiReasons, setAiStrategy, setAdditionalPrompt])
 
   // 참조 이미지 분석 결과 적용
-  const applyAnalysisResult = () => {
+  const applyAnalysisResult = useCallback(() => {
     if (!analysisResult?.analyzedOptions) return
 
     const newCategoryOptions: Record<string, string> = {}
@@ -150,12 +154,22 @@ export function WizardStep3() {
     if (analysisResult.overallStyle) {
       setAiStrategy(analysisResult.overallStyle)
     }
-  }
+  }, [analysisResult, setCategoryOptions, setCustomOptions, setCustomInputActive, setAiReasons, setAiStrategy])
 
-  // AI 재추천
+  // AI 자동 설정 로드 (Step 3 진입 시)
+  useEffect(() => {
+    if (settingMethod === 'ai-auto' && !hasLoadedAiRecommendation) {
+      loadAiRecommendation(false)
+    } else if (settingMethod === 'reference' && analysisResult?.analyzedOptions) {
+      applyAnalysisResult()
+    }
+  }, [settingMethod, hasLoadedAiRecommendation, loadAiRecommendation, analysisResult])
+
+  // AI 재추천 (수동 새로고침)
   const handleRefreshAiRecommendation = () => {
+    aiRecommendationRequestedRef.current = false // ref 리셋
     setHasLoadedAiRecommendation(false)
-    loadAiRecommendation()
+    loadAiRecommendation(true) // 수동 새로고침임을 표시
   }
 
   // 번역
@@ -233,7 +247,7 @@ export function WizardStep3() {
             <h2 className="text-lg font-semibold text-foreground">상세 옵션 설정</h2>
             {settingMethod === 'direct' && (
               <button
-                onClick={loadAiRecommendation}
+                onClick={() => loadAiRecommendation(true)}
                 disabled={isAiRecommending}
                 className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-primary/80 to-primary text-primary-foreground text-sm rounded-lg hover:from-primary hover:to-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >

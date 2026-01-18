@@ -2,13 +2,13 @@
  * fal.ai 클라이언트
  *
  * AI 이미지 생성을 위한 fal.ai Queue API 클라이언트입니다.
- * z-image-turbo-lora 모델을 사용하여 아바타 이미지를 생성합니다.
+ * z-image/turbo 모델을 사용하여 아바타 이미지를 생성합니다.
  */
 
 import { fal } from "@fal-ai/client"
 
 // 사용할 모델 ID
-const MODEL_ID = 'fal-ai/z-image/turbo/lora'
+const MODEL_ID = 'fal-ai/z-image/turbo'
 
 // fal 클라이언트 API 키 설정
 fal.config({
@@ -753,9 +753,10 @@ export async function submitSeedreamEditToQueue(input: SeedreamEditInput): Promi
     prompt: input.prompt,
     image_urls: input.image_urls,
     aspect_ratio: input.aspect_ratio || '1:1',
+    image_size: 'auto_4K',
     quality: input.quality || 'high',
     seed: input.seed,
-    enable_safety_checker: true,
+    enable_safety_checker: false,
   }
 
   const { request_id } = await fal.queue.submit(SEEDREAM_EDIT_MODEL_ID, {

@@ -81,8 +81,12 @@ export function VideoAdPageContent() {
 
   // 진행 중인 상태의 영상들을 폴링
   useEffect(() => {
-    // 진행 중인 상태인 영상들 필터링
-    const inProgressStatuses = ['GENERATING_SCRIPTS', 'GENERATING_AUDIO', 'IN_QUEUE', 'IN_PROGRESS']
+    // 진행 중인 상태인 영상들 필터링 (avatar motion 상태 포함)
+    const inProgressStatuses = [
+      'GENERATING_SCRIPTS', 'GENERATING_AUDIO', 'IN_QUEUE', 'IN_PROGRESS',
+      // Avatar Motion 상태
+      'GENERATING_STORY', 'GENERATING_FRAMES', 'GENERATING_AVATAR', 'FRAMES_COMPLETED'
+    ]
     const inProgressVideos = videoAds.filter(v => inProgressStatuses.includes(v.status))
 
     if (inProgressVideos.length === 0) return
@@ -105,6 +109,21 @@ export function VideoAdPageContent() {
   }
 
   const handleVideoClick = (video: VideoAd) => {
+    // avatarMotion 카테고리는 별도 라우트로 이동
+    if (video.category === 'avatarMotion') {
+      const avatarMotionDraftStatuses = [
+        'DRAFT', 'GENERATING_STORY', 'GENERATING_FRAMES', 'GENERATING_AVATAR', 'FRAMES_COMPLETED',
+        'IN_QUEUE', 'IN_PROGRESS'
+      ]
+      if (avatarMotionDraftStatuses.includes(video.status)) {
+        router.push(`/video-ad-create?category=avatarMotion&videoAdId=${video.id}`)
+        return
+      }
+      // 완료된 영상이면 상세 페이지로
+      router.push(`/dashboard/video-ad/${video.id}`)
+      return
+    }
+
     // DRAFT 또는 생성 중 상태면 마법사로 이동하여 이어서 진행
     const draftStatuses = ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO']
     if (draftStatuses.includes(video.status) && video.category) {
@@ -132,6 +151,11 @@ export function VideoAdPageContent() {
       'IN_PROGRESS': { label: t.videoAd?.status?.inProgress || '생성 중', className: 'bg-purple-500/20 text-purple-500' },
       'COMPLETED': { label: t.videoAd?.status?.completed || '완료', className: 'bg-green-500/20 text-green-500' },
       'FAILED': { label: t.videoAd?.status?.failed || '실패', className: 'bg-red-500/20 text-red-500' },
+      // Avatar Motion 상태
+      'GENERATING_STORY': { label: '스토리 생성 중', className: 'bg-cyan-500/20 text-cyan-500' },
+      'GENERATING_FRAMES': { label: '프레임 생성 중', className: 'bg-teal-500/20 text-teal-500' },
+      'GENERATING_AVATAR': { label: '아바타 생성 중', className: 'bg-violet-500/20 text-violet-500' },
+      'FRAMES_COMPLETED': { label: '프레임 완료', className: 'bg-emerald-500/20 text-emerald-500' },
     }
     const config = statusConfig[status] || { label: status, className: 'bg-gray-500/20 text-gray-500' }
     return (
@@ -144,6 +168,7 @@ export function VideoAdPageContent() {
   const getCategoryLabel = (category: string | null) => {
     const categoryLabels: Record<string, string> = {
       'productDescription': '제품 설명',
+      'avatarMotion': '아바타 모션',
       'productShowcase': '제품 쇼케이스',
       'lifestyle': '라이프스타일',
       'testimonial': '후기/추천',

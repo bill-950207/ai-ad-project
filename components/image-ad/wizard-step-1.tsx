@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useLanguage } from '@/contexts/language-context'
 import {
   Package,
@@ -15,11 +15,10 @@ import {
   Calendar,
   ChevronDown,
   Check,
-  Upload,
-  X,
   Loader2,
   ChevronRight,
-  Image as ImageIcon,
+  Minus,
+  Plus,
 } from 'lucide-react'
 import { ImageAdType, PRODUCT_ONLY_TYPES } from '@/components/ad-product/image-ad-type-modal'
 import { AvatarSelectModal } from '@/components/video-ad/avatar-select-modal'
@@ -45,9 +44,6 @@ export function WizardStep1() {
     setAdType,
     selectedProduct,
     setSelectedProduct,
-    localImageFile,
-    localImageUrl,
-    setLocalImage,
     selectedAvatarInfo,
     setSelectedAvatarInfo,
     canProceedToStep2,
@@ -60,7 +56,9 @@ export function WizardStep1() {
   const [showProductDropdown, setShowProductDropdown] = useState(false)
   const [showAvatarModal, setShowAvatarModal] = useState(false)
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  // 제품 정보 편집 상태
+  const [editableDescription, setEditableDescription] = useState('')
+  const [editableSellingPoints, setEditableSellingPoints] = useState<string[]>([''])
 
   const isProductOnly = PRODUCT_ONLY_TYPES.includes(adType)
   const isWearingType = adType === 'wearing'
@@ -87,25 +85,38 @@ export function WizardStep1() {
     fetchProducts()
   }, [fetchProducts])
 
-  // 파일 선택 핸들러
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const url = URL.createObjectURL(file)
-      setLocalImage(file, url)
-      setSelectedProduct(null) // 로컬 이미지 선택 시 제품 선택 해제
+  // 제품 선택 시 편집 가능한 필드 채우기
+  useEffect(() => {
+    if (selectedProduct) {
+      setEditableDescription(selectedProduct.description || '')
+      setEditableSellingPoints(
+        selectedProduct.selling_points && selectedProduct.selling_points.length > 0
+          ? selectedProduct.selling_points
+          : ['']
+      )
+    } else {
+      setEditableDescription('')
+      setEditableSellingPoints([''])
+    }
+  }, [selectedProduct])
+
+  // 셀링 포인트 관리 함수
+  const addSellingPoint = () => {
+    if (editableSellingPoints.length < 10) {
+      setEditableSellingPoints([...editableSellingPoints, ''])
     }
   }
 
-  // 로컬 이미지 삭제
-  const clearLocalImage = () => {
-    if (localImageUrl) {
-      URL.revokeObjectURL(localImageUrl)
+  const removeSellingPoint = (index: number) => {
+    if (editableSellingPoints.length > 1) {
+      setEditableSellingPoints(editableSellingPoints.filter((_, i) => i !== index))
     }
-    setLocalImage(null, null)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
+  }
+
+  const updateSellingPoint = (index: number, value: string) => {
+    const updated = [...editableSellingPoints]
+    updated[index] = value
+    setEditableSellingPoints(updated)
   }
 
   // 광고 유형 변경
@@ -131,16 +142,16 @@ export function WizardStep1() {
   // 다음 단계 유효성 메시지
   const getValidationMessage = () => {
     if (isProductOnly) {
-      if (!selectedProduct && !localImageFile) {
-        return '제품을 선택하거나 이미지를 업로드해주세요'
+      if (!selectedProduct) {
+        return '제품을 선택해주세요'
       }
     } else if (isWearingType) {
       if (!selectedAvatarInfo) {
         return '아바타를 선택해주세요'
       }
     } else {
-      if (!selectedProduct && !localImageFile) {
-        return '제품을 선택하거나 이미지를 업로드해주세요'
+      if (!selectedProduct) {
+        return '제품을 선택해주세요'
       }
       if (!selectedAvatarInfo) {
         return '아바타를 선택해주세요'
@@ -158,13 +169,13 @@ export function WizardStep1() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       {/* 광고 유형 선택 */}
-      <div className="bg-card border border-border rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">
-          광고 유형 선택
-        </h2>
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+      <div className="bg-card border border-border rounded-xl p-4">
+        <label className="block text-sm font-medium text-foreground mb-3">
+          광고 유형 선택 <span className="text-red-500">*</span>
+        </label>
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
           {AD_TYPE_LIST.map(({ type, icon: Icon }) => {
             const title = types[type]?.title || type
             const isActive = adType === type
@@ -172,53 +183,79 @@ export function WizardStep1() {
               <button
                 key={type}
                 onClick={() => handleAdTypeChange(type)}
-                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border transition-all ${
                   isActive
-                    ? 'border-primary bg-primary/5 text-primary'
-                    : 'border-border bg-card text-muted-foreground hover:border-primary/50 hover:bg-secondary/30'
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border text-muted-foreground hover:border-primary/50'
                 }`}
               >
-                <Icon className="w-6 h-6" />
-                <span className="text-xs font-medium text-center">{title}</span>
+                <Icon className="w-5 h-5" />
+                <span className="text-[11px] font-medium text-center">{title}</span>
               </button>
             )
           })}
         </div>
-        {types[adType]?.description && (
-          <p className="mt-4 text-sm text-muted-foreground bg-secondary/30 rounded-lg p-3">
-            {types[adType].description}
-          </p>
-        )}
       </div>
 
-      {/* 제품 선택 (착용샷에서는 선택사항) */}
-      <div className="bg-card border border-border rounded-xl p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <Package className="w-5 h-5" />
-            {imageAdCreate.selectProduct}
-            {isWearingType && (
-              <span className="text-xs font-normal text-muted-foreground ml-2">(선택사항)</span>
+      {/* 아바타 선택 (제품 단독 제외) */}
+      {!isProductOnly && (
+        <div className="bg-card border border-border rounded-xl p-4">
+          <label className="block text-sm font-medium text-foreground mb-2">
+            <User className="w-4 h-4 inline mr-2" />
+            {imageAdCreate.selectAvatar}
+            <span className="text-red-500 ml-1">*</span>
+          </label>
+          <button
+            onClick={() => setShowAvatarModal(true)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-secondary/50 border border-border rounded-lg text-left hover:border-primary/50 transition-colors"
+          >
+            {selectedAvatarInfo ? (
+              <div className="flex items-center gap-3">
+                {selectedAvatarInfo.type === 'ai-generated' ? (
+                  <div className="w-10 h-14 rounded bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-white" />
+                  </div>
+                ) : (
+                  <img
+                    src={selectedAvatarInfo.imageUrl}
+                    alt={selectedAvatarInfo.displayName}
+                    className="w-10 h-14 object-cover rounded"
+                  />
+                )}
+                <div>
+                  <span className="text-foreground block">{selectedAvatarInfo.displayName}</span>
+                  {selectedAvatarInfo.type === 'outfit' && (
+                    <span className="text-xs text-primary">의상 교체</span>
+                  )}
+                  {selectedAvatarInfo.type === 'ai-generated' && (
+                    <span className="text-xs text-purple-500">AI 자동 생성</span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <span className="text-muted-foreground">아바타를 선택하세요</span>
             )}
-          </h2>
+            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          </button>
         </div>
+      )}
 
-        {/* 숨겨진 파일 입력 */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
-
-        <div className="space-y-4">
-          {/* 제품 선택 드롭다운 */}
-          <div className="relative">
-            <button
-              onClick={() => setShowProductDropdown(!showProductDropdown)}
-              className="w-full flex items-center justify-between px-4 py-3 bg-secondary/30 border border-border rounded-xl hover:bg-secondary/50 transition-colors"
-            >
+      {/* 제품 선택 (착용샷에서는 선택사항) */}
+      <div className="bg-card border border-border rounded-xl p-4">
+        <label className="block text-sm font-medium text-foreground mb-2">
+          <Package className="w-4 h-4 inline mr-2" />
+          {imageAdCreate.selectProduct}
+          {isWearingType ? (
+            <span className="text-muted-foreground text-xs ml-1">(선택 사항)</span>
+          ) : (
+            <span className="text-red-500 ml-1">*</span>
+          )}
+        </label>
+        <div className="relative">
+          <button
+            onClick={() => setShowProductDropdown(!showProductDropdown)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-secondary/50 border border-border rounded-lg text-left hover:border-primary/50 transition-colors"
+          >
               <div className="flex items-center gap-3">
                 {selectedProduct ? (
                   <>
@@ -250,7 +287,6 @@ export function WizardStep1() {
                       key={product.id}
                       onClick={() => {
                         setSelectedProduct(product)
-                        clearLocalImage()
                         setShowProductDropdown(false)
                       }}
                       className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors ${
@@ -275,93 +311,74 @@ export function WizardStep1() {
             )}
           </div>
 
-          {/* 또는 구분선 */}
-          <div className="flex items-center gap-4">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground">또는</span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
+          {/* 선택된 제품 정보 편집 */}
+          {selectedProduct && (
+            <div className="mt-4 p-4 bg-secondary/30 rounded-xl space-y-4">
+              <div className="flex items-center gap-3 pb-3 border-b border-border">
+                <div className="w-12 h-12 bg-secondary rounded-lg overflow-hidden flex-shrink-0">
+                  <img
+                    src={selectedProduct.rembg_image_url || selectedProduct.image_url || ''}
+                    alt={selectedProduct.name}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div>
+                  <h4 className="font-medium text-foreground text-sm">{selectedProduct.name}</h4>
+                  <p className="text-xs text-muted-foreground">제품 정보를 확인하고 편집하세요</p>
+                </div>
+              </div>
 
-          {/* 이미지 직접 업로드 */}
-          {localImageUrl ? (
-            <div className="relative">
-              <div className="w-full aspect-video bg-secondary/30 rounded-xl overflow-hidden">
-                <img
-                  src={localImageUrl}
-                  alt="업로드된 이미지"
-                  className="w-full h-full object-contain"
+              {/* 설명 */}
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">제품 설명</label>
+                <textarea
+                  value={editableDescription}
+                  onChange={(e) => setEditableDescription(e.target.value)}
+                  placeholder="제품에 대한 설명..."
+                  rows={2}
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
                 />
               </div>
-              <button
-                onClick={clearLocalImage}
-                className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+
+              {/* 셀링 포인트 */}
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">
+                  셀링 포인트 <span className="text-muted-foreground/70">(예: &quot;24시간 보습&quot;, &quot;피부과 추천&quot;)</span>
+                </label>
+                <div className="space-y-2">
+                  {editableSellingPoints.map((point, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={point}
+                        onChange={(e) => updateSellingPoint(index, e.target.value)}
+                        placeholder="제품의 장점이나 특징"
+                        className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      />
+                      {editableSellingPoints.length > 1 && (
+                        <button
+                          onClick={() => removeSellingPoint(index)}
+                          className="p-2 text-muted-foreground hover:text-red-500 transition-colors"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {editableSellingPoints.length < 10 && (
+                    <button
+                      onClick={addSellingPoint}
+                      className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
+                    >
+                      <Plus className="w-3 h-3" />
+                      포인트 추가
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
-          ) : (
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full flex flex-col items-center justify-center gap-3 py-8 border-2 border-dashed border-border rounded-xl hover:border-primary/50 hover:bg-secondary/30 transition-colors"
-            >
-              <div className="w-12 h-12 bg-secondary/50 rounded-full flex items-center justify-center">
-                <Upload className="w-6 h-6 text-muted-foreground" />
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-medium text-foreground">이미지 직접 업로드</p>
-                <p className="text-xs text-muted-foreground mt-1">제품 이미지를 직접 업로드하세요</p>
-              </div>
-            </button>
           )}
-        </div>
       </div>
-
-      {/* 아바타 선택 (제품 단독 제외) */}
-      {!isProductOnly && (
-        <div className="bg-card border border-border rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-4">
-            <User className="w-5 h-5" />
-            {imageAdCreate.selectAvatar}
-          </h2>
-
-          {selectedAvatarInfo ? (
-            <div className="flex items-center gap-4 p-4 bg-secondary/30 rounded-xl">
-              <div className="w-16 h-16 bg-secondary rounded-lg overflow-hidden">
-                <img
-                  src={selectedAvatarInfo.imageUrl}
-                  alt={selectedAvatarInfo.displayName}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="flex-1">
-                <p className="font-medium text-foreground">{selectedAvatarInfo.displayName}</p>
-                <p className="text-sm text-muted-foreground">
-                  {selectedAvatarInfo.type === 'ai-generated' ? 'AI 생성 아바타' : '기본 아바타'}
-                </p>
-              </div>
-              <button
-                onClick={() => setShowAvatarModal(true)}
-                className="px-4 py-2 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
-              >
-                변경
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowAvatarModal(true)}
-              className="w-full flex items-center justify-center gap-3 py-8 border-2 border-dashed border-border rounded-xl hover:border-primary/50 hover:bg-secondary/30 transition-colors"
-            >
-              <div className="w-12 h-12 bg-secondary/50 rounded-full flex items-center justify-center">
-                <User className="w-6 h-6 text-muted-foreground" />
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-medium text-foreground">아바타 선택하기</p>
-                <p className="text-xs text-muted-foreground mt-1">광고에 등장할 모델을 선택하세요</p>
-              </div>
-            </button>
-          )}
-        </div>
-      )}
 
       {/* 다음 단계 버튼 */}
       <div className="flex justify-end pt-4">

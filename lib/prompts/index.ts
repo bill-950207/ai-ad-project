@@ -30,6 +30,7 @@ export * from './common'
 export * from './image-ad'
 export * from './scripts'
 export * from './first-frame'
+export * from './avatar-motion'
 
 // ============================================================
 // 통합 프롬프트 객체
@@ -60,6 +61,16 @@ import {
   DEFAULT_LOCATION_OPTIONS,
   PRODUCT_CATEGORY_LOCATIONS,
 } from './first-frame'
+
+import {
+  AI_AVATAR_GENERATION_TEMPLATE,
+  FRAME_PROMPT_IMPROVEMENT_TEMPLATE,
+  STORY_GENERATION_TEMPLATE,
+  AI_AVATAR_SYSTEM_PROMPT,
+  FRAME_PROMPT_SYSTEM,
+  STORY_GENERATION_SYSTEM,
+  AVATAR_MOTION_NEGATIVE_PROMPT,
+} from './avatar-motion'
 
 import {
   PHOTOREALISM_ESSENTIALS,
@@ -115,6 +126,17 @@ export const PROMPTS = {
     cameraComposition: CAMERA_COMPOSITION_PROMPTS,
     lighting: MOOD_LIGHTING,
     backgrounds: LOCATION_BACKGROUNDS,
+  },
+
+  /** 아바타 모션 영상 관련 프롬프트 */
+  avatarMotion: {
+    avatarGeneration: AI_AVATAR_GENERATION_TEMPLATE,
+    frameImprovement: FRAME_PROMPT_IMPROVEMENT_TEMPLATE,
+    storyGeneration: STORY_GENERATION_TEMPLATE,
+    avatarSystemPrompt: AI_AVATAR_SYSTEM_PROMPT,
+    frameSystemPrompt: FRAME_PROMPT_SYSTEM,
+    storySystemPrompt: STORY_GENERATION_SYSTEM,
+    negativePrompt: AVATAR_MOTION_NEGATIVE_PROMPT,
   },
 }
 

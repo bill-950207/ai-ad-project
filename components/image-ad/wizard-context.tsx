@@ -14,7 +14,8 @@ export interface AdProduct {
   name: string
   rembg_image_url: string | null
   image_url: string | null
-  description?: string
+  description?: string | null
+  selling_points?: string[] | null
 }
 
 export type WizardStep = 1 | 2 | 3 | 4
@@ -230,17 +231,17 @@ export function ImageAdWizardProvider({ children, initialAdType = 'productOnly' 
   const isWearingType = adType === 'wearing'
 
   const canProceedToStep2 = useCallback(() => {
-    // productOnly: 제품 또는 로컬 이미지 필수
+    // productOnly: 제품 필수
     if (isProductOnly) {
-      return !!selectedProduct || !!localImageFile
+      return !!selectedProduct
     }
     // wearing: 아바타 필수, 제품은 선택
     if (isWearingType) {
       return !!selectedAvatarInfo
     }
-    // 그 외: 제품(또는 로컬 이미지) + 아바타 필수
-    return (!!selectedProduct || !!localImageFile) && !!selectedAvatarInfo
-  }, [isProductOnly, isWearingType, selectedProduct, localImageFile, selectedAvatarInfo])
+    // 그 외: 제품 + 아바타 필수
+    return !!selectedProduct && !!selectedAvatarInfo
+  }, [isProductOnly, isWearingType, selectedProduct, selectedAvatarInfo])
 
   const canProceedToStep3 = useCallback(() => {
     // 설정 방식이 선택되어야 함

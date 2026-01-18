@@ -69,10 +69,40 @@ export async function GET(
       // provider에 따라 결과 조회
       let result: { images: Array<{ url: string }> }
 
-      if (provider === 'kie') {
-        result = await getKieGptImageResponse(actualId)
-      } else {
-        result = await getSeedreamEditQueueResponse(actualId)
+      try {
+        if (provider === 'kie') {
+          result = await getKieGptImageResponse(actualId)
+        } else {
+          result = await getSeedreamEditQueueResponse(actualId)
+        }
+      } catch (resultError) {
+        // NSFW 또는 콘텐츠 정책 위반 오류 처리
+        const errorMessage = resultError instanceof Error ? resultError.message : 'Unknown error'
+        const isNsfwError = errorMessage.toLowerCase().includes('nsfw') ||
+                           errorMessage.toLowerCase().includes('content policy') ||
+                           errorMessage.toLowerCase().includes('safety')
+
+        console.error('이미지 생성 결과 조회 오류:', { provider, errorMessage, isNsfwError })
+
+        // DB에 실패 상태 업데이트
+        await supabase
+          .from('image_ads')
+          .update({
+            status: 'FAILED',
+            error_message: isNsfwError
+              ? 'NSFW_CONTENT_DETECTED'
+              : errorMessage,
+          })
+          .eq('fal_request_id', rawRequestId)
+          .eq('user_id', user.id)
+
+        return NextResponse.json({
+          status: 'FAILED',
+          error: isNsfwError
+            ? 'NSFW_CONTENT_DETECTED'
+            : 'Image generation failed',
+          errorCode: isNsfwError ? 'NSFW' : 'GENERATION_FAILED',
+        })
       }
 
       if (result.images && result.images.length > 0) {

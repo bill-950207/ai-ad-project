@@ -1435,3 +1435,175 @@ function buildMusicStylePrompt(mood: string, genre: string, productType: string)
 
   return parts.filter(Boolean).join(', ')
 }
+
+// ============================================================
+// Seedance 1.5 Pro (Image-to-Video with Frame Interpolation)
+// ============================================================
+
+/** Seedance 1.5 Pro 모델 ID */
+const SEEDANCE_MODEL = 'bytedance/seedance-1.5-pro'
+
+/** Seedance 화면 비율 */
+export type SeedanceAspectRatio = '1:1' | '21:9' | '4:3' | '3:4' | '16:9' | '9:16'
+
+/** Seedance 해상도 */
+export type SeedanceResolution = '480p' | '720p'
+
+/** Seedance 영상 길이 (초) */
+export type SeedanceDuration = '4' | '8' | '12'
+
+/** Seedance 입력 타입 */
+export interface KieSeedanceInput {
+  prompt: string                      // 영상 설명 (3-2500자)
+  input_urls?: string[]               // 입력 이미지 URL (0-2개, 비어있으면 텍스트만으로 생성)
+  aspect_ratio?: SeedanceAspectRatio  // 화면 비율 (기본값: 9:16)
+  resolution?: SeedanceResolution     // 해상도 (기본값: 720p)
+  duration?: SeedanceDuration         // 영상 길이 (기본값: 8)
+  fixed_lens?: boolean                // 카메라 고정 (기본값: false)
+  generate_audio?: boolean            // 오디오 생성 (기본값: false)
+}
+
+/** Seedance 출력 타입 */
+export interface KieSeedanceOutput {
+  taskId: string
+}
+
+/** Seedance 결과 타입 */
+export interface KieSeedanceResult {
+  videos: Array<{ url: string }>
+}
+
+/**
+ * Seedance 1.5 Pro 작업 생성
+ *
+ * @param input - 영상 생성 입력 데이터
+ * @param callbackUrl - 완료 시 호출할 콜백 URL (선택)
+ * @returns Task ID
+ */
+export async function createSeedanceTask(
+  input: KieSeedanceInput,
+  callbackUrl?: string
+): Promise<KieSeedanceOutput> {
+  const body: Record<string, unknown> = {
+    model: SEEDANCE_MODEL,
+    input: {
+      prompt: input.prompt,
+      aspect_ratio: input.aspect_ratio || '9:16',
+      resolution: input.resolution || '720p',
+      duration: input.duration || '8',
+      fixed_lens: input.fixed_lens ?? false,
+      generate_audio: input.generate_audio ?? false,
+    },
+  }
+
+  // 입력 이미지가 있으면 추가
+  if (input.input_urls && input.input_urls.length > 0) {
+    (body.input as Record<string, unknown>).input_urls = input.input_urls
+  }
+
+  if (callbackUrl) {
+    body.callBackUrl = callbackUrl
+  }
+
+  const response = await fetch(`${KIE_API_BASE}/jobs/createTask`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`Kie.ai API 오류: ${response.status} - ${errorText}`)
+  }
+
+  const result: KieApiResponse<KieTaskData> = await response.json()
+
+  if (result.code !== 200) {
+    throw new Error(`Kie.ai API 오류: ${result.msg}`)
+  }
+
+  return {
+    taskId: result.data.taskId,
+  }
+}
+
+/**
+ * Seedance 영상 생성 요청을 큐에 제출 (시작/끝 프레임 보간)
+ *
+ * @param startFrameUrl - 시작 프레임 이미지 URL
+ * @param endFrameUrl - 끝 프레임 이미지 URL (선택)
+ * @param prompt - 영상 생성 프롬프트
+ * @param options - 추가 옵션
+ * @returns 큐 제출 응답
+ */
+export async function submitSeedanceToQueue(
+  startFrameUrl: string,
+  endFrameUrl: string | null,
+  prompt: string,
+  options?: {
+    aspectRatio?: SeedanceAspectRatio
+    resolution?: SeedanceResolution
+    duration?: SeedanceDuration
+    fixedLens?: boolean
+    generateAudio?: boolean
+  }
+): Promise<KieQueueSubmitResponse> {
+  const inputUrls = endFrameUrl ? [startFrameUrl, endFrameUrl] : [startFrameUrl]
+
+  const { taskId } = await createSeedanceTask({
+    prompt,
+    input_urls: inputUrls,
+    aspect_ratio: options?.aspectRatio || '9:16',
+    resolution: options?.resolution || '720p',
+    duration: options?.duration || '8',
+    fixed_lens: options?.fixedLens ?? false,
+    generate_audio: options?.generateAudio ?? false,
+  })
+
+  return {
+    request_id: taskId,
+  }
+}
+
+/**
+ * Seedance 큐 상태 조회
+ *
+ * @param requestId - Task ID
+ * @returns 큐 상태
+ */
+export async function getSeedanceQueueStatus(requestId: string): Promise<KieQueueStatusResponse> {
+  const taskInfo = await getTaskInfo(requestId)
+
+  const statusMap: Record<KieTaskStatus, KieQueueStatusResponse['status']> = {
+    'waiting': 'IN_QUEUE',
+    'success': 'COMPLETED',
+    'fail': 'COMPLETED',
+  }
+
+  return {
+    status: statusMap[taskInfo.state] || 'IN_QUEUE',
+  }
+}
+
+/**
+ * Seedance 결과 조회
+ *
+ * @param requestId - Task ID
+ * @returns 생성된 영상 정보
+ */
+export async function getSeedanceQueueResponse(requestId: string): Promise<KieSeedanceResult> {
+  const taskInfo = await getTaskInfo(requestId)
+
+  if (taskInfo.state === 'fail') {
+    throw new Error(`영상 생성 실패: ${taskInfo.failMsg || '알 수 없는 오류'}`)
+  }
+
+  const resultUrls = parseResultJson(taskInfo.resultJson)
+  if (resultUrls.length === 0) {
+    throw new Error('생성된 영상이 없습니다')
+  }
+
+  return {
+    videos: resultUrls.map(url => ({ url })),
+  }
+}

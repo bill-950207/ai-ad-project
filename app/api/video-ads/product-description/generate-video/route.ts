@@ -15,6 +15,72 @@ import { submitInfiniteTalkToQueue } from '@/lib/wavespeed/client'
 /** 제품 설명 영상 크레딧 비용 */
 const PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST = 10
 
+/** 카메라 구도별 프롬프트 설명 */
+const CAMERA_COMPOSITION_PROMPTS: Record<string, string> = {
+  'selfie-high': 'holding phone/camera high, looking up at camera from below, selfie angle from above',
+  'selfie-front': 'holding phone at eye level, straight-on selfie angle, front facing camera',
+  'selfie-side': 'holding phone slightly to the side, three-quarter selfie angle',
+  'tripod': 'camera mounted on tripod, stable professional framing, presenting to fixed camera',
+  'closeup': 'close-up framing on face and upper body, intimate speaking distance',
+  'fullbody': 'full body visible in frame, wider shot showing complete posture',
+}
+
+/** 대본 스타일별 표정/제스처 프롬프트 */
+const SCRIPT_STYLE_PROMPTS: Record<string, string> = {
+  'formal': 'professional demeanor, confident posture, measured hand gestures, trustworthy expression, composed speaking style',
+  'casual': 'relaxed friendly expression, natural conversational gestures, approachable demeanor, casual speaking manner',
+  'energetic': 'enthusiastic expression, animated hand gestures, bright smile, excited speaking style, dynamic energy',
+  'custom': 'natural expression, conversational gestures, engaging demeanor',
+}
+
+/**
+ * 영상 생성 프롬프트 생성
+ */
+function generateVideoPrompt(params: {
+  cameraComposition?: string
+  scriptStyle?: string
+  locationPrompt?: string
+  productName?: string
+  productDescription?: string
+}): string {
+  const parts: string[] = []
+
+  // 기본 영상 설명
+  parts.push('A person speaking naturally to camera')
+
+  // 카메라 구도
+  if (params.cameraComposition && CAMERA_COMPOSITION_PROMPTS[params.cameraComposition]) {
+    parts.push(CAMERA_COMPOSITION_PROMPTS[params.cameraComposition])
+  } else {
+    parts.push('natural framing, maintaining eye contact with camera')
+  }
+
+  // 대본 스타일에 따른 표정/제스처
+  const stylePrompt = SCRIPT_STYLE_PROMPTS[params.scriptStyle || 'custom'] || SCRIPT_STYLE_PROMPTS.custom
+  parts.push(stylePrompt)
+
+  // 제품 관련 동작
+  if (params.productName) {
+    parts.push(`presenting and discussing ${params.productName}`)
+  } else {
+    parts.push('talking about a product in an engaging way')
+  }
+
+  // 기본 동작 설명
+  parts.push('subtle head movements, natural facial expressions, lip-sync to speech')
+
+  // 장소 분위기 (있을 경우)
+  if (params.locationPrompt) {
+    // 장소 프롬프트에서 핵심 단어 추출 (너무 길면 줄임)
+    const shortLocation = params.locationPrompt.length > 50
+      ? params.locationPrompt.substring(0, 50) + '...'
+      : params.locationPrompt
+    parts.push(`in ${shortLocation}`)
+  }
+
+  return parts.join('. ')
+}
+
 /**
  * POST /api/video-ads/product-description/generate-video
  */
@@ -40,6 +106,10 @@ export async function POST(request: NextRequest) {
       voiceName,
       locationPrompt,
       duration,
+      // 영상 프롬프트 생성을 위한 추가 정보
+      cameraComposition,
+      productName,
+      productDescription,
     } = body
 
     if (!avatarId) {
@@ -79,6 +149,7 @@ export async function POST(request: NextRequest) {
         resolution: '480p',
         aspect_ratio: '9:16',
         location_prompt: locationPrompt || null,
+        camera_composition: cameraComposition || null,
         script_style: scriptStyle || null,
         scripts_json: JSON.stringify([{ style: scriptStyle, content: script }]),
         voice_id: voiceId,
@@ -88,8 +159,15 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // 영상 생성 프롬프트
-    const videoPrompt = 'A person speaking naturally to camera with subtle head movements, facial expressions, and gestures. Natural conversation style, maintaining eye contact. The person is talking about a product in an engaging way.'
+    // 영상 생성 프롬프트 (입력 정보 기반으로 동적 생성)
+    const videoPrompt = generateVideoPrompt({
+      cameraComposition,
+      scriptStyle,
+      locationPrompt,
+      productName,
+      productDescription,
+    })
+    console.log('Generated video prompt:', videoPrompt)
 
     let requestId: string
     let provider: 'wavespeed' | 'kie' = 'wavespeed'

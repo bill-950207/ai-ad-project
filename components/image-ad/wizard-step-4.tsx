@@ -175,6 +175,9 @@ export function WizardStep4() {
       const pollInterval = 1000
       const maxAttempts = 90
 
+      // NSFW 오류 카운트
+      let nsfwErrorCount = 0
+
       const pollSingleStatus = async (requestId: string): Promise<string | null> => {
         let attempts = 0
 
@@ -189,7 +192,13 @@ export function WizardStep4() {
           if (status.status === 'COMPLETED') {
             return status.imageUrl || null
           } else if (status.status === 'FAILED') {
-            console.error(`이미지 생성 실패 (${requestId}):`, status.error)
+            // NSFW 오류 체크
+            if (status.errorCode === 'NSFW' || status.error === 'NSFW_CONTENT_DETECTED') {
+              nsfwErrorCount++
+              console.warn(`NSFW 콘텐츠 감지로 이미지 생성 실패 (${requestId})`)
+            } else {
+              console.error(`이미지 생성 실패 (${requestId}):`, status.error)
+            }
             return null
           }
 
@@ -210,6 +219,14 @@ export function WizardStep4() {
       const imageUrls = results.filter((url): url is string => url !== null)
 
       if (imageUrls.length === 0) {
+        // 모든 이미지가 NSFW 오류로 실패한 경우
+        if (nsfwErrorCount > 0 && nsfwErrorCount === requestIds.length) {
+          throw new Error('생성된 이미지가 콘텐츠 정책(NSFW)에 위배되어 차단되었습니다. 다른 옵션으로 다시 시도해주세요.')
+        }
+        // 일부만 NSFW 오류인 경우
+        if (nsfwErrorCount > 0) {
+          throw new Error(`일부 이미지가 콘텐츠 정책에 위배되어 차단되었습니다. (${nsfwErrorCount}/${requestIds.length}개)`)
+        }
         throw new Error('모든 이미지 생성 실패')
       }
 

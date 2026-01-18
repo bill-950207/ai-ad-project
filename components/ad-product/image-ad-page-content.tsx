@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
-import { Plus, Image as ImageIcon, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Image as ImageIcon, Loader2, ChevronLeft, ChevronRight, RefreshCw, CreditCard } from 'lucide-react'
 
 interface AdProduct {
   id: string
@@ -47,6 +47,7 @@ export function ImageAdPageContent() {
   const [isAdsLoading, setIsAdsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set())
 
   const fetchImageAds = useCallback(async (page: number = 1) => {
     setIsAdsLoading(true)
@@ -125,6 +126,78 @@ export function ImageAdPageContent() {
     router.push('/image-ad-create')
   }
 
+  // 환불 핸들러
+  const handleRefund = async (adId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (processingIds.has(adId)) return
+
+    if (!confirm('크레딧을 환불하고 이 광고를 삭제하시겠습니까?')) return
+
+    setProcessingIds(prev => new Set(prev).add(adId))
+
+    try {
+      const res = await fetch(`/api/image-ads/${adId}/refund`, {
+        method: 'POST',
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        // 목록에서 제거
+        setImageAds(prev => prev.filter(ad => ad.id !== adId))
+        alert(`${data.refundedCredits} 크레딧이 환불되었습니다.`)
+      } else {
+        const error = await res.json()
+        alert(error.error || '환불에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('환불 오류:', error)
+      alert('환불 중 오류가 발생했습니다.')
+    } finally {
+      setProcessingIds(prev => {
+        const next = new Set(prev)
+        next.delete(adId)
+        return next
+      })
+    }
+  }
+
+  // 재시도 핸들러
+  const handleRetry = async (adId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (processingIds.has(adId)) return
+
+    setProcessingIds(prev => new Set(prev).add(adId))
+
+    try {
+      const res = await fetch(`/api/image-ads/${adId}/retry`, {
+        method: 'POST',
+      })
+
+      if (res.ok) {
+        // 상태를 IN_QUEUE로 업데이트
+        setImageAds(prev =>
+          prev.map(ad =>
+            ad.id === adId
+              ? { ...ad, status: 'IN_QUEUE' as const }
+              : ad
+          )
+        )
+      } else {
+        const error = await res.json()
+        alert(error.error || '재시도에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('재시도 오류:', error)
+      alert('재시도 중 오류가 발생했습니다.')
+    } finally {
+      setProcessingIds(prev => {
+        const next = new Set(prev)
+        next.delete(adId)
+        return next
+      })
+    }
+  }
+
   return (
     <div className="space-y-8">
       {/* 헤더 */}
@@ -194,9 +267,32 @@ export function ImageAdPageContent() {
                       <span className="text-sm text-muted-foreground">이미지 생성 중...</span>
                     </div>
                   ) : isFailed ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-red-500/5 gap-2">
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-red-500/5 gap-3 p-4">
                       <ImageIcon className="w-10 h-10 text-red-500/50" />
                       <span className="text-sm text-red-500">생성 실패</span>
+                      {/* 환불/재시도 버튼 */}
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={(e) => handleRetry(ad.id, e)}
+                          disabled={processingIds.has(ad.id)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {processingIds.has(ad.id) ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <RefreshCw className="w-3.5 h-3.5" />
+                          )}
+                          재시도
+                        </button>
+                        <button
+                          onClick={(e) => handleRefund(ad.id, e)}
+                          disabled={processingIds.has(ad.id)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-secondary-foreground text-xs font-medium rounded-lg hover:bg-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <CreditCard className="w-3.5 h-3.5" />
+                          환불
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-secondary/30">
