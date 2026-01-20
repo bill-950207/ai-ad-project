@@ -2,7 +2,7 @@
  * 아바타 모션 생성 상태 조회 API
  *
  * GET: 프레임/영상 생성 상태 확인
- * - kie:xxx 형식: kie.ai 상태 조회
+ * - kie:xxx 형식: kie.ai 상태 조회 (Kling 2.6 포함)
  * - fal:xxx 형식: fal.ai 상태 조회
  */
 
@@ -12,6 +12,7 @@ import {
   getTaskInfo as getKieTaskInfo,
   getGPTImageQueueResponse,
   getSeedanceQueueResponse,
+  getKling26QueueResponse,
 } from '@/lib/kie/client'
 import {
   getSeedreamEditQueueStatus,
@@ -69,8 +70,15 @@ export async function GET(
 
         // 결과 URL 가져오기
         if (type === 'video') {
-          const result = await getSeedanceQueueResponse(taskId)
-          resultUrl = result.videos[0]?.url || null
+          // Kling 2.6 또는 Seedance 영상 결과 조회
+          try {
+            const result = await getKling26QueueResponse(taskId)
+            resultUrl = result.videos[0]?.url || null
+          } catch {
+            // Kling 2.6 실패 시 Seedance 시도 (호환성)
+            const result = await getSeedanceQueueResponse(taskId)
+            resultUrl = result.videos[0]?.url || null
+          }
         } else {
           const result = await getGPTImageQueueResponse(taskId)
           resultUrl = result.images[0]?.url || null

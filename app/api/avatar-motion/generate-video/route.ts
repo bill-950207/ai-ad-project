@@ -1,24 +1,22 @@
 /**
  * 아바타 모션 영상 생성 API
  *
- * POST: 시작/끝 프레임 이미지를 사용하여 모션 영상 생성
- * - Seedance 1.5 Pro (kie.ai) 사용
+ * POST: 첫 프레임 이미지를 사용하여 모션 영상 생성
+ * - Kling 2.6 Image-to-Video (kie.ai) 사용
+ * - 첫 프레임 이미지만 필요 (끝 프레임 불필요)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import {
-  submitSeedanceToQueue,
-  type SeedanceAspectRatio,
-  type SeedanceDuration,
+  submitKling26ToQueue,
+  type Kling26Duration,
 } from '@/lib/kie/client'
 
 interface GenerateVideoRequest {
-  startFrameUrl: string          // 시작 프레임 이미지 URL
-  endFrameUrl: string            // 끝 프레임 이미지 URL
-  prompt: string                 // 영상 생성 프롬프트
-  aspectRatio?: '9:16' | '16:9' | '1:1'
-  duration?: number              // 영상 길이 (초): 4, 8, 12
+  startFrameUrl: string          // 첫 프레임 이미지 URL (필수)
+  prompt: string                 // 영상 생성 프롬프트 (영어, motionPromptEN 사용)
+  duration?: number              // 영상 길이 (초): 5 또는 10
   generateAudio?: boolean        // 오디오 생성 여부
 }
 
@@ -38,41 +36,35 @@ export async function POST(request: NextRequest) {
     const body: GenerateVideoRequest = await request.json()
     const {
       startFrameUrl,
-      endFrameUrl,
       prompt,
-      aspectRatio = '9:16',
-      duration = 8,
+      duration = 5,
       generateAudio = false,
     } = body
 
-    if (!startFrameUrl || !endFrameUrl) {
+    if (!startFrameUrl) {
       return NextResponse.json(
-        { error: 'Start and end frame URLs are required' },
+        { error: 'Start frame URL is required' },
         { status: 400 }
       )
     }
 
-    // Seedance aspect ratio 매핑
-    const seedanceAspectRatio: SeedanceAspectRatio =
-      aspectRatio === '1:1' ? '1:1' :
-      aspectRatio === '16:9' ? '16:9' : '9:16'
+    if (!prompt) {
+      return NextResponse.json(
+        { error: 'Prompt is required' },
+        { status: 400 }
+      )
+    }
 
-    // Seedance duration 매핑
-    const seedanceDuration: SeedanceDuration =
-      duration <= 4 ? '4' :
-      duration <= 8 ? '8' : '12'
+    // Kling 2.6 duration 매핑 (5초 또는 10초만 지원)
+    const klingDuration: Kling26Duration = duration >= 10 ? '10' : '5'
 
-    // Seedance 1.5 Pro로 영상 생성 요청
-    const response = await submitSeedanceToQueue(
+    // Kling 2.6 Image-to-Video로 영상 생성 요청
+    const response = await submitKling26ToQueue(
       startFrameUrl,
-      endFrameUrl,
       prompt,
       {
-        aspectRatio: seedanceAspectRatio,
-        duration: seedanceDuration,
-        resolution: '720p',
-        fixedLens: false,
-        generateAudio,
+        sound: generateAudio,
+        duration: klingDuration,
       }
     )
 
@@ -105,8 +97,7 @@ export async function POST(request: NextRequest) {
 }
 
 function calculateCreditCost(duration: number): number {
-  // 기본: 4초 = 50 크레딧, 8초 = 60 크레딧, 12초 = 75 크레딧
-  if (duration <= 4) return 50
-  if (duration <= 8) return 60
-  return 75
+  // Kling 2.6: 5초 = 50 크레딧, 10초 = 70 크레딧
+  if (duration <= 5) return 50
+  return 70
 }

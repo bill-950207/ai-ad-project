@@ -62,13 +62,17 @@ interface SelectedOptions {
   theme?: string
   atmosphere?: string
   productPlacement?: string
-  [key: string]: string | undefined
+  // DB에서 nested object가 포함될 수 있음 (ai_avatar_options 등)
+  [key: string]: string | Record<string, unknown> | undefined
 }
 
 interface ImageAd {
   id: string
   image_url: string | null  // WebP 압축본 (리스트/미리보기용)
   image_url_original: string | null  // 원본 PNG (다운로드용)
+  image_urls: string[] | null  // 배치 이미지 URL 배열 (압축본)
+  image_url_originals: string[] | null  // 배치 원본 이미지 URL 배열
+  num_images: number | null  // 요청된 이미지 개수
   ad_type: string
   status: string
   prompt: string | null
@@ -94,6 +98,8 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
   const [imageAd, setImageAd] = useState<ImageAd | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false)
 
   const fetchImageAd = useCallback(async () => {
     try {
@@ -135,9 +141,19 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
     }
   }
 
-  const handleDownload = async () => {
+  // 하위 호환성: image_urls가 없으면 image_url로 배열 생성
+  const imageUrls = imageAd?.image_urls || (imageAd?.image_url ? [imageAd.image_url] : [])
+  const originalUrls = imageAd?.image_url_originals || (imageAd?.image_url_original ? [imageAd.image_url_original] : [])
+  const hasMultipleImages = imageUrls.length > 1
+
+  // 선택된 이미지 URL
+  const selectedImageUrl = imageUrls[selectedImageIndex] || null
+  const selectedOriginalUrl = originalUrls[selectedImageIndex] || selectedImageUrl
+
+  const handleDownload = async (index?: number) => {
+    const idx = index ?? selectedImageIndex
     // 원본 URL이 있으면 원본(PNG) 다운로드, 없으면 압축본(WebP) 다운로드
-    const downloadUrl = imageAd?.image_url_original || imageAd?.image_url
+    const downloadUrl = originalUrls[idx] || imageUrls[idx]
     if (!downloadUrl) return
 
     try {
@@ -147,8 +163,9 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
       const a = document.createElement('a')
       a.href = url
       // 원본은 PNG, 압축본은 WebP
-      const extension = imageAd?.image_url_original ? 'png' : 'webp'
-      a.download = `image-ad-${imageAdId}.${extension}`
+      const extension = originalUrls[idx] ? 'png' : 'webp'
+      const suffix = hasMultipleImages ? `_${idx + 1}` : ''
+      a.download = `image-ad-${imageAdId}${suffix}.${extension}`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -156,6 +173,31 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
     } catch (error) {
       console.error('다운로드 오류:', error)
     }
+  }
+
+  const handleDownloadAll = async () => {
+    if (imageUrls.length === 0) return
+    setIsDownloadingAll(true)
+
+    try {
+      // 모든 이미지 순차 다운로드
+      for (let i = 0; i < imageUrls.length; i++) {
+        await handleDownload(i)
+        // 브라우저가 연속 다운로드를 처리할 수 있도록 약간의 딜레이
+        if (i < imageUrls.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+      }
+    } finally {
+      setIsDownloadingAll(false)
+    }
+  }
+
+  // 이미지 개수에 따른 썸네일 그리드 클래스
+  const getThumbnailGridClass = (count: number) => {
+    if (count <= 3) return 'grid-cols-3'
+    if (count === 4) return 'grid-cols-4'
+    return 'grid-cols-5'
   }
 
   const getAdTypeTitle = (adType: string): string => {
@@ -381,10 +423,14 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
     },
   }
 
-  const getOptionLabel = (key: string, value: string): string => {
+  const getOptionLabel = (key: string, value: unknown): string | null => {
+    // 객체인 경우 건너뛰기 (ai_avatar_options 같은 nested 객체)
+    if (typeof value === 'object' && value !== null) return null
+    // 문자열이 아닌 경우 문자열로 변환
+    const strValue = String(value)
     // 커스텀 옵션인 경우 그대로 표시
-    if (value === '__custom__') return '커스텀'
-    return optionValueLabels[key]?.[value] || value
+    if (strValue === '__custom__') return '커스텀'
+    return optionValueLabels[key]?.[strValue] || strValue
   }
 
   if (isLoading) {
@@ -420,10 +466,10 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {imageAd.image_url && (
+          {selectedImageUrl && (
             <>
               <a
-                href={imageAd.image_url_original || imageAd.image_url}
+                href={selectedOriginalUrl || selectedImageUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:bg-secondary/50 rounded-lg transition-colors"
@@ -432,12 +478,26 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                 {t.imageAdDetail?.viewOriginal || '원본 보기'}
               </a>
               <button
-                onClick={handleDownload}
+                onClick={() => handleDownload()}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:bg-secondary/50 rounded-lg transition-colors"
               >
                 <Download className="w-4 h-4" />
-                {t.imageAdDetail?.download || '다운로드'}
+                {hasMultipleImages ? '선택 다운로드' : (t.imageAdDetail?.download || '다운로드')}
               </button>
+              {hasMultipleImages && (
+                <button
+                  onClick={handleDownloadAll}
+                  disabled={isDownloadingAll}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {isDownloadingAll ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
+                  전체 다운로드 ({imageUrls.length})
+                </button>
+              )}
             </>
           )}
           <button
@@ -458,20 +518,53 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
       {/* 콘텐츠 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 생성된 이미지 */}
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <div className="aspect-square relative bg-[#1a1a2e]">
-            {imageAd.image_url ? (
-              <img
-                src={imageAd.image_url}
-                alt="Generated ad"
-                className="absolute inset-0 w-full h-full object-contain"
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <ImageIcon className="w-12 h-12 text-muted-foreground" />
-              </div>
-            )}
+        <div className="space-y-4">
+          {/* 메인 이미지 */}
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="aspect-square relative bg-[#1a1a2e]">
+              {selectedImageUrl ? (
+                <img
+                  src={selectedImageUrl}
+                  alt={`Generated ad ${selectedImageIndex + 1}`}
+                  className="absolute inset-0 w-full h-full object-contain"
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <ImageIcon className="w-12 h-12 text-muted-foreground" />
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* 썸네일 그리드 (배치인 경우) */}
+          {hasMultipleImages && (
+            <div className={`grid ${getThumbnailGridClass(imageUrls.length)} gap-2`}>
+              {imageUrls.map((url, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedImageIndex(idx)}
+                  className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                    idx === selectedImageIndex
+                      ? 'border-primary ring-2 ring-primary/30'
+                      : 'border-transparent hover:border-primary/50'
+                  }`}
+                >
+                  <img
+                    src={url}
+                    alt={`Thumbnail ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* 이미지 정보 (배치인 경우) */}
+          {hasMultipleImages && (
+            <p className="text-center text-sm text-muted-foreground">
+              {selectedImageIndex + 1} / {imageUrls.length}
+            </p>
+          )}
         </div>
 
         {/* 상세 정보 */}
@@ -626,6 +719,9 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
               <div className="flex flex-wrap gap-2">
                 {Object.entries(imageAd.selected_options).map(([key, value]) => {
                   if (!value || value === 'none') return null
+                  const label = getOptionLabel(key, value)
+                  // 객체 값인 경우 (null 반환) 건너뛰기
+                  if (label === null) return null
                   return (
                     <div
                       key={key}
@@ -635,7 +731,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                         {optionGroupLabels[key] || key}:
                       </span>
                       <span className="text-foreground font-medium">
-                        {getOptionLabel(key, value)}
+                        {label}
                       </span>
                     </div>
                   )

@@ -11,7 +11,7 @@
 /** Seedream 4.5용 포토리얼리즘 필수 요소 */
 export const PHOTOREALISM_ESSENTIALS = {
   /** 피부 표현 */
-  skin: 'natural skin texture with visible pores and subtle imperfections',
+  skin: 'smooth natural skin with healthy glow',
 
   /** 머리카락 표현 */
   hair: 'individual strands catching light naturally',
@@ -41,13 +41,13 @@ export const SEEDREAM_FORBIDDEN_TERMS = [
   'selfie stick',
 ]
 
-/** UGC 스타일 배경 (blur/bokeh 대신 실제 묘사) */
+/** UGC 스타일 배경 (blur/bokeh 절대 금지 - 실제 스마트폰 사진처럼) */
 export const UGC_BACKGROUND_STYLE =
-  'clear background with visible details instead of bokeh or blur'
+  'CRITICALLY IMPORTANT: The entire background MUST be perfectly sharp and crystal clear with every detail visible. ABSOLUTELY NO blur, NO bokeh, NO soft focus, NO shallow depth of field, NO out-of-focus areas anywhere in the image. Use f/11-f/16 aperture for maximum sharpness. Every element from foreground to background must be in razor-sharp focus like a real smartphone photo.'
 
-/** 전문적 스타일 배경 */
+/** 전문적 스타일 배경 (제한적 사용 - 여전히 블러 최소화) */
 export const PROFESSIONAL_BACKGROUND_STYLE =
-  'softly blurred background with subtle bokeh'
+  'background with visible environment details, minimal depth separation'
 
 // ============================================================
 // 네거티브 프롬프트
@@ -55,15 +55,15 @@ export const PROFESSIONAL_BACKGROUND_STYLE =
 
 /** 공통 네거티브 프롬프트 */
 export const COMMON_NEGATIVE_PROMPT =
-  'cartoon, anime, illustration, painting, drawing, sketch, low quality, blurry, distorted, deformed, ugly, bad anatomy, bad proportions, extra limbs, missing limbs, floating limbs, disconnected limbs, mutation, mutated, disfigured, watermark, signature, text overlay'
+  'cartoon, anime, illustration, painting, drawing, sketch, low quality, blurry, distorted, deformed, ugly, bad anatomy, bad proportions, extra limbs, missing limbs, floating limbs, disconnected limbs, mutation, mutated, disfigured, watermark, signature, text overlay, bokeh, shallow depth of field, blurred background, soft focus, out of focus background, defocused background'
 
 /** 아바타/인물용 네거티브 프롬프트 */
 export const AVATAR_NEGATIVE_PROMPT =
-  `${COMMON_NEGATIVE_PROMPT}, unnatural pose, stiff expression, plastic skin, mannequin, wax figure, dead eyes`
+  `${COMMON_NEGATIVE_PROMPT}, unnatural pose, stiff expression, plastic skin, mannequin, wax figure, dead eyes, blurry background, bokeh effect, soft background`
 
 /** 제품용 네거티브 프롬프트 */
 export const PRODUCT_NEGATIVE_PROMPT =
-  `${COMMON_NEGATIVE_PROMPT}, wrong product, different product, modified logo, altered branding, fake label`
+  `${COMMON_NEGATIVE_PROMPT}, wrong product, different product, modified logo, altered branding, fake label, blurry background, bokeh, out of focus`
 
 // ============================================================
 // 브랜드 보존 지시

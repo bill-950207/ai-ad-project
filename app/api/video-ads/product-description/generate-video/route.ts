@@ -150,6 +150,7 @@ export async function POST(request: NextRequest) {
         aspect_ratio: '9:16',
         location_prompt: locationPrompt || null,
         camera_composition: cameraComposition || null,
+        script: script || null,  // 대본 저장
         script_style: scriptStyle || null,
         scripts_json: JSON.stringify([{ style: scriptStyle, content: script }]),
         voice_id: voiceId,

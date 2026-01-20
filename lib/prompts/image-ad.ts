@@ -82,29 +82,71 @@ KEY REQUIREMENTS:
 4. Include specific camera and lighting details
 5. Keep prompts between 60-100 words
 
+AVATAR USAGE FLEXIBILITY:
+- If an avatar is provided, it represents the PREFERRED model appearance when a human is needed
+- However, the avatar does NOT need to appear in every image
+- Decide avatar inclusion based on the ad type and context:
+  * "productOnly" or "comparison" → Avatar should NOT appear (product-focused shots)
+  * "holding", "using", "wearing" → Avatar SHOULD appear (model-centric shots)
+  * "lifestyle", "unboxing", "seasonal" → Avatar is OPTIONAL (include only if it enhances the scene naturally)
+- If the avatar would feel forced or unnatural in the composition, prioritize a better product presentation without the avatar
+- When avatar is not used, focus entirely on the product and environment
+
+CRITICAL BACKGROUND SHARPNESS RULE:
+- The ENTIRE image must be in sharp focus - both subject AND background
+- ALWAYS specify "f/11" or "f/16" aperture for maximum depth of field
+- ALWAYS include: "entire scene in sharp focus, no blur, no bokeh, no soft background"
+- NEVER use shallow depth of field or blurry backgrounds
+- Background details must be as crisp and clear as the main subject
+
 PHOTOREALISM ELEMENTS TO INCLUDE:
-- Camera specs: ${PHOTOREALISM_ESSENTIALS.camera()}
+- Camera specs: shot on 35mm lens at f/11, entire scene razor sharp
 - Skin details: ${PHOTOREALISM_ESSENTIALS.skin}
 - Hair details: ${PHOTOREALISM_ESSENTIALS.hair}
 - Eye details: ${PHOTOREALISM_ESSENTIALS.eyes}
-- End with: ${PHOTOREALISM_ESSENTIALS.quality}`
+- End with: ${PHOTOREALISM_ESSENTIALS.quality}, entire background crystal clear and in focus`
 
 /** 광고 유형별 프롬프트 구조 가이드 */
 export const AD_TYPE_PROMPT_GUIDES: Record<string, string> = {
   productOnly: `Focus on the product as the hero. Structure: Product description → Placement → Background → Lighting → Technical specs.
-Example structure: "[Product] centered on [surface], [background description], [lighting setup], shot on 85mm lens at f/2.8, ${PHOTOREALISM_ESSENTIALS.quality}"`,
+Example structure: "[Product] centered on [surface], [background description], [lighting setup], shot on 50mm lens at f/11, entire scene in sharp focus, ${PHOTOREALISM_ESSENTIALS.quality}"
+CRITICAL: Background must be crystal clear and sharp, never blurry.
+AVATAR: Do NOT include any human/model in this shot - pure product focus only.`,
 
   holding: `Model naturally holding/presenting the product. Structure: Model + Product interaction → Pose → Expression → Background → Lighting.
-Hand position must be natural and product clearly visible. Avoid phone/selfie references.`,
+Hand position must be natural and product clearly visible. Avoid phone/selfie references.
+CRITICAL: Use f/11 aperture. Background must be completely sharp and in focus, no blur or bokeh.
+AVATAR: Use the provided avatar reference for the model appearance.`,
 
   using: `Model actively using the product in a natural way. Structure: Action description → Model state → Environment → Mood → Lighting.
-Show authentic product usage moment, not posed.`,
+Show authentic product usage moment, not posed.
+CRITICAL: Entire scene must be in razor sharp focus from foreground to background.
+AVATAR: Use the provided avatar reference for the model appearance.`,
 
   wearing: `Fashion-focused shot with model wearing the product. Structure: Outfit description → Model pose → Body framing → Environment → Lighting.
-Emphasize fit, drape, and style of the clothing.`,
+Emphasize fit, drape, and style of the clothing.
+CRITICAL: Use f/11 aperture for maximum sharpness throughout the entire image.
+AVATAR: Use the provided avatar reference for the model appearance.`,
 
   lifestyle: `Product naturally integrated into daily life scene. Structure: Scene setting → Activity → Product placement → Atmosphere → Lighting.
-Product should feel like a natural part of the scene, not forced.`,
+Product should feel like a natural part of the scene, not forced.
+CRITICAL: All background details must be perfectly sharp and visible, no soft focus.
+AVATAR: Optional - include a human only if it enhances the natural lifestyle context. If the scene works better without a person, omit the avatar entirely.`,
+
+  comparison: `Product comparison layout showing multiple items side by side. Structure: Products arrangement → Surface → Background → Even lighting.
+Maintain consistent angle and lighting for all products.
+CRITICAL: All products must be equally sharp and in focus.
+AVATAR: Do NOT include any human/model - focus on product comparison only.`,
+
+  unboxing: `Product unboxing presentation showing packaging and reveal moment. Structure: Package state → Product visibility → Hands/interaction → Surface → Lighting.
+Show the excitement of discovery.
+CRITICAL: All packaging details must be crisp and legible.
+AVATAR: Optional - include hands or partial figure only if it adds to the unboxing experience naturally.`,
+
+  seasonal: `Holiday or seasonal themed product presentation. Structure: Seasonal elements → Product placement → Decorative context → Themed lighting.
+Festive mood without overwhelming the product.
+CRITICAL: Maintain sharp focus on both product and seasonal decorations.
+AVATAR: Optional - include a person only if they naturally fit the seasonal celebration context.`,
 }
 
 // ============================================================
@@ -148,7 +190,9 @@ USER SELECTIONS:
 
 {{additionalPrompt}}
 
-AVATAR PRESENCE: {{hasAvatar}}
+AVATAR INFO: {{hasAvatar}}
+(Note: Avatar is a style reference for when a human model is appropriate. Decide whether to include a human based on the ad type and context - do NOT force avatar inclusion if it doesn't fit naturally.)
+
 REFERENCE STYLE: {{hasReferenceStyle}}
 
 OUTPUT FORMAT (JSON):
@@ -178,8 +222,8 @@ export const SEEDREAM_PROMPT_STRUCTURE = {
     action: 'holding a skincare product at chest level, looking at camera with confident smile',
     environment: 'in a bright modern bathroom with white marble surfaces and natural plants',
     lighting: 'soft natural daylight streaming from large window on the left',
-    camera: 'shot on 85mm lens at f/1.8, shallow depth of field',
-    quality: 'Hyperrealistic photograph, 8K RAW quality',
+    camera: 'shot on 35mm lens at f/11, entire scene in razor sharp focus from foreground to background, no blur, no bokeh',
+    quality: 'Hyperrealistic photograph, 8K RAW quality, crystal clear sharp background',
   },
 }
 

@@ -546,6 +546,11 @@ model image_ads {
   created_at         DateTime        @default(now()) @db.Timestamptz(6)
   updated_at         DateTime        @default(now()) @db.Timestamptz(6)
   completed_at       DateTime?       @db.Timestamptz(6)
+  // 배치 생성 지원 필드
+  image_urls           Json?         // 생성된 이미지 URL 배열 ["url1", "url2", ...]
+  image_url_originals  Json?         // 원본 이미지 URL 배열 (다운로드용)
+  batch_request_ids    Json?         // 배치 요청 ID 배열 [{provider: 'fal', requestId: 'xxx'}, ...]
+  num_images           Int?          @default(1)  // 요청된 이미지 개수
   avatars            avatars?        @relation(fields: [avatar_id], references: [id], onUpdate: NoAction)
   avatar_outfits     avatar_outfits? @relation(fields: [outfit_id], references: [id], onUpdate: NoAction)
   ad_products        ad_products?    @relation(fields: [product_id], references: [id], onUpdate: NoAction)
@@ -598,6 +603,7 @@ model video_ads {
   category              String?          @default("productDescription")
   video_type            String?          @default("UGC")
   aspect_ratio          String?
+  image_size            String?          // 이미지/영상 크기 (kling-2.6용): '1024x576' | '576x1024' | '768x768'
   location_prompt       String?
   video_background      String?
   camera_composition    String?
@@ -615,11 +621,20 @@ model video_ads {
   // Avatar Motion 전용 필드
   story_method          String?          // 스토리 설정 방식: 'direct' | 'ai-auto' | 'reference'
   story_info            Json?            // 스토리 정보 JSON (title, description, startFrame, endFrame 등)
+  // Product Ad 전용 필드 (scenario_method는 story_method 재사용, scenario_info는 story_info 재사용)
+  scenario_method       String?          // 시나리오 설정 방식: 'direct' | 'ai-auto' | 'reference'
+  reference_info        String?          // 참조 영상 정보 JSON (type, url, analyzedElements, analyzedDescription)
+  scenario_info         String?          // 시나리오 정보 JSON (title, description, elements)
+  first_scene_options   String?          // 첫 씬 옵션 JSON (3가지 옵션: index, requestId, imageUrl, status)
+  selected_scene_index  Int?             // 선택된 첫 씬 인덱스
   start_frame_url       String?          // 시작 프레임 이미지 URL
   end_frame_url         String?          // 끝 프레임 이미지 URL
   start_frame_request_id String?         // 시작 프레임 fal request ID
   end_frame_request_id  String?          // 끝 프레임 fal request ID
   video_request_id      String?          // 영상 생성 fal request ID
+  // MultiScene (Kling O1 / Vidu Q2) 전용 필드
+  scene_keyframes       Json?            // 씬 키프레임 배열 [{sceneIndex, imageUrl, status}, ...]
+  scene_video_urls      Json?            // 씬별 영상 URL 배열 [{sceneIndex, videoUrl}, ...]
   avatars               avatars?         @relation(fields: [avatar_id], references: [id], onUpdate: NoAction)
   ad_products           ad_products?     @relation(fields: [product_id], references: [id], onUpdate: NoAction)
   profiles              profiles         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -629,6 +644,8 @@ model video_ads {
   @@index([avatar_id], map: "idx_video_ads_avatar_id")
   @@index([status], map: "idx_video_ads_status")
   @@index([category], map: "idx_video_ads_category")
+  @@index([user_id, category, status], map: "idx_video_ads_user_category_status")
+  @@index([user_id, category, status, updated_at(sort: Desc)], map: "idx_video_ads_user_category_status_updated")
   @@schema("public")
 }
 
@@ -803,6 +820,12 @@ enum video_ad_status {
   GENERATING_FRAMES
   GENERATING_AVATAR
   FRAMES_COMPLETED
+  FRAME_COMPLETED
+  // Product Ad 상태
+  GENERATING_SCENARIO
+  GENERATING_SCENES
+  SCENES_COMPLETED
+  GENERATING_VIDEO
 
   @@schema("public")
 }

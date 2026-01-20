@@ -35,7 +35,14 @@
       "Bash(git checkout:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(npx next lint --strict)"
+      "Bash(npx next lint --strict)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(/Users/bill/Desktop/projects/ai_ad_project/node_modules/@ffmpeg-installer/darwin-arm64/ffmpeg:*)",
+      "Skill(ralph-loop:cancel-ralph)",
+      "Skill(ralph-loop:cancel-ralph:*)",
+      "Bash(wc:*)",
+      "Bash(test:*)"
     ]
   }
 }

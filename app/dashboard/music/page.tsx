@@ -8,7 +8,29 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useLanguage } from '@/contexts/language-context'
-import { Plus, Music, Loader2, Play, Pause, Trash2, Download } from 'lucide-react'
+import { Plus, Music, Loader2, Play, Pause, Trash2, Download, Sparkles, Package, ChevronDown, Info } from 'lucide-react'
+import Image from 'next/image'
+
+interface AdProduct {
+  id: string
+  name: string
+  description: string | null
+  category: string | null
+  image_url: string | null
+  rembg_image_url: string | null
+}
+
+interface MusicRecommendation {
+  mood: string
+  genre: string
+  productType: string
+  reasoning: {
+    mood: string
+    genre: string
+    productType: string
+  }
+  suggestedName: string
+}
 
 interface MusicTrack {
   id: string
@@ -44,6 +66,9 @@ const MOOD_OPTIONS = [
   { value: 'professional', labelKey: 'professional' },
   { value: 'exciting', labelKey: 'exciting' },
   { value: 'trendy', labelKey: 'trendy' },
+  { value: 'playful', labelKey: 'playful' },
+  { value: 'romantic', labelKey: 'romantic' },
+  { value: 'nostalgic', labelKey: 'nostalgic' },
 ]
 
 // 장르 옵션
@@ -56,6 +81,10 @@ const GENRE_OPTIONS = [
   { value: 'hiphop', labelKey: 'hiphop' },
   { value: 'ambient', labelKey: 'ambient' },
   { value: 'acoustic', labelKey: 'acoustic' },
+  { value: 'lofi', labelKey: 'lofi' },
+  { value: 'cinematic', labelKey: 'cinematic' },
+  { value: 'rnb', labelKey: 'rnb' },
+  { value: 'folk', labelKey: 'folk' },
 ]
 
 // 제품 유형 옵션
@@ -68,6 +97,10 @@ const PRODUCT_TYPE_OPTIONS = [
   { value: 'automobile', labelKey: 'automobile' },
   { value: 'finance', labelKey: 'finance' },
   { value: 'lifestyle', labelKey: 'lifestyle' },
+  { value: 'sports', labelKey: 'sports' },
+  { value: 'kids', labelKey: 'kids' },
+  { value: 'pet', labelKey: 'pet' },
+  { value: 'travel', labelKey: 'travel' },
 ]
 
 export default function MusicPage() {
@@ -87,6 +120,15 @@ export default function MusicPage() {
     genre: '',
     productType: '',
   })
+
+  // 제품 선택 및 AI 추천 상태
+  const [products, setProducts] = useState<AdProduct[]>([])
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null)
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false)
+  const [isRecommending, setIsRecommending] = useState(false)
+  const [recommendation, setRecommendation] = useState<MusicRecommendation | null>(null)
+  const [showProductDropdown, setShowProductDropdown] = useState(false)
+  const [useAiRecommendation, setUseAiRecommendation] = useState(false)
 
   // 번역 헬퍼
   const musicT = (t as Record<string, unknown>).adMusic as Record<string, unknown> | undefined
@@ -109,6 +151,70 @@ export default function MusicPage() {
   useEffect(() => {
     fetchMusicList()
   }, [fetchMusicList])
+
+  // 제품 목록 조회
+  const fetchProducts = useCallback(async () => {
+    setIsLoadingProducts(true)
+    try {
+      const res = await fetch('/api/ad-products?limit=50')
+      if (res.ok) {
+        const data = await res.json()
+        setProducts(data.products?.filter((p: AdProduct & { status: string }) => p.status === 'COMPLETED') || [])
+      }
+    } catch (error) {
+      console.error('제품 목록 조회 오류:', error)
+    } finally {
+      setIsLoadingProducts(false)
+    }
+  }, [])
+
+  // 모달 열릴 때 제품 목록 조회
+  useEffect(() => {
+    if (showCreateModal) {
+      fetchProducts()
+    }
+  }, [showCreateModal, fetchProducts])
+
+  // AI 음악 설정 추천
+  const handleAiRecommend = async () => {
+    if (!selectedProductId) {
+      alert('제품을 먼저 선택해주세요.')
+      return
+    }
+
+    setIsRecommending(true)
+    try {
+      const res = await fetch('/api/ad-music/recommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: selectedProductId }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setRecommendation(data.recommendation)
+        setFormData(prev => ({
+          ...prev,
+          name: data.recommendation.suggestedName,
+          mood: data.recommendation.mood,
+          genre: data.recommendation.genre,
+          productType: data.recommendation.productType,
+        }))
+        setUseAiRecommendation(true)
+      } else {
+        const error = await res.json()
+        alert(error.error || 'AI 추천에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('AI 추천 오류:', error)
+      alert('AI 추천에 실패했습니다.')
+    } finally {
+      setIsRecommending(false)
+    }
+  }
+
+  // 선택된 제품 가져오기
+  const selectedProduct = products.find(p => p.id === selectedProductId)
 
   // 페이지 이동 시 오디오 정지 (cleanup)
   useEffect(() => {
@@ -451,14 +557,147 @@ export default function MusicPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
             className="absolute inset-0 bg-black/50"
-            onClick={() => setShowCreateModal(false)}
+            onClick={() => {
+              setShowCreateModal(false)
+              setSelectedProductId(null)
+              setRecommendation(null)
+              setUseAiRecommendation(false)
+            }}
           />
-          <div className="relative bg-card border border-border rounded-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="relative bg-card border border-border rounded-2xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-foreground mb-6">
               {(musicT?.createNew as string) || '새 음악 생성'}
             </h2>
 
             <div className="space-y-4">
+              {/* AI 추천 섹션 */}
+              <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  <span className="font-medium text-foreground">AI 자동 설정</span>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  등록된 제품을 선택하면 AI가 제품에 맞는 최적의 음악 설정을 추천합니다.
+                </p>
+
+                {/* 제품 선택 드롭다운 */}
+                <div className="relative mb-3">
+                  <button
+                    onClick={() => setShowProductDropdown(!showProductDropdown)}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-secondary border border-border rounded-xl text-left hover:border-primary/50 transition-colors"
+                  >
+                    {selectedProduct ? (
+                      <div className="flex items-center gap-3">
+                        {(selectedProduct.rembg_image_url || selectedProduct.image_url) && (
+                          <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-secondary/50">
+                            <Image
+                              src={selectedProduct.rembg_image_url || selectedProduct.image_url || ''}
+                              alt={selectedProduct.name}
+                              fill
+                              className="object-contain"
+                            />
+                          </div>
+                        )}
+                        <span className="text-foreground truncate">{selectedProduct.name}</span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground flex items-center gap-2">
+                        <Package className="w-4 h-4" />
+                        제품 선택 (선택사항)
+                      </span>
+                    )}
+                    <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showProductDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {showProductDropdown && (
+                    <div className="absolute z-10 w-full mt-2 bg-card border border-border rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                      {isLoadingProducts ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                        </div>
+                      ) : products.length === 0 ? (
+                        <div className="py-4 text-center text-muted-foreground text-sm">
+                          등록된 제품이 없습니다
+                        </div>
+                      ) : (
+                        products.map(product => (
+                          <button
+                            key={product.id}
+                            onClick={() => {
+                              setSelectedProductId(product.id)
+                              setShowProductDropdown(false)
+                              setRecommendation(null)
+                              setUseAiRecommendation(false)
+                            }}
+                            className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors ${
+                              selectedProductId === product.id ? 'bg-primary/10' : ''
+                            }`}
+                          >
+                            {(product.rembg_image_url || product.image_url) && (
+                              <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-secondary/50 flex-shrink-0">
+                                <Image
+                                  src={product.rembg_image_url || product.image_url || ''}
+                                  alt={product.name}
+                                  fill
+                                  className="object-contain"
+                                />
+                              </div>
+                            )}
+                            <div className="text-left min-w-0">
+                              <div className="font-medium text-foreground truncate">{product.name}</div>
+                              {product.category && (
+                                <div className="text-xs text-muted-foreground truncate">{product.category}</div>
+                              )}
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* AI 추천 버튼 */}
+                <button
+                  onClick={handleAiRecommend}
+                  disabled={!selectedProductId || isRecommending}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isRecommending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      AI 분석 중...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      AI 추천 받기
+                    </>
+                  )}
+                </button>
+
+                {/* AI 추천 결과 표시 */}
+                {recommendation && useAiRecommendation && (
+                  <div className="mt-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Info className="w-4 h-4 text-green-600" />
+                      <span className="text-sm font-medium text-green-700">AI 추천 완료</span>
+                    </div>
+                    <div className="space-y-1 text-xs text-muted-foreground">
+                      <p><span className="text-foreground font-medium">분위기:</span> {recommendation.reasoning.mood}</p>
+                      <p><span className="text-foreground font-medium">장르:</span> {recommendation.reasoning.genre}</p>
+                      <p><span className="text-foreground font-medium">제품 유형:</span> {recommendation.reasoning.productType}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="relative flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border" />
+                </div>
+                <span className="relative px-3 bg-card text-sm text-muted-foreground">또는 직접 설정</span>
+              </div>
+
               {/* 이름 */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
@@ -467,7 +706,10 @@ export default function MusicPage() {
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={e => {
+                    setFormData(prev => ({ ...prev, name: e.target.value }))
+                    setUseAiRecommendation(false)
+                  }}
                   placeholder={(musicT?.namePlaceholder as string) || '예: 봄 시즌 광고 음악'}
                   className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
@@ -475,14 +717,20 @@ export default function MusicPage() {
 
               {/* 분위기 */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
                   {(musicT?.mood as string) || '분위기'}
+                  {useAiRecommendation && formData.mood && (
+                    <span className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded">AI</span>
+                  )}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {MOOD_OPTIONS.map(option => (
                     <button
                       key={option.value}
-                      onClick={() => setFormData(prev => ({ ...prev, mood: option.value }))}
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, mood: option.value }))
+                        setUseAiRecommendation(false)
+                      }}
                       className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
                         formData.mood === option.value
                           ? 'bg-primary text-primary-foreground border-primary'
@@ -497,14 +745,20 @@ export default function MusicPage() {
 
               {/* 장르 */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
                   {(musicT?.genre as string) || '장르'}
+                  {useAiRecommendation && formData.genre && (
+                    <span className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded">AI</span>
+                  )}
                 </label>
                 <div className="grid grid-cols-4 gap-2">
                   {GENRE_OPTIONS.map(option => (
                     <button
                       key={option.value}
-                      onClick={() => setFormData(prev => ({ ...prev, genre: option.value }))}
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, genre: option.value }))
+                        setUseAiRecommendation(false)
+                      }}
                       className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
                         formData.genre === option.value
                           ? 'bg-primary text-primary-foreground border-primary'
@@ -519,14 +773,20 @@ export default function MusicPage() {
 
               {/* 제품 유형 */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
                   {(musicT?.productType as string) || '제품 유형'}
+                  {useAiRecommendation && formData.productType && (
+                    <span className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded">AI</span>
+                  )}
                 </label>
                 <div className="grid grid-cols-4 gap-2">
                   {PRODUCT_TYPE_OPTIONS.map(option => (
                     <button
                       key={option.value}
-                      onClick={() => setFormData(prev => ({ ...prev, productType: option.value }))}
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, productType: option.value }))
+                        setUseAiRecommendation(false)
+                      }}
                       className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
                         formData.productType === option.value
                           ? 'bg-primary text-primary-foreground border-primary'
@@ -543,7 +803,12 @@ export default function MusicPage() {
             {/* 버튼 */}
             <div className="flex gap-3 mt-6">
               <button
-                onClick={() => setShowCreateModal(false)}
+                onClick={() => {
+                  setShowCreateModal(false)
+                  setSelectedProductId(null)
+                  setRecommendation(null)
+                  setUseAiRecommendation(false)
+                }}
                 className="flex-1 px-4 py-3 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-colors"
               >
                 {(musicT?.cancel as string) || '취소'}

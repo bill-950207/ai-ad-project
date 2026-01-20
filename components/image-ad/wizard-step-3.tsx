@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Sparkles,
   RefreshCw,
+  Check,
 } from 'lucide-react'
 import { CATEGORY_OPTIONS } from '@/lib/image-ad/category-options'
 import { useImageAdWizard } from './wizard-context'
@@ -19,7 +20,6 @@ export function WizardStep3() {
   const {
     adType,
     selectedProduct,
-    selectedAvatarInfo,
     settingMethod,
     analysisResult,
     categoryOptions,
@@ -38,6 +38,10 @@ export function WizardStep3() {
     setIsAiRecommending,
     hasLoadedAiRecommendation,
     setHasLoadedAiRecommendation,
+    generatedScenarios,
+    setGeneratedScenarios,
+    selectedScenarioIndex,
+    setSelectedScenarioIndex,
     updateCategoryOption,
     updateCustomOption,
     toggleCustomInput,
@@ -48,7 +52,43 @@ export function WizardStep3() {
   // 중복 요청 방지를 위한 ref
   const aiRecommendationRequestedRef = useRef(false)
 
-  // AI 추천 로드
+  // 시나리오 옵션 적용 헬퍼 함수
+  const applyScenarioOptions = useCallback((scenario: {
+    title: string
+    description: string
+    recommendedOptions: Record<string, { value: string; customText?: string; reason: string }>
+    overallStrategy: string
+    suggestedPrompt?: string
+  }, index: number) => {
+    const newCategoryOptions: Record<string, string> = {}
+    const newCustomOptions: Record<string, string> = {}
+    const newCustomInputActive: Record<string, boolean> = {}
+    const newAiReasons: Record<string, string> = {}
+
+    for (const [key, opt] of Object.entries(scenario.recommendedOptions)) {
+      if (opt.value === '__custom__' && opt.customText) {
+        newCategoryOptions[key] = '__custom__'
+        newCustomOptions[key] = opt.customText
+        newCustomInputActive[key] = true
+      } else {
+        newCategoryOptions[key] = opt.value
+        newCustomInputActive[key] = false
+      }
+      newAiReasons[key] = opt.reason
+    }
+
+    setCategoryOptions(newCategoryOptions)
+    setCustomOptions(newCustomOptions)
+    setCustomInputActive(newCustomInputActive)
+    setAiReasons(newAiReasons)
+    setAiStrategy(scenario.overallStrategy)
+    setSelectedScenarioIndex(index)
+    if (scenario.suggestedPrompt) {
+      setAdditionalPrompt(scenario.suggestedPrompt)
+    }
+  }, [setCategoryOptions, setCustomOptions, setCustomInputActive, setAiReasons, setAiStrategy, setAdditionalPrompt, setSelectedScenarioIndex])
+
+  // AI 추천 로드 (3개 시나리오 생성)
   const loadAiRecommendation = useCallback(async (isManualRefresh = false) => {
     // 수동 새로고침이 아닌 경우, 중복 요청 체크
     if (!isManualRefresh && aiRecommendationRequestedRef.current) {
@@ -68,6 +108,7 @@ export function WizardStep3() {
           productName: selectedProduct?.name,
           productDescription: selectedProduct?.description,
           language,
+          multiple: true,  // 다중 시나리오 모드
         }),
       })
 
@@ -77,41 +118,12 @@ export function WizardStep3() {
 
       const result = await res.json()
 
-      // 추천된 옵션 적용
-      if (result.recommendedOptions) {
-        const newCategoryOptions: Record<string, string> = {}
-        const newCustomOptions: Record<string, string> = {}
-        const newCustomInputActive: Record<string, boolean> = {}
-        const newAiReasons: Record<string, string> = {}
-
-        for (const [key, option] of Object.entries(result.recommendedOptions)) {
-          const opt = option as { value: string; customText?: string; reason: string }
-
-          if (opt.value === '__custom__' && opt.customText) {
-            newCategoryOptions[key] = '__custom__'
-            newCustomOptions[key] = opt.customText
-            newCustomInputActive[key] = true
-          } else {
-            newCategoryOptions[key] = opt.value
-            newCustomInputActive[key] = false
-          }
-
-          newAiReasons[key] = opt.reason
-        }
-
-        setCategoryOptions(newCategoryOptions)
-        setCustomOptions(newCustomOptions)
-        setCustomInputActive(newCustomInputActive)
-        setAiReasons(newAiReasons)
-      }
-
-      if (result.overallStrategy) {
-        setAiStrategy(result.overallStrategy)
-      }
-
-      // 추가 설명 적용
-      if (result.suggestedPrompt) {
-        setAdditionalPrompt(result.suggestedPrompt)
+      // 다중 시나리오 모드: 3개 시나리오 저장 및 첫 번째 시나리오 자동 선택
+      if (result.scenarios && result.scenarios.length > 0) {
+        setGeneratedScenarios(result.scenarios)
+        // 첫 번째 시나리오의 옵션을 직접 적용 (비동기 상태 업데이트 문제 방지)
+        const firstScenario = result.scenarios[0]
+        applyScenarioOptions(firstScenario, 0)
       }
     } catch (error) {
       console.error('AI 자동 설정 오류:', error)
@@ -122,7 +134,7 @@ export function WizardStep3() {
     } finally {
       setIsAiRecommending(false)
     }
-  }, [adType, selectedProduct, language, setIsAiRecommending, setHasLoadedAiRecommendation, setCategoryOptions, setCustomOptions, setCustomInputActive, setAiReasons, setAiStrategy, setAdditionalPrompt])
+  }, [adType, selectedProduct, language, setIsAiRecommending, setHasLoadedAiRecommendation, setGeneratedScenarios, applyScenarioOptions])
 
   // 참조 이미지 분석 결과 적용
   const applyAnalysisResult = useCallback(() => {
@@ -169,6 +181,7 @@ export function WizardStep3() {
   const handleRefreshAiRecommendation = () => {
     aiRecommendationRequestedRef.current = false // ref 리셋
     setHasLoadedAiRecommendation(false)
+    setGeneratedScenarios([]) // 기존 시나리오 초기화
     loadAiRecommendation(true) // 수동 새로고침임을 표시
   }
 
@@ -211,6 +224,54 @@ export function WizardStep3() {
         </div>
       )}
 
+      {/* AI 추천 시나리오 선택 (ai-auto 모드) */}
+      {settingMethod === 'ai-auto' && generatedScenarios.length > 0 && !isAiRecommending && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              추천 시나리오
+            </h3>
+            <button
+              onClick={handleRefreshAiRecommendation}
+              disabled={isAiRecommending}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+            >
+              <RefreshCw className="w-3 h-3" />
+              다시 추천
+            </button>
+          </div>
+
+          <div className="grid gap-3">
+            {generatedScenarios.map((scenario, index) => (
+              <button
+                key={index}
+                onClick={() => applyScenarioOptions(scenario, index)}
+                className={`p-4 rounded-xl border-2 text-left transition-all ${
+                  selectedScenarioIndex === index
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-semibold text-foreground">{scenario.title}</h4>
+                      {selectedScenarioIndex === index && (
+                        <Check className="w-4 h-4 text-primary" />
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                      {scenario.description}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* AI 전략 설명 */}
       {aiStrategy && !isAiRecommending && (
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-5">
@@ -221,9 +282,9 @@ export function WizardStep3() {
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1">
                 <h3 className="font-medium text-primary">
-                  {settingMethod === 'reference' ? 'AI 분석 결과' : 'AI 추천 전략'}
+                  {settingMethod === 'reference' ? 'AI 분석 결과' : '선택된 시나리오 전략'}
                 </h3>
-                {settingMethod === 'ai-auto' && (
+                {settingMethod === 'ai-auto' && generatedScenarios.length === 0 && (
                   <button
                     onClick={handleRefreshAiRecommendation}
                     disabled={isAiRecommending}

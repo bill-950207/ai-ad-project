@@ -51,7 +51,7 @@ export function getCameraCompositionSegment(composition: string): string {
   return `${config.angle}, ${config.description}, ${config.handPosition}`
 }
 
-/** 카메라 구도별 상세 가이드 */
+/** 카메라 구도별 상세 가이드 (UGC 스타일 - 배경 완전 선명) */
 export const CAMERA_COMPOSITION_DETAILED_GUIDES: Record<string, {
   promptSegment: string
   lightingRecommendation: string
@@ -60,32 +60,32 @@ export const CAMERA_COMPOSITION_DETAILED_GUIDES: Record<string, {
   'selfie-high': {
     promptSegment: 'captured from high angle approximately 30 degrees above eye level, subject looking up with naturally enlarged eyes, one hand holding product at chest level',
     lightingRecommendation: 'soft overhead lighting with catchlights in eyes',
-    depthOfField: 'f/2.0 for slight background separation while keeping face sharp',
+    depthOfField: 'f/11 with entire scene in razor sharp focus from foreground to background, absolutely no blur or bokeh anywhere',
   },
   'selfie-front': {
     promptSegment: 'eye-level straight-on frontal view, direct eye contact with camera, confident expression, product held forward at chest height',
     lightingRecommendation: 'balanced front lighting with soft fill',
-    depthOfField: 'f/1.8 for pleasing bokeh while maintaining sharp focus on face and product',
+    depthOfField: 'f/11 with every background detail crystal clear and sharp, absolutely no blur no bokeh no soft focus',
   },
   'selfie-side': {
     promptSegment: 'three-quarter view at 45-degree angle, showing facial contours and profile definition, product visible from angled perspective',
     lightingRecommendation: 'side lighting to emphasize facial structure',
-    depthOfField: 'f/2.2 for dimensional depth while keeping key features sharp',
+    depthOfField: 'f/11 with entire background razor sharp including all details, no blur no bokeh',
   },
   'tripod': {
     promptSegment: 'stable fixed-camera composition at chest to eye level, professional framing as if on tripod, both hands free to hold product naturally',
     lightingRecommendation: 'controlled studio-style lighting or well-lit interior',
-    depthOfField: 'f/2.8 for professional look with moderate background blur',
+    depthOfField: 'f/16 with entire scene in perfect sharp focus from nearest to farthest point',
   },
   'closeup': {
     promptSegment: 'intimate close framing on face and upper chest, filling most of frame, detailed facial features visible, product held near face',
     lightingRecommendation: 'soft beauty lighting with subtle shadows',
-    depthOfField: 'f/1.4 for strong subject isolation and creamy bokeh',
+    depthOfField: 'f/11 with environment completely visible and razor sharp, absolutely no artificial blur or bokeh',
   },
   'fullbody': {
     promptSegment: 'full body visible in frame from head to feet, environmental context included, product held at waist level in natural standing pose',
     lightingRecommendation: 'even full-body lighting, possibly natural outdoor light',
-    depthOfField: 'f/4.0 to keep entire body and some background in focus',
+    depthOfField: 'f/16 with entire scene in perfect sharp focus from foreground to background, every detail visible',
   },
 }
 

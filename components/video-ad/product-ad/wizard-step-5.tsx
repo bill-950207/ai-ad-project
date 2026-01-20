@@ -1,0 +1,641 @@
+'use client'
+
+import { useState, useEffect, useCallback, useRef } from 'react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
+  RefreshCw,
+  ImageIcon,
+  AlertCircle,
+  Sparkles,
+  X,
+  MessageSquarePlus,
+} from 'lucide-react'
+import Image from 'next/image'
+import { useProductAdWizard, SceneKeyframe, SceneInfo } from './wizard-context'
+
+// 재생성 모달 컴포넌트
+function RegenerateModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  sceneIndex,
+  scenePrompt,
+  isLoading,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: (additionalPrompt: string) => void
+  sceneIndex: number
+  scenePrompt: string
+  isLoading: boolean
+}) {
+  const [additionalPrompt, setAdditionalPrompt] = useState('')
+
+  useEffect(() => {
+    if (isOpen) {
+      setAdditionalPrompt('')
+    }
+  }, [isOpen])
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-background border border-border rounded-2xl shadow-xl max-w-md w-full mx-4 p-6">
+        <button
+          onClick={onClose}
+          disabled={isLoading}
+          className="absolute top-4 right-4 p-1 hover:bg-secondary rounded-lg transition-colors disabled:opacity-50"
+        >
+          <X className="w-5 h-5 text-muted-foreground" />
+        </button>
+
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-lg font-bold text-foreground">씬 {sceneIndex + 1} 다시 생성</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              추가 프롬프트를 입력하면 기존 시나리오와 함께 반영됩니다
+            </p>
+          </div>
+
+          {/* 현재 씬 프롬프트 미리보기 */}
+          <div className="p-3 bg-secondary/30 rounded-lg">
+            <p className="text-xs text-muted-foreground mb-1">현재 씬 프롬프트</p>
+            <p className="text-sm text-foreground line-clamp-3">{scenePrompt}</p>
+          </div>
+
+          {/* 추가 프롬프트 입력 */}
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <MessageSquarePlus className="w-4 h-4 text-muted-foreground" />
+              추가 프롬프트
+              <span className="text-xs text-muted-foreground font-normal">(선택)</span>
+            </label>
+            <textarea
+              value={additionalPrompt}
+              onChange={(e) => setAdditionalPrompt(e.target.value)}
+              placeholder="예: 더 밝은 조명으로, 배경을 심플하게..."
+              className="w-full px-3 py-2 text-sm bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+              rows={3}
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* 버튼 */}
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={onClose}
+              disabled={isLoading}
+              className="flex-1 px-4 py-2.5 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
+            >
+              취소
+            </button>
+            <button
+              onClick={() => onConfirm(additionalPrompt)}
+              disabled={isLoading}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  처리 중...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4" />
+                  다시 생성
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function WizardStep5() {
+  const {
+    aspectRatio,
+    sceneCount,
+    selectedProduct,
+    scenarioInfo,
+    setScenarioInfo,
+    sceneKeyframes,
+    setSceneKeyframes,
+    updateSceneKeyframe,
+    isGeneratingKeyframes,
+    setIsGeneratingKeyframes,
+    canProceedToStep6,
+    goToNextStep,
+    goToPrevStep,
+    saveDraft,
+  } = useProductAdWizard()
+
+  const [error, setError] = useState<string | null>(null)
+  const [regeneratingSceneIndex, setRegeneratingSceneIndex] = useState<number | null>(null)
+  const [modalSceneIndex, setModalSceneIndex] = useState<number | null>(null)
+  const [isMergingPrompt, setIsMergingPrompt] = useState(false)
+  const keyframePollingRef = useRef<NodeJS.Timeout | null>(null)
+
+  // 스크롤 상단으로 이동
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
+
+  // 컴포넌트 마운트 시 진행 중인 키프레임이 있으면 폴링 재개
+  useEffect(() => {
+    const generatingKeyframes = sceneKeyframes.filter(kf => kf.status === 'generating' && kf.requestId)
+    if (generatingKeyframes.length > 0) {
+      // 진행 중인 키프레임이 있으면 생성 상태 및 폴링 재개
+      setIsGeneratingKeyframes(true)
+      startKeyframePolling(sceneKeyframes)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // 마운트 시에만 실행
+
+  // 멀티씬 시나리오 생성 및 키프레임 이미지 생성
+  const generateAllKeyframes = async () => {
+    if (!selectedProduct || !scenarioInfo) return
+
+    setError(null)
+    setIsGeneratingKeyframes(true)
+    setSceneKeyframes([])
+
+    try {
+      // 1. 멀티씬 시나리오 생성
+      const multiSceneRes = await fetch('/api/product-ad/generate-multi-scene', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productName: selectedProduct.name,
+          productDescription: selectedProduct.description,
+          productImageUrl: selectedProduct.rembg_image_url || selectedProduct.image_url,
+          scenarioElements: scenarioInfo.elements,
+          scenarioDescription: scenarioInfo.description,
+          sceneCount,
+          totalDuration: sceneCount * 5,
+        }),
+      })
+
+      if (!multiSceneRes.ok) throw new Error('멀티씬 시나리오 생성 실패')
+
+      const multiSceneData = await multiSceneRes.json()
+      const scenes: SceneInfo[] = multiSceneData.scenes
+
+      // 시나리오에 씬 정보 저장
+      setScenarioInfo({
+        ...scenarioInfo,
+        scenes,
+      })
+
+      // 2. 키프레임 이미지 생성 요청
+      const keyframeRes = await fetch('/api/product-ad/generate-keyframes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productImageUrl: selectedProduct.rembg_image_url || selectedProduct.image_url,
+          scenes: scenes.map(s => ({
+            index: s.index,
+            scenePrompt: s.scenePrompt,
+          })),
+          aspectRatio,
+        }),
+      })
+
+      if (!keyframeRes.ok) throw new Error('키프레임 생성 요청 실패')
+
+      const keyframeData = await keyframeRes.json()
+
+      // 초기 키프레임 상태 설정
+      const initialKeyframes: SceneKeyframe[] = keyframeData.requests.map((req: { sceneIndex: number; requestId: string }) => ({
+        sceneIndex: req.sceneIndex,
+        requestId: req.requestId,
+        status: 'generating' as const,
+      }))
+
+      setSceneKeyframes(initialKeyframes)
+
+      // 폴링 시작
+      startKeyframePolling(initialKeyframes)
+    } catch (err) {
+      console.error('멀티씬 키프레임 생성 오류:', err)
+      setError('멀티씬 키프레임 생성에 실패했습니다. 다시 시도해주세요.')
+      setIsGeneratingKeyframes(false)
+    }
+  }
+
+  // 개별 씬 키프레임 재생성 (추가 프롬프트 포함)
+  const regenerateSingleKeyframe = async (sceneIndex: number, additionalPrompt: string = '') => {
+    if (!selectedProduct || !scenarioInfo?.scenes) return
+
+    const scene = scenarioInfo.scenes.find(s => s.index === sceneIndex)
+    if (!scene) return
+
+    setIsMergingPrompt(true)
+    setError(null)
+
+    try {
+      // 추가 프롬프트가 있으면 LLM으로 합치기
+      let finalPrompt = scene.scenePrompt
+      if (additionalPrompt.trim()) {
+        const mergeRes = await fetch('/api/product-ad/merge-prompts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            originalPrompt: scene.scenePrompt,
+            additionalPrompt: additionalPrompt.trim(),
+          }),
+        })
+
+        if (mergeRes.ok) {
+          const mergeData = await mergeRes.json()
+          finalPrompt = mergeData.mergedPrompt || finalPrompt
+        }
+      }
+
+      setIsMergingPrompt(false)
+      setModalSceneIndex(null)
+      setRegeneratingSceneIndex(sceneIndex)
+
+      // 해당 씬만 generating 상태로 변경
+      updateSceneKeyframe(sceneIndex, { status: 'generating', imageUrl: undefined, requestId: undefined })
+
+      const keyframeRes = await fetch('/api/product-ad/generate-keyframes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productImageUrl: selectedProduct.rembg_image_url || selectedProduct.image_url,
+          scenes: [{
+            index: sceneIndex,
+            scenePrompt: finalPrompt,
+          }],
+          aspectRatio,
+        }),
+      })
+
+      if (!keyframeRes.ok) throw new Error('키프레임 재생성 요청 실패')
+
+      const keyframeData = await keyframeRes.json()
+      const request = keyframeData.requests[0]
+
+      updateSceneKeyframe(sceneIndex, {
+        requestId: request.requestId,
+        status: 'generating',
+      })
+
+      // 단일 씬 폴링 시작
+      startSingleKeyframePolling(sceneIndex, request.requestId)
+    } catch (err) {
+      console.error('키프레임 재생성 오류:', err)
+      updateSceneKeyframe(sceneIndex, { status: 'failed' })
+      setRegeneratingSceneIndex(null)
+      setIsMergingPrompt(false)
+      setModalSceneIndex(null)
+      setError('키프레임 재생성에 실패했습니다.')
+    }
+  }
+
+  // 모달에서 확인 버튼 클릭 시
+  const handleModalConfirm = (additionalPrompt: string) => {
+    if (modalSceneIndex !== null) {
+      regenerateSingleKeyframe(modalSceneIndex, additionalPrompt)
+    }
+  }
+
+  // 전체 키프레임 상태 폴링
+  const startKeyframePolling = useCallback((keyframes: SceneKeyframe[]) => {
+    if (keyframePollingRef.current) {
+      clearInterval(keyframePollingRef.current)
+    }
+
+    const pollStatus = async () => {
+      let allCompleted = true
+      let hasError = false
+
+      for (const kf of keyframes) {
+        if (kf.status === 'completed' || kf.status === 'failed') continue
+
+        try {
+          const res = await fetch(`/api/product-ad/status/${encodeURIComponent(kf.requestId!)}?type=image`)
+          if (!res.ok) continue
+
+          const data = await res.json()
+
+          if (data.status === 'COMPLETED' && data.resultUrl) {
+            updateSceneKeyframe(kf.sceneIndex, {
+              status: 'completed',
+              imageUrl: data.resultUrl,
+            })
+          } else if (data.status === 'FAILED') {
+            updateSceneKeyframe(kf.sceneIndex, { status: 'failed' })
+            hasError = true
+          } else {
+            allCompleted = false
+          }
+        } catch {
+          allCompleted = false
+        }
+      }
+
+      if (allCompleted) {
+        if (keyframePollingRef.current) {
+          clearInterval(keyframePollingRef.current)
+          keyframePollingRef.current = null
+        }
+        setIsGeneratingKeyframes(false)
+
+        if (hasError) {
+          setError('일부 키프레임 생성에 실패했습니다. 실패한 씬은 다시 생성할 수 있습니다.')
+        }
+      }
+    }
+
+    keyframePollingRef.current = setInterval(pollStatus, 3000)
+    pollStatus()
+  }, [updateSceneKeyframe, setIsGeneratingKeyframes])
+
+  // 단일 키프레임 상태 폴링
+  const startSingleKeyframePolling = useCallback((sceneIndex: number, requestId: string) => {
+    const pollStatus = async () => {
+      try {
+        const res = await fetch(`/api/product-ad/status/${encodeURIComponent(requestId)}?type=image`)
+        if (!res.ok) {
+          setTimeout(() => pollStatus(), 3000)
+          return
+        }
+
+        const data = await res.json()
+
+        if (data.status === 'COMPLETED' && data.resultUrl) {
+          updateSceneKeyframe(sceneIndex, {
+            status: 'completed',
+            imageUrl: data.resultUrl,
+          })
+          setRegeneratingSceneIndex(null)
+        } else if (data.status === 'FAILED') {
+          updateSceneKeyframe(sceneIndex, { status: 'failed' })
+          setRegeneratingSceneIndex(null)
+          setError('키프레임 재생성에 실패했습니다.')
+        } else {
+          setTimeout(() => pollStatus(), 3000)
+        }
+      } catch {
+        setTimeout(() => pollStatus(), 3000)
+      }
+    }
+
+    pollStatus()
+  }, [updateSceneKeyframe])
+
+  // 컴포넌트 언마운트 시 폴링 정리
+  useEffect(() => {
+    return () => {
+      if (keyframePollingRef.current) {
+        clearInterval(keyframePollingRef.current)
+      }
+    }
+  }, [])
+
+  // 다음 단계로
+  const handleNext = async () => {
+    if (!canProceedToStep6()) return
+
+    await saveDraft({
+      wizardStep: 6,
+      sceneKeyframes: JSON.stringify(sceneKeyframes),
+    })
+    goToNextStep()
+  }
+
+  const hasKeyframes = sceneKeyframes.length > 0
+  const allKeyframesCompleted = hasKeyframes && sceneKeyframes.every(kf => kf.status === 'completed')
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-6">
+      {/* 헤더 */}
+      <div className="text-center">
+        <h2 className="text-xl font-bold text-foreground">씬 키프레임 생성</h2>
+        <p className="text-muted-foreground mt-2">
+          각 씬의 키프레임 이미지를 생성합니다
+        </p>
+      </div>
+
+      {/* 키프레임 생성 버튼 */}
+      {!hasKeyframes && !isGeneratingKeyframes && (
+        <button
+          onClick={generateAllKeyframes}
+          className="w-full p-6 rounded-xl border-2 border-dashed border-border hover:border-primary/50 transition-all"
+        >
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Sparkles className="w-6 h-6 text-primary" />
+            </div>
+            <div className="text-center">
+              <h4 className="font-medium text-foreground">
+                {sceneCount}개 씬 키프레임 생성하기
+              </h4>
+              <p className="text-sm text-muted-foreground mt-1">
+                AI가 {sceneCount}개 씬의 키프레임 이미지를 생성합니다
+              </p>
+            </div>
+          </div>
+        </button>
+      )}
+
+      {/* 키프레임 생성 중 초기 로딩 */}
+      {isGeneratingKeyframes && sceneKeyframes.length === 0 && (
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-8">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center">
+              <Loader2 className="w-7 h-7 text-primary animate-spin" />
+            </div>
+            <div className="text-center">
+              <h4 className="font-medium text-foreground mb-1">씬 키프레임 생성 중</h4>
+              <p className="text-sm text-muted-foreground">AI가 {sceneCount}개 씬의 키프레임을 생성하고 있습니다...</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 생성된 키프레임 목록 (가로 스크롤 리스트) */}
+      {hasKeyframes && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="w-4 h-4 text-muted-foreground" />
+              <h3 className="text-sm font-medium text-foreground">생성된 키프레임</h3>
+              <span className="text-xs text-muted-foreground">
+                ({sceneKeyframes.filter(k => k.status === 'completed').length}/{sceneKeyframes.length})
+              </span>
+            </div>
+            {allKeyframesCompleted && (
+              <button
+                onClick={generateAllKeyframes}
+                disabled={isGeneratingKeyframes}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isGeneratingKeyframes ? 'animate-spin' : ''}`} />
+                전체 다시 생성
+              </button>
+            )}
+          </div>
+
+          {/* 가로 스크롤 컨테이너 */}
+          <div className="w-full overflow-x-auto scrollbar-hide">
+            <div className="inline-flex gap-4 pb-2 px-1 snap-x snap-mandatory">
+            {sceneKeyframes.map((kf) => (
+              <div
+                key={kf.sceneIndex}
+                className="flex-shrink-0 snap-start"
+                style={{
+                  width: sceneKeyframes.length === 1 ? '100%' :
+                         sceneKeyframes.length === 2 ? 'calc(50% - 8px)' :
+                         'min(280px, 75vw)'
+                }}
+              >
+                <div className={`relative rounded-xl overflow-hidden border-2 bg-secondary/20 ${
+                  kf.status === 'completed'
+                    ? 'border-green-500/50'
+                    : kf.status === 'failed'
+                    ? 'border-red-500/50'
+                    : 'border-border'
+                }`}>
+                  {/* 씬 헤더 */}
+                  <div className="flex items-center justify-between px-3 py-2 bg-secondary/30 border-b border-border/30">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${
+                        kf.status === 'completed' ? 'bg-green-500' :
+                        kf.status === 'failed' ? 'bg-red-500' :
+                        'bg-primary animate-pulse'
+                      }`} />
+                      <span className="text-sm font-medium text-foreground">씬 {kf.sceneIndex + 1}</span>
+                    </div>
+                    {(kf.status === 'completed' || kf.status === 'failed') && (
+                      <button
+                        onClick={() => setModalSceneIndex(kf.sceneIndex)}
+                        disabled={regeneratingSceneIndex !== null || isGeneratingKeyframes}
+                        className="flex items-center gap-1 px-2 py-1 text-xs bg-secondary/50 text-muted-foreground rounded hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${regeneratingSceneIndex === kf.sceneIndex ? 'animate-spin' : ''}`} />
+                        다시
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 이미지 영역 */}
+                  <div className="relative aspect-video bg-black/20">
+                    {kf.status === 'completed' && kf.imageUrl ? (
+                      <Image
+                        src={kf.imageUrl}
+                        alt={`씬 ${kf.sceneIndex + 1}`}
+                        fill
+                        className="object-contain"
+                      />
+                    ) : kf.status === 'failed' ? (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-destructive/5 to-destructive/10">
+                        <AlertCircle className="w-10 h-10 text-destructive mb-2" />
+                        <span className="text-sm text-destructive">생성 실패</span>
+                        <button
+                          onClick={() => setModalSceneIndex(kf.sceneIndex)}
+                          className="mt-2 px-3 py-1.5 text-xs bg-destructive/20 text-destructive rounded-lg hover:bg-destructive/30 transition-colors"
+                        >
+                          다시 시도
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-secondary/30 to-secondary/50">
+                        <div className="relative">
+                          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <ImageIcon className="w-4 h-4 text-primary/50" />
+                          </div>
+                        </div>
+                        <span className="text-sm text-muted-foreground mt-3">생성 중...</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 프롬프트 미리보기 */}
+                  {scenarioInfo?.scenes?.[kf.sceneIndex]?.scenePrompt && (
+                    <div className="px-3 py-2 border-t border-border/30">
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {scenarioInfo.scenes[kf.sceneIndex].scenePrompt.slice(0, 80)}...
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+            </div>
+          </div>
+
+          {/* 씬 순서 인디케이터 (스크롤 힌트) */}
+          {sceneKeyframes.length > 2 && (
+            <div className="flex items-center justify-center gap-1.5">
+              {sceneKeyframes.map((kf) => (
+                <div
+                  key={kf.sceneIndex}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    kf.status === 'completed'
+                      ? 'bg-green-500'
+                      : kf.status === 'failed'
+                      ? 'bg-red-500'
+                      : 'bg-primary/30'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 에러 메시지 */}
+      {error && (
+        <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      )}
+
+      {/* 네비게이션 버튼 */}
+      <div className="flex gap-3 pt-4">
+        <button
+          onClick={goToPrevStep}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          이전
+        </button>
+        <button
+          onClick={handleNext}
+          disabled={!canProceedToStep6()}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          다음
+          <ArrowRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* 안내 메시지 */}
+      {hasKeyframes && !allKeyframesCompleted && !isGeneratingKeyframes && (
+        <p className="text-center text-sm text-muted-foreground">
+          모든 씬 키프레임이 완료되면 다음 단계로 진행할 수 있습니다
+        </p>
+      )}
+
+      {/* 재생성 모달 */}
+      <RegenerateModal
+        isOpen={modalSceneIndex !== null}
+        onClose={() => setModalSceneIndex(null)}
+        onConfirm={handleModalConfirm}
+        sceneIndex={modalSceneIndex ?? 0}
+        scenePrompt={modalSceneIndex !== null && scenarioInfo?.scenes?.[modalSceneIndex]?.scenePrompt || ''}
+        isLoading={isMergingPrompt}
+      />
+    </div>
+  )
+}

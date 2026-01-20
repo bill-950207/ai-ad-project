@@ -25,9 +25,12 @@ function createPrismaClient() {
   // DIRECT_URL 우선 사용 (pooler URL은 직접 연결에서 작동하지 않음)
   const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL
 
-  // PostgreSQL 연결 풀 생성
+  // PostgreSQL 연결 풀 생성 (최적화된 설정)
   const pool = new pg.Pool({
     connectionString,
+    max: 10,                       // 최대 연결 수
+    idleTimeoutMillis: 30000,      // 유휴 연결 타임아웃 (30초)
+    connectionTimeoutMillis: 5000, // 연결 타임아웃 (5초)
   })
 
   // Prisma용 pg 어댑터 생성
@@ -36,9 +39,8 @@ function createPrismaClient() {
   // Prisma 클라이언트 반환
   return new PrismaClient({
     adapter,
-    // 개발 환경에서는 쿼리, 에러, 경고 로그 출력
-    // 프로덕션에서는 에러만 출력
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    // 쿼리 로그는 성능에 영향을 주므로 에러만 출력
+    log: ['error'],
   })
 }
 

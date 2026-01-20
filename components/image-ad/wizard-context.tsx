@@ -35,6 +35,18 @@ export interface AnalysisResult {
   }>
 }
 
+export interface AiScenario {
+  title: string
+  description: string
+  recommendedOptions: Record<string, {
+    value: string
+    customText?: string
+    reason: string
+  }>
+  overallStrategy: string
+  suggestedPrompt?: string
+}
+
 export interface ImageAdWizardState {
   // Step 1: 기본 정보
   step: WizardStep
@@ -60,6 +72,8 @@ export interface ImageAdWizardState {
   aiReasons: Record<string, string>
   isAiRecommending: boolean
   hasLoadedAiRecommendation: boolean
+  generatedScenarios: AiScenario[]  // 생성된 3개 시나리오
+  selectedScenarioIndex: number | null  // 선택된 시나리오 인덱스
 
   // Step 4: 생성 설정
   aspectRatio: AspectRatio
@@ -100,6 +114,9 @@ export interface ImageAdWizardActions {
   setAiReasons: (reasons: Record<string, string>) => void
   setIsAiRecommending: (loading: boolean) => void
   setHasLoadedAiRecommendation: (loaded: boolean) => void
+  setGeneratedScenarios: (scenarios: AiScenario[]) => void
+  setSelectedScenarioIndex: (index: number | null) => void
+  selectScenario: (index: number) => void  // 시나리오 선택 시 옵션 자동 적용
   updateCategoryOption: (key: string, value: string) => void
   updateCustomOption: (key: string, value: string) => void
   toggleCustomInput: (key: string, active: boolean) => void
@@ -169,6 +186,8 @@ export function ImageAdWizardProvider({ children, initialAdType = 'productOnly' 
   const [aiReasons, setAiReasons] = useState<Record<string, string>>({})
   const [isAiRecommending, setIsAiRecommending] = useState(false)
   const [hasLoadedAiRecommendation, setHasLoadedAiRecommendation] = useState(false)
+  const [generatedScenarios, setGeneratedScenarios] = useState<AiScenario[]>([])
+  const [selectedScenarioIndex, setSelectedScenarioIndex] = useState<number | null>(null)
 
   // Step 4 상태
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1')
@@ -223,25 +242,65 @@ export function ImageAdWizardProvider({ children, initialAdType = 'productOnly' 
     }
   }, [])
 
+  // 시나리오 선택 시 해당 시나리오의 옵션을 적용
+  const selectScenario = useCallback((index: number) => {
+    setSelectedScenarioIndex(index)
+    const scenario = generatedScenarios[index]
+    if (!scenario) return
+
+    const newCategoryOptions: Record<string, string> = {}
+    const newCustomOptions: Record<string, string> = {}
+    const newCustomInputActive: Record<string, boolean> = {}
+    const newAiReasons: Record<string, string> = {}
+
+    for (const [key, opt] of Object.entries(scenario.recommendedOptions)) {
+      if (opt.value === '__custom__' && opt.customText) {
+        newCategoryOptions[key] = '__custom__'
+        newCustomOptions[key] = opt.customText
+        newCustomInputActive[key] = true
+      } else {
+        newCategoryOptions[key] = opt.value
+        newCustomInputActive[key] = false
+      }
+      newAiReasons[key] = opt.reason
+    }
+
+    setCategoryOptions(newCategoryOptions)
+    setCustomOptions(newCustomOptions)
+    setCustomInputActive(newCustomInputActive)
+    setAiReasons(newAiReasons)
+    setAiStrategy(scenario.overallStrategy)
+    if (scenario.suggestedPrompt) {
+      setAdditionalPrompt(scenario.suggestedPrompt)
+    }
+  }, [generatedScenarios])
+
   // ============================================================
   // Validation
   // ============================================================
 
-  const isProductOnly = ['productOnly'].includes(adType)
+  // 제품만 필요한 유형 (아바타 불필요)
+  const isProductOnlyType = ['productOnly'].includes(adType)
+  // 아바타만 필요하거나 제품이 선택사항인 유형
+  const isSeasonalType = adType === 'seasonal'
   const isWearingType = adType === 'wearing'
 
   const canProceedToStep2 = useCallback(() => {
-    // productOnly: 제품 필수
-    if (isProductOnly) {
+    // productOnly: 제품 필수, 아바타 불필요
+    if (isProductOnlyType) {
       return !!selectedProduct
     }
-    // wearing: 아바타 필수, 제품은 선택
+    // seasonal: 제품 필수, 아바타 선택사항
+    if (isSeasonalType) {
+      return !!selectedProduct
+    }
+    // wearing: 제품 필수 + 아바타 필수
     if (isWearingType) {
-      return !!selectedAvatarInfo
+      return !!selectedProduct && !!selectedAvatarInfo
     }
     // 그 외: 제품 + 아바타 필수
     return !!selectedProduct && !!selectedAvatarInfo
-  }, [isProductOnly, isWearingType, selectedProduct, selectedAvatarInfo])
+  }, [isProductOnlyType, isSeasonalType, isWearingType, selectedProduct, selectedAvatarInfo])
 
   const canProceedToStep3 = useCallback(() => {
     // 설정 방식이 선택되어야 함
@@ -306,6 +365,8 @@ export function ImageAdWizardProvider({ children, initialAdType = 'productOnly' 
     setAiReasons({})
     setIsAiRecommending(false)
     setHasLoadedAiRecommendation(false)
+    setGeneratedScenarios([])
+    setSelectedScenarioIndex(null)
     setAspectRatio('1:1')
     setQuality('medium')
     setNumImages(2)
@@ -340,6 +401,8 @@ export function ImageAdWizardProvider({ children, initialAdType = 'productOnly' 
     aiReasons,
     isAiRecommending,
     hasLoadedAiRecommendation,
+    generatedScenarios,
+    selectedScenarioIndex,
     aspectRatio,
     quality,
     numImages,
@@ -368,6 +431,9 @@ export function ImageAdWizardProvider({ children, initialAdType = 'productOnly' 
     setAiReasons,
     setIsAiRecommending,
     setHasLoadedAiRecommendation,
+    setGeneratedScenarios,
+    setSelectedScenarioIndex,
+    selectScenario,
     updateCategoryOption,
     updateCustomOption,
     toggleCustomInput,

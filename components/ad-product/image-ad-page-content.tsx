@@ -21,6 +21,10 @@ interface AdProduct {
 interface ImageAd {
   id: string
   image_url: string | null
+  image_urls: string[] | null  // 배치 이미지 URL 배열
+  image_url_originals: string[] | null  // 원본 이미지 URL 배열
+  num_images: number | null  // 요청된 이미지 개수
+  batch_request_ids: Array<{ provider: string; requestId: string }> | null
   product_id: string | null
   avatar_id: string | null
   ad_type: string
@@ -76,28 +80,32 @@ export function ImageAdPageContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // 진행 중인 광고 폴링
+  // 진행 중인 광고 폴링 (배치 지원)
   useEffect(() => {
     const inProgressAds = imageAds.filter(
-      ad => ['IN_QUEUE', 'IN_PROGRESS'].includes(ad.status) && ad.fal_request_id
+      ad => ['IN_QUEUE', 'IN_PROGRESS'].includes(ad.status) && (ad.batch_request_ids || ad.fal_request_id)
     )
 
     if (inProgressAds.length === 0) return
 
     const pollStatus = async () => {
       for (const ad of inProgressAds) {
-        if (!ad.fal_request_id) continue
-
         try {
-          const res = await fetch(`/api/image-ads/status/${ad.fal_request_id}`)
+          // 배치 상태 API 사용 (imageAdId로 조회)
+          const res = await fetch(`/api/image-ads/batch-status/${ad.id}`)
           if (res.ok) {
             const data = await res.json()
-            if (data.status === 'COMPLETED' && data.imageUrl) {
-              // 상태 업데이트
+            if (data.status === 'COMPLETED' && (data.imageUrls || data.imageUrl)) {
+              // 상태 업데이트 (배치 또는 단일)
               setImageAds(prev =>
                 prev.map(a =>
                   a.id === ad.id
-                    ? { ...a, status: 'COMPLETED' as const, image_url: data.imageUrl }
+                    ? {
+                        ...a,
+                        status: 'COMPLETED' as const,
+                        image_urls: data.imageUrls || (data.imageUrl ? [data.imageUrl] : null),
+                        image_url: data.imageUrls?.[0] || data.imageUrl || a.image_url,
+                      }
                     : a
                 )
               )
@@ -242,32 +250,56 @@ export function ImageAdPageContent() {
             {imageAds.map(ad => {
               const isInProgress = ['IN_QUEUE', 'IN_PROGRESS'].includes(ad.status)
               const isFailed = ad.status === 'FAILED'
+              // 하위 호환성: image_urls가 없으면 image_url로 배열 생성
+              const imageUrls = ad.image_urls || (ad.image_url ? [ad.image_url] : [])
+              const imageCount = imageUrls.length
+              const hasMultipleImages = imageCount > 1
+
+              // 이미지 개수에 따른 그리드 클래스
+              const getImageGridClass = (count: number) => {
+                if (count === 1) return 'grid-cols-1'
+                if (count === 2) return 'grid-cols-2'
+                if (count === 3) return 'grid-cols-3'
+                if (count === 4) return 'grid-cols-2'
+                return 'grid-cols-3'
+              }
 
               return (
                 <div
                   key={ad.id}
                   onClick={() => ad.status === 'COMPLETED' && router.push(`/dashboard/image-ad/${ad.id}`)}
-                  className={`relative group bg-card border border-border rounded-2xl overflow-hidden aspect-[4/3] transition-all ${
+                  className={`relative group bg-card border border-border rounded-2xl overflow-hidden transition-all ${
                     ad.status === 'COMPLETED'
                       ? 'cursor-pointer hover:border-primary/50 hover:shadow-lg'
                       : ''
                   }`}
                 >
-                  {ad.image_url ? (
-                    <div className="w-full h-full bg-secondary/30 flex items-center justify-center">
-                      <img
-                        src={ad.image_url}
-                        alt="Generated ad"
-                        className="max-w-full max-h-full object-contain"
-                      />
+                  {imageUrls.length > 0 ? (
+                    <div className={`w-full grid ${getImageGridClass(imageCount)} gap-1 p-1`}>
+                      {imageUrls.map((url, idx) => (
+                        <div
+                          key={idx}
+                          className={`aspect-square bg-secondary/30 flex items-center justify-center overflow-hidden rounded-lg ${
+                            imageCount === 1 ? 'aspect-[4/3]' : ''
+                          }`}
+                        >
+                          <img
+                            src={url}
+                            alt={`Generated ad ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
                     </div>
                   ) : isInProgress ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-secondary/30 gap-3">
+                    <div className="w-full aspect-[4/3] flex flex-col items-center justify-center bg-secondary/30 gap-3">
                       <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                      <span className="text-sm text-muted-foreground">이미지 생성 중...</span>
+                      <span className="text-sm text-muted-foreground">
+                        이미지 생성 중... {ad.num_images && ad.num_images > 1 ? `(${ad.num_images}장)` : ''}
+                      </span>
                     </div>
                   ) : isFailed ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-red-500/5 gap-3 p-4">
+                    <div className="w-full aspect-[4/3] flex flex-col items-center justify-center bg-red-500/5 gap-3 p-4">
                       <ImageIcon className="w-10 h-10 text-red-500/50" />
                       <span className="text-sm text-red-500">생성 실패</span>
                       {/* 환불/재시도 버튼 */}
@@ -295,7 +327,7 @@ export function ImageAdPageContent() {
                       </div>
                     </div>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-secondary/30">
+                    <div className="w-full aspect-[4/3] flex items-center justify-center bg-secondary/30">
                       <ImageIcon className="w-12 h-12 text-muted-foreground" />
                     </div>
                   )}
@@ -315,6 +347,15 @@ export function ImageAdPageContent() {
                       {(t.imageAdTypes as Record<string, { title?: string }>)?.[ad.ad_type]?.title || ad.ad_type}
                     </span>
                   </div>
+
+                  {/* 이미지 개수 뱃지 (배치인 경우) */}
+                  {hasMultipleImages && ad.status === 'COMPLETED' && (
+                    <div className="absolute top-3 right-3">
+                      <span className="px-2.5 py-1 text-xs font-medium bg-white/90 text-black rounded-lg backdrop-blur-sm">
+                        {imageCount}장
+                      </span>
+                    </div>
+                  )}
 
                   {/* 진행 중 상태 뱃지 */}
                   {isInProgress && (

@@ -16,9 +16,12 @@ export interface AdProduct {
   selling_points?: string[] | null
 }
 
-export type WizardStep = 1 | 2 | 3 | 4
+export type WizardStep = 1 | 2 | 3 | 4 | 5
 export type StoryMethod = 'direct' | 'ai-auto' | 'reference'
 export type AspectRatio = '16:9' | '9:16' | '1:1'
+
+// 이미지 크기 (kling-2.6 영상 생성에 영향)
+export type ImageSize = '1024x576' | '576x1024' | '768x768'  // 16:9, 9:16, 1:1
 
 // 스토리보드 프레임 정보
 export interface StoryFrame {
@@ -33,11 +36,14 @@ export interface StoryFrame {
 export interface StoryInfo {
   title: string           // 스토리 제목
   description: string     // 전체 스토리 설명
-  startFrame: StoryFrame  // 시작 프레임
-  endFrame: StoryFrame    // 끝 프레임
+  concept?: string        // 광고 컨셉 상세 설명
+  background?: string     // 배경/장소 상세 설명
+  startFrame: StoryFrame  // 시작 프레임 (필수)
+  endFrame?: StoryFrame   // 끝 프레임 (선택 - 호환성 유지, kling-2.6에서는 사용 안함)
   mood?: string           // 분위기
   action?: string         // 주요 동작
-  motionPromptEN?: string // 영상 생성용 영어 모션 설명
+  emotionalArc?: string   // 감정의 흐름
+  motionPromptEN?: string // 영상 생성용 영어 모션 설명 (kling-2.6용)
 }
 
 // AI 생성 아바타 옵션
@@ -66,6 +72,7 @@ export interface AvatarMotionWizardState {
   isAnalyzingReference: boolean
 
   // Step 3: 스토리보드 상세
+  locationPrompt: string  // 배경/장소 프롬프트 (빈 문자열이면 AI 자동 선택)
   storyInfo: StoryInfo | null
   isGeneratingStory: boolean
   aiGeneratedStory: StoryInfo | null
@@ -73,20 +80,24 @@ export interface AvatarMotionWizardState {
     id: string
     title: string
     description: string
+    concept?: string         // 광고 컨셉 설명
+    background?: string      // 배경/장소 상세 설명
     startFrame: string
-    endFrame: string
+    endFrame?: string        // 선택적
     mood: string
     action: string
-    motionPromptEN?: string // 영상 생성용 영어 모션 설명
+    emotionalArc?: string    // 감정의 흐름
+    motionPromptEN?: string  // 영상 생성용 영어 모션 설명
   }>
   selectedStoryTemplateId: string | null
 
-  // Step 4: 생성 설정
+  // Step 4: 프레임 생성 설정
   aspectRatio: AspectRatio
-  duration: number  // 초 단위 (2-5초)
+  imageSize: ImageSize        // 이미지 크기 (영상 크기에 영향)
+  duration: number            // 초 단위 (5 또는 10)
   isGeneratingFrames: boolean
   startFrameUrl: string | null
-  endFrameUrl: string | null
+  endFrameUrl: string | null  // 호환성 유지 (kling-2.6에서는 사용 안함)
 
   // AI 아바타 생성 (ai-generated 타입 선택 시)
   isGeneratingAvatars: boolean
@@ -95,9 +106,10 @@ export interface AvatarMotionWizardState {
   selectedAiAvatarUrl: string | null
   selectedAiAvatarDescription: string | null
 
-  // 영상 생성 상태
+  // Step 5: 영상 생성 상태
   isGeneratingVideo: boolean
   generationProgress: number
+  videoRequestId: string | null  // kling-2.6 작업 ID
   resultVideoUrl: string | null
 }
 
@@ -122,6 +134,7 @@ export interface AvatarMotionWizardActions {
   setIsAnalyzingReference: (loading: boolean) => void
 
   // Step 3 actions
+  setLocationPrompt: (prompt: string) => void
   setStoryInfo: (info: StoryInfo | null) => void
   setIsGeneratingStory: (loading: boolean) => void
   setAiGeneratedStory: (story: StoryInfo | null) => void
@@ -132,10 +145,12 @@ export interface AvatarMotionWizardActions {
 
   // Step 4 actions
   setAspectRatio: (ratio: AspectRatio) => void
+  setImageSize: (size: ImageSize) => void
   setDuration: (seconds: number) => void
   setIsGeneratingFrames: (loading: boolean) => void
   setStartFrameUrl: (url: string | null) => void
   setEndFrameUrl: (url: string | null) => void
+  setVideoRequestId: (id: string | null) => void
 
   // AI Avatar actions
   setIsGeneratingAvatars: (loading: boolean) => void
@@ -153,6 +168,7 @@ export interface AvatarMotionWizardActions {
   canProceedToStep2: () => boolean
   canProceedToStep3: () => boolean
   canProceedToStep4: () => boolean
+  canProceedToStep5: () => boolean  // 프레임 생성 완료 → 영상 생성 단계
   canGenerateVideo: () => boolean
 
   // Reset
@@ -179,11 +195,7 @@ const createDefaultStory = (): StoryInfo => ({
     order: 1,
     description: '',
   },
-  endFrame: {
-    id: 'end',
-    order: 2,
-    description: '',
-  },
+  // endFrame은 선택적 - kling-2.6에서는 사용 안함
 })
 
 // ============================================================
@@ -211,6 +223,7 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
   const [isAnalyzingReference, setIsAnalyzingReference] = useState(false)
 
   // Step 3 상태
+  const [locationPrompt, setLocationPrompt] = useState<string>('')
   const [storyInfo, setStoryInfo] = useState<StoryInfo | null>(null)
   const [isGeneratingStory, setIsGeneratingStory] = useState(false)
   const [aiGeneratedStory, setAiGeneratedStory] = useState<StoryInfo | null>(null)
@@ -219,10 +232,11 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
 
   // Step 4 상태
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('9:16')
-  const [duration, setDuration] = useState(3)
+  const [imageSize, setImageSize] = useState<ImageSize>('576x1024')  // 9:16 기본값
+  const [duration, setDuration] = useState(5)  // kling-2.6: 5 또는 10초
   const [isGeneratingFrames, setIsGeneratingFrames] = useState(false)
   const [startFrameUrl, setStartFrameUrl] = useState<string | null>(null)
-  const [endFrameUrl, setEndFrameUrl] = useState<string | null>(null)
+  const [endFrameUrl, setEndFrameUrl] = useState<string | null>(null)  // 호환성 유지
 
   // AI 아바타 상태
   const [isGeneratingAvatars, setIsGeneratingAvatars] = useState(false)
@@ -231,9 +245,10 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
   const [selectedAiAvatarUrl, setSelectedAiAvatarUrl] = useState<string | null>(null)
   const [selectedAiAvatarDescription, setSelectedAiAvatarDescription] = useState<string | null>(null)
 
-  // 영상 생성 상태
+  // 영상 생성 상태 (Step 5)
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false)
   const [generationProgress, setGenerationProgress] = useState(0)
+  const [videoRequestId, setVideoRequestId] = useState<string | null>(null)
   const [resultVideoUrl, setResultVideoUrl] = useState<string | null>(null)
 
   // ============================================================
@@ -263,12 +278,19 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     setStoryInfo(prev => {
       if (!prev) {
         const newStory = createDefaultStory()
-        newStory.endFrame.description = description
+        if (newStory.endFrame) {
+          newStory.endFrame.description = description
+        }
         return newStory
+      }
+      const endFrame = prev.endFrame || {
+        id: `endframe-${Date.now()}`,
+        order: 2,
+        description: '',
       }
       return {
         ...prev,
-        endFrame: { ...prev.endFrame, description },
+        endFrame: { ...endFrame, description },
       }
     })
   }, [])
@@ -330,11 +352,14 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
         productInfo: productInfo || null,
         aiAvatarOptions,
         storyMethod,
+        locationPrompt: locationPrompt || null,
         storyInfo,
         aspectRatio,
+        imageSize,
         duration,
         startFrameUrl,
         endFrameUrl,
+        videoRequestId,
         ...additionalData,
       }
 
@@ -370,11 +395,14 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     selectedAiAvatarDescription,
     generatedAvatarOptions,
     storyMethod,
+    locationPrompt,
     storyInfo,
     aspectRatio,
+    imageSize,
     duration,
     startFrameUrl,
     endFrameUrl,
+    videoRequestId,
   ])
 
   // Draft 로드
@@ -441,6 +469,10 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
         setStoryMethod(draft.story_method as StoryMethod)
       }
 
+      if (draft.location_prompt) {
+        setLocationPrompt(draft.location_prompt)
+      }
+
       if (draft.story_info) {
         setStoryInfo(draft.story_info as StoryInfo)
       }
@@ -448,6 +480,9 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
       // Step 4 정보 복원
       if (draft.aspect_ratio) {
         setAspectRatio(draft.aspect_ratio as AspectRatio)
+      }
+      if (draft.image_size) {
+        setImageSize(draft.image_size as ImageSize)
       }
       if (draft.duration) {
         setDuration(draft.duration)
@@ -457,6 +492,9 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
       }
       if (draft.end_frame_url) {
         setEndFrameUrl(draft.end_frame_url)
+      }
+      if (draft.video_request_id) {
+        setVideoRequestId(draft.video_request_id)
       }
       if (draft.video_url) {
         setResultVideoUrl(draft.video_url)
@@ -487,16 +525,22 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
   }, [storyMethod, referenceUrl, isAnalyzingReference])
 
   const canProceedToStep4 = useCallback(() => {
-    // 스토리 정보가 있고, 시작/끝 프레임 설명이 있어야 함
+    // 스토리 정보가 있고, 시작 프레임 설명이 있어야 함
     if (!storyInfo) return false
-    return !!storyInfo.startFrame.description && !!storyInfo.endFrame.description
+    return !!storyInfo.startFrame.description
   }, [storyInfo])
 
+  const canProceedToStep5 = useCallback(() => {
+    // 프레임 이미지가 생성되어야 함 (시작 프레임만)
+    if (isGeneratingFrames) return false
+    return !!startFrameUrl
+  }, [isGeneratingFrames, startFrameUrl])
+
   const canGenerateVideo = useCallback(() => {
-    // 프레임 이미지가 모두 생성되어야 함
-    if (isGeneratingVideo || isGeneratingFrames) return false
-    return !!startFrameUrl && !!endFrameUrl
-  }, [isGeneratingVideo, isGeneratingFrames, startFrameUrl, endFrameUrl])
+    // 프레임 이미지가 생성되어 있고, 영상 생성 중이 아니어야 함
+    if (isGeneratingVideo) return false
+    return !!startFrameUrl
+  }, [isGeneratingVideo, startFrameUrl])
 
   // ============================================================
   // Navigation
@@ -507,7 +551,7 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
   }, [])
 
   const goToNextStep = useCallback(() => {
-    setStep(prev => Math.min(prev + 1, 4) as WizardStep)
+    setStep(prev => Math.min(prev + 1, 5) as WizardStep)
   }, [])
 
   const goToPrevStep = useCallback(() => {
@@ -526,17 +570,22 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     setStep(1)
     setSelectedProduct(null)
     setSelectedAvatarInfo(null)
+    // Step 2 상태
     setStoryMethod(null)
     setReferenceFile(null)
     setReferenceUrl(null)
     setIsAnalyzingReference(false)
+    // Step 3 상태
+    setLocationPrompt('')
     setStoryInfo(null)
     setIsGeneratingStory(false)
     setAiGeneratedStory(null)
     setGeneratedStoryTemplates([])
     setSelectedStoryTemplateId(null)
+    // Step 4 상태
     setAspectRatio('9:16')
-    setDuration(3)
+    setImageSize('576x1024')
+    setDuration(5)
     setIsGeneratingFrames(false)
     setStartFrameUrl(null)
     setEndFrameUrl(null)
@@ -546,9 +595,10 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     setSelectedAiAvatarIndex(null)
     setSelectedAiAvatarUrl(null)
     setSelectedAiAvatarDescription(null)
-    // 영상 생성 상태
+    // Step 5 영상 생성 상태
     setIsGeneratingVideo(false)
     setGenerationProgress(0)
+    setVideoRequestId(null)
     setResultVideoUrl(null)
   }, [])
 
@@ -569,12 +619,14 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     referenceFile,
     referenceUrl,
     isAnalyzingReference,
+    locationPrompt,
     storyInfo,
     isGeneratingStory,
     aiGeneratedStory,
     generatedStoryTemplates,
     selectedStoryTemplateId,
     aspectRatio,
+    imageSize,
     duration,
     isGeneratingFrames,
     startFrameUrl,
@@ -588,6 +640,7 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     // 영상 생성 상태
     isGeneratingVideo,
     generationProgress,
+    videoRequestId,
     resultVideoUrl,
 
     // DB 연동 액션
@@ -604,6 +657,7 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     setStoryMethod,
     setReferenceMedia,
     setIsAnalyzingReference,
+    setLocationPrompt,
     setStoryInfo,
     setIsGeneratingStory,
     setAiGeneratedStory,
@@ -612,10 +666,12 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     setGeneratedStoryTemplates,
     setSelectedStoryTemplateId,
     setAspectRatio,
+    setImageSize,
     setDuration,
     setIsGeneratingFrames,
     setStartFrameUrl,
     setEndFrameUrl,
+    setVideoRequestId,
     // AI 아바타 액션
     setIsGeneratingAvatars,
     setGeneratedAvatarOptions,
@@ -626,9 +682,11 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     setIsGeneratingVideo,
     setGenerationProgress,
     setResultVideoUrl,
+    // Validation
     canProceedToStep2,
     canProceedToStep3,
     canProceedToStep4,
+    canProceedToStep5,
     canGenerateVideo,
     resetWizard,
   }

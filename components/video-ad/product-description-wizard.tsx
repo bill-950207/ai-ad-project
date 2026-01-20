@@ -73,15 +73,6 @@ interface Voice {
   previewUrl: string | null
 }
 
-type VoiceLanguage = 'ko' | 'en' | 'ja' | 'zh'
-
-const VOICE_LANGUAGE_LABELS: Record<VoiceLanguage, string> = {
-  ko: '한국어',
-  en: 'English',
-  ja: '日本語',
-  zh: '中文',
-}
-
 type WizardStep = 1 | 2 | 3 | 4
 type VideoDuration = 15 | 30 | 60
 
@@ -231,7 +222,6 @@ export function ProductDescriptionWizard() {
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false)
-  const [voiceLanguage, setVoiceLanguage] = useState<VoiceLanguage>('ko')
   const [isLoadingVoices, setIsLoadingVoices] = useState(false)
 
   // Step 5: 영상 생성
@@ -245,61 +235,11 @@ export function ProductDescriptionWizard() {
   const isRestoringDraft = useRef(false)
 
   // ============================================================
-  // 유틸리티 함수
-  // ============================================================
-
-  // 텍스트에서 언어 감지 (간단한 문자 범위 기반)
-  const detectLanguage = useCallback((text: string): VoiceLanguage => {
-    if (!text || text.trim().length === 0) return 'ko'
-
-    let korean = 0
-    let english = 0
-    let japanese = 0
-    let chinese = 0
-
-    for (const char of text) {
-      const code = char.charCodeAt(0)
-      // 한글
-      if ((code >= 0xAC00 && code <= 0xD7AF) || (code >= 0x1100 && code <= 0x11FF) || (code >= 0x3130 && code <= 0x318F)) {
-        korean++
-      }
-      // 영어
-      else if ((code >= 0x41 && code <= 0x5A) || (code >= 0x61 && code <= 0x7A)) {
-        english++
-      }
-      // 히라가나 & 카타카나
-      else if ((code >= 0x3040 && code <= 0x309F) || (code >= 0x30A0 && code <= 0x30FF)) {
-        japanese++
-      }
-      // 한자
-      else if (code >= 0x4E00 && code <= 0x9FFF) {
-        chinese++
-      }
-    }
-
-    // 히라가나/카타카나가 있으면 한자도 일본어로
-    if (japanese > 0) {
-      japanese += chinese
-      chinese = 0
-    }
-
-    const max = Math.max(korean, english, japanese, chinese)
-    if (max === 0) return 'ko'
-
-    if (korean === max) return 'ko'
-    if (english === max) return 'en'
-    if (japanese === max) return 'ja'
-    if (chinese === max) return 'zh'
-
-    return 'ko'
-  }, [])
-
-  // ============================================================
   // 데이터 로드
   // ============================================================
 
   // 특정 언어의 음성 목록 불러오기 (Minimax API)
-  const fetchVoicesByLanguage = useCallback(async (lang: VoiceLanguage) => {
+  const fetchVoicesByLanguage = useCallback(async (lang: 'ko' | 'en' | 'ja' | 'zh') => {
     setIsLoadingVoices(true)
     try {
       const res = await fetch(`/api/minimax-voices?language=${lang}`)
@@ -792,10 +732,8 @@ export function ProductDescriptionWizard() {
         setEditedScript(generatedEditedScript)
       }
 
-      // 대본 언어 감지 및 음성 목록 불러오기
-      const detectedLang = detectLanguage(generatedEditedScript)
-      setVoiceLanguage(detectedLang)
-      fetchVoicesByLanguage(detectedLang)
+      // 대본 언어로 음성 목록 불러오기 (Step 2에서 선택한 언어)
+      fetchVoicesByLanguage(scriptLanguage)
 
       // 생성된 대본과 이미지 정보 저장 + DRAFT 상태로 복원 (API 응답 값을 직접 전달하여 stale closure 문제 방지)
       await saveDraft(3, {
@@ -831,21 +769,11 @@ export function ProductDescriptionWizard() {
     }
     await saveDraft(3)
 
-    // 대본 언어 감지 및 해당 언어 음성 불러오기
-    const detectedLang = detectLanguage(editedScript)
-    setVoiceLanguage(detectedLang)
-    setSelectedVoice(null)  // 언어 변경 시 선택 초기화
-    await fetchVoicesByLanguage(detectedLang)
+    // Step 2에서 선택한 언어로 음성 목록 불러오기
+    setSelectedVoice(null)  // 음성 선택 초기화
+    await fetchVoicesByLanguage(scriptLanguage)
 
     setStep(4)
-  }
-
-  // 음성 언어 변경 핸들러
-  const handleVoiceLanguageChange = async (lang: VoiceLanguage) => {
-    if (lang === voiceLanguage) return
-    setVoiceLanguage(lang)
-    setSelectedVoice(null)  // 언어 변경 시 선택 초기화
-    await fetchVoicesByLanguage(lang)
   }
 
   // ============================================================
@@ -1574,7 +1502,7 @@ export function ProductDescriptionWizard() {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 max-w-lg mx-auto">
+                <div className="flex flex-wrap justify-center gap-3 max-w-lg mx-auto">
                   {firstFrameUrls.length > 0 ? (
                     firstFrameUrls.map((url, index) => (
                       <button
@@ -1584,7 +1512,7 @@ export function ProductDescriptionWizard() {
                           setFirstFrameUrl(url)  // 압축본 (표시용)
                           setFirstFrameOriginalUrl(firstFrameOriginalUrls[index] || url)  // 원본 (영상 생성용)
                         }}
-                        className={`relative aspect-[2/3] rounded-lg overflow-hidden border-2 transition-all ${
+                        className={`relative w-[120px] aspect-[2/3] rounded-lg overflow-hidden border-2 transition-all ${
                           selectedFirstFrameIndex === index
                             ? 'border-primary ring-2 ring-primary/30'
                             : 'border-border hover:border-primary/50'
@@ -1606,7 +1534,7 @@ export function ProductDescriptionWizard() {
                       </button>
                     ))
                   ) : firstFrameUrl ? (
-                    <div className="col-span-3 aspect-[2/3] max-w-[150px] mx-auto rounded-lg overflow-hidden border border-border">
+                    <div className="aspect-[2/3] w-[150px] rounded-lg overflow-hidden border border-border">
                       <img
                         src={firstFrameUrl}
                         alt="첫 프레임"
@@ -1614,7 +1542,7 @@ export function ProductDescriptionWizard() {
                       />
                     </div>
                   ) : (
-                    <div className="col-span-3 aspect-[2/3] max-w-[150px] mx-auto rounded-lg bg-secondary/30 flex items-center justify-center">
+                    <div className="aspect-[2/3] w-[150px] rounded-lg bg-secondary/30 flex items-center justify-center">
                       <p className="text-muted-foreground text-sm text-center px-2">이미지가 생성되면 여기에 표시됩니다</p>
                     </div>
                   )}
@@ -1691,29 +1619,6 @@ export function ProductDescriptionWizard() {
                     <p className="text-sm text-muted-foreground mt-1">
                       대본을 읽어줄 AI 음성을 선택하세요
                     </p>
-                  </div>
-
-                  {/* 음성 언어 선택 */}
-                  <div className="bg-card border border-border rounded-xl p-4">
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      음성 언어
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {(Object.keys(VOICE_LANGUAGE_LABELS) as VoiceLanguage[]).map((lang) => (
-                        <button
-                          key={lang}
-                          onClick={() => handleVoiceLanguageChange(lang)}
-                          disabled={isLoadingVoices}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                            voiceLanguage === lang
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-secondary/50 text-foreground hover:bg-secondary'
-                          } disabled:opacity-50`}
-                        >
-                          {VOICE_LANGUAGE_LABELS[lang]}
-                        </button>
-                      ))}
-                    </div>
                   </div>
 
                   {/* 음성 목록 */}

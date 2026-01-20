@@ -9,11 +9,12 @@
 'use client'
 
 import { useLanguage } from '@/contexts/language-context'
-import { X, Mic, Clapperboard } from 'lucide-react'
+import { X, Mic, Clapperboard, Package } from 'lucide-react'
 
 export type VideoAdCategory =
   | 'productDescription'  // 제품 설명 영상 (음성으로 제품 설명)
   | 'avatarMotion'        // 아바타 모션 영상 (아바타가 특정 장면 연기)
+  | 'productAd'           // 제품 광고 영상 (시네마틱 제품 영상)
 
 interface VideoAdTypeModalProps {
   isOpen: boolean
@@ -50,6 +51,17 @@ const CATEGORIES: CategoryInfo[] = [
       '한 컷 연기 영상 생성',
       '제품 사용, 포즈, 리액션 등 다양한 모션',
       '짧고 임팩트 있는 광고 소재',
+    ],
+  },
+  {
+    category: 'productAd',
+    icon: Package,
+    title: '제품 광고',
+    description: '제품만 나오는 시네마틱 광고 영상입니다',
+    features: [
+      'AI가 최적의 광고 시나리오 추천',
+      '제품 이미지로 첫 씬 3가지 생성',
+      '선택한 씬으로 영상 자동 생성',
     ],
   },
 ]

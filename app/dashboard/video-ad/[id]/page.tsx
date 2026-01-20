@@ -32,7 +32,20 @@ import {
   Mic,
   Shirt,
   Settings,
+  Film,
 } from 'lucide-react'
+import Image from 'next/image'
+
+interface SceneKeyframe {
+  sceneIndex: number
+  imageUrl?: string
+  status: string
+}
+
+interface SceneVideoUrl {
+  sceneIndex: number
+  videoUrl: string
+}
 
 interface VideoAdDetail {
   id: string
@@ -65,6 +78,9 @@ interface VideoAdDetail {
   first_scene_image_url: string | null
   first_frame_prompt: string | null
   outfit_id: string | null
+  scenario_info: string | null
+  scene_keyframes: SceneKeyframe[] | null
+  scene_video_urls: SceneVideoUrl[] | null
   ad_products?: {
     id: string
     name: string
@@ -439,16 +455,68 @@ export default function VideoAdDetailPage() {
             </div>
           )}
 
-          {/* 대본 (왼쪽 영역에 표시) */}
-          {videoAd.script && (
+          {/* 씬 키프레임 (멀티씬 모드일 때 표시) */}
+          {videoAd.scene_keyframes && videoAd.scene_keyframes.length > 0 && (
             <div className="bg-card border border-border rounded-xl p-4">
-              <h3 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                대본
+              <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                <Film className="w-4 h-4" />
+                씬 키프레임 ({videoAd.scene_keyframes.length}개)
               </h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {videoAd.script}
-              </p>
+              <div className={`grid gap-3 ${
+                videoAd.scene_keyframes.length <= 2 ? 'grid-cols-2' :
+                videoAd.scene_keyframes.length === 3 ? 'grid-cols-3' :
+                videoAd.scene_keyframes.length === 4 ? 'grid-cols-2' :
+                'grid-cols-3'
+              }`}>
+                {videoAd.scene_keyframes
+                  .filter(kf => kf.status === 'completed' && kf.imageUrl)
+                  .sort((a, b) => a.sceneIndex - b.sceneIndex)
+                  .map((kf) => (
+                    <div key={kf.sceneIndex} className="relative aspect-square rounded-lg overflow-hidden bg-secondary/30">
+                      <Image
+                        src={kf.imageUrl!}
+                        alt={`씬 ${kf.sceneIndex + 1}`}
+                        fill
+                        className="object-contain"
+                      />
+                      <div className="absolute bottom-1 left-1 px-2 py-0.5 bg-black/70 rounded text-xs text-white">
+                        씬 {kf.sceneIndex + 1}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* 대본 (제품 설명 영상용 - 왼쪽 영역에 표시) */}
+          {videoAd.script && (
+            <div className="bg-card border border-border rounded-xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  대본 스크립트
+                </h3>
+                {videoAd.script_style && (
+                  <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
+                    {(() => {
+                      const styleLabels: Record<string, string> = {
+                        'formal': '전문적',
+                        'casual': '친근함',
+                        'energetic': '활기찬',
+                        'professional': '전문적',
+                        'friendly': '친근함',
+                        'luxury': '고급스러움',
+                      }
+                      return styleLabels[videoAd.script_style || ''] || videoAd.script_style
+                    })()}
+                  </span>
+                )}
+              </div>
+              <div className="bg-secondary/30 rounded-lg p-4 border border-border/50">
+                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                  {videoAd.script}
+                </p>
+              </div>
             </div>
           )}
         </div>

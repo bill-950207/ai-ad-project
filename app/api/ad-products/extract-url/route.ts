@@ -3,7 +3,8 @@
  *
  * POST /api/ad-products/extract-url
  * - 먼저 HTML 스크래핑 시도
- * - 실패하거나 정보 부족 시 Gemini의 googleSearch/urlContext로 정보 검색
+ * - 스크래핑 성공 시: LLM으로 데이터 정리/보완 (광고 문구 제거, 요약 등)
+ * - 스크래핑 실패 시: Gemini의 googleSearch/urlContext로 직접 추출
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -119,8 +120,125 @@ async function scrapeProductInfo(url: string): Promise<ExtractedProductInfo | nu
   }
 }
 
+// LLM 응답 스키마 (공통)
+const productInfoSchema = {
+  type: Type.OBJECT,
+  properties: {
+    title: {
+      type: Type.STRING,
+      nullable: true,
+      description: '제품명 (브랜드명 포함, 간결하게)',
+    },
+    description: {
+      type: Type.STRING,
+      nullable: true,
+      description: '제품 설명 (핵심 내용 2-3문장 요약, 광고 문구나 불필요한 내용 제외)',
+    },
+    price: {
+      type: Type.STRING,
+      nullable: true,
+      description: '가격 (통화 기호 포함, 숫자 포맷 정리)',
+    },
+    brand: {
+      type: Type.STRING,
+      nullable: true,
+      description: '브랜드명',
+    },
+    features: {
+      type: Type.ARRAY,
+      nullable: true,
+      items: { type: Type.STRING },
+      description: '주요 특징/셀링 포인트 (3-5개, 간결한 문장)',
+    },
+    imageUrl: {
+      type: Type.STRING,
+      nullable: true,
+      description: '대표 제품 이미지 URL',
+    },
+  },
+}
+
 /**
- * Gemini를 사용하여 제품 정보 추출
+ * 스크래핑된 데이터를 LLM으로 정리/보완
+ */
+async function cleanScrapedDataWithLLM(
+  scrapedData: ExtractedProductInfo,
+  url: string
+): Promise<ExtractedProductInfo> {
+  const prompt = `다음은 제품 페이지에서 스크래핑한 원본 데이터입니다. 이 데이터를 깔끔하게 정리해주세요.
+
+=== 원본 데이터 ===
+제품명: ${scrapedData.title || '없음'}
+설명: ${scrapedData.description || '없음'}
+가격: ${scrapedData.price || '없음'}
+브랜드: ${scrapedData.brand || '없음'}
+이미지 URL: ${scrapedData.imageUrl || '없음'}
+
+=== URL (참고용) ===
+${url}
+
+=== 정리 지침 ===
+1. 제품명 (title):
+   - 불필요한 수식어, 광고 문구, 특수문자 제거
+   - 브랜드명 + 제품명 형태로 간결하게
+   - 예: "[무료배송] 더페이스샵 파워 퍼펙션..." → "더페이스샵 파워 퍼펙션 BB크림"
+
+2. 설명 (description):
+   - 광고 문구, 배송 정보, 이벤트 정보 제거
+   - 제품의 핵심 기능과 특징만 2-3문장으로 요약
+   - 자연스러운 문장으로 재구성
+
+3. 가격 (price):
+   - 통화 기호와 숫자만 유지 (예: "₩15,000" 또는 "$29.99")
+   - 할인가가 있으면 할인가 사용
+
+4. 브랜드 (brand):
+   - 정확한 브랜드명만 추출
+
+5. 특징 (features):
+   - 설명에서 3-5개의 핵심 특징/셀링포인트 추출
+   - 각 특징은 한 문장으로 간결하게
+   - 중복 내용 제거
+
+6. 이미지 URL: 원본 유지 (수정하지 않음)
+
+정보가 부족하거나 없는 필드는 null로 표시하세요.`
+
+  const config: GenerateContentConfig = {
+    thinkingConfig: {
+      thinkingLevel: ThinkingLevel.LOW,
+    },
+    responseMimeType: 'application/json',
+    responseSchema: productInfoSchema,
+  }
+
+  try {
+    const response = await genAI.models.generateContent({
+      model: MODEL_NAME,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config,
+    })
+
+    const responseText = response.text || '{}'
+    const result = JSON.parse(responseText)
+
+    return {
+      title: result.title || scrapedData.title || undefined,
+      description: result.description || scrapedData.description || undefined,
+      price: result.price || scrapedData.price || undefined,
+      brand: result.brand || scrapedData.brand || undefined,
+      features: result.features || undefined,
+      imageUrl: scrapedData.imageUrl || result.imageUrl || undefined, // 이미지 URL은 원본 우선
+    }
+  } catch (error) {
+    console.error('스크래핑 데이터 정리 오류:', error)
+    // LLM 정리 실패 시 원본 데이터 반환
+    return scrapedData
+  }
+}
+
+/**
+ * Gemini를 사용하여 제품 정보 추출 (스크래핑 실패 시)
  */
 async function extractWithGemini(url: string): Promise<ExtractedProductInfo> {
   const prompt = `다음 URL은 제품 상세 페이지입니다. URL에 직접 접근하여 제품 정보를 추출해주세요.
@@ -128,9 +246,9 @@ async function extractWithGemini(url: string): Promise<ExtractedProductInfo> {
 
 URL: ${url}
 
-다음 정보를 추출해주세요:
-1. 제품명 (title)
-2. 제품 설명 (description) - 핵심 내용을 2-3문장으로 요약
+다음 정보를 추출하고 깔끔하게 정리해주세요:
+1. 제품명 (title) - 브랜드명 + 제품명, 불필요한 수식어 제거
+2. 제품 설명 (description) - 핵심 내용을 2-3문장으로 요약, 광고 문구 제외
 3. 가격 (price) - 통화 기호 포함
 4. 브랜드명 (brand)
 5. 주요 특징/셀링 포인트 (features) - 3-5개의 핵심 특징
@@ -147,42 +265,7 @@ URL: ${url}
       thinkingLevel: ThinkingLevel.MEDIUM,
     },
     responseMimeType: 'application/json',
-    responseSchema: {
-      type: Type.OBJECT,
-      properties: {
-        title: {
-          type: Type.STRING,
-          nullable: true,
-          description: '제품명',
-        },
-        description: {
-          type: Type.STRING,
-          nullable: true,
-          description: '제품 설명 (2-3문장 요약)',
-        },
-        price: {
-          type: Type.STRING,
-          nullable: true,
-          description: '가격 (통화 기호 포함)',
-        },
-        brand: {
-          type: Type.STRING,
-          nullable: true,
-          description: '브랜드명',
-        },
-        features: {
-          type: Type.ARRAY,
-          nullable: true,
-          items: { type: Type.STRING },
-          description: '주요 특징/셀링 포인트 (3-5개)',
-        },
-        imageUrl: {
-          type: Type.STRING,
-          nullable: true,
-          description: '대표 제품 이미지 URL',
-        },
-      },
-    },
+    responseSchema: productInfoSchema,
   }
 
   try {
@@ -244,15 +327,24 @@ export async function POST(request: NextRequest) {
 
     // 1단계: 스크래핑 시도
     console.log('스크래핑 시도:', validUrl.href)
-    let productInfo = await scrapeProductInfo(validUrl.href)
+    const scrapedInfo = await scrapeProductInfo(validUrl.href)
 
     // 스크래핑 결과 확인 (최소 title 또는 description이 있어야 함)
-    const hasMinimalInfo = productInfo && (productInfo.title || productInfo.description)
+    const hasMinimalInfo = scrapedInfo && (scrapedInfo.title || scrapedInfo.description)
 
-    // 2단계: 스크래핑 실패 또는 정보 부족 시 Gemini 사용
-    if (!hasMinimalInfo) {
+    let productInfo: ExtractedProductInfo
+    let source: 'scraping+llm' | 'gemini'
+
+    if (hasMinimalInfo) {
+      // 2단계: 스크래핑 성공 시 LLM으로 데이터 정리/보완
+      console.log('스크래핑 성공, LLM으로 데이터 정리:', validUrl.href)
+      productInfo = await cleanScrapedDataWithLLM(scrapedInfo, validUrl.href)
+      source = 'scraping+llm'
+    } else {
+      // 스크래핑 실패 시 Gemini로 직접 추출
       console.log('Gemini 추출 시도:', validUrl.href)
       productInfo = await extractWithGemini(validUrl.href)
+      source = 'gemini'
     }
 
     return NextResponse.json({
@@ -265,7 +357,7 @@ export async function POST(request: NextRequest) {
         features: productInfo?.features || null,
         imageUrl: productInfo?.imageUrl || null,
       },
-      source: hasMinimalInfo ? 'scraping' : 'gemini',
+      source,
     })
   } catch (error) {
     console.error('URL 추출 오류:', error)

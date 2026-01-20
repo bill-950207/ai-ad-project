@@ -1,0 +1,806 @@
+'use client'
+
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+
+// ============================================================
+// 타입 정의
+// ============================================================
+
+export interface AdProduct {
+  id: string
+  name: string
+  rembg_image_url: string | null
+  image_url: string | null
+  description?: string | null
+  selling_points?: string[] | null
+}
+
+export type WizardStep = 1 | 2 | 3 | 4 | 5 | 6
+export type ScenarioMethod = 'direct' | 'ai-auto' | 'reference'
+export type AspectRatio = '16:9' | '9:16' | '1:1' | null
+export type VideoModel = 'seedance' | 'kling2.6' | 'wan2.6' | 'kling-o1' | 'vidu-q2'
+export type VideoResolution = '540p' | '720p' | '1080p'
+
+// 광고 요소 옵션들
+export interface AdElementOptions {
+  background: string        // 배경/장소
+  mood: string              // 분위기/톤
+  cameraAngle: string       // 카메라 구도
+  productPlacement: string  // 제품 배치/연출 방식
+  lighting: string          // 조명 스타일
+  colorTone: string         // 색상 톤
+}
+
+// 시나리오 정보
+export interface ScenarioInfo {
+  title: string
+  description: string
+  elements: AdElementOptions
+  scenes?: SceneInfo[]          // 개별 씬 배열 (Kling O1 멀티씬용)
+  firstScenePrompt?: string     // LLM이 생성한 첫 씬 프롬프트 (레거시)
+  videoPrompt?: string          // LLM이 생성한 영상 프롬프트 (레거시)
+  motionDescription?: string    // 모션 설명 (레거시)
+}
+
+// 첫 씬 옵션 (첫 번째 씬의 변형 선택용)
+export interface FirstSceneOption {
+  index: number
+  requestId: string
+  imageUrl?: string
+  status: 'pending' | 'generating' | 'completed' | 'failed'
+}
+
+// 개별 씬 정보 (시나리오의 각 씬)
+export interface SceneInfo {
+  index: number
+  scenePrompt: string        // 이 씬의 이미지 생성 프롬프트
+  transitionPrompt?: string  // 이 씬에서 다음 씬으로의 전환 프롬프트
+  duration: number           // 전환 영상 길이 (3-10초)
+  movementAmplitude?: 'auto' | 'small' | 'medium' | 'large'  // 카메라/모션 강도
+}
+
+// 씬 키프레임 상태 (각 씬의 이미지 생성 상태)
+export interface SceneKeyframe {
+  sceneIndex: number
+  requestId?: string
+  imageUrl?: string
+  status: 'pending' | 'generating' | 'completed' | 'failed'
+}
+
+// 씬 전환 영상 세그먼트 상태 (Kling O1로 생성된 전환 영상)
+export interface SceneVideoSegment {
+  fromSceneIndex: number
+  toSceneIndex: number
+  requestId?: string
+  videoUrl?: string
+  status: 'pending' | 'generating' | 'completed' | 'failed'
+}
+
+// 참조 영상 정보
+export interface ReferenceInfo {
+  type: 'file' | 'youtube'
+  url: string
+  file?: File
+  analyzedElements?: Partial<AdElementOptions>
+  analyzedDescription?: string
+}
+
+export interface ProductAdWizardState {
+  // DB 연동
+  draftId: string | null
+  isSaving: boolean
+
+  // Step 1: 제품 선택
+  step: WizardStep
+  selectedProduct: AdProduct | null
+  editableDescription: string
+  editableSellingPoints: string[]
+
+  // Step 2: 시나리오 설정 방식
+  scenarioMethod: ScenarioMethod | null
+  referenceInfo: ReferenceInfo | null
+  isAnalyzingReference: boolean
+
+  // Step 3: 시나리오 구성
+  scenarioInfo: ScenarioInfo | null
+  isGeneratingScenario: boolean
+  generatedScenarios: ScenarioInfo[]  // AI 추천 시나리오들
+  selectedScenarioIndex: number | null
+
+  // Step 4: 영상 설정
+  aspectRatio: AspectRatio
+  duration: number  // 4, 8, 12초 (Vidu: 1-8초) - 레거시, sceneDurations 사용
+  sceneDurations: number[]  // 각 씬별 영상 길이 (초)
+  videoResolution: VideoResolution  // 영상 해상도 (540p, 720p, 1080p)
+  sceneCount: number  // 씬 개수 (2-8)
+  multiShot: boolean  // 멀티샷 모드
+  videoCount: number  // 생성할 영상 개수 (1-3)
+  videoModel: VideoModel  // 영상 생성 모델
+  isGeneratingScenes: boolean
+  firstSceneOptions: FirstSceneOption[]
+  selectedSceneIndex: number | null
+
+  // Step 4-5: 멀티씬 키프레임 (Kling O1용)
+  sceneKeyframes: SceneKeyframe[]         // 모든 씬의 키프레임 이미지
+  isGeneratingKeyframes: boolean          // 키프레임 생성 중 여부
+
+  // Step 5: 영상 생성
+  isGeneratingVideo: boolean
+  generationProgress: number
+  videoRequestIds: string[]  // 여러 영상 요청 ID
+  resultVideoUrls: string[]  // 여러 영상 결과 URL
+
+  // Step 5: 멀티씬 영상 세그먼트 (Kling O1용)
+  sceneVideoSegments: SceneVideoSegment[]  // 씬 전환 영상들
+  finalVideoUrl: string | null             // FFmpeg로 합친 최종 영상
+}
+
+export interface ProductAdWizardActions {
+  // DB 연동
+  setDraftId: (id: string | null) => void
+  saveDraft: (additionalData?: Record<string, unknown>) => Promise<string | null>
+  loadDraft: (draftId: string) => Promise<boolean>
+
+  // Step navigation
+  goToStep: (step: WizardStep) => void
+  goToNextStep: () => void
+  goToPrevStep: () => void
+
+  // Step 1 actions
+  setSelectedProduct: (product: AdProduct | null) => void
+  setEditableDescription: (desc: string) => void
+  setEditableSellingPoints: (points: string[]) => void
+  addSellingPoint: () => void
+  removeSellingPoint: (index: number) => void
+  updateSellingPoint: (index: number, value: string) => void
+
+  // Step 2 actions
+  setScenarioMethod: (method: ScenarioMethod | null) => void
+  setReferenceInfo: (info: ReferenceInfo | null) => void
+  setIsAnalyzingReference: (loading: boolean) => void
+
+  // Step 3 actions
+  setScenarioInfo: (info: ScenarioInfo | null) => void
+  setIsGeneratingScenario: (loading: boolean) => void
+  setGeneratedScenarios: (scenarios: ScenarioInfo[]) => void
+  setSelectedScenarioIndex: (index: number | null) => void
+  updateScenarioElement: (key: keyof AdElementOptions, value: string) => void
+
+  // Step 4 actions
+  setAspectRatio: (ratio: AspectRatio) => void
+  setDuration: (seconds: number) => void
+  setSceneDurations: (durations: number[]) => void
+  updateSceneDuration: (sceneIndex: number, duration: number) => void
+  setVideoResolution: (resolution: VideoResolution) => void
+  setSceneCount: (count: number) => void
+  setMultiShot: (enabled: boolean) => void
+  setVideoCount: (count: number) => void
+  setVideoModel: (model: VideoModel) => void
+  setIsGeneratingScenes: (loading: boolean) => void
+  setFirstSceneOptions: (options: FirstSceneOption[]) => void
+  updateFirstSceneOption: (index: number, updates: Partial<FirstSceneOption>) => void
+  setSelectedSceneIndex: (index: number | null) => void
+
+  // Step 4-5 멀티씬 actions
+  setSceneKeyframes: (keyframes: SceneKeyframe[]) => void
+  updateSceneKeyframe: (sceneIndex: number, updates: Partial<SceneKeyframe>) => void
+  setIsGeneratingKeyframes: (loading: boolean) => void
+
+  // Step 5 actions
+  setIsGeneratingVideo: (generating: boolean) => void
+  setGenerationProgress: (progress: number) => void
+  setVideoRequestIds: (ids: string[]) => void
+  addVideoRequestId: (id: string) => void
+  setResultVideoUrls: (urls: string[]) => void
+  addResultVideoUrl: (url: string) => void
+
+  // Step 5 멀티씬 actions
+  setSceneVideoSegments: (segments: SceneVideoSegment[]) => void
+  updateSceneVideoSegment: (fromIndex: number, updates: Partial<SceneVideoSegment>) => void
+  setFinalVideoUrl: (url: string | null) => void
+
+  // Validation
+  canProceedToStep2: () => boolean
+  canProceedToStep3: () => boolean
+  canProceedToStep4: () => boolean
+  canProceedToStep5: () => boolean
+  canProceedToStep6: () => boolean
+  canGenerateVideo: () => boolean
+
+  // Reset
+  resetWizard: () => void
+}
+
+type ProductAdWizardContextType = ProductAdWizardState & ProductAdWizardActions
+
+// ============================================================
+// Context 생성
+// ============================================================
+
+const ProductAdWizardContext = createContext<ProductAdWizardContextType | null>(null)
+
+// ============================================================
+// 기본 시나리오 생성
+// ============================================================
+
+const createDefaultScenario = (): ScenarioInfo => ({
+  title: '',
+  description: '',
+  elements: {
+    background: '',
+    mood: '',
+    cameraAngle: '',
+    productPlacement: '',
+    lighting: '',
+    colorTone: '',
+  },
+})
+
+// ============================================================
+// Provider 컴포넌트
+// ============================================================
+
+interface ProductAdWizardProviderProps {
+  children: ReactNode
+}
+
+export function ProductAdWizardProvider({ children }: ProductAdWizardProviderProps) {
+  // DB 연동 상태
+  const [draftId, setDraftId] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Step 1 상태
+  const [step, setStep] = useState<WizardStep>(1)
+  const [selectedProduct, setSelectedProduct] = useState<AdProduct | null>(null)
+  const [editableDescription, setEditableDescription] = useState('')
+  const [editableSellingPoints, setEditableSellingPoints] = useState<string[]>([''])
+
+  // Step 2 상태
+  const [scenarioMethod, setScenarioMethod] = useState<ScenarioMethod | null>(null)
+  const [referenceInfo, setReferenceInfo] = useState<ReferenceInfo | null>(null)
+  const [isAnalyzingReference, setIsAnalyzingReference] = useState(false)
+
+  // Step 3 상태
+  const [scenarioInfo, setScenarioInfo] = useState<ScenarioInfo | null>(null)
+  const [isGeneratingScenario, setIsGeneratingScenario] = useState(false)
+  const [generatedScenarios, setGeneratedScenarios] = useState<ScenarioInfo[]>([])
+  const [selectedScenarioIndex, setSelectedScenarioIndex] = useState<number | null>(null)
+
+  // Step 4 상태
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>(null)
+  const [duration, setDuration] = useState(3)  // 기본 3초 (레거시)
+  const [sceneDurations, setSceneDurations] = useState<number[]>([3, 3, 3])  // 각 씬별 기본 3초
+  const [videoResolution, setVideoResolution] = useState<VideoResolution>('720p')  // 영상 해상도
+  const [sceneCount, setSceneCountState] = useState(3)  // 씬 개수 기본 3
+  const [multiShot, setMultiShot] = useState(false)
+  const [videoModel, setVideoModel] = useState<VideoModel>('vidu-q2')  // 기본 Vidu Q2
+  const [videoCount, setVideoCount] = useState(1)
+  const [isGeneratingScenes, setIsGeneratingScenes] = useState(false)
+  const [firstSceneOptions, setFirstSceneOptions] = useState<FirstSceneOption[]>([])
+  const [selectedSceneIndex, setSelectedSceneIndex] = useState<number | null>(null)
+
+  // Step 4-5 멀티씬 상태 (Kling O1용)
+  const [sceneKeyframes, setSceneKeyframes] = useState<SceneKeyframe[]>([])
+  const [isGeneratingKeyframes, setIsGeneratingKeyframes] = useState(false)
+
+  // Step 5 상태
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false)
+  const [generationProgress, setGenerationProgress] = useState(0)
+  const [videoRequestIds, setVideoRequestIds] = useState<string[]>([])
+  const [resultVideoUrls, setResultVideoUrls] = useState<string[]>([])
+
+  // Step 5 멀티씬 상태 (Kling O1용)
+  const [sceneVideoSegments, setSceneVideoSegments] = useState<SceneVideoSegment[]>([])
+  const [finalVideoUrl, setFinalVideoUrl] = useState<string | null>(null)
+
+  // Helper functions for video arrays
+  const addVideoRequestId = useCallback((id: string) => {
+    setVideoRequestIds(prev => [...prev, id])
+  }, [])
+
+  const addResultVideoUrl = useCallback((url: string) => {
+    setResultVideoUrls(prev => [...prev, url])
+  }, [])
+
+  // 셀링 포인트 관리 함수
+  const addSellingPoint = useCallback(() => {
+    if (editableSellingPoints.length < 10) {
+      setEditableSellingPoints(prev => [...prev, ''])
+    }
+  }, [editableSellingPoints.length])
+
+  const removeSellingPoint = useCallback((index: number) => {
+    if (editableSellingPoints.length > 1) {
+      setEditableSellingPoints(prev => prev.filter((_, i) => i !== index))
+    }
+  }, [editableSellingPoints.length])
+
+  const updateSellingPoint = useCallback((index: number, value: string) => {
+    setEditableSellingPoints(prev => {
+      const updated = [...prev]
+      updated[index] = value
+      return updated
+    })
+  }, [])
+
+  // 씬 개수 설정 (sceneDurations도 함께 조정)
+  const setSceneCount = useCallback((count: number) => {
+    setSceneCountState(count)
+    setSceneDurations(prev => {
+      if (prev.length === count) return prev
+      if (prev.length < count) {
+        // 씬 추가: 기본 3초로 채움
+        return [...prev, ...Array(count - prev.length).fill(3)]
+      }
+      // 씬 감소: 앞에서부터 유지
+      return prev.slice(0, count)
+    })
+  }, [])
+
+  // 개별 씬 시간 업데이트
+  const updateSceneDuration = useCallback((sceneIndex: number, duration: number) => {
+    setSceneDurations(prev => {
+      const updated = [...prev]
+      if (sceneIndex >= 0 && sceneIndex < updated.length) {
+        updated[sceneIndex] = Math.max(1, Math.min(8, duration))  // 1-8초 범위
+      }
+      return updated
+    })
+  }, [])
+
+  // ============================================================
+  // Actions
+  // ============================================================
+
+  // 시나리오 요소 업데이트
+  const updateScenarioElement = useCallback((key: keyof AdElementOptions, value: string) => {
+    setScenarioInfo(prev => {
+      if (!prev) {
+        const newScenario = createDefaultScenario()
+        newScenario.elements[key] = value
+        return newScenario
+      }
+      return {
+        ...prev,
+        elements: { ...prev.elements, [key]: value },
+      }
+    })
+  }, [])
+
+  // 첫 씬 옵션 업데이트
+  const updateFirstSceneOption = useCallback((index: number, updates: Partial<FirstSceneOption>) => {
+    setFirstSceneOptions(prev =>
+      prev.map(opt => opt.index === index ? { ...opt, ...updates } : opt)
+    )
+  }, [])
+
+  // 씬 키프레임 업데이트 (Kling O1용)
+  const updateSceneKeyframe = useCallback((sceneIndex: number, updates: Partial<SceneKeyframe>) => {
+    setSceneKeyframes(prev =>
+      prev.map(kf => kf.sceneIndex === sceneIndex ? { ...kf, ...updates } : kf)
+    )
+  }, [])
+
+  // 씬 전환 영상 세그먼트 업데이트 (Kling O1용)
+  const updateSceneVideoSegment = useCallback((fromIndex: number, updates: Partial<SceneVideoSegment>) => {
+    setSceneVideoSegments(prev =>
+      prev.map(seg => seg.fromSceneIndex === fromIndex ? { ...seg, ...updates } : seg)
+    )
+  }, [])
+
+  // Draft 저장
+  const saveDraft = useCallback(async (additionalData?: Record<string, unknown>): Promise<string | null> => {
+    setIsSaving(true)
+    try {
+      const payload = {
+        id: draftId,
+        category: 'productAd',
+        wizardStep: step,
+        productId: selectedProduct?.id,
+        productInfo: selectedProduct ? JSON.stringify(selectedProduct) : null,
+        scenarioMethod,
+        referenceInfo: referenceInfo ? JSON.stringify(referenceInfo) : null,
+        // 시나리오 정보에 영상 설정도 함께 저장
+        scenarioInfo: scenarioInfo ? JSON.stringify({
+          ...scenarioInfo,
+          _videoSettings: { videoResolution, videoModel, sceneCount, sceneDurations },
+        }) : null,
+        aspectRatio,
+        duration,
+        firstSceneOptions: firstSceneOptions.length > 0 ? JSON.stringify(firstSceneOptions) : null,
+        selectedSceneIndex,
+        videoRequestId: videoRequestIds[0] || null,  // 첫 번째 요청 ID (호환성)
+        videoUrl: resultVideoUrls[0] || null,  // 첫 번째 결과 URL (호환성)
+        videoRequestIds: videoRequestIds.length > 0 ? JSON.stringify(videoRequestIds) : null,
+        videoUrls: resultVideoUrls.length > 0 ? JSON.stringify(resultVideoUrls) : null,
+        // MultiScene 데이터: 모든 키프레임 상태 저장 (진행 중인 것도 포함)
+        sceneKeyframes: sceneKeyframes.length > 0 ? sceneKeyframes : null,
+        // 씬 비디오 세그먼트도 전체 저장 (진행 중인 것도 포함하여 재개 가능)
+        sceneVideoUrls: sceneVideoSegments.length > 0
+          ? sceneVideoSegments.map(s => ({
+              sceneIndex: s.fromSceneIndex,
+              requestId: s.requestId,
+              videoUrl: s.videoUrl,
+              status: s.status,
+            }))
+          : null,
+        ...additionalData,
+      }
+
+      const res = await fetch('/api/product-ad/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to save draft')
+      }
+
+      const data = await res.json()
+      if (data.draft?.id) {
+        setDraftId(data.draft.id)
+        return data.draft.id
+      }
+      return null
+    } catch (error) {
+      console.error('Draft 저장 오류:', error)
+      return null
+    } finally {
+      setIsSaving(false)
+    }
+  }, [
+    draftId, step, selectedProduct, scenarioMethod, referenceInfo,
+    scenarioInfo, aspectRatio, duration, sceneDurations, videoResolution, videoModel,
+    sceneCount, firstSceneOptions, selectedSceneIndex, videoRequestIds,
+    resultVideoUrls, sceneKeyframes, sceneVideoSegments
+  ])
+
+  // Draft 로드
+  const loadDraft = useCallback(async (id: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/product-ad/draft?id=${id}`)
+      if (!res.ok) return false
+
+      const data = await res.json()
+      const draft = data.draft
+      if (!draft) return false
+
+      setDraftId(draft.id)
+      setStep((draft.wizard_step || 1) as WizardStep)
+
+      if (draft.product_info) {
+        // JSON으로 저장된 제품 정보 복원
+        try {
+          const productData = JSON.parse(draft.product_info) as AdProduct
+          setSelectedProduct(productData)
+        } catch {
+          // JSON 파싱 실패 시 (레거시 형식) product_id만 사용
+          if (draft.product_id) {
+            setSelectedProduct({
+              id: draft.product_id,
+              name: '',
+              rembg_image_url: null,
+              image_url: null,
+            })
+          }
+        }
+      } else if (draft.product_id) {
+        // product_info가 없는 경우 (레거시 호환)
+        setSelectedProduct({
+          id: draft.product_id,
+          name: '',
+          rembg_image_url: null,
+          image_url: null,
+        })
+      }
+
+      if (draft.scenario_method) {
+        setScenarioMethod(draft.scenario_method as ScenarioMethod)
+      }
+
+      if (draft.reference_info) {
+        try {
+          setReferenceInfo(JSON.parse(draft.reference_info))
+        } catch { /* ignore */ }
+      }
+
+      if (draft.scenario_info) {
+        try {
+          const parsed = JSON.parse(draft.scenario_info)
+          // 영상 설정 추출 및 복원
+          if (parsed._videoSettings) {
+            const { videoResolution: vr, videoModel: vm, sceneCount: sc, sceneDurations: sd } = parsed._videoSettings
+            if (vr) setVideoResolution(vr as VideoResolution)
+            if (vm) setVideoModel(vm as VideoModel)
+            if (sc) {
+              setSceneCountState(sc)
+              // sceneDurations도 함께 복원
+              if (sd && Array.isArray(sd)) {
+                setSceneDurations(sd)
+              } else {
+                // sceneDurations가 없으면 sceneCount에 맞게 기본값 생성
+                setSceneDurations(Array(sc).fill(3))
+              }
+            }
+            // _videoSettings는 scenarioInfo에서 제거
+            const { _videoSettings, ...scenarioData } = parsed
+            setScenarioInfo(scenarioData as ScenarioInfo)
+          } else {
+            setScenarioInfo(parsed as ScenarioInfo)
+          }
+        } catch { /* ignore */ }
+      }
+
+      if (draft.aspect_ratio) setAspectRatio(draft.aspect_ratio as AspectRatio)
+      if (draft.duration) setDuration(draft.duration)
+
+      if (draft.first_scene_options) {
+        try {
+          setFirstSceneOptions(JSON.parse(draft.first_scene_options))
+        } catch { /* ignore */ }
+      }
+
+      if (draft.selected_scene_index !== null) {
+        setSelectedSceneIndex(draft.selected_scene_index)
+      }
+
+      // 여러 영상 요청 ID 로드
+      if (draft.video_request_ids) {
+        try {
+          setVideoRequestIds(JSON.parse(draft.video_request_ids))
+        } catch {
+          if (draft.video_request_id) setVideoRequestIds([draft.video_request_id])
+        }
+      } else if (draft.video_request_id) {
+        setVideoRequestIds([draft.video_request_id])
+      }
+
+      // 여러 영상 URL 로드
+      if (draft.video_urls) {
+        try {
+          setResultVideoUrls(JSON.parse(draft.video_urls))
+        } catch {
+          if (draft.video_url) setResultVideoUrls([draft.video_url])
+        }
+      } else if (draft.video_url) {
+        setResultVideoUrls([draft.video_url])
+      }
+
+      // 씬 키프레임 로드 (진행 중인 것도 복원하여 재개 가능)
+      if (draft.scene_keyframes && Array.isArray(draft.scene_keyframes)) {
+        setSceneKeyframes(draft.scene_keyframes as SceneKeyframe[])
+      }
+
+      // 씬 비디오 세그먼트 로드 (진행 중인 것도 복원하여 재개 가능)
+      if (draft.scene_video_urls && Array.isArray(draft.scene_video_urls)) {
+        const segments: SceneVideoSegment[] = (draft.scene_video_urls as Array<{
+          sceneIndex: number
+          requestId?: string
+          videoUrl?: string
+          status?: string
+        }>).map((item, idx, arr) => ({
+          fromSceneIndex: item.sceneIndex,
+          toSceneIndex: idx < arr.length - 1 ? arr[idx + 1].sceneIndex : item.sceneIndex + 1,
+          requestId: item.requestId,
+          videoUrl: item.videoUrl,
+          status: (item.status as SceneVideoSegment['status']) || (item.videoUrl ? 'completed' : 'pending'),
+        }))
+        setSceneVideoSegments(segments)
+      }
+
+      return true
+    } catch (error) {
+      console.error('Draft 로드 오류:', error)
+      return false
+    }
+  }, [])
+
+  // ============================================================
+  // Validation
+  // ============================================================
+
+  const canProceedToStep2 = useCallback(() => {
+    return !!selectedProduct
+  }, [selectedProduct])
+
+  const canProceedToStep3 = useCallback(() => {
+    if (!scenarioMethod) return false
+    if (scenarioMethod === 'reference') {
+      return !!referenceInfo && !isAnalyzingReference
+    }
+    return true
+  }, [scenarioMethod, referenceInfo, isAnalyzingReference])
+
+  const canProceedToStep4 = useCallback(() => {
+    if (!scenarioInfo) return false
+    // 최소한 배경과 분위기는 있어야 함
+    return !!scenarioInfo.elements.background && !!scenarioInfo.elements.mood
+  }, [scenarioInfo])
+
+  const canProceedToStep5 = useCallback(() => {
+    // Step 4 → Step 5: 비율, 해상도 등 영상 설정이 되어야 함
+    return !!aspectRatio && !!videoResolution
+  }, [aspectRatio, videoResolution])
+
+  const canProceedToStep6 = useCallback(() => {
+    // Step 5 → Step 6: 모든 씬 키프레임이 생성되어야 함
+    if (isGeneratingKeyframes) return false
+    if (sceneKeyframes.length === 0) return false
+    return sceneKeyframes.every(kf => kf.status === 'completed' && kf.imageUrl)
+  }, [isGeneratingKeyframes, sceneKeyframes])
+
+  const canGenerateVideo = useCallback(() => {
+    // Step 6: 영상 생성 가능 조건
+    if (isGeneratingVideo) return false
+    if (sceneKeyframes.length === 0) return false
+    return sceneKeyframes.every(kf => kf.status === 'completed' && kf.imageUrl)
+  }, [isGeneratingVideo, sceneKeyframes])
+
+  // ============================================================
+  // Navigation
+  // ============================================================
+
+  const goToStep = useCallback((targetStep: WizardStep) => {
+    setStep(targetStep)
+  }, [])
+
+  const goToNextStep = useCallback(() => {
+    setStep(prev => Math.min(prev + 1, 6) as WizardStep)
+  }, [])
+
+  const goToPrevStep = useCallback(() => {
+    setStep(prev => Math.max(prev - 1, 1) as WizardStep)
+  }, [])
+
+  // ============================================================
+  // Reset
+  // ============================================================
+
+  const resetWizard = useCallback(() => {
+    setDraftId(null)
+    setIsSaving(false)
+    setStep(1)
+    setSelectedProduct(null)
+    setEditableDescription('')
+    setEditableSellingPoints([''])
+    setScenarioMethod(null)
+    setReferenceInfo(null)
+    setIsAnalyzingReference(false)
+    setScenarioInfo(null)
+    setIsGeneratingScenario(false)
+    setGeneratedScenarios([])
+    setSelectedScenarioIndex(null)
+    setAspectRatio(null)
+    setDuration(3)
+    setSceneDurations([3, 3, 3])
+    setVideoResolution('720p')
+    setSceneCountState(3)
+    setMultiShot(false)
+    setVideoCount(1)
+    setVideoModel('vidu-q2')
+    setIsGeneratingScenes(false)
+    setFirstSceneOptions([])
+    setSelectedSceneIndex(null)
+    setSceneKeyframes([])
+    setIsGeneratingKeyframes(false)
+    setIsGeneratingVideo(false)
+    setGenerationProgress(0)
+    setVideoRequestIds([])
+    setResultVideoUrls([])
+    setSceneVideoSegments([])
+    setFinalVideoUrl(null)
+  }, [])
+
+  // ============================================================
+  // Context Value
+  // ============================================================
+
+  const value: ProductAdWizardContextType = {
+    // State
+    draftId,
+    isSaving,
+    step,
+    selectedProduct,
+    editableDescription,
+    editableSellingPoints,
+    scenarioMethod,
+    referenceInfo,
+    isAnalyzingReference,
+    scenarioInfo,
+    isGeneratingScenario,
+    generatedScenarios,
+    selectedScenarioIndex,
+    aspectRatio,
+    duration,
+    sceneDurations,
+    videoResolution,
+    sceneCount,
+    multiShot,
+    videoCount,
+    videoModel,
+    isGeneratingScenes,
+    firstSceneOptions,
+    selectedSceneIndex,
+    sceneKeyframes,
+    isGeneratingKeyframes,
+    isGeneratingVideo,
+    generationProgress,
+    videoRequestIds,
+    resultVideoUrls,
+    sceneVideoSegments,
+    finalVideoUrl,
+
+    // Actions
+    setDraftId,
+    saveDraft,
+    loadDraft,
+    goToStep,
+    goToNextStep,
+    goToPrevStep,
+    setSelectedProduct,
+    setEditableDescription,
+    setEditableSellingPoints,
+    addSellingPoint,
+    removeSellingPoint,
+    updateSellingPoint,
+    setScenarioMethod,
+    setReferenceInfo,
+    setIsAnalyzingReference,
+    setScenarioInfo,
+    setIsGeneratingScenario,
+    setGeneratedScenarios,
+    setSelectedScenarioIndex,
+    updateScenarioElement,
+    setAspectRatio,
+    setDuration,
+    setSceneDurations,
+    updateSceneDuration,
+    setVideoResolution,
+    setSceneCount,
+    setMultiShot,
+    setVideoCount,
+    setVideoModel,
+    setIsGeneratingScenes,
+    setFirstSceneOptions,
+    updateFirstSceneOption,
+    setSelectedSceneIndex,
+    setSceneKeyframes,
+    updateSceneKeyframe,
+    setIsGeneratingKeyframes,
+    setIsGeneratingVideo,
+    setGenerationProgress,
+    setVideoRequestIds,
+    addVideoRequestId,
+    setResultVideoUrls,
+    addResultVideoUrl,
+    setSceneVideoSegments,
+    updateSceneVideoSegment,
+    setFinalVideoUrl,
+    canProceedToStep2,
+    canProceedToStep3,
+    canProceedToStep4,
+    canProceedToStep5,
+    canProceedToStep6,
+    canGenerateVideo,
+    resetWizard,
+  }
+
+  return (
+    <ProductAdWizardContext.Provider value={value}>
+      {children}
+    </ProductAdWizardContext.Provider>
+  )
+}
+
+// ============================================================
+// Hook
+// ============================================================
+
+export function useProductAdWizard() {
+  const context = useContext(ProductAdWizardContext)
+  if (!context) {
+    throw new Error('useProductAdWizard must be used within ProductAdWizardProvider')
+  }
+  return context
+}

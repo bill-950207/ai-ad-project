@@ -65,7 +65,10 @@ export async function GET(
         location_prompt,
         first_scene_image_url,
         first_frame_prompt,
-        error_message
+        error_message,
+        scenario_info,
+        scene_keyframes,
+        scene_video_urls
       `)
       .eq('id', id)
       .eq('user_id', user.id)

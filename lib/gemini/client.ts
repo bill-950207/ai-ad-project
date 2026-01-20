@@ -7,7 +7,7 @@
  * - 영상 광고 프롬프트 생성
  */
 
-import { GenerateContentConfig, GoogleGenAI, ThinkingLevel, Type } from '@google/genai'
+import { GenerateContentConfig, GoogleGenAI, MediaResolution, ThinkingLevel, Type } from '@google/genai'
 
 // Gemini 클라이언트 초기화
 const genAI = new GoogleGenAI({
@@ -519,20 +519,27 @@ Generate TWO prompts:
 
 1. **First Scene Image Prompt (firstScenePrompt)**:
    - Image generation prompt optimized for Seedream 4.5 model (ByteDance)
-   - GOAL: Generate 100% photorealistic image indistinguishable from real photo
-   - Structure: subject → style → composition → lighting → technical parameters
+   - GOAL: Generate hyper-realistic commercial advertisement visual
+   - Structure: subject → dynamic action → lighting → texture details → premium aesthetic
    - Use natural language sentences (NOT comma-separated keywords)
    - First 5-8 words are most important - place the main subject there
-   - MUST include photorealism elements:
-     * Camera (choose based on style):
-       - UGC/selfie style: "shot on smartphone camera" or "shot on 28mm lens at f/5.6" (background visible)
-       - Professional style: "shot on 50mm lens at f/4" (slight background blur OK)
-     * Skin/Eyes: "natural skin texture with visible pores, realistic eye reflections with catchlights"
-     * Lighting (with direction): "soft natural daylight streaming from large window"
-     * Background: describe actual background details instead of blur/bokeh for UGC style
-   - End with (concise): "Hyperrealistic photograph, 8K RAW quality"
+
+   🎯 PREMIUM ADVERTISEMENT STYLE:
+   * Dynamic Elements: "dynamic pose", "elements frozen mid-air", "energetic composition"
+   * Skin/Model: "clean skin tones with natural texture", "confident expression", "bright engaging look"
+   * Lighting: "bold punchy studio lighting", "cinematic key light with soft fill to sculpt facial features"
+   * Texture: "ultra-sharp focus on product texture: surface details, material sheen, fine details clearly visible"
+   * Depth: "shallow depth of field isolates subject while maintaining product sharpness"
+   * Hands: "confident grip on product", "dynamic hand positioning"
+
+   * Camera style:
+     - Premium Ad: "cinematic lighting", "shallow depth of field", "high-impact commercial look"
+     - Bold colors: "punchy saturated colors", "bold color palette"
+   * Background: "clean studio background" or "bold colored backdrop"
+
+   - End with: "Premium advertising aesthetic, energetic and visually bold, optimized for social media hero frames"
    - Product reference: Use "the product in IMAGE1" (with correct index) instead of brand/product names
-   - AVOID for UGC style: "shallow depth of field", "creamy bokeh", "85mm lens" (causes excessive blur)
+   - INCLUDE: "ultra-sharp focus", "texture details", "premium aesthetic", "visually bold"
    - Write in English, 50-80 words (max 100 words)
 
 2. **Video Generation Prompt (videoPrompt)**:
@@ -552,6 +559,8 @@ Generate TWO prompts:
     thinkingConfig: {
       thinkingLevel: ThinkingLevel.HIGH,
     },
+    // Gemini 3 Flash: 이미지 분석을 위한 중간 해상도 설정 (256 tokens)
+    mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
     responseSchema: {
       type: Type.OBJECT,
@@ -618,12 +627,12 @@ Generate TWO prompts:
   try {
     return JSON.parse(responseText) as VideoAdPromptResult
   } catch {
-    // Seedream 4.5 포토리얼리즘 최적화 폴백 응답 (배경 선명 스타일)
+    // 프로페셔널 광고 스타일 폴백 응답 (고급 광고 비주얼)
     return {
       productSummary: 'Product information has been analyzed.',
-      firstScenePrompt: 'A professional model with natural skin texture and visible pores confidently presents the product from the reference image in an elegant studio setting. Warm studio lighting from the left creates subtle shadows on her face with realistic eye reflections and catchlights. Individual hair strands catch the light naturally. She holds the product at chest height looking directly at camera. The background shows clean studio walls and subtle decor details. Shot on 50mm lens at f/4. Hyperrealistic photograph, 8K RAW quality.',
-      videoPrompt: `Professional product advertisement video. The scene begins with a static shot of the model holding the product. Camera slowly zooms in to reveal product details. Smooth lighting transitions highlight the product features. The model shows subtle natural movements. Cinematic quality, ${input.duration} seconds duration.`,
-      negativePrompt: 'text, letters, words, watermark, logo, blurry, low quality, distorted, deformed, ugly, artificial looking, CGI, 3D render, illustration, painting, anime, cartoon',
+      firstScenePrompt: 'Hyper-realistic ad visual of a person confidently holding the product from the reference image with dynamic energy. Clean skin tones with natural texture, bright confident expression. Bold punchy studio lighting with cinematic key light and soft fill to sculpt facial features. Shallow depth of field isolates subject while product stays ultra-sharp. Ultra-sharp focus on product texture: surface details, material sheen clearly visible. Premium advertising aesthetic, energetic and visually bold, optimized for social media hero frames.',
+      videoPrompt: `Dynamic product advertisement video. The scene begins with an energetic shot of the person confidently presenting the product. Camera slowly pushes in to reveal ultra-sharp product details and textures. Bold cinematic lighting creates high-impact visual. The person shows confident, engaging movements. Premium commercial quality, ${input.duration} seconds duration.`,
+      negativePrompt: 'text, letters, words, watermark, logo, blurry, low quality, distorted, deformed, ugly, artificial looking, CGI, 3D render, illustration, painting, anime, cartoon, dull colors, flat lighting, boring composition',
     }
   }
 }
@@ -704,8 +713,22 @@ Generate the following:
    - They should be looking at the camera, ready to speak
    - ${input.productImageUrl ? 'Include the product naturally in frame (holding it or nearby)' : 'No product in this shot'}
    - **CRITICAL: Describe the avatar's exact appearance from the attached image**
-   - Natural lighting, authentic feel, NOT studio/commercial look
-   - Vertical (9:16) phone camera perspective
+
+   ⚠️ CRITICAL FOR UGC EDITORIAL STYLE - AVOID AI/COMMERCIAL LOOK:
+   - Style: "ultra-realistic cinematic editorial photography" (NOT commercial/advertisement style)
+   - Framing: "full body visible" or "natural editorial distance" (NOT face-only closeup)
+   - Skin: "realistic skin texture with natural details" (NOT smooth/flawless)
+   - Hair: "individual hair strands with natural flyaways" (NOT perfectly styled)
+   - Expression: "calm, confident, intelligent expression" (NOT exaggerated smile/pose)
+   - Lighting: "soft natural daylight" (NOT studio/dramatic lighting)
+   - Background: "sharp in-focus background with visible environment details" (NO blur/bokeh!)
+   - Eyes: "natural imperfect catchlights" (NOT perfectly symmetric)
+   - Hands: "natural relaxed grip, realistic finger positioning" (NOT stiff or awkward)
+   - Camera: "Shot on Sony A7IV, 35mm f/8, deep depth of field" (background must be sharp!)
+   - Quality: "ultra-realistic, photorealistic, 8K quality"
+
+   - Vertical (9:16) camera perspective
+   - AVOID: "smooth skin", "blurred background", "bokeh", "professional lighting", "advertisement quality"
    - Write in English, max 500 characters
 
 3. **Video Generation Prompt (videoPrompt)**:
@@ -735,6 +758,8 @@ Generate the following:
     thinkingConfig: {
       thinkingLevel: ThinkingLevel.MEDIUM,
     },
+    // Gemini 3 Flash: 아바타/제품 이미지 분석을 위한 중간 해상도 설정
+    mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
     responseSchema: {
       type: Type.OBJECT,
@@ -809,11 +834,11 @@ Generate the following:
     }
     return result
   } catch {
-    // Fallback response on parse failure
+    // Fallback response on parse failure (UGC 에디토리얼 스타일)
     return {
       productSummary: input.productInfo ? '제품 정보가 분석되었습니다.' : '일반 UGC 영상',
-      firstScenePrompt: 'A young woman in casual clothes sits in a cozy home setting, looking directly at the camera with a friendly smile. Natural daylight from a window illuminates her face. She appears ready to share something exciting. Authentic selfie-style vertical composition, warm and inviting atmosphere.',
-      videoPrompt: `A woman speaks enthusiastically to camera with natural expressions and subtle head movements. She gestures occasionally while talking, maintaining eye contact. Her facial expressions shift naturally between smiling and speaking. Authentic UGC style with slight camera movement. ${input.duration} seconds of natural conversation.`,
+      firstScenePrompt: 'A young woman seated comfortably on a modern designer armchair in a cozy living room, naturally looking at camera with calm confident expression. Full body visible. Soft natural daylight from floor-to-ceiling window. Sharp in-focus background with furniture and plants clearly visible. Shot on Sony A7IV, 35mm f/8, deep depth of field. Ultra-realistic cinematic editorial photography, 8K quality.',
+      videoPrompt: `A woman speaks naturally to camera with subtle head movements and confident expressions. She gestures occasionally while talking, maintaining eye contact. Her facial expressions shift naturally. Authentic UGC style with slight camera movement. ${input.duration} seconds of natural conversation.`,
       suggestedScript: input.script ? undefined : '안녕하세요! 오늘 정말 좋은 거 발견해서 공유하려고요. 진짜 대박인데...',
     }
   }
@@ -1125,13 +1150,14 @@ ByteDance의 Seedream 4.5 이미지-to-이미지 편집/합성 모델에 최적�
 5. 조명 (방향성 필수): "soft natural daylight streaming from large window", "warm studio lighting from the left"
 6. 품질 키워드 (간결하게): "Hyperrealistic photograph, 8K RAW quality" (중복 표현 금지)
 
-카메라 스펙 (구도별 설정):
-- 셀피-위에서(selfie-high): "${selfieAngleSettings['selfie-high']}, shot on 28mm lens at f/5.6"
-- 셀피-정면(selfie-front): "${selfieAngleSettings['selfie-front']}, shot on 35mm lens at f/4"
-- 셀피-측면(selfie-side): "${selfieAngleSettings['selfie-side']}, shot on 35mm lens at f/4"
-- 삼각대(tripod)/일반: "shot on 50mm lens at f/4" - 배경이 약간 보이면서 주제 강조
-- 클로즈업(closeup): "shot on 85mm lens at f/2.8" - 적당한 배경 블러로 얼굴 강조
-- 전신(fullbody): "shot on 35mm lens at f/5.6, environmental portrait" - 배경 맥락이 중요
+카메라 스펙 (UGC 에디토리얼 스타일 - 배경 선명하게):
+- 기본: "Shot on Sony A7IV, 35mm f/8, deep depth of field, entire scene sharp"
+- 셀피-위에서(selfie-high): "${selfieAngleSettings['selfie-high']}, Shot on Sony A7IV, 28mm f/8, entire scene sharp"
+- 셀피-정면(selfie-front): "${selfieAngleSettings['selfie-front']}, Shot on Sony A7IV, 35mm f/8, entire scene sharp"
+- 셀피-측면(selfie-side): "${selfieAngleSettings['selfie-side']}, Shot on Sony A7IV, 35mm f/8, entire scene sharp"
+- 삼각대(tripod)/일반: "Shot on Sony A7IV, 50mm f/8, entire scene sharp"
+- 클로즈업(closeup): "Shot on Sony A7IV, 50mm f/8, sharp background"
+- 전신(fullbody): "Shot on Sony A7IV, 35mm f/8, full body visible, entire scene sharp"
 
 === 셀피 구도 필수 규칙 (매우 중요 - 반드시 준수) ===
 셀피 스타일은 "카메라 앵글"만 셀피처럼 표현하고, 실제 셀카 찍는 동작/장비는 절대 보이지 않아야 합니다.
@@ -1152,22 +1178,69 @@ ByteDance의 Seedream 4.5 이미지-to-이미지 편집/합성 모델에 최적�
 - selfie-front (정면): 눈높이에서 정면. 가장 자연스럽고 직접적인 시선 교류.
 - selfie-side (측면): 45도 측면에서. 얼굴 입체감이 살아나고 세련된 느낌.
 
-배경 심도 가이드:
-- UGC/셀피 스타일: 배경이 선명하게 보여야 자연스러움 (shallow DOF, bokeh 사용 금지)
-- 전문 촬영 스타일: 약간의 배경 블러 허용 (soft background 정도만)
+배경 심도 가이드 (⚠️ 매우 중요 - 블러 절대 금지):
+- 모든 스타일에서 배경이 선명하게 보여야 함 (실제 스마트폰으로 찍은 것처럼)
+- "blurred background", "soft background", "bokeh", "shallow depth of field" 표현 절대 금지
+- 배경의 환경 디테일(가구, 간판, 사람들 등)이 또렷하게 보여야 UGC/인플루언서 느낌
+- 배경이 흐리면 AI가 만든 것처럼 보이므로 반드시 "sharp in-focus background" 사용
+
+=== ⭐ 럭셔리 에디토리얼 스타일 가이드 (핵심 요소) ===
+참조 이미지처럼 고급스럽고 세련된 에디토리얼 사진을 만들기 위한 필수 요소:
+
+**구도 & 카메라 (Composition)**:
+- 프레이밍: "full body visible" - 전신이 보이는 자연스러운 에디토리얼 거리
+- 카메라 각도: "slightly diagonal to the subject" - 약간 대각선에서 촬영하여 입체감 있는 구도
+- 거리: "natural editorial distance" - 에디토리얼 사진처럼 적절한 거리감
+
+**인물 & 표정 (Subject)**:
+- 표정: "calm, confident, intelligent expression" - 차분하고 자신감 있는 지적인 표정
+- 자세: "seated comfortably" 또는 "relaxed natural pose" - 편안하게 앉거나 자연스러운 포즈
+- 시선: "looking at camera" 또는 "natural gaze direction" - 카메라를 향하거나 자연스러운 시선
+- ⛔ "big smile", "enthusiastic", "excited expression" 등 과장된 표정 금지
+
+**환경 & 배경 (Environment)**:
+- 장소: "luxurious modern interior" - 고급스러운 현대적 인테리어
+- 가구: "luxury designer armchair/chair" - 디자이너 가구
+- 창문: "floor-to-ceiling glass window" - 천장까지 닿는 유리창
+- 소품: "modern coffee table with magazines/books, plants" - 잡지/책이 놓인 테이블, 화분
+- 배경: "sharp in-focus background showing entire luxurious interior" - 선명한 배경
+
+**조명 (Lighting)**:
+- 타입: "soft natural daylight" - 부드러운 자연광
+- 방향: "entering from behind/side through large window" - 창문을 통해 들어오는 빛
+- 효과: "enhances skin texture and fabric details without harsh shadows" - 자연스러운 하이라이트
+- ⛔ "studio lighting", "dramatic lighting", "rim lighting" 등 인공적인 조명 금지
+
+**분위기 & 스타일 (Mood)**:
+- 테마: "intelligence, influence, calm power, understated wealth" - 지적이고 영향력 있는 느낌
+- 스타일: "refined smart-casual billionaire aesthetic" - 절제된 고급스러움
+- ⛔ "advertisement", "commercial", "promotional" 등 광고 느낌 금지
+
+**품질 키워드 (Quality)**:
+- "pure photorealism, ultra-high detail level"
+- "realistic skin texture, authentic fabric weave"
+- "8K quality, ultra-realistic cinematic editorial photography"
 
 제품 참조 방식 (중요):
 - 제품 이미지가 제공된 경우: "the product from Figure X" 형식으로 참조 (브랜드명 직접 사용 금지)
 
-실제 사진처럼 보이게 하는 필수 요소:
-- 피부: "natural skin texture with subtle imperfections", "realistic skin with natural pores"
-- 머리카락: "individual hair strands catching light", "natural hair texture"
-- 눈: "realistic eye reflections with catchlights, natural iris detail"
-- 조명: "natural ambient lighting with soft shadows", 과도하게 균일한 조명 피하기
-- 환경: 실제 장소의 디테일 (가구, 소품, 창문 등)을 구체적으로 묘사
+⚠️ 럭셔리 에디토리얼 스타일 필수 요소 (고급스럽고 세련된 사진):
+- 스타일: "ultra-realistic cinematic editorial photography" (⛔ 전문 광고/상업 스타일 금지)
+- 환경: "luxurious modern interior" - 천장까지 유리창, 디자이너 가구, 화분, 잡지/책
+- 프레이밍: "full body visible" + "camera slightly diagonal to subject" (⛔ 얼굴만 클로즈업 금지)
+- 자세: "seated comfortably on luxury designer armchair" 또는 편안한 자연스러운 포즈
+- 표정: "calm, confident, intelligent expression" (⛔ 과장된 미소/"excited" 금지!)
+- 피부: "realistic skin texture with natural details" (⛔ "smooth", "flawless", "healthy glow" 금지)
+- 머리카락: "individual hair strands with natural flyaways" (⛔ 완벽하게 정돈된 머리카락 금지)
+- 손: "natural relaxed grip, realistic finger positioning" (⛔ 어색한 손가락 배치 금지)
+- 조명: "soft natural daylight entering from floor-to-ceiling glass window" (⛔ 스튜디오/드라마틱 조명 금지)
+- 배경: "sharp in-focus background showing luxurious interior with furniture, plants clearly visible" (⛔ 블러/보케 절대 금지!)
+- 분위기: "refined smart-casual aesthetic, understated wealth, calm power" (절제된 고급스러움)
+- 카메라: "Shot on Sony A7IV, 35mm f/8, deep depth of field" (배경까지 선명하게)
+- 품질: "ultra-realistic, photorealistic, 8K quality"
 
-프롬프트 예시:
-"Place the model from Figure 1 holding the product from Figure 2 in a bright modern living room. The model looks directly at camera with a natural smile. Soft natural daylight from large window, shot on 50mm lens at f/4. Natural skin texture with subtle imperfections, realistic eye reflections. Hyperrealistic photograph, 8K RAW quality."`
+프롬프트 예시 (럭셔리 에디토리얼 스타일):
+"Place the model from Figure 1 seated comfortably on a luxury designer armchair, naturally holding the product from Figure 2. Full body visible. Camera slightly diagonal to subject. Calm, confident, intelligent expression. Soft natural daylight entering from floor-to-ceiling glass window behind. Sharp in-focus background showing luxurious modern interior with coffee table, magazines, and plants clearly visible. Refined smart-casual aesthetic. Ultra-realistic cinematic editorial photography. Shot on Sony A7IV, 35mm f/8, deep depth of field. Realistic skin texture, authentic fabric weave. 8K quality."`
 
   const prompt = `당신은 Seedream 4.5 이미지 생성 모델을 위한 프롬프트 전문가입니다.
 **제품 설명 토킹 영상의 첫 프레임** 이미지 생성을 위한 프롬프트를 작성해주세요.
@@ -1191,14 +1264,17 @@ ${cameraSection}
 
 ${imageReferenceSection}
 
-요구사항 (토킹 영상 첫 프레임):
-1. 아바타가 카메라를 정면으로 바라보며 막 말을 시작하려는 자연스러운 표정 (밝고 친근한 미소)
-2. 제품을 양손으로 들거나 옆에 자연스럽게 배치 (제품 특성에 맞게)
-3. 세로 비율(9:16) 구도 - 영상용
-4. 유튜브/SNS 영상 촬영에 어울리는 자연스러운 조명
-5. UGC/인플루언서 영상 스타일의 포토리얼리스틱 이미지 (광고 포스터 스타일 금지)
-${input.cameraComposition ? `6. 지정된 카메라 구도(${input.cameraComposition})를 반드시 반영` : ''}
-${isSelfieMode ? `7. [필수] 셀피 구도이지만 카메라/스마트폰/손이 화면에 절대 보이지 않아야 함. 모델의 양손은 제품을 들고 있거나 자연스러운 포즈.` : ''}
+요구사항 (토킹 영상 첫 프레임 - 럭셔리 에디토리얼 스타일):
+1. 아바타가 차분하고 자신감 있으며 지적인 표정 (calm, confident, intelligent - 과장된 미소 금지!)
+2. 전신이 보이는 자연스러운 에디토리얼 거리 (full body visible)
+3. 고급스러운 현대적 인테리어 배경 (디자이너 가구, 천장까지 유리창, 식물, 잡지/책)
+4. 제품을 양손으로 자연스럽게 들고 있거나 옆에 배치
+5. 부드러운 자연광 (창문을 통해 들어오는 빛)
+6. 세로 비율(9:16) 구도 - 영상용
+7. 카메라를 피사체에서 약간 대각선으로 배치 (slightly diagonal to subject)
+8. 럭셔리 에디토리얼 스타일 - 광고/상업적 느낌 금지
+${input.cameraComposition ? `9. 지정된 카메라 구도(${input.cameraComposition})를 반드시 반영` : ''}
+${isSelfieMode ? `10. [필수] 셀피 구도이지만 카메라/스마트폰/손이 화면에 절대 보이지 않아야 함. 모델의 양손은 제품을 들고 있거나 자연스러운 포즈.` : ''}
 
 프롬프트 작성 지침 (Seedream 4.5 Figure 형식 필수):
 - 영어로 작성, 50-80단어 권장 (최대 100단어)
@@ -1211,32 +1287,53 @@ Figure 참조 형식:
 - 제품: "the product from Figure 2"
 - 결합: "Place the model from Figure 1 holding the product from Figure 2 in [환경]"
 
-카메라 스펙 (구도에 따라 선택):
-- 셀피-위에서(selfie-high): "${selfieAngleSettings['selfie-high']}" + 배경 선명하게
-- 셀피-정면(selfie-front): "${selfieAngleSettings['selfie-front']}" + 배경 선명하게
-- 셀피-측면(selfie-side): "${selfieAngleSettings['selfie-side']}" + 배경 선명하게
-- 삼각대(tripod)/일반: "shot on 50mm lens at f/4" + 배경 약간 보이게
-- 클로즈업(closeup): "shot on 85mm lens at f/2.8" + 배경 soft blur 허용
-- 전신(fullbody): "shot on 35mm lens at f/5.6, environmental portrait" + 배경 맥락 중요
+카메라 스펙 (UGC 에디토리얼 스타일 - 배경 선명하게):
+- 기본: "Shot on Sony A7IV, 35mm f/8, deep depth of field, entire scene sharp"
+- 셀피-위에서(selfie-high): "${selfieAngleSettings['selfie-high']}", Shot on Sony A7IV, 28mm f/8, entire scene sharp
+- 셀피-정면(selfie-front): "${selfieAngleSettings['selfie-front']}", Shot on Sony A7IV, 35mm f/8, entire scene sharp
+- 셀피-측면(selfie-side): "${selfieAngleSettings['selfie-side']}", Shot on Sony A7IV, 35mm f/8, entire scene sharp
+- 삼각대(tripod)/일반: Shot on Sony A7IV, 50mm f/8, entire scene sharp
+- 클로즈업(closeup): Shot on Sony A7IV, 50mm f/8, sharp background
+- 전신(fullbody): Shot on Sony A7IV, 35mm f/8, full body visible, entire scene sharp
 
-포토리얼리즘 필수 요소:
-- 조명 (방향성 포함): "soft natural daylight streaming from large window"
-- 피부: "natural skin texture with subtle imperfections" (과도하게 완벽한 피부 금지)
-- 눈: "realistic eye reflections with catchlights"
-- 마지막에 품질 키워드: "Hyperrealistic photograph, 8K RAW quality"
+⭐ 럭셔리 에디토리얼 스타일 필수 요소 (핵심!):
+- 스타일: "ultra-realistic cinematic editorial photography" (⛔ 광고/상업 스타일 금지!)
+- 환경: "luxurious modern interior" - 디자이너 가구, 천장까지 유리창, 식물, 잡지
+- 구도: "full body visible, camera slightly diagonal to subject" (⛔ 얼굴만 클로즈업 금지)
+- 자세: "seated comfortably on luxury designer armchair" 또는 자연스러운 포즈
+- 표정: "calm, confident, intelligent expression" (⛔ 과장된 미소/흥분 표정 금지!)
+- 카메라: "Shot on Sony A7IV, 35mm f/8, deep depth of field" (배경까지 선명하게)
+- 조명: "soft natural daylight entering from floor-to-ceiling glass window" (⛔ 스튜디오 조명 금지)
+- 피부: "realistic skin texture" (⛔ "smooth", "flawless", "healthy glow" 금지)
+- 배경: "sharp in-focus background showing luxurious interior with furniture, plants clearly visible" (⛔ 블러 절대 금지!)
+- 분위기: "refined smart-casual aesthetic, understated wealth" (절제된 고급스러움)
+- 품질: "ultra-realistic, photorealistic, 8K quality"
 
-절대 피해야 할 것:
+절대 피해야 할 것 (⚠️ 매우 중요):
 - IMAGE1, IMAGE2 형식 사용 (반드시 Figure 1, Figure 2 사용!)
-- 셀피/UGC 스타일에서 "shallow depth of field", "creamy bokeh" 사용 금지 (배경이 과하게 흐려짐)
+- ⛔ 배경 블러 관련 표현 절대 금지: "blurred background", "soft background", "bokeh", "shallow depth of field"
+- ⛔ 과장된 표정 금지: "big smile", "enthusiastic", "excited", "energetic expression"
+- ⛔ 광고/상업적 표현 금지: "advertisement", "commercial", "promotional", "marketing"
+- ⛔ 인공적인 조명 금지: "studio lighting", "dramatic lighting", "rim lighting", "spotlight"
+- ⛔ 완벽한 피부 표현 금지: "smooth skin", "flawless", "healthy glow", "perfect complexion"
 - "taking a selfie", "holding phone", "smartphone", "camera in hand" 등 카메라/폰 관련 표현
 - "extended arm", "arm reaching forward" 등 팔이 카메라 쪽으로 뻗는 묘사
 - 화면 가장자리에 손/팔이 잘려 보이는 묘사
-- 중복 표현, 과도하게 완벽한 피부`
+- 중복 표현
+
+핵심 키워드 (반드시 포함):
+- "luxurious modern interior" 또는 "luxury designer armchair"
+- "calm, confident, intelligent expression"
+- "full body visible"
+- "soft natural daylight from floor-to-ceiling glass window"
+- "sharp in-focus background"`
 
   const config: GenerateContentConfig = {
     thinkingConfig: {
       thinkingLevel: ThinkingLevel.MEDIUM,
     },
+    // Gemini 3 Flash: 아바타/제품 이미지 분석을 위한 중간 해상도 설정
+    mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
     responseSchema: {
       type: Type.OBJECT,
@@ -1295,10 +1392,10 @@ Figure 참조 형식:
   try {
     return JSON.parse(responseText) as FirstFramePromptResult
   } catch {
-    // Seedream 4.5 Figure 형식 폴백 응답 (편집 명령 형태)
+    // Seedream 4.5 Figure 형식 폴백 응답 (편집 명령 형태) - 럭셔리 에디토리얼 스타일
     const fallbackPrompt = isSelfieMode
-      ? `Place the model from Figure 1 with both hands holding the product from Figure 2 in a bright modern living room. ${selfieAngleSettings[input.cameraComposition || 'selfie-front']}, looking directly at camera with realistic eye reflections. Natural skin texture with subtle imperfections. Soft natural daylight from large window, background shows clear details of minimalist furniture. Vertical 9:16 composition. Hyperrealistic photograph, 8K RAW quality.`
-      : 'Place the model from Figure 1 holding the product from Figure 2 in a bright modern living room. The model looks directly at camera with a natural smile, realistic eye reflections. Natural skin texture with subtle imperfections, individual hair strands catching soft daylight from large window. Background shows clear minimalist furniture. Shot on 50mm lens at f/4. Vertical 9:16. Hyperrealistic photograph, 8K RAW quality.'
+      ? `Place the model from Figure 1 with both hands holding the product from Figure 2 in a luxurious modern interior. ${selfieAngleSettings[input.cameraComposition || 'selfie-front']}, looking directly at camera with calm, confident, intelligent expression. Natural skin with visible pores and subtle texture. Soft natural daylight entering from floor-to-ceiling glass window. Sharp in-focus background with luxury furniture and plants clearly visible. Shot on Sony A7IV, 35mm f/8, deep depth of field. Vertical 9:16. Ultra-realistic cinematic editorial photography, 8K quality.`
+      : 'Place the model from Figure 1 seated comfortably on a luxury designer armchair, naturally holding the product from Figure 2. Full body visible. Camera slightly diagonal to subject. Calm, confident, intelligent expression. Soft natural daylight entering from floor-to-ceiling glass window behind. Sharp in-focus background showing luxurious modern interior with coffee table, magazines, and plants clearly visible. Refined smart-casual aesthetic. Shot on Sony A7IV, 35mm f/8, deep depth of field. Vertical 9:16. Ultra-realistic cinematic editorial photography, 8K quality.'
 
     return {
       prompt: fallbackPrompt,
@@ -1384,6 +1481,8 @@ z-image-turbo는 ByteDance의 초고속 이미지 생성 모델입니다.
     thinkingConfig: {
       thinkingLevel: ThinkingLevel.MEDIUM,
     },
+    // Gemini 3 Flash: 제품 이미지 분석을 위한 중간 해상도 설정
+    mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
     responseSchema: {
       type: Type.OBJECT,
@@ -1487,8 +1586,10 @@ export async function generateImageAdPrompt(input: ImageAdPromptInput): Promise<
 === ATTACHED IMAGES GUIDE ===
 ${productImageIndex ? `[Figure ${productImageIndex}] = PRODUCT IMAGE
 - This is the product to advertise.
+- ⭐ CRITICAL: You MUST first analyze and identify WHAT this product is (e.g., "water bottle", "skincare serum", "action figure", "ceramic mug", "sneakers").
 - IMPORTANT: The product may be a figurine, doll, character merchandise, or statue that has human-like form. Even if it looks like a person, it is a PRODUCT, NOT a real human model. Do NOT transform or animate it into a real person.
-- Reference as "the product in Figure ${productImageIndex}" in your prompt.` : ''}
+- In your prompt, describe the product specifically (e.g., "the water bottle product from Figure 1", "the action figure from Figure 1") instead of just "the product from Figure 1".
+- Reference format: "the [specific product name] from Figure ${productImageIndex}"` : ''}
 ${avatarImageIndices.length ? `[Figure ${avatarImageIndices.join('], [Figure ')}] = MODEL IMAGE(S) (${avatarImageIndices.length} image${avatarImageIndices.length > 1 ? 's' : ''})
 - This is the human model for the advertisement.
 - Reference as "the model in Figure ${avatarImageIndices[0]}" in your prompt.` : ''}
@@ -1533,51 +1634,79 @@ AI 아바타 설명: "${input.aiAvatarDescription}"
 `}
 
 프롬프트 형식 (AI 아바타용):
+- 먼저 Figure 1 이미지를 분석하여 제품이 무엇인지 파악 (예: water bottle, figurine, skincare serum, etc.)
 - 모델을 텍스트로 상세히 묘사 (인종, 성별, 나이, 외모 특징 포함)
-- 제품만 "the product from Figure 1"으로 참조
-- 예: "A Korean woman in her 20s with black hair naturally holding the product from Figure 1..."
+- 제품을 구체적인 이름으로 참조 (예: "the water bottle from Figure 1", "the action figure from Figure 1")
+- 예: "A Korean woman in her 20s with black hair naturally holding the skincare serum from Figure 1..."
 
-광고 유형별 프롬프트 예시 (AI 아바타):
-- holding: "A [인종] [성별] in their [나이대] with [외모 특징] naturally holding and presenting the product from Figure 1 towards the camera in a [환경]. The model looks directly at the camera with a [표정]. [조명]. Shot on 85mm lens at f/2.8."
-- using: "A [인종] [성별] in their [나이대] actively using the product from Figure 1 in a [환경]. Authentic moment showing genuine product usage. [조명]."
-- lifestyle: "A [인종] [성별] in a [일상 환경] with the product from Figure 1 naturally placed nearby. Casual, authentic lifestyle moment."
+광고 유형별 프롬프트 예시 (AI 아바타 - 프리미엄 광고 품질):
+- holding: "A [인종] [성별] in their [나이대] with [외모 특징] confidently holding the [구체적 제품명] from Figure 1 in a [환경]. Authentic confident expression. Natural skin with visible pores and subtle texture, individual hair strands with natural flyaways. Professional commercial lighting. Shot on Sony A7IV, 85mm f/1.8, sharp focus. 4K resolution, hyperrealistic, premium advertisement quality."
+- using: "A [인종] [성별] in their [나이대] using the [구체적 제품명] from Figure 1 in a [환경]. Genuine expression with confident demeanor. Natural skin texture with subtle imperfections, hair with natural flyaways. Professional lighting setup. Shot on Sony A7IV, 85mm f/1.8, sharp focus. 4K resolution, hyperrealistic."
+- lifestyle: "A [인종] [성별] in a [일상 환경], the [구체적 제품명] from Figure 1 nearby. Natural skin with visible pores. Confident authentic moment. Professional commercial lighting. Shot on Sony A7IV, 85mm f/1.8, sharp focus. 4K resolution, hyperrealistic, premium advertisement quality."
 
 ⚠️ 절대 금지:
 - "the model from Figure 2" - 모델 이미지가 없습니다!
 - "Copy the appearance from Figure 2" - 해당 Figure가 존재하지 않습니다!
 - 존재하지 않는 Figure 번호 참조
 - "A person" 같은 모호한 표현 - 반드시 구체적인 인물 묘사 필요!
+- "the product from Figure 1" 같은 일반적인 표현 - 제품 유형 명시 필요!
 
 ✅ 반드시 사용:
 - 구체적인 인물 묘사 (인종, 성별, 나이대, 외모 특징)
-- "the product from Figure 1" - 제품만 Figure로 참조
+- "the [구체적 제품명] from Figure 1" - 제품을 구체적으로 참조 (예: "the skincare bottle from Figure 1", "the action figure from Figure 1")
+- 프리미엄 광고 품질 문구: "Shot on Sony A7IV, 85mm f/1.8, sharp focus. Natural skin with visible pores and texture. 4K resolution, hyperrealistic, premium advertisement quality"
+- ⛔ 금지: "smooth skin", "healthy glow", "flawless", "perfect" (AI 느낌 유발)
 ` : `
 이미지-to-이미지 편집/합성을 위한 프롬프트입니다.
 자연어 편집 명령을 사용하여 참조 이미지들의 요소를 조합합니다.
 
 ⭐ 핵심 프롬프트 형식:
-- "Place the model from Figure X holding the product from Figure Y in [환경]"
-- "Compose a scene with the model from Figure X naturally presenting the product from Figure Y"
-- "Copy the appearance of the model from Figure X and place them holding the product from Figure Y"
+- "Place the model from Figure X holding the [구체적 제품명] from Figure Y in [환경]"
+- "Compose a scene with the model from Figure X naturally presenting the [구체적 제품명] from Figure Y"
+- "Copy the appearance of the model from Figure X and place them holding the [구체적 제품명] from Figure Y"
 
 참조 형식:
 - 반드시 "Figure 1", "Figure 2" 형식 사용 (IMAGE1, IMAGE2 아님!)
-- 예: "the product in Figure 1", "the model in Figure 2"
-- 예: "copy the model from Figure 2", "place the product from Figure 1"
+- ⭐ 제품 참조 시: 구체적인 제품명 포함 필수! (예: "the water bottle from Figure 1", "the skincare serum from Figure 1", "the action figure from Figure 1")
+- 모델 참조: "the model in Figure 2", "copy the model from Figure 2"
 
 광고 유형별 편집 명령:
-- productOnly: "Place the product from Figure 1 in a [배경] with [조명]"
-- holding: "Place the model from Figure 2 holding the product from Figure 1 in [환경]"
-- using: "Compose the model from Figure 2 naturally using the product from Figure 1"
+- productOnly: "Place the [구체적 제품명] from Figure 1 in a [배경] with [조명]"
+- holding: "Place the model from Figure 2 holding the [구체적 제품명] from Figure 1 in [환경]"
+- using: "Compose the model from Figure 2 naturally using the [구체적 제품명] from Figure 1"
 - wearing: "Place the model from Figure 2 wearing the outfit, with [배경] and [조명]"
-- lifestyle: "Compose a lifestyle scene with the model from Figure 2 and the product from Figure 1 nearby"
+- lifestyle: "Compose a lifestyle scene with the model from Figure 2 and the [구체적 제품명] from Figure 1 nearby"
 `}
 
-포토리얼리즘 요소 (자연스러운 결과물을 위해):
-- 카메라 스펙: "Shot on 85mm lens at f/2.8"
-- 피부: "natural skin texture"
-- 조명: "soft window light from left side"
-- 품질: "professional photograph, high quality"
+=== UGC 스타일 포토리얼리즘 (AI 티를 벗겨내는 핵심 전략) ===
+
+⭐ 1. 조리개 설정 (매우 중요 - AI 기본값 f/1.8 절대 금지!):
+- AI는 기본적으로 f/1.8~f/2.0을 선호하여 배경이 뭉개지고 "가짜 배경 앞에 서 있는" 느낌을 줍니다.
+- ✅ UGC 추천: f/11 ~ f/16 - 배경이 완전히 선명하게 보여 "실제 공간에서 찍은 사진" 신뢰감을 줍니다.
+- 카메라 스펙: "Shot on Sony A7IV, 85mm f/1.8, sharp focus" (전문 카메라 스펙으로 고화질 유도)
+
+⭐ 2. 조명 (스튜디오 조명 버리고 일상 선택):
+- ❌ Bad: "Professional lighting, soft light, studio light, even lighting"
+- ✅ Good: "Natural light from a window", "Harsh sunlight with shadows", "Fluorescent indoor lighting", "Overcast sky"
+- 그림자가 너무 깔끔하면 가짜 같습니다: "realistic shadows, imperfect lighting, uneven natural lighting"
+
+⭐ 3. 피부/머리카락 텍스처 (AI 느낌 피하기 - 핵심!):
+- ⛔ 금지: "smooth skin", "flawless", "healthy glow", "perfect skin" (AI 느낌 유발)
+- ✅ 피부: "natural skin with visible pores, subtle texture, minor imperfections" (모공 보여야 진짜 같음)
+- ✅ 머리카락: "individual hair strands with natural flyaways and slight messiness" (잔머리 필수)
+- ✅ 카메라 스펙: "Shot on Sony A7IV, 85mm f/1.8, sharp focus, 4K resolution, hyperrealistic"
+
+⭐ 4. 구도 (프리미엄 광고 구도):
+- ✅ Good: 안정적인 중앙 구도 또는 삼분법
+- 배경 요소: "clean modern environment", "premium setting"
+- 프리미엄 느낌: 깔끔하고 세련된 배경
+
+⭐ 5. 배경 (선명하고 세련되게):
+- 배경이 선명하게 보여야 함: "sharp in-focus background with visible environment details"
+- 프리미엄 환경: "modern, premium setting"
+
+⭐ 필수 문구 (프롬프트 끝에 반드시 추가):
+"Shot on Sony A7IV with 85mm f/1.8 lens, sharp focus on face and product. Natural skin with visible pores and subtle texture, minor imperfections. Individual hair strands with natural flyaways. Authentic confident expression. Professional commercial lighting. 4K resolution, hyperrealistic, premium advertisement quality."
 
 ⚠️ 피규어/캐릭터 상품 중요 주의사항:
 - Figure 1(제품)이 피규어, 인형, 캐릭터 상품, 조각상 등 인물 형태인 경우가 있습니다.
@@ -1589,10 +1718,15 @@ ${isAiGeneratedAvatar ? `- AI 생성 모델이 피규어를 손에 들고 있거
 - "Preserve the exact appearance of the product from Figure 1"
 - 제품의 로고, 라벨, 브랜드 마크 원본 유지
 
-절대 금지:
+절대 금지 (Constraints):
 - 새로운 텍스트, 워터마크, 오버레이 추가
 - 피규어/인형 제품을 실제 사람으로 변환
+- ⛔ 인공적인 배경 블러/보케 효과 (NO artificial background blur, NO bokeh)
+- ⛔ 얕은 피사계 심도 (NO shallow depth of field)
+- ⛔ 인공적인 필터나 스타일화 (No artificial filters or stylization)
+- ⛔ 얼굴 변형이나 미화 (No facial reshaping or beautification)
 - "Do not add any new text, letters, words, or watermarks"
+- "Maintain natural proportions and lighting"
 
 === 참조 스타일 이미지 처리 (해당 시) - 매우 중요! ===
 
@@ -1661,33 +1795,40 @@ ${isAiGeneratedAvatar ? `
 === AI 생성 아바타 모드 필수 규칙 ===
 ⭐ 이것은 AI 아바타 모드입니다. 모델 이미지가 없으므로 Figure 2를 참조하면 안 됩니다!
 
-1. 모델은 텍스트로 설명: "A ${input.aiAvatarDescription}..." 형태로 시작
-2. 제품만 Figure 참조: "the product from Figure 1" 사용
-3. ❌ 절대 사용 금지: "Figure 2", "the model from Figure", "copy the model from Figure"
-4. 제품 보존: "Preserve the exact appearance of the product from Figure 1"
-5. 텍스트 금지: "Do not add any new text, letters, words, or watermarks"
-6. 피규어 제품인 경우: "keep it as a physical figurine; do not transform it into a real person"
+1. ⭐ 먼저 Figure 1 이미지를 분석하여 제품이 무엇인지 파악하세요 (예: water bottle, figurine, skincare serum, action figure)
+2. 모델은 텍스트로 설명: "A ${input.aiAvatarDescription}..." 형태로 시작
+3. 제품은 구체적으로 참조: "the [구체적 제품명] from Figure 1" 사용 (절대 "the product from Figure 1" 금지!)
+4. ❌ 절대 사용 금지: "Figure 2", "the model from Figure", "copy the model from Figure", "the product from Figure 1"
+5. 제품 보존: "Preserve the exact appearance of the [구체적 제품명] from Figure 1"
+6. 텍스트 금지: "Do not add any new text, letters, words, or watermarks"
+7. 피규어 제품인 경우: "keep it as a physical figurine; do not transform it into a real person"
+8. 🔥 프리미엄 광고 품질: 프롬프트 끝에 반드시 "Shot on Sony A7IV, 85mm f/1.8, sharp focus. Natural skin with visible pores and texture, individual hair strands with flyaways. 4K resolution, hyperrealistic, premium advertisement quality" 추가
+9. ⛔ 금지어: "smooth skin", "healthy glow", "flawless", "perfect" (AI 느낌 유발)
 
-프롬프트 예시 (AI 아바타):
-"A ${input.aiAvatarDescription}. Compose the model naturally holding and presenting the product from Figure 1 towards the camera in a clean studio setting with a sophisticated museum-gallery atmosphere. The model looks directly at the camera with a confident expression in a close-up shot. Use soft, professional studio lighting that emphasizes the fine textures and detailed paintwork of the figurine. Shot on 85mm lens at f/2.8 for sharp focus and natural skin texture. Preserve the exact appearance of the product from Figure 1 and keep it as a physical figurine; do not transform it into a real person. Copy the appearance of the model from Figure 2. Do not add any new text, letters, words, or watermarks. Professional high-quality commercial photography."
-
-위 예시에서 "Copy the appearance of the model from Figure 2" 부분은 제거하고, 모델 설명은 텍스트로만 해야 합니다!
+프롬프트 예시 (AI 아바타 - 제품이 물병인 경우 - 프리미엄 광고 품질):
+"A ${input.aiAvatarDescription}. Compose the model confidently holding the water bottle from Figure 1 in a modern indoor setting. Authentic confident expression. Natural skin with visible pores and subtle texture, individual hair strands with natural flyaways. Professional commercial lighting. Shot on Sony A7IV, 85mm f/1.8, sharp focus on face and product. Preserve the exact appearance of the water bottle from Figure 1. Do not add any new text. 4K resolution, hyperrealistic, premium advertisement quality."
 ` : `
 === 필수 규칙 ===
-1. 반드시 "Figure 1", "Figure 2" 형식으로 이미지 참조 (IMAGE1, IMAGE2 형식 사용 금지!)
-2. 편집 명령 형태로 시작: "Place...", "Compose...", "Copy... and place..."
-3. 제품 보존: "Preserve the exact appearance of the product from Figure 1"
-4. 텍스트 금지: "Do not add any new text, letters, words, or watermarks"
-5. 피규어/인형 제품인 경우: "Preserve the exact appearance of the product from Figure 1 and keep it as a physical figurine; do not transform it into a real person"
+1. ⭐ 먼저 Figure 1 이미지를 분석하여 제품이 무엇인지 파악하세요 (예: water bottle, figurine, skincare serum, action figure)
+2. 반드시 "Figure 1", "Figure 2" 형식으로 이미지 참조 (IMAGE1, IMAGE2 형식 사용 금지!)
+3. 편집 명령 형태로 시작: "Place...", "Compose...", "Copy... and place..."
+4. 제품은 구체적으로 참조: "the [구체적 제품명] from Figure 1" (예: "the water bottle from Figure 1", "the figurine from Figure 1")
+5. 제품 보존: "Preserve the exact appearance of the [구체적 제품명] from Figure 1"
+6. 텍스트 금지: "Do not add any new text, letters, words, or watermarks"
+7. 피규어/인형 제품인 경우: "Preserve the exact appearance of the figurine from Figure 1 and keep it as a physical figurine; do not transform it into a real person"
+8. 🔥 프리미엄 광고 품질: 프롬프트 끝에 반드시 "Shot on Sony A7IV, 85mm f/1.8, sharp focus. Natural skin with visible pores and texture, individual hair strands with flyaways. 4K resolution, hyperrealistic, premium advertisement quality" 추가
+9. ⛔ 금지어: "smooth skin", "healthy glow", "flawless", "perfect" (AI 느낌 유발)
 
-프롬프트 예시 형식:
-"Place the model from Figure 2 holding the product from Figure 1 in a clean studio. The model looks at the camera with a natural smile. Soft window light from the left side, shot on 85mm lens at f/2.8. Preserve the exact appearance of the product from Figure 1. Do not add any new text, letters, words, or watermarks. Professional photograph, high quality."
+프롬프트 예시 형식 (제품이 물병인 경우 - 프리미엄 광고 품질):
+"Place the model from Figure 2 confidently holding the water bottle from Figure 1 in a modern indoor setting. Authentic confident expression. Natural skin with visible pores and subtle texture, individual hair strands with natural flyaways. Professional commercial lighting. Shot on Sony A7IV, 85mm f/1.8, sharp focus on face and product. Preserve the exact appearance of the water bottle from Figure 1. Copy the appearance of the model from Figure 2. Do not add any new text. 4K resolution, hyperrealistic, premium advertisement quality."
 `}`
 
   const config: GenerateContentConfig = {
     thinkingConfig: {
       thinkingLevel: ThinkingLevel.MEDIUM,
     },
+    // Gemini 3 Flash: 제품/아바타 이미지 분석을 위한 중간 해상도 설정
+    mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
     responseSchema: {
       type: Type.OBJECT,
@@ -1696,8 +1837,8 @@ ${isAiGeneratedAvatar ? `
         optimizedPrompt: {
           type: Type.STRING,
           description: isAiGeneratedAvatar
-            ? '영어 프롬프트 (AI 아바타는 텍스트로 설명, 제품만 Figure 1 참조, Figure 2 사용 금지)'
-            : '편집 명령 형태 영어 프롬프트 (Figure 1, Figure 2 형식 사용, 편집 명령으로 시작)',
+            ? '영어 프롬프트 (AI 아바타는 텍스트로 설명, 제품은 구체적 이름으로 Figure 1 참조 예: "the water bottle from Figure 1", Figure 2 사용 금지, 끝에 포토리얼리즘 문구 필수)'
+            : '편집 명령 형태 영어 프롬프트 (Figure 1, Figure 2 형식 사용, 제품은 구체적 이름으로 참조 예: "the skincare serum from Figure 1", 끝에 포토리얼리즘 문구 필수)',
         },
         koreanDescription: {
           type: Type.STRING,
@@ -1795,16 +1936,23 @@ ${isAiGeneratedAvatar ? `
       modelDescription = 'The model from the reference image'
     }
 
+    // === 스타일 옵션: UGC vs 프로페셔널 광고 ===
+    // 향후 스타일 선택 기능 추가 시 사용 가능
+    // UGC 스타일: 'Candid iPhone photo aesthetic, Instagram story quality. Natural skin with visible pores and subtle texture, minor imperfections. Individual hair strands with natural flyaways. Authentic casual expression, slight asymmetry in features. Soft natural daylight from window. Slightly off-center framing. Film grain ISO 400. Real smartphone photo quality.'
+
+    // 프로페셔널 광고 스타일 (참조: 고급 광고 비주얼)
+    const photoRealism = 'Hyper-realistic commercial advertisement visual. Dynamic pose with confident expression, clean skin tones with natural texture. Bold punchy studio lighting with cinematic key light and soft fill to sculpt facial features. Shallow depth of field isolates the subject while maintaining product sharpness. Ultra-sharp focus on product texture: surface details, material sheen, and fine details clearly visible. Premium advertising aesthetic, energetic and visually bold, optimized for social media hero frames.'
+
     const fallbackPrompts: Record<ImageAdType, string> = {
-      productOnly: `Professional product photography of the product from Figure 1 on a clean white studio background. Soft diffused lighting from above creates subtle shadows and highlights product details. Shot on 50mm lens at f/2.8. Commercial advertisement quality with sharp focus. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
-      holding: `${modelDescription} naturally holds the product from Figure 1 near their face, looking directly into the camera with a warm genuine smile. Shot on 35mm lens at f/2.8. Natural skin texture with visible pores and subtle imperfections, realistic eye reflections with catchlights. Soft studio lighting from the left creates gentle shadows. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
-      using: `${modelDescription} actively uses and demonstrates the product from Figure 1 in a bright modern setting. Genuine expression showing satisfaction. Shot on 35mm lens at f/4.0. Natural skin texture with visible pores, realistic eye reflections. Soft natural daylight streaming from a side window. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
-      wearing: `Fashion advertisement featuring ${modelDescription.toLowerCase()} wearing the outfit from the reference image. Full body shot in clean studio setting. Model strikes a confident pose showing the clothing fit and style. Shot on 85mm lens at f/2.0. Natural skin texture with visible pores, realistic eye reflections with catchlights. Professional fashion photography lighting from the front. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
-      beforeAfter: `Before and after comparison layout showing transformation effect. Clean consistent lighting on both sides. Shot on 50mm lens at f/4.0. Natural skin texture with visible pores in both frames. Clear visual difference highlighting the product benefit. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
-      lifestyle: `Lifestyle advertisement showing ${modelDescription.toLowerCase()} naturally incorporating the product from Figure 1 into their daily routine in a cozy home setting. Authentic candid moment. Shot on 35mm lens at f/2.8. Natural skin texture with visible pores, realistic eye reflections. Natural daylight streaming through window creates warm inviting atmosphere. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
-      unboxing: `${modelDescription} excitedly reveals and presents the product from Figure 1, looking at the camera with genuine enthusiasm. Unboxing style shot on a clean desk setup. Shot on 28mm lens at f/3.5. Natural skin texture with visible pores, realistic eye reflections with catchlights. Soft natural daylight from window. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
-      comparison: `Product comparison layout with the product from Figure 1 prominently displayed. Side by side arrangement on clean neutral background. Shot on 50mm lens at f/4.0. Clear professional lighting highlighting product features and textures. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
-      seasonal: `Seasonal themed advertisement featuring the product from Figure 1 with festive decorations and warm atmosphere. Cozy seasonal setting with appropriate props. Shot on 35mm lens at f/2.8. Warm lighting mood with natural shadows. ${logoPreserve} Hyperrealistic photograph, 8K RAW quality.`,
+      productOnly: `Hyper-realistic product photography of the product from Figure 1 with dynamic floating elements or particles frozen mid-air. Bold studio background with punchy lighting. Ultra-sharp focus on texture: surface details, material quality, and fine features clearly visible. Cinematic key light with soft fill to enhance product gloss without harsh reflections. Premium commercial aesthetic, visually bold. ${logoPreserve} ${photoRealism}`,
+      holding: `${modelDescription} confidently holds the product from Figure 1 with dynamic energy, bright confident expression. Clean skin tones with natural texture. Bold studio lighting with cinematic key light sculpting facial features. Shallow depth of field isolates subject while product stays sharp. Ultra-sharp focus on product texture and details. Premium advertising aesthetic, energetic and visually bold. ${logoPreserve} ${photoRealism}`,
+      using: `${modelDescription} actively demonstrates the product from Figure 1 with energetic, dynamic pose. Confident expression showing genuine excitement. Bold punchy lighting creates high-impact commercial look. Ultra-sharp focus on product interaction and texture details. Shallow depth of field with motion clarity. Premium advertisement aesthetic, visually bold. ${logoPreserve} ${photoRealism}`,
+      wearing: `Fashion advertisement featuring ${modelDescription.toLowerCase()} in confident dynamic pose wearing the outfit. Bold studio lighting sculpts the form and fabric texture. Ultra-sharp focus on clothing details: fabric texture, stitching, material quality. Shallow depth of field isolates subject. Premium fashion advertising aesthetic, energetic and visually bold. ${logoPreserve} ${photoRealism}`,
+      beforeAfter: `Dynamic before and after comparison with bold visual contrast. Clean consistent cinematic lighting on both sides. Ultra-sharp focus highlighting transformation details. High-impact commercial layout. Premium advertising aesthetic. ${logoPreserve} ${photoRealism}`,
+      lifestyle: `${modelDescription.toLowerCase()} in energetic lifestyle moment with the product from Figure 1. Dynamic pose, confident expression. Bold lighting creates warm inviting atmosphere with high visual impact. Ultra-sharp focus on product integration. Shallow depth of field isolates key elements. Premium lifestyle advertising aesthetic, visually bold. ${logoPreserve} ${photoRealism}`,
+      unboxing: `${modelDescription} reveals the product from Figure 1 with genuine excitement and dynamic energy. Elements frozen mid-air for dramatic effect. Bold punchy lighting. Ultra-sharp focus on product details and textures. Premium unboxing aesthetic, energetic and visually bold. ${logoPreserve} ${photoRealism}`,
+      comparison: `Dynamic product comparison with the product from Figure 1 prominently featured. Bold studio lighting highlighting product features and textures. Ultra-sharp focus on material details and quality differences. Premium commercial layout, visually bold. ${logoPreserve} ${photoRealism}`,
+      seasonal: `Festive seasonal advertisement featuring the product from Figure 1 with dynamic decorative elements. Bold warm lighting creates high-impact festive atmosphere. Ultra-sharp focus on product and seasonal details. Premium seasonal advertising aesthetic, energetic and visually bold. ${logoPreserve} ${photoRealism}`,
     }
 
     return {
@@ -1918,6 +2066,8 @@ ${optionsDescription}
     thinkingConfig: {
       thinkingLevel: ThinkingLevel.MEDIUM,
     },
+    // Gemini 3 Flash: 참조 이미지 스타일 분석을 위한 높은 해상도 설정
+    mediaResolution: MediaResolution.MEDIA_RESOLUTION_HIGH,
     responseMimeType: 'application/json',
     responseSchema: {
       type: Type.OBJECT,
@@ -2089,19 +2239,49 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
   const styleText = styleMap[input.style || 'any']
   const ethnicityText = ethnicityMap[input.ethnicity || 'any']
 
-  // 카메라 구도 설명
-  const cameraCompositionDescriptions: Record<CameraCompositionType, string> = {
-    'selfie-high': 'high angle selfie perspective, camera looking down from above eye level',
-    'selfie-front': 'eye-level frontal view, direct eye contact with camera',
-    'selfie-side': 'three-quarter angle, showing facial contours, slight side view',
-    tripod: 'stable tripod shot, medium distance, waist to head visible',
-    closeup: 'close-up portrait, face and upper body prominent',
-    fullbody: 'full body shot, entire person visible in frame',
+  // 카메라 구도 설명 (조리개 값 포함 - UGC 스타일, 배경 완전 선명)
+  const cameraCompositionDescriptions: Record<CameraCompositionType, { description: string; aperture: string; lens: string }> = {
+    'selfie-high': {
+      description: 'high angle selfie perspective, camera looking down from above eye level',
+      aperture: 'f/11',
+      lens: '28mm',
+    },
+    'selfie-front': {
+      description: 'eye-level frontal view, direct eye contact with camera',
+      aperture: 'f/11',
+      lens: '35mm',
+    },
+    'selfie-side': {
+      description: 'three-quarter angle, showing facial contours, slight side view',
+      aperture: 'f/11',
+      lens: '35mm',
+    },
+    tripod: {
+      description: 'stable tripod shot, medium distance, waist to head visible',
+      aperture: 'f/16',
+      lens: '50mm',
+    },
+    closeup: {
+      description: 'close-up portrait, face and upper body prominent',
+      aperture: 'f/11',
+      lens: '50mm',
+    },
+    fullbody: {
+      description: 'full body shot, entire person visible in frame',
+      aperture: 'f/16',
+      lens: '35mm',
+    },
   }
 
+  // 카메라 구도에 따른 조리개/렌즈 설정 (배경 완전 선명)
+  const cameraConfig = input.cameraComposition
+    ? cameraCompositionDescriptions[input.cameraComposition]
+    : { description: 'natural framing', aperture: 'f/11', lens: '35mm' }
+
   const cameraSection = input.cameraComposition
-    ? `카메라 구도: ${cameraCompositionDescriptions[input.cameraComposition]}`
-    : ''
+    ? `카메라 구도: ${cameraConfig.description}
+카메라 스펙: Shot on Sony A7IV, 35mm f/8, deep depth of field (⚠️ 이 카메라 스펙을 프롬프트에 반드시 포함! 배경까지 선명하게!)`
+    : `카메라 스펙: Shot on Sony A7IV, 35mm f/8, deep depth of field (⚠️ 이 카메라 스펙을 프롬프트에 반드시 포함! 배경까지 선명하게!)`
 
   const prompt = `당신은 GPT-Image 1.5 이미지 생성을 위한 프롬프트 전문가입니다.
 **제품 설명 영상의 첫 프레임**에 사용될 이미지를 생성하기 위한 프롬프트를 작성해주세요.
@@ -2109,14 +2289,18 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
 ⚠️ 중요: 이것은 정적인 광고 포스터가 아니라, 제품을 설명하는 **토킹 영상의 시작 장면**입니다.
 인물이 곧 카메라를 향해 말을 시작할 것처럼 자연스럽고 편안한 모습이어야 합니다.
 
-=== GPT-Image 1.5 프롬프트 가이드라인 ===
+=== GPT-Image 1.5 프롬프트 가이드라인 (UGC 에디토리얼 스타일) ===
 - 자연스러운 문장 형태로 작성
 - 인물이 카메라를 바라보며 대화를 시작하려는 자연스러운 순간 포착
-- 광고 포스터처럼 과장된 포즈나 텍스트 오버레이 없이 자연스럽게
+- 광고 포스터가 아닌 에디토리얼/UGC 스타일로 자연스럽게
 - 인물의 외모, 표정, 포즈를 상세히 묘사
-- 조명과 분위기를 구체적으로 설명
+- ⭐ 프레이밍: "full body visible" 또는 "natural editorial distance" 권장 (얼굴만 클로즈업 금지!)
+- ⭐ 배경: "sharp in-focus background with visible environment details" 필수 (블러/보케 절대 금지!)
+- 조명: "soft natural daylight" (스튜디오 조명 금지)
 - 50-100 단어 권장
 - 제품 이미지가 첨부된 경우 "the product from Figure 1" 형식으로 참조 (IMAGE1 형식 사용 금지)
+- ⭐ 카메라 스펙 필수 포함: "Shot on Sony A7IV, 35mm f/8, deep depth of field" (배경 선명하게!)
+- ⭐ 스타일 필수: "ultra-realistic cinematic editorial photography, photorealistic, 8K quality"
 
 === 제품 정보 ===
 ${input.productInfo}
@@ -2156,36 +2340,47 @@ ${cameraSection}
    - 의상 (제품과 어울리는 일상적인 스타일)
    - 포즈: 자연스럽고 편안한 자세, 과장되지 않은 모습
 
-2. 배경/장소 묘사:
+2. 배경/장소 묘사 (⚠️ 배경 블러 절대 금지):
    - 제품 특성에 맞는 적절한 장소
    - 영상 촬영에 적합한 자연스러운 조명
    - 유튜브/SNS 영상에 어울리는 깔끔한 배경
+   - ⛔ "blurred background", "soft background", "bokeh" 절대 금지 - 배경이 선명해야 UGC/인플루언서 스타일!
+   - 반드시 "sharp in-focus background with visible environment details" 사용
 
 3. 제품 배치 (Figure 형식 필수):
    - 인물이 제품을 자연스럽게 들고 있거나 옆에 두고 있는 모습
    - 제품 소개를 시작하려는 느낌
    - 제품 참조: "holding the product from Figure 1" 형식 사용 (IMAGE1 형식 금지!)
 
-4. 기술적 품질 (영상용):
-   - 포토리얼리스틱 스타일
-   - 영상 촬영에 적합한 자연스러운 조명
-   - UGC/인플루언서 영상 스타일 (광고 포스터 스타일 ❌)
+4. 기술적 품질 (영상용 - UGC 에디토리얼 스타일):
+   - 에디토리얼 포토그래피 스타일 (광고 포스터 스타일 금지!)
+   - ⭐ 프레이밍: "full body visible" 또는 "natural editorial distance" (얼굴만 클로즈업 금지!)
+   - 조명: "soft natural daylight" (⛔ 스튜디오/드라마틱 조명 금지)
    - 텍스트, 로고, 그래픽 요소 없이 순수 촬영 이미지만
+   - ⭐⭐⭐ 배경 필수: "sharp in-focus background with visible environment details" (⛔ 블러/보케 절대 금지!)
+   - ⭐⭐⭐ 카메라 스펙 필수 (프롬프트에 반드시 포함!):
+     "Shot on Sony A7IV, 35mm f/8, deep depth of field" (배경까지 선명하게!)
+   - 끝에 반드시 추가: "ultra-realistic cinematic editorial photography, photorealistic, 8K quality"
 
 다음 JSON 형식으로 응답하세요:
 {
-  "prompt": "영어로 작성된 GPT-Image 1.5 프롬프트 (50-100단어). ⭐ 반드시 인종을 프롬프트 첫 부분에 명시하세요! 제품 참조 시 'the product from Figure 1' 형식 필수!",
+  "prompt": "영어로 작성된 GPT-Image 1.5 프롬프트 (50-100단어). ⭐ 필수 포함 사항: (1) 인종을 첫 부분에 명시, (2) 'the product from Figure 1' 형식, (3) 프레이밍: 'full body visible' 또는 'natural editorial distance', (4) 배경: 'sharp in-focus background with visible environment details', (5) 카메라: 'Shot on Sony A7IV, 35mm f/8, deep depth of field', (6) 스타일: 'ultra-realistic cinematic editorial photography'",
   "avatarDescription": "생성될 아바타에 대한 한국어 설명 (인종, 성별, 나이대, 외모, 스타일 등)",
   "locationDescription": "장소/배경에 대한 한국어 설명"
 }
 
-⭐ 프롬프트 작성 예시 (Figure 형식 적용):
-- 한국인 여성: "A Korean woman in her 20s with black hair holding the product from Figure 1 in a modern living room..."
-- 한국인 남성: "A Korean man in his 30s presenting the product from Figure 1 to the camera..."
-- 서양인 여성: "A Caucasian woman naturally holding the product from Figure 1 while looking at camera..."
-- 아시아인: "An Asian person with East Asian features holding the product from Figure 1..."`
+⭐ 프롬프트 작성 예시 (UGC 에디토리얼 스타일 - 배경 선명하게!):
+- 한국인 여성: "A Korean woman in her 20s with black hair and natural flyaways, seated comfortably on a designer armchair, naturally holding the product from Figure 1. Full body visible. Calm, confident expression. Soft natural daylight from floor-to-ceiling window. Sharp in-focus background showing modern interior with plants and furniture clearly visible. Shot on Sony A7IV, 35mm f/8, deep depth of field. Ultra-realistic cinematic editorial photography, 8K quality."
+- 한국인 남성: "A Korean man in his 30s with natural hair texture, standing in a cozy home office, presenting the product from Figure 1. Full body visible. Confident, intelligent expression. Soft natural daylight. Sharp background with bookshelf and desk clearly visible. Shot on Sony A7IV, 35mm f/8, deep depth of field. Ultra-realistic editorial photography, photorealistic."
+- 서양인 여성: "A Caucasian woman with natural flyaways in hair, seated at a modern kitchen counter, naturally holding the product from Figure 1. Full body visible. Authentic calm expression. Soft natural daylight from large window. Sharp in-focus background showing kitchen interior details. Shot on Sony A7IV, 35mm f/8, deep depth of field. Cinematic editorial photography, 8K quality."
+- 아시아인: "An Asian person with natural hair strands, seated on a luxury sofa, naturally holding the product from Figure 1. Full body visible in frame. Calm, confident expression. Soft natural daylight. Sharp background with modern living room furniture clearly visible. Shot on Sony A7IV, 35mm f/8, deep depth of field. Ultra-realistic editorial photography, photorealistic."`
 
   const config: GenerateContentConfig = {
+    thinkingConfig: {
+      thinkingLevel: ThinkingLevel.MEDIUM,
+    },
+    // Gemini 3 Flash: 제품 이미지 분석을 위한 중간 해상도 설정
+    mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
   }
 
@@ -2217,11 +2412,11 @@ ${cameraSection}
   try {
     return JSON.parse(responseText) as AiAvatarPromptResult
   } catch {
-    // Fallback response
+    // Fallback response (UGC 에디토리얼 스타일)
     return {
-      prompt: 'A professional looking person holding a product in a modern setting, natural lighting, photorealistic style, 8K quality',
-      avatarDescription: '제품에 어울리는 전문적인 모델',
-      locationDescription: '모던한 배경',
+      prompt: `A person seated comfortably in a modern living room, naturally holding a product. Full body visible in frame. Calm, confident expression. Soft natural daylight from large window. Sharp in-focus background with furniture and plants clearly visible. Shot on Sony A7IV, 35mm f/8, deep depth of field. Ultra-realistic cinematic editorial photography, photorealistic, 8K quality.`,
+      avatarDescription: '자연스러운 느낌의 모델',
+      locationDescription: '모던한 거실 배경',
     }
   }
 }
@@ -2259,6 +2454,21 @@ export interface RecommendedOptionsResult {
   }>
   overallStrategy: string  // 전체 전략 설명
   suggestedPrompt?: string  // 추가 프롬프트 제안
+}
+
+/** AI 다중 시나리오 결과 (3개 시나리오 중 선택) */
+export interface MultipleRecommendedOptionsResult {
+  scenarios: Array<{
+    title: string  // 시나리오 제목 (예: "프리미엄 고급스러운 스타일")
+    description: string  // 시나리오 설명 (1-2문장)
+    recommendedOptions: Record<string, {
+      value: string
+      customText?: string
+      reason: string
+    }>
+    overallStrategy: string
+    suggestedPrompt?: string
+  }>
 }
 
 /**
@@ -2352,6 +2562,8 @@ Explain why each option is suitable for this product.`
     thinkingConfig: {
       thinkingLevel: ThinkingLevel.MEDIUM,
     },
+    // Gemini 3 Flash: 제품/아바타 이미지 분석을 위한 중간 해상도 설정
+    mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
     responseSchema: {
       type: Type.OBJECT,
@@ -2445,6 +2657,230 @@ Explain why each option is suitable for this product.`
       recommendedOptions: fallbackOptions,
       overallStrategy: '제품 정보를 기반으로 기본 설정이 적용되었습니다. 필요에 따라 수정해주세요.',
       suggestedPrompt: undefined,
+    }
+  }
+}
+
+/**
+ * 제품 정보와 광고 유형에 맞는 3가지 다른 스타일의 시나리오를 AI가 추천합니다.
+ * 사용자가 원하는 스타일을 선택할 수 있도록 다양한 옵션을 제공합니다.
+ *
+ * @param input - AI 자동 설정 입력
+ * @returns 3개의 추천 시나리오
+ */
+export async function generateMultipleRecommendedOptions(
+  input: RecommendedOptionsInput
+): Promise<MultipleRecommendedOptionsResult> {
+  const language = input.language || 'ko'
+
+  // Output language instructions
+  const outputLanguageInstructions: Record<string, string> = {
+    ko: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt) in Korean.',
+    en: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt) in English.',
+    ja: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt) in Japanese.',
+  }
+
+  // Ad type descriptions
+  const adTypeDescriptions: Record<ImageAdType, string> = {
+    productOnly: 'Product only shot - Clean product photography showcasing the product alone',
+    holding: 'Holding shot - Model naturally holding the product',
+    using: 'Using shot - Model actively using/demonstrating the product',
+    wearing: 'Wearing shot - Fashion advertisement with model wearing clothing/accessories',
+    beforeAfter: 'Before/After - Comparison image showing transformation',
+    lifestyle: 'Lifestyle - Natural everyday scene with the product',
+    unboxing: 'Unboxing - Product reveal and first impression style',
+    comparison: 'Comparison - Product comparison advertisement',
+    seasonal: 'Seasonal/Theme - Advertisement with seasonal or themed atmosphere',
+  }
+
+  // Convert category groups to text (with keys and descriptions)
+  const groupsDescription = input.categoryGroups.map(group => {
+    const optionsText = group.options.map(opt => `    - ${opt.key}: ${opt.description}`).join('\n')
+    return `[${group.key}]\n${optionsText}`
+  }).join('\n\n')
+
+  const prompt = `You are an expert advertising image producer.
+Analyze the product information and ad type to recommend 3 DIFFERENT style scenarios.
+Each scenario should have a distinct approach and appeal to different customer preferences.
+
+OUTPUT LANGUAGE: ${outputLanguageInstructions[language] || outputLanguageInstructions.ko}
+
+=== PRODUCT INFORMATION ===
+Product Name: ${input.productName || 'Not provided'}
+Product Description: ${input.productDescription || 'Not provided'}
+
+=== AD TYPE ===
+${input.adType}: ${adTypeDescriptions[input.adType]}
+
+=== AVAILABLE CATEGORY OPTIONS ===
+${groupsDescription}
+
+=== SCENARIO GUIDELINES ===
+
+Analyze the product characteristics and create 3 DISTINCTLY DIFFERENT scenarios that are OPTIMIZED for THIS SPECIFIC PRODUCT.
+
+IMPORTANT: Do NOT use generic style categories like "luxury", "casual", "trendy" for every product.
+Instead, analyze the product and recommend styles that make sense for it:
+
+- For skincare/beauty products: Consider scenarios like "Morning Routine", "Self-care Moment", "Clean Beauty", "Dermatologist Recommended", "K-Beauty Aesthetic"
+- For food/beverage: Consider "Fresh & Appetizing", "Homemade Feel", "Gourmet Presentation", "Social Dining", "Quick & Easy"
+- For fashion: Consider "Street Style", "Office Chic", "Weekend Casual", "Date Night", "Athleisure"
+- For tech/electronics: Consider "Minimalist Tech", "Productivity Setup", "Gaming Vibes", "Creative Workspace", "On-the-go"
+- For home/lifestyle: Consider "Cozy Home", "Modern Minimalist", "Scandinavian", "Bohemian", "Urban Living"
+
+Think about:
+1. Who is the target customer for this product?
+2. When/where would they use this product?
+3. What emotions or aspirations should the ad evoke?
+4. What visual styles best communicate the product's value proposition?
+
+Each scenario should represent a genuinely different USE CASE or TARGET AUDIENCE, not just different aesthetic treatments of the same concept.
+
+=== REQUIREMENTS ===
+1. Each scenario must have:
+   - A distinctive title (2-4 words, describing the style)
+   - A brief description (1-2 sentences explaining the approach)
+   - Complete option selections for ALL category groups
+   - Reason for each option choice
+   - Overall strategy explanation
+   - Optional suggested prompt for additional styling
+
+2. Scenarios should be clearly different from each other
+3. All options should harmonize within each scenario
+4. Consider the product category and target audience
+
+IMPORTANT: Provide DIFFERENT option selections across scenarios where it makes sense.
+For example, if recommending backgrounds, each scenario should use a different background.`
+
+  const config: GenerateContentConfig = {
+    thinkingConfig: {
+      thinkingLevel: ThinkingLevel.MEDIUM,
+    },
+    mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
+    responseMimeType: 'application/json',
+    responseSchema: {
+      type: Type.OBJECT,
+      required: ['scenarios'],
+      properties: {
+        scenarios: {
+          type: Type.ARRAY,
+          description: '3개의 서로 다른 스타일 시나리오',
+          items: {
+            type: Type.OBJECT,
+            required: ['title', 'description', 'recommendations', 'overallStrategy'],
+            properties: {
+              title: {
+                type: Type.STRING,
+                description: '시나리오 제목 (2-4 단어, 예: 프리미엄 고급 스타일)',
+              },
+              description: {
+                type: Type.STRING,
+                description: '시나리오 설명 (1-2문장)',
+              },
+              recommendations: {
+                type: Type.ARRAY,
+                description: '각 카테고리 그룹별 추천 옵션 배열',
+                items: {
+                  type: Type.OBJECT,
+                  required: ['key', 'value', 'reason'],
+                  properties: {
+                    key: {
+                      type: Type.STRING,
+                      description: '카테고리 그룹 키 (예: pose, gaze, background 등)',
+                    },
+                    value: {
+                      type: Type.STRING,
+                      description: '선택된 옵션 키 또는 커스텀일 경우 "__custom__"',
+                    },
+                    customText: {
+                      type: Type.STRING,
+                      description: 'value가 "__custom__"일 때 커스텀 텍스트',
+                    },
+                    reason: {
+                      type: Type.STRING,
+                      description: '이 옵션을 선택한 이유 (1-2문장)',
+                    },
+                  },
+                },
+              },
+              overallStrategy: {
+                type: Type.STRING,
+                description: '전체 광고 전략 설명 (2-3문장)',
+              },
+              suggestedPrompt: {
+                type: Type.STRING,
+                description: '추가 프롬프트 제안 - 광고 이미지를 더 효과적으로 만들 수 있는 구체적인 스타일, 분위기, 지시사항 (1-2문장)',
+              },
+            },
+          },
+        },
+      },
+    },
+  }
+
+  const response = await genAI.models.generateContent({
+    model: MODEL_NAME,
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    config,
+  })
+
+  const responseText = response.text || ''
+
+  try {
+    const rawResult = JSON.parse(responseText) as {
+      scenarios: Array<{
+        title: string
+        description: string
+        recommendations: Array<{
+          key: string
+          value: string
+          customText?: string
+          reason: string
+        }>
+        overallStrategy: string
+        suggestedPrompt?: string
+      }>
+    }
+
+    // 배열을 Record 형태로 변환
+    const scenarios = rawResult.scenarios.map(scenario => {
+      const recommendedOptions: Record<string, { value: string; customText?: string; reason: string }> = {}
+      for (const rec of scenario.recommendations) {
+        recommendedOptions[rec.key] = {
+          value: rec.value,
+          customText: rec.customText,
+          reason: rec.reason,
+        }
+      }
+
+      return {
+        title: scenario.title,
+        description: scenario.description,
+        recommendedOptions,
+        overallStrategy: scenario.overallStrategy,
+        suggestedPrompt: scenario.suggestedPrompt,
+      }
+    })
+
+    return { scenarios }
+  } catch {
+    // Fallback: 단일 시나리오로 기본값 반환
+    const fallbackOptions: Record<string, { value: string; reason: string }> = {}
+    for (const group of input.categoryGroups) {
+      fallbackOptions[group.key] = {
+        value: group.options[0]?.key || '',
+        reason: '기본 설정이 적용되었습니다.',
+      }
+    }
+
+    return {
+      scenarios: [{
+        title: '기본 스타일',
+        description: '제품에 맞는 기본 설정입니다.',
+        recommendedOptions: fallbackOptions,
+        overallStrategy: '제품 정보를 기반으로 기본 설정이 적용되었습니다.',
+        suggestedPrompt: undefined,
+      }],
     }
   }
 }

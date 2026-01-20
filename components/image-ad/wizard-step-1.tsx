@@ -62,6 +62,11 @@ export function WizardStep1() {
 
   const isProductOnly = PRODUCT_ONLY_TYPES.includes(adType)
   const isWearingType = adType === 'wearing'
+  const isSeasonalType = adType === 'seasonal'
+  // 아바타 섹션을 숨길 유형 (제품만 단독 촬영)
+  const hideAvatarSection = isProductOnly
+  // 아바타가 선택사항인 유형 (seasonal)
+  const isAvatarOptional = isSeasonalType
 
   // 제품 데이터 로드
   const fetchProducts = useCallback(async () => {
@@ -141,15 +146,29 @@ export function WizardStep1() {
 
   // 다음 단계 유효성 메시지
   const getValidationMessage = () => {
+    // productOnly: 제품만 필수
     if (isProductOnly) {
       if (!selectedProduct) {
         return '제품을 선택해주세요'
       }
-    } else if (isWearingType) {
+    }
+    // seasonal: 제품 필수, 아바타 선택사항
+    else if (isSeasonalType) {
+      if (!selectedProduct) {
+        return '제품을 선택해주세요'
+      }
+    }
+    // wearing: 제품 + 아바타 모두 필수
+    else if (isWearingType) {
+      if (!selectedProduct) {
+        return '제품을 선택해주세요'
+      }
       if (!selectedAvatarInfo) {
         return '아바타를 선택해주세요'
       }
-    } else {
+    }
+    // 그 외: 제품 + 아바타 모두 필수
+    else {
       if (!selectedProduct) {
         return '제품을 선택해주세요'
       }
@@ -198,12 +217,16 @@ export function WizardStep1() {
       </div>
 
       {/* 아바타 선택 (제품 단독 제외) */}
-      {!isProductOnly && (
+      {!hideAvatarSection && (
         <div className="bg-card border border-border rounded-xl p-4">
           <label className="block text-sm font-medium text-foreground mb-2">
             <User className="w-4 h-4 inline mr-2" />
             {imageAdCreate.selectAvatar}
-            <span className="text-red-500 ml-1">*</span>
+            {isAvatarOptional ? (
+              <span className="text-muted-foreground ml-1 text-xs">(선택사항)</span>
+            ) : (
+              <span className="text-red-500 ml-1">*</span>
+            )}
           </label>
           <button
             onClick={() => setShowAvatarModal(true)}

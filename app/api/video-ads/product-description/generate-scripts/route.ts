@@ -4,7 +4,7 @@
  * POST /api/video-ads/product-description/generate-scripts
  * - 제품 정보를 바탕으로 3가지 스타일의 대본 생성
  * - 첫 프레임 이미지 프롬프트 생성 및 이미지 생성
- * - AI 아바타 선택 시 GPT-Image 1.5로 아바타 포함 이미지 생성
+ * - AI 아바타/기존 아바타 모두 Seedream 4.5 Edit로 이미지 생성
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -26,10 +26,6 @@ import {
   submitFirstFrameToQueue as submitFirstFrameToKieQueue,
   getEditQueueStatus as getKieEditQueueStatus,
   getEditQueueResponse as getKieEditQueueResponse,
-  // AI 아바타용 GPT-Image 1.5 Image-to-Image (kie.ai)
-  submitGPTImageToQueue as submitKieGptImageToQueue,
-  getGPTImageQueueStatus as getKieGptImageStatus,
-  getGPTImageQueueResponse as getKieGptImageResponse,
 } from '@/lib/kie/client'
 import { uploadExternalImageToR2 } from '@/lib/image/compress'
 
@@ -144,21 +140,28 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. 첫 프레임 이미지 생성 (AI 아바타: 3개, 기존 아바타: 2개)
-    type SubmitResult = { requestId: string; provider: 'fal' | 'kie' | 'gpt-image' }
+    type SubmitResult = { requestId: string; provider: 'fal' | 'kie' }
     let submitResults: SubmitResult[]
 
     if (isAiGeneratedAvatar) {
-      // AI 아바타: kie.ai GPT-Image 1.5 사용 (제품 이미지를 참조 이미지로 전달)
-      const aiInputUrls = productImageUrl ? [productImageUrl] : []
+      // AI 아바타: Seedream 4.5 Edit 사용 (제품 이미지를 참조로 활용)
+      const aiAvatarImageUrls: string[] = productImageUrl ? [productImageUrl] : []
 
       const submitAiAvatarFirstFrame = async (): Promise<SubmitResult> => {
-        const gptResponse = await submitKieGptImageToQueue(
-          aiInputUrls,
-          firstFramePrompt,
-          '2:3',  // 세로 비율
-          'medium'  // 품질 medium으로 변경
-        )
-        return { requestId: gptResponse.request_id, provider: 'gpt-image' }
+        try {
+          // fal.ai Seedream 4.5 먼저 시도
+          const falResponse = await submitSeedreamFirstFrameToQueue(
+            aiAvatarImageUrls,
+            firstFramePrompt,
+            '2:3' as SeedreamAspectRatio
+          )
+          return { requestId: falResponse.request_id, provider: 'fal' }
+        } catch (falError) {
+          console.warn('fal.ai Seedream 실패, Kie.ai로 폴백:', falError)
+          // Kie.ai Seedream 4.5 Edit 폴백
+          const kieResponse = await submitFirstFrameToKieQueue(aiAvatarImageUrls, firstFramePrompt, '2:3')
+          return { requestId: kieResponse.request_id, provider: 'kie' }
+        }
       }
 
       // AI 아바타: 3개의 이미지 요청 병렬 제출
@@ -207,14 +210,7 @@ export async function POST(request: NextRequest) {
         await new Promise(resolve => setTimeout(resolve, 3000))
 
         try {
-          if (result.provider === 'gpt-image') {
-            // kie.ai GPT-Image 1.5 상태 조회
-            const status = await getKieGptImageStatus(result.requestId)
-            if (status.status === 'COMPLETED') {
-              const response = await getKieGptImageResponse(result.requestId)
-              return response.images[0]?.url || null
-            }
-          } else if (result.provider === 'fal') {
+          if (result.provider === 'fal') {
             const status = await getSeedreamEditQueueStatus(result.requestId)
             if (status.status === 'COMPLETED') {
               const response = await getSeedreamEditQueueResponse(result.requestId)

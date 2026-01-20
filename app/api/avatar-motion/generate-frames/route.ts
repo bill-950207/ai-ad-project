@@ -1,11 +1,11 @@
 /**
  * 아바타 모션 프레임 이미지 생성 API
  *
- * POST: 시작/끝 프레임 이미지 생성
+ * POST: 첫 프레임 이미지 생성
  * - 항상 Seedream 4.5 High 사용
  * - Gemini로 프롬프트 개선 후 생성
  * - 선택된 아바타 이미지를 첨부하여 일관성 유지
- * - 끝 프레임 생성 시 시작 프레임 이미지를 첨부하여 배경/환경 일관성 유지
+ * - kling-2.6 image-to-video 모델에서 이 이미지를 첫 프레임으로 사용
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -19,7 +19,6 @@ import {
 } from '@/lib/fal/client'
 import {
   buildFrameImprovementPrompt,
-  buildEndFrameImprovementPrompt,
   AVATAR_MOTION_NEGATIVE_PROMPT,
 } from '@/lib/prompts/avatar-motion'
 
@@ -28,9 +27,10 @@ interface GenerateFramesRequest {
   avatarDescription?: string       // 아바타 설명 (AI 아바타의 경우)
   productImageUrl?: string         // 제품 이미지 URL
   productInfo?: string             // 제품 정보
-  startFramePrompt: string         // 시작 프레임 프롬프트 (한국어)
-  endFramePrompt: string           // 끝 프레임 프롬프트 (한국어)
+  startFramePrompt: string         // 첫 프레임 프롬프트 (한국어)
   aspectRatio?: '9:16' | '16:9' | '1:1'
+  imageSize?: '1024x576' | '576x1024' | '768x768'  // 이미지 크기 (영상 크기 결정)
+  locationPrompt?: string          // 배경/장소 프롬프트 (선택사항)
 }
 
 export async function POST(request: NextRequest) {
@@ -53,13 +53,20 @@ export async function POST(request: NextRequest) {
       productImageUrl,
       productInfo = '',
       startFramePrompt,
-      endFramePrompt,
       aspectRatio = '9:16',
+      locationPrompt = '',
     } = body
 
     if (!avatarImageUrl) {
       return NextResponse.json(
         { error: 'Avatar image URL is required' },
+        { status: 400 }
+      )
+    }
+
+    if (!startFramePrompt) {
+      return NextResponse.json(
+        { error: 'Start frame prompt is required' },
         { status: 400 }
       )
     }
@@ -75,20 +82,21 @@ export async function POST(request: NextRequest) {
       aspectRatio === '1:1' ? '1:1' :
       aspectRatio === '16:9' ? '16:9' : '9:16'
 
-    // 1. Gemini로 시작 프레임 프롬프트 개선
+    // 1. Gemini로 첫 프레임 프롬프트 개선
     const startFrameGeminiPrompt = buildFrameImprovementPrompt(
       startFramePrompt,
       avatarDescription,
       productInfo,
       'start',
-      aspectRatio
+      aspectRatio,
+      locationPrompt
     )
 
     const startFrameGeminiResponse = await generateText(startFrameGeminiPrompt)
     const startFrameImproved = parsePromptResponse(startFrameGeminiResponse, startFramePrompt)
 
-    // 2. 시작 프레임 생성 및 완료 대기
-    console.log('시작 프레임 생성 시작...')
+    // 2. 첫 프레임 생성 및 완료 대기
+    console.log('첫 프레임 생성 시작...')
     const startResponse = await submitSeedreamEditToQueue({
       prompt: startFrameImproved.prompt,
       image_urls: baseImageUrls,
@@ -96,40 +104,17 @@ export async function POST(request: NextRequest) {
       quality: 'high',
     })
 
-    // 시작 프레임 완료 대기 (최대 3분)
+    // 첫 프레임 완료 대기 (최대 3분)
     const startFrameResult = await waitForSeedreamCompletion(
       startResponse.request_id,
       180000 // 3분 타임아웃
     )
 
     if (!startFrameResult.success || !startFrameResult.imageUrl) {
-      throw new Error('Failed to generate start frame')
+      throw new Error('Failed to generate first frame')
     }
 
-    console.log('시작 프레임 생성 완료:', startFrameResult.imageUrl)
-
-    // 3. Gemini로 끝 프레임 프롬프트 개선 (시작 프레임 설명 포함)
-    const endFrameGeminiPrompt = buildEndFrameImprovementPrompt(
-      endFramePrompt,
-      avatarDescription,
-      productInfo,
-      aspectRatio,
-      startFramePrompt // 시작 프레임 설명 전달
-    )
-
-    const endFrameGeminiResponse = await generateText(endFrameGeminiPrompt)
-    const endFrameImproved = parsePromptResponse(endFrameGeminiResponse, endFramePrompt)
-
-    // 4. 끝 프레임 생성 (시작 프레임 이미지를 3번째 참조 이미지로 추가)
-    const endFrameImageUrls = [...baseImageUrls, startFrameResult.imageUrl]
-    console.log('끝 프레임 생성 시작 (참조 이미지:', endFrameImageUrls.length, '개)...')
-
-    const endResponse = await submitSeedreamEditToQueue({
-      prompt: endFrameImproved.prompt,
-      image_urls: endFrameImageUrls,
-      aspect_ratio: falAspectRatio,
-      quality: 'high',
-    })
+    console.log('첫 프레임 생성 완료:', startFrameResult.imageUrl)
 
     return NextResponse.json({
       success: true,
@@ -137,20 +122,15 @@ export async function POST(request: NextRequest) {
         requestId: `fal:${startResponse.request_id}`,
         provider: 'fal',
         improvedPrompt: startFrameImproved.prompt,
-        imageUrl: startFrameResult.imageUrl, // 이미 완료됨
+        imageUrl: startFrameResult.imageUrl,
         status: 'completed',
       },
-      endFrame: {
-        requestId: `fal:${endResponse.request_id}`,
-        provider: 'fal',
-        improvedPrompt: endFrameImproved.prompt,
-        status: 'pending',
-      },
+      // endFrame은 더 이상 필요 없음 - kling-2.6에서는 첫 프레임만 사용
     })
   } catch (error) {
     console.error('프레임 생성 오류:', error)
     return NextResponse.json(
-      { error: 'Failed to generate frames' },
+      { error: 'Failed to generate frame' },
       { status: 500 }
     )
   }

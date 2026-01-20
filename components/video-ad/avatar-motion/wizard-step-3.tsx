@@ -3,16 +3,15 @@
 import { useEffect, useState, useCallback } from 'react'
 import {
   ArrowLeft,
-  ArrowRight,
   Sparkles,
   Loader2,
   RefreshCw,
   Play,
-  Square,
   Lightbulb,
   Edit3,
   Check,
   Image,
+  MapPin,
 } from 'lucide-react'
 import { useAvatarMotionWizard } from './wizard-context'
 
@@ -21,11 +20,14 @@ interface StoryTemplate {
   id: string
   title: string
   description: string
-  startFrame: string
-  endFrame: string
+  concept?: string        // 광고 컨셉 상세 설명
+  background?: string     // 배경/장소 상세 설명
+  startFrame: string      // 시작 프레임 (필수)
+  endFrame?: string       // 끝 프레임 (선택 - 호환성 유지)
   mood: string
   action: string
-  motionPromptEN?: string // 영상 생성용 영어 모션 설명
+  emotionalArc?: string   // 감정의 흐름
+  motionPromptEN?: string // 영상 생성용 영어 모션 설명 (kling-2.6용)
 }
 
 interface StoryTemplateCardProps {
@@ -44,37 +46,64 @@ function StoryTemplateCard({ template, isSelected, onSelect }: StoryTemplateCard
           : 'border-border hover:border-primary/50 bg-card'
       }`}
     >
-      <div className="flex items-start justify-between mb-2">
-        <div>
-          <h4 className="font-medium text-foreground">{template.title}</h4>
-          <p className="text-xs text-muted-foreground">{template.description}</p>
+      {/* 헤더: 제목 + 설명 */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <h4 className="font-semibold text-foreground">{template.title}</h4>
+            {template.emotionalArc && (
+              <span className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-full">
+                {template.emotionalArc}
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground mt-0.5">{template.description}</p>
         </div>
         {isSelected && (
-          <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+          <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0 ml-2">
             <Check className="w-3 h-3 text-white" />
           </div>
         )}
       </div>
 
-      <div className="mt-3 flex items-center gap-2">
-        <div className="flex-1 p-2 bg-secondary/50 rounded-lg">
+      {/* 컨셉 설명 (있는 경우) */}
+      {template.concept && (
+        <div className="mb-3 p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-lg">
           <div className="flex items-center gap-1.5 mb-1">
-            <Play className="w-3 h-3 text-green-500" />
-            <span className="text-[10px] text-muted-foreground uppercase">시작</span>
+            <Lightbulb className="w-3 h-3 text-amber-500" />
+            <span className="text-[10px] text-amber-600 font-medium">컨셉</span>
           </div>
-          <p className="text-xs text-foreground line-clamp-2">{template.startFrame}</p>
+          <p className="text-xs text-foreground leading-relaxed">{template.concept}</p>
         </div>
+      )}
 
-        <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-
-        <div className="flex-1 p-2 bg-secondary/50 rounded-lg">
+      {/* 배경 설명 (있는 경우) */}
+      {template.background && (
+        <div className="mb-3 p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-lg">
           <div className="flex items-center gap-1.5 mb-1">
-            <Square className="w-3 h-3 text-red-500" />
-            <span className="text-[10px] text-muted-foreground uppercase">끝</span>
+            <MapPin className="w-3 h-3 text-blue-500" />
+            <span className="text-[10px] text-blue-600 font-medium">배경/장소</span>
           </div>
-          <p className="text-xs text-foreground line-clamp-2">{template.endFrame}</p>
+          <p className="text-xs text-foreground leading-relaxed">{template.background}</p>
         </div>
+      )}
+
+      {/* 시작 프레임 */}
+      <div className="p-2.5 bg-secondary/50 rounded-lg">
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <Play className="w-3 h-3 text-green-500" />
+          <span className="text-[10px] text-green-600 font-medium">첫 프레임</span>
+        </div>
+        <p className="text-xs text-foreground leading-relaxed line-clamp-4">{template.startFrame}</p>
       </div>
+
+      {/* 분위기 태그 */}
+      {template.mood && (
+        <div className="mt-2.5 flex items-center gap-2">
+          <span className="text-[10px] text-muted-foreground">분위기:</span>
+          <span className="text-xs text-foreground font-medium">{template.mood}</span>
+        </div>
+      )}
     </button>
   )
 }
@@ -87,7 +116,6 @@ export function WizardStep3() {
     isGeneratingStory,
     setIsGeneratingStory,
     updateStartFrame,
-    updateEndFrame,
     selectedProduct,
     selectedAvatarInfo,
     canProceedToStep4,
@@ -98,6 +126,9 @@ export function WizardStep3() {
     setGeneratedStoryTemplates,
     selectedStoryTemplateId,
     setSelectedStoryTemplateId,
+    // 배경/장소 프롬프트
+    locationPrompt,
+    setLocationPrompt,
     saveDraft,
     isSaving,
   } = useAvatarMotionWizard()
@@ -122,6 +153,7 @@ export function WizardStep3() {
           productCategory: '',
           avatarType: selectedAvatarInfo?.type || 'ai-generated',
           avatarDescription: selectedAvatarInfo?.displayName || '',
+          locationPrompt: locationPrompt || undefined,  // 빈 문자열이면 AI 자동 선택
         }),
       })
 
@@ -141,7 +173,7 @@ export function WizardStep3() {
     } finally {
       setIsGeneratingStory(false)
     }
-  }, [selectedProduct, selectedAvatarInfo, setIsGeneratingStory, setStoryInfo, setGeneratedStoryTemplates, setSelectedStoryTemplateId])
+  }, [selectedProduct, selectedAvatarInfo, locationPrompt, setIsGeneratingStory, setStoryInfo, setGeneratedStoryTemplates, setSelectedStoryTemplateId])
 
   // AI 자동 생성 시 스토리 템플릿 로드 (기존 템플릿이 없을 때만)
   useEffect(() => {
@@ -156,19 +188,18 @@ export function WizardStep3() {
     setStoryInfo({
       title: template.title,
       description: template.description,
+      concept: template.concept,
+      background: template.background,
       startFrame: {
         id: 'start',
         order: 1,
         description: template.startFrame,
       },
-      endFrame: {
-        id: 'end',
-        order: 2,
-        description: template.endFrame,
-      },
+      // endFrame은 선택적 - kling-2.6에서는 사용 안함
       mood: template.mood,
       action: template.action,
-      motionPromptEN: template.motionPromptEN, // 영어 모션 설명 저장
+      emotionalArc: template.emotionalArc,
+      motionPromptEN: template.motionPromptEN, // 영어 모션 설명 저장 (kling-2.6용)
     })
   }
 
@@ -183,11 +214,7 @@ export function WizardStep3() {
           order: 1,
           description: '',
         },
-        endFrame: {
-          id: 'end',
-          order: 2,
-          description: '',
-        },
+        // endFrame은 선택적 - kling-2.6에서는 사용 안함
       })
     }
   }, [storyMethod, storyInfo, setStoryInfo])
@@ -305,47 +332,45 @@ export function WizardStep3() {
             </div>
           )}
 
-          {/* 프레임 입력 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* 시작 프레임 */}
-            <div className="p-4 bg-card border border-border rounded-xl">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center">
-                  <Play className="w-3 h-3 text-green-500" />
-                </div>
-                <span className="font-medium text-foreground">시작 프레임</span>
+          {/* 배경/장소 입력 */}
+          <div className="p-4 bg-card border border-border rounded-xl">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center">
+                <MapPin className="w-3 h-3 text-blue-500" />
               </div>
-              <textarea
-                value={storyInfo?.startFrame.description || ''}
-                onChange={(e) => updateStartFrame(e.target.value)}
-                placeholder="시작 장면을 설명해주세요..."
-                rows={4}
-                className="w-full px-3 py-2 bg-secondary/50 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                영상이 시작되는 첫 장면입니다
-              </p>
+              <span className="font-medium text-foreground">배경/장소</span>
+              <span className="text-xs text-muted-foreground">(선택사항)</span>
             </div>
+            <input
+              type="text"
+              value={locationPrompt}
+              onChange={(e) => setLocationPrompt(e.target.value)}
+              placeholder="예: 밝은 카페, 현대적인 거실, 야외 공원 등 (비워두면 AI가 자동 선택)"
+              className="w-full px-3 py-2 bg-secondary/50 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            <p className="text-xs text-muted-foreground mt-2">
+              원하는 배경을 입력하세요. 비워두면 AI가 제품과 아바타에 맞는 배경을 자동으로 선택합니다.
+            </p>
+          </div>
 
-            {/* 끝 프레임 */}
-            <div className="p-4 bg-card border border-border rounded-xl">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center">
-                  <Square className="w-3 h-3 text-red-500" />
-                </div>
-                <span className="font-medium text-foreground">끝 프레임</span>
+          {/* 첫 프레임 입력 */}
+          <div className="p-4 bg-card border border-border rounded-xl">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                <Play className="w-3 h-3 text-green-500" />
               </div>
-              <textarea
-                value={storyInfo?.endFrame.description || ''}
-                onChange={(e) => updateEndFrame(e.target.value)}
-                placeholder="끝 장면을 설명해주세요..."
-                rows={4}
-                className="w-full px-3 py-2 bg-secondary/50 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                영상이 끝나는 마지막 장면입니다
-              </p>
+              <span className="font-medium text-foreground">첫 프레임</span>
             </div>
+            <textarea
+              value={storyInfo?.startFrame.description || ''}
+              onChange={(e) => updateStartFrame(e.target.value)}
+              placeholder="첫 장면을 설명해주세요..."
+              rows={4}
+              className="w-full px-3 py-2 bg-secondary/50 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+            />
+            <p className="text-xs text-muted-foreground mt-2">
+              이 이미지가 영상의 첫 장면이 됩니다. AI가 이 이미지를 기반으로 모션 영상을 생성합니다.
+            </p>
           </div>
         </div>
       )}
@@ -383,7 +408,7 @@ export function WizardStep3() {
         <p className="text-center text-sm text-muted-foreground">
           {storyMethod === 'ai-auto' && !selectedStoryTemplateId
             ? '스토리를 선택해주세요'
-            : '시작 프레임과 끝 프레임 설명을 입력해주세요'}
+            : '첫 프레임 설명을 입력해주세요'}
         </p>
       )}
     </div>

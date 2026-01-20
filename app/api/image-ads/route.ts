@@ -6,10 +6,11 @@
  */
 
 import { submitSeedreamEditToQueue, type SeedreamAspectRatio } from '@/lib/fal/client'
-import {
-  submitGPTImageToQueue as submitKieGptImageToQueue,
-  type GPTImageAspectRatio,
-} from '@/lib/kie/client'
+// [주석 처리] AI 아바타용 kie.ai GPT-Image 1.5 (현재 Seedream 사용)
+// import {
+//   submitGPTImageToQueue as submitKieGptImageToQueue,
+//   type GPTImageAspectRatio,
+// } from '@/lib/kie/client'
 import { createClient } from '@/lib/supabase/server'
 import { generateImageAdPrompt, type ImageAdType as GeminiImageAdType } from '@/lib/gemini/client'
 import { NextRequest, NextResponse } from 'next/server'
@@ -125,6 +126,10 @@ export async function GET(request: NextRequest) {
       .select(`
         id,
         image_url,
+        image_urls,
+        image_url_originals,
+        num_images,
+        batch_request_ids,
         product_id,
         avatar_id,
         ad_type,
@@ -226,15 +231,18 @@ export async function POST(request: NextRequest) {
     }
 
     // 필수 필드 검증
-    // wearing 타입은 productId 불필요, 나머지는 필수
     const isWearingType = adType === 'wearing'
+    const isSeasonalType = adType === 'seasonal'
+    const isProductOnlyType = adType === 'productOnly'
+
     if (!adType || !prompt || !imageSize) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       )
     }
-    if (!isWearingType && !productId) {
+    // 모든 타입에서 제품 필수 (productOnly, wearing, seasonal 포함)
+    if (!productId) {
       return NextResponse.json(
         { error: 'Product ID is required for this ad type' },
         { status: 400 }
@@ -251,8 +259,8 @@ export async function POST(request: NextRequest) {
     const avatarImageUrls: string[] = []
     let outfitImageUrl: string | undefined
 
-    // 제품 정보 조회 (wearing 타입이 아닐 때만)
-    if (!isWearingType && productId) {
+    // 제품 정보 조회 (모든 타입에서 필수)
+    if (productId) {
       const { data: product, error: productError } = await supabase
         .from('ad_products')
         .select('id, name, description, rembg_image_url, image_url, status')
@@ -285,20 +293,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 아바타가 필요한 경우 (productOnly 제외)
+    // 아바타가 필요한 경우 (productOnly, seasonal 제외)
     // 첫 번째 아바타 ID (DB 저장용)
     let primaryAvatarId: string | null = null
 
     // AI 생성 아바타 여부 확인
     const isAiGeneratedAvatar = avatarIds.length > 0 && avatarIds[0] === 'ai-generated'
 
-    if (adType !== 'productOnly') {
-      if (avatarIds.length === 0) {
-        return NextResponse.json(
-          { error: 'At least one avatar is required for this ad type' },
-          { status: 400 }
-        )
-      }
+    // 아바타가 필요한 유형인지 확인 (productOnly, seasonal은 아바타 선택사항)
+    const requiresAvatar = !isProductOnlyType && !isSeasonalType
+    const hasAvatar = avatarIds.length > 0
+
+    if (requiresAvatar && !hasAvatar) {
+      return NextResponse.json(
+        { error: 'At least one avatar is required for this ad type' },
+        { status: 400 }
+      )
+    }
+
+    // 아바타가 제공된 경우에만 아바타 처리
+    if (hasAvatar) {
 
       // AI 생성 아바타인 경우 - 아바타 이미지 없이 진행 (GPT-Image가 프롬프트만으로 생성)
       if (isAiGeneratedAvatar) {
@@ -307,7 +321,7 @@ export async function POST(request: NextRequest) {
         // 아바타 이미지 URL은 추가하지 않음 - 프롬프트만으로 생성
       }
       // 착용샷이고 의상이 선택된 경우, 의상 이미지 사용 (단일 아바타만)
-      else if (adType === 'wearing' && outfitId) {
+      else if (isWearingType && outfitId) {
         const avatarId = avatarIds[0]
         primaryAvatarId = avatarId
 
@@ -504,28 +518,38 @@ export async function POST(request: NextRequest) {
     let promptToSave = finalPrompt
 
     if (isAiGeneratedAvatar) {
-      // AI 생성 아바타: kie.ai GPT-Image 1.5 사용 (참조 이미지 없이 프롬프트만으로 생성)
+      // AI 생성 아바타: fal.ai Seedream 4.5 Edit 사용 (제품 이미지를 참조로 활용)
       // aiAvatarDescription은 이미 Gemini 호출 전에 생성됨
 
       // AI 아바타 프롬프트를 DB에 저장 (Gemini가 이미 아바타 설명을 포함한 프롬프트 생성)
-      // finalPrompt는 이미 Gemini에서 AI 아바타 설명을 고려하여 생성됨
       promptToSave = finalPrompt
-
-      // kie.ai aspect ratio 변환
-      const kieAspectRatio: GPTImageAspectRatio = aspectRatio === '1:1' ? '1:1' : aspectRatio === '3:2' ? '3:2' : '2:3'
-      const kieQuality = quality === 'high' ? 'high' : 'medium'
 
       // AI 아바타용 입력 이미지 (제품 이미지가 있으면 사용)
       const aiInputUrls = productImageUrl ? [productImageUrl] : []
+      const seedreamQuality = quality === 'high' ? 'high' : 'basic'
 
-      console.log('AI 아바타 이미지 광고 생성 (kie.ai GPT-Image 1.5):', { aiAvatarDescription, aspectRatio: kieAspectRatio, inputUrls: aiInputUrls })
+      console.log('AI 아바타 이미지 광고 생성 (fal.ai Seedream 4.5):', { aiAvatarDescription, aspectRatio, inputUrls: aiInputUrls })
 
       const queuePromises = Array.from({ length: validNumImages }, async () => {
-        const response = await submitKieGptImageToQueue(aiInputUrls, finalPrompt, kieAspectRatio, kieQuality)
-        return { request_id: response.request_id, provider: 'kie' as const }
+        const response = await submitSeedreamEditToQueue({
+          prompt: finalPrompt,
+          image_urls: aiInputUrls,
+          aspect_ratio: aspectRatio,
+          quality: seedreamQuality,
+        })
+        return { request_id: response.request_id, provider: 'fal' as const }
       })
 
       queueResponses = await Promise.all(queuePromises)
+
+      // [주석 처리] 기존 kie.ai GPT-Image 1.5 코드
+      // const kieAspectRatio: GPTImageAspectRatio = aspectRatio === '1:1' ? '1:1' : aspectRatio === '3:2' ? '3:2' : '2:3'
+      // const kieQuality = quality === 'high' ? 'high' : 'medium'
+      // const queuePromises = Array.from({ length: validNumImages }, async () => {
+      //   const response = await submitKieGptImageToQueue(aiInputUrls, finalPrompt, kieAspectRatio, kieQuality)
+      //   return { request_id: response.request_id, provider: 'kie' as const }
+      // })
+      // queueResponses = await Promise.all(queuePromises)
     } else {
       // 기존 아바타: fal.ai Seedream 4.5 Edit 사용
       const seedreamQuality = quality === 'high' ? 'high' : 'basic'
@@ -543,42 +567,44 @@ export async function POST(request: NextRequest) {
       queueResponses = await Promise.all(queuePromises)
     }
 
-    // DB에 이미지 광고 레코드 생성 (각 요청별로)
-    const imageAdRecords = []
-    for (let i = 0; i < validNumImages; i++) {
-      // provider prefix 추가 (kie:xxx 또는 fal:xxx)
-      const { request_id, provider } = queueResponses[i]
-      const fal_request_id = `${provider}:${request_id}`
+    // DB에 이미지 광고 단일 레코드 생성 (배치 정보 포함)
+    // 배치 요청 ID 배열 생성
+    const batchRequestIds = queueResponses.map(r => ({
+      provider: r.provider,
+      requestId: r.request_id,
+    }))
 
-      // selected_options에 aiAvatarOptions도 함께 저장 (재시도 시 필요)
-      const selectedOptionsToSave = {
-        ...(options || {}),
-        ...(isAiGeneratedAvatar && aiAvatarOptions ? { _aiAvatarOptions: aiAvatarOptions } : {}),
-      }
+    // selected_options에 aiAvatarOptions도 함께 저장 (재시도 시 필요)
+    const selectedOptionsToSave = {
+      ...(options || {}),
+      ...(isAiGeneratedAvatar && aiAvatarOptions ? { _aiAvatarOptions: aiAvatarOptions } : {}),
+    }
 
-      const { data: imageAd, error: insertError } = await supabase
-        .from('image_ads')
-        .insert({
-          user_id: user.id,
-          product_id: productId || null,
-          avatar_id: primaryAvatarId,  // AI 아바타일 경우 null
-          outfit_id: outfitId || null,
-          ad_type: adType,
-          status: 'IN_QUEUE',
-          fal_request_id: fal_request_id,
-          prompt: promptToSave,  // AI 아바타인 경우 아바타 설명 포함된 프롬프트
-          image_size: imageSize,
-          quality: quality,
-          selected_options: selectedOptionsToSave,  // 사용자 선택 옵션 + AI 아바타 옵션
-        })
-        .select('id')
-        .single()
+    const { data: imageAd, error: insertError } = await supabase
+      .from('image_ads')
+      .insert({
+        user_id: user.id,
+        product_id: productId || null,
+        avatar_id: primaryAvatarId,  // AI 아바타일 경우 null
+        outfit_id: outfitId || null,
+        ad_type: adType,
+        status: 'IN_QUEUE',
+        fal_request_id: null,  // 배치에서는 사용 안 함
+        batch_request_ids: batchRequestIds,  // 배치 요청 ID 배열
+        num_images: validNumImages,  // 요청된 이미지 개수
+        prompt: promptToSave,  // AI 아바타인 경우 아바타 설명 포함된 프롬프트
+        image_size: imageSize,
+        quality: quality,
+        selected_options: selectedOptionsToSave,  // 사용자 선택 옵션 + AI 아바타 옵션
+      })
+      .select('id')
+      .single()
 
-      if (insertError) {
-        console.error('이미지 광고 DB 저장 오류:', insertError)
-      } else if (imageAd) {
-        imageAdRecords.push(imageAd.id)
-      }
+    const imageAdRecords: string[] = []
+    if (insertError) {
+      console.error('이미지 광고 DB 저장 오류:', insertError)
+    } else if (imageAd) {
+      imageAdRecords.push(imageAd.id)
     }
 
     // 크레딧 차감

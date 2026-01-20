@@ -41,27 +41,33 @@ export async function POST(request: NextRequest) {
       // Step 2 데이터
       storyMethod,
       // Step 3 데이터
+      locationPrompt,  // 배경/장소 프롬프트
       storyInfo,
       // Step 4 데이터
       aspectRatio,
+      imageSize,  // 이미지/영상 크기 (kling-2.6용)
       duration,
       startFrameUrl,
       endFrameUrl,
       startFrameRequestId,
       endFrameRequestId,
+      // Step 5 데이터
       videoRequestId,
       videoUrl,
     } = body
 
-    // 허용된 상태값 (DRAFT 계열 상태만 허용)
+    // 허용된 상태값
     const allowedStatuses = [
       'DRAFT',
       'GENERATING_STORY',
       'GENERATING_FRAMES',
       'GENERATING_AVATAR',
       'FRAMES_COMPLETED',
+      'FRAME_COMPLETED',  // 프레임 생성 완료 (step 4 완료)
+      'GENERATING_VIDEO',  // 영상 생성 중 (step 5)
       'IN_QUEUE',
       'IN_PROGRESS',
+      'COMPLETED',  // 영상 생성 완료
     ]
     const validStatus = status && allowedStatuses.includes(status) ? status : undefined
 
@@ -97,8 +103,10 @@ export async function POST(request: NextRequest) {
           product_info: productInfo || null,
           ai_avatar_options: isAiGeneratedAvatar ? (aiAvatarOptions ? JSON.stringify(aiAvatarOptions) : null) : null,
           story_method: storyMethod || null,
+          location_prompt: locationPrompt || null,
           story_info: storyInfo || null,
           aspect_ratio: aspectRatio || null,
+          image_size: imageSize || null,
           duration: duration || null,
           start_frame_url: startFrameUrl || null,
           end_frame_url: endFrameUrl || null,
@@ -135,8 +143,10 @@ export async function POST(request: NextRequest) {
             product_info: productInfo || null,
             ai_avatar_options: isAiGeneratedAvatar ? (aiAvatarOptions ? JSON.stringify(aiAvatarOptions) : null) : null,
             story_method: storyMethod || null,
+            location_prompt: locationPrompt || null,
             story_info: storyInfo || null,
             aspect_ratio: aspectRatio || null,
+            image_size: imageSize || null,
             duration: duration || null,
             start_frame_url: startFrameUrl || null,
             end_frame_url: endFrameUrl || null,
@@ -165,8 +175,10 @@ export async function POST(request: NextRequest) {
           product_info: productInfo || null,
           ai_avatar_options: isAiGeneratedAvatar ? (aiAvatarOptions ? JSON.stringify(aiAvatarOptions) : null) : null,
           story_method: storyMethod || null,
+          location_prompt: locationPrompt || null,
           story_info: storyInfo || null,
           aspect_ratio: aspectRatio || null,
+          image_size: imageSize || null,
           duration: duration || null,
           start_frame_url: startFrameUrl || null,
           end_frame_url: endFrameUrl || null,

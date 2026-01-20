@@ -81,11 +81,13 @@ export function VideoAdPageContent() {
 
   // 진행 중인 상태의 영상들을 폴링
   useEffect(() => {
-    // 진행 중인 상태인 영상들 필터링 (avatar motion 상태 포함)
+    // 진행 중인 상태인 영상들 필터링 (avatar motion, product ad 상태 포함)
     const inProgressStatuses = [
       'GENERATING_SCRIPTS', 'GENERATING_AUDIO', 'IN_QUEUE', 'IN_PROGRESS',
       // Avatar Motion 상태
-      'GENERATING_STORY', 'GENERATING_FRAMES', 'GENERATING_AVATAR', 'FRAMES_COMPLETED'
+      'GENERATING_STORY', 'GENERATING_FRAMES', 'GENERATING_AVATAR', 'FRAMES_COMPLETED',
+      // Product Ad 상태
+      'GENERATING_SCENARIO', 'GENERATING_SCENES', 'SCENES_COMPLETED', 'GENERATING_VIDEO'
     ]
     const inProgressVideos = videoAds.filter(v => inProgressStatuses.includes(v.status))
 
@@ -117,6 +119,21 @@ export function VideoAdPageContent() {
       ]
       if (avatarMotionDraftStatuses.includes(video.status)) {
         router.push(`/video-ad-create?category=avatarMotion&videoAdId=${video.id}`)
+        return
+      }
+      // 완료된 영상이면 상세 페이지로
+      router.push(`/dashboard/video-ad/${video.id}`)
+      return
+    }
+
+    // productAd 카테고리 처리
+    if (video.category === 'productAd') {
+      const productAdDraftStatuses = [
+        'DRAFT', 'GENERATING_SCENARIO', 'GENERATING_SCENES', 'SCENES_COMPLETED',
+        'GENERATING_VIDEO', 'IN_QUEUE', 'IN_PROGRESS'
+      ]
+      if (productAdDraftStatuses.includes(video.status)) {
+        router.push(`/video-ad-create?category=productAd&videoAdId=${video.id}`)
         return
       }
       // 완료된 영상이면 상세 페이지로
@@ -156,6 +173,11 @@ export function VideoAdPageContent() {
       'GENERATING_FRAMES': { label: '프레임 생성 중', className: 'bg-teal-500/20 text-teal-500' },
       'GENERATING_AVATAR': { label: '아바타 생성 중', className: 'bg-violet-500/20 text-violet-500' },
       'FRAMES_COMPLETED': { label: '프레임 완료', className: 'bg-emerald-500/20 text-emerald-500' },
+      // Product Ad 상태
+      'GENERATING_SCENARIO': { label: '시나리오 생성 중', className: 'bg-cyan-500/20 text-cyan-500' },
+      'GENERATING_SCENES': { label: '첫 씬 생성 중', className: 'bg-teal-500/20 text-teal-500' },
+      'SCENES_COMPLETED': { label: '첫 씬 완료', className: 'bg-emerald-500/20 text-emerald-500' },
+      'GENERATING_VIDEO': { label: '영상 생성 중', className: 'bg-violet-500/20 text-violet-500' },
     }
     const config = statusConfig[status] || { label: status, className: 'bg-gray-500/20 text-gray-500' }
     return (

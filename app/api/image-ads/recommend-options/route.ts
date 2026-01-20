@@ -8,7 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { generateRecommendedCategoryOptions } from '@/lib/gemini/client'
+import { generateRecommendedCategoryOptions, generateMultipleRecommendedOptions } from '@/lib/gemini/client'
 import { CATEGORY_OPTIONS } from '@/lib/image-ad/category-options'
 import type { ImageAdType } from '@/components/ad-product/image-ad-type-modal'
 
@@ -225,6 +225,7 @@ export async function POST(request: NextRequest) {
       productName,
       productDescription,
       language = 'ko',
+      multiple = false,  // 다중 시나리오 모드 (기본: false)
     } = body
 
     if (!adType) {
@@ -246,7 +247,20 @@ export async function POST(request: NextRequest) {
       })),
     }))
 
-    // AI로 최적 옵션 추천 요청
+    // 다중 시나리오 모드일 때 3개의 시나리오 생성
+    if (multiple) {
+      const result = await generateMultipleRecommendedOptions({
+        adType: adType as ImageAdType,
+        productName,
+        productDescription,
+        categoryGroups,
+        language,
+      })
+
+      return NextResponse.json(result)
+    }
+
+    // 단일 시나리오 모드 (기존 동작)
     const result = await generateRecommendedCategoryOptions({
       adType: adType as ImageAdType,
       productName,

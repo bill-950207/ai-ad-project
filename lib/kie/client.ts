@@ -35,7 +35,7 @@ export interface KieTaskData {
 }
 
 /** Task 상태 */
-export type KieTaskStatus = 'waiting' | 'success' | 'fail'
+export type KieTaskStatus = 'waiting' | 'running' | 'processing' | 'success' | 'fail'
 
 /** Task 조회 응답 데이터 (API 실제 응답 구조) */
 export interface KieTaskInfo {
@@ -269,6 +269,8 @@ export async function getRembgQueueStatus(requestId: string): Promise<KieQueueSt
   // 상태 매핑: Kie.ai state -> fal.ai 호환 상태
   const statusMap: Record<KieTaskStatus, KieQueueStatusResponse['status']> = {
     'waiting': 'IN_QUEUE',
+    'running': 'IN_PROGRESS',
+    'processing': 'IN_PROGRESS',
     'success': 'COMPLETED',
     'fail': 'COMPLETED',  // 실패도 완료로 처리, 결과 조회 시 에러 확인
   }
@@ -410,6 +412,8 @@ export async function getZImageQueueStatus(requestId: string): Promise<KieQueueS
   // 상태 매핑: Kie.ai state -> fal.ai 호환 상태
   const statusMap: Record<KieTaskStatus, KieQueueStatusResponse['status']> = {
     'waiting': 'IN_QUEUE',
+    'running': 'IN_PROGRESS',
+    'processing': 'IN_PROGRESS',
     'success': 'COMPLETED',
     'fail': 'COMPLETED',  // 실패도 완료로 처리, 결과 조회 시 에러 확인
   }
@@ -563,6 +567,8 @@ export async function getEditQueueStatus(requestId: string): Promise<KieQueueSta
 
   const statusMap: Record<KieTaskStatus, KieQueueStatusResponse['status']> = {
     'waiting': 'IN_QUEUE',
+    'running': 'IN_PROGRESS',
+    'processing': 'IN_PROGRESS',
     'success': 'COMPLETED',
     'fail': 'COMPLETED',
   }
@@ -709,6 +715,8 @@ export async function getGPTImageQueueStatus(requestId: string): Promise<KieQueu
 
   const statusMap: Record<KieTaskStatus, KieQueueStatusResponse['status']> = {
     'waiting': 'IN_QUEUE',
+    'running': 'IN_PROGRESS',
+    'processing': 'IN_PROGRESS',
     'success': 'COMPLETED',
     'fail': 'COMPLETED',
   }
@@ -881,6 +889,8 @@ export async function getKlingAvatarQueueStatus(requestId: string): Promise<KieQ
 
   const statusMap: Record<KieTaskStatus, KieQueueStatusResponse['status']> = {
     'waiting': 'IN_QUEUE',
+    'running': 'IN_PROGRESS',
+    'processing': 'IN_PROGRESS',
     'success': 'COMPLETED',
     'fail': 'COMPLETED',
   }
@@ -920,7 +930,7 @@ export async function getKlingAvatarQueueResponse(requestId: string): Promise<Ki
 export const getInfinitalkQueueResponse = getKlingAvatarQueueResponse
 
 // ============================================================
-// 이미지 광고 생성 (GPT Image 1.5 우선, Seedream fallback)
+// 이미지 광고 생성 (Seedream 4.5 우선, GPT Image fallback)
 // ============================================================
 
 /** 이미지 광고 사이즈 타입 (fal.ai 호환) */
@@ -965,7 +975,7 @@ function imageSizeToEditAspectRatio(imageSize: ImageAdSize): EditAspectRatio {
 }
 
 /**
- * 이미지 광고 생성 요청을 큐에 제출 (GPT Image 1.5 우선, Seedream fallback)
+ * 이미지 광고 생성 요청을 큐에 제출 (Seedream 4.5 우선, GPT Image fallback)
  *
  * @param input - 이미지 광고 생성 입력 데이터
  * @returns 큐 제출 응답 (request_id 포함)
@@ -973,7 +983,7 @@ function imageSizeToEditAspectRatio(imageSize: ImageAdSize): EditAspectRatio {
 export async function submitImageAdToQueue(input: KieImageAdInput): Promise<KieQueueSubmitResponse> {
   const quality = input.quality || 'medium'
 
-  // Seedream으로 먼저 시도 (항상 high 퀄리티 사용)
+  // Seedream 4.5로 먼저 시도 (항상 high 퀄리티 사용)
   try {
     const editAspectRatio = imageSizeToEditAspectRatio(input.image_size || '1024x1024')
 
@@ -1017,6 +1027,8 @@ export async function getImageAdQueueStatus(requestId: string): Promise<KieQueue
 
   const statusMap: Record<KieTaskStatus, KieQueueStatusResponse['status']> = {
     'waiting': 'IN_QUEUE',
+    'running': 'IN_PROGRESS',
+    'processing': 'IN_PROGRESS',
     'success': 'COMPLETED',
     'fail': 'COMPLETED',
   }
@@ -1340,6 +1352,8 @@ export async function getZImageTurboQueueStatus(requestId: string): Promise<KieQ
 
   const statusMap: Record<KieTaskStatus, KieQueueStatusResponse['status']> = {
     'waiting': 'IN_QUEUE',
+    'running': 'IN_PROGRESS',
+    'processing': 'IN_PROGRESS',
     'success': 'COMPLETED',
     'fail': 'COMPLETED',
   }
@@ -1393,47 +1407,325 @@ export async function submitAdBackgroundToQueue(
 
 /**
  * 음악 스타일 프롬프트 생성
+ *
+ * Suno V5 모델에 최적화된 프롬프트 생성
+ * - 분위기, 장르, 제품 유형을 조합하여 효과적인 광고 음악 프롬프트 생성
+ * - 템포, 악기 힌트, 구조 힌트 포함
  */
 function buildMusicStylePrompt(mood: string, genre: string, productType: string): string {
-  const moodStyles: Record<string, string> = {
-    bright: 'uplifting, cheerful, positive energy',
-    calm: 'relaxing, soothing, peaceful',
-    emotional: 'touching, heartfelt, cinematic',
-    professional: 'corporate, confident, sophisticated',
-    exciting: 'energetic, dynamic, thrilling',
-    trendy: 'modern, fresh, contemporary',
+  // 분위기별 스타일 및 템포 힌트
+  const moodStyles: Record<string, { style: string; tempo: string; energy: string }> = {
+    bright: {
+      style: 'uplifting, cheerful, positive energy, joyful, sunshine vibes',
+      tempo: 'medium-fast tempo (110-130 BPM)',
+      energy: 'high energy, feel-good'
+    },
+    calm: {
+      style: 'relaxing, soothing, peaceful, gentle, tranquil',
+      tempo: 'slow tempo (60-80 BPM)',
+      energy: 'low energy, meditative'
+    },
+    emotional: {
+      style: 'touching, heartfelt, cinematic, moving, inspiring',
+      tempo: 'moderate tempo (80-100 BPM)',
+      energy: 'emotional build-up, crescendo'
+    },
+    professional: {
+      style: 'corporate, confident, sophisticated, trustworthy, polished',
+      tempo: 'moderate tempo (90-110 BPM)',
+      energy: 'steady, confident'
+    },
+    exciting: {
+      style: 'energetic, dynamic, thrilling, adrenaline, powerful',
+      tempo: 'fast tempo (120-140 BPM)',
+      energy: 'high energy, intense'
+    },
+    trendy: {
+      style: 'modern, fresh, contemporary, stylish, cutting-edge',
+      tempo: 'medium-fast tempo (100-120 BPM)',
+      energy: 'cool, urban'
+    },
+    playful: {
+      style: 'playful, fun, whimsical, bouncy, lighthearted',
+      tempo: 'medium-fast tempo (110-125 BPM)',
+      energy: 'upbeat, cheerful'
+    },
+    romantic: {
+      style: 'romantic, tender, loving, intimate, dreamy',
+      tempo: 'slow-moderate tempo (70-90 BPM)',
+      energy: 'soft, passionate'
+    },
+    nostalgic: {
+      style: 'nostalgic, retro, sentimental, warm memories, vintage feel',
+      tempo: 'moderate tempo (85-100 BPM)',
+      energy: 'warm, reflective'
+    },
   }
 
-  const genreStyles: Record<string, string> = {
-    pop: 'pop, catchy melody',
-    electronic: 'electronic, synth, modern beats',
-    classical: 'orchestral, elegant, refined',
-    jazz: 'jazz, smooth, sophisticated',
-    rock: 'rock, guitar-driven, powerful',
-    hiphop: 'hip-hop, rhythmic, urban',
-    ambient: 'ambient, atmospheric, ethereal',
-    acoustic: 'acoustic, warm, natural',
+  // 장르별 스타일 및 악기 힌트
+  const genreStyles: Record<string, { style: string; instruments: string }> = {
+    pop: {
+      style: 'pop music, catchy melody, radio-friendly, mainstream',
+      instruments: 'synth pads, electronic drums, bass, bright keys'
+    },
+    electronic: {
+      style: 'electronic, EDM influences, synth-heavy, modern production',
+      instruments: 'synthesizers, electronic beats, arpeggios, bass drops'
+    },
+    classical: {
+      style: 'orchestral, elegant, refined, timeless, majestic',
+      instruments: 'strings, piano, brass, woodwinds, orchestral arrangement'
+    },
+    jazz: {
+      style: 'jazz, smooth, sophisticated, groovy, swing feel',
+      instruments: 'piano, saxophone, upright bass, brushed drums'
+    },
+    rock: {
+      style: 'rock, guitar-driven, powerful, bold, raw energy',
+      instruments: 'electric guitar, drums, bass guitar, power chords'
+    },
+    hiphop: {
+      style: 'hip-hop, rhythmic, urban, groove-based, trap influences',
+      instruments: 'heavy 808 bass, hi-hats, snare, sampled loops'
+    },
+    ambient: {
+      style: 'ambient, atmospheric, ethereal, spacious, dreamy',
+      instruments: 'soft pads, reverb-heavy textures, subtle percussion'
+    },
+    acoustic: {
+      style: 'acoustic, warm, natural, organic, intimate',
+      instruments: 'acoustic guitar, soft percussion, ukulele, piano'
+    },
+    lofi: {
+      style: 'lo-fi, chill, relaxed beats, vintage warmth, tape hiss',
+      instruments: 'mellow keys, vinyl crackle, soft drums, jazzy samples'
+    },
+    cinematic: {
+      style: 'cinematic, epic, dramatic, movie soundtrack, orchestral power',
+      instruments: 'full orchestra, percussion, brass fanfares, choir'
+    },
+    rnb: {
+      style: 'R&B, smooth, soulful, groovy, contemporary R&B',
+      instruments: 'smooth synths, mellow bass, soft drums, vocal-like melodies'
+    },
+    folk: {
+      style: 'folk, rustic, storytelling, earthy, handcrafted feel',
+      instruments: 'acoustic guitar, banjo, harmonica, light percussion'
+    },
   }
 
+  // 제품 유형별 분위기 보완
   const productStyles: Record<string, string> = {
-    cosmetics: 'luxurious, feminine, elegant',
-    food: 'appetizing, warm, inviting',
-    tech: 'innovative, futuristic, sleek',
-    fashion: 'stylish, trendy, chic',
-    health: 'fresh, clean, revitalizing',
-    automobile: 'powerful, dynamic, premium',
-    finance: 'trustworthy, stable, professional',
-    lifestyle: 'comfortable, friendly, everyday',
+    cosmetics: 'beauty advertisement, luxurious feel, feminine elegance, glamorous, premium skincare',
+    food: 'food commercial, appetizing atmosphere, warm and inviting, delicious, homestyle',
+    tech: 'technology ad, innovative feel, futuristic vibes, sleek and modern, digital',
+    fashion: 'fashion advertisement, stylish and chic, runway vibes, high fashion, trendsetting',
+    health: 'wellness commercial, fresh and clean, revitalizing energy, natural, healthy lifestyle',
+    automobile: 'car advertisement, powerful and dynamic, premium quality, road adventure, luxury drive',
+    finance: 'financial services ad, trustworthy and stable, professional, secure, reliable',
+    lifestyle: 'lifestyle commercial, comfortable everyday, friendly vibes, relatable, modern living',
+    sports: 'sports advertisement, athletic energy, competitive spirit, victory, motivation',
+    kids: 'kids product ad, playful and fun, family-friendly, colorful, magical wonder',
+    pet: 'pet product commercial, heartwarming, lovable, companion vibes, cute and cuddly',
+    travel: 'travel advertisement, adventure awaits, wanderlust, exotic destinations, vacation vibes',
   }
 
-  const parts = [
-    moodStyles[mood] || mood,
-    genreStyles[genre] || genre,
-    productStyles[productType] || productType,
-    'advertisement background music, commercial jingle, 30 seconds',
-  ]
+  const moodData = moodStyles[mood] || { style: mood, tempo: 'moderate tempo', energy: 'balanced' }
+  const genreData = genreStyles[genre] || { style: genre, instruments: 'various instruments' }
+  const productStyle = productStyles[productType] || productType
 
-  return parts.filter(Boolean).join(', ')
+  // 효과적인 광고 음악 프롬프트 구성
+  const prompt = [
+    // 기본 구조
+    'instrumental advertisement background music',
+    'commercial jingle style',
+    '30 seconds duration',
+    'broadcast quality production',
+
+    // 분위기
+    moodData.style,
+    moodData.tempo,
+    moodData.energy,
+
+    // 장르
+    genreData.style,
+    genreData.instruments,
+
+    // 제품 특성
+    productStyle,
+
+    // 구조 힌트
+    'clear intro, catchy hook, smooth ending',
+    'memorable melody, professional mix',
+  ].filter(Boolean).join(', ')
+
+  return prompt
+}
+
+// ============================================================
+// Seedream V4 Text-to-Image (고품질 이미지 생성)
+// ============================================================
+
+/** Seedream V4 모델 ID */
+const SEEDREAM_V4_MODEL = 'bytedance/seedream-v4-text-to-image'
+
+/** Seedream V4 이미지 사이즈 */
+export type SeedreamV4ImageSize =
+  | 'square'        // 정방형
+  | 'square_hd'     // 정방형 HD
+  | 'portrait_4_3'  // 세로 3:4
+  | 'portrait_3_2'  // 세로 2:3
+  | 'portrait_16_9' // 세로 9:16
+  | 'landscape_4_3' // 가로 4:3
+  | 'landscape_3_2' // 가로 3:2
+  | 'landscape_16_9' // 가로 16:9
+  | 'landscape_21_9' // 가로 21:9
+
+/** Seedream V4 해상도 */
+export type SeedreamV4Resolution = '1K' | '2K' | '4K'
+
+/** Seedream V4 입력 타입 */
+export interface KieSeedreamV4Input {
+  prompt: string
+  image_size?: SeedreamV4ImageSize
+  image_resolution?: SeedreamV4Resolution
+  max_images?: number  // 1-6
+  seed?: number
+}
+
+/** Seedream V4 출력 타입 */
+export interface KieSeedreamV4Output {
+  taskId: string
+}
+
+/** Seedream V4 결과 타입 */
+export interface KieSeedreamV4Result {
+  images: Array<{ url: string }>
+}
+
+/**
+ * Seedream V4 Text-to-Image 작업 생성
+ *
+ * @param input - 이미지 생성 입력 데이터
+ * @param callbackUrl - 완료 시 호출할 콜백 URL (선택)
+ * @returns Task ID
+ */
+export async function createSeedreamV4Task(
+  input: KieSeedreamV4Input,
+  callbackUrl?: string
+): Promise<KieSeedreamV4Output> {
+  const body: Record<string, unknown> = {
+    model: SEEDREAM_V4_MODEL,
+    input: {
+      prompt: input.prompt,
+      image_size: input.image_size || 'square_hd',
+      image_resolution: input.image_resolution || '1K',
+      max_images: input.max_images || 1,
+    },
+  }
+
+  if (input.seed !== undefined) {
+    (body.input as Record<string, unknown>).seed = input.seed
+  }
+
+  if (callbackUrl) {
+    body.callBackUrl = callbackUrl
+  }
+
+  const response = await fetch(`${KIE_API_BASE}/jobs/createTask`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`Kie.ai API 오류: ${response.status} - ${errorText}`)
+  }
+
+  const result: KieApiResponse<KieTaskData> = await response.json()
+
+  if (result.code !== 200) {
+    throw new Error(`Kie.ai API 오류: ${result.msg}`)
+  }
+
+  return {
+    taskId: result.data.taskId,
+  }
+}
+
+/**
+ * Seedream V4 요청을 큐에 제출
+ *
+ * @param prompt - 이미지 생성 프롬프트
+ * @param options - 추가 옵션
+ * @returns 큐 제출 응답
+ */
+export async function submitSeedreamV4ToQueue(
+  prompt: string,
+  options?: {
+    imageSize?: SeedreamV4ImageSize
+    imageResolution?: SeedreamV4Resolution
+    maxImages?: number
+    seed?: number
+  }
+): Promise<KieQueueSubmitResponse> {
+  const { taskId } = await createSeedreamV4Task({
+    prompt,
+    image_size: options?.imageSize || 'square_hd',
+    image_resolution: options?.imageResolution || '1K',
+    max_images: options?.maxImages || 1,
+    seed: options?.seed,
+  })
+
+  return {
+    request_id: taskId,
+  }
+}
+
+/**
+ * Seedream V4 큐 상태 조회
+ *
+ * @param requestId - Task ID
+ * @returns 큐 상태
+ */
+export async function getSeedreamV4QueueStatus(requestId: string): Promise<KieQueueStatusResponse> {
+  const taskInfo = await getTaskInfo(requestId)
+
+  const statusMap: Record<KieTaskStatus, KieQueueStatusResponse['status']> = {
+    'waiting': 'IN_QUEUE',
+    'running': 'IN_PROGRESS',
+    'processing': 'IN_PROGRESS',
+    'success': 'COMPLETED',
+    'fail': 'COMPLETED',
+  }
+
+  return {
+    status: statusMap[taskInfo.state] || 'IN_QUEUE',
+  }
+}
+
+/**
+ * Seedream V4 결과 조회
+ *
+ * @param requestId - Task ID
+ * @returns 생성된 이미지 정보
+ */
+export async function getSeedreamV4QueueResponse(requestId: string): Promise<KieSeedreamV4Result> {
+  const taskInfo = await getTaskInfo(requestId)
+
+  if (taskInfo.state === 'fail') {
+    throw new Error(`이미지 생성 실패: ${taskInfo.failMsg || '알 수 없는 오류'}`)
+  }
+
+  const resultUrls = parseResultJson(taskInfo.resultJson)
+  if (resultUrls.length === 0) {
+    throw new Error('생성된 이미지가 없습니다')
+  }
+
+  return {
+    images: resultUrls.map(url => ({ url })),
+  }
 }
 
 // ============================================================
@@ -1576,6 +1868,8 @@ export async function getSeedanceQueueStatus(requestId: string): Promise<KieQueu
 
   const statusMap: Record<KieTaskStatus, KieQueueStatusResponse['status']> = {
     'waiting': 'IN_QUEUE',
+    'running': 'IN_PROGRESS',
+    'processing': 'IN_PROGRESS',
     'success': 'COMPLETED',
     'fail': 'COMPLETED',
   }
@@ -1592,6 +1886,309 @@ export async function getSeedanceQueueStatus(requestId: string): Promise<KieQueu
  * @returns 생성된 영상 정보
  */
 export async function getSeedanceQueueResponse(requestId: string): Promise<KieSeedanceResult> {
+  const taskInfo = await getTaskInfo(requestId)
+
+  if (taskInfo.state === 'fail') {
+    throw new Error(`영상 생성 실패: ${taskInfo.failMsg || '알 수 없는 오류'}`)
+  }
+
+  const resultUrls = parseResultJson(taskInfo.resultJson)
+  if (resultUrls.length === 0) {
+    throw new Error('생성된 영상이 없습니다')
+  }
+
+  return {
+    videos: resultUrls.map(url => ({ url })),
+  }
+}
+
+// ============================================================
+// Kling 2.6 Image-to-Video (아바타 모션 영상 생성)
+// ============================================================
+
+/** Kling 2.6 모델 ID */
+const KLING_2_6_MODEL = 'kling-2.6/image-to-video'
+
+/** Kling 2.6 영상 길이 */
+export type Kling26Duration = '5' | '10'
+
+/** Kling 2.6 입력 타입 */
+export interface KieKling26Input {
+  prompt: string              // 영상 설명 프롬프트
+  image_urls: string[]        // 입력 이미지 URL 배열 (첫 프레임 이미지)
+  sound?: boolean             // 사운드 생성 여부 (기본값: false)
+  duration?: Kling26Duration  // 영상 길이 - "5" 또는 "10" (기본값: "5")
+}
+
+/** Kling 2.6 출력 타입 */
+export interface KieKling26Output {
+  taskId: string
+}
+
+/** Kling 2.6 결과 타입 */
+export interface KieKling26Result {
+  videos: Array<{ url: string }>
+}
+
+/**
+ * Kling 2.6 Image-to-Video 작업 생성
+ *
+ * @param input - 영상 생성 입력 데이터
+ * @param callbackUrl - 완료 시 호출할 콜백 URL (선택)
+ * @returns Task ID
+ */
+export async function createKling26Task(
+  input: KieKling26Input,
+  callbackUrl?: string
+): Promise<KieKling26Output> {
+  const body: Record<string, unknown> = {
+    model: KLING_2_6_MODEL,
+    input: {
+      prompt: input.prompt,
+      image_urls: input.image_urls,
+      sound: input.sound ?? false,
+      duration: input.duration || '5',
+    },
+  }
+
+  if (callbackUrl) {
+    body.callBackUrl = callbackUrl
+  }
+
+  const response = await fetch(`${KIE_API_BASE}/jobs/createTask`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`Kie.ai API 오류: ${response.status} - ${errorText}`)
+  }
+
+  const result: KieApiResponse<KieTaskData> = await response.json()
+
+  if (result.code !== 200) {
+    throw new Error(`Kie.ai API 오류: ${result.msg}`)
+  }
+
+  return {
+    taskId: result.data.taskId,
+  }
+}
+
+/**
+ * Kling 2.6 영상 생성 요청을 큐에 제출
+ *
+ * @param imageUrl - 첫 프레임 이미지 URL
+ * @param prompt - 영상 생성 프롬프트
+ * @param options - 추가 옵션
+ * @returns 큐 제출 응답
+ */
+export async function submitKling26ToQueue(
+  imageUrl: string,
+  prompt: string,
+  options?: {
+    sound?: boolean
+    duration?: Kling26Duration
+  }
+): Promise<KieQueueSubmitResponse> {
+  const { taskId } = await createKling26Task({
+    prompt,
+    image_urls: [imageUrl],
+    sound: options?.sound ?? false,
+    duration: options?.duration || '5',
+  })
+
+  return {
+    request_id: taskId,
+  }
+}
+
+/**
+ * Kling 2.6 큐 상태 조회
+ *
+ * @param requestId - Task ID
+ * @returns 큐 상태
+ */
+export async function getKling26QueueStatus(requestId: string): Promise<KieQueueStatusResponse> {
+  const taskInfo = await getTaskInfo(requestId)
+
+  const statusMap: Record<KieTaskStatus, KieQueueStatusResponse['status']> = {
+    'waiting': 'IN_QUEUE',
+    'running': 'IN_PROGRESS',
+    'processing': 'IN_PROGRESS',
+    'success': 'COMPLETED',
+    'fail': 'COMPLETED',
+  }
+
+  return {
+    status: statusMap[taskInfo.state] || 'IN_QUEUE',
+  }
+}
+
+/**
+ * Kling 2.6 결과 조회
+ *
+ * @param requestId - Task ID
+ * @returns 생성된 영상 정보
+ */
+export async function getKling26QueueResponse(requestId: string): Promise<KieKling26Result> {
+  const taskInfo = await getTaskInfo(requestId)
+
+  if (taskInfo.state === 'fail') {
+    throw new Error(`영상 생성 실패: ${taskInfo.failMsg || '알 수 없는 오류'}`)
+  }
+
+  const resultUrls = parseResultJson(taskInfo.resultJson)
+  if (resultUrls.length === 0) {
+    throw new Error('생성된 영상이 없습니다')
+  }
+
+  return {
+    videos: resultUrls.map(url => ({ url })),
+  }
+}
+
+// ============================================================
+// Wan 2.6 Image-to-Video
+// ============================================================
+
+/** Wan 2.6 모델 ID */
+const WAN_2_6_MODEL = 'wan/2-6-image-to-video'
+
+/** Wan 2.6 영상 길이 */
+export type Wan26Duration = '5' | '10' | '15'
+
+/** Wan 2.6 해상도 */
+export type Wan26Resolution = '720p' | '1080p'
+
+/** Wan 2.6 입력 타입 */
+export interface KieWan26Input {
+  prompt: string              // 영상 설명 프롬프트 (2-5000자)
+  image_urls: string[]        // 입력 이미지 URL 배열 (최소 256x256)
+  duration?: Wan26Duration    // 영상 길이 - "5", "10", "15" (기본값: "5")
+  resolution?: Wan26Resolution // 해상도 (기본값: "1080p")
+  multi_shots?: boolean       // 멀티샷 모드 (기본값: false)
+}
+
+/** Wan 2.6 출력 타입 */
+export interface KieWan26Output {
+  taskId: string
+}
+
+/** Wan 2.6 결과 타입 */
+export interface KieWan26Result {
+  videos: Array<{ url: string }>
+}
+
+/**
+ * Wan 2.6 Image-to-Video 작업 생성
+ *
+ * @param input - 영상 생성 입력 데이터
+ * @param callbackUrl - 완료 시 호출할 콜백 URL (선택)
+ * @returns Task ID
+ */
+export async function createWan26Task(
+  input: KieWan26Input,
+  callbackUrl?: string
+): Promise<KieWan26Output> {
+  const body: Record<string, unknown> = {
+    model: WAN_2_6_MODEL,
+    input: {
+      prompt: input.prompt,
+      image_urls: input.image_urls,
+      duration: input.duration || '5',
+      resolution: input.resolution || '1080p',
+      multi_shots: input.multi_shots ?? false,
+    },
+  }
+
+  if (callbackUrl) {
+    body.callBackUrl = callbackUrl
+  }
+
+  const response = await fetch(`${KIE_API_BASE}/jobs/createTask`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`Kie.ai API 오류: ${response.status} - ${errorText}`)
+  }
+
+  const result: KieApiResponse<KieTaskData> = await response.json()
+
+  if (result.code !== 200) {
+    throw new Error(`Kie.ai API 오류: ${result.msg}`)
+  }
+
+  return {
+    taskId: result.data.taskId,
+  }
+}
+
+/**
+ * Wan 2.6 영상 생성 요청을 큐에 제출
+ *
+ * @param imageUrl - 첫 프레임 이미지 URL
+ * @param prompt - 영상 생성 프롬프트
+ * @param options - 추가 옵션
+ * @returns 큐 제출 응답
+ */
+export async function submitWan26ToQueue(
+  imageUrl: string,
+  prompt: string,
+  options?: {
+    duration?: Wan26Duration
+    resolution?: Wan26Resolution
+    multiShots?: boolean
+  }
+): Promise<KieQueueSubmitResponse> {
+  const { taskId } = await createWan26Task({
+    prompt,
+    image_urls: [imageUrl],
+    duration: options?.duration || '5',
+    resolution: options?.resolution || '1080p',
+    multi_shots: options?.multiShots ?? false,
+  })
+
+  return {
+    request_id: taskId,
+  }
+}
+
+/**
+ * Wan 2.6 큐 상태 조회
+ *
+ * @param requestId - Task ID
+ * @returns 큐 상태
+ */
+export async function getWan26QueueStatus(requestId: string): Promise<KieQueueStatusResponse> {
+  const taskInfo = await getTaskInfo(requestId)
+
+  const statusMap: Record<KieTaskStatus, KieQueueStatusResponse['status']> = {
+    'waiting': 'IN_QUEUE',
+    'running': 'IN_PROGRESS',
+    'processing': 'IN_PROGRESS',
+    'success': 'COMPLETED',
+    'fail': 'COMPLETED',
+  }
+
+  return {
+    status: statusMap[taskInfo.state] || 'IN_QUEUE',
+  }
+}
+
+/**
+ * Wan 2.6 결과 조회
+ *
+ * @param requestId - Task ID
+ * @returns 생성된 영상 정보
+ */
+export async function getWan26QueueResponse(requestId: string): Promise<KieWan26Result> {
   const taskInfo = await getTaskInfo(requestId)
 
   if (taskInfo.state === 'fail') {
