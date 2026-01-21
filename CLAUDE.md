@@ -265,6 +265,156 @@ if (!user) {
 - Unified interface with fallback support
 - Primary: ElevenLabs, Fallback: WaveSpeed
 
+## API Endpoints Reference
+
+총 65개 이상의 API 엔드포인트가 12개 기능 영역에 걸쳐 있습니다.
+
+### Avatars (아바타)
+
+| Endpoint | Method | 설명 |
+|----------|--------|------|
+| `/api/avatars` | GET | 사용자 아바타 목록 조회 |
+| `/api/avatars` | POST | 새 아바타 생성 (AI 생성) |
+| `/api/avatars/[id]` | GET | 특정 아바타 상세 조회 |
+| `/api/avatars/[id]` | DELETE | 아바타 삭제 |
+| `/api/avatars/[id]/status` | GET | 생성 상태 확인 |
+| `/api/avatars/[id]/complete` | POST | 업로드 완료 표시 |
+| `/api/avatars/[id]/upload-url` | POST | Presigned URL 생성 |
+| `/api/avatars/[id]/outfits` | GET/POST | 의상 변형 관리 |
+| `/api/avatars/[id]/outfits/[outfitId]/status` | GET | 의상 생성 상태 |
+
+### Image Ads (이미지 광고)
+
+| Endpoint | Method | 설명 |
+|----------|--------|------|
+| `/api/image-ads` | GET | 이미지 광고 목록 (페이지네이션) |
+| `/api/image-ads` | POST | 새 이미지 광고 생성 (Seedream 4.5 Edit) |
+| `/api/image-ads/[id]` | GET/DELETE | 이미지 광고 조회/삭제 |
+| `/api/image-ads/[id]/retry` | POST | 실패한 광고 재시도 |
+| `/api/image-ads/[id]/refund` | POST | 크레딧 환불 |
+| `/api/image-ads/status/[requestId]` | GET | 생성 상태 확인 |
+| `/api/image-ads/batch-status/[imageAdId]` | GET | 배치 진행 상황 |
+| `/api/image-ads/analyze-reference` | POST | 참조 이미지 스타일 분석 |
+| `/api/image-ads/recommend-options` | POST | AI 추천 옵션 |
+
+**광고 유형:** `productOnly`, `holding`, `using`, `wearing`, `beforeAfter`, `lifestyle`, `unboxing`, `comparison`, `seasonal`
+
+### Video Ads (비디오 광고)
+
+| Endpoint | Method | 설명 |
+|----------|--------|------|
+| `/api/video-ads` | GET | 비디오 광고 목록 |
+| `/api/video-ads` | POST | 새 비디오 광고 생성 |
+| `/api/video-ads/[id]` | GET/PATCH/DELETE | 비디오 광고 관리 |
+| `/api/video-ads/draft` | GET/POST/DELETE | 임시 저장 관리 |
+| `/api/video-ads/status/[requestId]` | GET | 생성 상태 (image/video/auto) |
+| `/api/video-ads/generate-prompt` | POST | Gemini로 프롬프트 생성 |
+| `/api/video-ads/extract-url` | POST | URL에서 제품 정보 추출 |
+
+**시간:** 5, 10, 15초 / **해상도:** 720p, 1080p
+
+### Product Ads (제품 광고 - 멀티씬)
+
+| Endpoint | Method | 설명 |
+|----------|--------|------|
+| `/api/product-ad/generate-multi-scene` | POST | 멀티씬 프롬프트 생성 (Vidu Q2) |
+| `/api/product-ad/status/[requestId]` | GET | 생성 상태 (image/video) |
+| `/api/product-ad/draft` | GET/POST | 임시 저장 |
+| `/api/product-ad/generate-scenario` | POST | 시나리오/키프레임 생성 |
+| `/api/product-ad/generate-scenes` | POST | 개별 씬 비디오 생성 |
+
+### Ad Products (광고 제품 - 배경 제거)
+
+| Endpoint | Method | 설명 |
+|----------|--------|------|
+| `/api/ad-products` | GET | 제품 목록 |
+| `/api/ad-products` | POST | 새 제품 생성 (rembg 배경 제거) |
+| `/api/ad-products/[id]` | GET/DELETE | 제품 조회/삭제 |
+| `/api/ad-products/[id]/upload-url` | POST | 업로드 URL 생성 |
+| `/api/ad-products/[id]/status` | GET | 처리 상태 |
+| `/api/ad-products/[id]/process` | POST | rembg 처리 요청 |
+| `/api/ad-products/[id]/retry` | POST | 재시도 |
+| `/api/ad-products/extract-url` | POST | URL에서 제품 정보 추출 |
+
+### Ad Music (AI 음악)
+
+| Endpoint | Method | 설명 |
+|----------|--------|------|
+| `/api/ad-music` | GET | 음악 목록 |
+| `/api/ad-music` | POST | 음악 생성 요청 (KIE V5) |
+| `/api/ad-music/[id]` | GET/DELETE | 음악 조회/삭제 |
+| `/api/ad-music/[id]/status` | GET | 생성 상태 |
+| `/api/ad-music/callback` | POST | KIE 웹훅 콜백 |
+| `/api/ad-music/recommend` | POST | AI 음악 추천 |
+
+### Ad Backgrounds (AI 배경)
+
+| Endpoint | Method | 설명 |
+|----------|--------|------|
+| `/api/ad-backgrounds` | GET | 배경 목록 |
+| `/api/ad-backgrounds` | POST | 배경 생성 (KIE Z-Image) |
+| `/api/ad-backgrounds/[id]` | GET/DELETE | 배경 조회/삭제 |
+| `/api/ad-backgrounds/[id]/status` | GET | 생성 상태 |
+
+**비율:** `16:9`, `9:16`, `1:1`, `4:3`, `3:4`
+
+### Voices (음성)
+
+| Endpoint | Method | 설명 |
+|----------|--------|------|
+| `/api/voices` | GET | ElevenLabs 음성 목록 |
+| `/api/minimax-voices` | GET | WaveSpeed 음성 목록 |
+| `/api/minimax-voices/preview` | GET | 음성 미리듣기 |
+
+### Avatar Motion (아바타 모션)
+
+| Endpoint | Method | 설명 |
+|----------|--------|------|
+| `/api/avatar-motion` | GET | 아바타 모션 비디오 목록 |
+| `/api/avatar-motion/status/[requestId]` | GET | 생성 상태 (frame/video) |
+| `/api/avatar-motion/draft` | GET/POST/DELETE | 임시 저장 |
+| `/api/avatar-motion/generate-story` | POST | 스토리 생성 |
+| `/api/avatar-motion/generate-scenes` | POST | 씬 생성 |
+
+### General (일반)
+
+| Endpoint | Method | 설명 |
+|----------|--------|------|
+| `/api/upload` | POST | R2에 이미지 업로드 |
+| `/api/onboarding` | GET/POST | 온보딩 상태/완료 |
+
+### 크레딧 시스템
+
+| 기능 | 크레딧 |
+|------|--------|
+| 아바타 생성 | 1 |
+| 이미지 광고 (medium) | 2/이미지 |
+| 이미지 광고 (high) | 3/이미지 |
+| 의상 변경 | 2 |
+
+### 공통 응답 패턴
+
+```typescript
+// 성공
+{ data: ... }
+{ success: true, data: ... }
+
+// 에러
+{ error: "메시지" }
+
+// 페이지네이션
+{
+  items: [...],
+  pagination: {
+    page: 1,
+    pageSize: 20,
+    totalCount: 100,
+    totalPages: 5,
+    hasMore: true
+  }
+}
+```
+
 ## File Storage
 
 ### Cloudflare R2 (lib/storage/r2.ts)
