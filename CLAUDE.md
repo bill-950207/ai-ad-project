@@ -620,6 +620,30 @@ Currently no automated tests configured. When adding tests:
 - **AI requests:** Queue-based to handle rate limits
 - **File uploads:** Direct to R2 via presigned URLs
 
+## Development Logging
+
+작업 완료 시 로그를 남겨 컨텍스트를 유지하고 CLAUDE.md 업데이트를 관리합니다.
+
+### 로그 위치
+```
+docs/logs/YYYY-MM-DD/HH-MM-유형-작업명.md
+```
+
+### 로그 작성 시점
+- 새 API 엔드포인트 추가 후
+- AI 서비스 모델/함수 추가 후
+- 주요 버그 수정 후
+- 데이터베이스 스키마 변경 후
+
+### 템플릿
+`docs/logs/TEMPLATE.md` 참조
+
+### 일일 요약
+하루 작업 마무리 시 `docs/logs/YYYY-MM-DD/DAILY-SUMMARY.md` 생성
+- 완료된 작업 목록
+- CLAUDE.md 변경 필요 사항
+- 다음 작업 제안
+
 ## Security Notes
 
 - Never expose service role keys to client
