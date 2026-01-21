@@ -193,10 +193,37 @@ export function ComponentName({ prop }: ComponentProps) {
 
 ## Database
 
-### Connection
-- **File:** `lib/db.ts`
-- Uses singleton pattern with hot-reload support in development
-- Connection pooling: max 10 connections, 30s idle timeout
+### Connection (`lib/db.ts`)
+- **ORM:** Prisma 7.2.0 with PostgreSQL adapter
+- **Database:** PostgreSQL via Supabase
+- **Adapter:** `@prisma/adapter-pg` with `pg.Pool`
+- **Connection:** DIRECT_URL 우선 사용 (pooler URL 미지원)
+- **Pooling:** max 10 connections, 30s idle timeout, 5s connection timeout
+- **Pattern:** Singleton with hot-reload support
+
+```typescript
+import { prisma } from '@/lib/db'
+
+// 조회
+const avatars = await prisma.avatars.findMany({
+  where: { user_id: userId },
+  orderBy: { created_at: 'desc' },
+})
+
+// 생성
+const avatar = await prisma.avatars.create({
+  data: { user_id: userId, name: 'New Avatar', status: 'PENDING' },
+})
+
+// 트랜잭션 (크레딧 차감 + 생성)
+await prisma.$transaction(async (tx) => {
+  await tx.profiles.update({
+    where: { id: userId },
+    data: { credits: { decrement: 1 } },
+  })
+  return tx.avatars.create({ data: { ... } })
+})
+```
 
 ### Key Models
 | Model | Purpose |
@@ -249,21 +276,87 @@ if (!user) {
 
 ## AI Service Integration
 
-### FAL.ai (lib/fal/client.ts)
-- Queue-based image generation
-- Returns `request_id` for status polling
+**중요:** 새로운 API를 추가하기 전에 아래 목록을 확인하여 동일한 모델에 연결하는 중복 API를 생성하지 않도록 주의하세요.
 
-### Kie.ai (lib/kie/client.ts)
-- Alternative provider for images/videos
-- Z-Image for avatar generation
+### FAL.ai (`lib/fal/client.ts`)
 
-### Gemini (lib/gemini/client.ts)
-- Prompt generation and content analysis
-- Script writing for video ads
+| 모델 ID | 용도 | 함수 |
+|---------|------|------|
+| `fal-ai/z-image/turbo` | 아바타 이미지 생성 | `submitToQueue()` |
+| `fal-ai/qwen-image-edit-2511/lora` | 의상 교체 (LoRA) | `submitOutfitChangeToQueue()` |
+| `smoretalk-ai/rembg-enhance` | 배경 제거 | `submitRembgToQueue()` |
+| `fal-ai/gpt-image-1.5/edit` | 이미지 광고 생성 (참조 이미지 포함) | `submitImageAdToQueue()` |
+| `fal-ai/gpt-image-1.5` | 이미지 생성 (프롬프트만) | `submitGptImageGenerateToQueue()` |
+| `wan/v2.6/image-to-video` | 영상 광고 생성 | `submitVideoAdToQueue()` |
+| `fal-ai/bytedance/seedance/v1.5/pro/image-to-video` | UGC 영상 생성 (오디오 포함) | `submitSeedanceToQueue()` |
+| `fal-ai/bytedance/seedream/v4.5/edit` | 이미지 편집/합성, 첫 프레임 생성 | `submitSeedreamEditToQueue()` |
+| `fal-ai/kling-video/o1/standard/image-to-video` | 씬 전환 영상 (시작/끝 프레임) | `submitKlingO1ToQueue()` |
+| `fal-ai/vidu/q2/image-to-video/turbo` | 씬별 영상 생성 | `submitViduQ2ToQueue()` |
 
-### TTS (lib/tts/unified-service.ts)
-- Unified interface with fallback support
-- Primary: ElevenLabs, Fallback: WaveSpeed
+### Kie.ai (`lib/kie/client.ts`)
+
+| 모델 ID | 용도 | 함수 |
+|---------|------|------|
+| `recraft/remove-background` | 배경 제거 | `createRembgTask()`, `submitRembgToQueue()` |
+| `z-image` | 아바타/배경 이미지 생성 | `submitZImageToQueue()`, `submitZImageTurboToQueue()` |
+| `seedream/4.5-edit` | 의상 교체, 이미지 편집, 첫 프레임 생성 | `submitOutfitEditToQueue()`, `submitFirstFrameToQueue()`, `submitImageAdToQueue()` |
+| `gpt-image/1.5-image-to-image` | 참조 이미지 기반 이미지 생성 | `submitGPTImageToQueue()` |
+| `kling/v1-avatar-standard` | 립싱크 토킹 영상 | `submitTalkingVideoToQueue()` |
+| `suno/V5` | AI 음악 생성 | `submitAdMusicToQueue()` |
+| `bytedance/seedream-v4-text-to-image` | 텍스트-이미지 생성 | `submitSeedreamV4ToQueue()` |
+| `bytedance/seedance-1.5-pro` | 프레임 보간 영상 | `submitSeedanceToQueue()` |
+| `kling-2.6/image-to-video` | 아바타 모션 영상 | `submitKling26ToQueue()` |
+| `wan/2-6-image-to-video` | 영상 생성 | `submitWan26ToQueue()` |
+
+### WaveSpeed AI (`lib/wavespeed/client.ts`)
+
+| 모델/서비스 | 용도 | 함수 |
+|-------------|------|------|
+| `minimax/speech-2.6-hd` | TTS 음성 합성 | `textToSpeech()`, `submitTTSTask()` |
+| `wavespeed-ai/infinitetalk` | 토킹 아바타 영상 | `submitInfiniteTalkToQueue()` |
+| `vidu/image-to-video-q2-turbo` | 영상 생성 | `submitViduToQueue()` |
+
+### Google Gemini (`lib/gemini/client.ts`)
+
+| 모델 ID | 용도 |
+|---------|------|
+| `gemini-3-flash-preview` | 프롬프트 생성, URL 제품 정보 추출, 스크립트 작성, 이미지 분석 |
+
+### ElevenLabs (`lib/elevenlabs/client.ts`)
+
+| 모델 ID | 용도 |
+|---------|------|
+| `eleven_multilingual_v2` | 다국어 TTS 음성 합성 |
+
+### 통합 TTS (`lib/tts/unified-service.ts`)
+
+자동 Fallback 지원:
+- **Primary:** WaveSpeed Minimax (한국어 최적화)
+- **Fallback:** ElevenLabs (다국어)
+
+```typescript
+import { generateSpeech } from '@/lib/tts/unified-service'
+
+const result = await generateSpeech({
+  text: '안녕하세요',
+  voiceId: 'Korean_SweetGirl',
+  language: 'ko',
+})
+```
+
+### 공급자별 용도 정리
+
+| 기능 | 주 공급자 | 대체 공급자 |
+|------|----------|------------|
+| 아바타 생성 | Kie.ai (Z-Image) | FAL.ai (Z-Image Turbo) |
+| 의상 교체 | Kie.ai (Seedream 4.5) | FAL.ai (Qwen Edit) |
+| 이미지 광고 | Kie.ai (Seedream 4.5) | FAL.ai (GPT-Image 1.5) |
+| 배경 제거 | Kie.ai (Recraft) | FAL.ai (Rembg) |
+| 영상 생성 | Kie.ai (Kling 2.6, Wan 2.6) | FAL.ai (Vidu Q2, Kling O1) |
+| TTS | WaveSpeed (Minimax) | ElevenLabs |
+| 토킹 영상 | Kie.ai (Kling Avatar) | WaveSpeed (InfiniteTalk) |
+| 음악 생성 | Kie.ai (Suno V5) | - |
+| LLM | Google Gemini | - |
 
 ## API Endpoints Reference
 
