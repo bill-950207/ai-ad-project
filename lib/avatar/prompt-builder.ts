@@ -18,7 +18,7 @@ export interface AvatarOptions {
 
   // 체형
   height?: 'short' | 'average' | 'tall'  // 키
-  bodyType?: 'slim' | 'average' | 'athletic' | 'curvy'  // 체형
+  bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'plussize'  // 체형
 
   // 외모
   hairStyle?: 'longStraight' | 'bob' | 'wavy' | 'ponytail' | 'short'  // 헤어스타일
@@ -74,12 +74,41 @@ const heightMap: Record<string, string> = {
   tall: 'tall',
 }
 
-/** 체형 매핑 */
-const bodyTypeMap: Record<string, string> = {
-  slim: 'slim build',
-  average: 'average build',
-  athletic: 'athletic build',
-  curvy: 'curvy figure',
+/** 여성 체형 매핑 (구체적인 신체 비율 포함) */
+const femaleBodyTypeMap: Record<string, string> = {
+  slim: 'slim slender body with 32-24-34 inch proportions, narrow shoulders, small bust, thin waist, lean hips',
+  average: 'average female body with 34-26-36 inch proportions, moderate bust, defined waist, balanced hips',
+  athletic: 'athletic toned female body with 34-25-35 inch proportions, firm muscles, toned abs, strong legs, defined arms',
+  curvy: 'hourglass figure body with 36-24-36 inch proportions, full bust (D-cup), very slim tiny waist, shapely round hips, slender toned legs',
+  plussize: 'plus-size female body with 42-36-46 inch proportions, very large bust, soft rounded belly, wide hips, thick thighs',
+}
+
+/** 남성 체형 매핑 (구체적인 신체 비율 포함) */
+const maleBodyTypeMap: Record<string, string> = {
+  slim: 'slim lean male body with narrow shoulders, thin arms, flat chest, slim waist, lean legs',
+  average: 'average male body with moderate shoulders, normal chest, slight belly, standard proportions',
+  athletic: 'athletic muscular male body with broad shoulders (18+ inches), defined chest muscles, visible six-pack abs, V-shaped torso, muscular arms and legs',
+  curvy: 'stocky male body with broad frame, thick chest, solid midsection, strong thick legs',
+  plussize: 'plus-size male body with large frame, broad chest, round belly, thick arms and legs',
+}
+
+/** 기본 체형 매핑 (성별 불명 시) */
+const defaultBodyTypeMap: Record<string, string> = {
+  slim: 'slim slender build with lean proportions',
+  average: 'average build with balanced proportions',
+  athletic: 'athletic toned build with defined muscles',
+  curvy: 'curvy build with pronounced proportions',
+  plussize: 'plus-size build with fuller figure',
+}
+
+/** 성별에 따른 체형 설명 반환 */
+function getBodyTypeDescription(bodyType: string, gender?: string): string {
+  if (gender === 'female') {
+    return femaleBodyTypeMap[bodyType] || defaultBodyTypeMap[bodyType] || bodyType
+  } else if (gender === 'male') {
+    return maleBodyTypeMap[bodyType] || defaultBodyTypeMap[bodyType] || bodyType
+  }
+  return defaultBodyTypeMap[bodyType] || bodyType
 }
 
 /** 헤어스타일 매핑 */
@@ -101,43 +130,35 @@ const hairColorMap: Record<string, string> = {
 
 /** 분위기/느낌 매핑 */
 const vibeMap: Record<string, string> = {
-  natural: 'natural and approachable look',
-  sophisticated: 'sophisticated and elegant look',
-  cute: 'cute and friendly look',
-  professional: 'professional and confident look',
-}
-
-/** 의상 스타일 매핑 */
-const outfitStyleMap: Record<string, string> = {
-  casual: 'casual outfit',
-  office: 'business casual attire',
-  sporty: 'athletic wear',
-  homewear: 'comfortable home clothes',
-}
-
-/** 색상 톤 매핑 */
-const colorToneMap: Record<string, string> = {
-  light: 'light-colored',
-  dark: 'dark-colored',
-  neutral: 'neutral-toned',
-  brandColor: '',  // 브랜드 색상은 별도 처리
+  natural: 'natural and approachable appearance',
+  sophisticated: 'sophisticated and elegant appearance',
+  cute: 'cute appearance',
+  professional: 'professional and confident appearance',
 }
 
 /** 배경 환경 매핑 */
 const backgroundMap: Record<string, string> = {
-  studio: 'in a professional photo studio with clean white background',
-  home: 'in a cozy home office with computer setup and ambient lighting',
-  office: 'in a modern office environment with natural lighting',
-  outdoor: 'in an outdoor urban setting with blurred city background',
-  cafe: 'in a stylish cafe with warm ambient lighting',
+  studio: 'in a professional photo studio with soft studio lighting and clean white backdrop, well-lit, sharp background',
+  home: 'in a cozy modern home interior with warm ambient lighting and soft natural light from window, detailed background',
+  office: 'in a bright modern office space with large windows and natural daylight streaming in, sharp clear background',
+  outdoor: 'in an outdoor urban setting with soft golden hour lighting, clear detailed background',
+  cafe: 'in a stylish cafe with warm ambient lighting, detailed cafe interior visible in background',
 }
 
 /** 포즈 스타일 매핑 */
 const poseMap: Record<string, string> = {
-  model: 'striking a professional model pose, looking at camera',
-  natural: 'in a relaxed natural pose, slightly smiling, candid shot',
-  casual: 'sitting comfortably in a casual relaxed position',
-  working: 'focused while working at desk, natural working pose',
+  model: 'striking a professional model pose, looking at camera, neutral relaxed expression',
+  natural: 'in a relaxed natural pose, neutral calm expression, candid shot',
+  casual: 'sitting comfortably in a casual relaxed position, neutral expression',
+  working: 'focused while working at desk, natural working pose, neutral expression',
+}
+
+/** 의상 스타일 매핑 (체형이 보이는 핏한 의상) */
+const outfitStyleMap: Record<string, string> = {
+  casual: 'wearing a fitted casual outfit that shows body shape (slim-fit jeans and form-fitting top)',
+  office: 'wearing a body-conscious office attire (fitted blouse and pencil skirt or tailored pants)',
+  sporty: 'wearing form-fitting athletic wear that accentuates the figure (yoga pants and fitted sports top)',
+  homewear: 'wearing comfortable but fitted loungewear that shows body contours (fitted t-shirt and leggings)',
 }
 
 // ============================================================
@@ -165,13 +186,13 @@ export function buildPromptFromOptions(options: AvatarOptions): string {
   if (age) subject += ` ${age}`
   parts.push(subject)
 
-  // 체형 (키와 체형)
+  // 체형 (키와 체형) - 성별에 따른 구체적인 신체 비율 사용
   const bodyDescParts: string[] = []
   if (options.height) {
     bodyDescParts.push(heightMap[options.height])
   }
   if (options.bodyType) {
-    bodyDescParts.push(bodyTypeMap[options.bodyType])
+    bodyDescParts.push(getBodyTypeDescription(options.bodyType, options.gender))
   }
   if (bodyDescParts.length > 0) {
     parts.push(bodyDescParts.join(' with '))
@@ -197,19 +218,12 @@ export function buildPromptFromOptions(options: AvatarOptions): string {
     parts.push(vibeMap[options.vibe])
   }
 
-  // 의상
+  // 의상 스타일 (체형이 보이는 핏한 의상)
   if (options.outfitStyle) {
-    let outfit = outfitStyleMap[options.outfitStyle]
-
-    // 색상 톤 적용
-    if (options.colorTone === 'brandColor' && options.brandColorHex) {
-      outfit = `${options.brandColorHex} colored ${outfit}`
-    } else if (options.colorTone) {
-      const colorDesc = colorToneMap[options.colorTone]
-      if (colorDesc) outfit = `${colorDesc} ${outfit}`
-    }
-
-    parts.push(`wearing ${outfit}`)
+    parts.push(outfitStyleMap[options.outfitStyle])
+  } else {
+    // 기본 의상: 체형이 잘 보이는 핏한 의상
+    parts.push('wearing fitted clothing that shows body shape')
   }
 
   // 포즈
@@ -244,7 +258,7 @@ export function validateAvatarOptions(options: unknown): options is AvatarOption
   const validAges = ['teen', 'early20s', 'late20s', '30s', '40plus']
   const validEthnicities = ['korean', 'eastAsian', 'western', 'southeastAsian', 'black', 'hispanic', 'mixed']
   const validHeights = ['short', 'average', 'tall']
-  const validBodyTypes = ['slim', 'average', 'athletic', 'curvy']
+  const validBodyTypes = ['slim', 'average', 'athletic', 'curvy', 'plussize']
   const validHairStyles = ['longStraight', 'bob', 'wavy', 'ponytail', 'short']
   const validHairColors = ['blackhair', 'brown', 'blonde', 'custom']
   const validVibes = ['natural', 'sophisticated', 'cute', 'professional']

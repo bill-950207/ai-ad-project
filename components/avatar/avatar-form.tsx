@@ -230,7 +230,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
             <div>
               <label className="block text-xs text-muted-foreground mb-2">{t.avatar.bodyType}</label>
               <div className="flex gap-2 flex-wrap">
-                {(['slim', 'average', 'athletic', 'curvy'] as const).map((v) => (
+                {(['slim', 'average', 'athletic', 'curvy', 'plussize'] as const).map((v) => (
                   <button
                     key={v}
                     type="button"

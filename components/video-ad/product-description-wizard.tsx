@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Clock,
   Edit3,
+  Expand,
   Globe,
   Loader2,
   MapPin,
@@ -28,10 +29,12 @@ import {
   Play,
   Plus,
   RefreshCw,
+  Shirt,
   Sparkles,
   User,
   Volume2,
 } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -77,7 +80,7 @@ type WizardStep = 1 | 2 | 3 | 4
 type VideoDuration = 15 | 30 | 60
 
 // 카메라 구도 타입 (셀카는 각도별로 세분화)
-type CameraComposition = 'auto' | 'selfie-high' | 'selfie-front' | 'selfie-side' | 'tripod' | 'closeup' | 'fullbody'
+type CameraComposition = 'auto' | 'selfie-high' | 'selfie-front' | 'selfie-side' | 'tripod' | 'closeup' | 'fullbody' | 'ugc-closeup'
 
 // 카메라 구도 정보 (예시 이미지 포함)
 interface CameraCompositionInfo {
@@ -126,13 +129,107 @@ const cameraCompositionLabels: Record<CameraComposition, CameraCompositionInfo> 
     desc: '전신이 보이는 구도',
     exampleImage: '/images/camera/fullbody.png',
   },
+  'ugc-closeup': {
+    label: 'UGC 클로즈업',
+    desc: '인플루언서 스타일, 가슴 위부터 얼굴까지 가깝게',
+    exampleImage: '/images/camera/ugc-closeup.png',
+  },
 }
 
 // 카메라 구도 그룹화 (UI 표시용)
 const cameraCompositionGroups = [
   { key: 'basic', label: '기본', compositions: ['auto', 'tripod', 'closeup', 'fullbody'] as CameraComposition[] },
   { key: 'selfie', label: '셀카', compositions: ['selfie-high', 'selfie-front', 'selfie-side'] as CameraComposition[] },
+  { key: 'ugc', label: 'UGC', compositions: ['ugc-closeup'] as CameraComposition[] },
 ]
+
+// 모델 포즈 타입
+type ModelPose = 'auto' | 'holding-product' | 'showing-product' | 'using-product' | 'talking-only'
+
+// 모델 포즈 정보
+interface ModelPoseInfo {
+  label: string
+  desc: string
+}
+
+const modelPoseLabels: Record<ModelPose, ModelPoseInfo> = {
+  auto: {
+    label: '자동',
+    desc: 'AI가 제품에 맞는 포즈 선택',
+  },
+  'holding-product': {
+    label: '제품 들기',
+    desc: '제품을 손에 들고 보여주기',
+  },
+  'showing-product': {
+    label: '제품 제시',
+    desc: '제품을 카메라 앞에 제시하기',
+  },
+  'using-product': {
+    label: '제품 사용',
+    desc: '제품을 직접 사용하는 모습',
+  },
+  'talking-only': {
+    label: '말로만 설명',
+    desc: '제품 없이 말로만 설명하기',
+  },
+}
+
+// 모델 포즈 목록 (UI 표시용)
+const modelPoseOptions: ModelPose[] = ['auto', 'holding-product', 'showing-product', 'using-product', 'talking-only']
+
+// 의상 설정 모드 타입
+type OutfitMode = 'keep_original' | 'ai_recommend' | 'preset' | 'custom'
+
+// 의상 프리셋 타입
+type OutfitPreset = 'casual_everyday' | 'formal_elegant' | 'professional_business' | 'sporty_athletic' | 'cozy_comfortable' | 'trendy_fashion' | 'minimal_simple'
+
+// AI 추천 의상 정보 타입
+interface RecommendedOutfit {
+  description: string           // 의상 설명 (영어, 프롬프트용)
+  koreanDescription: string     // 의상 설명 (한국어, 사용자 표시용)
+  reason: string                // 추천 이유 (한국어)
+}
+
+// 의상 프리셋 정보
+interface OutfitPresetInfo {
+  label: string
+  desc: string
+}
+
+const outfitPresetLabels: Record<OutfitPreset, OutfitPresetInfo> = {
+  casual_everyday: {
+    label: '캐주얼',
+    desc: '편안한 티셔츠, 청바지 등 일상적인 스타일',
+  },
+  formal_elegant: {
+    label: '포멀/우아',
+    desc: '세련된 드레스나 정장, 고급스러운 분위기',
+  },
+  professional_business: {
+    label: '비즈니스',
+    desc: '전문적인 비즈니스 정장, 깔끔한 셔츠',
+  },
+  sporty_athletic: {
+    label: '스포티',
+    desc: '운동복, 애슬레저 스타일',
+  },
+  cozy_comfortable: {
+    label: '편안한',
+    desc: '니트, 가디건 등 따뜻하고 편안한 스타일',
+  },
+  trendy_fashion: {
+    label: '트렌디',
+    desc: '최신 유행 스타일, 패셔너블한 룩',
+  },
+  minimal_simple: {
+    label: '미니멀',
+    desc: '심플한 단색 의상, 절제된 우아함',
+  },
+}
+
+// 의상 프리셋 목록
+const outfitPresetOptions: OutfitPreset[] = ['casual_everyday', 'formal_elegant', 'professional_business', 'sporty_athletic', 'cozy_comfortable', 'trendy_fashion', 'minimal_simple']
 
 // ============================================================
 // 컴포넌트
@@ -151,6 +248,10 @@ interface DraftData {
   duration: number | null
   video_background: string | null
   camera_composition: string | null
+  model_pose: string | null
+  outfit_mode: string | null
+  outfit_preset: string | null
+  outfit_custom: string | null
   scripts_json: string | null
   script_style: string | null
   script: string | null
@@ -199,6 +300,11 @@ export function ProductDescriptionWizard() {
   const [locationPrompt, setLocationPrompt] = useState('')
   const [duration, setDuration] = useState<VideoDuration>(30)
   const [cameraComposition, setCameraComposition] = useState<CameraComposition>('auto')
+  const [modelPose, setModelPose] = useState<ModelPose>('auto')
+  const [outfitMode, setOutfitMode] = useState<OutfitMode>('keep_original')
+  const [outfitPreset, setOutfitPreset] = useState<OutfitPreset | null>(null)
+  const [outfitCustom, setOutfitCustom] = useState('')
+  const [recommendedOutfit, setRecommendedOutfit] = useState<RecommendedOutfit | null>(null)
   const [scriptLanguage, setScriptLanguage] = useState<'ko' | 'en' | 'ja' | 'zh'>(
     (language as 'ko' | 'en' | 'ja' | 'zh') || 'ko'
   )
@@ -345,6 +451,10 @@ export function ProductDescriptionWizard() {
           locationPrompt,
           duration,
           cameraComposition: cameraComposition !== 'auto' ? cameraComposition : null,
+          modelPose: modelPose !== 'auto' ? modelPose : null,
+          outfitMode: outfitMode !== 'keep_original' ? outfitMode : null,
+          outfitPreset: outfitMode === 'preset' ? outfitPreset : null,
+          outfitCustom: outfitMode === 'custom' ? outfitCustom : null,
           scriptsJson: scriptsToSave.length > 0 ? JSON.stringify({ scripts: scriptsToSave, locationDescription: locationDescToSave }) : null,
           scriptStyle: scriptsToSave[scriptIndexToSave]?.style,
           script: editedScriptToSave,
@@ -368,7 +478,7 @@ export function ProductDescriptionWizard() {
     } finally {
       setIsSavingDraft(false)
     }
-  }, [draftId, selectedAvatarInfo, selectedProduct, productInfo, locationPrompt, duration, cameraComposition, scripts, selectedScriptIndex, editedScript, firstFrameUrl, firstFrameUrls, firstFrameOriginalUrls, firstFramePrompt, locationDescription, selectedVoice])
+  }, [draftId, selectedAvatarInfo, selectedProduct, productInfo, locationPrompt, duration, cameraComposition, modelPose, outfitMode, outfitPreset, outfitCustom, scripts, selectedScriptIndex, editedScript, firstFrameUrl, firstFrameUrls, firstFrameOriginalUrls, firstFramePrompt, locationDescription, selectedVoice])
 
   // 기존 초안 또는 진행 중인 영상 광고 로드
   const loadExistingData = useCallback(async () => {
@@ -485,6 +595,10 @@ export function ProductDescriptionWizard() {
     if (draft.location_prompt) setLocationPrompt(draft.location_prompt)
     if (draft.duration) setDuration(draft.duration as VideoDuration)
     if (draft.camera_composition) setCameraComposition(draft.camera_composition as CameraComposition)
+    if (draft.model_pose) setModelPose(draft.model_pose as ModelPose)
+    if (draft.outfit_mode) setOutfitMode(draft.outfit_mode as OutfitMode)
+    if (draft.outfit_preset) setOutfitPreset(draft.outfit_preset as OutfitPreset)
+    if (draft.outfit_custom) setOutfitCustom(draft.outfit_custom)
 
     // Step 3 데이터 (대본, 첫 프레임)
     if (draft.scripts_json) {
@@ -696,6 +810,11 @@ export function ProductDescriptionWizard() {
           locationPrompt: locationPrompt.trim() || undefined,
           durationSeconds: duration,
           cameraComposition: cameraComposition !== 'auto' ? cameraComposition : undefined,
+          modelPose: modelPose !== 'auto' ? modelPose : undefined,
+          // 의상 설정
+          outfitMode: outfitMode !== 'keep_original' ? outfitMode : undefined,
+          outfitPreset: outfitMode === 'preset' ? outfitPreset : undefined,
+          outfitCustom: outfitMode === 'custom' && outfitCustom.trim() ? outfitCustom.trim() : undefined,
           language: scriptLanguage,  // 대본 생성 언어
           // AI 아바타 옵션 (AI 생성 아바타일 때만)
           aiAvatarOptions: selectedAvatarInfo.type === 'ai-generated' ? selectedAvatarInfo.aiOptions : undefined,
@@ -726,6 +845,11 @@ export function ProductDescriptionWizard() {
       setSelectedFirstFrameIndex(0)
       setLocationDescription(generatedLocationDesc)
       setFirstFramePrompt(generatedFirstFramePrompt)
+
+      // AI 추천 의상 저장
+      if (data.recommendedOutfit) {
+        setRecommendedOutfit(data.recommendedOutfit)
+      }
 
       if (generatedScripts.length > 0) {
         setSelectedScriptIndex(0)
@@ -975,7 +1099,7 @@ export function ProductDescriptionWizard() {
   // 단계별 유효성 검사
   // ============================================================
 
-  const canProceedStep1 = selectedAvatarInfo !== null
+  const canProceedStep1 = selectedAvatarInfo !== null && selectedProduct !== null
   const canProceedStep2 = productInfo.trim().length > 0
   const canProceedStep3 = editedScript.trim().length > 0 && firstFrameUrl !== null
   const canProceedStep4 = selectedVoice !== null
@@ -1016,11 +1140,15 @@ export function ProductDescriptionWizard() {
     { step: 4, title: '생성', description: '영상 생성' },
   ]
 
+  // 선택 항목 표시 여부
+  const productImageUrl = selectedProduct?.rembg_image_url || selectedProduct?.image_url
+  const showSelectedItems = step >= 2 && !isGeneratingVideo && (selectedProduct || selectedAvatarInfo)
+
   return (
     <div className="min-h-full flex flex-col bg-background">
       {/* 헤더 - sticky */}
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="max-w-3xl mx-auto px-4 py-3">
+        <div className="max-w-5xl mx-auto px-4 py-3">
           {/* 타이틀 */}
           <div className="flex items-center gap-3 mb-3">
             <Link
@@ -1035,53 +1163,121 @@ export function ProductDescriptionWizard() {
             </div>
           </div>
 
-          {/* 단계 표시기 */}
-          <div className="flex items-center justify-center">
-            {STEPS.map(({ step: s, title }, index) => {
-              const isCompleted = step > s
-              const isCurrent = step === s
+          {/* 단계 표시기 + 선택 항목 */}
+          <div className="flex items-center justify-between">
+            {/* 왼쪽 여백 */}
+            <div className="w-48 hidden lg:block" />
 
-              return (
-                <div key={s} className="flex items-center">
-                  {/* 단계 원 + 텍스트 */}
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-                        isCompleted
-                          ? 'bg-primary text-primary-foreground'
-                          : isCurrent
-                            ? 'bg-primary text-primary-foreground ring-2 ring-primary/20'
-                            : 'bg-secondary text-muted-foreground'
-                      }`}
-                    >
-                      {isCompleted ? (
-                        <Check className="w-4 h-4" />
-                      ) : (
-                        s
-                      )}
-                    </div>
-                    <span
-                      className={`text-[10px] mt-1 font-medium whitespace-nowrap ${
-                        isCurrent ? 'text-primary' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
-                      }`}
-                    >
-                      {title}
-                    </span>
-                  </div>
+            {/* 중앙: 단계 표시기 */}
+            <div className="flex items-center justify-center flex-1 lg:flex-none">
+              {STEPS.map(({ step: s, title }, index) => {
+                const isCompleted = step > s
+                const isCurrent = step === s
 
-                  {/* 연결선 - 원의 세로 중간에 위치 */}
-                  {index < STEPS.length - 1 && (
-                    <div className="w-12 mx-1 -mt-4">
+                return (
+                  <div key={s} className="flex items-center">
+                    {/* 단계 원 + 텍스트 */}
+                    <div className="flex flex-col items-center">
                       <div
-                        className={`h-0.5 rounded-full transition-all ${
-                          isCompleted ? 'bg-primary' : 'bg-secondary'
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
+                          isCompleted
+                            ? 'bg-primary text-primary-foreground'
+                            : isCurrent
+                              ? 'bg-primary text-primary-foreground ring-2 ring-primary/20'
+                              : 'bg-secondary text-muted-foreground'
                         }`}
-                      />
+                      >
+                        {isCompleted ? (
+                          <Check className="w-4 h-4" />
+                        ) : (
+                          s
+                        )}
+                      </div>
+                      <span
+                        className={`text-[10px] mt-1 font-medium whitespace-nowrap ${
+                          isCurrent ? 'text-primary' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
+                        }`}
+                      >
+                        {title}
+                      </span>
+                    </div>
+
+                    {/* 연결선 */}
+                    {index < STEPS.length - 1 && (
+                      <div className="w-12 mx-1 -mt-4">
+                        <div
+                          className={`h-0.5 rounded-full transition-all ${
+                            isCompleted ? 'bg-primary' : 'bg-secondary'
+                          }`}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* 오른쪽: 선택 항목 요약 */}
+            <div className="w-48 hidden lg:flex items-center justify-end gap-2">
+              {showSelectedItems && (
+                <>
+                  {/* 제품 */}
+                  {selectedProduct && (
+                    <div className="flex items-center gap-1.5">
+                      <div className="relative w-8 h-8 rounded-md overflow-hidden bg-secondary flex-shrink-0">
+                        {productImageUrl ? (
+                          <Image
+                            src={productImageUrl}
+                            alt={selectedProduct.name}
+                            fill
+                            className="object-contain"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground truncate max-w-[60px]">
+                        {selectedProduct.name}
+                      </p>
                     </div>
                   )}
-                </div>
-              )
-            })}
+
+                  {/* 구분선 */}
+                  {selectedProduct && selectedAvatarInfo && (
+                    <div className="h-6 w-px bg-border" />
+                  )}
+
+                  {/* 아바타 */}
+                  {selectedAvatarInfo && (
+                    <div className="flex items-center gap-1.5">
+                      <div className="relative w-8 h-8 rounded-md overflow-hidden bg-secondary flex-shrink-0">
+                        {selectedAvatarInfo.type === 'ai-generated' ? (
+                          <div className="w-full h-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center">
+                            <Sparkles className="w-4 h-4 text-white" />
+                          </div>
+                        ) : selectedAvatarInfo.imageUrl ? (
+                          <Image
+                            src={selectedAvatarInfo.imageUrl}
+                            alt={selectedAvatarInfo.displayName}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <User className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground truncate max-w-[60px]">
+                        {selectedAvatarInfo.displayName}
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1148,11 +1344,11 @@ export function ProductDescriptionWizard() {
             selectedType={selectedAvatarInfo?.type}
           />
 
-          {/* 제품 선택 (선택 사항) */}
+          {/* 제품 선택 (필수) */}
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-2">
               <Package className="w-4 h-4 inline mr-2" />
-              제품 선택 <span className="text-muted-foreground text-xs">(선택 사항)</span>
+              제품 선택 <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <button
@@ -1171,22 +1367,13 @@ export function ProductDescriptionWizard() {
                     <span className="text-foreground">{selectedProduct.name}</span>
                   </div>
                 ) : (
-                  <span className="text-muted-foreground">제품을 선택하세요 (선택 사항)</span>
+                  <span className="text-muted-foreground">제품을 선택하세요</span>
                 )}
                 <ChevronDown className="w-4 h-4 text-muted-foreground" />
               </button>
 
               {showProductDropdown && (
                 <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  <button
-                    onClick={() => {
-                      setSelectedProduct(null)
-                      setShowProductDropdown(false)
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors border-b border-border"
-                  >
-                    <span className="text-muted-foreground">선택 안함</span>
-                  </button>
                   {products.length === 0 ? (
                     <div className="p-4 text-center text-muted-foreground text-sm">
                       등록된 제품이 없습니다
@@ -1413,7 +1600,7 @@ export function ProductDescriptionWizard() {
                         title={cameraCompositionLabels[comp].desc}
                       >
                         {/* 예시 이미지 (placeholder) */}
-                        <div className="w-full aspect-[3/4] rounded bg-secondary/50 mb-1.5 flex items-center justify-center overflow-hidden">
+                        <div className="w-full aspect-square rounded bg-secondary/50 mb-1.5 flex items-center justify-center overflow-hidden">
                           {/* TODO: 실제 이미지로 교체 */}
                           <Camera className="w-5 h-5 text-muted-foreground/50" />
                         </div>
@@ -1437,6 +1624,166 @@ export function ProductDescriptionWizard() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* 모델 포즈 */}
+          <div className="bg-card border border-border rounded-xl p-4">
+            <label className="block text-sm font-medium text-foreground mb-3">
+              <User className="w-4 h-4 inline mr-2" />
+              모델 포즈
+              <span className="text-xs text-muted-foreground ml-2">(선택 사항)</span>
+            </label>
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+              {modelPoseOptions.map((pose) => (
+                <button
+                  key={pose}
+                  type="button"
+                  onClick={() => setModelPose(pose)}
+                  className={`relative group flex flex-col items-center p-2 rounded-lg border transition-colors ${modelPose === pose
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border hover:border-primary/50'
+                    }`}
+                  title={modelPoseLabels[pose].desc}
+                >
+                  {/* 아이콘 placeholder */}
+                  <div className="w-full aspect-square rounded bg-secondary/50 mb-1.5 flex items-center justify-center overflow-hidden">
+                    <User className="w-5 h-5 text-muted-foreground/50" />
+                  </div>
+                  <span className={`text-[11px] font-medium text-center ${modelPose === pose ? 'text-primary' : 'text-muted-foreground'}`}>
+                    {modelPoseLabels[pose].label}
+                  </span>
+                  {modelPose === pose && (
+                    <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                      <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                    </div>
+                  )}
+                  {/* 호버 시 설명 표시 */}
+                  <div className="absolute inset-0 bg-black/70 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
+                    <p className="text-[10px] text-white text-center leading-tight">
+                      {modelPoseLabels[pose].desc}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 의상 설정 */}
+          <div className="bg-card border border-border rounded-xl p-4">
+            <label className="block text-sm font-medium text-foreground mb-3">
+              <Shirt className="w-4 h-4 inline mr-2" />
+              의상 설정
+              <span className="text-xs text-muted-foreground ml-2">(선택 사항)</span>
+            </label>
+
+            {/* 의상 모드 선택 */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setOutfitMode('keep_original')
+                  setOutfitPreset(null)
+                  setOutfitCustom('')
+                }}
+                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                  outfitMode === 'keep_original'
+                    ? 'border-primary bg-primary/10 text-primary font-medium'
+                    : 'border-border text-muted-foreground hover:border-primary/50'
+                }`}
+              >
+                기존 의상 유지
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setOutfitMode('ai_recommend')
+                  setOutfitPreset(null)
+                  setOutfitCustom('')
+                }}
+                className={`px-3 py-2 text-sm rounded-lg border transition-colors flex items-center justify-center gap-1.5 ${
+                  outfitMode === 'ai_recommend'
+                    ? 'border-primary bg-primary/10 text-primary font-medium'
+                    : 'border-border text-muted-foreground hover:border-primary/50'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                AI 추천
+              </button>
+              <button
+                type="button"
+                onClick={() => setOutfitMode('preset')}
+                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                  outfitMode === 'preset'
+                    ? 'border-primary bg-primary/10 text-primary font-medium'
+                    : 'border-border text-muted-foreground hover:border-primary/50'
+                }`}
+              >
+                스타일 선택
+              </button>
+              <button
+                type="button"
+                onClick={() => setOutfitMode('custom')}
+                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                  outfitMode === 'custom'
+                    ? 'border-primary bg-primary/10 text-primary font-medium'
+                    : 'border-border text-muted-foreground hover:border-primary/50'
+                }`}
+              >
+                직접 입력
+              </button>
+            </div>
+
+            {/* AI 추천 설명 */}
+            {outfitMode === 'ai_recommend' && (
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-4">
+                <p className="text-sm text-foreground flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  대본 생성 시 AI가 제품과 아바타에 어울리는 의상을 자동으로 추천합니다.
+                </p>
+              </div>
+            )}
+
+            {/* 프리셋 선택 */}
+            {outfitMode === 'preset' && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {outfitPresetOptions.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setOutfitPreset(preset)}
+                    className={`relative group p-3 rounded-lg border transition-colors text-left ${
+                      outfitPreset === preset
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                    title={outfitPresetLabels[preset].desc}
+                  >
+                    <span className={`text-sm font-medium ${outfitPreset === preset ? 'text-primary' : 'text-foreground'}`}>
+                      {outfitPresetLabels[preset].label}
+                    </span>
+                    <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
+                      {outfitPresetLabels[preset].desc}
+                    </p>
+                    {outfitPreset === preset && (
+                      <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* 직접 입력 */}
+            {outfitMode === 'custom' && (
+              <input
+                type="text"
+                value={outfitCustom}
+                onChange={(e) => setOutfitCustom(e.target.value)}
+                placeholder="원하는 의상을 설명해주세요... (예: 흰색 린넨 셔츠와 베이지 슬랙스)"
+                className="w-full px-4 py-2.5 text-sm bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+              />
+            )}
           </div>
 
           {/* 버튼 */}
@@ -1502,52 +1849,89 @@ export function ProductDescriptionWizard() {
                   </button>
                 </div>
 
-                <div className="flex flex-wrap justify-center gap-3 max-w-lg mx-auto">
+                <div className="flex flex-wrap justify-center gap-4 max-w-xl mx-auto">
                   {firstFrameUrls.length > 0 ? (
                     firstFrameUrls.map((url, index) => (
-                      <button
-                        key={index}
-                        onClick={() => {
-                          setSelectedFirstFrameIndex(index)
-                          setFirstFrameUrl(url)  // 압축본 (표시용)
-                          setFirstFrameOriginalUrl(firstFrameOriginalUrls[index] || url)  // 원본 (영상 생성용)
-                        }}
-                        className={`relative w-[120px] aspect-[2/3] rounded-lg overflow-hidden border-2 transition-all ${
-                          selectedFirstFrameIndex === index
-                            ? 'border-primary ring-2 ring-primary/30'
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                      >
-                        <img
-                          src={url}
-                          alt={`첫 프레임 옵션 ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                        {selectedFirstFrameIndex === index && (
-                          <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                            <Check className="w-3 h-3 text-primary-foreground" />
+                      <div key={index} className="relative">
+                        <button
+                          onClick={() => {
+                            setSelectedFirstFrameIndex(index)
+                            setFirstFrameUrl(url)  // 압축본 (표시용)
+                            setFirstFrameOriginalUrl(firstFrameOriginalUrls[index] || url)  // 원본 (영상 생성용)
+                          }}
+                          className={`relative w-[180px] aspect-[2/3] rounded-lg overflow-hidden border-2 transition-all ${
+                            selectedFirstFrameIndex === index
+                              ? 'border-primary ring-2 ring-primary/30'
+                              : 'border-border hover:border-primary/50'
+                          }`}
+                        >
+                          <img
+                            src={url}
+                            alt={`첫 프레임 옵션 ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          {selectedFirstFrameIndex === index && (
+                            <div className="absolute top-2 right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                              <Check className="w-4 h-4 text-primary-foreground" />
+                            </div>
+                          )}
+                          <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 rounded text-white text-xs">
+                            옵션 {index + 1}
                           </div>
-                        )}
-                        <div className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 bg-black/50 rounded text-white text-[10px]">
-                          옵션 {index + 1}
-                        </div>
-                      </button>
+                        </button>
+                        {/* 크게 보기 버튼 */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            window.open(firstFrameOriginalUrls[index] || url, '_blank')
+                          }}
+                          className="absolute bottom-2 right-2 px-2 py-1 bg-black/60 hover:bg-black/80 rounded text-white text-xs flex items-center gap-1 transition-colors"
+                          title="크게 보기"
+                        >
+                          <Expand className="w-3 h-3" />
+                          크게 보기
+                        </button>
+                      </div>
                     ))
                   ) : firstFrameUrl ? (
-                    <div className="aspect-[2/3] w-[150px] rounded-lg overflow-hidden border border-border">
-                      <img
-                        src={firstFrameUrl}
-                        alt="첫 프레임"
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="relative">
+                      <div className="aspect-[2/3] w-[180px] rounded-lg overflow-hidden border border-border">
+                        <img
+                          src={firstFrameUrl}
+                          alt="첫 프레임"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <button
+                        onClick={() => window.open(firstFrameOriginalUrl || firstFrameUrl, '_blank')}
+                        className="absolute bottom-2 right-2 px-2 py-1 bg-black/60 hover:bg-black/80 rounded text-white text-xs flex items-center gap-1 transition-colors"
+                        title="크게 보기"
+                      >
+                        <Expand className="w-3 h-3" />
+                        크게 보기
+                      </button>
                     </div>
                   ) : (
-                    <div className="aspect-[2/3] w-[150px] rounded-lg bg-secondary/30 flex items-center justify-center">
+                    <div className="aspect-[2/3] w-[180px] rounded-lg bg-secondary/30 flex items-center justify-center">
                       <p className="text-muted-foreground text-sm text-center px-2">이미지가 생성되면 여기에 표시됩니다</p>
                     </div>
                   )}
                 </div>
               </div>
+
+              {/* AI 추천 의상 표시 (ai_recommend 모드일 때) */}
+              {outfitMode === 'ai_recommend' && recommendedOutfit && (
+                <div className="bg-card border border-border rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                    <h2 className="text-lg font-semibold text-foreground">AI 추천 의상</h2>
+                  </div>
+                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                    <p className="text-foreground font-medium mb-2">{recommendedOutfit.koreanDescription}</p>
+                    <p className="text-sm text-muted-foreground">{recommendedOutfit.reason}</p>
+                  </div>
+                </div>
+              )}
 
               {/* 대본 선택 + 음성 선택 (2열 레이아웃) */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

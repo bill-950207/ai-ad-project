@@ -77,11 +77,16 @@ export function Navbar() {
               // 로딩 중 - 스켈레톤 표시
               <div className="h-10 w-24 bg-secondary animate-pulse rounded-lg" />
             ) : user ? (
-              // 로그인 상태 - 이메일 및 로그아웃 버튼
+              // 로그인 상태 - 대시보드 버튼 및 로그아웃 버튼
               <>
                 <span className="text-sm text-muted-foreground hidden sm:block">
                   {user.email}
                 </span>
+                <Link href="/dashboard">
+                  <Button variant="default" size="sm">
+                    대시보드
+                  </Button>
+                </Link>
                 <Button variant="outline" size="sm" onClick={handleLogout}>
                   Logout
                 </Button>

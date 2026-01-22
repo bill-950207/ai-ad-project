@@ -11,6 +11,13 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { GoogleGenAI, GenerateContentConfig, ThinkingLevel, Type } from '@google/genai'
 
+// Gemini 클라이언트 (lib/gemini/client.ts와 동일한 설정)
+const genAI = new GoogleGenAI({
+  apiKey: process.env.GOOGLE_AI_API_KEY!,
+})
+
+const MODEL_NAME = 'gemini-3-flash-preview'
+
 // 분위기 옵션
 const MOOD_OPTIONS = ['bright', 'calm', 'emotional', 'professional', 'exciting', 'trendy', 'playful', 'romantic', 'nostalgic']
 
@@ -37,9 +44,6 @@ async function recommendMusicSettings(
   productDescription: string,
   productCategory?: string
 ): Promise<MusicRecommendation> {
-  const gemini = new GoogleGenAI({
-    apiKey: process.env.GOOGLE_API_KEY!,
-  })
 
   const prompt = `You are an expert music director for advertising. Analyze the product information and recommend the best music settings for creating an advertisement background music.
 
@@ -152,8 +156,8 @@ Provide reasoning for each choice.`
     },
   }
 
-  const response = await gemini.models.generateContent({
-    model: 'gemini-2.5-flash',
+  const response = await genAI.models.generateContent({
+    model: MODEL_NAME,
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     config,
   })

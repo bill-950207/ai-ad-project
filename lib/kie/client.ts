@@ -318,7 +318,8 @@ export type ZImageAspectRatio = '1:1' | '4:3' | '3:4' | '16:9' | '9:16'
 /** Z Image 입력 타입 */
 export interface KieZImageInput {
   prompt: string
-  aspect_ratio?: ZImageAspectRatio,
+  aspect_ratio?: ZImageAspectRatio
+  enable_safety_checker?: boolean  // Safety Checker 활성화 여부 (기본: false)
 }
 
 /** Z Image 출력 타입 (fal.ai 호환) */
@@ -350,6 +351,7 @@ export async function createZImageTask(
     input: {
       prompt: input.prompt,
       aspect_ratio: input.aspect_ratio || '9:16',  // 아바타용 기본 세로 비율
+      enable_safety_checker: input.enable_safety_checker ?? false,  // Safety Checker 비활성화 (체형 등 반영 위해)
     },
   }
 
@@ -1263,6 +1265,7 @@ export async function submitAdMusicToQueue(
 export interface KieZImageTurboInput {
   prompt: string
   aspect_ratio?: ZImageAspectRatio
+  enable_safety_checker?: boolean  // Safety Checker 활성화 여부 (기본: false)
 }
 
 /** Z Image Turbo 출력 타입 */
@@ -1291,6 +1294,7 @@ export async function createZImageTurboTask(
     input: {
       prompt: input.prompt,
       aspect_ratio: input.aspect_ratio || '16:9',  // 배경용 기본 가로 비율
+      enable_safety_checker: input.enable_safety_checker ?? false,  // Safety Checker 비활성화 (체형 등 반영 위해)
     },
   }
 

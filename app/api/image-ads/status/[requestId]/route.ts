@@ -108,48 +108,130 @@ export async function GET(
       if (result.images && result.images.length > 0) {
         const generatedImageUrl = result.images[0].url
 
-        // 해당 image_ad의 ID 조회 (rawRequestId로 조회 - prefix 포함)
-        const { data: imageAdData } = await supabase
+        // 해당 image_ad 조회 (fal_request_id 또는 batch_request_ids에서 검색)
+        let imageAdData: { id: string; batch_request_ids: Array<{ provider: string; requestId: string }> | null; image_urls: string[] | null; image_url_originals: string[] | null; num_images: number | null } | null = null
+
+        // 1. fal_request_id로 먼저 검색
+        const { data: singleData } = await supabase
           .from('image_ads')
-          .select('id')
+          .select('id, batch_request_ids, image_urls, image_url_originals, num_images')
           .eq('fal_request_id', rawRequestId)
           .eq('user_id', user.id)
           .single()
+
+        if (singleData) {
+          imageAdData = singleData
+        } else {
+          // 2. batch_request_ids에서 검색 (JSONB 배열 내 객체의 requestId 필드 검색)
+          const { data: batchData } = await supabase
+            .from('image_ads')
+            .select('id, batch_request_ids, image_urls, image_url_originals, num_images')
+            .eq('user_id', user.id)
+            .not('batch_request_ids', 'is', null)
+
+          // batch_request_ids 배열에서 해당 requestId 찾기
+          if (batchData) {
+            for (const ad of batchData) {
+              const batchIds = ad.batch_request_ids as Array<{ provider: string; requestId: string }> | null
+              if (batchIds?.some(b => b.requestId === actualId || `${b.provider}:${b.requestId}` === rawRequestId)) {
+                imageAdData = ad
+                break
+              }
+            }
+          }
+        }
 
         let imageUrl = generatedImageUrl
         let imageUrlOriginal = generatedImageUrl
 
         // R2에 원본/압축본 업로드
         if (imageAdData?.id) {
+          // batch에서의 인덱스 찾기
+          let batchIndex = 0
+          if (imageAdData.batch_request_ids) {
+            const idx = imageAdData.batch_request_ids.findIndex(
+              b => b.requestId === actualId || `${b.provider}:${b.requestId}` === rawRequestId
+            )
+            if (idx >= 0) batchIndex = idx
+          }
+
           try {
             const uploadResult = await uploadExternalImageToR2(
               generatedImageUrl,
               'image-ads',
-              imageAdData.id
+              `${imageAdData.id}_${batchIndex}`
             )
             imageUrl = uploadResult.compressedUrl
             imageUrlOriginal = uploadResult.originalUrl
-            console.log('이미지 광고 R2 업로드 완료:', { id: imageAdData.id, provider, compressedUrl: imageUrl })
+            console.log('이미지 광고 R2 업로드 완료:', { id: imageAdData.id, provider, batchIndex, compressedUrl: imageUrl })
           } catch (uploadError) {
             console.error('이미지 광고 R2 업로드 실패, 원본 URL 사용:', uploadError)
             // 업로드 실패 시 원본 URL 그대로 사용
           }
-        }
 
-        // DB 업데이트
-        const { error: updateError } = await supabase
-          .from('image_ads')
-          .update({
-            status: 'COMPLETED',
-            image_url: imageUrl,
-            image_url_original: imageUrlOriginal,
-            completed_at: new Date().toISOString(),
-          })
-          .eq('fal_request_id', rawRequestId)
-          .eq('user_id', user.id)
+          // 배치 레코드인 경우: image_urls 배열 업데이트
+          if (imageAdData.batch_request_ids && imageAdData.batch_request_ids.length > 1) {
+            const existingUrls = imageAdData.image_urls || []
+            const existingOriginals = imageAdData.image_url_originals || []
+            const numImages = imageAdData.num_images || imageAdData.batch_request_ids.length
 
-        if (updateError) {
-          console.error('이미지 광고 DB 업데이트 오류:', updateError)
+            // 배열이 아직 초기화되지 않은 경우 빈 배열로 채우기
+            const newUrls = [...existingUrls]
+            const newOriginals = [...existingOriginals]
+
+            // 해당 인덱스에 URL 설정
+            newUrls[batchIndex] = imageUrl
+            newOriginals[batchIndex] = imageUrlOriginal
+
+            // 모든 요청이 완료되었는지 확인
+            const completedCount = newUrls.filter(u => u && u.length > 0).length
+            const isAllCompleted = completedCount >= numImages
+
+            await supabase
+              .from('image_ads')
+              .update({
+                status: isAllCompleted ? 'COMPLETED' : 'IN_PROGRESS',
+                image_urls: newUrls,
+                image_url_originals: newOriginals,
+                image_url: newUrls[0] || imageUrl,  // 하위 호환성
+                image_url_original: newOriginals[0] || imageUrlOriginal,
+                ...(isAllCompleted ? { completed_at: new Date().toISOString() } : {}),
+              })
+              .eq('id', imageAdData.id)
+              .eq('user_id', user.id)
+
+            console.log('배치 이미지 상태 업데이트:', { id: imageAdData.id, batchIndex, completedCount, numImages, isAllCompleted })
+          } else {
+            // 단일 레코드인 경우 (기존 로직)
+            await supabase
+              .from('image_ads')
+              .update({
+                status: 'COMPLETED',
+                image_url: imageUrl,
+                image_url_original: imageUrlOriginal,
+                image_urls: [imageUrl],
+                image_url_originals: [imageUrlOriginal],
+                completed_at: new Date().toISOString(),
+              })
+              .eq('id', imageAdData.id)
+              .eq('user_id', user.id)
+          }
+        } else {
+          // 레코드를 찾지 못한 경우에도 fal_request_id로 업데이트 시도 (하위 호환성)
+          const { error: updateError } = await supabase
+            .from('image_ads')
+            .update({
+              status: 'COMPLETED',
+              image_url: imageUrl,
+              image_url_original: imageUrlOriginal,
+              completed_at: new Date().toISOString(),
+            })
+            .eq('fal_request_id', rawRequestId)
+            .eq('user_id', user.id)
+
+          if (updateError) {
+            console.error('이미지 광고 DB 업데이트 오류 (레코드 없음):', updateError)
+          }
         }
 
         return NextResponse.json({
@@ -158,8 +240,9 @@ export async function GET(
           imageUrls: [imageUrl],
         })
       } else {
-        // 실패 상태로 DB 업데이트
-        await supabase
+        // 실패 상태로 DB 업데이트 (batch_request_ids도 확인)
+        // 먼저 fal_request_id로 업데이트 시도
+        const { count } = await supabase
           .from('image_ads')
           .update({
             status: 'FAILED',
@@ -168,6 +251,26 @@ export async function GET(
           .eq('fal_request_id', rawRequestId)
           .eq('user_id', user.id)
 
+        // fal_request_id로 찾지 못한 경우 batch_request_ids에서 검색
+        if (!count || count === 0) {
+          const { data: batchAds } = await supabase
+            .from('image_ads')
+            .select('id, batch_request_ids')
+            .eq('user_id', user.id)
+            .not('batch_request_ids', 'is', null)
+
+          if (batchAds) {
+            for (const ad of batchAds) {
+              const batchIds = ad.batch_request_ids as Array<{ provider: string; requestId: string }> | null
+              if (batchIds?.some(b => b.requestId === actualId || `${b.provider}:${b.requestId}` === rawRequestId)) {
+                // 배치의 일부가 실패해도 전체를 실패로 표시하지 않음 (다른 이미지가 성공할 수 있음)
+                console.log('배치 이미지 중 하나 실패:', { id: ad.id, requestId: rawRequestId })
+                break
+              }
+            }
+          }
+        }
+
         return NextResponse.json({
           status: 'FAILED',
           error: 'No images generated',
@@ -175,13 +278,38 @@ export async function GET(
       }
     }
 
-    // 진행 중인 경우 상태 업데이트
+    // 진행 중인 경우 상태 업데이트 (배치도 고려)
     if (status.status === 'IN_PROGRESS') {
-      await supabase
+      // fal_request_id로 업데이트 시도
+      const { count } = await supabase
         .from('image_ads')
         .update({ status: 'IN_PROGRESS' })
         .eq('fal_request_id', rawRequestId)
         .eq('user_id', user.id)
+
+      // 배치 레코드인 경우 (count가 0이면 fal_request_id로 찾지 못한 것)
+      if (!count || count === 0) {
+        const { data: batchAds } = await supabase
+          .from('image_ads')
+          .select('id, batch_request_ids')
+          .eq('user_id', user.id)
+          .eq('status', 'IN_QUEUE')  // 아직 IN_QUEUE 상태인 것만
+          .not('batch_request_ids', 'is', null)
+
+        if (batchAds) {
+          for (const ad of batchAds) {
+            const batchIds = ad.batch_request_ids as Array<{ provider: string; requestId: string }> | null
+            if (batchIds?.some(b => b.requestId === actualId || `${b.provider}:${b.requestId}` === rawRequestId)) {
+              await supabase
+                .from('image_ads')
+                .update({ status: 'IN_PROGRESS' })
+                .eq('id', ad.id)
+                .eq('user_id', user.id)
+              break
+            }
+          }
+        }
+      }
     }
 
     // 진행 중인 경우 상태 반환

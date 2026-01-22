@@ -20,7 +20,9 @@ import {
   User,
   Shirt,
   Settings2,
+  Wand2,
 } from 'lucide-react'
+import { ImageEditModal } from './image-edit-modal'
 
 interface AdProduct {
   id: string
@@ -100,6 +102,8 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [isDownloadingAll, setIsDownloadingAll] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [isDeletingSingle, setIsDeletingSingle] = useState(false)
 
   const fetchImageAd = useCallback(async () => {
     try {
@@ -190,6 +194,45 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
       }
     } finally {
       setIsDownloadingAll(false)
+    }
+  }
+
+  const handleDeleteSingleImage = async (index: number) => {
+    // 마지막 하나 남은 이미지는 삭제 불가
+    if (imageUrls.length <= 1) {
+      alert(t.imageAdDetail?.cannotDeleteLastImage || '마지막 이미지는 삭제할 수 없습니다.')
+      return
+    }
+
+    if (!confirm(t.imageAdDetail?.confirmDeleteSingleImage || '이 이미지를 삭제하시겠습니까?')) return
+
+    setIsDeletingSingle(true)
+    try {
+      const res = await fetch(`/api/image-ads/${imageAdId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deleteIndex: index }),
+      })
+
+      if (res.ok) {
+        // 삭제 후 데이터 새로고침
+        await fetchImageAd()
+        // 삭제된 이미지가 현재 선택된 이미지였으면 이전 이미지 또는 첫 이미지로 이동
+        if (index === selectedImageIndex) {
+          setSelectedImageIndex(Math.max(0, index - 1))
+        } else if (index < selectedImageIndex) {
+          // 삭제된 이미지가 선택된 이미지보다 앞이면 인덱스 조정
+          setSelectedImageIndex(selectedImageIndex - 1)
+        }
+      } else {
+        const data = await res.json()
+        alert(data.error || '이미지 삭제에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('이미지 삭제 오류:', error)
+      alert('이미지 삭제에 실패했습니다.')
+    } finally {
+      setIsDeletingSingle(false)
     }
   }
 
@@ -466,39 +509,20 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {selectedImageUrl && (
-            <>
-              <a
-                href={selectedOriginalUrl || selectedImageUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:bg-secondary/50 rounded-lg transition-colors"
-              >
-                <ExternalLink className="w-4 h-4" />
-                {t.imageAdDetail?.viewOriginal || '원본 보기'}
-              </a>
-              <button
-                onClick={() => handleDownload()}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:bg-secondary/50 rounded-lg transition-colors"
-              >
+          {/* 전체 다운로드 (배치인 경우만) */}
+          {hasMultipleImages && (
+            <button
+              onClick={handleDownloadAll}
+              disabled={isDownloadingAll}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50"
+            >
+              {isDownloadingAll ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
                 <Download className="w-4 h-4" />
-                {hasMultipleImages ? '선택 다운로드' : (t.imageAdDetail?.download || '다운로드')}
-              </button>
-              {hasMultipleImages && (
-                <button
-                  onClick={handleDownloadAll}
-                  disabled={isDownloadingAll}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50"
-                >
-                  {isDownloadingAll ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Download className="w-4 h-4" />
-                  )}
-                  전체 다운로드 ({imageUrls.length})
-                </button>
               )}
-            </>
+              전체 다운로드 ({imageUrls.length})
+            </button>
           )}
           <button
             onClick={handleDelete}
@@ -520,14 +544,58 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
         {/* 생성된 이미지 */}
         <div className="space-y-4">
           {/* 메인 이미지 */}
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="bg-card border border-border rounded-xl overflow-hidden group">
             <div className="aspect-square relative bg-[#1a1a2e]">
               {selectedImageUrl ? (
-                <img
-                  src={selectedImageUrl}
-                  alt={`Generated ad ${selectedImageIndex + 1}`}
-                  className="absolute inset-0 w-full h-full object-contain"
-                />
+                <>
+                  <img
+                    src={selectedImageUrl}
+                    alt={`Generated ad ${selectedImageIndex + 1}`}
+                    className="absolute inset-0 w-full h-full object-contain"
+                  />
+                  {/* 이미지 액션 버튼 오버레이 */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors">
+                    <div className="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <a
+                        href={selectedOriginalUrl || selectedImageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 bg-white/90 hover:bg-white text-gray-700 rounded-lg transition-colors shadow-lg"
+                        title="원본 보기"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                      <button
+                        onClick={() => handleDownload()}
+                        className="p-2 bg-white/90 hover:bg-white text-gray-700 rounded-lg transition-colors shadow-lg"
+                        title="다운로드"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setEditModalOpen(true)}
+                        className="p-2 bg-primary/90 hover:bg-primary text-white rounded-lg transition-colors shadow-lg"
+                        title="편집"
+                      >
+                        <Wand2 className="w-4 h-4" />
+                      </button>
+                      {imageUrls.length > 1 && (
+                        <button
+                          onClick={() => handleDeleteSingleImage(selectedImageIndex)}
+                          disabled={isDeletingSingle}
+                          className="p-2 bg-red-500/90 hover:bg-red-500 text-white rounded-lg transition-colors shadow-lg disabled:opacity-50"
+                          title="이미지 삭제"
+                        >
+                          {isDeletingSingle ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <ImageIcon className="w-12 h-12 text-muted-foreground" />
@@ -540,21 +608,74 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
           {hasMultipleImages && (
             <div className={`grid ${getThumbnailGridClass(imageUrls.length)} gap-2`}>
               {imageUrls.map((url, idx) => (
-                <button
+                <div
                   key={idx}
-                  onClick={() => setSelectedImageIndex(idx)}
-                  className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                  className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all group/thumb ${
                     idx === selectedImageIndex
                       ? 'border-primary ring-2 ring-primary/30'
                       : 'border-transparent hover:border-primary/50'
                   }`}
                 >
-                  <img
-                    src={url}
-                    alt={`Thumbnail ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
+                  <button
+                    onClick={() => setSelectedImageIndex(idx)}
+                    className="w-full h-full"
+                  >
+                    <img
+                      src={url}
+                      alt={`Thumbnail ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                  {/* 썸네일 호버 액션 */}
+                  <div className="absolute inset-0 bg-black/0 group-hover/thumb:bg-black/40 transition-colors pointer-events-none">
+                    <div className="absolute bottom-1 right-1 flex items-center gap-1 opacity-0 group-hover/thumb:opacity-100 transition-opacity pointer-events-auto">
+                      <a
+                        href={originalUrls[idx] || url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1 bg-white/90 hover:bg-white text-gray-700 rounded transition-colors"
+                        title="원본 보기"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDownload(idx)
+                        }}
+                        className="p-1 bg-white/90 hover:bg-white text-gray-700 rounded transition-colors"
+                        title="다운로드"
+                      >
+                        <Download className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedImageIndex(idx)
+                          setEditModalOpen(true)
+                        }}
+                        className="p-1 bg-primary/90 hover:bg-primary text-white rounded transition-colors"
+                        title="편집"
+                      >
+                        <Wand2 className="w-3 h-3" />
+                      </button>
+                      {imageUrls.length > 1 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteSingleImage(idx)
+                          }}
+                          disabled={isDeletingSingle}
+                          className="p-1 bg-red-500/90 hover:bg-red-500 text-white rounded transition-colors disabled:opacity-50"
+                          title="이미지 삭제"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -741,6 +862,24 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
           )}
         </div>
       </div>
+
+      {/* 이미지 편집 모달 */}
+      {selectedImageUrl && (
+        <ImageEditModal
+          isOpen={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          imageAdId={imageAdId}
+          imageUrl={selectedImageUrl}
+          imageIndex={selectedImageIndex}
+          quality={(imageAd.quality as 'medium' | 'high') || 'medium'}
+          onEditComplete={(newImageIndex) => {
+            // 편집 완료 후 데이터 새로고침 및 새 이미지 선택
+            fetchImageAd().then(() => {
+              setSelectedImageIndex(newImageIndex)
+            })
+          }}
+        />
+      )}
     </div>
   )
 }

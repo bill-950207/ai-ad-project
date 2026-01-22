@@ -102,6 +102,27 @@ const COMMON_COMPOSITION: OptionItem[] = [
   { key: 'negative_space', labelKey: 'negativeSpace' },
 ]
 
+// 의상 옵션 (아바타 포함 광고용)
+const COMMON_OUTFIT: OptionItem[] = [
+  { key: 'keep_original', labelKey: 'keepOriginal' },  // 원본 의상 유지
+  { key: 'casual_everyday', labelKey: 'casualEveryday' },
+  { key: 'formal_elegant', labelKey: 'formalElegant' },
+  { key: 'professional_business', labelKey: 'professionalBusiness' },
+  { key: 'sporty_athletic', labelKey: 'sportyAthletic' },
+  { key: 'cozy_comfortable', labelKey: 'cozyComfortable' },
+  { key: 'trendy_fashion', labelKey: 'trendyFashion' },
+  { key: 'minimal_simple', labelKey: 'minimalSimple' },
+]
+
+// 의상 옵션 그룹 (아바타 포함 광고에 추가)
+const OUTFIT_GROUP: OptionGroup = {
+  key: 'outfit',
+  labelKey: 'outfit',
+  options: COMMON_OUTFIT,
+  defaultValue: 'keep_original',
+  allowCustom: true,
+}
+
 // ============================================================
 // 카테고리별 특화 옵션
 // ============================================================
@@ -181,6 +202,7 @@ const PRODUCT_ONLY_OPTIONS: CategoryOptions = {
 // 들고 있는 샷 (holding) - 개선된 버전
 const HOLDING_OPTIONS: CategoryOptions = {
   groups: [
+    OUTFIT_GROUP,  // 의상 옵션 추가
     {
       key: 'pose',
       labelKey: 'pose',
@@ -257,6 +279,7 @@ const HOLDING_OPTIONS: CategoryOptions = {
 // 사용 중인 샷 (using) - 개선된 버전
 const USING_OPTIONS: CategoryOptions = {
   groups: [
+    OUTFIT_GROUP,  // 의상 옵션 추가
     {
       key: 'action',
       labelKey: 'action',
@@ -333,6 +356,7 @@ const USING_OPTIONS: CategoryOptions = {
 // 착용샷 (wearing) - 개선된 버전
 const WEARING_OPTIONS: CategoryOptions = {
   groups: [
+    OUTFIT_GROUP,  // 의상 옵션 추가 (착용 제품 외 나머지 의상)
     {
       key: 'pose',
       labelKey: 'pose',
@@ -426,78 +450,10 @@ const WEARING_OPTIONS: CategoryOptions = {
   ],
 }
 
-// 비포/애프터 (beforeAfter) - 개선된 버전
-const BEFORE_AFTER_OPTIONS: CategoryOptions = {
-  groups: [
-    {
-      key: 'layout',
-      labelKey: 'layout',
-      options: [
-        { key: 'side_by_side', labelKey: 'sideBySide' },
-        { key: 'split_screen_diagonal', labelKey: 'splitScreenDiagonal' },
-        { key: 'slider_reveal', labelKey: 'sliderReveal' },
-        { key: 'overlay_fade', labelKey: 'overlayFade' },
-      ],
-      defaultValue: 'side_by_side',
-      allowCustom: true,
-    },
-    {
-      key: 'gaze',
-      labelKey: 'gaze',
-      options: COMMON_GAZE,
-      defaultValue: 'camera_direct',
-      allowCustom: true,
-    },
-    {
-      key: 'focus',
-      labelKey: 'focus',
-      options: [
-        { key: 'skin_texture', labelKey: 'skinTexture' },
-        { key: 'skin_tone', labelKey: 'skinTone' },
-        { key: 'hair_health', labelKey: 'hairHealth' },
-        { key: 'overall_glow', labelKey: 'overallGlow' },
-        { key: 'detail_closeup', labelKey: 'detailCloseup' },
-      ],
-      defaultValue: 'overall_glow',
-      allowCustom: true,
-    },
-    {
-      key: 'lighting',
-      labelKey: 'lighting',
-      options: [
-        { key: 'consistent_studio', labelKey: 'consistentStudio' },
-        { key: 'natural_soft', labelKey: 'naturalSoft' },
-        { key: 'dramatic_highlight', labelKey: 'dramaticHighlight' },
-        { key: 'ring_light', labelKey: 'ringLight' },
-      ],
-      defaultValue: 'consistent_studio',
-      allowCustom: true,
-    },
-    {
-      key: 'style',
-      labelKey: 'style',
-      options: [
-        { key: 'clinical_clean', labelKey: 'clinicalClean' },
-        { key: 'lifestyle_natural', labelKey: 'lifestyleNatural' },
-        { key: 'dramatic_transformation', labelKey: 'dramaticTransformation' },
-        { key: 'subtle_enhancement', labelKey: 'subtleEnhancement' },
-      ],
-      defaultValue: 'clinical_clean',
-      allowCustom: true,
-    },
-    {
-      key: 'colorTone',
-      labelKey: 'colorTone',
-      options: COMMON_COLOR_TONE,
-      defaultValue: 'bright_vivid',
-      allowCustom: true,
-    },
-  ],
-}
-
 // 라이프스타일 (lifestyle) - 개선된 버전
 const LIFESTYLE_OPTIONS: CategoryOptions = {
   groups: [
+    OUTFIT_GROUP,  // 의상 옵션 추가
     {
       key: 'scene',
       labelKey: 'scene',
@@ -578,6 +534,7 @@ const LIFESTYLE_OPTIONS: CategoryOptions = {
 // 언박싱 (unboxing) - 개선된 버전
 const UNBOXING_OPTIONS: CategoryOptions = {
   groups: [
+    OUTFIT_GROUP,  // 의상 옵션 추가
     {
       key: 'action',
       labelKey: 'action',
@@ -644,67 +601,10 @@ const UNBOXING_OPTIONS: CategoryOptions = {
   ],
 }
 
-// 비교 (comparison) - 개선된 버전
-const COMPARISON_OPTIONS: CategoryOptions = {
-  groups: [
-    {
-      key: 'layout',
-      labelKey: 'layout',
-      options: [
-        { key: 'side_by_side', labelKey: 'sideBySide' },
-        { key: 'stacked_vertical', labelKey: 'stackedVertical' },
-        { key: 'grid_showcase', labelKey: 'gridShowcase' },
-        { key: 'spotlight_hero', labelKey: 'spotlightHero' },
-      ],
-      defaultValue: 'side_by_side',
-      allowCustom: true,
-    },
-    {
-      key: 'style',
-      labelKey: 'style',
-      options: [
-        { key: 'clean_minimal', labelKey: 'cleanMinimal' },
-        { key: 'detailed_specs', labelKey: 'detailedSpecs' },
-        { key: 'infographic_visual', labelKey: 'infographicVisual' },
-        { key: 'editorial_premium', labelKey: 'editorialPremium' },
-        { key: 'tech_futuristic', labelKey: 'techFuturistic' },
-      ],
-      defaultValue: 'clean_minimal',
-      allowCustom: true,
-    },
-    {
-      key: 'background',
-      labelKey: 'background',
-      options: [
-        { key: 'pure_white', labelKey: 'pureWhite' },
-        { key: 'soft_gradient', labelKey: 'softGradient' },
-        { key: 'neutral_gray', labelKey: 'neutralGray' },
-        { key: 'colored_accent', labelKey: 'coloredAccent' },
-        { key: 'texture_subtle', labelKey: 'textureSubtle' },
-      ],
-      defaultValue: 'pure_white',
-      allowCustom: true,
-    },
-    {
-      key: 'lighting',
-      labelKey: 'lighting',
-      options: COMMON_LIGHTING,
-      defaultValue: 'soft_diffused',
-      allowCustom: true,
-    },
-    {
-      key: 'colorTone',
-      labelKey: 'colorTone',
-      options: COMMON_COLOR_TONE,
-      defaultValue: 'bright_vivid',
-      allowCustom: true,
-    },
-  ],
-}
-
 // 시즌/테마 (seasonal) - 개선된 버전
 const SEASONAL_OPTIONS: CategoryOptions = {
   groups: [
+    OUTFIT_GROUP,  // 의상 옵션 추가
     {
       key: 'season',
       labelKey: 'season',
@@ -785,10 +685,8 @@ export const CATEGORY_OPTIONS: Record<ImageAdType, CategoryOptions> = {
   holding: HOLDING_OPTIONS,
   using: USING_OPTIONS,
   wearing: WEARING_OPTIONS,
-  beforeAfter: BEFORE_AFTER_OPTIONS,
   lifestyle: LIFESTYLE_OPTIONS,
   unboxing: UNBOXING_OPTIONS,
-  comparison: COMPARISON_OPTIONS,
   seasonal: SEASONAL_OPTIONS,
 }
 
@@ -861,19 +759,34 @@ function getBasePrompt(adType: ImageAdType, productName?: string): string {
       return 'Create an advertisement image where the model from the reference is naturally holding and presenting the product.'
     case 'using':
       return 'Create an advertisement image where the model from the reference is actively using and demonstrating the product.'
-    case 'wearing':
-      if (productName) {
-        return `Create a fashion advertisement image showcasing the model wearing the outfit from the reference image. The model should also be naturally holding or presenting "${productName}" as an accessory or complementary product in the shot.`
-      }
-      return 'Create a fashion advertisement image showcasing the model wearing the outfit from the reference image.'
-    case 'beforeAfter':
-      return 'Create a before and after comparison image showing the transformation effect.'
+    case 'wearing': {
+      const productRef = productName ? `"${productName}"` : 'the product'
+      return `Create a fashion advertisement image showcasing ${productRef} from Figure 1 being WORN by a model.
+
+CRITICAL WEARING REQUIREMENT:
+The product MUST be worn in its NATURAL, INTENDED way - exactly how a real person would wear this product in real life.
+
+FRAMING PRIORITY - THE PRODUCT IS THE STAR:
+- Focus the camera on the PRODUCT and the body part wearing it
+- It is PERFECTLY ACCEPTABLE to crop out other body parts that are not relevant to the product
+- Footwear (shoes, sneakers, boots) → Frame the FEET and LEGS. Face/upper body can be cropped out or not visible. Show from knees down or full legs.
+- Headwear (hats, caps, beanies) → Frame the HEAD. Lower body can be cropped.
+- Eyewear (glasses, sunglasses) → Frame the FACE closely.
+- Jewelry/Accessories → Frame the specific body part (neck, ears, wrist, fingers)
+- Clothing → Frame to show the garment properly on the body
+
+DO NOT:
+- Place the product next to or near the model as a prop
+- Have the model hold the product in their hands (unless it's a bag/purse meant to be held)
+- Show the product floating or disconnected from the model
+- Force the entire body or face into frame if it makes the product look awkward
+
+IMPORTANT: Prioritize making the PRODUCT look good and naturally worn. A partial body shot (legs only, hands only, face closeup) is often MORE effective than forcing a full body shot.`
+    }
     case 'lifestyle':
       return 'Create a lifestyle advertisement showing the model naturally incorporating the product into their daily routine.'
     case 'unboxing':
       return 'Create an unboxing or product reveal style advertisement with the model presenting the product.'
-    case 'comparison':
-      return 'Create a product comparison style advertisement highlighting differences.'
     case 'seasonal':
       return 'Create a seasonal themed advertisement with appropriate atmosphere and decorations.'
     default:
@@ -1344,6 +1257,25 @@ function getOptionPrompt(adType: ImageAdType, groupKey: string, optionValue: str
       framed: 'Framed composition using environmental elements.',
       negative_space: 'Negative space composition for minimalist impact.',
     },
+    // 의상 (아바타 포함 광고용)
+    outfit: {
+      keep_original: '',  // 원본 의상 유지 시 프롬프트 추가 안함
+      casual_everyday: 'Model wearing casual everyday outfit: comfortable t-shirt or blouse with jeans or casual pants, relaxed and approachable style.',
+      formal_elegant: 'Model wearing formal elegant outfit: sophisticated dress or tailored suit, refined and polished appearance.',
+      professional_business: 'Model wearing professional business attire: crisp blazer with dress shirt, polished and authoritative look.',
+      sporty_athletic: 'Model wearing sporty athletic wear: comfortable activewear or athleisure, energetic and dynamic style.',
+      cozy_comfortable: 'Model wearing cozy comfortable clothing: soft knit sweater or cardigan, warm and inviting appearance.',
+      trendy_fashion: 'Model wearing trendy fashion-forward outfit: current season styles, stylish and on-trend look.',
+      minimal_simple: 'Model wearing minimal simple outfit: clean solid-colored clothing without busy patterns, understated elegance.',
+    },
+  }
+
+  // wearing 타입에서 outfit 선택 시, 착용 제품 외 의상임을 명확히
+  if (adType === 'wearing' && groupKey === 'outfit' && optionValue !== 'keep_original') {
+    const baseOutfitPrompt = prompts[groupKey]?.[optionValue] || ''
+    if (baseOutfitPrompt) {
+      return baseOutfitPrompt + ' (This outfit applies to clothing OTHER than the product being advertised. The advertised product must be worn as-is.)'
+    }
   }
 
   return prompts[groupKey]?.[optionValue] || ''

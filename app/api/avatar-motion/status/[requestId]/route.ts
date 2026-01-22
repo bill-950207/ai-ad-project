@@ -3,7 +3,9 @@
  *
  * GET: 프레임/영상 생성 상태 확인
  * - kie:xxx 형식: kie.ai 상태 조회 (Kling 2.6 포함)
- * - fal:xxx 형식: fal.ai 상태 조회
+ * - fal:xxx 형식: fal.ai 상태 조회 (Seedream Edit)
+ * - wavespeed-vidu:xxx 형식: WaveSpeed Vidu Q2 상태 조회
+ * - fal-vidu:xxx 형식: fal.ai Vidu Q2 상태 조회
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -17,7 +19,13 @@ import {
 import {
   getSeedreamEditQueueStatus,
   getSeedreamEditQueueResponse,
+  getViduQ2QueueStatus,
+  getViduQ2QueueResponse,
 } from '@/lib/fal/client'
+import {
+  getViduQueueStatus,
+  getViduQueueResponse,
+} from '@/lib/wavespeed/client'
 
 interface RouteContext {
   params: Promise<{ requestId: string }>
@@ -88,7 +96,7 @@ export async function GET(
         errorMessage = taskInfo.failMsg || '알 수 없는 오류'
       }
     } else if (provider === 'fal') {
-      // fal.ai 상태 조회
+      // fal.ai 상태 조회 (Seedream Edit)
       const falStatus = await getSeedreamEditQueueStatus(taskId)
 
       if (falStatus.status === 'IN_QUEUE') {
@@ -111,6 +119,62 @@ export async function GET(
         }
       } else {
         status = 'IN_PROGRESS'
+      }
+    } else if (provider === 'wavespeed-vidu') {
+      // WaveSpeed Vidu Q2 상태 조회
+      try {
+        const viduStatus = await getViduQueueStatus(taskId)
+
+        if (viduStatus.status === 'IN_QUEUE') {
+          status = 'IN_QUEUE'
+        } else if (viduStatus.status === 'IN_PROGRESS') {
+          status = 'IN_PROGRESS'
+        } else if (viduStatus.status === 'COMPLETED') {
+          const result = await getViduQueueResponse(taskId)
+          if (result.videos && result.videos.length > 0) {
+            status = 'COMPLETED'
+            resultUrl = result.videos[0]?.url || null
+          } else {
+            status = 'FAILED'
+            errorMessage = '생성된 영상이 없습니다'
+          }
+        } else if (viduStatus.status === 'FAILED') {
+          status = 'FAILED'
+          errorMessage = '영상 생성 실패'
+        } else {
+          status = 'IN_PROGRESS'
+        }
+      } catch (error) {
+        status = 'FAILED'
+        errorMessage = error instanceof Error ? error.message : 'WaveSpeed Vidu 상태 조회 실패'
+      }
+    } else if (provider === 'fal-vidu') {
+      // fal.ai Vidu Q2 상태 조회
+      try {
+        const viduStatus = await getViduQ2QueueStatus(taskId)
+
+        if (viduStatus.status === 'IN_QUEUE') {
+          status = 'IN_QUEUE'
+        } else if (viduStatus.status === 'IN_PROGRESS') {
+          status = 'IN_PROGRESS'
+        } else if (viduStatus.status === 'COMPLETED') {
+          const result = await getViduQ2QueueResponse(taskId)
+          if (result.video && result.video.url) {
+            status = 'COMPLETED'
+            resultUrl = result.video.url
+          } else {
+            status = 'FAILED'
+            errorMessage = '생성된 영상이 없습니다'
+          }
+        } else if (viduStatus.status === 'FAILED') {
+          status = 'FAILED'
+          errorMessage = '영상 생성 실패'
+        } else {
+          status = 'IN_PROGRESS'
+        }
+      } catch (error) {
+        status = 'FAILED'
+        errorMessage = error instanceof Error ? error.message : 'fal.ai Vidu 상태 조회 실패'
       }
     } else {
       return NextResponse.json(

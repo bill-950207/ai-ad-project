@@ -14,6 +14,17 @@ import type { ImageAdType } from '@/components/ad-product/image-ad-type-modal'
 
 // Option descriptions for LLM (in English for better model performance)
 const OPTION_DESCRIPTIONS: Record<string, Record<string, string>> = {
+  // Outfit options (for avatar-included ads)
+  outfit: {
+    keep_original: 'Keep the original outfit from the avatar image',
+    casual_everyday: 'Casual everyday wear (t-shirt, jeans, comfortable clothes)',
+    formal_elegant: 'Formal elegant attire (dress, suit, sophisticated clothes)',
+    professional_business: 'Professional business wear (office attire, blazer)',
+    sporty_athletic: 'Sporty athletic wear (workout clothes, activewear)',
+    cozy_comfortable: 'Cozy comfortable wear (loungewear, soft fabrics)',
+    trendy_fashion: 'Trendy fashion-forward style (latest trends, stylish pieces)',
+    minimal_simple: 'Minimal simple style (clean lines, neutral colors)',
+  },
   // Pose options
   pose: {
     natural_hold: 'Naturally holding the product',
@@ -226,6 +237,10 @@ export async function POST(request: NextRequest) {
       productDescription,
       language = 'ko',
       multiple = false,  // 다중 시나리오 모드 (기본: false)
+      hasAvatar = false,  // 아바타 포함 여부 (의상 옵션은 카테고리 옵션으로 포함됨)
+      avatarInfo,  // 아바타 상세 정보 (type, avatarName, outfitName, aiOptions)
+      productImageUrl,  // 제품 이미지 URL
+      productUsageMethod,  // 제품 사용 방법 (using 타입 전용)
     } = body
 
     if (!adType) {
@@ -238,7 +253,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid ad type' }, { status: 400 })
     }
 
-    // 카테고리 그룹 정보 추출 (설명 포함)
+    // 카테고리 그룹 정보 추출 (설명 포함) - outfit도 포함됨
     const categoryGroups = categoryOptions.groups.map(group => ({
       key: group.key,
       options: group.options.map(opt => ({
@@ -255,6 +270,10 @@ export async function POST(request: NextRequest) {
         productDescription,
         categoryGroups,
         language,
+        hasAvatar,
+        avatarInfo,  // 아바타 상세 정보 전달
+        productImageUrl,  // 제품 이미지 URL 전달
+        productUsageMethod,  // 제품 사용 방법 전달
       })
 
       return NextResponse.json(result)
@@ -267,6 +286,10 @@ export async function POST(request: NextRequest) {
       productDescription,
       categoryGroups,
       language,
+      hasAvatar,
+      avatarInfo,
+      productImageUrl,
+      productUsageMethod,
     })
 
     return NextResponse.json(result)

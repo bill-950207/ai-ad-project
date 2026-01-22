@@ -314,15 +314,11 @@ function getTypePromptPrefix(adType: string): string {
     case 'using':
       return 'Create an advertisement image where the model from the reference is actively using the product.'
     case 'wearing':
-      return 'Create a fashion advertisement image showcasing the model wearing the outfit from the reference image.'
-    case 'beforeAfter':
-      return 'Create a before/after comparison advertisement showing the transformation.'
+      return 'Create a fashion advertisement image showcasing the model WEARING the clothing/underwear product from the reference image. The product is the actual item to be worn, NOT an accessory to hold.'
     case 'lifestyle':
       return 'Create a lifestyle advertisement showing the model naturally incorporating the product into daily life.'
     case 'unboxing':
       return 'Create an unboxing/review style advertisement with the model opening or presenting the product.'
-    case 'comparison':
-      return 'Create a product comparison style advertisement.'
     case 'seasonal':
       return 'Create a seasonal/themed advertisement with festive atmosphere.'
     default:

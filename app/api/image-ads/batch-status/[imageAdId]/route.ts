@@ -68,8 +68,11 @@ export async function GET(
       )
     }
 
-    // 이미 완료된 경우
-    if (imageAd.status === 'COMPLETED' && imageAd.image_urls) {
+    // 이미 완료된 경우 (image_urls가 num_images와 일치하는지도 확인)
+    const expectedNumImages = imageAd.num_images || (imageAd.batch_request_ids as BatchRequestId[] | null)?.length || 1
+    const hasCompleteImages = imageAd.image_urls && imageAd.image_urls.length >= expectedNumImages
+
+    if (imageAd.status === 'COMPLETED' && hasCompleteImages) {
       return NextResponse.json({
         status: 'COMPLETED',
         imageUrls: imageAd.image_urls,

@@ -184,6 +184,7 @@ export interface ProductAdWizardActions {
   // Step 4-5 멀티씬 actions
   setSceneKeyframes: (keyframes: SceneKeyframe[]) => void
   updateSceneKeyframe: (sceneIndex: number, updates: Partial<SceneKeyframe>) => void
+  reorderSceneKeyframes: (oldIndex: number, newIndex: number) => void
   setIsGeneratingKeyframes: (loading: boolean) => void
 
   // Step 5 actions
@@ -197,6 +198,7 @@ export interface ProductAdWizardActions {
   // Step 5 멀티씬 actions
   setSceneVideoSegments: (segments: SceneVideoSegment[]) => void
   updateSceneVideoSegment: (fromIndex: number, updates: Partial<SceneVideoSegment>) => void
+  reorderSceneVideoSegments: (oldIndex: number, newIndex: number) => void
   setFinalVideoUrl: (url: string | null) => void
 
   // Validation
@@ -381,11 +383,48 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
     )
   }, [])
 
+  // 씬 키프레임 순서 변경 (드래그앤드롭)
+  const reorderSceneKeyframes = useCallback((oldIndex: number, newIndex: number) => {
+    setSceneKeyframes(prev => {
+      const result = [...prev]
+      const [removed] = result.splice(oldIndex, 1)
+      result.splice(newIndex, 0, removed)
+      // 순서 변경 후 sceneIndex 재할당
+      return result.map((kf, idx) => ({ ...kf, sceneIndex: idx }))
+    })
+    // scenarioInfo의 scenes도 함께 재정렬
+    setScenarioInfo(prev => {
+      if (!prev?.scenes) return prev
+      const newScenes = [...prev.scenes]
+      const [removed] = newScenes.splice(oldIndex, 1)
+      newScenes.splice(newIndex, 0, removed)
+      return {
+        ...prev,
+        scenes: newScenes.map((s, idx) => ({ ...s, index: idx })),
+      }
+    })
+  }, [])
+
   // 씬 전환 영상 세그먼트 업데이트 (Kling O1용)
   const updateSceneVideoSegment = useCallback((fromIndex: number, updates: Partial<SceneVideoSegment>) => {
     setSceneVideoSegments(prev =>
       prev.map(seg => seg.fromSceneIndex === fromIndex ? { ...seg, ...updates } : seg)
     )
+  }, [])
+
+  // 씬 영상 세그먼트 순서 변경 (드래그앤드롭)
+  const reorderSceneVideoSegments = useCallback((oldIndex: number, newIndex: number) => {
+    setSceneVideoSegments(prev => {
+      const result = [...prev]
+      const [removed] = result.splice(oldIndex, 1)
+      result.splice(newIndex, 0, removed)
+      // 순서 변경 후 fromSceneIndex 재할당
+      return result.map((seg, idx) => ({
+        ...seg,
+        fromSceneIndex: idx,
+        toSceneIndex: idx + 1,
+      }))
+    })
   }, [])
 
   // Draft 저장
@@ -767,6 +806,7 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
     setSelectedSceneIndex,
     setSceneKeyframes,
     updateSceneKeyframe,
+    reorderSceneKeyframes,
     setIsGeneratingKeyframes,
     setIsGeneratingVideo,
     setGenerationProgress,
@@ -776,6 +816,7 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
     addResultVideoUrl,
     setSceneVideoSegments,
     updateSceneVideoSegment,
+    reorderSceneVideoSegments,
     setFinalVideoUrl,
     canProceedToStep2,
     canProceedToStep3,

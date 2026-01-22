@@ -1,164 +1,126 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import {
-  Edit3,
   Sparkles,
-  Image,
-  Video,
   ArrowLeft,
   ArrowRight,
-  Upload,
-  X,
   Loader2,
   Check,
+  RefreshCw,
+  Film,
+  MapPin,
+  Package,
+  Palette,
 } from 'lucide-react'
-import { useAvatarMotionWizard, StoryMethod } from './wizard-context'
-
-interface MethodCardProps {
-  method: StoryMethod
-  icon: typeof Edit3
-  title: string
-  description: string
-  features: string[]
-  isSelected: boolean
-  onSelect: () => void
-  recommended?: boolean
-  disabled?: boolean
-  disabledReason?: string
-}
-
-function MethodCard({
-  method,
-  icon: Icon,
-  title,
-  description,
-  features,
-  isSelected,
-  onSelect,
-  recommended,
-  disabled,
-  disabledReason,
-}: MethodCardProps) {
-  return (
-    <button
-      onClick={disabled ? undefined : onSelect}
-      disabled={disabled}
-      className={`relative w-full flex flex-col p-4 rounded-xl border transition-all text-left ${
-        disabled
-          ? 'border-border bg-card opacity-50 cursor-not-allowed'
-          : isSelected
-          ? 'border-primary bg-primary/5'
-          : 'border-border hover:border-primary/50 bg-card'
-      }`}
-    >
-      {recommended && (
-        <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-primary text-primary-foreground text-xs rounded-full">
-          추천
-        </span>
-      )}
-
-      <div className="flex items-start gap-3">
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-          isSelected ? 'bg-primary/20' : 'bg-secondary'
-        }`}>
-          <Icon className={`w-5 h-5 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
-        </div>
-
-        <div className="flex-1">
-          <h3 className={`font-semibold ${isSelected ? 'text-primary' : 'text-foreground'}`}>
-            {title}
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            {description}
-          </p>
-        </div>
-
-        {isSelected && (
-          <Check className="w-5 h-5 text-primary flex-shrink-0" />
-        )}
-      </div>
-
-      <ul className="mt-3 space-y-1 pl-[52px]">
-        {features.map((feature, index) => (
-          <li key={index} className="text-xs text-muted-foreground flex items-center gap-1.5">
-            <span className="w-1 h-1 rounded-full bg-primary/50" />
-            {feature}
-          </li>
-        ))}
-      </ul>
-
-      {disabled && disabledReason && (
-        <p className="mt-2 pl-[52px] text-xs text-amber-500">{disabledReason}</p>
-      )}
-    </button>
-  )
-}
+import { useAvatarMotionWizard, Scenario } from './wizard-context'
 
 export function WizardStep2() {
   const {
-    storyMethod,
-    setStoryMethod,
-    referenceUrl,
-    setReferenceMedia,
-    isAnalyzingReference,
-    setIsAnalyzingReference,
+    selectedProduct,
+    selectedAvatarInfo,
+    scenarios,
+    setScenarios,
+    selectedScenarioIndex,
+    setSelectedScenarioIndex,
+    isGeneratingScenarios,
+    setIsGeneratingScenarios,
     canProceedToStep3,
     goToNextStep,
     goToPrevStep,
-    selectedProduct,
-    selectedAvatarInfo,
     saveDraft,
     isSaving,
   } = useAvatarMotionWizard()
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [dragOver, setDragOver] = useState(false)
+  // 중복 요청 방지를 위한 ref
+  const scenarioRequestedRef = useRef(false)
 
-  const handleFileSelect = async (file: File) => {
-    // 이미지 또는 비디오 파일만 허용
-    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-      alert('이미지 또는 동영상 파일만 업로드 가능합니다.')
+  // 시나리오 생성 API 호출
+  const generateScenarios = useCallback(async (isManualRefresh = false) => {
+    if (!selectedProduct || !selectedAvatarInfo) return
+
+    // 수동 새로고침이 아닌 경우, 중복 요청 체크
+    if (!isManualRefresh && scenarioRequestedRef.current) {
       return
     }
+    scenarioRequestedRef.current = true
 
-    // 파일 크기 제한 (50MB)
-    if (file.size > 50 * 1024 * 1024) {
-      alert('파일 크기는 50MB 이하여야 합니다.')
-      return
+    setIsGeneratingScenarios(true)
+
+    try {
+      // 아바타 설명 구성
+      let avatarDescription = ''
+      if (selectedAvatarInfo.type === 'ai-generated') {
+        avatarDescription = 'AI 자동 생성 아바타'
+      } else if (selectedAvatarInfo.type === 'outfit') {
+        avatarDescription = `${selectedAvatarInfo.avatarName} (${selectedAvatarInfo.outfitName || '의상 교체'})`
+      } else {
+        avatarDescription = selectedAvatarInfo.avatarName || selectedAvatarInfo.displayName || '아바타'
+      }
+
+      const res = await fetch('/api/avatar-motion/generate-story', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productName: selectedProduct.name,
+          productDescription: selectedProduct.description || '',
+          productSellingPoints: selectedProduct.selling_points || [],
+          avatarDescription,
+          avatarType: selectedAvatarInfo.type,
+        }),
+      })
+
+      if (!res.ok) {
+        throw new Error('시나리오 생성 실패')
+      }
+
+      const data = await res.json()
+
+      if (data.scenarios && data.scenarios.length > 0) {
+        setScenarios(data.scenarios)
+        // 첫 번째 시나리오 자동 선택
+        setSelectedScenarioIndex(0)
+      }
+    } catch (error) {
+      console.error('시나리오 생성 오류:', error)
+      // 에러 시 ref 리셋하여 재시도 가능하게
+      if (!isManualRefresh) {
+        scenarioRequestedRef.current = false
+      }
+    } finally {
+      setIsGeneratingScenarios(false)
     }
+  }, [selectedProduct, selectedAvatarInfo, setScenarios, setSelectedScenarioIndex, setIsGeneratingScenarios])
 
-    const url = URL.createObjectURL(file)
-    setReferenceMedia(file, url)
+  // Step 2 진입 시 시나리오 자동 생성
+  useEffect(() => {
+    if (scenarios.length === 0 && !isGeneratingScenarios) {
+      generateScenarios(false)
+    }
+  }, [scenarios.length, isGeneratingScenarios, generateScenarios])
 
-    // 참조 미디어 분석 시뮬레이션 (실제로는 API 호출)
-    setIsAnalyzingReference(true)
-    // TODO: API 호출로 대체
-    setTimeout(() => {
-      setIsAnalyzingReference(false)
-    }, 2000)
+  // 시나리오 새로고침
+  const handleRefreshScenarios = () => {
+    scenarioRequestedRef.current = false
+    setScenarios([])
+    setSelectedScenarioIndex(null)
+    generateScenarios(true)
   }
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(false)
-    const file = e.dataTransfer.files[0]
-    if (file) handleFileSelect(file)
+  // 시나리오 선택
+  const handleSelectScenario = (index: number) => {
+    setSelectedScenarioIndex(index)
   }
-
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) handleFileSelect(file)
-  }
-
-  const isVideoFile = referenceUrl?.includes('video') || false
 
   // 다음 단계로 이동 (DB 저장 포함)
   const handleNext = async () => {
     if (!canProceedToStep3()) return
-    await saveDraft({ wizardStep: 3, status: 'GENERATING_STORY' })
+    await saveDraft({ wizardStep: 3 })
     goToNextStep()
   }
+
+  // 선택된 시나리오
+  const selectedScenario = selectedScenarioIndex !== null ? scenarios[selectedScenarioIndex] : null
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -197,145 +159,89 @@ export function WizardStep2() {
         )}
       </div>
 
-      {/* 스토리 설정 방식 선택 */}
-      <div className="space-y-3">
-        <h2 className="text-lg font-semibold text-foreground">스토리 설정 방식 선택</h2>
-        <p className="text-sm text-muted-foreground">
-          모션 영상의 스토리를 어떻게 설정할지 선택하세요.
-        </p>
-
-        <div className="space-y-3 mt-4">
-          <MethodCard
-            method="direct"
-            icon={Edit3}
-            title="직접 입력"
-            description="시작 프레임과 끝 프레임을 직접 설명합니다"
-            features={[
-              '원하는 동작을 자유롭게 설명',
-              '세밀한 연출 조정 가능',
-            ]}
-            isSelected={storyMethod === 'direct'}
-            onSelect={() => setStoryMethod('direct')}
-          />
-
-          <MethodCard
-            method="ai-auto"
-            icon={Sparkles}
-            title="AI 자동 생성"
-            description="제품과 아바타에 맞는 스토리를 AI가 자동으로 제안합니다"
-            features={[
-              '제품 특성에 맞는 자연스러운 모션',
-              '여러 스토리 옵션 중 선택 가능',
-            ]}
-            isSelected={storyMethod === 'ai-auto'}
-            onSelect={() => setStoryMethod('ai-auto')}
-            recommended={!!selectedProduct}
-            disabled={!selectedProduct}
-            disabledReason="제품을 선택해야 AI 자동 생성을 사용할 수 있습니다"
-          />
-
-          <MethodCard
-            method="reference"
-            icon={Image}
-            title="참조 미디어 분석"
-            description="기존 이미지나 영상을 분석하여 비슷한 스토리를 생성합니다"
-            features={[
-              '원하는 레퍼런스 스타일 적용',
-              '이미지 또는 동영상 업로드 지원',
-            ]}
-            isSelected={storyMethod === 'reference'}
-            onSelect={() => setStoryMethod('reference')}
-          />
-        </div>
-      </div>
-
-      {/* 참조 미디어 업로드 (reference 선택 시) */}
-      {storyMethod === 'reference' && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-foreground">참조 미디어 업로드</h3>
-
-          {!referenceUrl ? (
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={handleDrop}
-              className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-                dragOver
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <Upload className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-              <p className="text-foreground font-medium">
-                이미지 또는 동영상을 업로드하세요
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                드래그하거나 클릭하여 선택
-              </p>
-              <p className="text-xs text-muted-foreground mt-2">
-                JPG, PNG, GIF, MP4, MOV (최대 50MB)
-              </p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,video/*"
-                onChange={handleFileInputChange}
-                className="hidden"
-              />
+      {/* 시나리오 생성 중 */}
+      {isGeneratingScenarios && (
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+              <Loader2 className="w-8 h-8 text-primary animate-spin" />
             </div>
-          ) : (
-            <div className="relative rounded-xl overflow-hidden bg-secondary/30">
-              {isAnalyzingReference && (
-                <div className="absolute inset-0 z-10 bg-black/50 flex items-center justify-center">
-                  <div className="text-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
-                    <p className="text-white text-sm">미디어 분석 중...</p>
-                  </div>
+            <div className="text-center">
+              <h3 className="font-medium text-foreground mb-1">AI가 시나리오를 생성 중입니다</h3>
+              <p className="text-sm text-muted-foreground">
+                {selectedProduct ? `"${selectedProduct.name}"` : '제품'}에 맞는 영화적 시나리오를 만들고 있습니다...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 시나리오 선택 */}
+      {!isGeneratingScenarios && scenarios.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Film className="w-5 h-5 text-primary" />
+              시나리오 선택
+            </h2>
+            <button
+              onClick={handleRefreshScenarios}
+              disabled={isGeneratingScenarios}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              다시 생성
+            </button>
+          </div>
+
+          <p className="text-sm text-muted-foreground">
+            AI가 추천하는 3가지 시나리오 중 하나를 선택하세요.
+          </p>
+
+          <div className="grid gap-3">
+            {scenarios.map((scenario, index) => (
+              <ScenarioCard
+                key={scenario.id}
+                scenario={scenario}
+                index={index}
+                isSelected={selectedScenarioIndex === index}
+                onSelect={() => handleSelectScenario(index)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 선택된 시나리오 상세 */}
+      {selectedScenario && !isGeneratingScenarios && (
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-5">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-medium text-primary mb-2">
+                선택된 시나리오: {selectedScenario.title}
+              </h3>
+              <div className="space-y-2 text-sm">
+                <p className="text-foreground">{selectedScenario.concept}</p>
+                <div className="flex items-center gap-4 text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
+                    {selectedScenario.location}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Palette className="w-3 h-3" />
+                    {selectedScenario.mood}
+                  </span>
                 </div>
-              )}
-
-              <div className="p-4">
-                <div className="flex items-start gap-4">
-                  <div className="w-24 h-24 bg-secondary rounded-lg overflow-hidden flex-shrink-0">
-                    {isVideoFile ? (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Video className="w-8 h-8 text-muted-foreground" />
-                      </div>
-                    ) : (
-                      <img
-                        src={referenceUrl}
-                        alt="참조 이미지"
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-                  </div>
-
-                  <div className="flex-1">
-                    <p className="text-sm text-foreground font-medium">
-                      {isVideoFile ? '참조 동영상' : '참조 이미지'}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      이 미디어의 스타일을 분석하여 비슷한 스토리를 생성합니다
-                    </p>
-                    {!isAnalyzingReference && (
-                      <p className="text-xs text-green-500 mt-2 flex items-center gap-1">
-                        <Check className="w-3 h-3" />
-                        분석 완료
-                      </p>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={() => setReferenceMedia(null, null)}
-                    className="p-1.5 hover:bg-secondary rounded-lg transition-colors"
-                  >
-                    <X className="w-4 h-4 text-muted-foreground" />
-                  </button>
+                <div className="flex items-start gap-1 text-muted-foreground">
+                  <Package className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span>{selectedScenario.productAppearance}</span>
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -368,11 +274,73 @@ export function WizardStep2() {
       </div>
 
       {/* 유효성 메시지 */}
-      {!canProceedToStep3() && storyMethod === 'reference' && !referenceUrl && (
+      {!canProceedToStep3() && !isGeneratingScenarios && scenarios.length > 0 && (
         <p className="text-center text-sm text-muted-foreground">
-          참조 미디어를 업로드해주세요
+          시나리오를 선택해주세요
         </p>
       )}
     </div>
+  )
+}
+
+// 시나리오 카드 컴포넌트
+interface ScenarioCardProps {
+  scenario: Scenario
+  index: number
+  isSelected: boolean
+  onSelect: () => void
+}
+
+function ScenarioCard({ scenario, index, isSelected, onSelect }: ScenarioCardProps) {
+  // 인덱스에 따른 아이콘 색상
+  const colorClasses = [
+    'from-blue-500 to-cyan-500',
+    'from-purple-500 to-pink-500',
+    'from-orange-500 to-amber-500',
+  ]
+  const colorClass = colorClasses[index % colorClasses.length]
+
+  return (
+    <button
+      onClick={onSelect}
+      className={`p-4 rounded-xl border-2 text-left transition-all ${
+        isSelected
+          ? 'border-primary bg-primary/5'
+          : 'border-border hover:border-primary/50'
+      }`}
+    >
+      <div className="flex items-start gap-4">
+        {/* 시나리오 번호 */}
+        <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${colorClass} flex items-center justify-center flex-shrink-0`}>
+          <span className="text-white font-bold">{index + 1}</span>
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h4 className="font-semibold text-foreground">{scenario.title}</h4>
+            {isSelected && (
+              <Check className="w-4 h-4 text-primary flex-shrink-0" />
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            {scenario.description}
+          </p>
+          {/* 태그 */}
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            <span className="px-2 py-0.5 bg-secondary text-xs text-muted-foreground rounded">
+              {scenario.location}
+            </span>
+            <span className="px-2 py-0.5 bg-secondary text-xs text-muted-foreground rounded">
+              {scenario.mood}
+            </span>
+            {scenario.tags.slice(0, 2).map((tag, i) => (
+              <span key={i} className="px-2 py-0.5 bg-secondary text-xs text-muted-foreground rounded">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </button>
   )
 }

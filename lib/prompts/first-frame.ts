@@ -87,6 +87,11 @@ export const CAMERA_COMPOSITION_DETAILED_GUIDES: Record<string, {
     lightingRecommendation: 'even full-body lighting, possibly natural outdoor light',
     depthOfField: 'f/16 with entire scene in perfect sharp focus from foreground to background, every detail visible',
   },
+  'ugc-closeup': {
+    promptSegment: 'UGC-style intimate medium close-up, subject fills most of the frame from chest up, natural relaxed expression, eyes looking DIRECTLY into camera lens, casual influencer vlog aesthetic like casually talking to viewer, approachable and genuine vibe',
+    lightingRecommendation: 'soft natural window light or ring light, flattering front lighting',
+    depthOfField: 'f/8 with background slightly visible but subject is clearly the main focus, natural depth',
+  },
 }
 
 // ============================================================

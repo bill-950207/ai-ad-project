@@ -68,7 +68,7 @@ export interface FalZImageResponse {
 // ============================================================
 
 /**
- * 이미지 생성 요청을 fal.ai 큐에 제출
+ * 이미지 생성 요청을 fal.ai 큐에 제출, z-image/turbo
  *
  * @param prompt - 이미지 생성 프롬프트
  * @returns 큐 제출 응답 (request_id 포함)
@@ -77,7 +77,8 @@ export async function submitToQueue(prompt: string): Promise<FalQueueSubmitRespo
   const input = {
     prompt,
     num_inference_steps: 8,        // 추론 단계 수
-    enable_prompt_expansion: true, // 프롬프트 자동 확장 활성화
+    enable_prompt_expansion: false, // 프롬프트 자동 확장 비활성화
+    enable_safety_checker: false, // Safety Checker 비활성화 (체형 등 반영 위해)
     image_size: {
       width: 960 * 1.5,
       height: 1704 * 1.5,
@@ -523,9 +524,9 @@ export async function submitVideoAdToQueue(input: VideoAdInput): Promise<FalQueu
     resolution: input.resolution || '1080p',
     duration: input.duration || 5,
     negative_prompt: input.negative_prompt,
-    enable_prompt_expansion: input.enable_prompt_expansion ?? true,
+    enable_prompt_expansion: input.enable_prompt_expansion ?? false,
     seed: input.seed,
-    enable_safety_checker: true,
+    enable_safety_checker: false, // Safety Checker 비활성화 (체형 등 반영 위해)
   }
 
   const { request_id } = await fal.queue.submit(WAN_VIDEO_MODEL_ID, {
@@ -647,7 +648,7 @@ export async function submitSeedanceToQueue(input: SeedanceInput): Promise<FalQu
     generate_audio: input.generate_audio ?? true,
     seed: input.seed,
     end_image_url: input.end_image_url,
-    enable_safety_checker: true,
+    enable_safety_checker: false, // Safety Checker 비활성화 (체형 등 반영 위해)
   }
 
   const { request_id } = await fal.queue.submit(SEEDANCE_MODEL_ID, {
@@ -724,6 +725,46 @@ const SEEDREAM_EDIT_MODEL_ID = 'fal-ai/bytedance/seedream/v4.5/edit'
 /** Seedream 화면 비율 타입 */
 export type SeedreamAspectRatio = '21:9' | '16:9' | '4:3' | '1:1' | '3:4' | '9:16' | '2:3' | '3:2'
 
+/** Seedream 이미지 크기 타입 (width, height) */
+export interface SeedreamImageSize {
+  width: number
+  height: number
+}
+
+/**
+ * Seedream 4.5의 aspect_ratio를 width/height로 변환
+ * 최대 차원은 4096, 최소는 1920
+ *
+ * @param aspectRatio - 화면 비율
+ * @returns width, height 객체
+ */
+export function convertAspectRatioToImageSize(aspectRatio: SeedreamAspectRatio): SeedreamImageSize {
+  const MAX_SIZE = 4096
+  const MIN_SIZE = 1920
+
+  switch (aspectRatio) {
+    case '1:1':
+      return { width: MAX_SIZE, height: MAX_SIZE }
+    case '16:9':
+      return { width: MAX_SIZE, height: Math.round(MAX_SIZE * 9 / 16) }  // 4096 x 2304
+    case '9:16':
+      return { width: Math.round(MAX_SIZE * 9 / 16), height: MAX_SIZE }  // 2304 x 4096
+    case '4:3':
+      return { width: MAX_SIZE, height: Math.round(MAX_SIZE * 3 / 4) }   // 4096 x 3072
+    case '3:4':
+      return { width: Math.round(MAX_SIZE * 3 / 4), height: MAX_SIZE }   // 3072 x 4096
+    case '21:9':
+      // 21:9 with height at min would need width 4480 (exceeds max), so use max width
+      return { width: MAX_SIZE, height: MIN_SIZE }  // 4096 x 1920 (approximately 21:9)
+    case '2:3':
+      return { width: Math.round(MAX_SIZE * 2 / 3), height: MAX_SIZE }   // 2731 x 4096
+    case '3:2':
+      return { width: MAX_SIZE, height: Math.round(MAX_SIZE * 2 / 3) }   // 4096 x 2731
+    default:
+      return { width: MAX_SIZE, height: MAX_SIZE }
+  }
+}
+
 /** Seedream 품질 타입 */
 export type SeedreamQuality = 'basic' | 'high'
 
@@ -749,11 +790,13 @@ export interface SeedreamEditOutput {
  * @returns 큐 제출 응답 (request_id 포함)
  */
 export async function submitSeedreamEditToQueue(input: SeedreamEditInput): Promise<FalQueueSubmitResponse> {
+  // aspect_ratio를 width/height로 변환 (최대 4096)
+  const imageSize = convertAspectRatioToImageSize(input.aspect_ratio || '1:1')
+
   const falInput = {
     prompt: input.prompt,
     image_urls: input.image_urls,
-    aspect_ratio: input.aspect_ratio || '1:1',
-    image_size: 'auto_4K',
+    image_size: imageSize,
     quality: input.quality || 'high',
     seed: input.seed,
     enable_safety_checker: false,

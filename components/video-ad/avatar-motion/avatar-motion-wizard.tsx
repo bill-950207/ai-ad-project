@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Check, Loader2 } from 'lucide-react'
+import Image from 'next/image'
+import { ArrowLeft, Check, Loader2, Package, Sparkles, User } from 'lucide-react'
 import { AvatarMotionWizardProvider, useAvatarMotionWizard, WizardStep } from './wizard-context'
 import { WizardStep1 } from './wizard-step-1'
 import { WizardStep2 } from './wizard-step-2'
@@ -23,11 +24,14 @@ interface WizardHeaderProps {
 }
 
 function WizardHeader({ onBack }: WizardHeaderProps) {
-  const { step } = useAvatarMotionWizard()
+  const { step, selectedProduct, selectedAvatarInfo } = useAvatarMotionWizard()
+
+  const productImageUrl = selectedProduct?.rembg_image_url || selectedProduct?.image_url
+  const showSelectedItems = step >= 2 && (selectedProduct || selectedAvatarInfo)
 
   return (
     <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="max-w-3xl mx-auto px-4 py-3">
+      <div className="max-w-5xl mx-auto px-4 py-3">
         {/* 타이틀 */}
         <div className="flex items-center gap-3 mb-3">
           {onBack && (
@@ -44,53 +48,121 @@ function WizardHeader({ onBack }: WizardHeaderProps) {
           </div>
         </div>
 
-        {/* 단계 표시기 */}
-        <div className="flex items-center justify-center">
-          {STEPS.map(({ step: s, title }, index) => {
-            const isCompleted = step > s
-            const isCurrent = step === s
+        {/* 단계 표시기 + 선택 항목 */}
+        <div className="flex items-center justify-between">
+          {/* 왼쪽 여백 */}
+          <div className="w-48 hidden lg:block" />
 
-            return (
-              <div key={s} className="flex items-center">
-                {/* 단계 원 + 텍스트 */}
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-                      isCompleted
-                        ? 'bg-primary text-primary-foreground'
-                        : isCurrent
-                          ? 'bg-primary text-primary-foreground ring-2 ring-primary/20'
-                          : 'bg-secondary text-muted-foreground'
-                    }`}
-                  >
-                    {isCompleted ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      s
-                    )}
-                  </div>
-                  <span
-                    className={`text-[10px] mt-1 font-medium whitespace-nowrap ${
-                      isCurrent ? 'text-primary' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
-                    }`}
-                  >
-                    {title}
-                  </span>
-                </div>
+          {/* 중앙: 단계 표시기 */}
+          <div className="flex items-center justify-center flex-1 lg:flex-none">
+            {STEPS.map(({ step: s, title }, index) => {
+              const isCompleted = step > s
+              const isCurrent = step === s
 
-                {/* 연결선 - 원의 세로 중간에 위치 */}
-                {index < STEPS.length - 1 && (
-                  <div className="w-12 mx-1 -mt-4">
+              return (
+                <div key={s} className="flex items-center">
+                  {/* 단계 원 + 텍스트 */}
+                  <div className="flex flex-col items-center">
                     <div
-                      className={`h-0.5 rounded-full transition-all ${
-                        isCompleted ? 'bg-primary' : 'bg-secondary'
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
+                        isCompleted
+                          ? 'bg-primary text-primary-foreground'
+                          : isCurrent
+                            ? 'bg-primary text-primary-foreground ring-2 ring-primary/20'
+                            : 'bg-secondary text-muted-foreground'
                       }`}
-                    />
+                    >
+                      {isCompleted ? (
+                        <Check className="w-4 h-4" />
+                      ) : (
+                        s
+                      )}
+                    </div>
+                    <span
+                      className={`text-[10px] mt-1 font-medium whitespace-nowrap ${
+                        isCurrent ? 'text-primary' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
+                      }`}
+                    >
+                      {title}
+                    </span>
+                  </div>
+
+                  {/* 연결선 */}
+                  {index < STEPS.length - 1 && (
+                    <div className="w-12 mx-1 -mt-4">
+                      <div
+                        className={`h-0.5 rounded-full transition-all ${
+                          isCompleted ? 'bg-primary' : 'bg-secondary'
+                        }`}
+                      />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* 오른쪽: 선택 항목 요약 */}
+          <div className="w-48 hidden lg:flex items-center justify-end gap-2">
+            {showSelectedItems && (
+              <>
+                {/* 제품 */}
+                {selectedProduct && (
+                  <div className="flex items-center gap-1.5">
+                    <div className="relative w-8 h-8 rounded-md overflow-hidden bg-secondary flex-shrink-0">
+                      {productImageUrl ? (
+                        <Image
+                          src={productImageUrl}
+                          alt={selectedProduct.name}
+                          fill
+                          className="object-contain"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Package className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground truncate max-w-[60px]">
+                      {selectedProduct.name}
+                    </p>
                   </div>
                 )}
-              </div>
-            )
-          })}
+
+                {/* 구분선 */}
+                {selectedProduct && selectedAvatarInfo && (
+                  <div className="h-6 w-px bg-border" />
+                )}
+
+                {/* 아바타 */}
+                {selectedAvatarInfo && (
+                  <div className="flex items-center gap-1.5">
+                    <div className="relative w-8 h-8 rounded-md overflow-hidden bg-secondary flex-shrink-0">
+                      {selectedAvatarInfo.type === 'ai-generated' ? (
+                        <div className="w-full h-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center">
+                          <Sparkles className="w-4 h-4 text-white" />
+                        </div>
+                      ) : selectedAvatarInfo.imageUrl ? (
+                        <Image
+                          src={selectedAvatarInfo.imageUrl}
+                          alt={selectedAvatarInfo.displayName}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <User className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground truncate max-w-[60px]">
+                      {selectedAvatarInfo.displayName}
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

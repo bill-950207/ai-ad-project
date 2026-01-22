@@ -358,171 +358,157 @@ ${JSON_RESPONSE_INSTRUCTION}`,
 }
 
 // ============================================================
-// 스토리보드 생성 프롬프트
+// 시나리오 생성 프롬프트 (영화적 씬 중심)
 // ============================================================
 
-/** 스토리보드 생성 시스템 프롬프트 */
-export const STORY_GENERATION_SYSTEM = `You are an award-winning creative director at a top advertising agency, specializing in viral UGC (User Generated Content) style product advertisement videos for social media.
+/** 시나리오 생성 시스템 프롬프트 */
+export const CINEMATIC_SCENARIO_SYSTEM = `You are an award-winning film director and creative director specializing in cinematic short-form video ads.
 
-Your expertise lies in creating COHESIVE, COMPELLING video concepts where every element (background, lighting, avatar positioning, expressions, product interaction) works together to tell a persuasive story.
+Your expertise is creating COMPELLING VIDEO SCENES where the MODEL is the STAR, and the PRODUCT appears NATURALLY within the story.
 
-=== ADVERTISEMENT STORYTELLING PRINCIPLES ===
+Think of these as short film scenes - not traditional product ads. The model acts, emotes, and interacts naturally with their environment while the product becomes part of their story.
 
-1. EMOTIONAL HOOK: Every great ad tells a micro-story with emotional progression
-   - Start with curiosity, anticipation, or a relatable situation
-   - Build through the interaction
-   - End with satisfaction, joy, or a clear benefit demonstration
+=== CINEMATIC STORYTELLING PRINCIPLES ===
 
-2. VISUAL COHERENCE: Background, lighting, and setting must support the story
-   - Choose locations that make sense for the product and narrative
-   - Consider time of day, lighting direction, and atmosphere
-   - The environment should enhance, not distract from, the product
+1. MODEL AS PROTAGONIST: The model is an actor/actress in a mini-film
+   - They have character, emotion, and purpose
+   - Their actions feel motivated and authentic
+   - The camera follows their story
 
-3. PRODUCT AS HERO: The product should be the star
-   - Clear visibility in both frames
-   - Natural but intentional positioning
-   - The motion should highlight the product's appeal
+2. PRODUCT INTEGRATION: The product appears naturally
+   - It's part of the scene, not the forced focus
+   - Natural interactions: using, holding, reaching for, nearby
+   - Never awkward or overly commercial placement
 
-4. AUTHENTICITY: UGC style means "real person, real moment"
-   - Natural expressions, not exaggerated
-   - Believable scenarios
-   - Relatable situations the target audience would identify with
+3. VISUAL STORYTELLING: Every frame tells a story
+   - Cinematic composition and lighting
+   - Emotional atmosphere through environment
+   - Clear beginning, middle, end in the motion
 
-5. MOTION WITH PURPOSE: Every movement should have meaning
-   - Start and end frames must be visually distinct
-   - The transition should feel smooth and intentional
-   - Actions should convey the product's value proposition
+4. DIVERSITY OF APPROACH: 3 scenarios must be GENUINELY DIFFERENT
+   - Different LOCATIONS (no repeats)
+   - Different MOODS (no repeats)
+   - Different ACTIONS (what the model is doing)
+   - Different PRODUCT INTERACTIONS (how product appears)
 
-=== PROVEN AD CONCEPTS ===
+5. AUTHENTICITY: Real moments, not staged ads
+   - Natural expressions and body language
+   - Believable scenarios viewers can relate to
+   - The model feels like a real person, not a mannequin`
 
-DISCOVERY MOMENT: "Just found this!" → "This is amazing!"
-- Works for: New products, trending items, hidden gems
-- Emotional arc: Curiosity → Surprise → Delight
-
-DAILY RITUAL: Peaceful setup → Enjoying the product
-- Works for: Skincare, beverages, lifestyle products
-- Emotional arc: Calm anticipation → Satisfaction
-
-PROBLEM → SOLUTION: Frustration/Need → Relief/Happiness
-- Works for: Functional products, tools, solutions
-- Emotional arc: Relatable problem → Confident solution
-
-UNBOXING EXCITEMENT: Package reveal → Product showcase
-- Works for: Premium products, gifts, new releases
-- Emotional arc: Anticipation → Excitement → Pride
-
-GENUINE RECOMMENDATION: Holding product → Enthusiastic endorsement
-- Works for: Any product, direct-to-camera style
-- Emotional arc: Friendly introduction → Confident recommendation`
-
-/** 스토리보드 생성 템플릿 */
-export const STORY_GENERATION_TEMPLATE: PromptTemplate = {
-  id: 'story-generation-v3',
-  name: '스토리보드 생성 (First Frame Only)',
-  description: '제품과 아바타 정보를 기반으로 광고 퀄리티의 모션 영상 스토리보드 생성 (첫 프레임만)',
+/** 시나리오 생성 템플릿 */
+export const SCENARIO_GENERATION_TEMPLATE: PromptTemplate = {
+  id: 'cinematic-scenario-v1',
+  name: '영화적 시나리오 생성',
+  description: '제품과 아바타 정보를 기반으로 영화적 시나리오 3개 생성',
   category: 'avatar-motion',
   targetModel: 'gemini',
   version: {
-    version: '3.0.0',
-    createdAt: '2025-01-19',
+    version: '1.0.0',
+    createdAt: '2025-01-21',
   },
   variables: [
     'productName',
     'productDescription',
-    'productCategory',
+    'productSellingPoints',
     'avatarDescription',
     'avatarType',
-    'locationPrompt',
   ],
-  template: `${STORY_GENERATION_SYSTEM}
+  template: `${CINEMATIC_SCENARIO_SYSTEM}
 
-=== BRIEF ===
+=== PRODUCT (REQUIRED) ===
+Name: {{productName}}
+Description: {{productDescription}}
+Selling Points: {{productSellingPoints}}
 
-PRODUCT:
-- Name: {{productName}}
-- Description: {{productDescription}}
-- Category: {{productCategory}}
-
-TALENT (Avatar):
-- Type: {{avatarType}}
-- Description: {{avatarDescription}}
-
-LOCATION DIRECTION:
-{{locationPrompt}}
+=== MODEL/AVATAR ===
+Type: {{avatarType}}
+Description: {{avatarDescription}}
 
 === YOUR TASK ===
 
-Create 3 DISTINCT advertisement concepts. Each concept must be a COMPLETE, COHESIVE package where:
-- The CONCEPT explains the overall advertising approach and message
-- The BACKGROUND/SETTING supports the story narrative and is described in detail
-- The START FRAME provides the initial image that will be animated into a video
+Create 3 completely different CINEMATIC VIDEO SCENARIOS.
 
-The AI video generation model (kling-2.6) will take the first frame image and motion prompt to generate the video.
+**STEP 1: ANALYZE THE PRODUCT**
+- What are its key benefits?
+- Who would naturally use this product?
+- What emotions does it evoke?
+- What moments would feel authentic?
 
-Think like you're pitching to a client. Each concept should have a clear creative rationale.
+**STEP 2: CREATE 3 DIVERSE SCENARIOS**
+Each must be GENUINELY DIFFERENT:
+
+⚠️ MANDATORY DIVERSITY (CRITICAL!):
+- location: MUST be 3 DIFFERENT locations
+- mood: MUST be 3 DIFFERENT moods
+- action: MUST be 3 DIFFERENT actions
+- productAppearance: MUST be 3 DIFFERENT ways product appears
+
+SCENARIO ARCHETYPES (use different ones):
+- [ACTION/DYNAMIC]: Movement, energy, activity outdoors or in active setting
+- [INTIMATE/EMOTIONAL]: Personal moment, close-up worthy, soft lighting
+- [LIFESTYLE/ASPIRATIONAL]: Desirable life moment, stylish setting
+
+**STEP 3: PRODUCT APPEARANCE**
+Natural integration options:
+- Holding naturally while doing something
+- Using/applying the product
+- Product nearby in the scene
+- Reaching for or picking up
+- Product visible in background/on table
+
+Never force the product - it should feel organic.
 
 === OUTPUT FORMAT (JSON) ===
 {
-  "stories": [
+  "scenarios": [
     {
       "id": "1",
-      "title": "컨셉 제목 (한국어, 감각적으로 10자 이내)",
-      "description": "이 광고 컨셉의 핵심 아이디어 (한국어, 30자 이내)",
-      "concept": "광고의 전체적인 분위기와 스토리라인 설명 (한국어, 2-3문장). 어떤 상황에서 어떤 메시지를 전달하는지, 시청자가 느껴야 할 감정이 무엇인지 설명.",
-      "background": "배경/장소에 대한 구체적인 설명 (한국어). 반드시 포함: 장소 유형, 시간대, 조명 방향과 질감, 색감/톤, 주요 배경 요소들, 전체적인 분위기. 예: '밝은 자연광이 들어오는 미니멀한 화이트톤 거실. 큰 창문에서 부드러운 오후 햇살이 왼쪽에서 들어오고, 심플한 회색 소파와 작은 관엽식물이 보이는 깔끔하고 모던한 공간'",
-      "startFrame": "첫 프레임 상세 설명 (한국어). 이 이미지가 영상의 시작점이 됨. 반드시 포함: 아바타의 정확한 자세/포즈, 시선 방향, 표정, 제품의 위치와 상태, 양손의 위치와 하는 행동, 배경 속에서의 위치. 예: '거실 소파에 편안하게 앉아 왼손으로 제품 박스를 무릎 위에 올려둔 채, 카메라를 향해 기대감 어린 미소를 짓고 있음. 오른손은 박스 뚜껑 위에 살짝 얹어둔 상태. 제품 박스가 화면 중앙에 위치하도록 구도 설정'",
-      "mood": "영상의 전체 분위기 (한국어, 2-3개 키워드)",
-      "action": "핵심 동작 요약 (한국어, 5-10자)",
-      "emotionalArc": "감정의 흐름 (한국어). 예: '기대감 → 설렘 → 만족'",
-      "motionPromptEN": "DETAILED English motion description for video generation (60-80 words). This prompt will be used by kling-2.6 image-to-video model to animate the first frame. Structure: (1) STARTING STATE: Brief restatement of initial pose (2) MOTION SEQUENCE: Specific movements with timing cues like 'slowly', 'smoothly', 'gradually' (3) EXPRESSION CHANGES: How the face and emotions transition (4) PRODUCT INTERACTION: How hands and product move throughout (5) ENDING ACTION: Final pose/gesture. Be cinematic, specific, and ensure smooth motion flow."
+      "title": "시나리오 제목 (한국어, 감각적으로 8자 이내)",
+      "description": "한 문장으로 어떤 장면인지 설명 (한국어, 25자 이내)",
+      "concept": "이 시나리오의 컨셉과 스토리 (한국어, 2-3문장). 모델이 어떤 상황에 있고, 어떤 감정을 느끼고, 어떤 행동을 하는지.",
+      "productAppearance": "제품이 어떻게 등장하는지 (한국어). 예: '모델이 자연스럽게 한 손에 들고 있다', '테이블 위에 놓여있고 모델이 손을 뻗는다', '제품을 사용하며 만족스러워한다'",
+      "firstFramePrompt": "첫 프레임 상세 설명 (한국어). 이미지 생성에 직접 사용됨. 포함 필수: 모델의 정확한 자세, 표정, 시선, 제품 위치, 배경 장소, 조명, 분위기. 80-120자로 구체적으로.",
+      "motionPromptEN": "DETAILED English motion description for video generation (60-80 words). Structure: (1) Initial state restatement (2) Specific movements with timing (slowly, smoothly) (3) Expression transitions (4) Product interaction throughout (5) Final pose. Be cinematic and specific.",
+      "mood": "분위기 키워드 (한국어, 2-3단어)",
+      "location": "장소 (한국어, 구체적으로)",
+      "tags": ["태그1", "태그2", "태그3"]
     },
     {
       "id": "2",
-      ... (completely different concept and approach)
+      ... (COMPLETELY DIFFERENT location, mood, action, product interaction)
     },
     {
       "id": "3",
-      ... (completely different concept and approach)
+      ... (COMPLETELY DIFFERENT location, mood, action, product interaction)
     }
   ]
 }
 
-=== CRITICAL REQUIREMENTS ===
+=== EXAMPLE DIVERSE SCENARIOS ===
 
-1. DIVERSITY: Each concept must use a DIFFERENT advertising approach:
-   - One could be "discovery/reaction" style
-   - One could be "daily ritual/lifestyle" style
-   - One could be "direct recommendation" style
+For skincare product:
+1. [ACTION] - 아침 조깅 후 공원에서 땀을 식히며 사용
+2. [INTIMATE] - 밤 침실에서 은은한 조명 아래 스킨케어 루틴
+3. [LIFESTYLE] - 세련된 카페에서 친구와 대화하며 제품 꺼내기
 
-2. BACKGROUND SPECIFICITY: Don't just say "거실" - describe:
-   - Location type (living room, bedroom, cafe, studio, outdoor)
-   - Time of day and lighting direction (morning light from left, soft afternoon sun)
-   - Color palette and tone (warm, cool, neutral, bright)
-   - Key visible elements (furniture, plants, props)
-   - Overall atmosphere (calm, energetic, professional, cozy)
+Notice: ALL different locations, moods, actions!
 
-3. START FRAME DETAIL: The frame description must be detailed enough that an image generation model can recreate it exactly:
-   - Exact body position and posture (standing, sitting, leaning)
-   - Both hand positions and what they're doing
-   - Facial expression and eye direction
-   - Product location, size in frame, and state
-   - Position within the background setting
-   - Composition/framing guidance
+=== CRITICAL REMINDERS ===
 
-4. MOTION PROMPT QUALITY: The motionPromptEN must describe BELIEVABLE motion that:
-   - Starts from the described first frame
-   - Has natural pacing (smooth transitions, not jerky)
-   - Shows clear emotional progression
-   - Keeps the product visible and featured
-   - Ends with a satisfying final pose/gesture
-
-5. AUTHENTICITY: These are UGC-style ads, so:
-   - Keep poses natural, not overly staged or commercial
-   - Expressions should feel genuine and relatable
-   - Scenarios should be believable everyday moments
+1. 3 scenarios with 3 DIFFERENT locations - no repeats!
+2. 3 scenarios with 3 DIFFERENT moods - no repeats!
+3. Product appears NATURALLY in each scene
+4. firstFramePrompt is detailed enough for image generation
+5. motionPromptEN describes smooth, cinematic motion
+6. Everything in Korean except motionPromptEN
 
 ${JSON_RESPONSE_INSTRUCTION}`,
 }
+
+// Legacy alias for backward compatibility
+export const STORY_GENERATION_TEMPLATE = SCENARIO_GENERATION_TEMPLATE
+export const STORY_GENERATION_SYSTEM = CINEMATIC_SCENARIO_SYSTEM
 
 // ============================================================
 // 네거티브 프롬프트
@@ -660,27 +646,41 @@ export function buildEndFrameImprovementPrompt(
     .replace('{{startFrameDescription}}', startFrameDescription)
 }
 
-/** 스토리보드 생성 프롬프트 빌드 */
-export function buildStoryGenerationPrompt(
+/** 시나리오 생성 프롬프트 빌드 */
+export function buildScenarioGenerationPrompt(
   productName: string,
   productDescription: string,
-  productCategory: string,
+  productSellingPoints: string[],
   avatarDescription: string,
-  avatarType: string,
-  locationPrompt?: string
+  avatarType: string
 ): string {
-  const locationText = locationPrompt
-    ? `User specified location: ${locationPrompt}. Use this location/background in all story frames.`
-    : 'No specific location specified. Choose appropriate backgrounds for each story (e.g., modern home, studio, cafe, outdoor) based on the product and avatar.'
+  const sellingPointsText = productSellingPoints.length > 0
+    ? productSellingPoints.join(', ')
+    : '(셀링 포인트 없음)'
 
-  return STORY_GENERATION_TEMPLATE.template
+  return SCENARIO_GENERATION_TEMPLATE.template
     .replace('{{productName}}', productName || '제품')
     .replace('{{productDescription}}', productDescription || '일반 소비재 제품')
-    .replace('{{productCategory}}', productCategory || '일반')
+    .replace('{{productSellingPoints}}', sellingPointsText)
     .replace('{{avatarDescription}}', avatarDescription || '친근한 인플루언서 스타일')
     .replace('{{avatarType}}', avatarType || 'ai-generated')
-    .replace('{{locationPrompt}}', locationText)
 }
+
+// Legacy alias
+export const buildStoryGenerationPrompt = (
+  productName: string,
+  productDescription: string,
+  _productCategory: string,
+  avatarDescription: string,
+  avatarType: string,
+  _locationPrompt?: string
+): string => buildScenarioGenerationPrompt(
+  productName,
+  productDescription,
+  [],
+  avatarDescription,
+  avatarType
+)
 
 // ============================================================
 // 영상 생성 프롬프트
@@ -792,4 +792,305 @@ function translateMoodToEnglish(koreanMood: string): string {
   }
 
   return result || 'warm and inviting'
+}
+
+// ============================================================
+// 멀티 씬 시나리오 생성 프롬프트 (Vidu Q2용)
+// ============================================================
+
+/** 멀티 씬 시나리오 생성 시스템 프롬프트 */
+export const MULTI_SCENE_SCENARIO_SYSTEM = `You are an award-winning film director specializing in multi-scene cinematic short-form video ads.
+
+Your task is to create COMPELLING VIDEO STORIES told across MULTIPLE SCENES. Each scene is a separate video segment (1-8 seconds) that will be concatenated together.
+
+=== MULTI-SCENE STORYTELLING ===
+
+1. NARRATIVE ARC: The scenes together tell a complete mini-story
+   - Scene 1: Setup/Introduction - establish the context
+   - Middle scenes: Development/Action - build the story
+   - Final scene: Payoff/Resolution - deliver the message
+
+2. SCENE TRANSITIONS: Each scene should flow naturally to the next
+   - Visual continuity (consistent lighting, color grading)
+   - Story continuity (logical progression of action)
+   - Emotional continuity (building or shifting mood)
+
+3. SCENE DIVERSITY: Each scene should be visually distinct
+   - Different camera angles or distances
+   - Different poses or actions
+   - Different expressions or interactions with product
+
+4. PRODUCT INTEGRATION: Product appears naturally throughout
+   - Can appear in some or all scenes
+   - Natural placement and interaction
+   - Never feels forced
+
+5. PACING: Scene durations should match the content
+   - Quick cuts (1-3s) for dynamic/action moments
+   - Medium (4-5s) for standard storytelling
+   - Longer (6-8s) for emotional/showcase moments`
+
+/** 멀티 씬 시나리오 생성 템플릿 */
+export const MULTI_SCENE_SCENARIO_TEMPLATE: PromptTemplate = {
+  id: 'multi-scene-scenario-v1',
+  name: '멀티 씬 시나리오 생성',
+  description: '여러 씬으로 구성된 영화적 시나리오 생성',
+  category: 'avatar-motion',
+  targetModel: 'gemini',
+  version: {
+    version: '1.0.0',
+    createdAt: '2025-01-21',
+  },
+  variables: [
+    'productName',
+    'productDescription',
+    'productSellingPoints',
+    'avatarDescription',
+    'avatarType',
+    'sceneCount',
+    'totalDuration',
+  ],
+  template: `${MULTI_SCENE_SCENARIO_SYSTEM}
+
+=== PRODUCT (REQUIRED) ===
+Name: {{productName}}
+Description: {{productDescription}}
+Selling Points: {{productSellingPoints}}
+
+=== MODEL/AVATAR ===
+Type: {{avatarType}}
+Description: {{avatarDescription}}
+
+=== VIDEO SPECIFICATIONS ===
+Number of Scenes: {{sceneCount}}
+Target Total Duration: approximately {{totalDuration}} seconds
+
+=== YOUR TASK ===
+
+Create 3 DIFFERENT multi-scene story concepts. Each concept must have {{sceneCount}} scenes that together tell a complete mini-story.
+
+**FOR EACH SCENARIO:**
+1. Design a coherent narrative arc across all scenes
+2. Each scene should have:
+   - Clear action/purpose
+   - Specific first frame description
+   - Motion description for video generation
+   - Recommended duration (1-8 seconds)
+   - Movement intensity
+
+**SCENE DURATION GUIDELINES:**
+- Opening/Setup scenes: 3-5 seconds
+- Action/Development scenes: 4-6 seconds
+- Climax/Showcase scenes: 5-8 seconds
+- Quick transitions: 2-3 seconds
+- Total should be approximately {{totalDuration}} seconds
+
+**MOVEMENT AMPLITUDE:**
+- "small": Subtle movements (talking, slight gestures)
+- "medium": Normal movements (walking, reaching, turning)
+- "large": Dynamic movements (dancing, jumping, dramatic gestures)
+- "auto": Let the model decide based on content
+
+=== OUTPUT FORMAT (JSON) ===
+{
+  "scenarios": [
+    {
+      "id": "1",
+      "title": "시나리오 제목 (한국어, 10자 이내)",
+      "description": "전체 스토리 설명 (한국어, 30자 이내)",
+      "concept": "이 시나리오의 컨셉과 전체 스토리 흐름 (한국어, 3-4문장)",
+      "productAppearance": "제품이 전체 영상에서 어떻게 등장하고 사용되는지 (한국어)",
+      "mood": "전체 분위기 키워드 (한국어, 2-3단어)",
+      "tags": ["태그1", "태그2", "태그3"],
+      "totalDuration": 15,
+      "scenes": [
+        {
+          "sceneIndex": 0,
+          "title": "씬 제목 (한국어)",
+          "description": "이 씬에서 무슨 일이 일어나는지 (한국어, 20자 이내)",
+          "firstFramePrompt": "첫 프레임 상세 설명 (한국어). 모델의 자세, 표정, 시선, 제품 위치, 배경, 조명을 구체적으로 (80-100자)",
+          "motionPromptEN": "Detailed English motion description (40-60 words). Describe: starting pose, movements, expressions, product interaction, ending pose. Be specific about timing and smoothness.",
+          "duration": 5,
+          "movementAmplitude": "medium",
+          "location": "장소 (한국어)",
+          "mood": "씬 분위기 (한국어)"
+        },
+        {
+          "sceneIndex": 1,
+          ... (next scene, building on scene 0)
+        },
+        {
+          "sceneIndex": 2,
+          ... (final scene, delivering the payoff)
+        }
+      ]
+    },
+    {
+      "id": "2",
+      ... (COMPLETELY DIFFERENT story concept with {{sceneCount}} scenes)
+    },
+    {
+      "id": "3",
+      ... (COMPLETELY DIFFERENT story concept with {{sceneCount}} scenes)
+    }
+  ]
+}
+
+=== EXAMPLE: 3-Scene Skincare Ad ===
+
+Scenario 1: "아침 루틴" (Morning Routine)
+- Scene 0 (4s): Model wakes up, stretches in bed with soft morning light
+- Scene 1 (5s): Model at bathroom mirror, picks up product, starts routine
+- Scene 2 (6s): Model glowing, satisfied smile, holds product to camera
+
+Scenario 2: "자기 전 힐링" (Before Sleep Healing)
+- Scene 0 (4s): Model relaxing on couch after long day
+- Scene 1 (5s): Model applying product, peaceful expression
+- Scene 2 (6s): Model laying down, content, product beside pillow
+
+Notice: Each scenario tells a DIFFERENT story, with scenes that BUILD on each other!
+
+=== CRITICAL REMINDERS ===
+
+1. 3 scenarios, each with {{sceneCount}} scenes
+2. Scenes within a scenario must tell a CONNECTED story
+3. Each scene's firstFramePrompt is detailed enough for image generation
+4. Each scene's motionPromptEN describes specific movements
+5. Scene durations should total approximately {{totalDuration}} seconds
+6. Movement amplitudes match the action intensity
+7. All text in Korean except motionPromptEN
+
+${JSON_RESPONSE_INSTRUCTION}`,
+}
+
+/** 멀티 씬 시나리오 생성 프롬프트 빌드 */
+export function buildMultiSceneScenarioPrompt(
+  productName: string,
+  productDescription: string,
+  productSellingPoints: string[],
+  avatarDescription: string,
+  avatarType: string,
+  sceneCount: number,
+  totalDuration: number
+): string {
+  const sellingPointsText = productSellingPoints.length > 0
+    ? productSellingPoints.join(', ')
+    : '(셀링 포인트 없음)'
+
+  return MULTI_SCENE_SCENARIO_TEMPLATE.template
+    .replace('{{productName}}', productName || '제품')
+    .replace('{{productDescription}}', productDescription || '일반 소비재 제품')
+    .replace('{{productSellingPoints}}', sellingPointsText)
+    .replace('{{avatarDescription}}', avatarDescription || '친근한 인플루언서 스타일')
+    .replace('{{avatarType}}', avatarType || 'ai-generated')
+    .replace(/\{\{sceneCount\}\}/g, String(sceneCount))
+    .replace(/\{\{totalDuration\}\}/g, String(totalDuration))
+}
+
+// ============================================================
+// AI 추천 설정 생성 프롬프트
+// ============================================================
+
+/** AI 추천 설정 시스템 프롬프트 */
+export const AI_RECOMMENDATION_SYSTEM = `You are an expert video production consultant specializing in short-form video ads.
+
+Your task is to analyze the scenario/story and recommend optimal video settings:
+1. Aspect ratio (9:16 for vertical/social, 16:9 for horizontal/youtube, 1:1 for square/instagram)
+2. Number of scenes
+3. Duration for each scene
+4. Movement intensity for each scene
+
+Consider:
+- The story's pacing and emotional arc
+- Platform best practices
+- Product visibility requirements
+- Model's actions and movements`
+
+/** AI 추천 설정 템플릿 */
+export const AI_RECOMMENDATION_TEMPLATE: PromptTemplate = {
+  id: 'ai-recommendation-v1',
+  name: 'AI 추천 설정',
+  description: '시나리오에 맞는 최적의 영상 설정 추천',
+  category: 'avatar-motion',
+  targetModel: 'gemini',
+  version: {
+    version: '1.0.0',
+    createdAt: '2025-01-21',
+  },
+  variables: [
+    'scenarioTitle',
+    'scenarioDescription',
+    'scenarioConcept',
+    'productCategory',
+    'targetPlatform',
+  ],
+  template: `${AI_RECOMMENDATION_SYSTEM}
+
+=== SCENARIO TO ANALYZE ===
+Title: {{scenarioTitle}}
+Description: {{scenarioDescription}}
+Concept: {{scenarioConcept}}
+Product Category: {{productCategory}}
+Target Platform: {{targetPlatform}}
+
+=== YOUR TASK ===
+
+Analyze the scenario and recommend optimal video settings.
+
+**ASPECT RATIO GUIDELINES:**
+- "9:16": Best for TikTok, Instagram Reels, YouTube Shorts (vertical, mobile-first)
+- "16:9": Best for YouTube, website embeds (horizontal, desktop-friendly)
+- "1:1": Best for Instagram Feed, Facebook (square, versatile)
+
+**SCENE COUNT GUIDELINES:**
+- 2 scenes: Very short, punchy ads (10s or less)
+- 3 scenes: Standard storytelling (10-18s)
+- 4-5 scenes: Longer narratives (18-25s)
+
+**DURATION PER SCENE:**
+- 1-3s: Quick cuts, dynamic action
+- 4-5s: Standard pacing
+- 6-8s: Slow, emotional, showcase moments
+
+**MOVEMENT AMPLITUDE:**
+- "auto": Let the model decide
+- "small": Subtle (talking, slight gestures)
+- "medium": Normal (walking, reaching)
+- "large": Dynamic (active movements)
+
+=== OUTPUT FORMAT (JSON) ===
+{
+  "recommendation": {
+    "aspectRatio": "9:16",
+    "resolution": "720p",
+    "sceneCount": 3,
+    "sceneDurations": [4, 5, 6],
+    "movementAmplitudes": ["medium", "medium", "small"],
+    "reasoning": "추천 이유를 한국어로 설명 (2-3문장). 왜 이 설정이 이 시나리오에 적합한지."
+  }
+}
+
+=== REASONING GUIDELINES ===
+Explain in Korean:
+- Why this aspect ratio fits the platform and content
+- Why this scene structure works for the story
+- How the pacing supports the narrative arc
+
+${JSON_RESPONSE_INSTRUCTION}`,
+}
+
+/** AI 추천 설정 프롬프트 빌드 */
+export function buildAIRecommendationPrompt(
+  scenarioTitle: string,
+  scenarioDescription: string,
+  scenarioConcept: string,
+  productCategory: string,
+  targetPlatform: string = '소셜 미디어 (인스타그램, 틱톡)'
+): string {
+  return AI_RECOMMENDATION_TEMPLATE.template
+    .replace('{{scenarioTitle}}', scenarioTitle)
+    .replace('{{scenarioDescription}}', scenarioDescription)
+    .replace('{{scenarioConcept}}', scenarioConcept)
+    .replace('{{productCategory}}', productCategory || '일반 소비재')
+    .replace('{{targetPlatform}}', targetPlatform)
 }

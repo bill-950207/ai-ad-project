@@ -1,25 +1,23 @@
 /**
  * 이미지 광고 유형 선택 모달
  *
- * 9가지 광고 유형 중 하나를 선택합니다:
- * 1. 제품 단독, 2. 제품 홀딩, 3. 제품 사용, 4. 착용샷, 5. Before/After
- * 6. 라이프스타일, 7. 언박싱/리뷰, 8. 비교샷, 9. 시즌/테마
+ * 7가지 광고 유형 중 하나를 선택합니다:
+ * 1. 제품 단독, 2. 제품 홀딩, 3. 제품 사용, 4. 착용샷
+ * 5. 라이프스타일, 6. 언박싱/리뷰, 7. 시즌/테마
  */
 
 'use client'
 
 import { useLanguage } from '@/contexts/language-context'
-import { X, Hand, Sparkles, Shirt, ArrowLeftRight, Coffee, Package, Scale, Calendar, Box } from 'lucide-react'
+import { X, Hand, Sparkles, Shirt, Coffee, Package, Calendar, Box } from 'lucide-react'
 
 export type ImageAdType =
   | 'productOnly'
   | 'holding'
   | 'using'
   | 'wearing'
-  | 'beforeAfter'
   | 'lifestyle'
   | 'unboxing'
-  | 'comparison'
   | 'seasonal'
 
 // 모델이 필요 없는 타입
@@ -27,8 +25,8 @@ export const PRODUCT_ONLY_TYPES: ImageAdType[] = ['productOnly']
 
 // 모델이 필요한 타입
 export const MODEL_REQUIRED_TYPES: ImageAdType[] = [
-  'holding', 'using', 'wearing', 'beforeAfter',
-  'lifestyle', 'unboxing', 'comparison', 'seasonal'
+  'holding', 'using', 'wearing',
+  'lifestyle', 'unboxing', 'seasonal'
 ]
 
 interface ImageAdTypeModalProps {
@@ -42,10 +40,8 @@ const AD_TYPES: { type: ImageAdType; icon: typeof Hand }[] = [
   { type: 'holding', icon: Hand },
   { type: 'using', icon: Sparkles },
   { type: 'wearing', icon: Shirt },
-  { type: 'beforeAfter', icon: ArrowLeftRight },
   { type: 'lifestyle', icon: Coffee },
   { type: 'unboxing', icon: Package },
-  { type: 'comparison', icon: Scale },
   { type: 'seasonal', icon: Calendar },
 ]
 

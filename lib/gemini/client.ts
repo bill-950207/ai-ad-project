@@ -134,6 +134,10 @@ export interface ProductScriptInput {
   durationSeconds: number       // 영상 길이 (초)
   language?: 'ko' | 'en' | 'ja' | 'zh'  // 대본 생성 언어 (기본값: ko)
   additionalInstructions?: string  // 추가 지시사항
+  // AI 의상 추천용 추가 정보
+  requestOutfitRecommendation?: boolean  // AI 의상 추천 요청 여부
+  avatarDescription?: string    // 아바타 설명 (의상 추천 시)
+  productImageUrl?: string      // 제품 이미지 URL (의상 추천 시)
 }
 
 /** 개별 대본 */
@@ -144,14 +148,22 @@ export interface Script {
   estimatedDuration: number     // 예상 길이 (초)
 }
 
+/** AI 추천 의상 정보 */
+export interface RecommendedOutfit {
+  description: string           // 의상 설명 (영어, 프롬프트용)
+  koreanDescription: string     // 의상 설명 (한국어, 사용자 표시용)
+  reason: string                // 추천 이유 (한국어)
+}
+
 /** 제품 설명 대본 생성 결과 */
 export interface ProductScriptResult {
   productSummary: string        // 제품 요약
   scripts: Script[]             // 3가지 스타일의 대본
+  recommendedOutfit?: RecommendedOutfit  // AI 추천 의상 (요청 시에만)
 }
 
 /** 카메라 구도 타입 (셀카는 각도별로 세분화) */
-export type CameraCompositionType = 'selfie-high' | 'selfie-front' | 'selfie-side' | 'tripod' | 'closeup' | 'fullbody'
+export type CameraCompositionType = 'selfie-high' | 'selfie-front' | 'selfie-side' | 'tripod' | 'closeup' | 'fullbody' | 'ugc-closeup'
 
 /** 배경 생성 모드 */
 export type BackgroundGenerationMode = 'PRODUCT' | 'OPTIONS' | 'PROMPT'
@@ -192,11 +204,22 @@ export type ImageAdType =
   | 'holding'
   | 'using'
   | 'wearing'
-  | 'beforeAfter'
   | 'lifestyle'
   | 'unboxing'
-  | 'comparison'
   | 'seasonal'
+
+/** 아바타 특성 정보 (광고 프롬프트에 반영) */
+export interface AvatarCharacteristics {
+  gender?: 'female' | 'male' | 'nonbinary'
+  age?: 'teen' | 'early20s' | 'late20s' | '30s' | '40plus'
+  ethnicity?: 'korean' | 'eastAsian' | 'western' | 'southeastAsian' | 'black' | 'hispanic' | 'mixed'
+  height?: 'short' | 'average' | 'tall'
+  bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'plussize'
+  hairStyle?: 'longStraight' | 'bob' | 'wavy' | 'ponytail' | 'short'
+  hairColor?: 'blackhair' | 'brown' | 'blonde' | 'custom'
+  customHairColor?: string
+  vibe?: 'natural' | 'sophisticated' | 'cute' | 'professional'
+}
 
 /** 이미지 광고 프롬프트 생성 입력 */
 export interface ImageAdPromptInput {
@@ -205,9 +228,10 @@ export interface ImageAdPromptInput {
   productDescription?: string            // 제품 설명
   productImageUrl?: string               // 제품 이미지 URL
   avatarImageUrls?: string[]             // 아바타 이미지 URL 배열
+  avatarCharacteristics?: AvatarCharacteristics  // 아바타 특성 (피부톤, 체형, 키 등)
   outfitImageUrl?: string                // 의상 이미지 URL (wearing 타입)
   referenceStyleImageUrl?: string        // 참조 스타일 이미지 URL (분위기/스타일만 참조)
-  selectedOptions: Record<string, string> // 사용자 선택 옵션
+  selectedOptions: Record<string, string> // 사용자 선택 옵션 (outfit 옵션 포함)
   additionalPrompt?: string              // 추가 프롬프트
   aiAvatarDescription?: string           // AI 생성 아바타 설명 (아바타 이미지 없이 텍스트로 생성할 때)
 }
@@ -235,6 +259,7 @@ export interface AnalyzedOptionValue {
   value: string               // 선택된 프리셋 키 또는 커스텀 텍스트
   customText?: string         // 커스텀인 경우 상세 설명
   confidence: number          // 확신도 (0-1)
+  reason: string              // 왜 이 값을 선택했는지 상세한 근거
 }
 
 /** 참조 스타일 이미지 분석 결과 */
@@ -247,6 +272,12 @@ export interface ReferenceStyleAnalysisResult {
   adTypeMatchReason?: string       // 추천 이유 (한국어)
 }
 
+/** 모델 포즈 타입 */
+export type ModelPoseType = 'holding-product' | 'showing-product' | 'using-product' | 'talking-only'
+
+/** 의상 프리셋 타입 */
+export type OutfitPresetType = 'casual_everyday' | 'formal_elegant' | 'professional_business' | 'sporty_athletic' | 'cozy_comfortable' | 'trendy_fashion' | 'minimal_simple'
+
 /** 첫 프레임 이미지 프롬프트 생성 입력 */
 export interface FirstFramePromptInput {
   productInfo: string           // 제품 정보
@@ -254,6 +285,9 @@ export interface FirstFramePromptInput {
   locationPrompt?: string       // 장소 프롬프트 (선택사항)
   productImageUrl?: string      // 제품 이미지 URL (선택사항)
   cameraComposition?: CameraCompositionType  // 카메라 구도 (선택사항)
+  modelPose?: ModelPoseType     // 모델 포즈 (선택사항)
+  outfitPreset?: OutfitPresetType  // 의상 프리셋 (선택사항)
+  outfitCustom?: string         // 의상 직접 입력 (선택사항)
 }
 
 /** 첫 프레임 이미지 프롬프트 생성 결과 */
@@ -916,6 +950,23 @@ ${input.productInfo}`
     : `Product info:
 ${input.productInfo}`
 
+  // AI 의상 추천 섹션 (요청 시에만)
+  const outfitRecommendationSection = input.requestOutfitRecommendation
+    ? `
+
+OUTFIT RECOMMENDATION REQUEST:
+Please also recommend an appropriate outfit for the model/avatar that complements the product.
+${input.avatarDescription ? `Avatar/Model description: ${input.avatarDescription}` : ''}
+
+Outfit recommendation guidelines:
+- The outfit should complement the product being advertised
+- Consider the product's style, color, and target audience
+- Choose an outfit that looks natural for UGC-style content
+- The outfit should not distract from the product
+- Consider seasonal appropriateness and current fashion trends
+- Provide specific details (color, style, material) for image generation`
+    : ''
+
   const prompt = `You are a professional advertising script writer. Write 3 different style scripts for the following product.
 
 ${productSection}
@@ -953,11 +1004,76 @@ IMPORTANT:
 - Each script must be ${minChars}~${maxChars} characters
 - Write in natural spoken language
 - Clearly convey the product's core value and selling points
-- ALL SCRIPTS MUST BE WRITTEN IN ${config_lang.name.toUpperCase()}`
+- ALL SCRIPTS MUST BE WRITTEN IN ${config_lang.name.toUpperCase()}
+${outfitRecommendationSection}`
 
   const tools = input.productUrl
     ? [{ urlContext: {} }, { googleSearch: {} }]
     : undefined
+
+  // 기본 스키마 속성
+  const baseSchemaProperties = {
+    productSummary: {
+      type: Type.STRING,
+      description: `Summarize the product's core value in 2-3 sentences (in ${config_lang.name})`,
+    },
+    scripts: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        required: ['style', 'styleName', 'content', 'estimatedDuration'],
+        properties: {
+          style: {
+            type: Type.STRING,
+            enum: ['formal', 'casual', 'energetic'],
+            description: 'Script style code',
+          },
+          styleName: {
+            type: Type.STRING,
+            description: `Style name in ${config_lang.name}`,
+          },
+          content: {
+            type: Type.STRING,
+            description: `Script content (must be in ${config_lang.name})`,
+          },
+          estimatedDuration: {
+            type: Type.NUMBER,
+            description: 'Estimated speech duration (seconds)',
+          },
+        },
+      },
+    },
+  }
+
+  // AI 의상 추천 요청 시 스키마에 추가
+  const schemaProperties = input.requestOutfitRecommendation
+    ? {
+        ...baseSchemaProperties,
+        recommendedOutfit: {
+          type: Type.OBJECT,
+          required: ['description', 'koreanDescription', 'reason'],
+          description: 'AI recommended outfit for the model',
+          properties: {
+            description: {
+              type: Type.STRING,
+              description: 'Outfit description in English for image generation prompt (e.g., "casual white cotton t-shirt with light blue jeans")',
+            },
+            koreanDescription: {
+              type: Type.STRING,
+              description: '의상 설명 (한국어, 사용자 표시용)',
+            },
+            reason: {
+              type: Type.STRING,
+              description: '추천 이유 (한국어, 왜 이 의상이 제품과 잘 어울리는지)',
+            },
+          },
+        },
+      }
+    : baseSchemaProperties
+
+  const requiredFields = input.requestOutfitRecommendation
+    ? ['productSummary', 'scripts', 'recommendedOutfit']
+    : ['productSummary', 'scripts']
 
   const genConfig: GenerateContentConfig = {
     tools,
@@ -967,39 +1083,8 @@ IMPORTANT:
     responseMimeType: 'application/json',
     responseSchema: {
       type: Type.OBJECT,
-      required: ['productSummary', 'scripts'],
-      properties: {
-        productSummary: {
-          type: Type.STRING,
-          description: `Summarize the product's core value in 2-3 sentences (in ${config_lang.name})`,
-        },
-        scripts: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            required: ['style', 'styleName', 'content', 'estimatedDuration'],
-            properties: {
-              style: {
-                type: Type.STRING,
-                enum: ['formal', 'casual', 'energetic'],
-                description: 'Script style code',
-              },
-              styleName: {
-                type: Type.STRING,
-                description: `Style name in ${config_lang.name}`,
-              },
-              content: {
-                type: Type.STRING,
-                description: `Script content (must be in ${config_lang.name})`,
-              },
-              estimatedDuration: {
-                type: Type.NUMBER,
-                description: 'Estimated speech duration (seconds)',
-              },
-            },
-          },
-        },
-      },
+      required: requiredFields,
+      properties: schemaProperties,
     },
   }
 
@@ -1049,7 +1134,7 @@ IMPORTANT:
 
     const fallback = fallbackByLanguage[language] || fallbackByLanguage.ko
 
-    return {
+    const result: ProductScriptResult = {
       productSummary: fallback.summary,
       scripts: [
         {
@@ -1072,6 +1157,17 @@ IMPORTANT:
         },
       ],
     }
+
+    // AI 의상 추천 요청 시 기본 의상 추가
+    if (input.requestOutfitRecommendation) {
+      result.recommendedOutfit = {
+        description: 'casual white cotton t-shirt with comfortable light blue jeans',
+        koreanDescription: '캐주얼한 흰색 면 티셔츠와 편안한 라이트 블루 청바지',
+        reason: '제품과 잘 어울리는 자연스럽고 깔끔한 캐주얼 스타일입니다.',
+      }
+    }
+
+    return result
   }
 }
 
@@ -1098,6 +1194,7 @@ export async function generateFirstFramePrompt(input: FirstFramePromptInput): Pr
     tripod: '삼각대 촬영 스타일 - 카메라가 고정된 위치에 설치된 것처럼, 정면에서 안정적인 구도, 허리부터 머리까지 보이는 거리',
     closeup: '클로즈업 - 얼굴과 상체 위주, 표정이 잘 보이는 가까운 거리, 어깨부터 머리까지',
     fullbody: '전신 샷 - 아바타의 전신이 보이는 구도, 발끝부터 머리까지 전체가 프레임에 담김',
+    'ugc-closeup': 'UGC 스타일 미디엄 클로즈업 - 인플루언서가 직접 촬영한 듯한 친근한 구도. 가슴 위쪽부터 머리까지 프레임에 가득 차게 담김. 카메라 렌즈를 똑바로 바라보며 자연스러운 표정. 시청자에게 편하게 말하는 듯한 분위기.',
   }
 
   // 셀카 구도인지 확인
@@ -1107,6 +1204,40 @@ export async function generateFirstFramePrompt(input: FirstFramePromptInput): Pr
     ? `카메라 구도: ${cameraCompositionDescriptions[input.cameraComposition]}
 이 구도에 맞게 아바타의 포즈와 카메라 앵글을 설정해주세요.`
     : ''
+
+  // 모델 포즈 설명
+  const modelPoseDescriptions: Record<ModelPoseType, string> = {
+    'holding-product': '제품 들기 - 모델이 제품을 양손으로 자연스럽게 들고 카메라를 향해 보여주는 포즈. 제품이 얼굴 옆이나 가슴 높이에 위치.',
+    'showing-product': '제품 제시 - 모델이 제품을 카메라 앞으로 내밀어 보여주는 포즈. 한 손 또는 양손으로 제품을 프레젠테이션하듯 제시.',
+    'using-product': '제품 사용 - 모델이 실제로 제품을 사용하는 모습. 스킨케어면 얼굴에 바르는 중, 음료면 마시는 중 등 제품 특성에 맞는 사용 장면.',
+    'talking-only': '말로만 설명 - ⚠️ 제품이 화면에 절대 보이지 않음! 제품 없이 아바타만 화면에 등장. 손은 자연스럽게 내려두거나 제스처를 취하며 대화하듯 자연스러운 포즈.',
+  }
+
+  const poseSection = input.modelPose
+    ? `모델 포즈: ${modelPoseDescriptions[input.modelPose]}
+${input.modelPose === 'talking-only' ? '⚠️ 중요: 제품이 화면에 전혀 보이지 않아야 합니다! 아바타만 등장하는 프레임입니다.' : '이 포즈에 맞게 모델의 자세와 제품 배치를 설정해주세요.'}`
+    : ''
+
+  // 의상 프리셋 설명
+  const outfitPresetDescriptions: Record<OutfitPresetType, string> = {
+    casual_everyday: '캐주얼 일상 의상 - 편안한 티셔츠나 블라우스에 청바지 또는 캐주얼 팬츠, 친근하고 편안한 스타일',
+    formal_elegant: '포멀/우아한 의상 - 세련된 드레스나 정장, 고급스럽고 우아한 분위기',
+    professional_business: '비즈니스 의상 - 전문적인 비즈니스 정장이나 깔끔한 셔츠, 신뢰감 있는 스타일',
+    sporty_athletic: '스포티 의상 - 운동복이나 애슬레저 스타일, 활동적이고 건강한 이미지',
+    cozy_comfortable: '편안한 의상 - 부드러운 니트 스웨터나 가디건, 따뜻하고 아늑한 느낌',
+    trendy_fashion: '트렌디 패션 의상 - 최신 유행 스타일, 세련되고 패셔너블한 룩',
+    minimal_simple: '미니멀 심플 의상 - 깔끔한 단색 의상, 절제된 우아함과 세련된 느낌',
+  }
+
+  // 의상 설명 생성
+  let outfitSection = ''
+  if (input.outfitCustom) {
+    outfitSection = `의상 설정 (사용자 지정): ${input.outfitCustom}
+이 의상 설명에 맞게 모델의 의상을 설정해주세요. 원본 아바타의 의상 대신 지정된 의상을 입혀주세요.`
+  } else if (input.outfitPreset) {
+    outfitSection = `의상 설정: ${outfitPresetDescriptions[input.outfitPreset]}
+이 스타일에 맞게 모델의 의상을 설정해주세요. 원본 아바타의 의상 대신 지정된 스타일의 의상을 입혀주세요.`
+  }
 
   // 이미지 인덱스 계산 (Seedream 4.5 Figure 형식)
   const avatarImageIndex = 1
@@ -1262,6 +1393,10 @@ ${locationSection}
 
 ${cameraSection}
 
+${poseSection}
+
+${outfitSection}
+
 ${imageReferenceSection}
 
 요구사항 (토킹 영상 첫 프레임 - 럭셔리 에디토리얼 스타일):
@@ -1275,6 +1410,8 @@ ${imageReferenceSection}
 8. 럭셔리 에디토리얼 스타일 - 광고/상업적 느낌 금지
 ${input.cameraComposition ? `9. 지정된 카메라 구도(${input.cameraComposition})를 반드시 반영` : ''}
 ${isSelfieMode ? `10. [필수] 셀피 구도이지만 카메라/스마트폰/손이 화면에 절대 보이지 않아야 함. 모델의 양손은 제품을 들고 있거나 자연스러운 포즈.` : ''}
+${input.modelPose ? `11. [필수] 지정된 모델 포즈(${input.modelPose})를 반드시 반영하여 모델의 자세와 제품 배치를 설정` : ''}
+${(input.outfitPreset || input.outfitCustom) ? `12. [필수] 지정된 의상 스타일을 반드시 반영하여 모델의 의상을 변경 (원본 아바타 의상 무시)` : ''}
 
 프롬프트 작성 지침 (Seedream 4.5 Figure 형식 필수):
 - 영어로 작성, 50-80단어 권장 (최대 100단어)
@@ -1539,6 +1676,138 @@ z-image-turbo는 ByteDance의 초고속 이미지 생성 모델입니다.
 }
 
 /**
+ * 아바타 특성을 영어 프롬프트 텍스트로 변환
+ * @param characteristics - 아바타 특성 정보
+ * @returns 아바타 특성 설명 텍스트
+ */
+function buildAvatarCharacteristicsText(characteristics: AvatarCharacteristics): string {
+  const parts: string[] = []
+
+  // 인종/피부톤
+  const ethnicityMap: Record<string, string> = {
+    korean: 'Korean',
+    eastAsian: 'East Asian',
+    western: 'Caucasian',
+    southeastAsian: 'Southeast Asian',
+    black: 'African',
+    hispanic: 'Hispanic',
+    mixed: 'mixed ethnicity',
+  }
+
+  // 성별
+  const genderMap: Record<string, string> = {
+    female: 'woman',
+    male: 'man',
+    nonbinary: 'person',
+  }
+
+  // 나이대
+  const ageMap: Record<string, string> = {
+    teen: 'teenage',
+    early20s: 'in their early 20s',
+    late20s: 'in their late 20s',
+    '30s': 'in their 30s',
+    '40plus': 'in their 40s',
+  }
+
+  // 키
+  const heightMap: Record<string, string> = {
+    short: 'petite',
+    average: 'average height',
+    tall: 'tall',
+  }
+
+  // 여성 체형 (구체적인 신체 비율 포함)
+  const femaleBodyTypeMap: Record<string, string> = {
+    slim: 'slim slender body with 32-24-34 inch proportions, narrow shoulders, small bust, thin waist, lean hips',
+    average: 'average female body with 34-26-36 inch proportions, moderate bust, defined waist, balanced hips',
+    athletic: 'athletic toned female body with 34-25-35 inch proportions, firm muscles, toned abs, strong legs, defined arms',
+    curvy: 'hourglass figure body with 36-24-36 inch proportions, full bust (D-cup), very slim tiny waist, shapely round hips, slender toned legs',
+    plussize: 'plus-size female body with 42-36-46 inch proportions, very large bust, soft rounded belly, wide hips, thick thighs',
+  }
+
+  // 남성 체형 (구체적인 신체 비율 포함)
+  const maleBodyTypeMap: Record<string, string> = {
+    slim: 'slim lean male body with narrow shoulders, thin arms, flat chest, slim waist, lean legs',
+    average: 'average male body with moderate shoulders, normal chest, slight belly, standard proportions',
+    athletic: 'athletic muscular male body with broad shoulders (18+ inches), defined chest muscles, visible six-pack abs, V-shaped torso, muscular arms and legs',
+    curvy: 'stocky male body with broad frame, thick chest, solid midsection, strong thick legs',
+    plussize: 'plus-size male body with large frame, broad chest, round belly, thick arms and legs',
+  }
+
+  // 기본 체형 (성별 불명 시)
+  const defaultBodyTypeMap: Record<string, string> = {
+    slim: 'slim slender build with lean proportions',
+    average: 'average build with balanced proportions',
+    athletic: 'athletic toned build with defined muscles',
+    curvy: 'curvy build with pronounced proportions',
+    plussize: 'plus-size build with fuller figure',
+  }
+
+  // 성별에 따른 체형 설명 반환
+  const getBodyTypeDesc = (bodyType: string, gender?: string): string => {
+    if (gender === 'female') {
+      return femaleBodyTypeMap[bodyType] || defaultBodyTypeMap[bodyType] || bodyType
+    } else if (gender === 'male') {
+      return maleBodyTypeMap[bodyType] || defaultBodyTypeMap[bodyType] || bodyType
+    }
+    return defaultBodyTypeMap[bodyType] || bodyType
+  }
+
+  // 헤어스타일
+  const hairStyleMap: Record<string, string> = {
+    longStraight: 'long straight hair',
+    bob: 'bob haircut',
+    wavy: 'wavy hair',
+    ponytail: 'ponytail',
+    short: 'short hair',
+  }
+
+  // 머리 색상
+  const hairColorMap: Record<string, string> = {
+    blackhair: 'black hair',
+    brown: 'brown hair',
+    blonde: 'blonde hair',
+    custom: '',
+  }
+
+  // 기본 주체 (성별 + 인종 + 나이)
+  const gender = characteristics.gender ? genderMap[characteristics.gender] : 'person'
+  const ethnicity = characteristics.ethnicity ? ethnicityMap[characteristics.ethnicity] : ''
+  const age = characteristics.age ? ageMap[characteristics.age] : ''
+
+  let subject = ethnicity ? `${ethnicity} ${gender}` : gender
+  if (age) subject += ` ${age}`
+  parts.push(subject)
+
+  // 체형 (키 + 체형) - 성별에 따른 구체적인 신체 비율 사용
+  const bodyParts: string[] = []
+  if (characteristics.height) {
+    bodyParts.push(heightMap[characteristics.height])
+  }
+  if (characteristics.bodyType) {
+    bodyParts.push(getBodyTypeDesc(characteristics.bodyType, characteristics.gender))
+  }
+  if (bodyParts.length > 0) {
+    parts.push(`with ${bodyParts.join(', ')}`)
+  }
+
+  // 헤어스타일
+  if (characteristics.hairStyle) {
+    let hair = hairStyleMap[characteristics.hairStyle]
+    // 머리 색상 적용
+    if (characteristics.hairColor === 'custom' && characteristics.customHairColor) {
+      hair = `${characteristics.customHairColor} colored ${hair}`
+    } else if (characteristics.hairColor && hairColorMap[characteristics.hairColor]) {
+      hair = `${hairColorMap[characteristics.hairColor]}, ${hair}`
+    }
+    parts.push(hair)
+  }
+
+  return parts.join(', ')
+}
+
+/**
  * 이미지 광고용 프롬프트를 Gemini로 최적화하여 생성합니다.
  * Seedream 4.5 모델에 최적화된 프롬프트를 생성합니다.
  *
@@ -1551,17 +1820,36 @@ export async function generateImageAdPrompt(input: ImageAdPromptInput): Promise<
     productOnly: '제품 단독 촬영 (제품만 강조하는 프로페셔널 제품 사진)',
     holding: '들고 있는 샷 (모델이 제품을 자연스럽게 들고 있는 광고)',
     using: '사용 중인 샷 (모델이 제품을 실제로 사용하는 모습)',
-    wearing: '착용샷 (모델이 의상/액세서리를 착용한 패션 광고)',
-    beforeAfter: '비포/애프터 (사용 전후 비교 이미지)',
+    wearing: '착용샷 (모델이 Figure 1의 의류/속옷 제품을 직접 입고 있는 패션 광고 - 제품을 들거나 액세서리로 취급하지 않음!)',
     lifestyle: '라이프스타일 (일상에서 제품과 함께하는 자연스러운 모습)',
     unboxing: '언박싱 (제품을 개봉하거나 소개하는 리뷰 스타일)',
-    comparison: '비교 (제품 비교 스타일 광고)',
     seasonal: '시즌/테마 (계절감이나 특별한 테마가 있는 광고)',
   }
 
-  // 옵션을 한국어 설명으로 변환
+  // 의상 옵션 프롬프트 매핑 (outfit 키를 구체적인 프롬프트로 변환)
+  const outfitPromptMap: Record<string, string> = {
+    keep_original: '',  // 원본 의상 유지 시 추가 안함
+    casual_everyday: 'Model wearing casual everyday outfit: comfortable t-shirt or blouse with jeans or casual pants, relaxed and approachable style.',
+    formal_elegant: 'Model wearing formal elegant outfit: sophisticated dress or tailored suit, refined and polished appearance.',
+    professional_business: 'Model wearing professional business attire: crisp blazer with dress shirt, polished and authoritative look.',
+    sporty_athletic: 'Model wearing sporty athletic wear: comfortable activewear or athleisure, energetic and dynamic style.',
+    cozy_comfortable: 'Model wearing cozy comfortable clothing: soft knit sweater or cardigan, warm and inviting appearance.',
+    trendy_fashion: 'Model wearing trendy fashion-forward outfit: current season styles, stylish and on-trend look.',
+    minimal_simple: 'Model wearing minimal simple outfit: clean solid-colored clothing without busy patterns, understated elegance.',
+  }
+
+  // 옵션을 한국어 설명으로 변환 (outfit은 구체적인 프롬프트로 확장)
   const optionDescriptions = Object.entries(input.selectedOptions)
-    .map(([key, value]) => `${key}: ${value}`)
+    .map(([key, value]) => {
+      // outfit 옵션은 구체적인 프롬프트로 변환
+      if (key === 'outfit' && value !== 'keep_original') {
+        const outfitPrompt = outfitPromptMap[value]
+        if (outfitPrompt) {
+          return `outfit: ${value} → ${outfitPrompt}`
+        }
+      }
+      return `${key}: ${value}`
+    })
     .join(', ')
 
   // 제품 정보 섹션
@@ -1581,6 +1869,11 @@ export async function generateImageAdPrompt(input: ImageAdPromptInput): Promise<
   // AI 생성 아바타 여부 확인 (아바타 이미지 없이 텍스트 설명만 있는 경우)
   const isAiGeneratedAvatar = !!input.aiAvatarDescription && !input.avatarImageUrls?.length
 
+  // 아바타 특성 텍스트 생성 (있는 경우)
+  const avatarCharacteristicsText = input.avatarCharacteristics
+    ? buildAvatarCharacteristicsText(input.avatarCharacteristics)
+    : null
+
   // 이미지 참조 안내 (Figure 1, Figure 2 형태로 Seedream 4.5 문서 규격에 맞춤)
   const imageReferenceSection = `
 === ATTACHED IMAGES GUIDE ===
@@ -1592,7 +1885,13 @@ ${productImageIndex ? `[Figure ${productImageIndex}] = PRODUCT IMAGE
 - Reference format: "the [specific product name] from Figure ${productImageIndex}"` : ''}
 ${avatarImageIndices.length ? `[Figure ${avatarImageIndices.join('], [Figure ')}] = MODEL IMAGE(S) (${avatarImageIndices.length} image${avatarImageIndices.length > 1 ? 's' : ''})
 - This is the human model for the advertisement.
-- Reference as "the model in Figure ${avatarImageIndices[0]}" in your prompt.` : ''}
+- Reference as "the model in Figure ${avatarImageIndices[0]}" in your prompt.
+${avatarCharacteristicsText ? `- ⭐⭐⭐ CRITICAL - MUST PRESERVE EXACT PHYSICAL CHARACTERISTICS ⭐⭐⭐
+  * Physical traits (USE THESE EXACT DESCRIPTIONS VERBATIM): ${avatarCharacteristicsText}
+  * DO NOT shorten, summarize, or paraphrase these descriptions!
+  * "hourglass figure with fuller bust and hips, slim waist, attractive curves" must stay as-is, NOT shortened to just "hourglass figure"
+  * Include the FULL body type description in your prompt to maintain visual consistency.
+  * Example: "The ${avatarCharacteristicsText} model from Figure ${avatarImageIndices[0]} holding..."` : ''}` : ''}
 ${isAiGeneratedAvatar ? `[NO MODEL IMAGE - AI-GENERATED AVATAR]
 - There is NO model image provided (no Figure for the model).
 - You MUST describe the model using TEXT description only.
@@ -1674,7 +1973,7 @@ AI 아바타 설명: "${input.aiAvatarDescription}"
 - productOnly: "Place the [구체적 제품명] from Figure 1 in a [배경] with [조명]"
 - holding: "Place the model from Figure 2 holding the [구체적 제품명] from Figure 1 in [환경]"
 - using: "Compose the model from Figure 2 naturally using the [구체적 제품명] from Figure 1"
-- wearing: "Place the model from Figure 2 wearing the outfit, with [배경] and [조명]"
+- wearing: "⭐ 착용샷 - 모델이 Figure 1의 [의류/속옷 제품명]을 직접 착용! Place the model from Figure 2 WEARING the [구체적 의류/속옷 제품명] from Figure 1. 제품을 들거나 액세서리로 취급하지 말고, 실제로 입고 있어야 합니다!"
 - lifestyle: "Compose a lifestyle scene with the model from Figure 2 and the [구체적 제품명] from Figure 1 nearby"
 `}
 
@@ -1713,6 +2012,16 @@ AI 아바타 설명: "${input.aiAvatarDescription}"
 - 이 경우 제품을 실제 사람으로 변환하거나 애니메이션화하지 마세요!
 - 프롬프트에 반드시 포함: "Preserve the exact appearance of the product from Figure 1 and keep it as a physical figurine; do not transform it into a real person"
 ${isAiGeneratedAvatar ? `- AI 생성 모델이 피규어를 손에 들고 있거나 보여주는 형태로 구성` : `- 모델(Figure 2)이 피규어를 손에 들고 있거나 보여주는 형태로 구성`}
+
+⭐⭐⭐ 착용샷(wearing) 타입 중요 주의사항 ⭐⭐⭐
+광고 유형이 "wearing"인 경우, 반드시 다음 규칙을 따르세요:
+- Figure 1의 제품(의류, 속옷, 액세서리 등)을 모델이 **직접 착용**해야 합니다!
+- ❌ 잘못된 예: "presenting the bra as an accessory", "holding the underwear", "the bra nearby"
+- ✅ 올바른 예: "wearing the red push-up bra from Figure 1", "dressed in the lingerie from Figure 1"
+- 속옷(브라, 팬티, 란제리 등) 제품인 경우: 모델이 해당 속옷을 **실제로 입고 있는** 이미지여야 합니다!
+- 의류 제품인 경우: 모델이 해당 의류를 **실제로 입고 있는** 패션 화보 이미지여야 합니다!
+- 액세서리(목걸이, 귀걸이, 시계 등)인 경우: 모델이 해당 액세서리를 **착용하고 있는** 이미지여야 합니다!
+- 절대 제품을 손에 들거나, 옆에 놓거나, 액세서리로 취급하지 마세요!
 
 제품 보존 (중요):
 - "Preserve the exact appearance of the product from Figure 1"
@@ -1784,6 +2093,10 @@ ${isAiGeneratedAvatar ? `- AI 생성 모델이 피규어를 손에 들고 있거
 ${productSection}
 
 선택된 옵션: ${optionDescriptions || '기본값'}
+${input.selectedOptions.outfit && input.selectedOptions.outfit !== 'keep_original' ? `
+⭐ 의상 옵션 필수 포함: 위 outfit 옵션에 명시된 의상 설명을 프롬프트에 반드시 포함하세요!
+- 제품(Figure 1)은 제외하고, 모델이 착용하는 다른 의상에 대한 설명입니다.
+- 예: "wearing casual everyday outfit with comfortable t-shirt and jeans" 형태로 포함` : ''}
 
 ${input.additionalPrompt ? `추가 요청: ${input.additionalPrompt}` : ''}
 
@@ -1804,9 +2117,12 @@ ${isAiGeneratedAvatar ? `
 7. 피규어 제품인 경우: "keep it as a physical figurine; do not transform it into a real person"
 8. 🔥 프리미엄 광고 품질: 프롬프트 끝에 반드시 "Shot on Sony A7IV, 85mm f/1.8, sharp focus. Natural skin with visible pores and texture, individual hair strands with flyaways. 4K resolution, hyperrealistic, premium advertisement quality" 추가
 9. ⛔ 금지어: "smooth skin", "healthy glow", "flawless", "perfect" (AI 느낌 유발)
+10. ⭐⭐ 모델 체형 필수: 아바타 설명에 체형 정보가 있으면 반드시 그대로 프롬프트에 포함하세요!
+    - "hourglass figure with fuller bust and hips, slim waist, attractive curves" → 그대로 사용 (절대 축약 금지!)
+    - 체형 설명을 생략하거나 축약하면 안 됨!
 
-프롬프트 예시 (AI 아바타 - 제품이 물병인 경우 - 프리미엄 광고 품질):
-"A ${input.aiAvatarDescription}. Compose the model confidently holding the water bottle from Figure 1 in a modern indoor setting. Authentic confident expression. Natural skin with visible pores and subtle texture, individual hair strands with natural flyaways. Professional commercial lighting. Shot on Sony A7IV, 85mm f/1.8, sharp focus on face and product. Preserve the exact appearance of the water bottle from Figure 1. Do not add any new text. 4K resolution, hyperrealistic, premium advertisement quality."
+프롬프트 예시 (AI 아바타 - 체형 포함 - 프리미엄 광고 품질):
+"A Korean woman in her late 20s with hourglass figure with fuller bust and hips, slim waist, attractive curves. Compose the model confidently holding the water bottle from Figure 1 in a modern indoor setting. Authentic confident expression. Natural skin with visible pores and subtle texture, individual hair strands with natural flyaways. Professional commercial lighting. Shot on Sony A7IV, 85mm f/1.8, sharp focus on face and product. Preserve the exact appearance of the water bottle from Figure 1. Do not add any new text. 4K resolution, hyperrealistic, premium advertisement quality."
 ` : `
 === 필수 규칙 ===
 1. ⭐ 먼저 Figure 1 이미지를 분석하여 제품이 무엇인지 파악하세요 (예: water bottle, figurine, skincare serum, action figure)
@@ -1818,9 +2134,13 @@ ${isAiGeneratedAvatar ? `
 7. 피규어/인형 제품인 경우: "Preserve the exact appearance of the figurine from Figure 1 and keep it as a physical figurine; do not transform it into a real person"
 8. 🔥 프리미엄 광고 품질: 프롬프트 끝에 반드시 "Shot on Sony A7IV, 85mm f/1.8, sharp focus. Natural skin with visible pores and texture, individual hair strands with flyaways. 4K resolution, hyperrealistic, premium advertisement quality" 추가
 9. ⛔ 금지어: "smooth skin", "healthy glow", "flawless", "perfect" (AI 느낌 유발)
+10. ⭐⭐ 모델 체형 필수: 위에서 제공된 모델의 Physical traits를 그대로 프롬프트에 포함하세요!
+    - "hourglass figure with fuller bust and hips, slim waist, attractive curves" → 그대로 사용 (절대 축약 금지!)
+    - "slim slender build", "athletic toned build" 등도 정확히 포함
+    - 체형 설명을 생략하거나 "hourglass figure"로만 축약하면 안 됨!
 
-프롬프트 예시 형식 (제품이 물병인 경우 - 프리미엄 광고 품질):
-"Place the model from Figure 2 confidently holding the water bottle from Figure 1 in a modern indoor setting. Authentic confident expression. Natural skin with visible pores and subtle texture, individual hair strands with natural flyaways. Professional commercial lighting. Shot on Sony A7IV, 85mm f/1.8, sharp focus on face and product. Preserve the exact appearance of the water bottle from Figure 1. Copy the appearance of the model from Figure 2. Do not add any new text. 4K resolution, hyperrealistic, premium advertisement quality."
+프롬프트 예시 형식 (제품이 물병인 경우 - 체형 포함 - 프리미엄 광고 품질):
+"Place the Korean woman in her late 20s with hourglass figure with fuller bust and hips, slim waist, attractive curves model from Figure 2 confidently holding the water bottle from Figure 1 in a modern indoor setting. Authentic confident expression. Natural skin with visible pores and subtle texture, individual hair strands with natural flyaways. Professional commercial lighting. Shot on Sony A7IV, 85mm f/1.8, sharp focus on face and product. Preserve the exact appearance of the water bottle from Figure 1. Copy the appearance of the model from Figure 2. Do not add any new text. 4K resolution, hyperrealistic, premium advertisement quality."
 `}`
 
   const config: GenerateContentConfig = {
@@ -1947,11 +2267,9 @@ ${isAiGeneratedAvatar ? `
       productOnly: `Hyper-realistic product photography of the product from Figure 1 with dynamic floating elements or particles frozen mid-air. Bold studio background with punchy lighting. Ultra-sharp focus on texture: surface details, material quality, and fine features clearly visible. Cinematic key light with soft fill to enhance product gloss without harsh reflections. Premium commercial aesthetic, visually bold. ${logoPreserve} ${photoRealism}`,
       holding: `${modelDescription} confidently holds the product from Figure 1 with dynamic energy, bright confident expression. Clean skin tones with natural texture. Bold studio lighting with cinematic key light sculpting facial features. Shallow depth of field isolates subject while product stays sharp. Ultra-sharp focus on product texture and details. Premium advertising aesthetic, energetic and visually bold. ${logoPreserve} ${photoRealism}`,
       using: `${modelDescription} actively demonstrates the product from Figure 1 with energetic, dynamic pose. Confident expression showing genuine excitement. Bold punchy lighting creates high-impact commercial look. Ultra-sharp focus on product interaction and texture details. Shallow depth of field with motion clarity. Premium advertisement aesthetic, visually bold. ${logoPreserve} ${photoRealism}`,
-      wearing: `Fashion advertisement featuring ${modelDescription.toLowerCase()} in confident dynamic pose wearing the outfit. Bold studio lighting sculpts the form and fabric texture. Ultra-sharp focus on clothing details: fabric texture, stitching, material quality. Shallow depth of field isolates subject. Premium fashion advertising aesthetic, energetic and visually bold. ${logoPreserve} ${photoRealism}`,
-      beforeAfter: `Dynamic before and after comparison with bold visual contrast. Clean consistent cinematic lighting on both sides. Ultra-sharp focus highlighting transformation details. High-impact commercial layout. Premium advertising aesthetic. ${logoPreserve} ${photoRealism}`,
+      wearing: `Fashion advertisement featuring ${modelDescription.toLowerCase()} in confident dynamic pose WEARING the clothing/underwear product from Figure 1. The model must actually be wearing the product from Figure 1, NOT holding it or presenting it as an accessory. Bold studio lighting sculpts the form and fabric texture. Ultra-sharp focus on clothing details: fabric texture, stitching, material quality. Shallow depth of field isolates subject. Premium fashion advertising aesthetic, energetic and visually bold. ${logoPreserve} ${photoRealism}`,
       lifestyle: `${modelDescription.toLowerCase()} in energetic lifestyle moment with the product from Figure 1. Dynamic pose, confident expression. Bold lighting creates warm inviting atmosphere with high visual impact. Ultra-sharp focus on product integration. Shallow depth of field isolates key elements. Premium lifestyle advertising aesthetic, visually bold. ${logoPreserve} ${photoRealism}`,
       unboxing: `${modelDescription} reveals the product from Figure 1 with genuine excitement and dynamic energy. Elements frozen mid-air for dramatic effect. Bold punchy lighting. Ultra-sharp focus on product details and textures. Premium unboxing aesthetic, energetic and visually bold. ${logoPreserve} ${photoRealism}`,
-      comparison: `Dynamic product comparison with the product from Figure 1 prominently featured. Bold studio lighting highlighting product features and textures. Ultra-sharp focus on material details and quality differences. Premium commercial layout, visually bold. ${logoPreserve} ${photoRealism}`,
       seasonal: `Festive seasonal advertisement featuring the product from Figure 1 with dynamic decorative elements. Bold warm lighting creates high-impact festive atmosphere. Ultra-sharp focus on product and seasonal details. Premium seasonal advertising aesthetic, energetic and visually bold. ${logoPreserve} ${photoRealism}`,
     }
 
@@ -1980,11 +2298,9 @@ export async function analyzeReferenceStyleImage(input: ReferenceStyleAnalysisIn
     productOnly: '제품 단독 - 제품만 보이는 스튜디오 촬영',
     holding: '들고 있는 샷 - 모델이 제품을 손에 들고 있는 포즈',
     using: '사용 중인 샷 - 모델이 제품을 사용/적용하는 모습',
-    wearing: '착용샷 - 모델이 의류/액세서리를 착용한 모습',
-    beforeAfter: '비포/애프터 - 제품 사용 전후 비교',
+    wearing: '착용샷 - 모델이 제품(의류/속옷)을 직접 입고 있는 모습 (제품을 들거나 액세서리로 취급하지 않음)',
     lifestyle: '라이프스타일 - 일상 속에서 제품을 사용하는 장면',
     unboxing: '언박싱 - 제품 개봉/공개 장면',
-    comparison: '비교 - 여러 제품 비교',
     seasonal: '시즌/테마 - 계절이나 특정 테마에 맞춘 광고',
   }
 
@@ -2040,6 +2356,7 @@ ${optionsDescription}
    - 프리셋 목록에서 가장 적합한 값이 있으면 type: "preset"으로 선택
    - 프리셋 중 적합한 것이 없거나 더 구체적인 설명이 필요하면 type: "custom"으로 직접 입력
    - confidence: 해당 분석의 확신도 (0.0 ~ 1.0)
+   - reason: 왜 이 값을 선택했는지 상세한 근거 (참조 이미지의 어떤 요소를 보고 판단했는지)
 
 4. **suggestedPrompt 작성 (매우 중요!)**:
    참조 이미지의 스타일을 최대한 유사하게 재현하기 위한 상세한 스타일 설명을 작성하세요.
@@ -2077,7 +2394,7 @@ ${optionsDescription}
           type: Type.ARRAY,
           items: {
             type: Type.OBJECT,
-            required: ['key', 'type', 'value', 'confidence'],
+            required: ['key', 'type', 'value', 'confidence', 'reason'],
             properties: {
               key: {
                 type: Type.STRING,
@@ -2101,6 +2418,10 @@ ${optionsDescription}
                 type: Type.NUMBER,
                 description: '확신도 (0.0 ~ 1.0)',
               },
+              reason: {
+                type: Type.STRING,
+                description: '왜 이 값을 선택했는지 상세한 근거 (한국어, 예: "이미지에서 모델이 카메라를 응시하며 미소 짓고 있어 eye_contact와 smile을 선택했습니다")',
+              },
             },
           },
         },
@@ -2115,7 +2436,7 @@ ${optionsDescription}
         recommendedAdType: {
           type: Type.STRING,
           nullable: true,
-          enum: ['productOnly', 'holding', 'using', 'wearing', 'beforeAfter', 'lifestyle', 'unboxing', 'comparison', 'seasonal'],
+          enum: ['productOnly', 'holding', 'using', 'wearing', 'lifestyle', 'unboxing', 'seasonal'],
           description: '이미지에 가장 적합한 광고 유형 (현재 선택과 다를 경우에만)',
         },
         adTypeMatchConfidence: {
@@ -2179,6 +2500,9 @@ export interface AiAvatarPromptInput {
   productImageUrl?: string         // 제품 이미지 URL (선택)
   locationPrompt?: string          // 장소 지정 (선택)
   cameraComposition?: CameraCompositionType  // 카메라 구도 (선택)
+  modelPose?: ModelPoseType        // 모델 포즈 (선택)
+  outfitPreset?: OutfitPresetType  // 의상 프리셋 (선택)
+  outfitCustom?: string            // 의상 직접 입력 (선택)
   targetGender?: 'male' | 'female' | 'any'  // 타겟 성별 (선택)
   targetAge?: 'young' | 'middle' | 'mature' | 'any'  // 타겟 연령대 (선택)
   style?: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'  // 스타일 (선택)
@@ -2271,6 +2595,11 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
       aperture: 'f/16',
       lens: '35mm',
     },
+    'ugc-closeup': {
+      description: 'UGC-style intimate medium close-up, chest-up framing filling most of frame, eyes looking DIRECTLY into camera lens, natural relaxed expression, casual influencer vlog aesthetic like talking to viewer',
+      aperture: 'f/8',
+      lens: '35mm',
+    },
   }
 
   // 카메라 구도에 따른 조리개/렌즈 설정 (배경 완전 선명)
@@ -2282,6 +2611,38 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
     ? `카메라 구도: ${cameraConfig.description}
 카메라 스펙: Shot on Sony A7IV, 35mm f/8, deep depth of field (⚠️ 이 카메라 스펙을 프롬프트에 반드시 포함! 배경까지 선명하게!)`
     : `카메라 스펙: Shot on Sony A7IV, 35mm f/8, deep depth of field (⚠️ 이 카메라 스펙을 프롬프트에 반드시 포함! 배경까지 선명하게!)`
+
+  // 모델 포즈 설명
+  const modelPoseDescriptions: Record<ModelPoseType, string> = {
+    'holding-product': '모델이 제품을 양손으로 자연스럽게 들고 카메라를 향해 보여주는 포즈. 제품이 얼굴 옆이나 가슴 높이에 위치.',
+    'showing-product': '모델이 제품을 카메라 앞으로 내밀어 보여주는 포즈. 한 손 또는 양손으로 제품을 프레젠테이션하듯 제시.',
+    'using-product': '모델이 실제로 제품을 사용하는 모습. 스킨케어면 얼굴에 바르는 중, 음료면 마시는 중 등 제품 특성에 맞는 사용 장면.',
+    'talking-only': '⚠️ 제품이 화면에 절대 보이지 않음! 제품 없이 아바타만 화면에 등장. 손은 자연스럽게 내려두거나 제스처를 취하며 대화하듯 자연스러운 포즈.',
+  }
+
+  const poseSection = input.modelPose
+    ? `모델 포즈: ${modelPoseDescriptions[input.modelPose]}
+${input.modelPose === 'talking-only' ? '⚠️ 중요: 제품이 화면에 전혀 보이지 않아야 합니다! 아바타만 등장하는 프레임입니다.' : '이 포즈에 맞게 모델의 자세와 제품 배치를 설정해주세요.'}`
+    : ''
+
+  // 의상 프리셋 설명
+  const outfitPresetDescriptions: Record<OutfitPresetType, string> = {
+    casual_everyday: '캐주얼 일상 의상 - 편안한 티셔츠나 블라우스에 청바지 또는 캐주얼 팬츠',
+    formal_elegant: '포멀/우아한 의상 - 세련된 드레스나 정장',
+    professional_business: '비즈니스 의상 - 전문적인 비즈니스 정장이나 깔끔한 셔츠',
+    sporty_athletic: '스포티 의상 - 운동복이나 애슬레저 스타일',
+    cozy_comfortable: '편안한 의상 - 부드러운 니트 스웨터나 가디건',
+    trendy_fashion: '트렌디 패션 의상 - 최신 유행 스타일',
+    minimal_simple: '미니멀 심플 의상 - 깔끔한 단색 의상',
+  }
+
+  // 의상 설명 생성
+  let outfitSection = ''
+  if (input.outfitCustom) {
+    outfitSection = `의상 설정 (사용자 지정): ${input.outfitCustom}`
+  } else if (input.outfitPreset) {
+    outfitSection = `의상 설정: ${outfitPresetDescriptions[input.outfitPreset]}`
+  }
 
   const prompt = `당신은 GPT-Image 1.5 이미지 생성을 위한 프롬프트 전문가입니다.
 **제품 설명 영상의 첫 프레임**에 사용될 이미지를 생성하기 위한 프롬프트를 작성해주세요.
@@ -2322,6 +2683,12 @@ ${input.productImageUrl ? `=== ATTACHED PRODUCT IMAGE (Figure 1) ===
 ${locationSection}
 
 ${cameraSection}
+
+${poseSection}
+
+${outfitSection ? `=== 의상 설정 ===
+${outfitSection}
+이 의상 스타일에 맞게 모델의 의상을 설정해주세요.` : ''}
 
 === 작성 지침 (영상 첫 프레임용) ===
 
@@ -2436,13 +2803,31 @@ export interface CategoryOptionGroup {
   options: CategoryOptionItem[]  // 사용 가능한 옵션 (키 + 설명)
 }
 
+/** 아바타 정보 (시나리오 추천용) */
+export interface AvatarInfoForScenario {
+  type: 'avatar' | 'outfit' | 'ai-generated'
+  avatarName?: string
+  outfitName?: string
+  // AI 생성 아바타 옵션
+  aiOptions?: {
+    targetGender: 'male' | 'female' | 'any'
+    targetAge: 'young' | 'middle' | 'mature' | 'any'
+    style: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
+    ethnicity: 'korean' | 'asian' | 'western' | 'any'
+  }
+}
+
 /** AI 자동 설정 입력 */
 export interface RecommendedOptionsInput {
   adType: ImageAdType
   productName?: string
   productDescription?: string
-  categoryGroups: CategoryOptionGroup[]  // 해당 광고 유형의 카테고리 그룹들
+  categoryGroups: CategoryOptionGroup[]  // 해당 광고 유형의 카테고리 그룹들 (outfit 포함)
   language?: string  // 응답 언어 (ko, en, ja)
+  hasAvatar?: boolean  // 아바타 포함 여부
+  avatarInfo?: AvatarInfoForScenario  // 아바타 상세 정보
+  productImageUrl?: string  // 제품 이미지 URL (멀티모달 분석용)
+  productUsageMethod?: string  // 제품 사용 방법 (using 타입 전용)
 }
 
 /** AI 자동 설정 결과 */
@@ -2496,10 +2881,8 @@ export async function generateRecommendedCategoryOptions(
     holding: 'Holding shot - Model naturally holding the product',
     using: 'Using shot - Model actively using/demonstrating the product',
     wearing: 'Wearing shot - Fashion advertisement with model wearing clothing/accessories',
-    beforeAfter: 'Before/After - Comparison image showing transformation',
     lifestyle: 'Lifestyle - Natural everyday scene with the product',
     unboxing: 'Unboxing - Product reveal and first impression style',
-    comparison: 'Comparison - Product comparison advertisement',
     seasonal: 'Seasonal/Theme - Advertisement with seasonal or themed atmosphere',
   }
 
@@ -2538,8 +2921,6 @@ ${groupsDescription}
    - wearing: Pose and background that suits the clothing style
    - lifestyle: Relatable everyday scene and mood
    - unboxing: Exciting action and expression
-   - beforeAfter: Layout that emphasizes transformation
-   - comparison: Clear comparison with appropriate background
    - seasonal: Theme and atmosphere matching the season
 
 3. Harmonious Combination:
@@ -2686,10 +3067,8 @@ export async function generateMultipleRecommendedOptions(
     holding: 'Holding shot - Model naturally holding the product',
     using: 'Using shot - Model actively using/demonstrating the product',
     wearing: 'Wearing shot - Fashion advertisement with model wearing clothing/accessories',
-    beforeAfter: 'Before/After - Comparison image showing transformation',
     lifestyle: 'Lifestyle - Natural everyday scene with the product',
     unboxing: 'Unboxing - Product reveal and first impression style',
-    comparison: 'Comparison - Product comparison advertisement',
     seasonal: 'Seasonal/Theme - Advertisement with seasonal or themed atmosphere',
   }
 
@@ -2699,58 +3078,78 @@ export async function generateMultipleRecommendedOptions(
     return `[${group.key}]\n${optionsText}`
   }).join('\n\n')
 
-  const prompt = `You are an expert advertising image producer.
-Analyze the product information and ad type to recommend 3 DIFFERENT style scenarios.
-Each scenario should have a distinct approach and appeal to different customer preferences.
+  // Build avatar description
+  let avatarDescription = ''
+  if (input.hasAvatar && input.avatarInfo) {
+    const { type, avatarName, outfitName, aiOptions } = input.avatarInfo
+    if (type === 'ai-generated' && aiOptions) {
+      const genderText = aiOptions.targetGender !== 'any' ? aiOptions.targetGender : 'any gender'
+      const ageText = aiOptions.targetAge !== 'any' ? aiOptions.targetAge : 'any age'
+      const styleText = aiOptions.style !== 'any' ? aiOptions.style : 'any style'
+      const ethnicityText = aiOptions.ethnicity !== 'any' ? aiOptions.ethnicity : 'any ethnicity'
+      avatarDescription = `AI-generated avatar: ${genderText}, ${ageText}, ${styleText} style, ${ethnicityText}`
+    } else if (type === 'outfit' && outfitName) {
+      avatarDescription = `Pre-made avatar with outfit: ${avatarName || 'Unknown'} (${outfitName})`
+    } else if (avatarName) {
+      avatarDescription = `Pre-made avatar: ${avatarName}`
+    }
+  }
 
-OUTPUT LANGUAGE: ${outputLanguageInstructions[language] || outputLanguageInstructions.ko}
+  // Build product usage section for 'using' type
+  const productUsageSection = input.productUsageMethod
+    ? `\nProduct Usage Method: ${input.productUsageMethod}`
+    : ''
 
-=== PRODUCT INFORMATION ===
-Product Name: ${input.productName || 'Not provided'}
-Product Description: ${input.productDescription || 'Not provided'}
+  const prompt = `You are a creative director at a top advertising agency.
 
-=== AD TYPE ===
-${input.adType}: ${adTypeDescriptions[input.adType]}
+${outputLanguageInstructions[language] || outputLanguageInstructions.ko}
 
-=== AVAILABLE CATEGORY OPTIONS ===
+=== #1 PRIORITY: THE PRODUCT ===
+Name: ${input.productName || 'Unknown'}
+Description: ${input.productDescription || 'No description'}${productUsageSection}
+
+Study this product deeply. What makes it special? Who desires it? What feelings does it evoke? What visual story would make someone want to buy it RIGHT NOW?
+${input.hasAvatar ? `
+=== #2 PRIORITY: THE MODEL ===
+${avatarDescription || 'Model included'}
+
+How can this person best showcase the product? What's their vibe? How do they naturally interact with products like this?` : ''}
+
+=== AD FORMAT: ${input.adType} ===
+${adTypeDescriptions[input.adType]}
+
+=== OPTIONS TO CHOOSE FROM ===
 ${groupsDescription}
 
-=== SCENARIO GUIDELINES ===
+(Use "__custom__" with customText if the preset options don't capture your vision)
 
-Analyze the product characteristics and create 3 DISTINCTLY DIFFERENT scenarios that are OPTIMIZED for THIS SPECIFIC PRODUCT.
+=== YOUR TASK ===
 
-IMPORTANT: Do NOT use generic style categories like "luxury", "casual", "trendy" for every product.
-Instead, analyze the product and recommend styles that make sense for it:
+**STEP 1: ANALYZE THE PRODUCT DEEPLY**
+Before creating scenarios, think about:
+- What are its key features, benefits, ingredients, texture?
+- Who is the ideal customer? What do they care about?
+- What makes this product stand out from competitors?
+- What emotions should the ad evoke?
 
-- For skincare/beauty products: Consider scenarios like "Morning Routine", "Self-care Moment", "Clean Beauty", "Dermatologist Recommended", "K-Beauty Aesthetic"
-- For food/beverage: Consider "Fresh & Appetizing", "Homemade Feel", "Gourmet Presentation", "Social Dining", "Quick & Easy"
-- For fashion: Consider "Street Style", "Office Chic", "Weekend Casual", "Date Night", "Athleisure"
-- For tech/electronics: Consider "Minimalist Tech", "Productivity Setup", "Gaming Vibes", "Creative Workspace", "On-the-go"
-- For home/lifestyle: Consider "Cozy Home", "Modern Minimalist", "Scandinavian", "Bohemian", "Urban Living"
+**STEP 2: CREATE 3 COMPLETELY DIFFERENT SCENARIOS**
+- Each scenario must highlight a DIFFERENT aspect of the product
+- Each scenario must appeal to a DIFFERENT customer motivation
+- Think creatively - there are no right or wrong answers
+- The scenarios should feel like they could be real ads for this specific product
 
-Think about:
-1. Who is the target customer for this product?
-2. When/where would they use this product?
-3. What emotions or aspirations should the ad evoke?
-4. What visual styles best communicate the product's value proposition?
+**STEP 3: MANDATORY DIVERSIFICATION (CRITICAL!)**
+⚠️ IMPORTANT: The following options MUST be different across all 3 scenarios:
+- background: MUST choose 3 DIFFERENT backgrounds
+- mood: MUST choose 3 DIFFERENT moods
+- If available: lighting, pose, gaze should also vary
 
-Each scenario should represent a genuinely different USE CASE or TARGET AUDIENCE, not just different aesthetic treatments of the same concept.
+Do NOT create 3 scenarios with the same background or same mood. This will be rejected.
 
-=== REQUIREMENTS ===
-1. Each scenario must have:
-   - A distinctive title (2-4 words, describing the style)
-   - A brief description (1-2 sentences explaining the approach)
-   - Complete option selections for ALL category groups
-   - Reason for each option choice
-   - Overall strategy explanation
-   - Optional suggested prompt for additional styling
-
-2. Scenarios should be clearly different from each other
-3. All options should harmonize within each scenario
-4. Consider the product category and target audience
-
-IMPORTANT: Provide DIFFERENT option selections across scenarios where it makes sense.
-For example, if recommending backgrounds, each scenario should use a different background.`
+**STEP 4: FOCUS ON THE PRODUCT**
+- How can the product be the star of each scene?
+- What setting makes this product look most appealing?
+- What emotion will make customers want to buy this?`
 
   const config: GenerateContentConfig = {
     thinkingConfig: {
@@ -2764,18 +3163,18 @@ For example, if recommending backgrounds, each scenario should use a different b
       properties: {
         scenarios: {
           type: Type.ARRAY,
-          description: '3개의 서로 다른 스타일 시나리오',
+          description: '3개의 완전히 다른 시나리오 - 각각 다른 background와 mood 필수',
           items: {
             type: Type.OBJECT,
             required: ['title', 'description', 'recommendations', 'overallStrategy'],
             properties: {
               title: {
                 type: Type.STRING,
-                description: '시나리오 제목 (2-4 단어, 예: 프리미엄 고급 스타일)',
+                description: '시나리오 제목 (2-4 단어, 창의적이고 기억에 남는 제목)',
               },
               description: {
                 type: Type.STRING,
-                description: '시나리오 설명 (1-2문장)',
+                description: '시나리오 설명 - 생생한 장면 묘사 (1-2문장)',
               },
               recommendations: {
                 type: Type.ARRAY,
@@ -2881,6 +3280,135 @@ For example, if recommending backgrounds, each scenario should use a different b
         overallStrategy: '제품 정보를 기반으로 기본 설정이 적용되었습니다.',
         suggestedPrompt: undefined,
       }],
+    }
+  }
+}
+
+// ============================================================
+// 이미지 편집 프롬프트 개선
+// ============================================================
+
+/** 이미지 편집 프롬프트 입력 */
+export interface MergeEditPromptInput {
+  originalPrompt: string  // 기존 프롬프트 (참고용, 사용되지 않음)
+  userEditRequest: string  // 유저가 입력한 수정 요청 (한국어 가능)
+  currentImageUrl?: string  // 현재 이미지 URL (분석용)
+}
+
+/** 이미지 편집 프롬프트 결과 */
+export interface MergeEditPromptResult {
+  mergedPrompt: string  // 개선된 편집 프롬프트 (영어)
+  editSummary: string   // 수정 내용 요약 (한국어)
+}
+
+/**
+ * 이미지 편집 프롬프트 개선
+ *
+ * 유저의 편집 요청만을 기반으로 이미지 모델에 적합한 프롬프트를 생성합니다.
+ * 기존 프롬프트의 설정(포즈, 배경 등)은 포함하지 않고 유저 요청만 개선합니다.
+ *
+ * @param input - 편집 프롬프트 입력
+ * @returns 개선된 프롬프트와 수정 요약
+ */
+export async function mergeEditPrompt(input: MergeEditPromptInput): Promise<MergeEditPromptResult> {
+  const prompt = `You are an expert image prompt engineer for AI image editing.
+Your task is to enhance the user's edit request into a clear, effective prompt for an image editing AI model.
+
+=== USER'S EDIT REQUEST ===
+${input.userEditRequest}
+
+=== INSTRUCTIONS ===
+1. The user wants to modify an existing image. The image is provided for reference.
+2. Your job is to enhance ONLY the user's edit request into a professional image editing prompt.
+3. DO NOT include:
+   - Pose descriptions
+   - Framing/composition settings
+   - Camera settings
+   - Lighting setups (unless specifically requested by user)
+   - Background descriptions (unless specifically requested by user)
+   - Any other settings that were NOT mentioned by the user
+4. ONLY describe what the user explicitly wants to change.
+5. Keep the prompt focused and concise - describe only the modification.
+6. Translate Korean to English if needed.
+7. Use clear, direct language that an image editing AI can understand.
+
+=== EXAMPLES ===
+User request: "배경을 해변으로 바꿔줘"
+Enhanced prompt: "Change the background to a tropical beach with clear blue sky, soft sand, and gentle ocean waves."
+
+User request: "더 밝게"
+Enhanced prompt: "Increase brightness and make the overall image brighter and more luminous."
+
+User request: "표정을 웃는 얼굴로"
+Enhanced prompt: "Change the facial expression to a warm, natural smile."
+
+User request: "제품 색상을 빨간색으로"
+Enhanced prompt: "Change the product color to vibrant red while maintaining its texture and material appearance."
+
+=== OUTPUT FORMAT ===
+Return a JSON object with:
+- mergedPrompt: The enhanced edit prompt in English (focused only on what needs to change)
+- editSummary: A brief summary of the edit (in Korean, 1 sentence)
+
+Example response:
+{
+  "mergedPrompt": "Change the background to a modern minimalist kitchen with white marble countertops and natural daylight.",
+  "editSummary": "배경을 모던 주방으로 변경합니다."
+}`
+
+  const config: GenerateContentConfig = {
+    thinkingConfig: {
+      thinkingLevel: ThinkingLevel.MEDIUM,
+    },
+    responseMimeType: 'application/json',
+    responseSchema: {
+      type: Type.OBJECT,
+      required: ['mergedPrompt', 'editSummary'],
+      properties: {
+        mergedPrompt: {
+          type: Type.STRING,
+          description: 'The final merged prompt in English',
+        },
+        editSummary: {
+          type: Type.STRING,
+          description: 'Brief summary of changes in Korean',
+        },
+      },
+    },
+  }
+
+  const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []
+
+  // 현재 이미지가 있으면 분석을 위해 포함 (선택사항)
+  if (input.currentImageUrl) {
+    const imageData = await fetchImageAsBase64(input.currentImageUrl)
+    if (imageData) {
+      parts.push({
+        inlineData: {
+          mimeType: imageData.mimeType,
+          data: imageData.base64,
+        },
+      })
+    }
+  }
+
+  parts.push({ text: prompt })
+
+  const response = await genAI.models.generateContent({
+    model: MODEL_NAME,
+    contents: [{ role: 'user', parts }],
+    config,
+  })
+
+  const responseText = response.text || ''
+
+  try {
+    return JSON.parse(responseText) as MergeEditPromptResult
+  } catch {
+    // Fallback: 단순 연결
+    return {
+      mergedPrompt: `${input.originalPrompt} Additionally: ${input.userEditRequest}`,
+      editSummary: '프롬프트가 수정되었습니다.',
     }
   }
 }

@@ -15,7 +15,9 @@ import {
   ExternalLink,
   Check,
   Coins,
+  Wand2,
 } from 'lucide-react'
+import { ImageEditModal } from './image-edit-modal'
 import { buildPromptFromOptions } from '@/lib/image-ad/category-options'
 import { useImageAdWizard, AspectRatio, Quality } from './wizard-context'
 import { compressImage } from '@/lib/image/compress-client'
@@ -68,6 +70,10 @@ export function WizardStep4() {
 
   const [generationStartTime, setGenerationStartTime] = useState<number | null>(null)
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  // 이미지 편집 모달 상태
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [editImageIndex, setEditImageIndex] = useState(0)
 
   const isWearingType = adType === 'wearing'
 
@@ -150,7 +156,7 @@ export function WizardStep4() {
         numImages,
         referenceStyleImageUrl: referenceUrl,
         aiAvatarOptions: selectedAvatarInfo?.type === 'ai-generated' ? selectedAvatarInfo.aiOptions : undefined,
-        options: categoryOptions,  // 선택한 옵션 저장
+        options: categoryOptions,  // 선택한 옵션 저장 (의상 옵션 포함)
       }
 
       const createRes = await fetch('/api/image-ads', {
@@ -230,6 +236,17 @@ export function WizardStep4() {
         throw new Error('모든 이미지 생성 실패')
       }
 
+      // DB 상태를 확실히 COMPLETED로 업데이트하기 위해 batch-status API 호출
+      // (개별 폴링의 경쟁 조건으로 인해 DB 업데이트가 누락될 수 있음)
+      if (imageAdIds && imageAdIds.length > 0) {
+        try {
+          await fetch(`/api/image-ads/batch-status/${imageAdIds[0]}`)
+          console.log('배치 상태 최종 업데이트 완료')
+        } catch (batchError) {
+          console.error('배치 상태 최종 업데이트 실패:', batchError)
+        }
+      }
+
       setResultImages(imageUrls)
       setGenerationProgress(100)
     } catch (error) {
@@ -286,6 +303,16 @@ export function WizardStep4() {
                 />
               </div>
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-3">
+                <button
+                  onClick={() => {
+                    setEditImageIndex(index)
+                    setEditModalOpen(true)
+                  }}
+                  className="p-3 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+                  title="이미지 편집"
+                >
+                  <Wand2 className="w-5 h-5 text-white" />
+                </button>
                 <a
                   href={url}
                   download={`ad-image-${index + 1}.png`}
@@ -328,6 +355,24 @@ export function WizardStep4() {
             광고 목록으로
           </button>
         </div>
+
+        {/* 이미지 편집 모달 */}
+        {resultAdIds.length > 0 && (
+          <ImageEditModal
+            isOpen={editModalOpen}
+            onClose={() => setEditModalOpen(false)}
+            imageAdId={resultAdIds[0]}
+            imageUrl={resultImages[editImageIndex] || ''}
+            imageIndex={editImageIndex}
+            quality={quality}
+            onEditComplete={(index, newImageUrl) => {
+              // 편집 완료 시 해당 인덱스의 이미지 URL 업데이트
+              const updated = [...resultImages]
+              updated[index] = newImageUrl
+              setResultImages(updated)
+            }}
+          />
+        )}
       </div>
     )
   }

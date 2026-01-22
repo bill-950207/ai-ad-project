@@ -43,10 +43,8 @@ type ImageAdType =
   | 'holding'
   | 'using'
   | 'wearing'
-  | 'beforeAfter'
   | 'lifestyle'
   | 'unboxing'
-  | 'comparison'
   | 'seasonal'
 
 // 퀄리티 타입
@@ -68,6 +66,7 @@ interface ImageAdRequestBody {
     lighting?: string
     mood?: string
     angle?: string
+    outfit?: string  // 의상 옵션 (카테고리 옵션으로 포함)
   }
   // AI 아바타 옵션 (avatarIds[0]이 'ai-generated'일 때)
   aiAvatarOptions?: {
@@ -95,6 +94,7 @@ export async function GET(request: NextRequest) {
     // 쿼리 파라미터
     const { searchParams } = new URL(request.url)
     const productId = searchParams.get('productId')
+    const avatarId = searchParams.get('avatarId')
     const page = parseInt(searchParams.get('page') || '1', 10)
     const pageSize = parseInt(searchParams.get('pageSize') || '12', 10)
     const limit = searchParams.get('limit') // legacy support
@@ -115,6 +115,9 @@ export async function GET(request: NextRequest) {
 
     if (productId) {
       countQuery = countQuery.eq('product_id', productId)
+    }
+    if (avatarId) {
+      countQuery = countQuery.eq('avatar_id', avatarId)
     }
 
     const { count: totalCount } = await countQuery
@@ -149,6 +152,9 @@ export async function GET(request: NextRequest) {
 
     if (productId) {
       query = query.eq('product_id', productId)
+    }
+    if (avatarId) {
+      query = query.eq('avatar_id', avatarId)
     }
 
     // pagination 또는 legacy limit 적용
@@ -257,6 +263,7 @@ export async function POST(request: NextRequest) {
     let productDescription: string | undefined
     let productImageUrl: string | undefined
     const avatarImageUrls: string[] = []
+    let avatarCharacteristics: Record<string, unknown> | undefined  // 아바타 특성 (피부톤, 체형, 키 등)
     let outfitImageUrl: string | undefined
 
     // 제품 정보 조회 (모든 타입에서 필수)
@@ -327,7 +334,7 @@ export async function POST(request: NextRequest) {
 
         const { data: avatar, error: avatarError } = await supabase
           .from('avatars')
-          .select('id, name, image_url, status')
+          .select('id, name, image_url, status, options')
           .eq('id', avatarId)
           .eq('user_id', user.id)
           .single()
@@ -346,9 +353,13 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        // Gemini용 아바타 이미지 URL 저장
+        // Gemini용 아바타 이미지 URL 및 특성 저장
         if (avatar.image_url) {
           avatarImageUrls.push(avatar.image_url)
+        }
+        // 아바타 특성 저장 (피부톤, 체형, 키 등)
+        if (avatar.options) {
+          avatarCharacteristics = avatar.options as Record<string, unknown>
         }
 
         const { data: outfit, error: outfitError } = await supabase
@@ -384,7 +395,7 @@ export async function POST(request: NextRequest) {
         for (const avatarId of avatarIds) {
           const { data: avatar, error: avatarError } = await supabase
             .from('avatars')
-            .select('id, name, image_url, status')
+            .select('id, name, image_url, status, options')
             .eq('id', avatarId)
             .eq('user_id', user.id)
             .single()
@@ -406,6 +417,10 @@ export async function POST(request: NextRequest) {
           // 첫 번째 아바타를 primary로 설정
           if (!primaryAvatarId) {
             primaryAvatarId = avatarId
+            // 첫 번째 아바타의 특성 저장 (피부톤, 체형, 키 등)
+            if (avatar.options) {
+              avatarCharacteristics = avatar.options as Record<string, unknown>
+            }
           }
 
           // 일반 아바타 이미지 추가
@@ -476,9 +491,10 @@ export async function POST(request: NextRequest) {
         productDescription,
         productImageUrl,
         avatarImageUrls: avatarImageUrls.length > 0 ? avatarImageUrls : undefined,
+        avatarCharacteristics: avatarCharacteristics as import('@/lib/gemini/client').AvatarCharacteristics | undefined,
         outfitImageUrl,
         referenceStyleImageUrl,
-        selectedOptions: options || {},
+        selectedOptions: options || {},  // 의상 옵션도 포함됨 (outfit key)
         additionalPrompt: prompt,
         aiAvatarDescription,
       })
@@ -648,15 +664,11 @@ function getTypePromptPrefix(adType: ImageAdType, isAiAvatar = false, avatarDesc
     case 'using':
       return `Create an advertisement image where ${modelRef} is actively using the product from Figure 1.`
     case 'wearing':
-      return `Create a fashion advertisement image showcasing ${modelRef} wearing the outfit from the reference image.`
-    case 'beforeAfter':
-      return 'Create a before/after comparison advertisement showing the transformation.'
+      return `Create a fashion advertisement image showcasing ${modelRef} wearing the clothing/underwear product from Figure 1. The product from Figure 1 is the actual item to be worn, NOT an accessory.`
     case 'lifestyle':
       return `Create a lifestyle advertisement showing ${modelRef} naturally incorporating the product from Figure 1 into daily life.`
     case 'unboxing':
       return `Create an unboxing/review style advertisement with ${modelRef} opening or presenting the product from Figure 1.`
-    case 'comparison':
-      return 'Create a product comparison style advertisement.'
     case 'seasonal':
       return 'Create a seasonal/themed advertisement with festive atmosphere.'
     default:

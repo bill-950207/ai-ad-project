@@ -204,7 +204,7 @@ async function handleImagePhase(
         duration: (videoAd.duration || 5) as VideoDuration,
         resolution: (videoAd.resolution || '1080p') as VideoResolution,
         negative_prompt: 'text, letters, words, watermark, logo, blurry, low quality, distorted, deformed',
-        enable_prompt_expansion: true,
+        enable_prompt_expansion: false,
       })
 
       // 영상 요청 ID 저장

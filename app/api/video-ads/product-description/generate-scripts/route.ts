@@ -51,6 +51,11 @@ export async function POST(request: NextRequest) {
       locationPrompt,
       durationSeconds,
       cameraComposition,  // 카메라 구도 (selfie, tripod, closeup, fullbody)
+      modelPose,  // 모델 포즈 (holding-product, showing-product, using-product, talking-only)
+      // 의상 설정
+      outfitMode,  // 의상 모드 (preset, custom)
+      outfitPreset,  // 의상 프리셋 (casual_everyday, formal_elegant, etc.)
+      outfitCustom,  // 의상 직접 입력 텍스트
       language = 'ko',  // 대본 생성 언어 (기본값: 한국어)
       // AI 아바타 옵션 (avatarId가 'ai-generated'일 때)
       aiAvatarOptions,
@@ -68,6 +73,7 @@ export async function POST(request: NextRequest) {
     const isAiGeneratedAvatar = avatarId === 'ai-generated'
 
     let finalAvatarImageUrl: string | null = null
+    let avatarDescription: string | undefined  // AI 의상 추천용 아바타 설명
 
     if (!isAiGeneratedAvatar) {
       // 기존 아바타 조회
@@ -85,6 +91,21 @@ export async function POST(request: NextRequest) {
 
       // 사용할 아바타 이미지 URL (의상이 선택된 경우 해당 URL 사용)
       finalAvatarImageUrl = avatarImageUrl || avatar.image_url
+
+      // 아바타 설명 구성 (AI 의상 추천용)
+      if (avatar.name) {
+        avatarDescription = avatar.name
+      }
+    } else {
+      // AI 아바타 설명 구성
+      if (aiAvatarOptions) {
+        const parts = []
+        if (aiAvatarOptions.targetGender) parts.push(aiAvatarOptions.targetGender)
+        if (aiAvatarOptions.targetAge) parts.push(aiAvatarOptions.targetAge)
+        if (aiAvatarOptions.ethnicity) parts.push(aiAvatarOptions.ethnicity)
+        if (aiAvatarOptions.style) parts.push(aiAvatarOptions.style + ' style')
+        avatarDescription = parts.join(', ')
+      }
     }
 
     // 제품 이미지 URL (선택 사항)
@@ -100,16 +121,25 @@ export async function POST(request: NextRequest) {
       productImageUrl = product?.rembg_image_url || product?.image_url || undefined
     }
 
-    // 1. 대본 생성 (Gemini)
+    // 1. 대본 생성 (Gemini) - AI 의상 추천도 함께 요청 가능
     const scriptsResult = await generateProductScripts({
       productInfo: productInfo.trim(),
       durationSeconds: durationSeconds || 30,
       language,  // 대본 생성 언어
+      // AI 의상 추천 요청 시 추가 파라미터
+      requestOutfitRecommendation: outfitMode === 'ai_recommend',
+      avatarDescription: outfitMode === 'ai_recommend' ? avatarDescription : undefined,
+      productImageUrl: outfitMode === 'ai_recommend' ? productImageUrl : undefined,
     })
 
     // 2. 첫 프레임 프롬프트 생성 (Gemini) - AI 아바타와 기존 아바타 분기
     let firstFramePrompt: string
     let locationDescription: string
+
+    // AI 추천 의상 사용 시 outfitCustom에 AI가 추천한 의상 설명 사용
+    const effectiveOutfitCustom = outfitMode === 'ai_recommend' && scriptsResult.recommendedOutfit
+      ? scriptsResult.recommendedOutfit.description
+      : outfitMode === 'custom' ? outfitCustom : undefined
 
     if (isAiGeneratedAvatar) {
       // AI 아바타: generateAiAvatarPrompt 사용 (아바타 묘사 포함 프롬프트 생성)
@@ -118,6 +148,9 @@ export async function POST(request: NextRequest) {
         productImageUrl,
         locationPrompt: locationPrompt?.trim() || undefined,
         cameraComposition: cameraComposition as CameraCompositionType | undefined,
+        modelPose,
+        outfitPreset: outfitMode === 'preset' ? outfitPreset : undefined,
+        outfitCustom: effectiveOutfitCustom,
         targetGender: aiAvatarOptions?.targetGender,
         targetAge: aiAvatarOptions?.targetAge,
         style: aiAvatarOptions?.style,
@@ -134,12 +167,15 @@ export async function POST(request: NextRequest) {
         locationPrompt: locationPrompt?.trim() || undefined,
         productImageUrl,
         cameraComposition,
+        modelPose,
+        outfitPreset: outfitMode === 'preset' ? outfitPreset : undefined,
+        outfitCustom: effectiveOutfitCustom,
       })
       firstFramePrompt = firstFrameResult.prompt
       locationDescription = firstFrameResult.locationDescription
     }
 
-    // 3. 첫 프레임 이미지 생성 (AI 아바타: 3개, 기존 아바타: 2개)
+    // 3. 첫 프레임 이미지 생성 (2개)
     type SubmitResult = { requestId: string; provider: 'fal' | 'kie' }
     let submitResults: SubmitResult[]
 
@@ -164,9 +200,8 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // AI 아바타: 3개의 이미지 요청 병렬 제출
+      // AI 아바타: 2개의 이미지 요청 병렬 제출
       submitResults = await Promise.all([
-        submitAiAvatarFirstFrame(),
         submitAiAvatarFirstFrame(),
         submitAiAvatarFirstFrame(),
       ])
@@ -282,6 +317,7 @@ export async function POST(request: NextRequest) {
       locationDescription,
       firstFramePrompt,
       isAiGeneratedAvatar,  // AI 아바타 사용 여부
+      recommendedOutfit: scriptsResult.recommendedOutfit,  // AI 추천 의상 (요청 시에만)
     })
   } catch (error) {
     console.error('대본 생성 오류:', error)

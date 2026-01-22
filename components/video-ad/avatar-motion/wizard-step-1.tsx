@@ -130,8 +130,8 @@ export function WizardStep1() {
       <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
         <h3 className="font-medium text-foreground mb-2">아바타 모션 영상이란?</h3>
         <p className="text-sm text-muted-foreground">
-          아바타가 제품을 들고 특정 동작을 수행하는 짧은 영상입니다.
-          시작 프레임과 끝 프레임 이미지를 생성한 후, AI가 자연스러운 모션 영상을 만들어냅니다.
+          모델이 영화를 촬영하듯 제품과 함께 연기하는 짧은 영상을 만듭니다.
+          AI가 제품과 모델에 맞는 시나리오를 제안하고, 영화적인 첫 장면을 생성한 후 자연스러운 모션 영상으로 완성합니다.
         </p>
       </div>
 
@@ -176,12 +176,12 @@ export function WizardStep1() {
         </button>
       </div>
 
-      {/* 제품 선택 (선택 사항) */}
+      {/* 제품 선택 (필수) */}
       <div className="bg-card border border-border rounded-xl p-4">
         <label className="block text-sm font-medium text-foreground mb-2">
           <Package className="w-4 h-4 inline mr-2" />
           제품 선택
-          <span className="text-muted-foreground text-xs ml-1">(선택 사항)</span>
+          <span className="text-red-500 ml-1">*</span>
         </label>
         <div className="relative">
           <button
@@ -201,7 +201,7 @@ export function WizardStep1() {
                   <span className="font-medium text-foreground">{selectedProduct.name}</span>
                 </>
               ) : (
-                <span className="text-muted-foreground">제품을 선택하세요 (선택 사항)</span>
+                <span className="text-muted-foreground">제품을 선택하세요</span>
               )}
             </div>
             <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${showProductDropdown ? 'rotate-180' : ''}`} />
@@ -209,22 +209,6 @@ export function WizardStep1() {
 
           {showProductDropdown && (
             <div className="absolute z-50 w-full mt-2 bg-card border border-border rounded-xl shadow-lg max-h-64 overflow-y-auto">
-              {/* 선택 해제 옵션 */}
-              <button
-                onClick={() => {
-                  setSelectedProduct(null)
-                  setShowProductDropdown(false)
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors ${
-                  !selectedProduct ? 'bg-primary/5' : ''
-                }`}
-              >
-                <span className="text-muted-foreground">제품 없음</span>
-                {!selectedProduct && (
-                  <Check className="w-4 h-4 text-primary ml-auto" />
-                )}
-              </button>
-
               {products.length === 0 ? (
                 <div className="p-4 text-center text-muted-foreground text-sm">
                   등록된 제품이 없습니다
@@ -350,7 +334,11 @@ export function WizardStep1() {
       {/* 유효성 메시지 */}
       {!canProceedToStep2() && (
         <p className="text-center text-sm text-muted-foreground">
-          아바타를 선택해주세요
+          {!selectedAvatarInfo && !selectedProduct
+            ? '아바타와 제품을 선택해주세요'
+            : !selectedAvatarInfo
+            ? '아바타를 선택해주세요'
+            : '제품을 선택해주세요'}
         </p>
       )}
 

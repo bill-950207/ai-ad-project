@@ -5,7 +5,9 @@
     "language": "言語",
     "myProfile": "マイプロフィール",
     "settings": "設定",
-    "comingSoon": "近日公開"
+    "comingSoon": "近日公開",
+    "cancel": "キャンセル",
+    "save": "保存"
   },
   "nav": {
     "adCreationTools": "広告作成ツール",
@@ -91,6 +93,7 @@
       "bodyAverage": "普通",
       "bodyAthletic": "アスレチック",
       "bodyCurvy": "グラマラス",
+      "bodyPlussize": "プラスサイズ",
       "longStraight": "ロングストレート",
       "bob": "ボブ",
       "wavy": "ウェーブ",
@@ -334,7 +337,18 @@
     },
     "adjustSize": "製品サイズ調整",
     "adjustSizeDesc": "アバターと比較しながら製品サイズを調整します",
-    "retryRembg": "背景除去を再試行"
+    "retryRembg": "背景除去を再試行",
+    "productInfo": "製品情報",
+    "brand": "ブランド",
+    "brandPlaceholder": "例：ナイキ、アップル",
+    "price": "価格",
+    "pricePlaceholder": "例：2,990円",
+    "description": "製品説明",
+    "descriptionPlaceholder": "製品の簡単な説明を入力してください",
+    "sellingPoints": "セールスポイント",
+    "sellingPointPlaceholder": "例：100%天然素材",
+    "addSellingPoint": "セールスポイントを追加",
+    "noProductInfo": "登録された製品情報がありません"
   },
   "videoAd": {
     "title": "動画広告",
@@ -446,6 +460,8 @@
     "viewOriginal": "原本を見る",
     "download": "ダウンロード",
     "confirmDelete": "この画像広告を削除してもよろしいですか？",
+    "confirmDeleteSingleImage": "この画像を削除してもよろしいですか？",
+    "cannotDeleteLastImage": "最後の画像は削除できません",
     "product": "広告製品",
     "avatar": "アバター",
     "outfit": "衣装",
@@ -561,7 +577,8 @@
         "atmosphere": "雰囲気",
         "productPlacement": "商品配置",
         "colorTone": "カラートーン",
-        "composition": "構図"
+        "composition": "構図",
+        "outfit": "衣装"
       },
       "options": {
         "studioWhite": "ホワイトスタジオ",
@@ -885,7 +902,15 @@
         "asymmetric": "非対称",
         "diagonal": "対角線",
         "framed": "フレーム",
-        "negativeSpace": "ネガティブスペース"
+        "negativeSpace": "ネガティブスペース",
+        "keepOriginal": "オリジナル衣装を維持",
+        "casualEveryday": "カジュアル普段着",
+        "formalElegant": "フォーマルエレガンス",
+        "professionalBusiness": "ビジネススーツ",
+        "sportyAthletic": "スポーティアスレチック",
+        "cozyComfortable": "リラックスホームウェア",
+        "trendyFashion": "トレンディファッション",
+        "minimalSimple": "ミニマルシンプル"
       }
     }
   },

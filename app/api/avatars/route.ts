@@ -134,10 +134,12 @@ export async function POST(request: NextRequest) {
     const hasBackground = options?.background
     const hasPose = options?.pose
 
-    // 품질 향상 문구 (배경/포즈가 지정되지 않은 경우에만 기본값 추가)
-    const qualityEnhancers = 'high quality photo, realistic, professional photography, sharp focus'
-    const defaultBackground = hasBackground ? '' : ', clean studio background'
-    const defaultPose = hasPose ? '' : ', natural portrait pose'
+    // 품질 향상 문구 (좋은 결과물 프롬프트 참고)
+    const qualityEnhancers = 'high quality photo, realistic, professional photography, sharp focus, detailed skin texture'
+    // 기본 배경: 구체적인 스튜디오 설정으로 흐릿함 방지
+    const defaultBackground = hasBackground ? '' : ', in a professional photo studio with soft studio lighting and clean white backdrop, well-lit'
+    // 기본 포즈: 자연스러운 포즈와 중립적 표정 (광고에서 다양한 표정 적용 가능)
+    const defaultPose = hasPose ? '' : ', in a relaxed natural pose, neutral calm expression, candid shot'
     const viewType = 'upper body shot'
 
     const finalPrompt = `${rawPrompt}, ${qualityEnhancers}${defaultBackground}${defaultPose}, ${viewType}`

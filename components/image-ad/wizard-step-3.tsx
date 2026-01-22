@@ -20,6 +20,8 @@ export function WizardStep3() {
   const {
     adType,
     selectedProduct,
+    selectedAvatarInfo,
+    productUsageMethod,  // 제품 사용 방법 (using 타입 전용)
     settingMethod,
     analysisResult,
     categoryOptions,
@@ -100,6 +102,14 @@ export function WizardStep3() {
     setHasLoadedAiRecommendation(true)
 
     try {
+      // 아바타 정보 구성
+      const avatarInfo = selectedAvatarInfo ? {
+        type: selectedAvatarInfo.type,
+        avatarName: selectedAvatarInfo.avatarName,
+        outfitName: selectedAvatarInfo.outfitName,
+        aiOptions: selectedAvatarInfo.aiOptions,
+      } : undefined
+
       const res = await fetch('/api/image-ads/recommend-options', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -109,6 +119,10 @@ export function WizardStep3() {
           productDescription: selectedProduct?.description,
           language,
           multiple: true,  // 다중 시나리오 모드
+          hasAvatar: !!selectedAvatarInfo,
+          avatarInfo,  // 아바타 상세 정보 (type, avatarName, outfitName, aiOptions)
+          productImageUrl: selectedProduct?.rembg_image_url || selectedProduct?.image_url,  // 제품 이미지 URL
+          productUsageMethod: adType === 'using' ? productUsageMethod : undefined,  // using 타입일 때만 전달
         }),
       })
 
@@ -134,7 +148,7 @@ export function WizardStep3() {
     } finally {
       setIsAiRecommending(false)
     }
-  }, [adType, selectedProduct, language, setIsAiRecommending, setHasLoadedAiRecommendation, setGeneratedScenarios, applyScenarioOptions])
+  }, [adType, selectedProduct, selectedAvatarInfo, productUsageMethod, language, setIsAiRecommending, setHasLoadedAiRecommendation, setGeneratedScenarios, applyScenarioOptions])
 
   // 참조 이미지 분석 결과 적용
   const applyAnalysisResult = useCallback(() => {
@@ -155,7 +169,8 @@ export function WizardStep3() {
         newCustomInputActive[opt.key] = false
       }
 
-      newAiReasons[opt.key] = `참조 이미지에서 분석됨 (신뢰도: ${Math.round(opt.confidence * 100)}%)`
+      // AI 추천처럼 상세한 이유 표시 (reason 필드 사용)
+      newAiReasons[opt.key] = opt.reason || `참조 이미지에서 분석됨 (신뢰도: ${Math.round(opt.confidence * 100)}%)`
     }
 
     setCategoryOptions(newCategoryOptions)
@@ -166,7 +181,12 @@ export function WizardStep3() {
     if (analysisResult.overallStyle) {
       setAiStrategy(analysisResult.overallStyle)
     }
-  }, [analysisResult, setCategoryOptions, setCustomOptions, setCustomInputActive, setAiReasons, setAiStrategy])
+
+    // 추가 설명(additionalPrompt)에 suggestedPrompt 적용
+    if (analysisResult.suggestedPrompt) {
+      setAdditionalPrompt(analysisResult.suggestedPrompt)
+    }
+  }, [analysisResult, setCategoryOptions, setCustomOptions, setCustomInputActive, setAiReasons, setAiStrategy, setAdditionalPrompt])
 
   // AI 자동 설정 로드 (Step 3 진입 시)
   useEffect(() => {

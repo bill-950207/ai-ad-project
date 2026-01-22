@@ -5,7 +5,9 @@
     "language": "Language",
     "myProfile": "My Profile",
     "settings": "Settings",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "cancel": "Cancel",
+    "save": "Save"
   },
   "nav": {
     "adCreationTools": "Ad Creation Tools",
@@ -91,6 +93,7 @@
       "bodyAverage": "Average",
       "bodyAthletic": "Athletic",
       "bodyCurvy": "Curvy",
+      "bodyPlussize": "Plus Size",
       "longStraight": "Long Straight",
       "bob": "Bob",
       "wavy": "Wavy",
@@ -334,7 +337,18 @@
     },
     "adjustSize": "Adjust Product Size",
     "adjustSizeDesc": "Adjust the product size while comparing with the avatar",
-    "retryRembg": "Retry Background Removal"
+    "retryRembg": "Retry Background Removal",
+    "productInfo": "Product Information",
+    "brand": "Brand",
+    "brandPlaceholder": "e.g., Nike, Apple",
+    "price": "Price",
+    "pricePlaceholder": "e.g., $29.99",
+    "description": "Product Description",
+    "descriptionPlaceholder": "Enter a brief description of the product",
+    "sellingPoints": "Selling Points",
+    "sellingPointPlaceholder": "e.g., 100% natural materials",
+    "addSellingPoint": "Add Selling Point",
+    "noProductInfo": "No product information available"
   },
   "videoAd": {
     "title": "Video Ad",
@@ -446,6 +460,8 @@
     "viewOriginal": "View Original",
     "download": "Download",
     "confirmDelete": "Are you sure you want to delete this image ad?",
+    "confirmDeleteSingleImage": "Are you sure you want to delete this image?",
+    "cannotDeleteLastImage": "Cannot delete the last image",
     "product": "Ad Product",
     "avatar": "Avatar",
     "outfit": "Outfit",
@@ -561,7 +577,8 @@
         "atmosphere": "Atmosphere",
         "productPlacement": "Product Placement",
         "colorTone": "Color Tone",
-        "composition": "Composition"
+        "composition": "Composition",
+        "outfit": "Outfit"
       },
       "options": {
         "studioWhite": "White Studio",
@@ -885,7 +902,15 @@
         "asymmetric": "Asymmetric",
         "diagonal": "Diagonal",
         "framed": "Framed",
-        "negativeSpace": "Negative Space"
+        "negativeSpace": "Negative Space",
+        "keepOriginal": "Keep Original",
+        "casualEveryday": "Casual Everyday",
+        "formalElegant": "Formal Elegant",
+        "professionalBusiness": "Professional Business",
+        "sportyAthletic": "Sporty Athletic",
+        "cozyComfortable": "Cozy Comfortable",
+        "trendyFashion": "Trendy Fashion",
+        "minimalSimple": "Minimal Simple"
       }
     }
   },

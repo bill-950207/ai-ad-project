@@ -5,7 +5,9 @@
     "language": "언어",
     "myProfile": "내 프로필",
     "settings": "설정",
-    "comingSoon": "곧 출시 예정"
+    "comingSoon": "곧 출시 예정",
+    "cancel": "취소",
+    "save": "저장"
   },
   "nav": {
     "adCreationTools": "광고 생성 도구",
@@ -91,6 +93,7 @@
       "bodyAverage": "보통",
       "bodyAthletic": "탄탄한",
       "bodyCurvy": "볼륨감 있는",
+      "bodyPlussize": "플러스 사이즈",
       "longStraight": "긴 생머리",
       "bob": "단발",
       "wavy": "웨이브",
@@ -334,7 +337,18 @@
     },
     "adjustSize": "제품 크기 조절",
     "adjustSizeDesc": "아바타와 비교하면서 제품 크기를 조절하세요",
-    "retryRembg": "누끼따기 재시도"
+    "retryRembg": "누끼따기 재시도",
+    "productInfo": "제품 정보",
+    "brand": "브랜드",
+    "brandPlaceholder": "예: 나이키, 애플",
+    "price": "가격",
+    "pricePlaceholder": "예: 29,900원",
+    "description": "제품 설명",
+    "descriptionPlaceholder": "제품에 대한 간단한 설명을 입력하세요",
+    "sellingPoints": "셀링 포인트",
+    "sellingPointPlaceholder": "예: 100% 천연 소재",
+    "addSellingPoint": "셀링 포인트 추가",
+    "noProductInfo": "등록된 제품 정보가 없습니다"
   },
   "videoAd": {
     "title": "영상 광고",
@@ -446,6 +460,8 @@
     "viewOriginal": "원본 보기",
     "download": "다운로드",
     "confirmDelete": "이 이미지 광고를 삭제하시겠습니까?",
+    "confirmDeleteSingleImage": "이 이미지를 삭제하시겠습니까?",
+    "cannotDeleteLastImage": "마지막 이미지는 삭제할 수 없습니다",
     "product": "광고 제품",
     "avatar": "아바타",
     "outfit": "의상",
@@ -561,7 +577,8 @@
         "atmosphere": "분위기",
         "productPlacement": "제품 배치",
         "colorTone": "색상 톤",
-        "composition": "구도"
+        "composition": "구도",
+        "outfit": "의상"
       },
       "options": {
         "studioWhite": "화이트 스튜디오",
@@ -885,7 +902,15 @@
         "asymmetric": "비대칭",
         "diagonal": "대각선",
         "framed": "프레임",
-        "negativeSpace": "네거티브 스페이스"
+        "negativeSpace": "네거티브 스페이스",
+        "keepOriginal": "원본 의상 유지",
+        "casualEveryday": "캐주얼 일상복",
+        "formalElegant": "포멀 엘레강스",
+        "professionalBusiness": "비즈니스 정장",
+        "sportyAthletic": "스포티 애슬레틱",
+        "cozyComfortable": "편안한 홈웨어",
+        "trendyFashion": "트렌디 패션",
+        "minimalSimple": "미니멀 심플"
       }
     }
   },

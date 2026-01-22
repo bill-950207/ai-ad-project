@@ -11,9 +11,26 @@ import {
   Sparkles,
   X,
   MessageSquarePlus,
+  GripVertical,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useProductAdWizard, SceneKeyframe, SceneInfo } from './wizard-context'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  horizontalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 // 재생성 모달 컴포넌트
 function RegenerateModal({
@@ -117,6 +134,135 @@ function RegenerateModal({
   )
 }
 
+// 드래그 가능한 키프레임 카드 컴포넌트
+function SortableKeyframeCard({
+  kf,
+  totalCount,
+  scenePrompt,
+  onRegenerate,
+  isRegenerating,
+  isGeneratingKeyframes,
+}: {
+  kf: SceneKeyframe
+  totalCount: number
+  scenePrompt?: string
+  onRegenerate: (sceneIndex: number) => void
+  isRegenerating: boolean
+  isGeneratingKeyframes: boolean
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `keyframe-${kf.sceneIndex}` })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    width: totalCount === 1 ? '100%' :
+           totalCount === 2 ? 'calc(50% - 8px)' :
+           'min(280px, 75vw)',
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : 1,
+  }
+
+  const canDrag = kf.status === 'completed' && !isGeneratingKeyframes
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex-shrink-0 snap-start"
+    >
+      <div className={`relative rounded-xl overflow-hidden border-2 bg-secondary/20 ${
+        isDragging ? 'ring-2 ring-primary shadow-lg' :
+        kf.status === 'completed'
+          ? 'border-green-500/50'
+          : kf.status === 'failed'
+          ? 'border-red-500/50'
+          : 'border-border'
+      }`}>
+        {/* 씬 헤더 */}
+        <div className="flex items-center justify-between px-3 py-2 bg-secondary/30 border-b border-border/30">
+          <div className="flex items-center gap-2">
+            {/* 드래그 핸들 */}
+            {canDrag && (
+              <button
+                {...attributes}
+                {...listeners}
+                className="cursor-grab active:cursor-grabbing p-0.5 -ml-1 hover:bg-secondary/50 rounded transition-colors"
+              >
+                <GripVertical className="w-4 h-4 text-muted-foreground" />
+              </button>
+            )}
+            <div className={`w-2 h-2 rounded-full ${
+              kf.status === 'completed' ? 'bg-green-500' :
+              kf.status === 'failed' ? 'bg-red-500' :
+              'bg-primary animate-pulse'
+            }`} />
+            <span className="text-sm font-medium text-foreground">씬 {kf.sceneIndex + 1}</span>
+          </div>
+          {(kf.status === 'completed' || kf.status === 'failed') && (
+            <button
+              onClick={() => onRegenerate(kf.sceneIndex)}
+              disabled={isRegenerating || isGeneratingKeyframes}
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-secondary/50 text-muted-foreground rounded hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3 h-3 ${isRegenerating ? 'animate-spin' : ''}`} />
+              다시
+            </button>
+          )}
+        </div>
+
+        {/* 이미지 영역 */}
+        <div className="relative aspect-video bg-black/20">
+          {kf.status === 'completed' && kf.imageUrl ? (
+            <Image
+              src={kf.imageUrl}
+              alt={`씬 ${kf.sceneIndex + 1}`}
+              fill
+              className="object-contain"
+            />
+          ) : kf.status === 'failed' ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-destructive/5 to-destructive/10">
+              <AlertCircle className="w-10 h-10 text-destructive mb-2" />
+              <span className="text-sm text-destructive">생성 실패</span>
+              <button
+                onClick={() => onRegenerate(kf.sceneIndex)}
+                className="mt-2 px-3 py-1.5 text-xs bg-destructive/20 text-destructive rounded-lg hover:bg-destructive/30 transition-colors"
+              >
+                다시 시도
+              </button>
+            </div>
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-secondary/30 to-secondary/50">
+              <div className="relative">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <ImageIcon className="w-4 h-4 text-primary/50" />
+                </div>
+              </div>
+              <span className="text-sm text-muted-foreground mt-3">생성 중...</span>
+            </div>
+          )}
+        </div>
+
+        {/* 프롬프트 미리보기 */}
+        {scenePrompt && (
+          <div className="px-3 py-2 border-t border-border/30">
+            <p className="text-xs text-muted-foreground line-clamp-2">
+              {scenePrompt.slice(0, 80)}...
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export function WizardStep5() {
   const {
     aspectRatio,
@@ -127,6 +273,7 @@ export function WizardStep5() {
     sceneKeyframes,
     setSceneKeyframes,
     updateSceneKeyframe,
+    reorderSceneKeyframes,
     isGeneratingKeyframes,
     setIsGeneratingKeyframes,
     canProceedToStep6,
@@ -140,6 +287,30 @@ export function WizardStep5() {
   const [modalSceneIndex, setModalSceneIndex] = useState<number | null>(null)
   const [isMergingPrompt, setIsMergingPrompt] = useState(false)
   const keyframePollingRef = useRef<NodeJS.Timeout | null>(null)
+
+  // DnD 센서 설정
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  // 드래그 종료 핸들러
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const oldIndex = sceneKeyframes.findIndex(kf => `keyframe-${kf.sceneIndex}` === active.id)
+      const newIndex = sceneKeyframes.findIndex(kf => `keyframe-${kf.sceneIndex}` === over.id)
+      if (oldIndex !== -1 && newIndex !== -1) {
+        reorderSceneKeyframes(oldIndex, newIndex)
+      }
+    }
+  }, [sceneKeyframes, reorderSceneKeyframes])
 
   // 스크롤 상단으로 이동
   useEffect(() => {
@@ -484,94 +655,33 @@ export function WizardStep5() {
             )}
           </div>
 
-          {/* 가로 스크롤 컨테이너 */}
-          <div className="w-full overflow-x-auto scrollbar-hide">
-            <div className="inline-flex gap-4 pb-2 px-1 snap-x snap-mandatory">
-            {sceneKeyframes.map((kf) => (
-              <div
-                key={kf.sceneIndex}
-                className="flex-shrink-0 snap-start"
-                style={{
-                  width: sceneKeyframes.length === 1 ? '100%' :
-                         sceneKeyframes.length === 2 ? 'calc(50% - 8px)' :
-                         'min(280px, 75vw)'
-                }}
-              >
-                <div className={`relative rounded-xl overflow-hidden border-2 bg-secondary/20 ${
-                  kf.status === 'completed'
-                    ? 'border-green-500/50'
-                    : kf.status === 'failed'
-                    ? 'border-red-500/50'
-                    : 'border-border'
-                }`}>
-                  {/* 씬 헤더 */}
-                  <div className="flex items-center justify-between px-3 py-2 bg-secondary/30 border-b border-border/30">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${
-                        kf.status === 'completed' ? 'bg-green-500' :
-                        kf.status === 'failed' ? 'bg-red-500' :
-                        'bg-primary animate-pulse'
-                      }`} />
-                      <span className="text-sm font-medium text-foreground">씬 {kf.sceneIndex + 1}</span>
-                    </div>
-                    {(kf.status === 'completed' || kf.status === 'failed') && (
-                      <button
-                        onClick={() => setModalSceneIndex(kf.sceneIndex)}
-                        disabled={regeneratingSceneIndex !== null || isGeneratingKeyframes}
-                        className="flex items-center gap-1 px-2 py-1 text-xs bg-secondary/50 text-muted-foreground rounded hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50"
-                      >
-                        <RefreshCw className={`w-3 h-3 ${regeneratingSceneIndex === kf.sceneIndex ? 'animate-spin' : ''}`} />
-                        다시
-                      </button>
-                    )}
-                  </div>
-
-                  {/* 이미지 영역 */}
-                  <div className="relative aspect-video bg-black/20">
-                    {kf.status === 'completed' && kf.imageUrl ? (
-                      <Image
-                        src={kf.imageUrl}
-                        alt={`씬 ${kf.sceneIndex + 1}`}
-                        fill
-                        className="object-contain"
-                      />
-                    ) : kf.status === 'failed' ? (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-destructive/5 to-destructive/10">
-                        <AlertCircle className="w-10 h-10 text-destructive mb-2" />
-                        <span className="text-sm text-destructive">생성 실패</span>
-                        <button
-                          onClick={() => setModalSceneIndex(kf.sceneIndex)}
-                          className="mt-2 px-3 py-1.5 text-xs bg-destructive/20 text-destructive rounded-lg hover:bg-destructive/30 transition-colors"
-                        >
-                          다시 시도
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-secondary/30 to-secondary/50">
-                        <div className="relative">
-                          <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <ImageIcon className="w-4 h-4 text-primary/50" />
-                          </div>
-                        </div>
-                        <span className="text-sm text-muted-foreground mt-3">생성 중...</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 프롬프트 미리보기 */}
-                  {scenarioInfo?.scenes?.[kf.sceneIndex]?.scenePrompt && (
-                    <div className="px-3 py-2 border-t border-border/30">
-                      <p className="text-xs text-muted-foreground line-clamp-2">
-                        {scenarioInfo.scenes[kf.sceneIndex].scenePrompt.slice(0, 80)}...
-                      </p>
-                    </div>
-                  )}
+          {/* 가로 스크롤 컨테이너 with 드래그앤드롭 */}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={sceneKeyframes.map(kf => `keyframe-${kf.sceneIndex}`)}
+              strategy={horizontalListSortingStrategy}
+            >
+              <div className="-mx-4 sm:-mx-6 px-4 sm:px-6 overflow-x-auto scrollbar-hide">
+                <div className="flex gap-4 pb-2 pt-1 min-w-min">
+                  {sceneKeyframes.map((kf, index) => (
+                    <SortableKeyframeCard
+                      key={`keyframe-${kf.sceneIndex}`}
+                      kf={kf}
+                      totalCount={sceneKeyframes.length}
+                      scenePrompt={scenarioInfo?.scenes?.[index]?.scenePrompt}
+                      onRegenerate={(sceneIndex) => setModalSceneIndex(sceneIndex)}
+                      isRegenerating={regeneratingSceneIndex === kf.sceneIndex}
+                      isGeneratingKeyframes={isGeneratingKeyframes}
+                    />
+                  ))}
                 </div>
               </div>
-            ))}
-            </div>
-          </div>
+            </SortableContext>
+          </DndContext>
 
           {/* 씬 순서 인디케이터 (스크롤 힌트) */}
           {sceneKeyframes.length > 2 && (

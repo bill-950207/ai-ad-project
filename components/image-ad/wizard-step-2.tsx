@@ -48,7 +48,6 @@ export function WizardStep2() {
   const {
     settingMethod,
     setSettingMethod,
-    referenceFile,
     referenceUrl,
     setReferenceImage,
     isAnalyzingReference,
@@ -57,7 +56,6 @@ export function WizardStep2() {
     setAnalysisResult,
     adType,
     selectedProduct,
-    canProceedToStep3,
     goToNextStep,
     goToPrevStep,
   } = useImageAdWizard()
@@ -89,7 +87,7 @@ export function WizardStep2() {
       // 업로드
       const formData = new FormData()
       formData.append('file', compressedFile)
-      formData.append('type', 'reference')
+      formData.append('type', 'reference-style')
 
       const uploadRes = await fetch('/api/upload', {
         method: 'POST',
@@ -323,7 +321,7 @@ export function WizardStep2() {
               <h3 className="font-medium text-foreground mb-1">AI가 최적의 설정을 추천합니다</h3>
               <p className="text-sm text-muted-foreground">
                 선택한 제품{selectedProduct ? ` "${selectedProduct.name}"` : ''}과 광고 유형을 분석하여
-                포즈, 배경, 조명, 분위기 등을 자동으로 설정합니다.
+                포즈, 배경, 조명, 분위기, 의상 등을 자동으로 설정합니다.
                 다음 단계에서 AI 추천을 확인하고 필요시 수정할 수 있습니다.
               </p>
             </div>

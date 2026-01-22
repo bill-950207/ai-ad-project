@@ -8,47 +8,39 @@ import {
   Loader2,
   RefreshCw,
   Sparkles,
-  Clock,
-  Image,
-  Film,
   AlertCircle,
   User,
-  Lightbulb,
   MapPin,
   Check,
+  Film,
+  Clock,
+  Monitor,
+  Package,
+  Layers,
+  ImageIcon,
 } from 'lucide-react'
-import { useAvatarMotionWizard, AspectRatio, ImageSize } from './wizard-context'
-
-// 이미지 크기 옵션 (영상 크기 결정)
-const IMAGE_SIZE_OPTIONS: { size: ImageSize; ratio: AspectRatio; label: string; description: string }[] = [
-  { size: '576x1024', ratio: '9:16', label: '세로 (9:16)', description: '릴스, 숏츠, TikTok' },
-  { size: '1024x576', ratio: '16:9', label: '가로 (16:9)', description: '유튜브, 가로 영상' },
-  { size: '768x768', ratio: '1:1', label: '정방형 (1:1)', description: '인스타그램 피드' },
-]
-
-// 길이 옵션 (초) - kling-2.6은 5초 또는 10초
-const DURATION_OPTIONS = [
-  { seconds: 5, label: '5초', description: '짧은 모션' },
-  { seconds: 10, label: '10초', description: '풀 모션' },
-]
+import { useAvatarMotionWizard, SceneKeyframe } from './wizard-context'
 
 // 생성 단계
-type GenerationPhase = 'idle' | 'avatar' | 'frame' | 'done' | 'error'
+type GenerationPhase = 'idle' | 'avatar' | 'frames' | 'done' | 'error'
 
 export function WizardStep4() {
   const {
-    storyInfo,
     selectedProduct,
     selectedAvatarInfo,
-    locationPrompt,
+    getSelectedScenario,
     aspectRatio,
-    setAspectRatio,
     imageSize,
-    setImageSize,
-    duration,
-    setDuration,
+    sceneCount,
+    sceneDurations,
+    additionalPrompt,
     isGeneratingFrames,
     setIsGeneratingFrames,
+    // 씬별 키프레임
+    sceneKeyframes,
+    setSceneKeyframes,
+    updateSceneKeyframe,
+    // Legacy
     startFrameUrl,
     setStartFrameUrl,
     // AI 아바타 상태
@@ -65,6 +57,7 @@ export function WizardStep4() {
     canProceedToStep5,
     goToNextStep,
     goToPrevStep,
+    getTotalDuration,
     // DB 연동
     saveDraft,
     draftId,
@@ -72,24 +65,20 @@ export function WizardStep4() {
 
   const [generationPhase, setGenerationPhase] = useState<GenerationPhase>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [currentGeneratingScene, setCurrentGeneratingScene] = useState(0)
 
   // 중복 생성 방지를 위한 ref
   const generationStartedRef = useRef(false)
 
+  // 선택된 시나리오 가져오기
+  const selectedScenario = getSelectedScenario()
+
   // AI 아바타가 필요한지 확인
   const needsAiAvatar = selectedAvatarInfo?.type === 'ai-generated'
 
-  // 프레임이 완성되었는지 확인
-  const frameCompleted = !!startFrameUrl
-
-  // 이미지 크기 변경 시 비율도 업데이트
-  const handleImageSizeChange = (newSize: ImageSize) => {
-    setImageSize(newSize)
-    const option = IMAGE_SIZE_OPTIONS.find(opt => opt.size === newSize)
-    if (option) {
-      setAspectRatio(option.ratio)
-    }
-  }
+  // 모든 프레임이 완성되었는지 확인
+  const allFramesCompleted = sceneKeyframes.length >= sceneCount &&
+    sceneKeyframes.every(kf => kf.status === 'completed' && kf.imageUrl)
 
   // AI 아바타 상태 폴링
   const pollAvatarStatus = useCallback(async (requestId: string) => {
@@ -103,12 +92,17 @@ export function WizardStep4() {
     }
   }, [])
 
-  // AI 아바타 생성 (영상 컨텍스트 기반)
+  // AI 아바타 생성 (시나리오 기반)
   const generateAvatar = useCallback(async () => {
+    if (!selectedScenario) return
+
     setIsGeneratingAvatars(true)
     resetAiAvatars()
 
     try {
+      // 멀티 씬의 첫 번째 씬 정보 사용
+      const firstScene = selectedScenario.scenes?.[0]
+
       const response = await fetch('/api/avatar-motion/generate-avatars', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -116,17 +110,20 @@ export function WizardStep4() {
           productName: selectedProduct?.name || '',
           productDescription: selectedProduct?.description || '',
           productCategory: '',
-          storyInfo: storyInfo ? {
-            title: storyInfo.title,
-            description: storyInfo.description,
-            concept: storyInfo.concept,
-            background: storyInfo.background,
-            startFrame: storyInfo.startFrame,
-            mood: storyInfo.mood,
-            action: storyInfo.action,
-            motionPromptEN: storyInfo.motionPromptEN,
-          } : undefined,
-          locationPrompt: locationPrompt || '',
+          storyInfo: {
+            title: selectedScenario.title,
+            description: selectedScenario.description,
+            concept: selectedScenario.concept,
+            background: firstScene?.location || selectedScenario.location,
+            startFrame: {
+              id: 'start',
+              order: 1,
+              description: firstScene?.firstFramePrompt || selectedScenario.firstFramePrompt,
+            },
+            mood: firstScene?.mood || selectedScenario.mood,
+            motionPromptEN: firstScene?.motionPromptEN || selectedScenario.motionPromptEN,
+          },
+          locationPrompt: firstScene?.location || selectedScenario.location,
         }),
       })
 
@@ -146,16 +143,23 @@ export function WizardStep4() {
       console.error('아바타 생성 오류:', error)
       throw error
     }
-  }, [selectedProduct, storyInfo, locationPrompt, setIsGeneratingAvatars, resetAiAvatars, setGeneratedAvatarOptions])
+  }, [selectedProduct, selectedScenario, setIsGeneratingAvatars, resetAiAvatars, setGeneratedAvatarOptions])
 
-  // 프레임 생성 (첫 프레임만)
-  const generateFrame = useCallback(async (avatarImageUrl: string | undefined) => {
-    if (!storyInfo) return
-
-    setIsGeneratingFrames(true)
-    setStartFrameUrl(null)
-
+  // 단일 씬 프레임 생성
+  const generateSceneFrame = useCallback(async (
+    sceneIndex: number,
+    firstFramePrompt: string,
+    avatarImageUrl: string | undefined
+  ): Promise<string | null> => {
     try {
+      // 프롬프트 구성
+      let framePrompt = firstFramePrompt
+      if (additionalPrompt) {
+        framePrompt = `${framePrompt}\n\n추가 지시: ${additionalPrompt}`
+      }
+
+      const scene = selectedScenario?.scenes?.[sceneIndex]
+
       const response = await fetch('/api/avatar-motion/generate-frames', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -166,31 +170,75 @@ export function WizardStep4() {
           productInfo: selectedProduct
             ? `${selectedProduct.name}: ${selectedProduct.description || ''}`
             : '',
-          startFramePrompt: storyInfo.startFrame.description,
+          startFramePrompt: framePrompt,
           aspectRatio,
           imageSize,
-          locationPrompt: locationPrompt || '',
+          locationPrompt: scene?.location || selectedScenario?.location || '',
         }),
       })
 
       if (!response.ok) {
-        throw new Error('프레임 생성 요청 실패')
+        throw new Error(`씬 ${sceneIndex + 1} 프레임 생성 요청 실패`)
       }
 
       const data = await response.json()
 
-      // API가 첫 프레임 완료 후 반환하므로 바로 설정
       if (data.startFrame.status === 'completed' && data.startFrame.imageUrl) {
-        setStartFrameUrl(data.startFrame.imageUrl)
         return data.startFrame.imageUrl
       }
 
-      throw new Error('프레임 생성 실패')
+      return null
     } catch (error) {
-      console.error('프레임 생성 오류:', error)
-      throw error
+      console.error(`씬 ${sceneIndex + 1} 프레임 생성 오류:`, error)
+      return null
     }
-  }, [storyInfo, selectedAvatarInfo, selectedProduct, aspectRatio, imageSize, locationPrompt, needsAiAvatar, selectedAiAvatarDescription, setIsGeneratingFrames, setStartFrameUrl])
+  }, [selectedScenario, selectedAvatarInfo, selectedProduct, aspectRatio, imageSize, additionalPrompt, needsAiAvatar, selectedAiAvatarDescription])
+
+  // 모든 씬 프레임 순차 생성
+  const generateAllSceneFrames = useCallback(async (avatarImageUrl: string | undefined) => {
+    if (!selectedScenario) return
+
+    setIsGeneratingFrames(true)
+
+    // 씬 키프레임 초기화
+    const initialKeyframes: SceneKeyframe[] = Array.from({ length: sceneCount }, (_, i) => ({
+      sceneIndex: i,
+      imageUrl: null,
+      requestId: null,
+      status: 'pending',
+    }))
+    setSceneKeyframes(initialKeyframes)
+
+    // 멀티 씬이 있으면 사용, 없으면 기존 시나리오의 firstFramePrompt 사용
+    const scenes = selectedScenario.scenes || []
+    const hasMultiScene = scenes.length > 0
+
+    for (let i = 0; i < sceneCount; i++) {
+      setCurrentGeneratingScene(i)
+
+      // 해당 씬의 firstFramePrompt 가져오기
+      const scene = hasMultiScene ? scenes[i] : null
+      const framePrompt = scene?.firstFramePrompt || selectedScenario.firstFramePrompt || ''
+
+      // 상태를 generating으로 업데이트
+      updateSceneKeyframe(i, { status: 'generating' })
+
+      // 프레임 생성
+      const imageUrl = await generateSceneFrame(i, framePrompt, avatarImageUrl)
+
+      if (imageUrl) {
+        updateSceneKeyframe(i, { status: 'completed', imageUrl })
+        // 첫 씬은 Legacy startFrameUrl에도 저장
+        if (i === 0) {
+          setStartFrameUrl(imageUrl)
+        }
+      } else {
+        updateSceneKeyframe(i, { status: 'failed', error: '프레임 생성 실패' })
+      }
+    }
+
+    setIsGeneratingFrames(false)
+  }, [selectedScenario, sceneCount, setIsGeneratingFrames, setSceneKeyframes, updateSceneKeyframe, setStartFrameUrl, generateSceneFrame])
 
   // 전체 생성 프로세스 시작
   const startGeneration = useCallback(async () => {
@@ -219,18 +267,16 @@ export function WizardStep4() {
           }
         }
 
-        // 프레임 생성
-        setGenerationPhase('frame')
-        await generateFrame(avatarImageUrl || undefined)
+        // 모든 씬 프레임 생성
+        setGenerationPhase('frames')
+        await generateAllSceneFrames(avatarImageUrl || undefined)
 
-        setIsGeneratingFrames(false)
         setGenerationPhase('done')
       } else {
         // 아바타 이미 있음 - 프레임만 생성
-        setGenerationPhase('frame')
-        await generateFrame(needsAiAvatar ? selectedAiAvatarUrl || undefined : selectedAvatarInfo?.imageUrl)
+        setGenerationPhase('frames')
+        await generateAllSceneFrames(needsAiAvatar ? selectedAiAvatarUrl || undefined : selectedAvatarInfo?.imageUrl)
 
-        setIsGeneratingFrames(false)
         setGenerationPhase('done')
       }
     } catch (error) {
@@ -240,11 +286,11 @@ export function WizardStep4() {
       setIsGeneratingAvatars(false)
       setIsGeneratingFrames(false)
     }
-  }, [needsAiAvatar, selectedAiAvatarUrl, selectedAvatarInfo, generatedAvatarOptions, generateAvatar, generateFrame, pollAvatarStatus, updateAvatarOption, selectAiAvatar, setIsGeneratingAvatars, setIsGeneratingFrames])
+  }, [needsAiAvatar, selectedAiAvatarUrl, selectedAvatarInfo, generatedAvatarOptions, generateAvatar, generateAllSceneFrames, pollAvatarStatus, updateAvatarOption, selectAiAvatar, setIsGeneratingAvatars, setIsGeneratingFrames])
 
   // Step 4 진입 시 자동으로 생성 시작 (한 번만)
   useEffect(() => {
-    if (frameCompleted || generationStartedRef.current) {
+    if (allFramesCompleted || generationStartedRef.current) {
       return
     }
     generationStartedRef.current = true
@@ -260,18 +306,20 @@ export function WizardStep4() {
 
   // 프레임 생성 완료 시 DB 저장
   useEffect(() => {
-    if (generationPhase === 'done' && startFrameUrl && draftId) {
+    if (generationPhase === 'done' && allFramesCompleted && draftId) {
       saveDraft({
         status: 'FRAME_COMPLETED',
-        startFrameUrl,
+        sceneKeyframes,
+        startFrameUrl: sceneKeyframes[0]?.imageUrl || null,
       })
     }
-  }, [generationPhase, startFrameUrl, draftId, saveDraft])
+  }, [generationPhase, allFramesCompleted, sceneKeyframes, draftId, saveDraft])
 
   // 다시 생성
   const handleRetry = () => {
     setGenerationPhase('idle')
     setErrorMessage(null)
+    setSceneKeyframes([])
     setStartFrameUrl(null)
     resetAiAvatars()
     generationStartedRef.current = false
@@ -287,8 +335,6 @@ export function WizardStep4() {
     await saveDraft({
       wizardStep: 5,
       status: 'GENERATING_VIDEO',
-      imageSize,
-      duration,
     })
     goToNextStep()
   }
@@ -297,16 +343,43 @@ export function WizardStep4() {
   const getPhaseText = () => {
     switch (generationPhase) {
       case 'avatar':
-        return { title: 'AI 아바타 생성 중', description: '제품과 스토리에 맞는 아바타를 만들고 있어요' }
-      case 'frame':
-        return { title: '첫 프레임 생성 중', description: '영상의 첫 장면을 만들고 있어요' }
+        return { title: 'AI 아바타 생성 중', description: '시나리오에 맞는 아바타를 만들고 있어요' }
+      case 'frames':
+        return {
+          title: `씬 ${currentGeneratingScene + 1}/${sceneCount} 프레임 생성 중`,
+          description: '각 씬의 첫 장면을 만들고 있어요'
+        }
       default:
         return { title: '준비 중', description: '' }
     }
   }
 
+  // 시나리오가 없는 경우
+  if (!selectedScenario) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-card border border-red-500/30 rounded-xl p-8">
+          <div className="flex flex-col items-center justify-center py-8">
+            <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+            <h3 className="text-xl font-semibold text-foreground">시나리오가 선택되지 않았습니다</h3>
+            <p className="text-muted-foreground mt-2">이전 단계로 돌아가 시나리오를 선택해주세요.</p>
+          </div>
+        </div>
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={goToPrevStep}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            이전
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   // 생성 중 UI
-  if (generationPhase !== 'done' && generationPhase !== 'error' && !frameCompleted) {
+  if (generationPhase !== 'done' && generationPhase !== 'error' && !allFramesCompleted) {
     const phaseText = getPhaseText()
     return (
       <div className="max-w-2xl mx-auto">
@@ -318,52 +391,65 @@ export function WizardStep4() {
               </div>
               {/* 진행 단계 표시 */}
               <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                <div className={`w-2 h-2 rounded-full transition-colors ${generationPhase === 'avatar' || generationPhase === 'frame' ? 'bg-primary' : 'bg-secondary'}`} />
-                <div className={`w-2 h-2 rounded-full transition-colors ${generationPhase === 'frame' ? 'bg-primary' : 'bg-secondary'}`} />
+                <div className={`w-2 h-2 rounded-full transition-colors ${generationPhase === 'avatar' || generationPhase === 'frames' ? 'bg-primary' : 'bg-secondary'}`} />
+                <div className={`w-2 h-2 rounded-full transition-colors ${generationPhase === 'frames' ? 'bg-primary' : 'bg-secondary'}`} />
               </div>
             </div>
 
             <h3 className="text-xl font-semibold text-foreground mt-8">{phaseText.title}</h3>
             <p className="text-muted-foreground mt-2">{phaseText.description}</p>
 
-            {/* 스토리 정보 표시 */}
+            {/* 씬별 진행 상태 */}
+            {generationPhase === 'frames' && (
+              <div className="mt-6 w-full max-w-xs">
+                <div className="flex justify-between text-xs text-muted-foreground mb-2">
+                  <span>씬 프레임 생성</span>
+                  <span>{sceneKeyframes.filter(kf => kf.status === 'completed').length}/{sceneCount}</span>
+                </div>
+                <div className="flex gap-1">
+                  {Array.from({ length: sceneCount }, (_, i) => {
+                    const kf = sceneKeyframes[i]
+                    let bgColor = 'bg-secondary'
+                    if (kf?.status === 'completed') bgColor = 'bg-green-500'
+                    else if (kf?.status === 'generating') bgColor = 'bg-primary animate-pulse'
+                    else if (kf?.status === 'failed') bgColor = 'bg-red-500'
+                    return (
+                      <div
+                        key={i}
+                        className={`flex-1 h-2 rounded ${bgColor} transition-colors`}
+                      />
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 시나리오 정보 표시 */}
             <div className="mt-8 w-full space-y-3">
-              <p className="text-xs text-muted-foreground text-center mb-2">생성 중인 스토리보드</p>
+              <p className="text-xs text-muted-foreground text-center mb-2">생성 중인 시나리오</p>
 
-              {/* 컨셉 */}
-              {storyInfo?.concept && (
-                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <Lightbulb className="w-3 h-3 text-amber-500" />
-                    <span className="text-[10px] text-amber-600 font-medium">컨셉</span>
-                  </div>
-                  <p className="text-xs text-foreground">{storyInfo.concept}</p>
-                </div>
-              )}
-
-              {/* 배경 */}
-              {storyInfo?.background && (
-                <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <MapPin className="w-3 h-3 text-blue-500" />
-                    <span className="text-[10px] text-blue-600 font-medium">배경/장소</span>
-                  </div>
-                  <p className="text-xs text-foreground">{storyInfo.background}</p>
-                </div>
-              )}
-
-              {/* 첫 프레임 */}
-              <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <Play className="w-3 h-3 text-green-500" />
-                  <span className="text-[10px] text-green-600 font-medium">첫 프레임</span>
+                  <Film className="w-3 h-3 text-primary" />
+                  <span className="text-[10px] text-primary font-medium">{selectedScenario.title}</span>
                 </div>
-                <p className="text-xs text-foreground">{storyInfo?.startFrame.description}</p>
+                <p className="text-xs text-foreground">{selectedScenario.description}</p>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1 px-2 py-1 bg-secondary rounded">
+                  <Layers className="w-3 h-3" />
+                  {sceneCount}개 씬
+                </span>
+                <span className="flex items-center gap-1 px-2 py-1 bg-secondary rounded">
+                  <Clock className="w-3 h-3" />
+                  총 {getTotalDuration()}초
+                </span>
               </div>
             </div>
 
             <p className="text-sm text-muted-foreground mt-6">
-              이 과정은 1-2분 정도 소요됩니다
+              이 과정은 {sceneCount * 30}초 ~ {sceneCount * 60}초 정도 소요됩니다
             </p>
           </div>
         </div>
@@ -417,152 +503,126 @@ export function WizardStep4() {
     )
   }
 
-  // 프레임 생성 완료 - 결과 및 영상 설정 UI
+  // 프레임 생성 완료 - 결과 UI
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      {/* 프레임 결과 + 스토리 정보 */}
-      <div className="bg-card border border-border rounded-xl p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Image className="w-5 h-5 text-primary" />
-            <h3 className="font-medium text-foreground">첫 프레임 생성 완료</h3>
-          </div>
-          <button
-            onClick={handleRetry}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors"
-          >
-            <RefreshCw className="w-4 h-4" />
-            다시 생성
-          </button>
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* 헤더 */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Check className="w-5 h-5 text-green-500" />
+          <h3 className="font-medium text-foreground">모든 씬 프레임 생성 완료</h3>
+          <span className="text-sm text-muted-foreground">({sceneKeyframes.filter(kf => kf.status === 'completed').length}/{sceneCount}개)</span>
         </div>
+        <button
+          onClick={handleRetry}
+          className="flex items-center gap-2 px-3 py-1.5 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors"
+        >
+          <RefreshCw className="w-4 h-4" />
+          다시 생성
+        </button>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* 첫 프레임 이미지 */}
-          <div>
-            <div className={`rounded-xl overflow-hidden relative ${aspectRatio === '9:16' ? 'aspect-[9/16]' : aspectRatio === '16:9' ? 'aspect-[16/9]' : 'aspect-square'}`}>
-              <img
-                src={startFrameUrl || ''}
-                alt="첫 프레임"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute top-2 left-2 px-2 py-1 bg-green-500/80 rounded text-white text-xs font-medium">
-                첫 프레임
+      {/* 씬별 프레임 그리드 */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {sceneKeyframes.map((kf, i) => {
+          const scene = selectedScenario.scenes?.[i]
+          return (
+            <div key={i} className="bg-card border border-border rounded-xl overflow-hidden">
+              {/* 프레임 이미지 */}
+              <div className={`relative ${aspectRatio === '9:16' ? 'aspect-[9/16]' : aspectRatio === '16:9' ? 'aspect-[16/9]' : 'aspect-square'}`}>
+                {kf.imageUrl ? (
+                  <img
+                    src={kf.imageUrl}
+                    alt={`씬 ${i + 1} 프레임`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-secondary flex items-center justify-center">
+                    <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="absolute top-2 left-2 px-2 py-1 bg-black/60 rounded text-white text-xs font-medium">
+                  씬 {i + 1}
+                </div>
+                {kf.status === 'completed' && (
+                  <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                    <Check className="w-3 h-3 text-white" />
+                  </div>
+                )}
+              </div>
+
+              {/* 씬 정보 */}
+              <div className="p-3">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                  <Clock className="w-3 h-3" />
+                  <span>{sceneDurations[i] || 5}초</span>
+                  {scene?.mood && (
+                    <>
+                      <span className="mx-1">•</span>
+                      <span>{scene.mood}</span>
+                    </>
+                  )}
+                </div>
+                <p className="text-xs text-foreground line-clamp-2">
+                  {scene?.description || scene?.title || `씬 ${i + 1}`}
+                </p>
               </div>
             </div>
-            <div className="mt-2 flex items-center justify-center gap-1">
-              <Check className="w-3 h-3 text-green-500" />
-              <span className="text-xs text-green-500">생성 완료</span>
-            </div>
+          )
+        })}
+      </div>
+
+      {/* 시나리오 정보 */}
+      <div className="bg-card border border-border rounded-xl p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Film className="w-5 h-5 text-primary" />
           </div>
-
-          {/* 스토리 정보 */}
-          <div className="space-y-3">
-            {/* AI 아바타 정보 (있는 경우) */}
-            {needsAiAvatar && selectedAiAvatarUrl && (
-              <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <User className="w-3 h-3 text-purple-500" />
-                  <span className="text-[10px] text-purple-500 font-medium">AI 아바타</span>
-                </div>
-                <p className="text-xs text-foreground">{selectedAiAvatarDescription}</p>
-              </div>
-            )}
-
-            {/* 컨셉 */}
-            {storyInfo?.concept && (
-              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Lightbulb className="w-3 h-3 text-amber-500" />
-                  <span className="text-[10px] text-amber-600 font-medium">컨셉</span>
-                </div>
-                <p className="text-xs text-foreground line-clamp-2">{storyInfo.concept}</p>
-              </div>
-            )}
-
-            {/* 배경 */}
-            {storyInfo?.background && (
-              <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <MapPin className="w-3 h-3 text-blue-500" />
-                  <span className="text-[10px] text-blue-600 font-medium">배경/장소</span>
-                </div>
-                <p className="text-xs text-foreground line-clamp-2">{storyInfo.background}</p>
-              </div>
-            )}
-
-            {/* 첫 프레임 설명 */}
-            <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-              <div className="flex items-center gap-1.5 mb-1">
-                <Play className="w-3 h-3 text-green-500" />
-                <span className="text-[10px] text-green-600 font-medium">첫 프레임</span>
-              </div>
-              <p className="text-xs text-foreground line-clamp-3">{storyInfo?.startFrame.description}</p>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-medium text-foreground">{selectedScenario.title}</h4>
+            <p className="text-sm text-muted-foreground mt-1">{selectedScenario.description}</p>
+            <div className="flex flex-wrap gap-2 mt-2 text-xs">
+              {needsAiAvatar && selectedAiAvatarUrl && (
+                <span className="flex items-center gap-1 px-2 py-1 bg-purple-500/10 text-purple-600 rounded">
+                  <User className="w-3 h-3" />
+                  AI 아바타
+                </span>
+              )}
+              <span className="flex items-center gap-1 px-2 py-1 bg-secondary rounded text-muted-foreground">
+                <MapPin className="w-3 h-3" />
+                {selectedScenario.scenes?.[0]?.location || selectedScenario.location}
+              </span>
+              <span className="flex items-center gap-1 px-2 py-1 bg-secondary rounded text-muted-foreground">
+                <Sparkles className="w-3 h-3" />
+                {selectedScenario.mood}
+              </span>
+              <span className="flex items-center gap-1 px-2 py-1 bg-secondary rounded text-muted-foreground">
+                <Package className="w-3 h-3" />
+                {selectedScenario.productAppearance?.slice(0, 20)}...
+              </span>
             </div>
-
-            {/* 분위기 */}
-            {storyInfo?.mood && (
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-muted-foreground">분위기:</span>
-                <span className="text-foreground font-medium">{storyInfo.mood}</span>
-              </div>
-            )}
           </div>
         </div>
       </div>
 
-      {/* 영상 설정 */}
-      <div className="bg-card border border-border rounded-xl p-4 space-y-4">
-        <div className="flex items-center gap-2">
-          <Film className="w-5 h-5 text-primary" />
-          <h3 className="font-medium text-foreground">영상 설정</h3>
-        </div>
-
-        {/* 이미지/영상 크기 선택 */}
-        <div>
-          <label className="block text-sm text-muted-foreground mb-2">
-            <Image className="w-4 h-4 inline mr-1" />
-            영상 크기
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {IMAGE_SIZE_OPTIONS.map((option) => (
-              <button
-                key={option.size}
-                onClick={() => handleImageSizeChange(option.size)}
-                className={`p-3 rounded-lg border text-center transition-all ${
-                  imageSize === option.size
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border text-muted-foreground hover:border-primary/50'
-                }`}
-              >
-                <span className="text-sm font-medium block">{option.label}</span>
-                <span className="text-[10px] opacity-70">{option.description}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 길이 선택 */}
-        <div>
-          <label className="block text-sm text-muted-foreground mb-2">
-            <Clock className="w-4 h-4 inline mr-1" />
-            영상 길이
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            {DURATION_OPTIONS.map((option) => (
-              <button
-                key={option.seconds}
-                onClick={() => setDuration(option.seconds)}
-                className={`p-3 rounded-lg border text-center transition-all ${
-                  duration === option.seconds
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border text-muted-foreground hover:border-primary/50'
-                }`}
-              >
-                <span className="text-sm font-medium block">{option.label}</span>
-                <span className="text-xs opacity-70">{option.description}</span>
-              </button>
-            ))}
-          </div>
+      {/* 영상 설정 요약 */}
+      <div className="p-4 bg-secondary/30 rounded-xl">
+        <div className="text-xs text-muted-foreground mb-2">영상 설정</div>
+        <div className="flex flex-wrap items-center gap-4 text-sm">
+          <span className="flex items-center gap-1.5 text-foreground">
+            <Monitor className="w-4 h-4 text-primary" />
+            {aspectRatio === '9:16' ? '세로 (9:16)' : aspectRatio === '16:9' ? '가로 (16:9)' : '정사각 (1:1)'}
+          </span>
+          <span className="text-muted-foreground">|</span>
+          <span className="flex items-center gap-1.5 text-foreground">
+            <Layers className="w-4 h-4 text-primary" />
+            {sceneCount}개 씬
+          </span>
+          <span className="text-muted-foreground">|</span>
+          <span className="flex items-center gap-1.5 text-foreground">
+            <Clock className="w-4 h-4 text-primary" />
+            총 {getTotalDuration()}초
+          </span>
         </div>
       </div>
 

@@ -16,10 +16,27 @@ import {
   MessageSquarePlus,
   X,
   Play,
+  Clock,
+  GripVertical,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useProductAdWizard, SceneVideoSegment } from './wizard-context'
-import { Clock } from 'lucide-react'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  horizontalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 // 영상 재생성 모달 컴포넌트
 function VideoRegenerateModal({
@@ -166,6 +183,142 @@ interface SceneVideoStatus {
   errorMessage?: string
 }
 
+// 드래그 가능한 씬 영상 카드 컴포넌트
+function SortableVideoCard({
+  sceneVideo,
+  totalCount,
+  onRegenerate,
+  onDownload,
+  isRegenerating,
+  isMergingVideos,
+  regeneratingSceneIndex,
+}: {
+  sceneVideo: SceneVideoStatus
+  totalCount: number
+  onRegenerate: (sceneIndex: number) => void
+  onDownload: (url: string, index: number) => void
+  isRegenerating: boolean
+  isMergingVideos: boolean
+  regeneratingSceneIndex: number | null
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `video-${sceneVideo.sceneIndex}` })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    width: totalCount === 1 ? '100%' : totalCount === 2 ? 'calc(50% - 8px)' : 'min(320px, 80vw)',
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : 1,
+  }
+
+  const isCompleted = sceneVideo.status === 'completed' && sceneVideo.videoUrl
+  const isGenerating = sceneVideo.status === 'generating'
+  const isFailed = sceneVideo.status === 'failed'
+  const canDrag = isCompleted && !isMergingVideos && regeneratingSceneIndex === null
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex-shrink-0 snap-start"
+    >
+      <div className={`bg-secondary/20 rounded-xl overflow-hidden border-2 transition-all ${
+        isDragging ? 'ring-2 ring-primary shadow-lg border-primary' :
+        isCompleted ? 'border-border/50' :
+        isFailed ? 'border-red-500/30' :
+        'border-border/50'
+      }`}>
+        {/* 씬 헤더 */}
+        <div className="flex items-center justify-between px-3 py-2 bg-secondary/30 border-b border-border/30">
+          <div className="flex items-center gap-2">
+            {/* 드래그 핸들 */}
+            {canDrag && (
+              <button
+                {...attributes}
+                {...listeners}
+                className="cursor-grab active:cursor-grabbing p-0.5 -ml-1 hover:bg-secondary/50 rounded transition-colors"
+              >
+                <GripVertical className="w-4 h-4 text-muted-foreground" />
+              </button>
+            )}
+            <div className={`w-2 h-2 rounded-full ${
+              isCompleted ? 'bg-green-500' :
+              isGenerating || isRegenerating ? 'bg-primary animate-pulse' :
+              isFailed ? 'bg-red-500' : 'bg-muted'
+            }`} />
+            <span className="text-sm font-medium text-foreground">씬 {sceneVideo.sceneIndex + 1}</span>
+          </div>
+          {(isCompleted || isFailed) && !isRegenerating && (
+            <button
+              onClick={() => onRegenerate(sceneVideo.sceneIndex)}
+              disabled={isMergingVideos || regeneratingSceneIndex !== null}
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-secondary/50 text-muted-foreground rounded hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className="w-3 h-3" />
+              다시
+            </button>
+          )}
+        </div>
+
+        {/* 영상 영역 */}
+        <div className="relative aspect-video bg-black">
+          {isCompleted ? (
+            <video
+              src={sceneVideo.videoUrl}
+              controls
+              className="w-full h-full object-contain"
+              preload="metadata"
+            />
+          ) : isGenerating || isRegenerating ? (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-secondary/30 to-secondary/50">
+              <div className="relative">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Video className="w-4 h-4 text-primary/50" />
+                </div>
+              </div>
+              <span className="text-sm text-muted-foreground mt-3">
+                {isRegenerating ? '재생성 중...' : '생성 중...'}
+              </span>
+            </div>
+          ) : isFailed ? (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-destructive/5 to-destructive/10">
+              <AlertCircle className="w-10 h-10 text-destructive mb-2" />
+              <span className="text-sm text-destructive">생성 실패</span>
+              <button
+                onClick={() => onRegenerate(sceneVideo.sceneIndex)}
+                className="mt-2 px-3 py-1.5 text-xs bg-destructive/20 text-destructive rounded-lg hover:bg-destructive/30 transition-colors"
+              >
+                다시 시도
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        {/* 개별 다운로드 버튼 */}
+        {isCompleted && (
+          <div className="px-3 py-2 border-t border-border/30">
+            <button
+              onClick={() => onDownload(sceneVideo.videoUrl!, sceneVideo.sceneIndex)}
+              className="w-full flex items-center justify-center gap-2 px-3 py-1.5 text-xs bg-secondary/50 text-muted-foreground rounded-lg hover:bg-secondary hover:text-foreground transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              다운로드
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export function WizardStep6() {
   const router = useRouter()
   const {
@@ -186,6 +339,7 @@ export function WizardStep6() {
     sceneVideoSegments,
     setSceneVideoSegments,
     updateSceneVideoSegment,
+    reorderSceneVideoSegments,
     finalVideoUrl,
     setFinalVideoUrl,
     isGeneratingVideo,
@@ -215,6 +369,39 @@ export function WizardStep6() {
   const isPollingActiveRef = useRef(false)
   const isTransitionPollingActiveRef = useRef(false)
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([])
+
+  // DnD 센서 설정
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  // 드래그 종료 핸들러 (씬 영상 순서 변경)
+  const handleVideoDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const sortedStatuses = [...sceneVideoStatuses].sort((a, b) => a.sceneIndex - b.sceneIndex)
+      const oldIndex = sortedStatuses.findIndex(s => `video-${s.sceneIndex}` === active.id)
+      const newIndex = sortedStatuses.findIndex(s => `video-${s.sceneIndex}` === over.id)
+      if (oldIndex !== -1 && newIndex !== -1) {
+        // sceneVideoStatuses 재정렬
+        const result = [...sortedStatuses]
+        const [removed] = result.splice(oldIndex, 1)
+        result.splice(newIndex, 0, removed)
+        // sceneIndex 재할당
+        const reordered = result.map((s, idx) => ({ ...s, sceneIndex: idx }))
+        setSceneVideoStatuses(reordered)
+        // context의 segments도 업데이트
+        reorderSceneVideoSegments(oldIndex, newIndex)
+      }
+    }
+  }, [sceneVideoStatuses, reorderSceneVideoSegments])
 
   // 스크롤 상단으로 이동
   useEffect(() => {
@@ -952,103 +1139,44 @@ export function WizardStep6() {
                 </>
               ) : (
                 <>
-                  {/* 가로 스크롤 씬 영상 리스트 */}
+                  {/* 가로 스크롤 씬 영상 리스트 with 드래그앤드롭 */}
                   {sceneVideoStatuses.length > 0 && (
                     <div className="space-y-3">
-                      <p className="text-sm text-muted-foreground">각 씬 영상을 확인하고 재생해보세요</p>
-                      <div className="w-full overflow-x-auto scrollbar-hide">
-                        <div className="inline-flex gap-4 pb-4 px-1 snap-x snap-mandatory">
-                        {sceneVideoStatuses
-                          .sort((a, b) => a.sceneIndex - b.sceneIndex)
-                          .map((sceneVideo) => {
-                            const isCompleted = sceneVideo.status === 'completed' && sceneVideo.videoUrl
-                            const isGenerating = sceneVideo.status === 'generating'
-                            const isFailed = sceneVideo.status === 'failed'
-                            const isRegenerating = regeneratingSceneIndex === sceneVideo.sceneIndex
-
-                            return (
-                              <div
-                                key={sceneVideo.requestId || `scene-${sceneVideo.sceneIndex}`}
-                                className="flex-shrink-0 snap-start"
-                                style={{ width: sceneVideoStatuses.length === 1 ? '100%' : sceneVideoStatuses.length === 2 ? 'calc(50% - 8px)' : 'min(320px, 80vw)' }}
-                              >
-                                <div className="bg-secondary/20 rounded-xl overflow-hidden border border-border/50">
-                                  {/* 씬 헤더 */}
-                                  <div className="flex items-center justify-between px-3 py-2 bg-secondary/30 border-b border-border/30">
-                                    <div className="flex items-center gap-2">
-                                      <div className={`w-2 h-2 rounded-full ${
-                                        isCompleted ? 'bg-green-500' :
-                                        isGenerating || isRegenerating ? 'bg-primary animate-pulse' :
-                                        isFailed ? 'bg-red-500' : 'bg-muted'
-                                      }`} />
-                                      <span className="text-sm font-medium text-foreground">씬 {sceneVideo.sceneIndex + 1}</span>
-                                    </div>
-                                    {(isCompleted || isFailed) && !isRegenerating && (
-                                      <button
-                                        onClick={() => setModalSceneIndex(sceneVideo.sceneIndex)}
-                                        disabled={isMergingVideos || regeneratingSceneIndex !== null}
-                                        className="flex items-center gap-1 px-2 py-1 text-xs bg-secondary/50 text-muted-foreground rounded hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50"
-                                      >
-                                        <RefreshCw className="w-3 h-3" />
-                                        다시
-                                      </button>
-                                    )}
-                                  </div>
-
-                                  {/* 영상 영역 */}
-                                  <div className="relative aspect-video bg-black">
-                                    {isCompleted ? (
-                                      <video
-                                        ref={el => { videoRefs.current[sceneVideo.sceneIndex] = el }}
-                                        src={sceneVideo.videoUrl}
-                                        controls
-                                        className="w-full h-full object-contain"
-                                        preload="metadata"
-                                      />
-                                    ) : isGenerating || isRegenerating ? (
-                                      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-secondary/30 to-secondary/50">
-                                        <div className="relative">
-                                          <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                                          <div className="absolute inset-0 flex items-center justify-center">
-                                            <Video className="w-4 h-4 text-primary/50" />
-                                          </div>
-                                        </div>
-                                        <span className="text-sm text-muted-foreground mt-3">
-                                          {isRegenerating ? '재생성 중...' : '생성 중...'}
-                                        </span>
-                                      </div>
-                                    ) : isFailed ? (
-                                      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-destructive/5 to-destructive/10">
-                                        <AlertCircle className="w-10 h-10 text-destructive mb-2" />
-                                        <span className="text-sm text-destructive">생성 실패</span>
-                                        <button
-                                          onClick={() => setModalSceneIndex(sceneVideo.sceneIndex)}
-                                          className="mt-2 px-3 py-1.5 text-xs bg-destructive/20 text-destructive rounded-lg hover:bg-destructive/30 transition-colors"
-                                        >
-                                          다시 시도
-                                        </button>
-                                      </div>
-                                    ) : null}
-                                  </div>
-
-                                  {/* 개별 다운로드 버튼 */}
-                                  {isCompleted && (
-                                    <div className="px-3 py-2 border-t border-border/30">
-                                      <button
-                                        onClick={() => handleDownload(sceneVideo.videoUrl!, sceneVideo.sceneIndex)}
-                                        className="w-full flex items-center justify-center gap-2 px-3 py-1.5 text-xs bg-secondary/50 text-muted-foreground rounded-lg hover:bg-secondary hover:text-foreground transition-colors"
-                                      >
-                                        <Download className="w-3.5 h-3.5" />
-                                        다운로드
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        각 씬 영상을 확인하고 재생해보세요
+                        {sceneVideoStatuses.filter(s => s.status === 'completed').length >= 2 && (
+                          <span className="text-primary ml-1">(드래그하여 순서 변경 가능)</span>
+                        )}
+                      </p>
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleVideoDragEnd}
+                      >
+                        <SortableContext
+                          items={[...sceneVideoStatuses].sort((a, b) => a.sceneIndex - b.sceneIndex).map(s => `video-${s.sceneIndex}`)}
+                          strategy={horizontalListSortingStrategy}
+                        >
+                          <div className="-mx-4 sm:-mx-6 px-4 sm:px-6 overflow-x-auto scrollbar-hide">
+                            <div className="flex gap-4 pb-4 pt-1 min-w-min">
+                              {[...sceneVideoStatuses]
+                                .sort((a, b) => a.sceneIndex - b.sceneIndex)
+                                .map((sceneVideo) => (
+                                  <SortableVideoCard
+                                    key={sceneVideo.requestId || `scene-${sceneVideo.sceneIndex}`}
+                                    sceneVideo={sceneVideo}
+                                    totalCount={sceneVideoStatuses.length}
+                                    onRegenerate={(sceneIndex) => setModalSceneIndex(sceneIndex)}
+                                    onDownload={handleDownload}
+                                    isRegenerating={regeneratingSceneIndex === sceneVideo.sceneIndex}
+                                    isMergingVideos={isMergingVideos}
+                                    regeneratingSceneIndex={regeneratingSceneIndex}
+                                  />
+                                ))}
+                            </div>
+                          </div>
+                        </SortableContext>
+                      </DndContext>
                     </div>
                   )}
 

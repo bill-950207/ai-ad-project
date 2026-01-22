@@ -9,9 +9,7 @@ import {
   Hand,
   Sparkles,
   Shirt,
-  ArrowLeftRight,
   Coffee,
-  Scale,
   Calendar,
   ChevronDown,
   Check,
@@ -30,10 +28,8 @@ const AD_TYPE_LIST: { type: ImageAdType; icon: typeof Box }[] = [
   { type: 'holding', icon: Hand },
   { type: 'using', icon: Sparkles },
   { type: 'wearing', icon: Shirt },
-  { type: 'beforeAfter', icon: ArrowLeftRight },
   { type: 'lifestyle', icon: Coffee },
   { type: 'unboxing', icon: Package },
-  { type: 'comparison', icon: Scale },
   { type: 'seasonal', icon: Calendar },
 ]
 
@@ -46,6 +42,8 @@ export function WizardStep1() {
     setSelectedProduct,
     selectedAvatarInfo,
     setSelectedAvatarInfo,
+    productUsageMethod,
+    setProductUsageMethod,
     canProceedToStep2,
     goToNextStep,
   } = useImageAdWizard()
@@ -63,6 +61,7 @@ export function WizardStep1() {
   const isProductOnly = PRODUCT_ONLY_TYPES.includes(adType)
   const isWearingType = adType === 'wearing'
   const isSeasonalType = adType === 'seasonal'
+  const isUsingType = adType === 'using'
   // 아바타 섹션을 숨길 유형 (제품만 단독 촬영)
   const hideAvatarSection = isProductOnly
   // 아바타가 선택사항인 유형 (seasonal)
@@ -167,6 +166,18 @@ export function WizardStep1() {
         return '아바타를 선택해주세요'
       }
     }
+    // using: 제품 + 아바타 + 사용 방법 필수
+    else if (isUsingType) {
+      if (!selectedProduct) {
+        return '제품을 선택해주세요'
+      }
+      if (!selectedAvatarInfo) {
+        return '아바타를 선택해주세요'
+      }
+      if (!productUsageMethod.trim()) {
+        return '제품 사용 방법을 입력해주세요'
+      }
+    }
     // 그 외: 제품 + 아바타 모두 필수
     else {
       if (!selectedProduct) {
@@ -194,7 +205,7 @@ export function WizardStep1() {
         <label className="block text-sm font-medium text-foreground mb-3">
           광고 유형 선택 <span className="text-red-500">*</span>
         </label>
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+        <div className="grid grid-cols-4 gap-2">
           {AD_TYPE_LIST.map(({ type, icon: Icon }) => {
             const title = types[type]?.title || type
             const isActive = adType === type
@@ -399,6 +410,23 @@ export function WizardStep1() {
                   )}
                 </div>
               </div>
+
+              {/* 제품 사용 방법 (using 타입 전용) */}
+              {isUsingType && (
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">
+                    제품 사용 방법 <span className="text-red-500">*</span>
+                    <span className="text-muted-foreground/70 ml-1">(예: &quot;얼굴에 바르는 중&quot;, &quot;손에 덜어서 사용&quot;)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={productUsageMethod}
+                    onChange={(e) => setProductUsageMethod(e.target.value)}
+                    placeholder="제품을 어떻게 사용하는 장면인지 입력하세요"
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                </div>
+              )}
             </div>
           )}
       </div>

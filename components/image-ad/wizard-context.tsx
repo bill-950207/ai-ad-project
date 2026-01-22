@@ -32,6 +32,7 @@ export interface AnalysisResult {
     value: string
     customText?: string
     confidence: number
+    reason?: string  // AI가 이 옵션을 선택한 이유
   }>
 }
 
@@ -55,6 +56,7 @@ export interface ImageAdWizardState {
   localImageFile: File | null
   localImageUrl: string | null
   selectedAvatarInfo: SelectedAvatarInfo | null
+  productUsageMethod: string  // 제품 사용 방법 (using 타입 전용)
 
   // Step 2: 설정 방식
   settingMethod: SettingMethod | null
@@ -98,6 +100,7 @@ export interface ImageAdWizardActions {
   setSelectedProduct: (product: AdProduct | null) => void
   setLocalImage: (file: File | null, url: string | null) => void
   setSelectedAvatarInfo: (info: SelectedAvatarInfo | null) => void
+  setProductUsageMethod: (method: string) => void
 
   // Step 2 actions
   setSettingMethod: (method: SettingMethod | null) => void
@@ -167,6 +170,7 @@ export function ImageAdWizardProvider({ children, initialAdType = 'productOnly' 
   const [localImageFile, setLocalImageFile] = useState<File | null>(null)
   const [localImageUrl, setLocalImageUrl] = useState<string | null>(null)
   const [selectedAvatarInfo, setSelectedAvatarInfo] = useState<SelectedAvatarInfo | null>(null)
+  const [productUsageMethod, setProductUsageMethod] = useState<string>('')
 
   // Step 2 상태
   const [settingMethod, setSettingMethod] = useState<SettingMethod | null>(null)
@@ -298,9 +302,13 @@ export function ImageAdWizardProvider({ children, initialAdType = 'productOnly' 
     if (isWearingType) {
       return !!selectedProduct && !!selectedAvatarInfo
     }
+    // using: 제품 + 아바타 + 사용 방법 필수
+    if (adType === 'using') {
+      return !!selectedProduct && !!selectedAvatarInfo && !!productUsageMethod.trim()
+    }
     // 그 외: 제품 + 아바타 필수
     return !!selectedProduct && !!selectedAvatarInfo
-  }, [isProductOnlyType, isSeasonalType, isWearingType, selectedProduct, selectedAvatarInfo])
+  }, [isProductOnlyType, isSeasonalType, isWearingType, adType, selectedProduct, selectedAvatarInfo, productUsageMethod])
 
   const canProceedToStep3 = useCallback(() => {
     // 설정 방식이 선택되어야 함
@@ -352,6 +360,7 @@ export function ImageAdWizardProvider({ children, initialAdType = 'productOnly' 
     setLocalImageFile(null)
     setLocalImageUrl(null)
     setSelectedAvatarInfo(null)
+    setProductUsageMethod('')
     setSettingMethod(null)
     setReferenceFile(null)
     setReferenceUrl(null)
@@ -388,6 +397,7 @@ export function ImageAdWizardProvider({ children, initialAdType = 'productOnly' 
     localImageFile,
     localImageUrl,
     selectedAvatarInfo,
+    productUsageMethod,
     settingMethod,
     referenceFile,
     referenceUrl,
@@ -419,6 +429,7 @@ export function ImageAdWizardProvider({ children, initialAdType = 'productOnly' 
     setSelectedProduct,
     setLocalImage,
     setSelectedAvatarInfo,
+    setProductUsageMethod,
     setSettingMethod,
     setReferenceImage,
     setIsAnalyzingReference,

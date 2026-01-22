@@ -41,11 +41,6 @@ export const AD_TYPE_DESCRIPTIONS: Record<string, {
     english: 'Fashion/outfit worn by model',
     focusPoints: ['outfit fit', 'full body or detail', 'style coherence'],
   },
-  beforeAfter: {
-    korean: '비포/애프터 비교',
-    english: 'Before and after transformation',
-    focusPoints: ['clear comparison', 'same angle', 'visible difference'],
-  },
   lifestyle: {
     korean: '일상 사용 맥락',
     english: 'Product in daily life context',
@@ -55,11 +50,6 @@ export const AD_TYPE_DESCRIPTIONS: Record<string, {
     korean: '개봉/언박싱',
     english: 'Product unboxing presentation',
     focusPoints: ['packaging visible', 'reveal moment', 'excitement'],
-  },
-  comparison: {
-    korean: '제품 비교 레이아웃',
-    english: 'Product comparison layout',
-    focusPoints: ['side by side', 'clear differences', 'organized layout'],
   },
   seasonal: {
     korean: '시즌/기념일 테마',
@@ -86,7 +76,7 @@ AVATAR USAGE FLEXIBILITY:
 - If an avatar is provided, it represents the PREFERRED model appearance when a human is needed
 - However, the avatar does NOT need to appear in every image
 - Decide avatar inclusion based on the ad type and context:
-  * "productOnly" or "comparison" → Avatar should NOT appear (product-focused shots)
+  * "productOnly" → Avatar should NOT appear (product-focused shots)
   * "holding", "using", "wearing" → Avatar SHOULD appear (model-centric shots)
   * "lifestyle", "unboxing", "seasonal" → Avatar is OPTIONAL (include only if it enhances the scene naturally)
 - If the avatar would feel forced or unnatural in the composition, prioritize a better product presentation without the avatar
@@ -132,11 +122,6 @@ AVATAR: Use the provided avatar reference for the model appearance.`,
 Product should feel like a natural part of the scene, not forced.
 CRITICAL: All background details must be perfectly sharp and visible, no soft focus.
 AVATAR: Optional - include a human only if it enhances the natural lifestyle context. If the scene works better without a person, omit the avatar entirely.`,
-
-  comparison: `Product comparison layout showing multiple items side by side. Structure: Products arrangement → Surface → Background → Even lighting.
-Maintain consistent angle and lighting for all products.
-CRITICAL: All products must be equally sharp and in focus.
-AVATAR: Do NOT include any human/model - focus on product comparison only.`,
 
   unboxing: `Product unboxing presentation showing packaging and reveal moment. Structure: Package state → Product visibility → Hands/interaction → Surface → Lighting.
 Show the excitement of discovery.
