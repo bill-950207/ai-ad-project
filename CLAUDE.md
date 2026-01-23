@@ -133,8 +133,14 @@ git worktree list
 
 ### 새 워크트리 설정 (필수)
 새 워크트리에서 작업 시작 전 반드시 초기 설정이 필요합니다:
-
 ```bash
+# 1. 워크트리 생성
+git worktree add ../ai_ad_project-[feature-name] [branch-name]
+
+# 2. 워크트리로 이동
+cd ../ai_ad_project-[feature-name]
+
+# 3. 초기 설정
 ./scripts/setup-worktree.sh
 ```
 
@@ -145,6 +151,8 @@ cp /Users/bill/Desktop/projects/ai_ad_project/.env .
 npm run db:generate
 ```
 
+**⚠️ .env 파일은 git에 포함되지 않으므로 반드시 메인 프로젝트에서 복사해야 함**
+
 ### Claude Code 자동 확인
 **새 세션 시작 시 반드시 확인:**
 1. 현재 디렉토리가 워크트리인지 확인 (`git worktree list`)
@@ -153,6 +161,46 @@ npm run db:generate
 4. `lib/generated/prisma/client` 존재 여부 확인
 
 위 항목 중 하나라도 없으면 `./scripts/setup-worktree.sh` 실행을 제안하세요.
+
+## Commit & PR Guidelines
+
+### 커밋 시점
+- 기능 하나 완료 시 즉시 커밋
+- 버그 수정 완료 시 즉시 커밋
+- 컴파일/빌드 가능한 상태에서만 커밋
+
+### 커밋 메시지 형식
+```
+feat: 새 기능 추가
+fix: 버그 수정
+refactor: 코드 리팩토링
+docs: 문서 수정
+chore: 기타 작업
+style: 코드 포맷팅
+```
+
+### 작업 완료 후 필수 절차
+1. 변경사항 커밋
+```bash
+git add .
+git commit -m "feat: 작업 내용 요약"
+```
+
+2. 원격 푸시
+```bash
+git push origin [브랜치명]
+```
+
+3. PR 생성 요청
+```bash
+gh pr create --title "feat: 작업 제목" --body "작업 내용 설명"
+```
+또는 사용자에게 PR 생성 안내
+
+### 브랜치 병합 규칙
+- **Claude는 main 브랜치에 직접 병합하지 않음**
+- 병합은 사용자가 코드 리뷰 후 직접 수행
+- PR 생성까지만 Claude 역할
 
 ## Code Conventions
 
