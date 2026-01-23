@@ -16,8 +16,20 @@ export interface AdProduct {
   selling_points?: string[] | null
 }
 
-export type WizardStep = 1 | 2 | 3 | 4 | 5
+export type WizardStep = 1 | 2 | 3 | 4 | 5 | 6
 export type AspectRatio = '16:9' | '9:16' | '1:1'
+
+// 스토리 방식 선택 타입
+export type StoryMethod = 'direct' | 'ai-auto' | 'reference'
+
+// 참조 영상 정보
+export interface ReferenceInfo {
+  type: 'file' | 'youtube'
+  url: string
+  file?: File
+  analyzedElements?: string[]
+  analyzedDescription?: string
+}
 
 // Vidu Q2 해상도 타입
 export type VideoResolution = '540p' | '720p' | '1080p'
@@ -28,12 +40,22 @@ export interface SceneInfo {
   sceneIndex: number                // 씬 인덱스 (0부터)
   title: string                     // 씬 제목 (한국어)
   description: string               // 씬 설명 (한국어)
-  firstFramePrompt: string          // 첫 프레임 생성용 프롬프트 (한국어)
-  motionPromptEN: string            // Vidu Q2용 영어 모션 프롬프트
-  duration: number                  // 씬 길이 (초, 1-8)
+  imageSummary: string              // 이미지 프롬프트 요약 (사용자 언어, 표시용)
+  videoSummary: string              // 영상 프롬프트 요약 (사용자 언어, 표시용)
+  firstFramePrompt: string          // 첫 프레임 생성용 프롬프트 (영어, AI용)
+  motionPromptEN: string            // 영상 모션용 프롬프트 (영어, AI용)
+  duration: number                  // 씬 길이 (초, 2-5)
   movementAmplitude: MovementAmplitude  // 움직임 강도
   location: string                  // 배경/장소
   mood: string                      // 분위기
+}
+
+// 시나리오 추천 설정 (LLM이 시나리오와 함께 생성)
+export interface ScenarioRecommendedSettings {
+  aspectRatio: AspectRatio
+  sceneCount: number
+  sceneDurations: number[]
+  movementAmplitudes: MovementAmplitude[]
 }
 
 // 시나리오 타입 (LLM 생성 - 멀티 씬 지원)
@@ -45,9 +67,11 @@ export interface Scenario {
   productAppearance: string         // 제품 등장 방식 설명 (한국어)
   mood: string                      // 전체 분위기 키워드
   tags: string[]                    // 태그 배열
-  // 멀티 씬 정보 (선택적 - 멀티 씬 모드에서만 존재)
-  scenes?: SceneInfo[]              // 씬 배열 (멀티 씬 모드)
-  totalDuration?: number            // 총 길이 (초)
+  // 멀티 씬 정보
+  scenes: SceneInfo[]               // 씬 배열
+  totalDuration: number             // 총 길이 (초)
+  // AI 추천 설정 (완전 시나리오 생성 시)
+  recommendedSettings?: ScenarioRecommendedSettings
   // Legacy (단일 씬 호환)
   firstFramePrompt?: string         // 첫 프레임 생성용 프롬프트 (한국어)
   motionPromptEN?: string           // 영상 모션용 프롬프트 (영어)
@@ -128,12 +152,18 @@ export interface AvatarMotionWizardState {
   selectedProduct: AdProduct | null
   selectedAvatarInfo: SelectedAvatarInfo | null
 
-  // Step 2: 시나리오 선택 (LLM 생성 3개 중 선택)
+  // Step 2: 스토리 방식 선택 (직접/AI추천/참고)
+  storyMethod: StoryMethod | null
+  referenceInfo: ReferenceInfo | null
+  isAnalyzingReference: boolean
+
+  // Step 3: 시나리오 입력/선택 (AI 추천 모드에서 LLM 생성 3개 중 선택)
   scenarios: Scenario[]
   selectedScenarioIndex: number | null
   isGeneratingScenarios: boolean
+  isModifyingScenario: boolean      // 시나리오 수정 중
 
-  // Step 3: 영상 설정 (멀티 씬)
+  // Step 4: 영상 설정 (멀티 씬)
   aspectRatio: AspectRatio
   imageSize: ImageSize            // 이미지 크기 (영상 크기에 영향)
   resolution: VideoResolution     // Vidu Q2 해상도
@@ -144,7 +174,7 @@ export interface AvatarMotionWizardState {
   useAIRecommendation: boolean    // AI 추천 설정 사용 여부
   aiRecommendedSettings: AIRecommendedSettings | null  // AI 추천 설정
 
-  // Step 4: 씬별 첫 프레임 생성
+  // Step 5: 씬별 첫 프레임 생성
   isGeneratingFrames: boolean
   sceneKeyframes: SceneKeyframe[]  // 씬별 키프레임 이미지
   startFrameUrl: string | null     // Legacy (단일 씬 호환)
@@ -156,7 +186,7 @@ export interface AvatarMotionWizardState {
   selectedAiAvatarUrl: string | null
   selectedAiAvatarDescription: string | null
 
-  // Step 5: 씬별 영상 생성 상태 (Vidu Q2)
+  // Step 6: 씬별 영상 생성 상태 (Vidu Q2)
   isGeneratingVideo: boolean
   generationProgress: number
   sceneVideos: SceneVideo[]        // 씬별 생성된 영상
@@ -183,10 +213,16 @@ export interface AvatarMotionWizardActions {
   setSelectedProduct: (product: AdProduct | null) => void
   setSelectedAvatarInfo: (info: SelectedAvatarInfo | null) => void
 
-  // Step 2 actions (시나리오 선택)
+  // Step 2 actions (스토리 방식 + 시나리오 선택)
+  setStoryMethod: (method: StoryMethod | null) => void
+  setReferenceInfo: (info: ReferenceInfo | null) => void
+  setIsAnalyzingReference: (loading: boolean) => void
   setScenarios: (scenarios: Scenario[]) => void
   setSelectedScenarioIndex: (index: number | null) => void
   setIsGeneratingScenarios: (loading: boolean) => void
+  setIsModifyingScenario: (loading: boolean) => void
+  applyScenarioSettings: (scenarioIndex: number) => void  // 시나리오의 추천 설정 적용
+  updateScenario: (index: number, scenario: Scenario) => void  // 수정된 시나리오 업데이트
 
   // Step 3 actions (영상 설정 - 멀티 씬)
   setAspectRatio: (ratio: AspectRatio) => void
@@ -224,9 +260,10 @@ export interface AvatarMotionWizardActions {
 
   // Validation
   canProceedToStep2: () => boolean   // 아바타 + 제품 선택 완료
-  canProceedToStep3: () => boolean   // 시나리오 선택 완료
-  canProceedToStep4: () => boolean   // 영상 설정 완료
-  canProceedToStep5: () => boolean   // 모든 씬 프레임 생성 완료
+  canProceedToStep3: () => boolean   // 스토리 방식 선택 완료
+  canProceedToStep4: () => boolean   // 시나리오 입력/선택 완료
+  canProceedToStep5: () => boolean   // 영상 설정 완료
+  canProceedToStep6: () => boolean   // 모든 씬 프레임 생성 완료
   canGenerateVideo: () => boolean
   canMergeVideos: () => boolean      // 모든 씬 영상 생성 완료
 
@@ -283,10 +320,14 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
   const [selectedProduct, setSelectedProduct] = useState<AdProduct | null>(null)
   const [selectedAvatarInfo, setSelectedAvatarInfo] = useState<SelectedAvatarInfo | null>(null)
 
-  // Step 2 상태 (시나리오 선택)
+  // Step 2 상태 (스토리 방식 + 시나리오 선택)
+  const [storyMethod, setStoryMethod] = useState<StoryMethod | null>(null)
+  const [referenceInfo, setReferenceInfo] = useState<ReferenceInfo | null>(null)
+  const [isAnalyzingReference, setIsAnalyzingReference] = useState(false)
   const [scenarios, setScenarios] = useState<Scenario[]>([])
   const [selectedScenarioIndex, setSelectedScenarioIndex] = useState<number | null>(null)
   const [isGeneratingScenarios, setIsGeneratingScenarios] = useState(false)
+  const [isModifyingScenario, setIsModifyingScenario] = useState(false)
 
   // Step 3 상태 (영상 설정 - 멀티 씬)
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('9:16')
@@ -384,8 +425,14 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     setAspectRatio(aiRecommendedSettings.aspectRatio)
     setResolution(aiRecommendedSettings.resolution)
     setSceneCount(aiRecommendedSettings.sceneCount)
-    setSceneDurations(aiRecommendedSettings.sceneDurations)
-    setMovementAmplitudes(aiRecommendedSettings.movementAmplitudes)
+
+    // undefined 체크 후 적용
+    if (aiRecommendedSettings.sceneDurations && aiRecommendedSettings.sceneDurations.length > 0) {
+      setSceneDurations(aiRecommendedSettings.sceneDurations)
+    }
+    if (aiRecommendedSettings.movementAmplitudes && aiRecommendedSettings.movementAmplitudes.length > 0) {
+      setMovementAmplitudes(aiRecommendedSettings.movementAmplitudes)
+    }
 
     // 이미지 크기도 비율에 맞게 설정
     const sizeMap: Record<AspectRatio, ImageSize> = {
@@ -396,8 +443,51 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     setImageSize(sizeMap[aiRecommendedSettings.aspectRatio])
   }, [aiRecommendedSettings])
 
+  // 시나리오의 추천 설정 적용 (AI 추천 모드에서 시나리오 선택 시)
+  const applyScenarioSettings = useCallback((scenarioIndex: number) => {
+    const scenario = scenarios[scenarioIndex]
+    if (!scenario?.recommendedSettings) return
+
+    const settings = scenario.recommendedSettings
+    setAspectRatio(settings.aspectRatio)
+    setSceneCount(settings.sceneCount)
+
+    // 씬에서 duration과 movementAmplitude 추출 (recommendedSettings에 없을 수 있음)
+    if (settings.sceneDurations && settings.sceneDurations.length > 0) {
+      setSceneDurations(settings.sceneDurations)
+    } else if (scenario.scenes && scenario.scenes.length > 0) {
+      // 씬에서 추출
+      const durations = scenario.scenes.map(s => s.duration || 2)
+      setSceneDurations(durations)
+    }
+
+    if (settings.movementAmplitudes && settings.movementAmplitudes.length > 0) {
+      setMovementAmplitudes(settings.movementAmplitudes)
+    } else if (scenario.scenes && scenario.scenes.length > 0) {
+      // 씬에서 추출
+      const amplitudes = scenario.scenes.map(s => (s.movementAmplitude as MovementAmplitude) || 'medium')
+      setMovementAmplitudes(amplitudes)
+    }
+
+    // 이미지 크기도 비율에 맞게 설정
+    const sizeMap: Record<AspectRatio, ImageSize> = {
+      '16:9': '1024x576',
+      '9:16': '576x1024',
+      '1:1': '768x768',
+    }
+    setImageSize(sizeMap[settings.aspectRatio])
+  }, [scenarios])
+
+  // 수정된 시나리오 업데이트
+  const updateScenario = useCallback((index: number, scenario: Scenario) => {
+    setScenarios(prev => prev.map((s, i) => i === index ? scenario : s))
+  }, [])
+
   // 총 영상 길이 계산
   const getTotalDuration = useCallback(() => {
+    if (!sceneDurations || sceneDurations.length === 0) {
+      return sceneCount * 2 // 기본값: 씬당 2초
+    }
     return sceneDurations.slice(0, sceneCount).reduce((sum, d) => sum + d, 0)
   }, [sceneDurations, sceneCount])
 
@@ -459,6 +549,7 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
         productId: selectedProduct?.id,
         productInfo: productInfo || null,
         aiAvatarOptions,
+        storyMethod,
         scenarios,
         selectedScenarioIndex,
         storyInfo: storyInfoForSave,
@@ -507,6 +598,7 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     selectedAiAvatarUrl,
     selectedAiAvatarDescription,
     generatedAvatarOptions,
+    storyMethod,
     scenarios,
     selectedScenarioIndex,
     aspectRatio,
@@ -542,7 +634,7 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
 
       // 아바타 정보 복원
       if (draft.avatar_id || draft.ai_avatar_options) {
-        const isAiGenerated = !draft.avatar_id && draft.ai_avatar_options
+        const isAiGenerated = draft.avatar_id === 'ai-generated' || (!draft.avatar_id && draft.ai_avatar_options)
         let aiOptions = null
         try {
           aiOptions = draft.ai_avatar_options ? JSON.parse(draft.ai_avatar_options) : null
@@ -550,33 +642,95 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
           // JSON 파싱 실패 시 무시
         }
 
-        setSelectedAvatarInfo({
-          type: isAiGenerated ? 'ai-generated' : (draft.outfit_id ? 'outfit' : 'avatar'),
-          avatarId: draft.avatar_id || '',
-          avatarName: isAiGenerated ? 'AI 생성 아바타' : '아바타',
-          outfitId: draft.outfit_id,
-          imageUrl: draft.avatar_image_url || '',
-          displayName: isAiGenerated ? 'AI 생성 아바타' : '아바타',
-        })
-
         if (isAiGenerated && aiOptions) {
+          // AI 생성 아바타 복원
+          setSelectedAvatarInfo({
+            type: 'ai-generated',
+            avatarId: '',
+            avatarName: 'AI 생성 아바타',
+            outfitId: undefined,
+            imageUrl: aiOptions.imageUrl || draft.avatar_image_url || '',
+            displayName: 'AI 생성 아바타',
+          })
           setSelectedAiAvatarIndex(aiOptions.index)
           setSelectedAiAvatarUrl(aiOptions.imageUrl)
           setSelectedAiAvatarDescription(aiOptions.description)
           if (aiOptions.options) {
             setGeneratedAvatarOptions(aiOptions.options)
           }
+        } else if (draft.avatar_id && draft.avatar_id !== 'ai-generated') {
+          // 일반 아바타 복원 (API로 완전한 정보 불러오기)
+          try {
+            const avatarRes = await fetch(`/api/avatars/${draft.avatar_id}`)
+            if (avatarRes.ok) {
+              const avatarData = await avatarRes.json()
+              const avatar = avatarData.avatar
+
+              // outfit_id가 있으면 의상 정보도 불러오기
+              let outfitImageUrl = draft.avatar_image_url
+              if (draft.outfit_id && avatar?.outfits) {
+                const outfit = avatar.outfits.find((o: { id: string }) => o.id === draft.outfit_id)
+                if (outfit?.image_url) {
+                  outfitImageUrl = outfit.image_url
+                }
+              }
+
+              setSelectedAvatarInfo({
+                type: draft.outfit_id ? 'outfit' : 'avatar',
+                avatarId: draft.avatar_id,
+                avatarName: avatar?.name || '아바타',
+                outfitId: draft.outfit_id,
+                imageUrl: outfitImageUrl || avatar?.image_url || '',
+                displayName: avatar?.name || '아바타',
+              })
+            }
+          } catch (error) {
+            console.error('아바타 정보 로드 오류:', error)
+            // 최소한의 정보로 설정
+            setSelectedAvatarInfo({
+              type: draft.outfit_id ? 'outfit' : 'avatar',
+              avatarId: draft.avatar_id,
+              avatarName: '아바타',
+              outfitId: draft.outfit_id,
+              imageUrl: draft.avatar_image_url || '',
+              displayName: '아바타',
+            })
+          }
         }
       }
 
-      // 제품 정보 복원 (간단히 ID만)
+      // 제품 정보 복원 (API로 완전한 정보 불러오기)
       if (draft.product_id) {
-        setSelectedProduct({
-          id: draft.product_id,
-          name: '',
-          rembg_image_url: null,
-          image_url: null,
-        })
+        try {
+          const productRes = await fetch(`/api/ad-products/${draft.product_id}`)
+          if (productRes.ok) {
+            const productData = await productRes.json()
+            if (productData.product) {
+              setSelectedProduct({
+                id: productData.product.id,
+                name: productData.product.name || '',
+                description: productData.product.description || '',
+                selling_points: productData.product.selling_points || [],
+                rembg_image_url: productData.product.rembg_image_url,
+                image_url: productData.product.image_url,
+              })
+            }
+          }
+        } catch (error) {
+          console.error('제품 정보 로드 오류:', error)
+          // 최소한의 정보로 설정
+          setSelectedProduct({
+            id: draft.product_id,
+            name: '제품',
+            rembg_image_url: null,
+            image_url: null,
+          })
+        }
+      }
+
+      // 스토리 방식 복원
+      if (draft.story_method) {
+        setStoryMethod(draft.story_method as StoryMethod)
       }
 
       // 시나리오 정보 복원
@@ -646,17 +800,38 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
   }, [selectedAvatarInfo, selectedProduct])
 
   const canProceedToStep3 = useCallback(() => {
-    // 시나리오가 선택되어야 함
-    if (isGeneratingScenarios) return false
-    return selectedScenarioIndex !== null && scenarios.length > 0
-  }, [isGeneratingScenarios, selectedScenarioIndex, scenarios])
+    // 스토리 방식이 선택되어야 함
+    return !!storyMethod
+  }, [storyMethod])
 
   const canProceedToStep4 = useCallback(() => {
-    // 영상 설정이 완료되어야 함 (기본값이 있으므로 항상 true)
-    return canProceedToStep3()
-  }, [canProceedToStep3])
+    // 스토리 방식에 따른 시나리오 입력/선택이 완료되어야 함
+    if (!storyMethod) return false
+
+    // 직접 입력: 방식만 선택하면 됨 (Step 3에서 직접 입력)
+    if (storyMethod === 'direct') return true
+
+    // AI 추천: 시나리오가 생성되고 선택되어야 함
+    if (storyMethod === 'ai-auto') {
+      if (isGeneratingScenarios) return false
+      return selectedScenarioIndex !== null && scenarios.length > 0
+    }
+
+    // 참조 영상: 영상이 분석 완료되어야 함
+    if (storyMethod === 'reference') {
+      if (isAnalyzingReference) return false
+      return referenceInfo !== null && referenceInfo.analyzedDescription !== undefined
+    }
+
+    return false
+  }, [storyMethod, isGeneratingScenarios, selectedScenarioIndex, scenarios, isAnalyzingReference, referenceInfo])
 
   const canProceedToStep5 = useCallback(() => {
+    // 영상 설정이 완료되어야 함 (기본값이 있으므로 항상 true)
+    return canProceedToStep4()
+  }, [canProceedToStep4])
+
+  const canProceedToStep6 = useCallback(() => {
     // 모든 씬의 첫 프레임 이미지가 생성되어야 함
     if (isGeneratingFrames) return false
     if (sceneKeyframes.length === 0) return false
@@ -666,8 +841,8 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
   const canGenerateVideo = useCallback(() => {
     // 모든 씬 키프레임이 완료되어 있고, 영상 생성 중이 아니어야 함
     if (isGeneratingVideo) return false
-    return canProceedToStep5()
-  }, [isGeneratingVideo, canProceedToStep5])
+    return canProceedToStep6()
+  }, [isGeneratingVideo, canProceedToStep6])
 
   const canMergeVideos = useCallback(() => {
     // 모든 씬 영상이 생성되어 있어야 함
@@ -685,7 +860,7 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
   }, [])
 
   const goToNextStep = useCallback(() => {
-    setStep(prev => Math.min(prev + 1, 5) as WizardStep)
+    setStep(prev => Math.min(prev + 1, 6) as WizardStep)
   }, [])
 
   const goToPrevStep = useCallback(() => {
@@ -704,10 +879,14 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     setStep(1)
     setSelectedProduct(null)
     setSelectedAvatarInfo(null)
-    // Step 2 상태 (시나리오)
+    // Step 2 상태 (스토리 방식 + 시나리오)
+    setStoryMethod(null)
+    setReferenceInfo(null)
+    setIsAnalyzingReference(false)
     setScenarios([])
     setSelectedScenarioIndex(null)
     setIsGeneratingScenarios(false)
+    setIsModifyingScenario(false)
     // Step 3 상태 (영상 설정 - 멀티 씬)
     setAspectRatio('9:16')
     setImageSize('576x1024')
@@ -751,10 +930,14 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     selectedProduct,
     selectedAvatarInfo,
 
-    // Step 2 상태 (시나리오)
+    // Step 2 상태 (스토리 방식 + 시나리오)
+    storyMethod,
+    referenceInfo,
+    isAnalyzingReference,
     scenarios,
     selectedScenarioIndex,
     isGeneratingScenarios,
+    isModifyingScenario,
 
     // Step 3 상태 (영상 설정 - 멀티 씬)
     aspectRatio,
@@ -804,10 +987,16 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     setSelectedProduct,
     setSelectedAvatarInfo,
 
-    // Step 2 액션 (시나리오)
+    // Step 2 액션 (스토리 방식 + 시나리오)
+    setStoryMethod,
+    setReferenceInfo,
+    setIsAnalyzingReference,
     setScenarios,
     setSelectedScenarioIndex,
     setIsGeneratingScenarios,
+    setIsModifyingScenario,
+    applyScenarioSettings,
+    updateScenario,
 
     // Step 3 액션 (영상 설정 - 멀티 씬)
     setAspectRatio,
@@ -848,6 +1037,7 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     canProceedToStep3,
     canProceedToStep4,
     canProceedToStep5,
+    canProceedToStep6,
     canGenerateVideo,
     canMergeVideos,
 

@@ -290,31 +290,45 @@ export const MODEL_PROMPT_STRUCTURES = {
 
 /**
  * firstFramePrompt 생성 가이드 (Seedream 4.5용)
+ *
+ * ⚠️ 중요: 아바타 참조 이미지가 제공되므로 인물 외모 묘사 금지
  */
 export const SEEDREAM_FIRST_FRAME_GUIDE = `
-SEEDREAM 4.5 OPTIMIZED PROMPT STRUCTURE (80-100 words):
+SEEDREAM 4.5 OPTIMIZED PROMPT STRUCTURE (60-80 words):
 
-1. SUBJECT & POSE (15-20 words):
-   "Young Asian woman in late 20s, [pose], [expression], wearing [outfit]"
+⚠️ CRITICAL: An avatar reference image will be provided.
+DO NOT describe person's physical appearance (age, ethnicity, facial features, hair color/style, body type).
+ONLY describe pose, action, expression, clothing, and environment.
 
-2. LIGHTING - CRITICAL (15-20 words):
-   "[Temperature] light from [specific direction] creating [effect]"
-   Example: "warm golden morning light streaming from large window on right side, creating soft rim light on hair"
+1. POSE & ACTION (10-15 words):
+   "[Action verb], [body position], [expression/emotion]"
+   Example: "leaning against window frame, gazing outside thoughtfully, serene expression"
+
+2. PRODUCT INTERACTION (10-15 words):
+   "[How model interacts with product], [product from reference image 2]"
+   Example: "holding the product from reference image 2 at chest level, examining it closely"
 
 3. ENVIRONMENT (10-15 words):
    "[Specific location] with [lived-in details]"
-   Example: "in a cozy bedroom with rumpled white sheets and potted plants"
+   Example: "in a cozy cafe with warm wooden interior and morning sunlight"
 
-4. CAMERA SPECS (10-15 words):
-   "shot on [lens]mm lens at f/[aperture], [depth of field description]"
-   Example: "shot on 35mm lens at f/1.8, shallow depth of field with creamy bokeh"
+4. LIGHTING - CRITICAL (10-15 words):
+   "[Temperature] light from [specific direction] creating [effect]"
+   Example: "warm golden light from large window on left, creating soft shadows"
 
-5. PRODUCT PLACEMENT (10-15 words):
-   "[How model interacts with product], [product visibility]"
-   Example: "gently holding skincare bottle in both hands at chest level"
+5. CAMERA SPECS (10-15 words):
+   "shot on [lens]mm lens at f/[aperture]"
+   Example: "shot on 35mm lens at f/2.8, cinematic composition"
 
 6. QUALITY TAGS (5-10 words):
-   "natural skin texture with visible pores, shot on film, natural color grading"
+   "natural skin texture with visible pores, cinematic atmosphere, 8K RAW quality"
+
+❌ FORBIDDEN (will cause different person):
+- Age descriptions ("in her 20s", "young", "middle-aged")
+- Ethnicity/race ("Asian", "Caucasian", "Korean")
+- Facial features ("sharp jawline", "big eyes", "oval face")
+- Hair descriptions ("short black hair", "long wavy hair")
+- Body type ("slim", "athletic", "petite")
 `.trim()
 
 /**

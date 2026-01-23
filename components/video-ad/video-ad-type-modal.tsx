@@ -3,17 +3,16 @@
  *
  * 영상 광고 카테고리 중 하나를 선택합니다:
  * 1. 제품 설명 영상 - 아바타가 제품을 말로 설명하는 영상
- * 2. 아바타 모션 - 아바타가 특정 장면을 연기하는 영상
+ * 2. 제품 광고 - 제품만 나오는 시네마틱 광고 영상
  */
 
 'use client'
 
 import { useLanguage } from '@/contexts/language-context'
-import { X, Mic, Clapperboard, Package } from 'lucide-react'
+import { X, Mic, Package } from 'lucide-react'
 
 export type VideoAdCategory =
   | 'productDescription'  // 제품 설명 영상 (음성으로 제품 설명)
-  | 'avatarMotion'        // 아바타 모션 영상 (아바타가 특정 장면 연기)
   | 'productAd'           // 제품 광고 영상 (시네마틱 제품 영상)
 
 interface VideoAdTypeModalProps {
@@ -40,17 +39,6 @@ const CATEGORIES: CategoryInfo[] = [
       'AI가 자동으로 대본 3가지 스타일 생성',
       '선택한 대본을 음성으로 변환',
       '아바타가 말하는 영상 생성',
-    ],
-  },
-  {
-    category: 'avatarMotion',
-    icon: Clapperboard,
-    title: '아바타 모션',
-    description: '아바타가 특정 장면을 연기하는 영상입니다',
-    features: [
-      '한 컷 연기 영상 생성',
-      '제품 사용, 포즈, 리액션 등 다양한 모션',
-      '짧고 임팩트 있는 광고 소재',
     ],
   },
   {

@@ -9,12 +9,12 @@ import {
   ChevronDown,
   Check,
   Loader2,
-  ArrowRight,
   Minus,
   Plus,
 } from 'lucide-react'
 import { AvatarSelectModal } from '@/components/video-ad/avatar-select-modal'
 import { useAvatarMotionWizard, AdProduct } from './wizard-context'
+import { WizardNavigation } from './wizard-navigation-button'
 
 export function WizardStep1() {
   const { t } = useLanguage()
@@ -312,35 +312,14 @@ export function WizardStep1() {
         )}
       </div>
 
-      {/* 다음 단계 버튼 */}
-      <button
-        onClick={handleNext}
-        disabled={!canProceedToStep2() || isSaving}
-        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isSaving ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            저장 중...
-          </>
-        ) : (
-          <>
-            다음
-            <ArrowRight className="w-4 h-4" />
-          </>
-        )}
-      </button>
-
-      {/* 유효성 메시지 */}
-      {!canProceedToStep2() && (
-        <p className="text-center text-sm text-muted-foreground">
-          {!selectedAvatarInfo && !selectedProduct
-            ? '아바타와 제품을 선택해주세요'
-            : !selectedAvatarInfo
-            ? '아바타를 선택해주세요'
-            : '제품을 선택해주세요'}
-        </p>
-      )}
+      {/* 다음 단계 버튼 - 조건 충족 시 아래에서 올라옴 */}
+      <WizardNavigation
+        onNext={handleNext}
+        canProceed={canProceedToStep2()}
+        loading={isSaving}
+        showNext={canProceedToStep2()}
+        showPrev={false}
+      />
 
       {/* 아바타 선택 모달 */}
       <AvatarSelectModal

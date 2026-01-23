@@ -6,17 +6,19 @@ import { ArrowLeft, Check, Loader2, Package, Sparkles, User } from 'lucide-react
 import { AvatarMotionWizardProvider, useAvatarMotionWizard, WizardStep } from './wizard-context'
 import { WizardStep1 } from './wizard-step-1'
 import { WizardStep2 } from './wizard-step-2'
-import { WizardStep3 } from './wizard-step-3'
-import { WizardStep4 } from './wizard-step-4'
-import { WizardStep5 } from './wizard-step-5'
+import { WizardStep3Scenario } from './wizard-step-3-scenario'
+import { WizardStep4Settings } from './wizard-step-4-settings'
+import { WizardStep5Frames } from './wizard-step-5-frames'
+import { WizardStep6Video } from './wizard-step-6-video'
 
-// 단계 정보
+// 단계 정보 (6단계)
 const STEPS = [
   { step: 1 as WizardStep, title: '아바타/제품' },
   { step: 2 as WizardStep, title: '스토리 방식' },
-  { step: 3 as WizardStep, title: '스토리보드' },
-  { step: 4 as WizardStep, title: '프레임 생성' },
-  { step: 5 as WizardStep, title: '영상 생성' },
+  { step: 3 as WizardStep, title: '시나리오' },
+  { step: 4 as WizardStep, title: '영상 설정' },
+  { step: 5 as WizardStep, title: '프레임 생성' },
+  { step: 6 as WizardStep, title: '영상 생성' },
 ]
 
 interface WizardHeaderProps {
@@ -171,14 +173,24 @@ function WizardHeader({ onBack }: WizardHeaderProps) {
 
 function WizardContent() {
   const { step } = useAvatarMotionWizard()
+  const prevStepRef = useRef(step)
+
+  // 스텝 변경 시 스크롤 상단으로 이동
+  useEffect(() => {
+    if (prevStepRef.current !== step) {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      prevStepRef.current = step
+    }
+  }, [step])
 
   return (
     <div className="flex-1 max-w-5xl mx-auto px-4 py-8 w-full">
       {step === 1 && <WizardStep1 />}
       {step === 2 && <WizardStep2 />}
-      {step === 3 && <WizardStep3 />}
-      {step === 4 && <WizardStep4 />}
-      {step === 5 && <WizardStep5 />}
+      {step === 3 && <WizardStep3Scenario />}
+      {step === 4 && <WizardStep4Settings />}
+      {step === 5 && <WizardStep5Frames />}
+      {step === 6 && <WizardStep6Video />}
     </div>
   )
 }

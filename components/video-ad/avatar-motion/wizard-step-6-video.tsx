@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   ArrowLeft,
   Loader2,
@@ -18,17 +19,19 @@ import {
   Play,
   Merge,
 } from 'lucide-react'
+import { WizardNavigation } from './wizard-navigation-button'
 import { useAvatarMotionWizard, SceneVideo } from './wizard-context'
 
 // 생성 상태
-type VideoGenerationStatus = 'idle' | 'generating_scenes' | 'merging' | 'completed' | 'error'
+type VideoGenerationStatus = 'idle' | 'generating_scenes' | 'scenes_completed' | 'merging' | 'completed' | 'error'
 
-export function WizardStep5() {
+export function WizardStep6Video() {
   const {
     getSelectedScenario,
     sceneKeyframes,
     sceneCount,
     sceneDurations,
+    setSceneDurations,
     movementAmplitudes,
     resolution,
     aspectRatio,
@@ -58,9 +61,21 @@ export function WizardStep5() {
     draftId,
   } = useAvatarMotionWizard()
 
+  const router = useRouter()
+
   const [status, setStatus] = useState<VideoGenerationStatus>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [currentGeneratingScene, setCurrentGeneratingScene] = useState(0)
+
+  // 완료 버튼 병합 중 상태 (별도 화면 없이 버튼만 로딩)
+  const [isCompletingMerge, setIsCompletingMerge] = useState(false)
+
+  // 씬별 재생성 모달 상태
+  const [showRegenerateModal, setShowRegenerateModal] = useState(false)
+  const [regeneratingSceneIndex, setRegeneratingSceneIndex] = useState<number | null>(null)
+  const [regeneratePrompt, setRegeneratePrompt] = useState('')
+  const [regenerateDuration, setRegenerateDuration] = useState(3)
+  const [isRegenerating, setIsRegenerating] = useState(false)
 
   // 중복 생성 방지
   const generationStartedRef = useRef(false)
@@ -147,7 +162,7 @@ export function WizardStep5() {
     }
   }, [additionalPrompt, resolution, pollVideoStatus])
 
-  // 모든 씬 영상 순차 생성
+  // 모든 씬 영상 병렬 생성
   const generateAllSceneVideos = useCallback(async () => {
     if (sceneKeyframes.length < sceneCount) {
       setErrorMessage('프레임 이미지가 부족합니다. 이전 단계를 완료해주세요.')
@@ -160,26 +175,29 @@ export function WizardStep5() {
     setErrorMessage(null)
     setGenerationProgress(0)
 
-    // 씬 비디오 초기화
+    // 씬 비디오 초기화 (모두 generating 상태)
     const initialVideos: SceneVideo[] = Array.from({ length: sceneCount }, (_, i) => ({
       sceneIndex: i,
       videoUrl: null,
       requestId: null,
       provider: 'wavespeed',
-      status: 'pending',
+      status: 'generating',
     }))
     setSceneVideos(initialVideos)
 
     const scenes = selectedScenario?.scenes || []
     const hasMultiScene = scenes.length > 0
 
-    for (let i = 0; i < sceneCount; i++) {
-      setCurrentGeneratingScene(i)
+    // 완료된 영상 URL 추적 (state와 별도로)
+    const completedVideoUrls: (string | null)[] = new Array(sceneCount).fill(null)
+    let completedCount = 0
 
+    // 모든 씬에 대해 병렬로 영상 생성
+    const videoPromises = Array.from({ length: sceneCount }, async (_, i) => {
       const keyframe = sceneKeyframes[i]
       if (!keyframe?.imageUrl) {
         updateSceneVideo(i, { status: 'failed', error: '프레임 이미지 없음' })
-        continue
+        return { index: i, success: false }
       }
 
       // 해당 씬의 모션 프롬프트 가져오기
@@ -188,50 +206,48 @@ export function WizardStep5() {
       const duration = sceneDurations[i] || 5
       const amplitude = movementAmplitudes[i] || 'auto'
 
-      // 상태를 generating으로 업데이트
-      updateSceneVideo(i, { status: 'generating' })
-
       // 영상 생성
       const videoUrl = await generateSceneVideo(i, keyframe.imageUrl, motionPrompt, duration, amplitude)
 
       if (videoUrl) {
+        completedVideoUrls[i] = videoUrl
+        completedCount++
         updateSceneVideo(i, { status: 'completed', videoUrl })
+        // 진행률 업데이트 (80%까지 씬 생성)
+        setGenerationProgress((completedCount / sceneCount) * 80)
+        return { index: i, success: true, videoUrl }
       } else {
         updateSceneVideo(i, { status: 'failed', error: '영상 생성 실패' })
+        return { index: i, success: false }
       }
+    })
 
-      // 진행률 업데이트
-      setGenerationProgress(((i + 1) / sceneCount) * 80) // 80%까지 씬 생성
-    }
+    // 모든 영상 생성 완료 대기
+    const results = await Promise.all(videoPromises)
 
     setIsGeneratingVideo(false)
 
     // 모든 씬 영상이 완료되었는지 확인
-    const updatedVideos = sceneVideos
-    const allCompleted = updatedVideos.every(sv => sv.status === 'completed' && sv.videoUrl)
+    const allCompleted = results.every(r => r.success)
+    const validVideoUrls = completedVideoUrls.filter((url): url is string => url !== null)
 
-    if (allCompleted) {
-      // 영상 병합 시작
-      await mergeVideos()
+    if (allCompleted && validVideoUrls.length === sceneCount) {
+      // 모든 씬 생성 완료 - 씬별 확인 화면으로 전환 (자동 병합하지 않음)
+      setGenerationProgress(80)
+      setStatus('scenes_completed')
     } else {
       setStatus('error')
       setErrorMessage('일부 씬 영상 생성에 실패했습니다')
     }
-  }, [sceneKeyframes, sceneCount, selectedScenario, sceneDurations, movementAmplitudes, sceneVideos, setSceneVideos, updateSceneVideo, setIsGeneratingVideo, setGenerationProgress, generateSceneVideo])
+  }, [sceneKeyframes, sceneCount, selectedScenario, sceneDurations, movementAmplitudes, setSceneVideos, updateSceneVideo, setIsGeneratingVideo, setGenerationProgress, generateSceneVideo])
 
-  // 영상 병합
-  const mergeVideos = useCallback(async () => {
+  // 영상 병합 (URL을 직접 전달받는 버전)
+  const mergeVideosWithUrls = useCallback(async (videoUrls: string[]) => {
     setStatus('merging')
     setIsMergingVideos(true)
     setGenerationProgress(85)
 
     try {
-      // 완료된 씬 영상 URL 수집
-      const videoUrls = sceneVideos
-        .filter(sv => sv.status === 'completed' && sv.videoUrl)
-        .sort((a, b) => a.sceneIndex - b.sceneIndex)
-        .map(sv => sv.videoUrl as string)
-
       if (videoUrls.length < sceneCount) {
         throw new Error('병합할 영상이 부족합니다')
       }
@@ -257,7 +273,6 @@ export function WizardStep5() {
         await saveDraft({
           status: 'COMPLETED',
           videoUrl: data.mergedVideoUrl,
-          sceneVideos,
         })
       } else {
         throw new Error('병합된 영상 URL이 없습니다')
@@ -269,9 +284,134 @@ export function WizardStep5() {
     } finally {
       setIsMergingVideos(false)
     }
-  }, [sceneVideos, sceneCount, setIsMergingVideos, setResultVideoUrl, setGenerationProgress, saveDraft])
+  }, [sceneCount, setIsMergingVideos, setResultVideoUrl, setGenerationProgress, saveDraft])
 
-  // Step 5 진입 시 자동으로 영상 생성 시작
+  // 영상 병합 (state에서 URL을 가져오는 기존 버전 - 재시도용)
+  const mergeVideos = useCallback(async () => {
+    // 완료된 씬 영상 URL 수집
+    const videoUrls = sceneVideos
+      .filter(sv => sv.status === 'completed' && sv.videoUrl)
+      .sort((a, b) => a.sceneIndex - b.sceneIndex)
+      .map(sv => sv.videoUrl as string)
+
+    await mergeVideosWithUrls(videoUrls)
+  }, [sceneVideos, mergeVideosWithUrls])
+
+  // 씬별 재생성 모달 열기
+  const openRegenerateModal = (sceneIndex: number) => {
+    const scene = selectedScenario?.scenes?.[sceneIndex]
+    setRegeneratingSceneIndex(sceneIndex)
+    setRegeneratePrompt('')
+    setRegenerateDuration(sceneDurations[sceneIndex] || scene?.duration || 3)
+    setShowRegenerateModal(true)
+  }
+
+  // 씬별 재생성 실행
+  const handleRegenerateScene = async () => {
+    if (regeneratingSceneIndex === null) return
+
+    const sceneIndex = regeneratingSceneIndex
+    const keyframe = sceneKeyframes[sceneIndex]
+    if (!keyframe?.imageUrl) {
+      setErrorMessage('프레임 이미지가 없습니다')
+      return
+    }
+
+    setIsRegenerating(true)
+    setShowRegenerateModal(false)
+    updateSceneVideo(sceneIndex, { status: 'generating', videoUrl: null })
+
+    try {
+      const scenes = selectedScenario?.scenes || []
+      const scene = scenes[sceneIndex]
+      let motionPrompt = scene?.motionPromptEN || selectedScenario?.motionPromptEN || ''
+
+      // 사용자 추가 프롬프트 적용
+      if (regeneratePrompt.trim()) {
+        motionPrompt = `${motionPrompt}. Additional: ${regeneratePrompt}`
+      }
+
+      const amplitude = movementAmplitudes[sceneIndex] || 'auto'
+
+      // 영상 재생성
+      const videoUrl = await generateSceneVideo(
+        sceneIndex,
+        keyframe.imageUrl,
+        motionPrompt,
+        regenerateDuration,
+        amplitude
+      )
+
+      if (videoUrl) {
+        updateSceneVideo(sceneIndex, { status: 'completed', videoUrl })
+        // 씬 시간 업데이트
+        const newDurations = [...sceneDurations]
+        newDurations[sceneIndex] = regenerateDuration
+        setSceneDurations(newDurations)
+      } else {
+        updateSceneVideo(sceneIndex, { status: 'failed', error: '재생성 실패' })
+      }
+    } catch (error) {
+      console.error('씬 재생성 오류:', error)
+      updateSceneVideo(sceneIndex, { status: 'failed', error: '재생성 실패' })
+    } finally {
+      setIsRegenerating(false)
+      setRegeneratingSceneIndex(null)
+      setRegeneratePrompt('')
+    }
+  }
+
+  // 완료 버튼 핸들러 (씬 확인 후 병합 → 상세 페이지 이동)
+  const handleComplete = async () => {
+    const videoUrls = sceneVideos
+      .filter(sv => sv.status === 'completed' && sv.videoUrl)
+      .sort((a, b) => a.sceneIndex - b.sceneIndex)
+      .map(sv => sv.videoUrl as string)
+
+    if (videoUrls.length !== sceneCount) {
+      setErrorMessage('모든 씬 영상이 완료되지 않았습니다')
+      return
+    }
+
+    setIsCompletingMerge(true)
+    setErrorMessage(null)
+
+    try {
+      // 영상 병합 API 호출
+      const response = await fetch('/api/avatar-motion/merge-videos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoUrls }),
+      })
+
+      if (!response.ok) {
+        throw new Error('영상 병합 요청 실패')
+      }
+
+      const data = await response.json()
+
+      if (data.mergedVideoUrl) {
+        // DB에 완료 상태 저장
+        await saveDraft({
+          status: 'COMPLETED',
+          videoUrl: data.mergedVideoUrl,
+        })
+
+        // 상세 페이지로 이동
+        if (draftId) {
+          router.push(`/dashboard/video-ad/${draftId}`)
+        }
+      } else {
+        throw new Error('병합된 영상 URL이 없습니다')
+      }
+    } catch (error) {
+      console.error('영상 병합 오류:', error)
+      setErrorMessage(error instanceof Error ? error.message : '영상 병합에 실패했습니다')
+      setIsCompletingMerge(false)
+    }
+  }
+
+  // Step 6 진입 시 자동으로 영상 생성 시작
   useEffect(() => {
     // 이미 완료된 영상이 있으면 스킵
     if (resultVideoUrl) {
@@ -378,13 +518,13 @@ export function WizardStep5() {
 
             <h3 className="text-xl font-semibold text-foreground mt-8">
               {status === 'merging'
-                ? '영상 병합 중...'
-                : `씬 ${currentGeneratingScene + 1}/${sceneCount} 영상 생성 중...`}
+                ? '영상을 합치고 있어요'
+                : '씬 영상을 생성하고 있어요'}
             </h3>
             <p className="text-muted-foreground mt-2">
               {status === 'merging'
-                ? '모든 씬 영상을 하나로 합치고 있습니다'
-                : 'Vidu Q2가 모션을 생성하고 있습니다'}
+                ? '모든 장면을 하나로 합치고 있습니다'
+                : '각 장면의 모션 영상을 만들고 있어요'}
             </p>
 
             {/* 진행률 바 */}
@@ -469,6 +609,233 @@ export function WizardStep5() {
             이전
           </button>
         </div>
+      </div>
+    )
+  }
+
+  // 씬별 확인 화면 (병합 전)
+  if (status === 'scenes_completed') {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        {/* 헤더 */}
+        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+            <Check className="w-5 h-5 text-green-500" />
+          </div>
+          <div>
+            <h3 className="font-medium text-foreground">씬 영상 생성 완료</h3>
+            <p className="text-sm text-muted-foreground">
+              각 씬을 확인하고 필요하면 수정하세요. 완료 버튼을 누르면 영상이 합쳐집니다.
+            </p>
+          </div>
+        </div>
+
+        {/* 씬별 영상 그리드 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {sceneVideos.map((sv, i) => {
+            const scene = selectedScenario?.scenes?.[i]
+            const isThisSceneRegenerating = isRegenerating && regeneratingSceneIndex === i
+
+            return (
+              <div
+                key={i}
+                className="bg-card border border-border rounded-xl overflow-hidden"
+              >
+                {/* 영상 프리뷰 */}
+                <div className={`relative ${aspectRatio === '9:16' ? 'aspect-[9/16]' : aspectRatio === '16:9' ? 'aspect-[16/9]' : 'aspect-square'}`}>
+                  {isThisSceneRegenerating ? (
+                    <div className="absolute inset-0 bg-background flex flex-col items-center justify-center">
+                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                      <p className="text-sm text-muted-foreground mt-2">재생성 중...</p>
+                    </div>
+                  ) : sv.status === 'completed' && sv.videoUrl ? (
+                    <video
+                      src={sv.videoUrl}
+                      className="w-full h-full object-cover"
+                      controls
+                      loop
+                      muted
+                      playsInline
+                    />
+                  ) : sv.status === 'failed' ? (
+                    <div className="absolute inset-0 bg-red-500/10 flex flex-col items-center justify-center">
+                      <AlertCircle className="w-8 h-8 text-red-500" />
+                      <p className="text-sm text-red-500 mt-2">생성 실패</p>
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 bg-secondary flex items-center justify-center">
+                      <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+
+                {/* 씬 정보 */}
+                <div className="p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-foreground">
+                      씬 {i + 1}: {scene?.title || '씬'}
+                    </span>
+                    <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded">
+                      {sceneDurations[i]}초
+                    </span>
+                  </div>
+                  {scene?.description && (
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+                      {scene.description}
+                    </p>
+                  )}
+
+                  {/* 재생성 버튼 */}
+                  <button
+                    onClick={() => openRegenerateModal(i)}
+                    disabled={isRegenerating || isCompletingMerge}
+                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-sm text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors border border-border disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    수정하기
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* 영상 정보 요약 */}
+        <div className="bg-secondary/30 rounded-xl p-4">
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <span className="flex items-center gap-1.5 text-foreground">
+              <Layers className="w-4 h-4 text-primary" />
+              {sceneCount}개 씬
+            </span>
+            <span className="text-muted-foreground">|</span>
+            <span className="flex items-center gap-1.5 text-foreground">
+              <Clock className="w-4 h-4 text-primary" />
+              총 {getTotalDuration()}초
+            </span>
+            <span className="text-muted-foreground">|</span>
+            <span className="flex items-center gap-1.5 text-foreground">
+              <Play className="w-4 h-4 text-primary" />
+              {resolution}
+            </span>
+          </div>
+        </div>
+
+        {/* 에러 메시지 */}
+        {errorMessage && (
+          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-500">
+            {errorMessage}
+          </div>
+        )}
+
+        {/* 하단 버튼 */}
+        <div className="flex gap-3">
+          <button
+            onClick={goToPrevStep}
+            disabled={isCompletingMerge}
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            이전
+          </button>
+          <button
+            onClick={handleComplete}
+            disabled={isRegenerating || isCompletingMerge || completedSceneVideos < sceneCount}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isCompletingMerge ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                영상 합치는 중...
+              </>
+            ) : isRegenerating ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                재생성 중...
+              </>
+            ) : (
+              <>
+                <Check className="w-4 h-4" />
+                완료
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* 씬별 재생성 모달 */}
+        {showRegenerateModal && regeneratingSceneIndex !== null && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-background rounded-2xl shadow-xl w-full max-w-md">
+              <div className="p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <RefreshCw className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">
+                      씬 {regeneratingSceneIndex + 1} 수정
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      추가 지시사항이나 시간을 조정하세요
+                    </p>
+                  </div>
+                </div>
+
+                {/* 추가 프롬프트 */}
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">
+                    추가 지시사항 (선택)
+                  </label>
+                  <textarea
+                    value={regeneratePrompt}
+                    onChange={(e) => setRegeneratePrompt(e.target.value)}
+                    placeholder="예: 더 역동적으로, 미소를 더 밝게, 천천히 움직이게..."
+                    rows={3}
+                    className="w-full px-4 py-3 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                  />
+                </div>
+
+                {/* 시간 조정 */}
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">
+                    씬 시간
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min="2"
+                      max="5"
+                      value={regenerateDuration}
+                      onChange={(e) => setRegenerateDuration(parseInt(e.target.value))}
+                      className="flex-1 h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                    />
+                    <div className="w-16 px-2 py-1 bg-background border border-border rounded text-center text-sm font-medium">
+                      {regenerateDuration}초
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => {
+                      setShowRegenerateModal(false)
+                      setRegeneratingSceneIndex(null)
+                      setRegeneratePrompt('')
+                    }}
+                    className="flex-1 px-4 py-2.5 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={handleRegenerateScene}
+                    className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    재생성
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
