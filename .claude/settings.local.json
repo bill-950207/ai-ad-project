@@ -43,7 +43,10 @@
       "Skill(ralph-loop:cancel-ralph:*)",
       "Bash(wc:*)",
       "Bash(test:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh auth status:*)",
+      "Bash(git worktree add:*)"
     ]
   }
 }
