@@ -634,7 +634,7 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
 
       // 아바타 정보 복원
       if (draft.avatar_id || draft.ai_avatar_options) {
-        const isAiGenerated = !draft.avatar_id && draft.ai_avatar_options
+        const isAiGenerated = draft.avatar_id === 'ai-generated' || (!draft.avatar_id && draft.ai_avatar_options)
         let aiOptions = null
         try {
           aiOptions = draft.ai_avatar_options ? JSON.parse(draft.ai_avatar_options) : null
@@ -642,33 +642,90 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
           // JSON 파싱 실패 시 무시
         }
 
-        setSelectedAvatarInfo({
-          type: isAiGenerated ? 'ai-generated' : (draft.outfit_id ? 'outfit' : 'avatar'),
-          avatarId: draft.avatar_id || '',
-          avatarName: isAiGenerated ? 'AI 생성 아바타' : '아바타',
-          outfitId: draft.outfit_id,
-          imageUrl: draft.avatar_image_url || '',
-          displayName: isAiGenerated ? 'AI 생성 아바타' : '아바타',
-        })
-
         if (isAiGenerated && aiOptions) {
+          // AI 생성 아바타 복원
+          setSelectedAvatarInfo({
+            type: 'ai-generated',
+            avatarId: '',
+            avatarName: 'AI 생성 아바타',
+            outfitId: undefined,
+            imageUrl: aiOptions.imageUrl || draft.avatar_image_url || '',
+            displayName: 'AI 생성 아바타',
+          })
           setSelectedAiAvatarIndex(aiOptions.index)
           setSelectedAiAvatarUrl(aiOptions.imageUrl)
           setSelectedAiAvatarDescription(aiOptions.description)
           if (aiOptions.options) {
             setGeneratedAvatarOptions(aiOptions.options)
           }
+        } else if (draft.avatar_id && draft.avatar_id !== 'ai-generated') {
+          // 일반 아바타 복원 (API로 완전한 정보 불러오기)
+          try {
+            const avatarRes = await fetch(`/api/avatars/${draft.avatar_id}`)
+            if (avatarRes.ok) {
+              const avatarData = await avatarRes.json()
+              const avatar = avatarData.avatar
+
+              // outfit_id가 있으면 의상 정보도 불러오기
+              let outfitImageUrl = draft.avatar_image_url
+              if (draft.outfit_id && avatar?.outfits) {
+                const outfit = avatar.outfits.find((o: { id: string }) => o.id === draft.outfit_id)
+                if (outfit?.image_url) {
+                  outfitImageUrl = outfit.image_url
+                }
+              }
+
+              setSelectedAvatarInfo({
+                type: draft.outfit_id ? 'outfit' : 'avatar',
+                avatarId: draft.avatar_id,
+                avatarName: avatar?.name || '아바타',
+                outfitId: draft.outfit_id,
+                imageUrl: outfitImageUrl || avatar?.image_url || '',
+                displayName: avatar?.name || '아바타',
+              })
+            }
+          } catch (error) {
+            console.error('아바타 정보 로드 오류:', error)
+            // 최소한의 정보로 설정
+            setSelectedAvatarInfo({
+              type: draft.outfit_id ? 'outfit' : 'avatar',
+              avatarId: draft.avatar_id,
+              avatarName: '아바타',
+              outfitId: draft.outfit_id,
+              imageUrl: draft.avatar_image_url || '',
+              displayName: '아바타',
+            })
+          }
         }
       }
 
-      // 제품 정보 복원 (간단히 ID만)
+      // 제품 정보 복원 (API로 완전한 정보 불러오기)
       if (draft.product_id) {
-        setSelectedProduct({
-          id: draft.product_id,
-          name: '',
-          rembg_image_url: null,
-          image_url: null,
-        })
+        try {
+          const productRes = await fetch(`/api/ad-products/${draft.product_id}`)
+          if (productRes.ok) {
+            const productData = await productRes.json()
+            if (productData.product) {
+              setSelectedProduct({
+                id: productData.product.id,
+                name: productData.product.name || '',
+                description: productData.product.description || '',
+                selling_points: productData.product.selling_points || [],
+                rembg_image_url: productData.product.rembg_image_url,
+                image_url: productData.product.image_url,
+              })
+            }
+          }
+        } catch (error) {
+          console.error('제품 정보 로드 오류:', error)
+          // 최소한의 정보로 설정
+          setSelectedProduct({
+            id: draft.product_id,
+            name: '제품',
+            rembg_image_url: null,
+            image_url: null,
+          })
+        }
       }
 
       // 스토리 방식 복원

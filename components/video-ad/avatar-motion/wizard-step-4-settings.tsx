@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import {
-  ArrowLeft,
-  ArrowRight,
   Loader2,
   Monitor,
   Smartphone,
@@ -32,6 +30,7 @@ import {
   VideoResolution,
   MovementAmplitude,
 } from './wizard-context'
+import { WizardNavigation } from './wizard-navigation-button'
 
 // 화면 비율 옵션
 const ASPECT_RATIO_OPTIONS: {
@@ -664,32 +663,14 @@ export function WizardStep4Settings() {
       </div>
 
       {/* 네비게이션 버튼 */}
-      <div className="flex gap-3">
-        <button
-          onClick={goToPrevStep}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          이전
-        </button>
-        <button
-          onClick={handleNext}
-          disabled={!canProceedToStep5() || isSaving}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isSaving ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              저장 중...
-            </>
-          ) : (
-            <>
-              다음
-              <ArrowRight className="w-4 h-4" />
-            </>
-          )}
-        </button>
-      </div>
+      <WizardNavigation
+        onPrev={goToPrevStep}
+        onNext={handleNext}
+        canProceed={canProceedToStep5()}
+        loading={isSaving}
+        showNext={true}
+        showPrev={true}
+      />
     </div>
   )
 }

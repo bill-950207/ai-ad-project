@@ -3,8 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Sparkles,
-  ArrowLeft,
-  ArrowRight,
   Loader2,
   Check,
   RefreshCw,
@@ -29,6 +27,7 @@ import {
   ReferenceInfo,
   SceneInfo,
 } from './wizard-context'
+import { WizardNavigation } from './wizard-navigation-button'
 
 export function WizardStep3Scenario() {
   const {
@@ -517,41 +516,15 @@ export function WizardStep3Scenario() {
         </div>
       )}
 
-      {/* 네비게이션 버튼 */}
-      <div className="flex gap-3 pt-4">
-        <button
-          onClick={goToPrevStep}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          이전
-        </button>
-        <button
-          onClick={handleNext}
-          disabled={!canProceedToStep4() || isSaving}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isSaving ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              저장 중...
-            </>
-          ) : (
-            <>
-              다음
-              <ArrowRight className="w-4 h-4" />
-            </>
-          )}
-        </button>
-      </div>
-
-      {/* 안내 메시지 */}
-      {!canProceedToStep4() && storyMethod && (
-        <p className="text-center text-sm text-muted-foreground">
-          {storyMethod === 'ai-auto' && (isGeneratingScenarios ? '시나리오 생성 중...' : '시나리오를 선택해주세요')}
-          {storyMethod === 'reference' && (isAnalyzingReference ? '영상 분석 중...' : '참조할 영상을 업로드해주세요')}
-        </p>
-      )}
+      {/* 네비게이션 버튼 - 조건 충족 시 아래에서 올라옴 */}
+      <WizardNavigation
+        onPrev={goToPrevStep}
+        onNext={handleNext}
+        canProceed={canProceedToStep4()}
+        loading={isSaving}
+        showNext={canProceedToStep4()}
+        showPrev={true}
+      />
 
       {/* 시나리오 수정 모달 */}
       {showModifyModal && (

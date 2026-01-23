@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   ArrowLeft,
-  ArrowRight,
   Play,
   Loader2,
   RefreshCw,
@@ -21,6 +20,7 @@ import {
   MessageSquare,
   RotateCw,
 } from 'lucide-react'
+import { WizardNavigation } from './wizard-navigation-button'
 import { useAvatarMotionWizard, SceneKeyframe } from './wizard-context'
 
 // 생성 단계

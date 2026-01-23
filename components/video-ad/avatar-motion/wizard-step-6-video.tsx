@@ -19,6 +19,7 @@ import {
   Play,
   Merge,
 } from 'lucide-react'
+import { WizardNavigation } from './wizard-navigation-button'
 import { useAvatarMotionWizard, SceneVideo } from './wizard-context'
 
 // 생성 상태
