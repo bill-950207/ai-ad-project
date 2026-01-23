@@ -745,7 +745,6 @@ export function WizardStep5Frames() {
         >
           <Sparkles className="w-4 h-4" />
           영상 생성
-          <ArrowRight className="w-4 h-4" />
         </button>
       </div>
 
