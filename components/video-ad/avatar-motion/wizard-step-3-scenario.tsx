@@ -626,10 +626,24 @@ function DetailedScenarioCard({ scenario, index, isSelected, onSelect, onModify 
           : 'border-border hover:border-primary/50'
       }`}
     >
+      {/* 수정 요청 버튼 (우측 상단) */}
+      <div className="flex justify-end px-4 pt-3">
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onModify()
+          }}
+          className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+          수정 요청
+        </button>
+      </div>
+
       {/* 메인 카드 (클릭 가능) */}
       <button
         onClick={onSelect}
-        className="w-full p-5 text-left"
+        className="w-full px-5 pb-5 text-left"
       >
         <div className="flex items-start gap-4">
           {/* 시나리오 번호 */}
@@ -700,20 +714,6 @@ function DetailedScenarioCard({ scenario, index, isSelected, onSelect, onModify 
           </div>
         </div>
       )}
-
-      {/* 수정 요청 버튼 */}
-      <div className="px-5 pb-4 pt-2">
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onModify()
-          }}
-          className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors border border-border"
-        >
-          <MessageSquare className="w-4 h-4" />
-          수정 요청
-        </button>
-      </div>
     </div>
   )
 }
