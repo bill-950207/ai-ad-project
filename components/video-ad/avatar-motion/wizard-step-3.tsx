@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   ArrowLeft,
   ArrowRight,
@@ -22,6 +22,7 @@ import {
   Play,
   Zap,
   Layers,
+  CheckCircle,
 } from 'lucide-react'
 import {
   useAvatarMotionWizard,
@@ -141,8 +142,69 @@ export function WizardStep3() {
 
   const [isLoadingRecommendation, setIsLoadingRecommendation] = useState(false)
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false)
+  const [autoFilledFromScenario, setAutoFilledFromScenario] = useState(false)
+
+  // 자동 채우기가 한 번만 실행되도록 추적
+  const autoFillAppliedRef = useRef<string | null>(null)
 
   const selectedScenario = getSelectedScenario()
+
+  // AI 추천 시나리오에서 씬 정보가 있으면 자동으로 설정 채우기
+  useEffect(() => {
+    if (!selectedScenario) return
+
+    // 이미 이 시나리오에 대해 자동 채우기를 적용했으면 스킵
+    if (autoFillAppliedRef.current === selectedScenario.id) return
+
+    // 씬 정보가 있는 통합 시나리오인 경우에만 자동 채우기
+    if (selectedScenario.scenes && selectedScenario.scenes.length > 0) {
+      const scenes = selectedScenario.scenes
+      const scenarioSceneCount = selectedScenario.sceneCount || scenes.length
+
+      // 화면 비율 설정
+      if (selectedScenario.aspectRatio) {
+        setAspectRatio(selectedScenario.aspectRatio)
+        // 이미지 크기도 비율에 맞게 설정
+        const sizeMap: Record<AspectRatio, ImageSize> = {
+          '16:9': '1024x576',
+          '9:16': '576x1024',
+          '1:1': '768x768',
+        }
+        setImageSize(sizeMap[selectedScenario.aspectRatio])
+      }
+
+      // 씬 개수 설정
+      setSceneCount(scenarioSceneCount)
+
+      // 씬별 시간 설정
+      const durations = scenes.map(scene => scene.duration || 5)
+      // 씬 개수에 맞게 조정
+      while (durations.length < scenarioSceneCount) {
+        durations.push(5)
+      }
+      setSceneDurations(durations.slice(0, scenarioSceneCount))
+
+      // 씬별 움직임 강도 설정
+      const amplitudes = scenes.map(scene => scene.movementAmplitude || 'auto')
+      // 씬 개수에 맞게 조정
+      while (amplitudes.length < scenarioSceneCount) {
+        amplitudes.push('auto')
+      }
+      setMovementAmplitudes(amplitudes.slice(0, scenarioSceneCount))
+
+      // 자동 채우기 완료 표시
+      autoFillAppliedRef.current = selectedScenario.id
+      setAutoFilledFromScenario(true)
+      setUseAIRecommendation(true)
+
+      console.log('AI 시나리오에서 영상 설정 자동 채우기 완료:', {
+        aspectRatio: selectedScenario.aspectRatio,
+        sceneCount: scenarioSceneCount,
+        durations: durations.slice(0, scenarioSceneCount),
+        amplitudes: amplitudes.slice(0, scenarioSceneCount),
+      })
+    }
+  }, [selectedScenario, setAspectRatio, setImageSize, setSceneCount, setSceneDurations, setMovementAmplitudes, setUseAIRecommendation])
 
   // 화면 비율 변경
   const handleAspectRatioChange = (option: typeof ASPECT_RATIO_OPTIONS[0]) => {
@@ -253,11 +315,37 @@ export function WizardStep3() {
                   <Palette className="w-3 h-3" />
                   {selectedScenario.mood}
                 </span>
-                <span className="flex items-center gap-1">
-                  <Package className="w-3 h-3" />
-                  {selectedScenario.productAppearance.slice(0, 30)}...
-                </span>
+                {selectedScenario.productAppearance && (
+                  <span className="flex items-center gap-1">
+                    <Package className="w-3 h-3" />
+                    {selectedScenario.productAppearance.slice(0, 30)}...
+                  </span>
+                )}
+                {selectedScenario.scenes && selectedScenario.scenes.length > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Layers className="w-3 h-3" />
+                    {selectedScenario.scenes.length}개 씬
+                  </span>
+                )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI 추천 시나리오에서 자동 채우기 완료 알림 */}
+      {autoFilledFromScenario && selectedScenario?.scenes && selectedScenario.scenes.length > 0 && (
+        <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-xl">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                AI 시나리오 설정 자동 적용됨
+              </p>
+              <p className="text-xs text-green-600/80 dark:text-green-400/80 mt-0.5">
+                선택한 시나리오의 화면 비율, 씬 개수, 씬별 시간 및 움직임 설정이 자동으로 적용되었습니다.
+                필요에 따라 아래에서 수정할 수 있습니다.
+              </p>
             </div>
           </div>
         </div>

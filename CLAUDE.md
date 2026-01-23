@@ -644,6 +644,50 @@ docs/logs/YYYY-MM-DD/HH-MM-유형-작업명.md
 - CLAUDE.md 변경 필요 사항
 - 다음 작업 제안
 
+## Git Branch Guidelines
+
+### 중복 세션 작업 시 주의사항
+
+**문제:** 여러 Claude 세션이 동일한 작업 디렉토리를 공유할 경우, 한 세션에서 브랜치를 변경하면 다른 세션도 영향을 받습니다.
+
+**해결책: Git Worktree 사용**
+
+서로 다른 브랜치에서 동시 작업이 필요할 때:
+
+```bash
+# 새 worktree 생성 (별도 디렉토리에서 다른 브랜치 작업)
+git worktree add ../ai_ad_project-[feature-name] [branch-name]
+
+# 예시
+git worktree add ../ai_ad_project-avatar-motion feature/avatar-motion-workflow-refactor
+
+# worktree 목록 확인
+git worktree list
+
+# worktree 제거 (작업 완료 후)
+git worktree remove ../ai_ad_project-[feature-name]
+```
+
+**권장 네이밍:**
+- `ai_ad_project-avatar-motion` - 아바타 모션 작업
+- `ai_ad_project-image-ad` - 이미지 광고 작업
+- `ai_ad_project-[feature]` - 기타 기능 작업
+
+### 브랜치 전환 전 확인사항
+
+1. 현재 브랜치 확인: `git branch --show-current`
+2. 변경사항 확인: `git status --short`
+3. 다른 세션이 같은 디렉토리 사용 중인지 확인
+4. 필요 시 worktree 생성 후 별도 디렉토리에서 작업
+
+### 주요 브랜치
+
+| 브랜치 | 용도 |
+|--------|------|
+| `main` | 프로덕션 브랜치 |
+| `feature/avatar-motion-workflow-refactor` | 아바타 모션 워크플로우 개선 |
+| `feature/remove-background-menu` | 배경 메뉴 제거 작업 |
+
 ## Security Notes
 
 - Never expose service role keys to client
