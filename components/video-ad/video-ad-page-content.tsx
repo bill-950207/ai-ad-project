@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
-import { Plus, Video, Play, Loader2, Edit3, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Video, Play, Loader2, Edit3, ArrowRight, ChevronLeft, ChevronRight, Music } from 'lucide-react'
 import { VideoAdTypeModal, VideoAdCategory } from './video-ad-type-modal'
 
 interface VideoAd {
@@ -26,6 +26,9 @@ interface VideoAd {
   category: string | null
   wizard_step: number | null
   created_at: string
+  bgm_info?: {
+    music_name: string
+  } | null
 }
 
 interface PaginationInfo {
@@ -355,6 +358,16 @@ export function VideoAdPageContent() {
                     </div>
                   )}
                 </div>
+
+                {/* 음악 배지 - 오른쪽 상단 */}
+                {video.bgm_info && video.status === 'COMPLETED' && (
+                  <div className="absolute top-2 right-2 z-10">
+                    <div className="flex items-center gap-1 px-2 py-1 bg-black/70 rounded-full text-white text-xs">
+                      <Music className="w-3 h-3" />
+                      <span className="max-w-[80px] truncate">{video.bgm_info.music_name}</span>
+                    </div>
+                  </div>
+                )}
 
                 {/* 정보 */}
                 <div className="p-3">

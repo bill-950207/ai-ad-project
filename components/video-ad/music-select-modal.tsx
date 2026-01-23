@@ -7,6 +7,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   X,
   Music,
@@ -58,8 +59,9 @@ export interface MusicSelection {
 interface MusicSelectModalProps {
   isOpen: boolean
   onClose: () => void
-  onSelect: (selection: MusicSelection) => void
+  onSelect?: (selection: MusicSelection) => void
   videoDuration: number
+  videoAdId: string
 }
 
 // 분위기 라벨
@@ -96,7 +98,10 @@ export function MusicSelectModal({
   onClose,
   onSelect,
   videoDuration,
+  videoAdId,
 }: MusicSelectModalProps) {
+  const router = useRouter()
+
   // 음악 목록 상태
   const [musicList, setMusicList] = useState<AdMusic[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -233,16 +238,34 @@ export function MusicSelectModal({
     const track = getSelectedTrack()
     if (!selectedMusic || !track) return
 
-    onSelect({
+    stopPreview()
+
+    // 합성 페이지로 이동 (쿼리 파라미터에 정보 전달)
+    const params = new URLSearchParams({
       musicId: selectedMusic.id,
-      musicName: selectedMusic.name,
-      trackIndex: selectedTrackIndex,
-      audioUrl: track.audioUrl,
-      startTime: timeRange[0],
-      endTime: timeRange[1],
-      musicVolume: musicVolume / 100,
+      musicName: encodeURIComponent(selectedMusic.name),
+      trackIndex: String(selectedTrackIndex),
+      startTime: String(timeRange[0]),
+      endTime: String(timeRange[1]),
+      musicVolume: String(musicVolume / 100),
+      imageUrl: encodeURIComponent(track.imageUrl || ''),
     })
+
     onClose()
+    router.push(`/dashboard/video-ad/${videoAdId}/merge-music?${params.toString()}`)
+
+    // 레거시 콜백 지원 (필요한 경우)
+    if (onSelect) {
+      onSelect({
+        musicId: selectedMusic.id,
+        musicName: selectedMusic.name,
+        trackIndex: selectedTrackIndex,
+        audioUrl: track.audioUrl,
+        startTime: timeRange[0],
+        endTime: timeRange[1],
+        musicVolume: musicVolume / 100,
+      })
+    }
   }
 
   // 시간 포맷

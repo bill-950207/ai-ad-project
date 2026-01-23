@@ -36,7 +36,7 @@ import {
   Music,
 } from 'lucide-react'
 import Image from 'next/image'
-import { MusicSelectModal, MusicSelection } from '@/components/video-ad/music-select-modal'
+import { MusicSelectModal } from '@/components/video-ad/music-select-modal'
 
 interface SceneKeyframe {
   sceneIndex: number
@@ -125,7 +125,6 @@ export default function VideoAdDetailPage() {
 
   // 음악 추가 상태
   const [showMusicModal, setShowMusicModal] = useState(false)
-  const [isAddingMusic, setIsAddingMusic] = useState(false)
 
   // 비디오 컨트롤 상태
   const [isPlaying, setIsPlaying] = useState(false)
@@ -260,45 +259,6 @@ export default function VideoAdDetailPage() {
   const handleFullscreen = () => {
     if (videoRef.current?.requestFullscreen) {
       videoRef.current.requestFullscreen()
-    }
-  }
-
-  // 음악 추가 핸들러
-  const handleAddMusic = async (selection: MusicSelection) => {
-    if (!videoAd) return
-
-    setShowMusicModal(false)
-    setIsAddingMusic(true)
-
-    try {
-      const res = await fetch(`/api/video-ads/${videoAd.id}/add-music`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          musicId: selection.musicId,
-          trackIndex: selection.trackIndex,
-          startTime: selection.startTime,
-          endTime: selection.endTime,
-          musicVolume: selection.musicVolume,
-        }),
-      })
-
-      if (res.ok) {
-        const data = await res.json()
-        setVideoAd(data.videoAd)
-        // 비디오 리로드
-        if (videoRef.current) {
-          videoRef.current.load()
-        }
-      } else {
-        const error = await res.json()
-        alert(error.error || '음악 추가에 실패했습니다.')
-      }
-    } catch (error) {
-      console.error('음악 추가 오류:', error)
-      alert('음악 추가 중 오류가 발생했습니다.')
-    } finally {
-      setIsAddingMusic(false)
     }
   }
 
@@ -481,14 +441,9 @@ export default function VideoAdDetailPage() {
                 </button>
                 <button
                   onClick={() => setShowMusicModal(true)}
-                  disabled={isAddingMusic}
-                  className="flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-lg hover:bg-secondary/80 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-lg hover:bg-secondary/80 transition-colors"
                 >
-                  {isAddingMusic ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Music className="w-4 h-4" />
-                  )}
+                  <Music className="w-4 h-4" />
                   {videoAd.bgm_info ? '음악 변경' : '음악 추가'}
                 </button>
                 <button
@@ -861,8 +816,8 @@ export default function VideoAdDetailPage() {
       <MusicSelectModal
         isOpen={showMusicModal}
         onClose={() => setShowMusicModal(false)}
-        onSelect={handleAddMusic}
         videoDuration={videoAd.video_duration || 10}
+        videoAdId={videoAd.id}
       />
     </div>
   )

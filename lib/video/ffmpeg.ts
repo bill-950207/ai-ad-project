@@ -429,7 +429,11 @@ export async function mergeVideoWithAudio(options: {
         .on('error', (err: Error) => {
           console.error('FFmpeg merge error:', err)
           // 원본 비디오에 오디오가 없는 경우 다시 시도
-          if (err.message.includes('Stream map') || err.message.includes('does not contain')) {
+          // - "Stream map" / "does not contain": 오디오 스트림 없음
+          // - "Invalid argument": 필터그래프 바인딩 실패 (오디오 없음)
+          const noAudioPatterns = ['Stream map', 'does not contain', 'Invalid argument', 'filtergraph']
+          const isNoAudioError = noAudioPatterns.some(p => err.message.includes(p))
+          if (isNoAudioError) {
             console.log('Retrying without original audio...')
             mergeWithoutOriginalAudio()
               .then(resolve)
