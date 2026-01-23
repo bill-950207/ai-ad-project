@@ -186,7 +186,6 @@ interface SceneVideoStatus {
 // 드래그 가능한 씬 영상 카드 컴포넌트
 function SortableVideoCard({
   sceneVideo,
-  totalCount,
   onRegenerate,
   onDownload,
   isRegenerating,
@@ -194,7 +193,6 @@ function SortableVideoCard({
   regeneratingSceneIndex,
 }: {
   sceneVideo: SceneVideoStatus
-  totalCount: number
   onRegenerate: (sceneIndex: number) => void
   onDownload: (url: string, index: number) => void
   isRegenerating: boolean
@@ -213,7 +211,6 @@ function SortableVideoCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    width: totalCount === 1 ? '100%' : totalCount === 2 ? 'calc(50% - 8px)' : 'min(320px, 80vw)',
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 10 : 1,
   }
@@ -227,7 +224,6 @@ function SortableVideoCard({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex-shrink-0 snap-start"
     >
       <div className={`bg-secondary/20 rounded-xl overflow-hidden border-2 transition-all ${
         isDragging ? 'ring-2 ring-primary shadow-lg border-primary' :
@@ -1157,23 +1153,27 @@ export function WizardStep6() {
                           items={[...sceneVideoStatuses].sort((a, b) => a.sceneIndex - b.sceneIndex).map(s => `video-${s.sceneIndex}`)}
                           strategy={horizontalListSortingStrategy}
                         >
-                          <div className="-mx-4 sm:-mx-6 px-4 sm:px-6 overflow-x-auto scrollbar-hide">
-                            <div className="flex gap-4 pb-4 pt-1 min-w-min">
-                              {[...sceneVideoStatuses]
-                                .sort((a, b) => a.sceneIndex - b.sceneIndex)
-                                .map((sceneVideo) => (
-                                  <SortableVideoCard
-                                    key={sceneVideo.requestId || `scene-${sceneVideo.sceneIndex}`}
-                                    sceneVideo={sceneVideo}
-                                    totalCount={sceneVideoStatuses.length}
-                                    onRegenerate={(sceneIndex) => setModalSceneIndex(sceneIndex)}
-                                    onDownload={handleDownload}
-                                    isRegenerating={regeneratingSceneIndex === sceneVideo.sceneIndex}
-                                    isMergingVideos={isMergingVideos}
-                                    regeneratingSceneIndex={regeneratingSceneIndex}
-                                  />
-                                ))}
-                            </div>
+                          <div className={`grid gap-4 ${
+                            sceneVideoStatuses.length === 1 ? 'grid-cols-1' :
+                            sceneVideoStatuses.length === 2 ? 'grid-cols-2' :
+                            sceneVideoStatuses.length === 3 ? 'grid-cols-3' :
+                            sceneVideoStatuses.length === 4 ? 'grid-cols-2' :
+                            sceneVideoStatuses.length <= 6 ? 'grid-cols-3' :
+                            'grid-cols-4'
+                          }`}>
+                            {[...sceneVideoStatuses]
+                              .sort((a, b) => a.sceneIndex - b.sceneIndex)
+                              .map((sceneVideo) => (
+                                <SortableVideoCard
+                                  key={sceneVideo.requestId || `scene-${sceneVideo.sceneIndex}`}
+                                  sceneVideo={sceneVideo}
+                                  onRegenerate={(sceneIndex) => setModalSceneIndex(sceneIndex)}
+                                  onDownload={handleDownload}
+                                  isRegenerating={regeneratingSceneIndex === sceneVideo.sceneIndex}
+                                  isMergingVideos={isMergingVideos}
+                                  regeneratingSceneIndex={regeneratingSceneIndex}
+                                />
+                              ))}
                           </div>
                         </SortableContext>
                       </DndContext>
