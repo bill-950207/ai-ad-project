@@ -121,47 +121,48 @@ export const STORY_GENERATION_SYSTEM = CINEMATIC_SCENARIO_SYSTEM
 // ============================================================
 
 /** 멀티 씬 시나리오 생성 시스템 프롬프트 */
-export const MULTI_SCENE_SCENARIO_SYSTEM = `You are an award-winning film director specializing in multi-scene cinematic short-form video ads.
+export const MULTI_SCENE_SCENARIO_SYSTEM = `You are a commercial director specializing in fast-paced, multi-scene short-form video ads.
 
-Your task is to create COMPELLING VIDEO STORIES told across MULTIPLE SCENES. Each scene is a separate video segment (1-8 seconds) that will be concatenated together.
+Your task is to create DYNAMIC VIDEO STORIES with QUICK SCENE TRANSITIONS for modern social media platforms.
 
-=== MULTI-SCENE STORYTELLING ===
+=== MULTI-SCENE EDITING PRINCIPLES ===
 
-1. NARRATIVE ARC: The scenes together tell a complete mini-story
-   - Scene 1: Setup/Introduction - establish the context
-   - Middle scenes: Development/Action - build the story
-   - Final scene: Payoff/Resolution - deliver the message
+1. RHYTHM & PACING:
+   - Vary scene durations for visual rhythm
+   - 2초 as default (cost-effective, punchy)
+   - 3-5초 for key moments only
+   - Never same duration consecutively
 
-2. SCENE TRANSITIONS: Each scene should flow naturally to the next
-   - Visual continuity (consistent lighting, color grading)
-   - Story continuity (logical progression of action)
-   - Emotional continuity (building or shifting mood)
+2. NARRATIVE FLOW:
+   - Scene 1: Hook (grab attention immediately)
+   - Middle scenes: Build momentum with variety
+   - Final scene: Payoff with product/message
 
-3. SCENE DIVERSITY: Each scene should be visually distinct
-   - Different camera angles or distances
-   - Different poses or actions
-   - Different expressions or interactions with product
+3. VISUAL VARIETY:
+   - Alternate: closeup ↔ wide, static ↔ motion
+   - Each scene = new angle OR new action
+   - Jump cuts create energy
 
-4. PRODUCT INTEGRATION: Product appears naturally throughout
-   - Can appear in some or all scenes
-   - Natural placement and interaction
-   - Never feels forced
+4. PRODUCT INTEGRATION:
+   - Natural placement, not forced
+   - Build anticipation before reveal
+   - Can be hero or background
 
-5. PACING: Scene durations should match the content
-   - Quick cuts (1-3s) for dynamic/action moments
-   - Medium (4-5s) for standard storytelling
-   - Longer (6-8s) for emotional/showcase moments`
+5. MOVEMENT AMPLITUDE per scene length:
+   - 2초 scenes: "small" (subtle gestures, micro-expressions)
+   - 3-4초 scenes: "medium" (natural movements)
+   - 5초 scenes: "large" (significant action)`
 
 /** 멀티 씬 시나리오 생성 템플릿 */
 export const MULTI_SCENE_SCENARIO_TEMPLATE: PromptTemplate = {
-  id: 'multi-scene-scenario-v1',
+  id: 'multi-scene-scenario-v2',
   name: '멀티 씬 시나리오 생성',
-  description: '여러 씬으로 구성된 영화적 시나리오 생성',
+  description: '빠른 씬 전환의 멀티 씬 시나리오 생성',
   category: 'avatar-motion',
   targetModel: 'gemini',
   version: {
-    version: '1.0.0',
-    createdAt: '2025-01-21',
+    version: '2.0.0',
+    createdAt: '2025-01-23',
   },
   variables: [
     'productName',
@@ -181,42 +182,24 @@ Model: {{avatarType}} - {{avatarDescription}}
 Scenes: {{sceneCount}}, Total Duration: ~{{totalDuration}}s
 
 === CONSTRAINTS ===
-- Min 3 scenes, Max 15s total
-- Each scene: 2-4s (prefer 2-3s)
-- movementAmplitude: small(subtle) | medium(normal) | large(dynamic) | auto
+- Exactly {{sceneCount}} scenes, total ~{{totalDuration}}s
+- Duration per scene: 2초 기본, 필요시 3-5초
+- Vary durations for rhythm (never same consecutively)
+- movementAmplitude: small(2초) | medium(3-4초) | large(5초)
 
-=== JSON OUTPUT ===
-{
-  "scenarios": [{
-    "id": "1",
-    "title": "한국어 10자",
-    "description": "한국어 30자",
-    "concept": "한국어 3-4문장",
-    "productAppearance": "제품 등장 방식",
-    "mood": "한국어 2-3단어",
-    "tags": ["태그1", "태그2", "태그3"],
-    "totalDuration": {{totalDuration}},
-    "scenes": [{
-      "sceneIndex": 0,
-      "title": "씬 제목",
-      "description": "한국어 20자",
-      "imageSummary": "한국어 이미지 설명 (예: 침대에서 기지개 켜는 모델)",
-      "videoSummary": "한국어 동작 설명 (예: 천천히 일어나며 미소 짓기)",
-      "firstFramePrompt": "English 60-80 words. Pose, expression, gaze, product position, background, lighting.",
-      "motionPromptEN": "English 40-60 words. Starting pose → movements → expressions → product interaction → ending pose.",
-      "duration": 3,
-      "movementAmplitude": "medium",
-      "location": "장소",
-      "mood": "분위기"
-    }]
-  }]
-}
+=== OUTPUT STRUCTURE ===
 
-=== CHECKLIST ===
-✓ 3 different story concepts
-✓ {{sceneCount}} scenes per scenario, connected story
-✓ firstFramePrompt/motionPromptEN: ENGLISH
-✓ imageSummary/videoSummary/title/description: KOREAN
+JSON with scenarios array containing:
+- id, title(한국어), description(한국어), concept(한국어)
+- productAppearance, mood, tags, totalDuration
+- scenes array with all required fields
+- Each scene: sceneIndex, title, description, imageSummary(한국어), videoSummary(한국어)
+- firstFramePrompt(English 60-80 words), motionPromptEN(English 40-60 words)
+- duration, movementAmplitude, location, mood
+
+=== LANGUAGE RULES ===
+- firstFramePrompt, motionPromptEN: ENGLISH
+- All others: KOREAN
 
 ${JSON_RESPONSE_INSTRUCTION}`,
 }
@@ -225,54 +208,57 @@ ${JSON_RESPONSE_INSTRUCTION}`,
 // 완전 시나리오 생성 프롬프트 (설정 포함)
 // ============================================================
 
-/** 완전 시나리오 생성 시스템 프롬프트 (시네마틱 스타일 + 모델 최적화) */
-export const COMPLETE_SCENARIO_SYSTEM = `You are an award-winning commercial film director creating cinematic product advertisement videos.
+/** 완전 시나리오 생성 시스템 프롬프트 (숏폼 광고 스타일 + 모델 최적화) */
+export const COMPLETE_SCENARIO_SYSTEM = `You are an award-winning commercial director specializing in SHORT-FORM VIDEO ADS for TikTok, Instagram Reels, and YouTube Shorts.
 
-Your task is to create EMOTIONALLY COMPELLING, FILM-QUALITY VIDEO SCENARIOS that feel like mini movies, not advertisements.
+Your task is to create DYNAMIC, ATTENTION-GRABBING VIDEO SCENARIOS with FAST-PACED EDITING that feels like modern social media ads.
 
-Think like a Terrence Malick or Wong Kar-wai directing a luxury brand commercial - poetic, atmospheric, and visually stunning.
+Think like a music video director or Nike/Apple commercial editor - rhythmic, punchy, and visually striking with quick cuts.
 
-=== CINEMATIC FILMMAKING PRINCIPLES ===
+=== SHORT-FORM AD FILMMAKING PRINCIPLES ===
 
-1. PHOTOREALISTIC IMAGERY (CRITICAL - AVOID AI LOOK):
+1. FAST-PACED EDITING (CORE PRINCIPLE):
+   - Quick scene transitions create energy and momentum
+   - Vary scene lengths for rhythm: short-short-longer pattern
+   - Each cut should surprise or reveal something new
+   - Build tension through pacing, release through longer moments
+   - First 2 seconds must HOOK the viewer immediately
+
+2. SCENE DURATION STRATEGY:
+   - DEFAULT: 2 seconds (most cost-effective, punchy)
+   - Use 3-4 seconds for: key product moments, emotional beats, reveals
+   - Use 5 seconds ONLY for: climactic scenes, hero shots
+   - Total: 12-15 seconds (4-8 scenes)
+   - NEVER use same duration for consecutive scenes
+
+3. VISUAL VARIETY (ESSENTIAL FOR QUICK CUTS):
+   - Alternate between: closeup ↔ wide, static ↔ motion
+   - Each scene = different angle OR different action
+   - Jump cuts within same location create energy
+   - Match cuts between scenes create flow
+
+4. PHOTOREALISTIC IMAGERY (AVOID AI LOOK):
    - ${SEEDREAM_OPTIMIZATION.antiAI.skin}
    - ${SEEDREAM_OPTIMIZATION.antiAI.hair}
    - ${SEEDREAM_OPTIMIZATION.antiAI.environment}
    - Candid moments, not posed stock photos
-   - Natural color grading, not oversaturated
 
-2. CINEMATIC LIGHTING (KEY TO AVOIDING AI LOOK):
-   - Golden hour: warm backlight creating rim lighting on hair/shoulders
-   - Window light: soft directional light with natural shadows
-   - Practical lights: lamps, candles creating warm pools of light
-   - NEVER flat, even lighting - always directional with shadows
-   - ALWAYS specify exact light direction: "${SEEDREAM_OPTIMIZATION.lightingDirections[0]}"
+5. CINEMATIC LIGHTING:
+   - ALWAYS directional with shadows (never flat)
+   - Golden hour, window light, practical lights
+   - Specify exact direction: "${SEEDREAM_OPTIMIZATION.lightingDirections[0]}"
 
-3. EMOTIONAL STORYTELLING:
-   - Model as protagonist in a short film, not a presenter
-   - Internal emotions visible through subtle expressions
-   - Moments of genuine connection, contemplation, joy
-   - Product appears naturally in the story, never forced
-   - Each scene has emotional purpose, not just action
+6. PRODUCT INTEGRATION:
+   - Product appears naturally, not forced
+   - Can be hero in some scenes, background in others
+   - Build anticipation before product reveal
 
-4. CINEMATIC CAMERA WORK:
-   - Shallow depth of field (f/1.8-2.8) with beautiful bokeh
-   - Thoughtful composition using rule of thirds
-   - Camera angles that create intimacy or drama
-   - Natural, motivated camera movements
-
-5. ⚠️ SCENE SPECIFICATIONS:
-   - Each scene: 2-5 seconds (prefer 3-4 for cinematic pacing)
-   - 3-5 scenes per video
-   - Total: ≤15 seconds
-   - Slower, more deliberate movements than typical ads
-
-=== SEEDREAM 4.5 IMAGE GENERATION OPTIMIZATION ===
+=== SEEDREAM 4.5 IMAGE OPTIMIZATION ===
 
 For firstFramePrompt (English, 80-100 words):
 ${SEEDREAM_FIRST_FRAME_GUIDE}
 
-Camera specs to use:
+Camera specs:
 - Portrait: ${SEEDREAM_OPTIMIZATION.cameraSpecs.portrait}
 - Closeup: ${SEEDREAM_OPTIMIZATION.cameraSpecs.closeup}
 - Environmental: ${SEEDREAM_OPTIMIZATION.cameraSpecs.environmental}
@@ -280,59 +266,41 @@ Camera specs to use:
 
 Quality ending: "${SEEDREAM_OPTIMIZATION.qualityTags}"
 
-=== VIDU Q2 VIDEO GENERATION OPTIMIZATION ===
+=== VIDU Q2 VIDEO OPTIMIZATION ===
 
-For motionPromptEN (English, 50-70 words):
+For motionPromptEN (English, 40-60 words):
 ${VIDU_MOTION_GUIDE}
 
-Camera movement terms:
-- ${VIDU_OPTIMIZATION.cameraMovements.dollyIn}
-- ${VIDU_OPTIMIZATION.cameraMovements.slowZoom}
-- ${VIDU_OPTIMIZATION.cameraMovements.staticShot}
-- ${VIDU_OPTIMIZATION.cameraMovements.rackFocus}
+Camera movements: ${VIDU_OPTIMIZATION.cameraMovements.dollyIn}, ${VIDU_OPTIMIZATION.cameraMovements.slowZoom}, ${VIDU_OPTIMIZATION.cameraMovements.staticShot}
 
-Micro-expression timing for realism:
-- ${VIDU_OPTIMIZATION.microExpressions.blink}
-- ${VIDU_OPTIMIZATION.microExpressions.smile}
-- ${VIDU_OPTIMIZATION.microExpressions.breathe}
+Micro-expressions: ${VIDU_OPTIMIZATION.microExpressions.blink}, ${VIDU_OPTIMIZATION.microExpressions.smile}
 
-Motion pacing: Use "${VIDU_OPTIMIZATION.movementPace.slow}" for cinematic feel
+⚠️ Do NOT describe motion intensity - use API's movement_amplitude parameter
 
-⚠️ IMPORTANT: Do NOT describe motion intensity in prompt - use API's movement_amplitude parameter instead
+=== MOVEMENT AMPLITUDE ===
+- "small": micro-expressions, breathing, subtle gestures (for 2s scenes)
+- "medium": head turn, reaching, natural gestures (for 3-4s scenes)
+- "large": walking, significant movement (for 4-5s scenes)
 
-=== CINEMATIC CAMERA STYLES ===
+=== 3 DIFFERENT SCENARIOS ===
 
-- "intimate-closeup": 35mm f/1.8, face filling 70% of frame, shallow DOF, emotional connection
-- "golden-hour": Backlit with warm rim light, lens flare acceptable, dreamy atmosphere
-- "window-light": Soft directional daylight, one side lit, other in gentle shadow
-- "lifestyle-wide": 24mm showing environment, model naturally placed, context-rich
-- "detail-macro": Product in sharp focus, hands/face soft, sensory detail
-- "over-shoulder": Intimate POV, seeing what model sees, immersive
+Create genuinely different approaches:
+- Different LOCATIONS
+- Different EMOTIONAL TONES
+- Different PACING STYLES (one faster, one more measured, one mixed)
+- Different PRODUCT REVEAL TIMING
 
-=== MOVEMENT AMPLITUDE (API parameter, not in prompt) ===
-- "small": Breathing, blinking, micro-expressions, gentle sway
-- "medium": Turning head, reaching, natural gestures
-- "large": Walking, significant body movement
-
-=== 3 DIFFERENT CINEMATIC CONCEPTS ===
-
-Each must feel like a different short film:
-- Different LOCATIONS (no repeats)
-- Different EMOTIONAL TONES (no repeats)
-- Different LIGHTING MOODS (no repeats)
-- Different TIMES OF DAY (morning/afternoon/evening)
-
-${SEEDREAM_FORBIDDEN_TERMS.length > 0 ? `FORBIDDEN TERMS (make images look AI): ${SEEDREAM_FORBIDDEN_TERMS.join(', ')}` : ''}`
+${SEEDREAM_FORBIDDEN_TERMS.length > 0 ? `FORBIDDEN TERMS (AI artifacts): ${SEEDREAM_FORBIDDEN_TERMS.join(', ')}` : ''}`
 
 /** 완전 시나리오 생성 템플릿 */
 export const COMPLETE_SCENARIO_GENERATION_TEMPLATE: PromptTemplate = {
-  id: 'complete-scenario-v1',
-  name: '완전 시나리오 생성 (설정 포함)',
-  description: '스토리와 모든 영상 설정이 포함된 완전한 시나리오 3개 생성',
+  id: 'complete-scenario-v2',
+  name: '숏폼 광고 시나리오 생성',
+  description: '빠른 씬 전환의 숏폼 광고 스타일 시나리오 3개 생성',
   category: 'avatar-motion',
   targetModel: 'gemini',
   version: {
-    version: '1.0.0',
+    version: '2.0.0',
     createdAt: '2025-01-23',
   },
   variables: [
@@ -351,48 +319,35 @@ Selling Points: {{productSellingPoints}}
 Model Type: {{avatarType}}
 Model Description: {{avatarDescription}}
 
-=== CREATE 3 CINEMATIC SCENARIOS ===
+=== CREATE 3 DIFFERENT SHORT-FORM AD SCENARIOS ===
 
-⚠️ MANDATORY: Each scenario must have DIFFERENT location, mood, lighting, time of day.
+⚠️ CRITICAL RULES:
+1. Each scenario: 4-8 scenes, total 12-15 seconds
+2. Scene duration: 2초 기본, 필요시 3-5초 (vary for rhythm)
+3. NEVER same duration for consecutive scenes
+4. First scene must HOOK (attention-grabbing)
+5. 3 scenarios must differ in: location, mood, pacing style
 
-Story archetypes: 아침 루틴 | 황금빛 오후 | 친밀한 밤 | 일상의 발견 | 나만의 시간
-Emotional tones: 평온함 | 설렘 | 만족감 | 자신감 | 여유로움
-Lighting: 골든아워(backlight) | 창가빛(directional) | 램프빛(warm pools) | 새벽빛(cool→warm)
+=== OUTPUT STRUCTURE ===
 
-=== JSON OUTPUT ===
-{
-  "scenarios": [{
-    "id": "1",
-    "title": "한국어 8자",
-    "description": "한국어 20자",
-    "concept": "한국어 2문장 (감정/분위기)",
-    "productAppearance": "제품 등장 방식",
-    "mood": "한국어 2단어",
-    "location": "구체적 장소",
-    "tags": ["태그1", "태그2", "태그3"],
-    "recommendedSettings": { "aspectRatio": "9:16", "sceneCount": 3 },
-    "scenes": [{
-      "sceneIndex": 0,
-      "title": "씬 제목",
-      "description": "15자 이내",
-      "imageSummary": "한국어 20자",
-      "videoSummary": "한국어 20자",
-      "firstFramePrompt": "English 80-100 words. Include: (1) LIGHTING direction 'warm backlight from upper right', (2) CAMERA '35mm f/1.8 shallow DOF', (3) COMPOSITION, (4) natural pose, (5) environment details, (6) 'natural skin with pores'. End: 'shot on film'.",
-      "motionPromptEN": "English 50-70 words. Slow movements: start→gentle motion→expression shift→product interaction→contemplative end. Include breathing, micro-expressions.",
-      "duration": 3,
-      "movementAmplitude": "small",
-      "location": "장소",
-      "mood": "분위기"
-    }]
-  }]
-}
+JSON with scenarios array. Each scenario contains:
+- id, title(한국어 8자), description(한국어 20자)
+- concept(한국어 2문장), productAppearance, mood(2단어), location
+- tags(array), recommendedSettings: { aspectRatio, sceneCount }
+- scenes array with: sceneIndex, title, description, imageSummary(한국어), videoSummary(한국어)
+- firstFramePrompt(English 80-100 words with lighting/camera/composition)
+- motionPromptEN(English 40-60 words)
+- duration(2-5), movementAmplitude(small/medium/large), location, mood
 
-=== CHECKLIST ===
-✓ 3 different locations/moods/lighting per scenario
-✓ Scene duration: 2-5s, total ≤15s, minimum 3 scenes
-✓ firstFramePrompt/motionPromptEN: ENGLISH with lighting details
-✓ imageSummary/videoSummary/description: KOREAN
-✓ Anti-AI: directional lighting, 'natural skin with pores', shallow DOF
+=== LANGUAGE RULES ===
+- firstFramePrompt, motionPromptEN: ENGLISH only
+- All other fields: KOREAN
+
+=== QUALITY REQUIREMENTS ===
+- Directional lighting with shadows
+- Natural skin texture, shallow DOF
+- Candid moments, not stock photo poses
+- Product integration feels natural
 
 ${JSON_RESPONSE_INSTRUCTION}`,
 }
