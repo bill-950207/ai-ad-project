@@ -7,15 +7,15 @@
  * - 매우 구체적인 프롬프트로 현실성 확보
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { generateText } from '@/lib/gemini/client'
 import {
-  buildBatchFramePrompt,
+  AVATAR_MOTION_NEGATIVE_PROMPT,
   BatchFramePromptParams,
   BatchFramePromptResponse,
-  AVATAR_MOTION_NEGATIVE_PROMPT,
+  buildBatchFramePrompt,
 } from '@/lib/prompts/avatar-motion'
+import { createClient } from '@/lib/supabase/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 interface GenerateBatchPromptsRequest {
   // 시나리오 정보

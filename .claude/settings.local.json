@@ -50,7 +50,10 @@
       "Bash(git fetch:*)",
       "Bash(gh pr create:*)",
       "Bash(gh auth status:*)",
-      "Bash(git worktree add:*)"
+      "Bash(git worktree add:*)",
+      "Bash(npm run db:generate:*)",
+      "Bash(ffmpeg:*)",
+      "Bash(gh pr edit 6 --body \"$\\(cat <<''EOF''\n## Summary\n영상 광고에 배경 음악\\(BGM\\)을 추가하는 기능을 구현합니다.\n\n### 주요 기능\n- 영상 광고 상세 페이지에서 \"음악 추가\" 버튼 클릭\n- 광고 음악 리스트에서 음악 선택\n- 트랙 선택 \\(여러 트랙이 있는 경우\\)\n- 구간 선택 \\(듀얼 슬라이더\\) + 미리듣기\n- 볼륨 조절\n- FFmpeg로 영상과 음악 합성\n- 합성 진행 페이지에서 실시간 상태 표시\n\n### 변경 파일\n**백엔드:**\n- `lib/video/ffmpeg.ts` - `trimAudio`, `mergeVideoWithAudio` 함수 추가\n- `app/api/video-ads/[id]/add-music/route.ts` - 음악 합성 API\n- `app/api/video-ads/route.ts` - bgm_info 필드 조회 추가\n- `prisma/schema.prisma` - bgm_info 필드 추가\n\n**프론트엔드:**\n- `components/ui/dual-range-slider.tsx` - 구간 선택 슬라이더\n- `components/video-ad/music-select-modal.tsx` - 음악 선택 모달\n- `app/dashboard/video-ad/[id]/page.tsx` - 상세 페이지 UI\n- `app/dashboard/video-ad/[id]/merge-music/page.tsx` - 합성 진행 페이지\n- `components/video-ad/video-ad-page-content.tsx` - 리스트 음악 배지\n\n## Test plan\n- [ ] 영상 광고 상세 페이지에서 \"음악 추가\" 버튼 확인\n- [ ] 음악 선택 모달에서 음악 목록 표시 확인\n- [ ] 구간 선택 슬라이더 동작 확인\n- [ ] 미리듣기 기능 확인\n- [ ] 적용 클릭 → 합성 페이지 이동 확인\n- [ ] 합성 진행 상태 표시 확인\n- [ ] 합성 완료 후 영상 재생 확인\n- [ ] 영상 광고 리스트에서 음악 배지 표시 확인\n- [ ] 음악 변경 기능 확인\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\nEOF\n\\)\")"
     ]
   }
 }

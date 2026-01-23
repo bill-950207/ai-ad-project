@@ -10,6 +10,10 @@ import {
   SEEDREAM_FORBIDDEN_TERMS,
   JSON_RESPONSE_INSTRUCTION,
   AVATAR_NEGATIVE_PROMPT,
+  SEEDREAM_OPTIMIZATION,
+  VIDU_OPTIMIZATION,
+  SEEDREAM_FIRST_FRAME_GUIDE,
+  VIDU_MOTION_GUIDE,
 } from './common'
 
 // ============================================================
@@ -358,54 +362,124 @@ ${JSON_RESPONSE_INSTRUCTION}`,
 }
 
 // ============================================================
-// 시나리오 생성 프롬프트 (영화적 씬 중심)
+// 아바타 모션용 시네마틱 카메라 가이드
 // ============================================================
 
-/** 시나리오 생성 시스템 프롬프트 */
-export const CINEMATIC_SCENARIO_SYSTEM = `You are an award-winning film director and creative director specializing in cinematic short-form video ads.
+/** 시네마틱 카메라 스타일 가이드 */
+export const AVATAR_CAMERA_GUIDES: Record<string, {
+  korean: string
+  promptSegment: string
+  lighting: string
+  framing: string
+}> = {
+  'intimate-closeup': {
+    korean: '친밀한 클로즈업',
+    promptSegment: 'intimate close-up shot on 35mm lens at f/1.8, face filling 70% of frame, shallow depth of field with beautiful bokeh, natural skin texture visible',
+    lighting: 'soft directional window light from left side creating gentle shadows, warm color temperature',
+    framing: 'rule of thirds, eyes in upper third, out-of-focus background creating depth',
+  },
+  'golden-hour': {
+    korean: '골든아워',
+    promptSegment: 'backlit golden hour shot, warm rim lighting on hair and shoulders, lens flare acceptable, dreamy atmospheric quality',
+    lighting: 'golden sunlight from behind/side creating rim light, face in soft shadow with subtle fill',
+    framing: 'medium shot showing upper body, sun creating halo effect, warm color grading',
+  },
+  'window-light': {
+    korean: '창가 자연광',
+    promptSegment: 'soft window light portrait, one side illuminated, other in gentle shadow, natural and authentic',
+    lighting: 'large window as key light from 45 degrees, no fill light, natural shadows on face',
+    framing: 'medium close-up, subject positioned near window, background slightly darker',
+  },
+  'lifestyle-wide': {
+    korean: '라이프스타일 와이드',
+    promptSegment: 'environmental portrait on 24mm lens showing context, subject naturally placed in their space',
+    lighting: 'practical lights visible in frame (lamps, candles), mixed warm lighting',
+    framing: 'wide shot showing 60% environment 40% subject, lived-in authentic space',
+  },
+  'over-shoulder': {
+    korean: '오버숄더',
+    promptSegment: 'over-the-shoulder POV shot, intimate perspective seeing what subject sees, shallow DOF',
+    lighting: 'matches scene ambient light, focus on what hands are doing',
+    framing: 'shoulder/hair out of focus in foreground, hands and product in sharp focus',
+  },
+}
 
-Your expertise is creating COMPELLING VIDEO SCENES where the MODEL is the STAR, and the PRODUCT appears NATURALLY within the story.
+// ============================================================
+// 시나리오 생성 프롬프트 (제품 중심 + 아바타 프레젠터)
+// ============================================================
 
-Think of these as short film scenes - not traditional product ads. The model acts, emotes, and interacts naturally with their environment while the product becomes part of their story.
+/** 시나리오 생성 시스템 프롬프트 (시네마틱 + 모델 최적화) */
+export const CINEMATIC_SCENARIO_SYSTEM = `You are an award-winning commercial film director creating cinematic product advertisement videos.
 
-=== CINEMATIC STORYTELLING PRINCIPLES ===
+Your task is to create EMOTIONALLY COMPELLING, FILM-QUALITY VIDEO SCENARIOS that feel like mini movies, not advertisements.
 
-1. MODEL AS PROTAGONIST: The model is an actor/actress in a mini-film
-   - They have character, emotion, and purpose
-   - Their actions feel motivated and authentic
-   - The camera follows their story
+Think like a Terrence Malick or Sofia Coppola directing a luxury brand commercial - poetic, atmospheric, visually stunning.
 
-2. PRODUCT INTEGRATION: The product appears naturally
-   - It's part of the scene, not the forced focus
-   - Natural interactions: using, holding, reaching for, nearby
-   - Never awkward or overly commercial placement
+=== CINEMATIC FILMMAKING PRINCIPLES ===
 
-3. VISUAL STORYTELLING: Every frame tells a story
-   - Cinematic composition and lighting
-   - Emotional atmosphere through environment
-   - Clear beginning, middle, end in the motion
+1. PHOTOREALISTIC IMAGERY (CRITICAL - AVOID AI LOOK):
+   - ${SEEDREAM_OPTIMIZATION.antiAI.skin}
+   - ${SEEDREAM_OPTIMIZATION.antiAI.hair}
+   - ${SEEDREAM_OPTIMIZATION.antiAI.environment}
+   - Candid moments, not posed stock photos
+   - Natural color grading, not oversaturated
 
-4. DIVERSITY OF APPROACH: 3 scenarios must be GENUINELY DIFFERENT
+2. CINEMATIC LIGHTING (KEY TO AVOIDING AI LOOK):
+   - Golden hour: warm backlight creating rim lighting on hair/shoulders
+   - Window light: soft directional light with natural shadows
+   - Practical lights: lamps, candles creating warm pools of light
+   - NEVER flat, even lighting - always directional with shadows
+   - ALWAYS specify exact light direction: "${SEEDREAM_OPTIMIZATION.lightingDirections[0]}"
+
+3. EMOTIONAL STORYTELLING:
+   - Model as protagonist in a short film, not a presenter
+   - Internal emotions visible through subtle expressions
+   - Moments of genuine connection, contemplation, joy
+   - Product appears naturally in the story, never forced
+
+4. CINEMATIC CAMERA WORK:
+   - Shallow depth of field (f/1.8-2.8) with beautiful bokeh
+   - Thoughtful composition using rule of thirds
+   - Camera angles that create intimacy or drama
+   - Slow, deliberate movements
+
+5. DIVERSITY ACROSS 3 SCENARIOS:
    - Different LOCATIONS (no repeats)
-   - Different MOODS (no repeats)
-   - Different ACTIONS (what the model is doing)
-   - Different PRODUCT INTERACTIONS (how product appears)
+   - Different EMOTIONAL TONES (no repeats)
+   - Different LIGHTING MOODS (no repeats)
+   - Different TIMES OF DAY
 
-5. AUTHENTICITY: Real moments, not staged ads
-   - Natural expressions and body language
-   - Believable scenarios viewers can relate to
-   - The model feels like a real person, not a mannequin`
+=== MODEL-SPECIFIC PROMPT OPTIMIZATION ===
+
+**SEEDREAM 4.5 (firstFramePrompt - English, 80-100 words):**
+${SEEDREAM_FIRST_FRAME_GUIDE}
+
+**VIDU Q2 (motionPromptEN - English, 50-70 words):**
+${VIDU_MOTION_GUIDE}
+
+Camera movement options for motionPromptEN:
+- "${VIDU_OPTIMIZATION.cameraMovements.dollyIn}"
+- "${VIDU_OPTIMIZATION.cameraMovements.slowZoom}"
+- "${VIDU_OPTIMIZATION.cameraMovements.staticShot}"
+- "${VIDU_OPTIMIZATION.cameraMovements.rackFocus}"
+
+Micro-expression timing for realism:
+- "${VIDU_OPTIMIZATION.microExpressions.blink}"
+- "${VIDU_OPTIMIZATION.microExpressions.smile}"
+- "${VIDU_OPTIMIZATION.microExpressions.breathe}"
+
+⚠️ Do NOT describe motion intensity in prompt - use API's movement_amplitude parameter`
 
 /** 시나리오 생성 템플릿 */
 export const SCENARIO_GENERATION_TEMPLATE: PromptTemplate = {
-  id: 'cinematic-scenario-v1',
-  name: '영화적 시나리오 생성',
-  description: '제품과 아바타 정보를 기반으로 영화적 시나리오 3개 생성',
+  id: 'ugc-scenario-v2',
+  name: 'UGC 스타일 시나리오 생성',
+  description: '제품 중심의 UGC 스타일 시나리오 3개 생성',
   category: 'avatar-motion',
   targetModel: 'gemini',
   version: {
-    version: '1.0.0',
-    createdAt: '2025-01-21',
+    version: '2.0.0',
+    createdAt: '2025-01-23',
   },
   variables: [
     'productName',
@@ -416,92 +490,72 @@ export const SCENARIO_GENERATION_TEMPLATE: PromptTemplate = {
   ],
   template: `${CINEMATIC_SCENARIO_SYSTEM}
 
-=== PRODUCT (REQUIRED) ===
+=== PRODUCT INFO ===
 Name: {{productName}}
 Description: {{productDescription}}
-Selling Points: {{productSellingPoints}}
+Key Benefits: {{productSellingPoints}}
 
-=== MODEL/AVATAR ===
+=== PRESENTER/AVATAR ===
 Type: {{avatarType}}
 Description: {{avatarDescription}}
 
-=== YOUR TASK ===
+=== CREATE 3 UGC VIDEO CONCEPTS ===
 
-Create 3 completely different CINEMATIC VIDEO SCENARIOS.
+Think like a successful content creator making product videos. Each concept should feel like a different creator's approach.
 
-**STEP 1: ANALYZE THE PRODUCT**
-- What are its key benefits?
-- Who would naturally use this product?
-- What emotions does it evoke?
-- What moments would feel authentic?
+**MANDATORY: 3 DIFFERENT APPROACHES**
+- 3 different LOCATIONS
+- 3 different MOODS/VIBES
+- 3 different PRODUCT INTERACTIONS
 
-**STEP 2: CREATE 3 DIVERSE SCENARIOS**
-Each must be GENUINELY DIFFERENT:
+**PRODUCT INTERACTION STYLES:**
+1. "언박싱/첫 사용" - Opening, first impression, excitement
+2. "데일리 루틴" - Integrating into daily life
+3. "제품 소개" - Direct showcase to camera
+4. "사용 중" - Actively using the product
+5. "만족/추천" - Expressing satisfaction, recommending
 
-⚠️ MANDATORY DIVERSITY (CRITICAL!):
-- location: MUST be 3 DIFFERENT locations
-- mood: MUST be 3 DIFFERENT moods
-- action: MUST be 3 DIFFERENT actions
-- productAppearance: MUST be 3 DIFFERENT ways product appears
-
-SCENARIO ARCHETYPES (use different ones):
-- [ACTION/DYNAMIC]: Movement, energy, activity outdoors or in active setting
-- [INTIMATE/EMOTIONAL]: Personal moment, close-up worthy, soft lighting
-- [LIFESTYLE/ASPIRATIONAL]: Desirable life moment, stylish setting
-
-**STEP 3: PRODUCT APPEARANCE**
-Natural integration options:
-- Holding naturally while doing something
-- Using/applying the product
-- Product nearby in the scene
-- Reaching for or picking up
-- Product visible in background/on table
-
-Never force the product - it should feel organic.
+**CAMERA STYLE OPTIONS:**
+- selfie-high: 하이앵글 셀카, 귀엽고 친근한 느낌
+- selfie-front: 정면 셀카, 직접 소통하는 느낌
+- vlog-style: Vlog처럼 자연스럽게 말하는 느낌
+- tripod: 고정 카메라, 깔끔한 제품 소개
+- lifestyle: 일상 속 자연스러운 장면
 
 === OUTPUT FORMAT (JSON) ===
 {
   "scenarios": [
     {
       "id": "1",
-      "title": "시나리오 제목 (한국어, 감각적으로 8자 이내)",
-      "description": "한 문장으로 어떤 장면인지 설명 (한국어, 25자 이내)",
-      "concept": "이 시나리오의 컨셉과 스토리 (한국어, 2-3문장). 모델이 어떤 상황에 있고, 어떤 감정을 느끼고, 어떤 행동을 하는지.",
-      "productAppearance": "제품이 어떻게 등장하는지 (한국어). 예: '모델이 자연스럽게 한 손에 들고 있다', '테이블 위에 놓여있고 모델이 손을 뻗는다', '제품을 사용하며 만족스러워한다'",
-      "firstFramePrompt": "첫 프레임 상세 설명 (한국어). 이미지 생성에 직접 사용됨. 포함 필수: 모델의 정확한 자세, 표정, 시선, 제품 위치, 배경 장소, 조명, 분위기. 80-120자로 구체적으로.",
-      "motionPromptEN": "DETAILED English motion description for video generation (60-80 words). Structure: (1) Initial state restatement (2) Specific movements with timing (slowly, smoothly) (3) Expression transitions (4) Product interaction throughout (5) Final pose. Be cinematic and specific.",
-      "mood": "분위기 키워드 (한국어, 2-3단어)",
-      "location": "장소 (한국어, 구체적으로)",
+      "title": "시나리오 제목 (한국어, 8자 이내)",
+      "description": "한 문장 설명 (한국어, 20자 이내)",
+      "concept": "컨셉 설명 (한국어, 2문장). 상황과 느낌.",
+      "productAppearance": "제품 등장 방식 (한국어, 구체적으로)",
+      "cameraStyle": "위 카메라 스타일 중 하나 (영어)",
+      "firstFramePrompt": "첫 프레임 설명 (한국어, 80-100자). 포함: 모델 자세/표정/시선, 제품 위치, 배경, 조명. 구체적으로.",
+      "motionPromptEN": "English motion description (50-70 words). Structure: Starting pose → Movement → Expression → Product interaction → End pose. Include timing words (slowly, smoothly, gently).",
+      "mood": "분위기 (한국어, 2단어)",
+      "location": "장소 (한국어)",
       "tags": ["태그1", "태그2", "태그3"]
     },
     {
       "id": "2",
-      ... (COMPLETELY DIFFERENT location, mood, action, product interaction)
+      ... (DIFFERENT location, mood, camera style, product interaction)
     },
     {
       "id": "3",
-      ... (COMPLETELY DIFFERENT location, mood, action, product interaction)
+      ... (DIFFERENT location, mood, camera style, product interaction)
     }
   ]
 }
 
-=== EXAMPLE DIVERSE SCENARIOS ===
-
-For skincare product:
-1. [ACTION] - 아침 조깅 후 공원에서 땀을 식히며 사용
-2. [INTIMATE] - 밤 침실에서 은은한 조명 아래 스킨케어 루틴
-3. [LIFESTYLE] - 세련된 카페에서 친구와 대화하며 제품 꺼내기
-
-Notice: ALL different locations, moods, actions!
-
-=== CRITICAL REMINDERS ===
-
-1. 3 scenarios with 3 DIFFERENT locations - no repeats!
-2. 3 scenarios with 3 DIFFERENT moods - no repeats!
-3. Product appears NATURALLY in each scene
-4. firstFramePrompt is detailed enough for image generation
-5. motionPromptEN describes smooth, cinematic motion
-6. Everything in Korean except motionPromptEN
+=== QUALITY CHECKLIST ===
+✓ Product is clearly visible and featured
+✓ Avatar looks natural and approachable
+✓ Each scenario feels distinct
+✓ firstFramePrompt has enough detail for image generation
+✓ motionPromptEN describes clear, smooth movement
+✓ All Korean except motionPromptEN and cameraStyle
 
 ${JSON_RESPONSE_INSTRUCTION}`,
 }
@@ -795,51 +849,68 @@ function translateMoodToEnglish(koreanMood: string): string {
 }
 
 // ============================================================
-// 멀티 씬 시나리오 생성 프롬프트 (Vidu Q2용)
+// 멀티 씬 시나리오 생성 프롬프트 (UGC 스타일)
 // ============================================================
 
-/** 멀티 씬 시나리오 생성 시스템 프롬프트 */
-export const MULTI_SCENE_SCENARIO_SYSTEM = `You are an award-winning film director specializing in multi-scene cinematic short-form video ads.
+/** 멀티 씬 시나리오 생성 시스템 프롬프트 (모델 최적화) */
+export const MULTI_SCENE_SCENARIO_SYSTEM = `You are an expert video producer creating multi-scene cinematic short-form product ads.
 
-Your task is to create COMPELLING VIDEO STORIES told across MULTIPLE SCENES. Each scene is a separate video segment (1-8 seconds) that will be concatenated together.
+Each video is made of MULTIPLE SHORT SCENES (2-5 seconds each) that tell a quick, engaging product story.
 
-=== MULTI-SCENE STORYTELLING ===
+=== MULTI-SCENE PRINCIPLES ===
 
-1. NARRATIVE ARC: The scenes together tell a complete mini-story
-   - Scene 1: Setup/Introduction - establish the context
-   - Middle scenes: Development/Action - build the story
-   - Final scene: Payoff/Resolution - deliver the message
+1. QUICK CUTS: Short-form video pacing
+   - Each scene: 2-5 seconds (prefer 2-3 seconds)
+   - Total video: typically 10-15 seconds
+   - Fast, engaging, no boring moments
 
-2. SCENE TRANSITIONS: Each scene should flow naturally to the next
-   - Visual continuity (consistent lighting, color grading)
-   - Story continuity (logical progression of action)
-   - Emotional continuity (building or shifting mood)
+2. PRODUCT FOCUS: Product is the hero
+   - Product visible in most/all scenes
+   - Natural but intentional placement
+   - Clear showcase moments
 
-3. SCENE DIVERSITY: Each scene should be visually distinct
-   - Different camera angles or distances
-   - Different poses or actions
-   - Different expressions or interactions with product
+3. STORY FLOW: Scenes connect logically
+   - Scene 1: Hook/Introduction (grab attention)
+   - Middle scenes: Usage/Demo (show product)
+   - Final scene: Payoff (satisfaction, recommendation)
 
-4. PRODUCT INTEGRATION: Product appears naturally throughout
-   - Can appear in some or all scenes
-   - Natural placement and interaction
-   - Never feels forced
+4. VISUAL VARIETY: Keep it interesting
+   - Different angles per scene
+   - Different product interactions
+   - Expression changes throughout
 
-5. PACING: Scene durations should match the content
-   - Quick cuts (1-3s) for dynamic/action moments
-   - Medium (4-5s) for standard storytelling
-   - Longer (6-8s) for emotional/showcase moments`
+5. SAME SETTING: Consistent environment
+   - Same location across all scenes
+   - Same lighting and atmosphere
+   - Same outfit on model (critical!)
+   - Only pose/action changes between scenes
+
+=== SEEDREAM 4.5 IMAGE OPTIMIZATION ===
+
+For each scene's firstFramePrompt (English, 60-80 words):
+- Include exact lighting direction: "${SEEDREAM_OPTIMIZATION.lightingDirections[0]}"
+- Include camera specs: "${SEEDREAM_OPTIMIZATION.cameraSpecs.portrait}"
+- Include anti-AI texture: "${SEEDREAM_OPTIMIZATION.antiAI.skin}"
+- End with: "${SEEDREAM_OPTIMIZATION.qualityTags}"
+
+=== VIDU Q2 VIDEO OPTIMIZATION ===
+
+For each scene's motionPromptEN (English, 40-60 words):
+- Use timing adverbs: ${VIDU_OPTIMIZATION.movementPace.slow}
+- Include micro-expressions: "${VIDU_OPTIMIZATION.microExpressions.blink}", "${VIDU_OPTIMIZATION.microExpressions.smile}"
+- Camera movement options: "${VIDU_OPTIMIZATION.cameraMovements.staticShot}" or "${VIDU_OPTIMIZATION.cameraMovements.slowZoom}"
+- DO NOT describe motion intensity - use API's movement_amplitude parameter`
 
 /** 멀티 씬 시나리오 생성 템플릿 */
 export const MULTI_SCENE_SCENARIO_TEMPLATE: PromptTemplate = {
-  id: 'multi-scene-scenario-v1',
-  name: '멀티 씬 시나리오 생성',
-  description: '여러 씬으로 구성된 영화적 시나리오 생성',
+  id: 'multi-scene-scenario-v2',
+  name: '멀티 씬 UGC 시나리오 생성',
+  description: '여러 씬으로 구성된 UGC 스타일 시나리오 생성',
   category: 'avatar-motion',
   targetModel: 'gemini',
   version: {
-    version: '1.0.0',
-    createdAt: '2025-01-21',
+    version: '2.0.0',
+    createdAt: '2025-01-23',
   },
   variables: [
     'productName',
@@ -852,113 +923,90 @@ export const MULTI_SCENE_SCENARIO_TEMPLATE: PromptTemplate = {
   ],
   template: `${MULTI_SCENE_SCENARIO_SYSTEM}
 
-=== PRODUCT (REQUIRED) ===
+=== PRODUCT INFO ===
 Name: {{productName}}
 Description: {{productDescription}}
-Selling Points: {{productSellingPoints}}
+Key Benefits: {{productSellingPoints}}
 
-=== MODEL/AVATAR ===
+=== PRESENTER/AVATAR ===
 Type: {{avatarType}}
 Description: {{avatarDescription}}
 
-=== VIDEO SPECIFICATIONS ===
-Number of Scenes: {{sceneCount}}
-Target Total Duration: approximately {{totalDuration}} seconds
+=== VIDEO SPECS ===
+Scenes: {{sceneCount}}
+Target Duration: ~{{totalDuration}} seconds
 
-=== YOUR TASK ===
+=== CREATE 3 MULTI-SCENE CONCEPTS ===
 
-Create 3 DIFFERENT multi-scene story concepts. Each concept must have {{sceneCount}} scenes that together tell a complete mini-story.
+Each concept = {{sceneCount}} connected scenes telling a quick product story.
 
-**FOR EACH SCENARIO:**
-1. Design a coherent narrative arc across all scenes
-2. Each scene should have:
-   - Clear action/purpose
-   - Specific first frame description
-   - Motion description for video generation
-   - Recommended duration (1-8 seconds)
-   - Movement intensity
-
-**SCENE DURATION GUIDELINES:**
-- Opening/Setup scenes: 3-5 seconds
-- Action/Development scenes: 4-6 seconds
-- Climax/Showcase scenes: 5-8 seconds
-- Quick transitions: 2-3 seconds
-- Total should be approximately {{totalDuration}} seconds
+**SCENE DURATION GUIDE (IMPORTANT!):**
+- 2-3초: 대부분의 씬 (빠른 컷)
+- 4-5초: 제품 집중 씬 (필요한 경우만)
+- 5초 이상: 거의 사용하지 않음
 
 **MOVEMENT AMPLITUDE:**
-- "small": Subtle movements (talking, slight gestures)
-- "medium": Normal movements (walking, reaching, turning)
-- "large": Dynamic movements (dancing, jumping, dramatic gestures)
-- "auto": Let the model decide based on content
+- "small": 미세한 움직임 (말하기, 살짝 고개 끄덕임)
+- "medium": 일반 움직임 (제품 들기, 돌아보기)
+- "large": 큰 움직임 (활발한 동작)
+
+**STORY STRUCTURES (choose different ones):**
+1. "발견 → 사용 → 만족" (Discovery story)
+2. "루틴 → 제품 → 완성" (Routine story)
+3. "문제 → 해결 → 추천" (Solution story)
 
 === OUTPUT FORMAT (JSON) ===
 {
   "scenarios": [
     {
       "id": "1",
-      "title": "시나리오 제목 (한국어, 10자 이내)",
-      "description": "전체 스토리 설명 (한국어, 30자 이내)",
-      "concept": "이 시나리오의 컨셉과 전체 스토리 흐름 (한국어, 3-4문장)",
-      "productAppearance": "제품이 전체 영상에서 어떻게 등장하고 사용되는지 (한국어)",
-      "mood": "전체 분위기 키워드 (한국어, 2-3단어)",
+      "title": "시나리오 제목 (한국어, 8자 이내)",
+      "description": "전체 스토리 요약 (한국어, 20자 이내)",
+      "concept": "컨셉 설명 (한국어, 2문장)",
+      "productAppearance": "제품 등장 방식 (한국어)",
+      "mood": "분위기 (한국어, 2단어)",
+      "location": "장소 (한국어)",
       "tags": ["태그1", "태그2", "태그3"],
-      "totalDuration": 15,
+      "recommendedSettings": {
+        "aspectRatio": "9:16",
+        "totalDuration": 10
+      },
       "scenes": [
         {
           "sceneIndex": 0,
-          "title": "씬 제목 (한국어)",
-          "description": "이 씬에서 무슨 일이 일어나는지 (한국어, 20자 이내)",
-          "firstFramePrompt": "첫 프레임 상세 설명 (한국어). 모델의 자세, 표정, 시선, 제품 위치, 배경, 조명을 구체적으로 (80-100자)",
-          "motionPromptEN": "Detailed English motion description (40-60 words). Describe: starting pose, movements, expressions, product interaction, ending pose. Be specific about timing and smoothness.",
-          "duration": 5,
+          "title": "씬 제목",
+          "description": "씬 설명 (15자 이내)",
+          "imageSummary": "이미지 요약 (한국어, 사용자 표시용)",
+          "videoSummary": "영상 요약 (한국어, 사용자 표시용)",
+          "firstFramePrompt": "첫 프레임 설명 (한국어, 80자). 자세, 표정, 시선, 제품 위치, 배경, 조명.",
+          "motionPromptEN": "English motion (40-50 words). Starting pose → Movement → Expression → Product → End pose.",
+          "duration": 3,
           "movementAmplitude": "medium",
-          "location": "장소 (한국어)",
-          "mood": "씬 분위기 (한국어)"
+          "location": "장소",
+          "mood": "분위기"
         },
-        {
-          "sceneIndex": 1,
-          ... (next scene, building on scene 0)
-        },
-        {
-          "sceneIndex": 2,
-          ... (final scene, delivering the payoff)
-        }
+        ... (다음 씬들)
       ]
     },
     {
       "id": "2",
-      ... (COMPLETELY DIFFERENT story concept with {{sceneCount}} scenes)
+      ... (DIFFERENT concept)
     },
     {
       "id": "3",
-      ... (COMPLETELY DIFFERENT story concept with {{sceneCount}} scenes)
+      ... (DIFFERENT concept)
     }
   ]
 }
 
-=== EXAMPLE: 3-Scene Skincare Ad ===
-
-Scenario 1: "아침 루틴" (Morning Routine)
-- Scene 0 (4s): Model wakes up, stretches in bed with soft morning light
-- Scene 1 (5s): Model at bathroom mirror, picks up product, starts routine
-- Scene 2 (6s): Model glowing, satisfied smile, holds product to camera
-
-Scenario 2: "자기 전 힐링" (Before Sleep Healing)
-- Scene 0 (4s): Model relaxing on couch after long day
-- Scene 1 (5s): Model applying product, peaceful expression
-- Scene 2 (6s): Model laying down, content, product beside pillow
-
-Notice: Each scenario tells a DIFFERENT story, with scenes that BUILD on each other!
-
-=== CRITICAL REMINDERS ===
-
-1. 3 scenarios, each with {{sceneCount}} scenes
-2. Scenes within a scenario must tell a CONNECTED story
-3. Each scene's firstFramePrompt is detailed enough for image generation
-4. Each scene's motionPromptEN describes specific movements
-5. Scene durations should total approximately {{totalDuration}} seconds
-6. Movement amplitudes match the action intensity
-7. All text in Korean except motionPromptEN
+=== QUALITY CHECKLIST ===
+✓ Scene durations: mostly 2-3 seconds
+✓ Total duration ~{{totalDuration}} seconds
+✓ Product clearly featured
+✓ Scenes flow logically
+✓ Same setting/outfit across scenes
+✓ imageSummary and videoSummary in Korean for user display
+✓ motionPromptEN in English for video generation
 
 ${JSON_RESPONSE_INSTRUCTION}`,
 }

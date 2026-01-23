@@ -155,3 +155,196 @@ export const JSON_RESPONSE_INSTRUCTION =
 /** JSON 응답 지시 (한국어 - 레거시 호환용) */
 export const JSON_RESPONSE_INSTRUCTION_KO =
   '반드시 유효한 JSON 형식으로만 응답하세요. 추가 설명이나 마크다운 없이 JSON만 반환하세요.'
+
+// ============================================================
+// 모델별 프롬프트 최적화 가이드라인
+// ============================================================
+
+/**
+ * Seedream 4.5 이미지 생성 모델 최적화 가이드라인
+ *
+ * 공식 가이드 기반:
+ * - 자연어 프롬프트 선호 (50-80 words 최적)
+ * - 구체적이지만 간결한 설명
+ * - 카메라 스펙 포함 (렌즈, 조리개)
+ * - 조명 방향 명시
+ * - 네거티브 프롬프트 활용
+ */
+export const SEEDREAM_OPTIMIZATION = {
+  /** 권장 프롬프트 길이 */
+  wordCount: { min: 50, max: 80, ideal: 65 },
+
+  /** 필수 포함 요소 */
+  requiredElements: [
+    'subject description (who)',
+    'pose/action (what)',
+    'environment (where)',
+    'lighting direction (how lit)',
+    'camera specs (lens/aperture)',
+  ],
+
+  /** 권장 카메라 스펙 */
+  cameraSpecs: {
+    portrait: 'shot on 85mm lens at f/1.8',
+    closeup: 'shot on 50mm lens at f/2.0',
+    environmental: 'shot on 35mm lens at f/2.8',
+    fullbody: 'shot on 24mm lens at f/4.0',
+  },
+
+  /** 조명 방향 표현 */
+  lightingDirections: [
+    'warm golden light from upper left',
+    'soft window light from right side',
+    'backlight from behind creating rim light',
+    'soft diffused overhead light',
+  ],
+
+  /** 얼굴 일관성 유지 표현 */
+  faceConsistency:
+    'The same person from the reference image, maintaining exact facial features, skin tone, and hair',
+
+  /** 품질 종결 태그 */
+  qualityTags: 'shot on film, natural color grading, photorealistic',
+
+  /** Anti-AI 텍스처 표현 */
+  antiAI: {
+    skin: 'natural skin texture with visible pores and subtle imperfections',
+    hair: 'natural hair with individual strands and flyaways',
+    environment: 'lived-in environment with authentic details',
+  },
+}
+
+/**
+ * Vidu Q2 영상 생성 모델 최적화 가이드라인
+ *
+ * 공식 가이드 기반:
+ * - 카메라 무브먼트 용어 활용
+ * - movement_amplitude API 파라미터 사용 (프롬프트에 움직임 강도 X)
+ * - 마이크로 표정 타이밍 힌트
+ * - 간결하고 명확한 문장 구조
+ * - 50-70 words 권장
+ */
+export const VIDU_OPTIMIZATION = {
+  /** 권장 프롬프트 길이 */
+  wordCount: { min: 50, max: 70, ideal: 60 },
+
+  /** 카메라 무브먼트 용어 (영어) */
+  cameraMovements: {
+    dollyIn: 'camera slowly dollies in',
+    dollyOut: 'camera gently dollies out',
+    trackingShot: 'camera smoothly tracks subject',
+    slowZoom: 'slow zoom into face',
+    staticShot: 'static camera, subject moves naturally',
+    orbitLeft: 'camera orbits slowly to the left',
+    orbitRight: 'camera orbits slowly to the right',
+    rackFocus: 'focus racks from background to subject',
+    tiltUp: 'camera tilts up slowly',
+    tiltDown: 'camera tilts down gently',
+  },
+
+  /** 마이크로 표정 타이밍 힌트 */
+  microExpressions: {
+    blink: 'natural blink around 2 seconds',
+    smile: 'subtle smile slowly forming',
+    eyeMovement: 'eyes drift naturally before settling',
+    breathe: 'chest rises gently with natural breath',
+  },
+
+  /** 움직임 속도 표현 (movement_amplitude와 함께 사용) */
+  movementPace: {
+    slow: 'slowly, gracefully, gently, softly',
+    medium: 'smoothly, naturally, steadily',
+    fast: 'quickly, dynamically, energetically',
+  },
+
+  /** 프롬프트 구조 템플릿 */
+  structureTemplate:
+    '[Starting state] → [Movement with timing adverb] → [Expression change] → [Product interaction] → [End state]',
+
+  /** 금지 표현 (API 파라미터로 제어해야 하는 것들) */
+  avoidInPrompt: [
+    'fast movement', // use movement_amplitude instead
+    'slow motion', // use movement_amplitude instead
+    'high speed', // use movement_amplitude instead
+    'quick action', // use movement_amplitude instead
+  ],
+
+  /** 시네마틱 움직임 표현 */
+  cinematicMotion: {
+    contemplative: 'unhurried, deliberate movements with natural pauses',
+    emotional: 'subtle internal emotion visible through micro-expressions',
+    natural: 'realistic human rhythm, natural breathing pace',
+  },
+}
+
+/**
+ * 모델별 프롬프트 구조 템플릿
+ */
+export const MODEL_PROMPT_STRUCTURES = {
+  /** Seedream 4.5 이미지 프롬프트 구조 */
+  seedream: `[Subject] [Pose/Expression] [Clothing], [Environment], [Lighting direction], [Camera specs], [Quality tags]`,
+
+  /** Vidu Q2 모션 프롬프트 구조 */
+  vidu: `[Initial state]. [Camera movement if any]. [Subject movement with timing]. [Expression transition]. [Product interaction]. [Final state]. [Atmospheric detail].`,
+}
+
+/**
+ * firstFramePrompt 생성 가이드 (Seedream 4.5용)
+ */
+export const SEEDREAM_FIRST_FRAME_GUIDE = `
+SEEDREAM 4.5 OPTIMIZED PROMPT STRUCTURE (80-100 words):
+
+1. SUBJECT & POSE (15-20 words):
+   "Young Asian woman in late 20s, [pose], [expression], wearing [outfit]"
+
+2. LIGHTING - CRITICAL (15-20 words):
+   "[Temperature] light from [specific direction] creating [effect]"
+   Example: "warm golden morning light streaming from large window on right side, creating soft rim light on hair"
+
+3. ENVIRONMENT (10-15 words):
+   "[Specific location] with [lived-in details]"
+   Example: "in a cozy bedroom with rumpled white sheets and potted plants"
+
+4. CAMERA SPECS (10-15 words):
+   "shot on [lens]mm lens at f/[aperture], [depth of field description]"
+   Example: "shot on 35mm lens at f/1.8, shallow depth of field with creamy bokeh"
+
+5. PRODUCT PLACEMENT (10-15 words):
+   "[How model interacts with product], [product visibility]"
+   Example: "gently holding skincare bottle in both hands at chest level"
+
+6. QUALITY TAGS (5-10 words):
+   "natural skin texture with visible pores, shot on film, natural color grading"
+`.trim()
+
+/**
+ * motionPromptEN 생성 가이드 (Vidu Q2용)
+ */
+export const VIDU_MOTION_GUIDE = `
+VIDU Q2 OPTIMIZED MOTION PROMPT (50-70 words):
+
+STRUCTURE:
+1. STARTING STATE (10 words):
+   "She sits peacefully, [initial pose and expression]"
+
+2. CAMERA (optional, 5-10 words):
+   "Camera slowly dollies in" or "Static shot"
+
+3. PRIMARY MOVEMENT (15-20 words):
+   Use timing adverbs: slowly, gently, gracefully, softly
+   "Gently raises the product toward her face, movement unhurried and deliberate"
+
+4. EXPRESSION TRANSITION (10 words):
+   "A subtle smile forms as she examines the product"
+
+5. MICRO-EXPRESSION (5-10 words):
+   "Natural blink, eyes softening with contentment"
+
+6. END STATE (10 words):
+   "She brings it closer, settling into quiet satisfaction"
+
+IMPORTANT:
+- Do NOT describe motion intensity (use API's movement_amplitude)
+- Use human rhythm descriptions ("natural breath", "unhurried")
+- Include micro-expressions for realism
+`.trim()
