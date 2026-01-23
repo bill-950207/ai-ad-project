@@ -58,7 +58,6 @@ const navItems: NavItem[] = [
     children: [
       { labelKey: 'avatarGeneration', href: '/dashboard/avatar', icon: <Sparkles className="w-4 h-4" /> },  // 아바타 생성
       { labelKey: 'musicGeneration', href: '/dashboard/music', icon: <Music className="w-4 h-4" /> },        // 음악 생성
-      { labelKey: 'backgroundGeneration', href: '/dashboard/background', icon: <Image className="w-4 h-4" /> },  // 배경 생성
       { labelKey: 'adProducts', href: '/dashboard/ad-products', icon: <Package className="w-4 h-4" /> },  // 광고 제품
     ]
   },

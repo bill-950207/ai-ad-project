@@ -275,10 +275,18 @@ export function WizardStep4Settings() {
                   <Palette className="w-3 h-3" />
                   {selectedScenario.mood}
                 </span>
-                <span className="flex items-center gap-1">
-                  <Package className="w-3 h-3" />
-                  {selectedScenario.productAppearance.slice(0, 30)}...
-                </span>
+                {selectedScenario.productAppearance && (
+                  <span className="flex items-center gap-1">
+                    <Package className="w-3 h-3" />
+                    {selectedScenario.productAppearance.slice(0, 30)}...
+                  </span>
+                )}
+                {selectedScenario.scenes && selectedScenario.scenes.length > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Layers className="w-3 h-3" />
+                    {selectedScenario.scenes.length}개 씬
+                  </span>
+                )}
               </div>
             </div>
           </div>
