@@ -137,14 +137,12 @@ function RegenerateModal({
 // 드래그 가능한 키프레임 카드 컴포넌트
 function SortableKeyframeCard({
   kf,
-  totalCount,
   scenePrompt,
   onRegenerate,
   isRegenerating,
   isGeneratingKeyframes,
 }: {
   kf: SceneKeyframe
-  totalCount: number
   scenePrompt?: string
   onRegenerate: (sceneIndex: number) => void
   isRegenerating: boolean
@@ -162,9 +160,6 @@ function SortableKeyframeCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    width: totalCount === 1 ? '100%' :
-           totalCount === 2 ? 'calc(50% - 8px)' :
-           'min(280px, 75vw)',
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 10 : 1,
   }
@@ -175,7 +170,6 @@ function SortableKeyframeCard({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex-shrink-0 snap-start"
     >
       <div className={`relative rounded-xl overflow-hidden border-2 bg-secondary/20 ${
         isDragging ? 'ring-2 ring-primary shadow-lg' :
@@ -655,7 +649,7 @@ export function WizardStep5() {
             )}
           </div>
 
-          {/* 가로 스크롤 컨테이너 with 드래그앤드롭 */}
+          {/* 그리드 레이아웃 with 드래그앤드롭 */}
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -665,20 +659,24 @@ export function WizardStep5() {
               items={sceneKeyframes.map(kf => `keyframe-${kf.sceneIndex}`)}
               strategy={horizontalListSortingStrategy}
             >
-              <div className="-mx-4 sm:-mx-6 px-4 sm:px-6 overflow-x-auto scrollbar-hide">
-                <div className="flex gap-4 pb-2 pt-1 min-w-min">
-                  {sceneKeyframes.map((kf, index) => (
-                    <SortableKeyframeCard
-                      key={`keyframe-${kf.sceneIndex}`}
-                      kf={kf}
-                      totalCount={sceneKeyframes.length}
-                      scenePrompt={scenarioInfo?.scenes?.[index]?.scenePrompt}
-                      onRegenerate={(sceneIndex) => setModalSceneIndex(sceneIndex)}
-                      isRegenerating={regeneratingSceneIndex === kf.sceneIndex}
-                      isGeneratingKeyframes={isGeneratingKeyframes}
-                    />
-                  ))}
-                </div>
+              <div className={`grid gap-4 ${
+                sceneKeyframes.length === 1 ? 'grid-cols-1' :
+                sceneKeyframes.length === 2 ? 'grid-cols-2' :
+                sceneKeyframes.length === 3 ? 'grid-cols-3' :
+                sceneKeyframes.length === 4 ? 'grid-cols-2' :
+                sceneKeyframes.length <= 6 ? 'grid-cols-3' :
+                'grid-cols-4'
+              }`}>
+                {sceneKeyframes.map((kf, index) => (
+                  <SortableKeyframeCard
+                    key={`keyframe-${kf.sceneIndex}`}
+                    kf={kf}
+                    scenePrompt={scenarioInfo?.scenes?.[index]?.scenePrompt}
+                    onRegenerate={(sceneIndex) => setModalSceneIndex(sceneIndex)}
+                    isRegenerating={regeneratingSceneIndex === kf.sceneIndex}
+                    isGeneratingKeyframes={isGeneratingKeyframes}
+                  />
+                ))}
               </div>
             </SortableContext>
           </DndContext>
