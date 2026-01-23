@@ -14,6 +14,7 @@ import { generateText } from '@/lib/gemini/client'
 import {
   buildScenarioGenerationPrompt,
   buildMultiSceneScenarioPrompt,
+  buildCompleteScenarioPrompt,
 } from '@/lib/prompts/avatar-motion'
 
 // 씬 정보 타입 (멀티 씬)
@@ -27,6 +28,14 @@ interface SceneInfo {
   movementAmplitude: 'auto' | 'small' | 'medium' | 'large'
   location: string
   mood: string
+}
+
+// 추천 설정 타입 (완전 시나리오 생성용)
+interface RecommendedSettings {
+  aspectRatio: '16:9' | '9:16' | '1:1'
+  sceneCount: number
+  sceneDurations: number[]
+  movementAmplitudes: ('auto' | 'small' | 'medium' | 'large')[]
 }
 
 // 시나리오 타입 (wizard-context.tsx의 Scenario와 동일)
@@ -45,6 +54,8 @@ interface Scenario {
   firstFramePrompt?: string
   motionPromptEN?: string
   location?: string
+  // 완전 시나리오 생성 시 추천 설정
+  recommendedSettings?: RecommendedSettings
 }
 
 interface GenerateStoryRequest {
@@ -57,6 +68,8 @@ interface GenerateStoryRequest {
   multiScene?: boolean
   sceneCount?: number
   totalDuration?: number
+  // AI 추천 모드: 시나리오와 함께 모든 설정 생성
+  generateCompleteSettings?: boolean
 }
 
 export async function POST(request: NextRequest) {
@@ -82,6 +95,7 @@ export async function POST(request: NextRequest) {
       multiScene = false,
       sceneCount = 3,
       totalDuration = 15,
+      generateCompleteSettings = false,
     } = body
 
     if (!productName) {
@@ -91,9 +105,42 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 멀티 씬 모드 vs 단일 씬 모드
+    // 시나리오 생성 모드 분기
     let scenarios: Scenario[]
 
+    // 완전 시나리오 생성 모드 (AI 추천 - 설정 포함)
+    if (generateCompleteSettings) {
+      const prompt = buildCompleteScenarioPrompt(
+        productName,
+        productDescription,
+        productSellingPoints,
+        avatarDescription || getDefaultAvatarDescription(avatarType),
+        avatarType
+      )
+
+      const response = await generateText(prompt)
+
+      try {
+        const jsonMatch = response.match(/\{[\s\S]*\}/)
+        if (!jsonMatch) {
+          throw new Error('No JSON found in response')
+        }
+        const parsed = JSON.parse(jsonMatch[0])
+        scenarios = normalizeCompleteScenarios(parsed.scenarios)
+      } catch (parseError) {
+        console.error('Failed to parse complete scenario response:', response, parseError)
+        scenarios = getFallbackCompleteScenarios(productName)
+      }
+
+      return NextResponse.json({
+        success: true,
+        scenarios,
+        multiScene: true,
+        generateCompleteSettings: true,
+      })
+    }
+
+    // 멀티 씬 모드 (설정 별도)
     if (multiScene) {
       // 멀티 씬 프롬프트 생성
       const prompt = buildMultiSceneScenarioPrompt(
@@ -393,6 +440,232 @@ function getFallbackMultiSceneScenarios(
         ['세련된 카페', '카페 테이블', '카페 창가'],
         ['세련된', '우아한', '자신감']
       ),
+    },
+  ]
+}
+
+// 완전 시나리오 정규화 (설정 포함)
+function normalizeCompleteScenarios(rawScenarios: unknown[]): Scenario[] {
+  return rawScenarios.map((s: unknown, i: number) => {
+    const scenario = s as Record<string, unknown>
+    const rawScenes = (scenario.scenes as unknown[]) || []
+    const rawSettings = (scenario.recommendedSettings as Record<string, unknown>) || {}
+
+    // 씬 정규화
+    const scenes: SceneInfo[] = rawScenes.map((sc: unknown, j: number) => {
+      const scene = sc as Record<string, unknown>
+      return {
+        sceneIndex: (scene.sceneIndex as number) ?? j,
+        title: (scene.title as string) || `씬 ${j + 1}`,
+        description: (scene.description as string) || '',
+        firstFramePrompt: (scene.firstFramePrompt as string) || '',
+        motionPromptEN: (scene.motionPromptEN as string) || '',
+        duration: (scene.duration as number) || (rawSettings.sceneDurations as number[])?.[j] || 5,
+        movementAmplitude: (scene.movementAmplitude as SceneInfo['movementAmplitude']) ||
+          (rawSettings.movementAmplitudes as string[])?.[j] as SceneInfo['movementAmplitude'] || 'auto',
+        location: (scene.location as string) || '',
+        mood: (scene.mood as string) || '',
+      }
+    })
+
+    // 추천 설정 정규화
+    const sceneCount = scenes.length || 3
+    const recommendedSettings: RecommendedSettings = {
+      aspectRatio: (rawSettings.aspectRatio as RecommendedSettings['aspectRatio']) || '9:16',
+      sceneCount,
+      sceneDurations: (rawSettings.sceneDurations as number[]) || scenes.map(s => s.duration),
+      movementAmplitudes: (rawSettings.movementAmplitudes as RecommendedSettings['movementAmplitudes']) ||
+        scenes.map(s => s.movementAmplitude),
+    }
+
+    // sceneDurations와 movementAmplitudes 길이 맞추기
+    while (recommendedSettings.sceneDurations.length < sceneCount) {
+      recommendedSettings.sceneDurations.push(5)
+    }
+    while (recommendedSettings.movementAmplitudes.length < sceneCount) {
+      recommendedSettings.movementAmplitudes.push('auto')
+    }
+
+    // 총 길이 계산
+    const totalDuration = scenes.reduce((sum, sc) => sum + sc.duration, 0)
+
+    return {
+      id: (scenario.id as string) || String(i + 1),
+      title: (scenario.title as string) || `시나리오 ${i + 1}`,
+      description: (scenario.description as string) || '',
+      concept: (scenario.concept as string) || '',
+      productAppearance: (scenario.productAppearance as string) || '제품이 자연스럽게 등장',
+      mood: (scenario.mood as string) || '',
+      location: (scenario.location as string) || '',
+      tags: (scenario.tags as string[]) || [],
+      scenes,
+      totalDuration,
+      recommendedSettings,
+    }
+  })
+}
+
+// 완전 시나리오 Fallback (설정 포함)
+function getFallbackCompleteScenarios(productName: string): Scenario[] {
+  const product = productName || '제품'
+  const productEN = productName || 'the product'
+
+  return [
+    {
+      id: '1',
+      title: '아침 루틴',
+      description: '상쾌한 아침, 제품과 시작하는 하루',
+      concept: '밝은 아침 햇살이 들어오는 방에서 기상 후 제품을 사용하며 하루를 시작하는 자연스러운 모닝 루틴.',
+      productAppearance: '침대에서 일어나 제품을 집어들고 사용하는 순간',
+      mood: '상쾌하고 활기찬',
+      location: '밝은 침실',
+      tags: ['아침', '루틴', '상쾌함'],
+      totalDuration: 15,
+      recommendedSettings: {
+        aspectRatio: '9:16',
+        sceneCount: 3,
+        sceneDurations: [4, 5, 6],
+        movementAmplitudes: ['small', 'medium', 'small'],
+      },
+      scenes: [
+        {
+          sceneIndex: 0,
+          title: '기상',
+          description: '상쾌하게 일어남',
+          firstFramePrompt: '밝은 아침 햇살이 창문으로 들어오는 깨끗한 침실에서, 모델이 이불 속에서 막 눈을 뜨며 기지개를 펴려는 순간. 부드러운 자연광이 얼굴을 비추고, 평화로운 표정.',
+          motionPromptEN: `Person slowly wakes up, stretches arms above head with a peaceful expression. Eyes gradually open, looks toward window with gentle smile. Natural morning movements, relaxed and unhurried.`,
+          duration: 4,
+          movementAmplitude: 'small',
+          location: '밝은 침실',
+          mood: '평화로운',
+        },
+        {
+          sceneIndex: 1,
+          title: '제품 발견',
+          description: `${product} 집어들기`,
+          firstFramePrompt: `침대 옆 협탁 위에 놓인 ${product}을(를) 향해 손을 뻗는 모델. 기대감 어린 표정으로 제품을 바라보며, 아침 햇살이 제품과 손을 비춤.`,
+          motionPromptEN: `Person reaches toward ${productEN} on bedside table. Picks it up gently, brings it closer to examine with anticipation. Expression brightens as they hold the product. Smooth deliberate movements.`,
+          duration: 5,
+          movementAmplitude: 'medium',
+          location: '침실 침대 옆',
+          mood: '기대감',
+        },
+        {
+          sceneIndex: 2,
+          title: '만족',
+          description: '환한 미소로 마무리',
+          firstFramePrompt: `${product}을(를) 양손으로 부드럽게 쥐고 가슴 앞에 들고 있는 모델. 밝은 미소를 지으며 카메라를 바라봄. 자연광이 얼굴과 제품을 따뜻하게 비춤.`,
+          motionPromptEN: `Person holds ${productEN} at chest level with both hands. Slowly turns to camera with bright satisfied smile. Slight head tilt, warm genuine expression. Presents product naturally toward camera.`,
+          duration: 6,
+          movementAmplitude: 'small',
+          location: '밝은 침실',
+          mood: '만족스러운',
+        },
+      ],
+    },
+    {
+      id: '2',
+      title: '휴식 시간',
+      description: '편안한 오후, 나만의 힐링 타임',
+      concept: '아늑한 거실 소파에서 여유로운 오후 시간을 보내며 제품과 함께 휴식하는 편안한 순간.',
+      productAppearance: '소파에 앉아 제품을 사용하며 휴식',
+      mood: '편안하고 따뜻한',
+      location: '아늑한 거실',
+      tags: ['휴식', '힐링', '편안함'],
+      totalDuration: 12,
+      recommendedSettings: {
+        aspectRatio: '1:1',
+        sceneCount: 2,
+        sceneDurations: [5, 7],
+        movementAmplitudes: ['medium', 'small'],
+      },
+      scenes: [
+        {
+          sceneIndex: 0,
+          title: '휴식 시작',
+          description: '소파에 앉음',
+          firstFramePrompt: `따뜻한 오후 햇살이 들어오는 거실, 부드러운 소파에 편안하게 앉으려는 모델. ${product}이(가) 테이블 위에 놓여있고, 편안한 캐주얼 복장, 여유로운 표정.`,
+          motionPromptEN: `Person settles comfortably onto soft couch, exhales with relaxation. Shoulders drop, body relaxes into cushions. Reaches toward ${productEN} on coffee table. Natural settling movements.`,
+          duration: 5,
+          movementAmplitude: 'medium',
+          location: '거실 소파',
+          mood: '편안한',
+        },
+        {
+          sceneIndex: 1,
+          title: '만족의 순간',
+          description: '제품과 함께 휴식',
+          firstFramePrompt: `소파에 편안하게 앉아 ${product}을(를) 양손으로 감싸 쥔 모델. 눈을 살짝 감으며 만족스러운 표정. 부드러운 조명이 전체 장면을 따뜻하게 감쌈.`,
+          motionPromptEN: `Person holds ${productEN} with both hands, eyes close briefly in contentment. Opens eyes with warm smile, gently caresses product. Peaceful satisfied expression, completely relaxed posture.`,
+          duration: 7,
+          movementAmplitude: 'small',
+          location: '거실 소파',
+          mood: '만족스러운',
+        },
+      ],
+    },
+    {
+      id: '3',
+      title: '도시의 순간',
+      description: '세련된 카페에서의 스타일리시한 일상',
+      concept: '트렌디한 도심 카페에서 여유롭게 시간을 보내며 제품을 자연스럽게 사용하는 세련된 라이프스타일.',
+      productAppearance: '카페 테이블에서 제품을 꺼내 사용하는 모습',
+      mood: '세련되고 도시적인',
+      location: '트렌디한 카페',
+      tags: ['카페', '라이프스타일', '세련됨'],
+      totalDuration: 18,
+      recommendedSettings: {
+        aspectRatio: '16:9',
+        sceneCount: 4,
+        sceneDurations: [3, 5, 5, 5],
+        movementAmplitudes: ['small', 'medium', 'small', 'small'],
+      },
+      scenes: [
+        {
+          sceneIndex: 0,
+          title: '카페 도착',
+          description: '창가 자리에 앉음',
+          firstFramePrompt: '세련된 인테리어의 카페 창가 자리, 모델이 의자에 앉으며 주변을 둘러보는 순간. 자연광이 들어오고, 자신감 있는 표정.',
+          motionPromptEN: 'Person settles into cafe window seat, glances around appreciating the atmosphere. Confident poised expression, adjusts posture elegantly. Quick establishing movement.',
+          duration: 3,
+          movementAmplitude: 'small',
+          location: '카페 창가',
+          mood: '여유로운',
+        },
+        {
+          sceneIndex: 1,
+          title: '제품 등장',
+          description: `${product} 꺼내기`,
+          firstFramePrompt: `카페 테이블 위에 가방이 놓여있고, 모델이 가방에서 ${product}을(를) 꺼내려 손을 뻗는 순간. 기대감 있는 표정.`,
+          motionPromptEN: `Person reaches into bag on table, pulls out ${productEN} with smooth motion. Places it on table, admires it with pleased expression. Deliberate stylish movements.`,
+          duration: 5,
+          movementAmplitude: 'medium',
+          location: '카페 테이블',
+          mood: '기대감',
+        },
+        {
+          sceneIndex: 2,
+          title: '사용 순간',
+          description: '제품 살펴보기',
+          firstFramePrompt: `${product}을(를) 양손으로 들고 자세히 살펴보는 모델. 만족스러운 미소, 카페의 세련된 배경이 보임.`,
+          motionPromptEN: `Person examines ${productEN} closely, turning it gently in hands. Expression shows satisfaction and appreciation. Elegant careful movements, sophisticated demeanor.`,
+          duration: 5,
+          movementAmplitude: 'small',
+          location: '카페',
+          mood: '만족스러운',
+        },
+        {
+          sceneIndex: 3,
+          title: '마무리',
+          description: '자신감 있는 포즈',
+          firstFramePrompt: `${product}을(를) 한 손에 들고 카메라를 향해 자신감 있게 미소짓는 모델. 카페 창문으로 들어오는 자연광이 얼굴을 비춤.`,
+          motionPromptEN: `Person holds ${productEN} in one hand, turns confidently to camera. Bright sophisticated smile, slight head tilt. Presents product with natural elegance, poised final pose.`,
+          duration: 5,
+          movementAmplitude: 'small',
+          location: '카페 창가',
+          mood: '자신감',
+        },
+      ],
     },
   ]
 }

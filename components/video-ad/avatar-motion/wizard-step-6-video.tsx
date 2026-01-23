@@ -23,7 +23,7 @@ import { useAvatarMotionWizard, SceneVideo } from './wizard-context'
 // 생성 상태
 type VideoGenerationStatus = 'idle' | 'generating_scenes' | 'merging' | 'completed' | 'error'
 
-export function WizardStep5() {
+export function WizardStep6Video() {
   const {
     getSelectedScenario,
     sceneKeyframes,
@@ -271,7 +271,7 @@ export function WizardStep5() {
     }
   }, [sceneVideos, sceneCount, setIsMergingVideos, setResultVideoUrl, setGenerationProgress, saveDraft])
 
-  // Step 5 진입 시 자동으로 영상 생성 시작
+  // Step 6 진입 시 자동으로 영상 생성 시작
   useEffect(() => {
     // 이미 완료된 영상이 있으면 스킵
     if (resultVideoUrl) {

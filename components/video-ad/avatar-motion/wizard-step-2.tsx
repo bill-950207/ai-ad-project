@@ -1,129 +1,42 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
 import {
   Sparkles,
   ArrowLeft,
   ArrowRight,
-  Loader2,
   Check,
-  RefreshCw,
-  Film,
-  MapPin,
-  Package,
-  Palette,
+  Edit3,
+  Video,
 } from 'lucide-react'
-import { useAvatarMotionWizard, Scenario } from './wizard-context'
+import {
+  useAvatarMotionWizard,
+  StoryMethod,
+} from './wizard-context'
 
 export function WizardStep2() {
   const {
     selectedProduct,
     selectedAvatarInfo,
-    scenarios,
-    setScenarios,
-    selectedScenarioIndex,
-    setSelectedScenarioIndex,
-    isGeneratingScenarios,
-    setIsGeneratingScenarios,
+    storyMethod,
+    setStoryMethod,
     canProceedToStep3,
     goToNextStep,
     goToPrevStep,
-    saveDraft,
-    isSaving,
   } = useAvatarMotionWizard()
 
-  // 중복 요청 방지를 위한 ref
-  const scenarioRequestedRef = useRef(false)
-
-  // 시나리오 생성 API 호출
-  const generateScenarios = useCallback(async (isManualRefresh = false) => {
-    if (!selectedProduct || !selectedAvatarInfo) return
-
-    // 수동 새로고침이 아닌 경우, 중복 요청 체크
-    if (!isManualRefresh && scenarioRequestedRef.current) {
-      return
-    }
-    scenarioRequestedRef.current = true
-
-    setIsGeneratingScenarios(true)
-
-    try {
-      // 아바타 설명 구성
-      let avatarDescription = ''
-      if (selectedAvatarInfo.type === 'ai-generated') {
-        avatarDescription = 'AI 자동 생성 아바타'
-      } else if (selectedAvatarInfo.type === 'outfit') {
-        avatarDescription = `${selectedAvatarInfo.avatarName} (${selectedAvatarInfo.outfitName || '의상 교체'})`
-      } else {
-        avatarDescription = selectedAvatarInfo.avatarName || selectedAvatarInfo.displayName || '아바타'
-      }
-
-      const res = await fetch('/api/avatar-motion/generate-story', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          productName: selectedProduct.name,
-          productDescription: selectedProduct.description || '',
-          productSellingPoints: selectedProduct.selling_points || [],
-          avatarDescription,
-          avatarType: selectedAvatarInfo.type,
-        }),
-      })
-
-      if (!res.ok) {
-        throw new Error('시나리오 생성 실패')
-      }
-
-      const data = await res.json()
-
-      if (data.scenarios && data.scenarios.length > 0) {
-        setScenarios(data.scenarios)
-        // 첫 번째 시나리오 자동 선택
-        setSelectedScenarioIndex(0)
-      }
-    } catch (error) {
-      console.error('시나리오 생성 오류:', error)
-      // 에러 시 ref 리셋하여 재시도 가능하게
-      if (!isManualRefresh) {
-        scenarioRequestedRef.current = false
-      }
-    } finally {
-      setIsGeneratingScenarios(false)
-    }
-  }, [selectedProduct, selectedAvatarInfo, setScenarios, setSelectedScenarioIndex, setIsGeneratingScenarios])
-
-  // Step 2 진입 시 시나리오 자동 생성
-  useEffect(() => {
-    if (scenarios.length === 0 && !isGeneratingScenarios) {
-      generateScenarios(false)
-    }
-  }, [scenarios.length, isGeneratingScenarios, generateScenarios])
-
-  // 시나리오 새로고침
-  const handleRefreshScenarios = () => {
-    scenarioRequestedRef.current = false
-    setScenarios([])
-    setSelectedScenarioIndex(null)
-    generateScenarios(true)
+  // 방식 선택
+  const handleSelectMethod = (method: StoryMethod) => {
+    setStoryMethod(method)
   }
 
-  // 시나리오 선택
-  const handleSelectScenario = (index: number) => {
-    setSelectedScenarioIndex(index)
-  }
-
-  // 다음 단계로 이동 (DB 저장 포함)
-  const handleNext = async () => {
+  // 다음 단계로
+  const handleNext = () => {
     if (!canProceedToStep3()) return
-    await saveDraft({ wizardStep: 3 })
     goToNextStep()
   }
 
-  // 선택된 시나리오
-  const selectedScenario = selectedScenarioIndex !== null ? scenarios[selectedScenarioIndex] : null
-
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6">
       {/* 선택된 정보 요약 */}
       <div className="flex items-center gap-4 p-4 bg-secondary/30 rounded-xl">
         {selectedAvatarInfo && (
@@ -159,94 +72,142 @@ export function WizardStep2() {
         )}
       </div>
 
-      {/* 시나리오 생성 중 */}
-      {isGeneratingScenarios && (
-        <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-              <Loader2 className="w-8 h-8 text-primary animate-spin" />
-            </div>
-            <div className="text-center">
-              <h3 className="font-medium text-foreground mb-1">AI가 시나리오를 생성 중입니다</h3>
-              <p className="text-sm text-muted-foreground">
-                {selectedProduct ? `"${selectedProduct.name}"` : '제품'}에 맞는 영화적 시나리오를 만들고 있습니다...
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 헤더 */}
+      <div className="text-center">
+        <h2 className="text-xl font-bold text-foreground">시나리오 설정 방식 선택</h2>
+        <p className="text-muted-foreground mt-2">
+          어떻게 광고 시나리오를 구성할지 선택해주세요
+        </p>
+      </div>
 
-      {/* 시나리오 선택 */}
-      {!isGeneratingScenarios && scenarios.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <Film className="w-5 h-5 text-primary" />
-              시나리오 선택
-            </h2>
-            <button
-              onClick={handleRefreshScenarios}
-              disabled={isGeneratingScenarios}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
-            >
-              <RefreshCw className="w-4 h-4" />
-              다시 생성
-            </button>
-          </div>
-
-          <p className="text-sm text-muted-foreground">
-            AI가 추천하는 3가지 시나리오 중 하나를 선택하세요.
-          </p>
-
-          <div className="grid gap-3">
-            {scenarios.map((scenario, index) => (
-              <ScenarioCard
-                key={scenario.id}
-                scenario={scenario}
-                index={index}
-                isSelected={selectedScenarioIndex === index}
-                onSelect={() => handleSelectScenario(index)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 선택된 시나리오 상세 */}
-      {selectedScenario && !isGeneratingScenarios && (
-        <div className="bg-primary/5 border border-primary/20 rounded-xl p-5">
+      {/* 방식 선택 카드 */}
+      <div className="grid gap-4">
+        {/* 직접 입력 */}
+        <button
+          onClick={() => handleSelectMethod('direct')}
+          className={`p-5 rounded-xl border-2 text-left transition-all ${
+            storyMethod === 'direct'
+              ? 'border-primary bg-primary/5'
+              : 'border-border hover:border-primary/50'
+          }`}
+        >
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-5 h-5 text-primary" />
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
+              storyMethod === 'direct' ? 'bg-primary/20' : 'bg-secondary'
+            }`}>
+              <Edit3 className={`w-6 h-6 ${
+                storyMethod === 'direct' ? 'text-primary' : 'text-muted-foreground'
+              }`} />
             </div>
             <div className="flex-1">
-              <h3 className="font-medium text-primary mb-2">
-                선택된 시나리오: {selectedScenario.title}
-              </h3>
-              <div className="space-y-2 text-sm">
-                <p className="text-foreground">{selectedScenario.concept}</p>
-                <div className="flex items-center gap-4 text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3" />
-                    {selectedScenario.location}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Palette className="w-3 h-3" />
-                    {selectedScenario.mood}
-                  </span>
-                </div>
-                <div className="flex items-start gap-1 text-muted-foreground">
-                  <Package className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                  <span>{selectedScenario.productAppearance}</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-lg text-foreground">직접 입력</h3>
+                {storyMethod === 'direct' && (
+                  <Check className="w-5 h-5 text-primary" />
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                배경, 분위기, 카메라 앵글, 씬 구성 등을 직접 선택하여 광고를 구성합니다
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="px-2 py-1 bg-secondary text-xs text-muted-foreground rounded">
+                  세부 조정 가능
+                </span>
+                <span className="px-2 py-1 bg-secondary text-xs text-muted-foreground rounded">
+                  자유로운 구성
+                </span>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        </button>
+
+        {/* AI 추천 */}
+        <button
+          onClick={() => handleSelectMethod('ai-auto')}
+          className={`p-5 rounded-xl border-2 text-left transition-all ${
+            storyMethod === 'ai-auto'
+              ? 'border-primary bg-primary/5'
+              : 'border-border hover:border-primary/50'
+          }`}
+        >
+          <div className="flex items-start gap-4">
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
+              storyMethod === 'ai-auto' ? 'bg-primary/20' : 'bg-secondary'
+            }`}>
+              <Sparkles className={`w-6 h-6 ${
+                storyMethod === 'ai-auto' ? 'text-primary' : 'text-muted-foreground'
+              }`} />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-lg text-foreground">AI 추천</h3>
+                <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full font-medium">
+                  추천
+                </span>
+                {storyMethod === 'ai-auto' && (
+                  <Check className="w-5 h-5 text-primary" />
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                제품과 아바타 정보를 분석하여 AI가 최적의 시나리오와 설정을 추천합니다
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="px-2 py-1 bg-primary/10 text-xs text-primary rounded">
+                  3가지 시나리오 제안
+                </span>
+                <span className="px-2 py-1 bg-secondary text-xs text-muted-foreground rounded">
+                  자동 설정
+                </span>
+                <span className="px-2 py-1 bg-secondary text-xs text-muted-foreground rounded">
+                  수정 요청 가능
+                </span>
+              </div>
+            </div>
+          </div>
+        </button>
+
+        {/* 참조 영상 */}
+        <button
+          onClick={() => handleSelectMethod('reference')}
+          className={`p-5 rounded-xl border-2 text-left transition-all ${
+            storyMethod === 'reference'
+              ? 'border-primary bg-primary/5'
+              : 'border-border hover:border-primary/50'
+          }`}
+        >
+          <div className="flex items-start gap-4">
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
+              storyMethod === 'reference' ? 'bg-primary/20' : 'bg-secondary'
+            }`}>
+              <Video className={`w-6 h-6 ${
+                storyMethod === 'reference' ? 'text-primary' : 'text-muted-foreground'
+              }`} />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-lg text-foreground">참조 영상 분석</h3>
+                {storyMethod === 'reference' && (
+                  <Check className="w-5 h-5 text-primary" />
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                기존 광고 영상을 분석하여 스타일과 구성을 추출합니다
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="px-2 py-1 bg-secondary text-xs text-muted-foreground rounded">
+                  스타일 복제
+                </span>
+                <span className="px-2 py-1 bg-secondary text-xs text-muted-foreground rounded">
+                  YouTube 지원
+                </span>
+              </div>
+            </div>
+          </div>
+        </button>
+      </div>
 
       {/* 네비게이션 버튼 */}
-      <div className="flex gap-3">
+      <div className="flex gap-3 pt-4">
         <button
           onClick={goToPrevStep}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
@@ -256,91 +217,20 @@ export function WizardStep2() {
         </button>
         <button
           onClick={handleNext}
-          disabled={!canProceedToStep3() || isSaving}
+          disabled={!canProceedToStep3()}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isSaving ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              저장 중...
-            </>
-          ) : (
-            <>
-              다음
-              <ArrowRight className="w-4 h-4" />
-            </>
-          )}
+          다음
+          <ArrowRight className="w-4 h-4" />
         </button>
       </div>
 
-      {/* 유효성 메시지 */}
-      {!canProceedToStep3() && !isGeneratingScenarios && scenarios.length > 0 && (
+      {/* 안내 메시지 */}
+      {!storyMethod && (
         <p className="text-center text-sm text-muted-foreground">
-          시나리오를 선택해주세요
+          시나리오 설정 방식을 선택해주세요
         </p>
       )}
     </div>
-  )
-}
-
-// 시나리오 카드 컴포넌트
-interface ScenarioCardProps {
-  scenario: Scenario
-  index: number
-  isSelected: boolean
-  onSelect: () => void
-}
-
-function ScenarioCard({ scenario, index, isSelected, onSelect }: ScenarioCardProps) {
-  // 인덱스에 따른 아이콘 색상
-  const colorClasses = [
-    'from-blue-500 to-cyan-500',
-    'from-purple-500 to-pink-500',
-    'from-orange-500 to-amber-500',
-  ]
-  const colorClass = colorClasses[index % colorClasses.length]
-
-  return (
-    <button
-      onClick={onSelect}
-      className={`p-4 rounded-xl border-2 text-left transition-all ${
-        isSelected
-          ? 'border-primary bg-primary/5'
-          : 'border-border hover:border-primary/50'
-      }`}
-    >
-      <div className="flex items-start gap-4">
-        {/* 시나리오 번호 */}
-        <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${colorClass} flex items-center justify-center flex-shrink-0`}>
-          <span className="text-white font-bold">{index + 1}</span>
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h4 className="font-semibold text-foreground">{scenario.title}</h4>
-            {isSelected && (
-              <Check className="w-4 h-4 text-primary flex-shrink-0" />
-            )}
-          </div>
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {scenario.description}
-          </p>
-          {/* 태그 */}
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            <span className="px-2 py-0.5 bg-secondary text-xs text-muted-foreground rounded">
-              {scenario.location}
-            </span>
-            <span className="px-2 py-0.5 bg-secondary text-xs text-muted-foreground rounded">
-              {scenario.mood}
-            </span>
-            {scenario.tags.slice(0, 2).map((tag, i) => (
-              <span key={i} className="px-2 py-0.5 bg-secondary text-xs text-muted-foreground rounded">
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-    </button>
   )
 }

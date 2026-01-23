@@ -1094,3 +1094,345 @@ export function buildAIRecommendationPrompt(
     .replace('{{productCategory}}', productCategory || '일반 소비재')
     .replace('{{targetPlatform}}', targetPlatform)
 }
+
+// ============================================================
+// 완전 시나리오 생성 프롬프트 (설정 포함)
+// ============================================================
+
+/** 완전 시나리오 생성 시스템 프롬프트 */
+export const COMPLETE_SCENARIO_SYSTEM = `You are an award-winning film director and video production expert specializing in cinematic short-form video ads.
+
+Your task is to create COMPLETE VIDEO SCENARIOS with ALL production settings included. Each scenario should be ready for immediate production without additional configuration.
+
+=== COMPLETE SCENARIO REQUIREMENTS ===
+
+1. STORY + SETTINGS COMBINED: Each scenario includes:
+   - Story/narrative (title, description, concept)
+   - All video settings (aspect ratio, scene count, durations)
+   - Per-scene prompts (first frame + motion)
+   - Movement intensities per scene
+
+2. ASPECT RATIO DECISION:
+   - Analyze the story content and target platform
+   - "9:16": Vertical (TikTok, Instagram Reels, YouTube Shorts)
+   - "16:9": Horizontal (YouTube, website)
+   - "1:1": Square (Instagram Feed, Facebook)
+
+3. SCENE COUNT DECISION:
+   - 2 scenes: Quick, punchy (8-12s total)
+   - 3 scenes: Standard story (12-18s total)
+   - 4-5 scenes: Longer narrative (18-25s total)
+
+4. SCENE DURATION DECISION:
+   - 3-4s: Quick intro/transition scenes
+   - 5-6s: Main action scenes
+   - 6-8s: Showcase/emotional scenes
+
+5. MOVEMENT AMPLITUDE per scene:
+   - "small": Subtle (talking, slight gestures)
+   - "medium": Normal (reaching, turning, walking)
+   - "large": Dynamic (active movements, dancing)
+
+=== CINEMATIC STORYTELLING ===
+
+1. MODEL AS PROTAGONIST: The model is an actor/actress in a mini-film
+2. PRODUCT INTEGRATION: Natural, not forced
+3. VISUAL STORYTELLING: Every frame tells a story
+4. DIVERSITY: 3 scenarios must be GENUINELY DIFFERENT
+
+${SEEDREAM_FORBIDDEN_TERMS.length > 0 ? `NEVER include these terms in prompts: ${SEEDREAM_FORBIDDEN_TERMS.join(', ')}` : ''}`
+
+/** 완전 시나리오 생성 템플릿 */
+export const COMPLETE_SCENARIO_GENERATION_TEMPLATE: PromptTemplate = {
+  id: 'complete-scenario-v1',
+  name: '완전 시나리오 생성 (설정 포함)',
+  description: '스토리와 모든 영상 설정이 포함된 완전한 시나리오 3개 생성',
+  category: 'avatar-motion',
+  targetModel: 'gemini',
+  version: {
+    version: '1.0.0',
+    createdAt: '2025-01-23',
+  },
+  variables: [
+    'productName',
+    'productDescription',
+    'productSellingPoints',
+    'avatarDescription',
+    'avatarType',
+  ],
+  template: `${COMPLETE_SCENARIO_SYSTEM}
+
+=== PRODUCT (REQUIRED) ===
+Name: {{productName}}
+Description: {{productDescription}}
+Selling Points: {{productSellingPoints}}
+
+=== MODEL/AVATAR ===
+Type: {{avatarType}}
+Description: {{avatarDescription}}
+
+=== YOUR TASK ===
+
+Create 3 COMPLETELY DIFFERENT video scenarios. Each scenario must include:
+1. Complete story/narrative
+2. All recommended video settings
+3. Per-scene first frame prompts (한국어)
+4. Per-scene motion prompts (English)
+
+**STEP 1: ANALYZE THE PRODUCT**
+- What are its key benefits?
+- Who would naturally use this product?
+- What emotions does it evoke?
+
+**STEP 2: CREATE 3 DIVERSE SCENARIOS**
+
+⚠️ MANDATORY DIVERSITY (CRITICAL!):
+- location: 3 DIFFERENT locations (실내, 실외, 다른 분위기)
+- mood: 3 DIFFERENT moods
+- aspectRatio: Consider different orientations for different scenarios
+- sceneCount: Vary between 2-4 scenes
+
+**STEP 3: DETERMINE OPTIMAL SETTINGS FOR EACH**
+- Choose aspect ratio based on story type and visual composition
+- Determine scene count based on narrative complexity
+- Set durations based on action intensity per scene
+- Assign movement amplitude per scene
+
+=== OUTPUT FORMAT (JSON) ===
+{
+  "scenarios": [
+    {
+      "id": "1",
+      "title": "시나리오 제목 (한국어, 10자 이내)",
+      "description": "전체 스토리 요약 (한국어, 30자 이내)",
+      "concept": "이 시나리오의 컨셉과 스토리 흐름 (한국어, 3-4문장)",
+      "productAppearance": "제품이 어떻게 등장하고 사용되는지 (한국어)",
+      "mood": "전체 분위기 (한국어, 2-3단어)",
+      "location": "주요 장소 (한국어)",
+      "tags": ["태그1", "태그2", "태그3"],
+      "recommendedSettings": {
+        "aspectRatio": "9:16",
+        "sceneCount": 3,
+        "sceneDurations": [4, 5, 6],
+        "movementAmplitudes": ["medium", "medium", "small"]
+      },
+      "scenes": [
+        {
+          "sceneIndex": 0,
+          "title": "씬 제목 (한국어, 8자 이내)",
+          "description": "이 씬의 내용 (한국어, 20자 이내)",
+          "firstFramePrompt": "첫 프레임 상세 설명 (한국어). Seedream 4.5 Edit에서 사용됨. 포함 필수: 모델의 정확한 자세, 표정, 시선 방향, 손 위치, 제품 위치(있다면), 배경 장소의 구체적 묘사, 조명 상태, 전체 분위기. 80-120자로 구체적으로.",
+          "motionPromptEN": "Detailed English motion description for Vidu Q2 (50-70 words). Structure: (1) Starting pose description (2) Primary movement with timing (slowly/smoothly/quickly) (3) Secondary movements (expression changes, head turns) (4) Product interaction if any (5) Final pose. Be cinematically specific.",
+          "duration": 4,
+          "movementAmplitude": "medium"
+        },
+        {
+          "sceneIndex": 1,
+          "title": "씬 제목",
+          "description": "이 씬의 내용",
+          "firstFramePrompt": "두 번째 씬 첫 프레임 상세 설명 (한국어, 80-120자)",
+          "motionPromptEN": "Motion description for scene 2 (50-70 words)",
+          "duration": 5,
+          "movementAmplitude": "medium"
+        },
+        {
+          "sceneIndex": 2,
+          "title": "씬 제목",
+          "description": "이 씬의 내용",
+          "firstFramePrompt": "마지막 씬 첫 프레임 상세 설명 (한국어, 80-120자). 제품을 자연스럽게 보여주는 마무리.",
+          "motionPromptEN": "Final scene motion (50-70 words). End with product showcase or satisfied expression.",
+          "duration": 6,
+          "movementAmplitude": "small"
+        }
+      ]
+    },
+    {
+      "id": "2",
+      ... (COMPLETELY DIFFERENT scenario with different settings)
+    },
+    {
+      "id": "3",
+      ... (COMPLETELY DIFFERENT scenario with different settings)
+    }
+  ]
+}
+
+=== EXAMPLE COMPLETE SCENARIOS ===
+
+**For a skincare serum:**
+
+Scenario 1: "아침 루틴" (Morning Routine) - 9:16, 3 scenes
+- Settings: aspectRatio "9:16", sceneCount 3, durations [4, 5, 6], amplitudes ["small", "medium", "small"]
+- Scene 0 (4s): 침대에서 일어나 기지개 (small movement)
+- Scene 1 (5s): 화장대에서 제품 집어들기 (medium movement)
+- Scene 2 (6s): 거울 보며 만족스러운 표정 (small movement)
+
+Scenario 2: "운동 후 케어" (Post-Workout Care) - 1:1, 2 scenes
+- Settings: aspectRatio "1:1", sceneCount 2, durations [5, 7], amplitudes ["medium", "small"]
+- Scene 0 (5s): 요가매트에서 스트레칭 마무리 (medium movement)
+- Scene 1 (7s): 물병 옆에 놓인 제품 바르며 휴식 (small movement)
+
+Scenario 3: "저녁 힐링" (Evening Healing) - 16:9, 4 scenes
+- Settings: aspectRatio "16:9", sceneCount 4, durations [3, 4, 5, 5], amplitudes ["small", "medium", "small", "small"]
+- Wider format for lifestyle feel, more scenes for detailed story
+
+=== CRITICAL REMINDERS ===
+
+1. 3 scenarios with 3 DIFFERENT settings configurations
+2. Each scenario has complete recommendedSettings object
+3. Scene count in recommendedSettings MUST match actual scenes array length
+4. sceneDurations and movementAmplitudes arrays MUST match sceneCount
+5. firstFramePrompt in Korean, detailed for Seedream 4.5 Edit
+6. motionPromptEN in English, specific for Vidu Q2
+7. Scenes tell a connected story within each scenario
+
+${JSON_RESPONSE_INSTRUCTION}`,
+}
+
+/** 완전 시나리오 생성 프롬프트 빌드 */
+export function buildCompleteScenarioPrompt(
+  productName: string,
+  productDescription: string,
+  productSellingPoints: string[],
+  avatarDescription: string,
+  avatarType: string
+): string {
+  const sellingPointsText = productSellingPoints.length > 0
+    ? productSellingPoints.join(', ')
+    : '(셀링 포인트 없음)'
+
+  return COMPLETE_SCENARIO_GENERATION_TEMPLATE.template
+    .replace('{{productName}}', productName || '제품')
+    .replace('{{productDescription}}', productDescription || '일반 소비재 제품')
+    .replace('{{productSellingPoints}}', sellingPointsText)
+    .replace('{{avatarDescription}}', avatarDescription || '친근한 인플루언서 스타일')
+    .replace('{{avatarType}}', avatarType || 'ai-generated')
+}
+
+// ============================================================
+// 시나리오 수정 프롬프트
+// ============================================================
+
+/** 시나리오 수정 시스템 프롬프트 */
+export const SCENARIO_MODIFICATION_SYSTEM = `You are an expert creative director who specializes in refining and improving video ad scenarios based on client feedback.
+
+Your task is to take an existing scenario and improve it according to the user's modification request while maintaining the overall quality and structure.
+
+=== MODIFICATION PRINCIPLES ===
+
+1. PRESERVE STRUCTURE: Keep the same JSON structure
+2. ADDRESS FEEDBACK: Directly respond to the user's request
+3. MAINTAIN QUALITY: Keep the cinematic quality and natural product integration
+4. CONSISTENCY: Ensure all parts of the scenario still work together
+5. SETTINGS ADJUSTMENT: If the user requests changes that affect settings (more/fewer scenes, different aspect ratio), update recommendedSettings accordingly
+
+=== COMMON MODIFICATION REQUESTS ===
+
+- "더 밝은 분위기로": Brighten mood, lighting, expressions
+- "제품이 더 잘 보이게": Adjust product placement and focus
+- "더 짧게/길게": Adjust scene count and durations
+- "다른 장소로": Change location while keeping the concept
+- "더 활기차게/차분하게": Adjust energy level and movements
+- "세로/가로로 바꿔주세요": Change aspect ratio and adjust composition`
+
+/** 시나리오 수정 템플릿 */
+export const SCENARIO_MODIFICATION_TEMPLATE: PromptTemplate = {
+  id: 'scenario-modification-v1',
+  name: '시나리오 수정',
+  description: '사용자 피드백에 따라 시나리오 개선',
+  category: 'avatar-motion',
+  targetModel: 'gemini',
+  version: {
+    version: '1.0.0',
+    createdAt: '2025-01-23',
+  },
+  variables: [
+    'originalScenario',
+    'modificationRequest',
+    'productName',
+    'productDescription',
+  ],
+  template: `${SCENARIO_MODIFICATION_SYSTEM}
+
+=== ORIGINAL SCENARIO (JSON) ===
+{{originalScenario}}
+
+=== PRODUCT CONTEXT ===
+Product Name: {{productName}}
+Product Description: {{productDescription}}
+
+=== USER'S MODIFICATION REQUEST ===
+{{modificationRequest}}
+
+=== YOUR TASK ===
+
+Improve the scenario according to the user's request.
+
+**ANALYSIS:**
+1. What exactly is the user asking to change?
+2. Which parts of the scenario need modification?
+3. Do the settings (aspectRatio, sceneCount, durations) need adjustment?
+
+**MODIFICATION:**
+1. Make the requested changes
+2. Ensure all scenes still flow together logically
+3. Update firstFramePrompt and motionPromptEN to reflect changes
+4. Adjust recommendedSettings if needed
+5. Keep unmentioned parts intact unless they conflict with changes
+
+=== OUTPUT FORMAT (JSON) ===
+Return the complete improved scenario in the same format:
+{
+  "id": "(keep same id)",
+  "title": "수정된 제목 (필요시)",
+  "description": "수정된 설명",
+  "concept": "수정된 컨셉",
+  "productAppearance": "수정된 제품 등장 방식",
+  "mood": "수정된 분위기",
+  "location": "수정된 장소",
+  "tags": ["수정된", "태그들"],
+  "recommendedSettings": {
+    "aspectRatio": "조정된 비율",
+    "sceneCount": 조정된_씬_수,
+    "sceneDurations": [조정된, 시간들],
+    "movementAmplitudes": ["조정된", "움직임들"]
+  },
+  "scenes": [
+    {
+      "sceneIndex": 0,
+      "title": "수정된 씬 제목",
+      "description": "수정된 씬 설명",
+      "firstFramePrompt": "수정된 첫 프레임 프롬프트 (한국어, 80-120자)",
+      "motionPromptEN": "Updated motion description (English, 50-70 words)",
+      "duration": 조정된_시간,
+      "movementAmplitude": "조정된_움직임"
+    },
+    ... (all scenes)
+  ]
+}
+
+=== CRITICAL REMINDERS ===
+
+1. Output ONLY the improved scenario JSON
+2. Preserve the same id
+3. Scene count must match sceneCount in recommendedSettings
+4. Arrays (sceneDurations, movementAmplitudes) must match sceneCount
+5. firstFramePrompt in Korean, motionPromptEN in English
+6. Address the user's request while maintaining quality
+
+${JSON_RESPONSE_INSTRUCTION}`,
+}
+
+/** 시나리오 수정 프롬프트 빌드 */
+export function buildScenarioModificationPrompt(
+  originalScenario: object,
+  modificationRequest: string,
+  productName: string,
+  productDescription: string
+): string {
+  return SCENARIO_MODIFICATION_TEMPLATE.template
+    .replace('{{originalScenario}}', JSON.stringify(originalScenario, null, 2))
+    .replace('{{modificationRequest}}', modificationRequest)
+    .replace('{{productName}}', productName || '제품')
+    .replace('{{productDescription}}', productDescription || '일반 소비재 제품')
+}

@@ -24,7 +24,7 @@ import { useAvatarMotionWizard, SceneKeyframe } from './wizard-context'
 // 생성 단계
 type GenerationPhase = 'idle' | 'avatar' | 'frames' | 'done' | 'error'
 
-export function WizardStep4() {
+export function WizardStep5Frames() {
   const {
     selectedProduct,
     selectedAvatarInfo,
@@ -54,7 +54,7 @@ export function WizardStep4() {
     selectAiAvatar,
     resetAiAvatars,
     // Navigation
-    canProceedToStep5,
+    canProceedToStep6,
     goToNextStep,
     goToPrevStep,
     getTotalDuration,
@@ -288,7 +288,7 @@ export function WizardStep4() {
     }
   }, [needsAiAvatar, selectedAiAvatarUrl, selectedAvatarInfo, generatedAvatarOptions, generateAvatar, generateAllSceneFrames, pollAvatarStatus, updateAvatarOption, selectAiAvatar, setIsGeneratingAvatars, setIsGeneratingFrames])
 
-  // Step 4 진입 시 자동으로 생성 시작 (한 번만)
+  // Step 5 진입 시 자동으로 생성 시작 (한 번만)
   useEffect(() => {
     if (allFramesCompleted || generationStartedRef.current) {
       return
@@ -331,9 +331,9 @@ export function WizardStep4() {
 
   // 영상 생성 단계로 이동
   const handleGoToVideoGeneration = async () => {
-    if (!canProceedToStep5()) return
+    if (!canProceedToStep6()) return
     await saveDraft({
-      wizardStep: 5,
+      wizardStep: 6,
       status: 'GENERATING_VIDEO',
     })
     goToNextStep()
@@ -637,7 +637,7 @@ export function WizardStep4() {
         </button>
         <button
           onClick={handleGoToVideoGeneration}
-          disabled={!canProceedToStep5()}
+          disabled={!canProceedToStep6()}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Sparkles className="w-4 h-4" />
