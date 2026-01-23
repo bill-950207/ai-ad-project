@@ -425,8 +425,14 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     setAspectRatio(aiRecommendedSettings.aspectRatio)
     setResolution(aiRecommendedSettings.resolution)
     setSceneCount(aiRecommendedSettings.sceneCount)
-    setSceneDurations(aiRecommendedSettings.sceneDurations)
-    setMovementAmplitudes(aiRecommendedSettings.movementAmplitudes)
+
+    // undefined 체크 후 적용
+    if (aiRecommendedSettings.sceneDurations && aiRecommendedSettings.sceneDurations.length > 0) {
+      setSceneDurations(aiRecommendedSettings.sceneDurations)
+    }
+    if (aiRecommendedSettings.movementAmplitudes && aiRecommendedSettings.movementAmplitudes.length > 0) {
+      setMovementAmplitudes(aiRecommendedSettings.movementAmplitudes)
+    }
 
     // 이미지 크기도 비율에 맞게 설정
     const sizeMap: Record<AspectRatio, ImageSize> = {
@@ -445,8 +451,23 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     const settings = scenario.recommendedSettings
     setAspectRatio(settings.aspectRatio)
     setSceneCount(settings.sceneCount)
-    setSceneDurations(settings.sceneDurations)
-    setMovementAmplitudes(settings.movementAmplitudes)
+
+    // 씬에서 duration과 movementAmplitude 추출 (recommendedSettings에 없을 수 있음)
+    if (settings.sceneDurations && settings.sceneDurations.length > 0) {
+      setSceneDurations(settings.sceneDurations)
+    } else if (scenario.scenes && scenario.scenes.length > 0) {
+      // 씬에서 추출
+      const durations = scenario.scenes.map(s => s.duration || 2)
+      setSceneDurations(durations)
+    }
+
+    if (settings.movementAmplitudes && settings.movementAmplitudes.length > 0) {
+      setMovementAmplitudes(settings.movementAmplitudes)
+    } else if (scenario.scenes && scenario.scenes.length > 0) {
+      // 씬에서 추출
+      const amplitudes = scenario.scenes.map(s => (s.movementAmplitude as MovementAmplitude) || 'medium')
+      setMovementAmplitudes(amplitudes)
+    }
 
     // 이미지 크기도 비율에 맞게 설정
     const sizeMap: Record<AspectRatio, ImageSize> = {
@@ -464,6 +485,9 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
 
   // 총 영상 길이 계산
   const getTotalDuration = useCallback(() => {
+    if (!sceneDurations || sceneDurations.length === 0) {
+      return sceneCount * 2 // 기본값: 씬당 2초
+    }
     return sceneDurations.slice(0, sceneCount).reduce((sum, d) => sum + d, 0)
   }, [sceneDurations, sceneCount])
 
