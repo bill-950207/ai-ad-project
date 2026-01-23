@@ -635,6 +635,8 @@ model video_ads {
   // MultiScene (Kling O1 / Vidu Q2) 전용 필드
   scene_keyframes       Json?            // 씬 키프레임 배열 [{sceneIndex, imageUrl, status}, ...]
   scene_video_urls      Json?            // 씬별 영상 URL 배열 [{sceneIndex, videoUrl}, ...]
+  // BGM (배경 음악) 정보
+  bgm_info              Json?            // {music_id, track_index, start_time, end_time, music_volume, original_video_url}
   avatars               avatars?         @relation(fields: [avatar_id], references: [id], onUpdate: NoAction)
   ad_products           ad_products?     @relation(fields: [product_id], references: [id], onUpdate: NoAction)
   profiles              profiles         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
