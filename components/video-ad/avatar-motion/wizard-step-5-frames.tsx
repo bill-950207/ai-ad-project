@@ -537,7 +537,7 @@ export function WizardStep5Frames() {
             </div>
 
             <p className="text-sm text-muted-foreground mt-6">
-              이 과정은 {sceneCount * 30}초 ~ {sceneCount * 60}초 정도 소요됩니다
+              이 과정은 {Math.ceil(sceneCount * 30 / 60)}분 ~ {Math.ceil(sceneCount * 60 / 60)}분 정도 소요됩니다
             </p>
           </div>
         </div>
