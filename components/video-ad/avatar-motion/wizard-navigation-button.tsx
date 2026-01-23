@@ -84,9 +84,15 @@ export function WizardNavigation({
   return (
     <div
       className={cn(
-        'flex gap-3 mt-6 transition-all duration-300',
-        // 컨테이너도 다음 버튼이 보일 때만 높이 확보
-        showNext ? 'opacity-100 max-h-20' : 'opacity-0 max-h-0 overflow-hidden',
+        // 하단 고정 플로팅
+        'sticky bottom-0 left-0 right-0 z-10',
+        // 배경 그라데이션 (위로 페이드)
+        'pt-6 pb-4 -mx-4 px-4',
+        'bg-gradient-to-t from-background via-background to-transparent',
+        // 버튼 컨테이너
+        'flex gap-3 transition-all duration-300',
+        // 다음 버튼 표시 조건
+        showNext ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none',
         className
       )}
     >
