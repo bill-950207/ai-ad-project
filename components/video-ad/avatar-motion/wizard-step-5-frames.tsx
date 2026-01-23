@@ -18,6 +18,8 @@ import {
   Package,
   Layers,
   ImageIcon,
+  MessageSquare,
+  RotateCw,
 } from 'lucide-react'
 import { useAvatarMotionWizard, SceneKeyframe } from './wizard-context'
 
@@ -66,6 +68,12 @@ export function WizardStep5Frames() {
   const [generationPhase, setGenerationPhase] = useState<GenerationPhase>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [currentGeneratingScene, setCurrentGeneratingScene] = useState(0)
+
+  // 프레임 재생성 관련 상태
+  const [showRegenerateModal, setShowRegenerateModal] = useState(false)
+  const [regeneratingSceneIndex, setRegeneratingSceneIndex] = useState<number | null>(null)
+  const [regeneratePrompt, setRegeneratePrompt] = useState('')
+  const [isRegenerating, setIsRegenerating] = useState(false)
 
   // 중복 생성 방지를 위한 ref
   const generationStartedRef = useRef(false)
@@ -194,18 +202,18 @@ export function WizardStep5Frames() {
     }
   }, [selectedScenario, selectedAvatarInfo, selectedProduct, aspectRatio, imageSize, additionalPrompt, needsAiAvatar, selectedAiAvatarDescription])
 
-  // 모든 씬 프레임 순차 생성
+  // 모든 씬 프레임 병렬 생성
   const generateAllSceneFrames = useCallback(async (avatarImageUrl: string | undefined) => {
     if (!selectedScenario) return
 
     setIsGeneratingFrames(true)
 
-    // 씬 키프레임 초기화
+    // 씬 키프레임 초기화 (모두 generating 상태)
     const initialKeyframes: SceneKeyframe[] = Array.from({ length: sceneCount }, (_, i) => ({
       sceneIndex: i,
       imageUrl: null,
       requestId: null,
-      status: 'pending',
+      status: 'generating',
     }))
     setSceneKeyframes(initialKeyframes)
 
@@ -213,15 +221,11 @@ export function WizardStep5Frames() {
     const scenes = selectedScenario.scenes || []
     const hasMultiScene = scenes.length > 0
 
-    for (let i = 0; i < sceneCount; i++) {
-      setCurrentGeneratingScene(i)
-
+    // 모든 씬에 대해 병렬로 프레임 생성
+    const framePromises = Array.from({ length: sceneCount }, async (_, i) => {
       // 해당 씬의 firstFramePrompt 가져오기
       const scene = hasMultiScene ? scenes[i] : null
       const framePrompt = scene?.firstFramePrompt || selectedScenario.firstFramePrompt || ''
-
-      // 상태를 generating으로 업데이트
-      updateSceneKeyframe(i, { status: 'generating' })
 
       // 프레임 생성
       const imageUrl = await generateSceneFrame(i, framePrompt, avatarImageUrl)
@@ -232,10 +236,15 @@ export function WizardStep5Frames() {
         if (i === 0) {
           setStartFrameUrl(imageUrl)
         }
+        return { index: i, success: true, imageUrl }
       } else {
         updateSceneKeyframe(i, { status: 'failed', error: '프레임 생성 실패' })
+        return { index: i, success: false }
       }
-    }
+    })
+
+    // 모든 프레임 생성 완료 대기
+    await Promise.all(framePromises)
 
     setIsGeneratingFrames(false)
   }, [selectedScenario, sceneCount, setIsGeneratingFrames, setSceneKeyframes, updateSceneKeyframe, setStartFrameUrl, generateSceneFrame])
@@ -339,6 +348,85 @@ export function WizardStep5Frames() {
     goToNextStep()
   }
 
+  // 단일 프레임 재생성 (이전 이미지 참조)
+  const regenerateSingleFrame = useCallback(async (sceneIndex: number, additionalInstruction: string) => {
+    if (!selectedScenario) return
+
+    setIsRegenerating(true)
+    updateSceneKeyframe(sceneIndex, { status: 'generating' })
+
+    try {
+      const scene = selectedScenario.scenes?.[sceneIndex]
+      let framePrompt = scene?.firstFramePrompt || selectedScenario.firstFramePrompt || ''
+
+      // 사용자 추가 지시사항 추가
+      if (additionalInstruction.trim()) {
+        framePrompt = `${framePrompt}\n\n사용자 수정 요청: ${additionalInstruction}`
+      }
+      if (additionalPrompt) {
+        framePrompt = `${framePrompt}\n\n추가 지시: ${additionalPrompt}`
+      }
+
+      // 기존 이미지를 참조하여 수정 생성 (reference_image 활용)
+      const existingImageUrl = sceneKeyframes[sceneIndex]?.imageUrl
+
+      const response = await fetch('/api/avatar-motion/generate-frames', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          avatarImageUrl: needsAiAvatar ? selectedAiAvatarUrl : selectedAvatarInfo?.imageUrl,
+          avatarDescription: needsAiAvatar ? selectedAiAvatarDescription : '',
+          productImageUrl: selectedProduct?.rembg_image_url || selectedProduct?.image_url,
+          productInfo: selectedProduct
+            ? `${selectedProduct.name}: ${selectedProduct.description || ''}`
+            : '',
+          startFramePrompt: framePrompt,
+          aspectRatio,
+          imageSize,
+          locationPrompt: scene?.location || selectedScenario?.location || '',
+          referenceImageUrl: existingImageUrl, // 기존 이미지를 참조로 전달
+          isRegeneration: true,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('프레임 재생성 실패')
+      }
+
+      const data = await response.json()
+
+      if (data.startFrame.status === 'completed' && data.startFrame.imageUrl) {
+        updateSceneKeyframe(sceneIndex, { status: 'completed', imageUrl: data.startFrame.imageUrl })
+        if (sceneIndex === 0) {
+          setStartFrameUrl(data.startFrame.imageUrl)
+        }
+      } else {
+        throw new Error('프레임 이미지를 받지 못했습니다')
+      }
+    } catch (error) {
+      console.error('프레임 재생성 오류:', error)
+      updateSceneKeyframe(sceneIndex, { status: 'failed', error: '재생성 실패' })
+    } finally {
+      setIsRegenerating(false)
+      setShowRegenerateModal(false)
+      setRegeneratingSceneIndex(null)
+      setRegeneratePrompt('')
+    }
+  }, [selectedScenario, sceneKeyframes, selectedAvatarInfo, selectedProduct, selectedAiAvatarUrl, selectedAiAvatarDescription, aspectRatio, imageSize, additionalPrompt, needsAiAvatar, updateSceneKeyframe, setStartFrameUrl])
+
+  // 프레임 재생성 모달 열기
+  const handleOpenRegenerateModal = (sceneIndex: number) => {
+    setRegeneratingSceneIndex(sceneIndex)
+    setRegeneratePrompt('')
+    setShowRegenerateModal(true)
+  }
+
+  // 프레임 재생성 요청
+  const handleRegenerateSubmit = () => {
+    if (regeneratingSceneIndex === null) return
+    regenerateSingleFrame(regeneratingSceneIndex, regeneratePrompt)
+  }
+
   // 생성 중 상태 표시
   const getPhaseText = () => {
     switch (generationPhase) {
@@ -346,8 +434,8 @@ export function WizardStep5Frames() {
         return { title: 'AI 아바타 생성 중', description: '시나리오에 맞는 아바타를 만들고 있어요' }
       case 'frames':
         return {
-          title: `씬 ${currentGeneratingScene + 1}/${sceneCount} 프레임 생성 중`,
-          description: '각 씬의 첫 장면을 만들고 있어요'
+          title: '씬 이미지를 생성하고 있어요',
+          description: '각 장면의 이미지를 만들고 있어요'
         }
       default:
         return { title: '준비 중', description: '' }
@@ -526,11 +614,17 @@ export function WizardStep5Frames() {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {sceneKeyframes.map((kf, i) => {
           const scene = selectedScenario.scenes?.[i]
+          const isThisRegenerating = isRegenerating && regeneratingSceneIndex === i
           return (
             <div key={i} className="bg-card border border-border rounded-xl overflow-hidden">
               {/* 프레임 이미지 */}
               <div className={`relative ${aspectRatio === '9:16' ? 'aspect-[9/16]' : aspectRatio === '16:9' ? 'aspect-[16/9]' : 'aspect-square'}`}>
-                {kf.imageUrl ? (
+                {isThisRegenerating ? (
+                  <div className="w-full h-full bg-secondary flex flex-col items-center justify-center">
+                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                    <span className="text-xs text-muted-foreground mt-2">재생성 중...</span>
+                  </div>
+                ) : kf.imageUrl ? (
                   <img
                     src={kf.imageUrl}
                     alt={`씬 ${i + 1} 프레임`}
@@ -544,7 +638,7 @@ export function WizardStep5Frames() {
                 <div className="absolute top-2 left-2 px-2 py-1 bg-black/60 rounded text-white text-xs font-medium">
                   씬 {i + 1}
                 </div>
-                {kf.status === 'completed' && (
+                {kf.status === 'completed' && !isThisRegenerating && (
                   <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
                     <Check className="w-3 h-3 text-white" />
                   </div>
@@ -563,9 +657,18 @@ export function WizardStep5Frames() {
                     </>
                   )}
                 </div>
-                <p className="text-xs text-foreground line-clamp-2">
+                <p className="text-xs text-foreground line-clamp-2 mb-2">
                   {scene?.description || scene?.title || `씬 ${i + 1}`}
                 </p>
+                {/* 재생성 버튼 */}
+                <button
+                  onClick={() => handleOpenRegenerateModal(i)}
+                  disabled={isRegenerating}
+                  className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 rounded border border-border transition-colors disabled:opacity-50"
+                >
+                  <RotateCw className="w-3 h-3" />
+                  재생성
+                </button>
               </div>
             </div>
           )
@@ -637,7 +740,7 @@ export function WizardStep5Frames() {
         </button>
         <button
           onClick={handleGoToVideoGeneration}
-          disabled={!canProceedToStep6()}
+          disabled={!canProceedToStep6() || isRegenerating}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Sparkles className="w-4 h-4" />
@@ -645,6 +748,74 @@ export function WizardStep5Frames() {
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
+
+      {/* 프레임 재생성 모달 */}
+      {showRegenerateModal && regeneratingSceneIndex !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-2xl shadow-xl w-full max-w-md">
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <RotateCw className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">씬 {regeneratingSceneIndex + 1} 프레임 재생성</h3>
+                  <p className="text-sm text-muted-foreground">수정하고 싶은 점을 입력하면 기존 이미지를 참조하여 재생성합니다</p>
+                </div>
+              </div>
+
+              {/* 현재 이미지 미리보기 */}
+              {sceneKeyframes[regeneratingSceneIndex]?.imageUrl && (
+                <div className="rounded-lg overflow-hidden border border-border">
+                  <img
+                    src={sceneKeyframes[regeneratingSceneIndex].imageUrl!}
+                    alt={`현재 씬 ${regeneratingSceneIndex + 1}`}
+                    className="w-full h-auto max-h-48 object-contain bg-secondary"
+                  />
+                </div>
+              )}
+
+              <textarea
+                value={regeneratePrompt}
+                onChange={(e) => setRegeneratePrompt(e.target.value)}
+                placeholder="예: 배경을 더 밝게, 제품을 더 크게, 아바타 표정을 더 밝게..."
+                rows={3}
+                className="w-full px-4 py-3 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+              />
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowRegenerateModal(false)
+                    setRegeneratingSceneIndex(null)
+                    setRegeneratePrompt('')
+                  }}
+                  className="flex-1 px-4 py-2.5 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleRegenerateSubmit}
+                  disabled={isRegenerating}
+                  className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isRegenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      재생성 중...
+                    </>
+                  ) : (
+                    <>
+                      <RotateCw className="w-4 h-4" />
+                      재생성
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -173,6 +173,15 @@ function WizardHeader({ onBack }: WizardHeaderProps) {
 
 function WizardContent() {
   const { step } = useAvatarMotionWizard()
+  const prevStepRef = useRef(step)
+
+  // 스텝 변경 시 스크롤 상단으로 이동
+  useEffect(() => {
+    if (prevStepRef.current !== step) {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      prevStepRef.current = step
+    }
+  }, [step])
 
   return (
     <div className="flex-1 max-w-5xl mx-auto px-4 py-8 w-full">

@@ -40,9 +40,11 @@ export interface SceneInfo {
   sceneIndex: number                // 씬 인덱스 (0부터)
   title: string                     // 씬 제목 (한국어)
   description: string               // 씬 설명 (한국어)
-  firstFramePrompt: string          // 첫 프레임 생성용 프롬프트 (한국어)
-  motionPromptEN: string            // Vidu Q2용 영어 모션 프롬프트
-  duration: number                  // 씬 길이 (초, 1-8)
+  imageSummary: string              // 이미지 프롬프트 요약 (사용자 언어, 표시용)
+  videoSummary: string              // 영상 프롬프트 요약 (사용자 언어, 표시용)
+  firstFramePrompt: string          // 첫 프레임 생성용 프롬프트 (영어, AI용)
+  motionPromptEN: string            // 영상 모션용 프롬프트 (영어, AI용)
+  duration: number                  // 씬 길이 (초, 2-5)
   movementAmplitude: MovementAmplitude  // 움직임 강도
   location: string                  // 배경/장소
   mood: string                      // 분위기

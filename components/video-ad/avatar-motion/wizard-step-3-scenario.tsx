@@ -21,9 +21,7 @@ import {
   Smartphone,
   Square,
   Video,
-  ChevronDown,
-  ChevronUp,
-  Play,
+  ImageIcon,
 } from 'lucide-react'
 import {
   useAvatarMotionWizard,
@@ -622,7 +620,6 @@ interface DetailedScenarioCardProps {
 }
 
 function DetailedScenarioCard({ scenario, index, isSelected, onSelect, onModify }: DetailedScenarioCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
 
   // 인덱스에 따른 아이콘 색상
   const colorClasses = [
@@ -717,37 +714,18 @@ function DetailedScenarioCard({ scenario, index, isSelected, onSelect, onModify 
         </div>
       </button>
 
-      {/* 씬 상세 정보 (펼치기/접기) */}
+      {/* 씬 상세 정보 (가로 스크롤) */}
       {scenario.scenes && scenario.scenes.length > 0 && (
-        <>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsExpanded(!isExpanded)
-            }}
-            className="w-full px-5 py-2 border-t border-border flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/30 transition-colors"
-          >
-            {isExpanded ? (
-              <>
-                <ChevronUp className="w-4 h-4" />
-                씬 상세 정보 접기
-              </>
-            ) : (
-              <>
-                <ChevronDown className="w-4 h-4" />
-                씬 상세 정보 보기
-              </>
-            )}
-          </button>
-
-          {isExpanded && (
-            <div className="px-5 pb-4 space-y-3 border-t border-border pt-4">
-              {scenario.scenes.map((scene, i) => (
-                <SceneInfoCard key={i} scene={scene} sceneNumber={i + 1} />
-              ))}
-            </div>
-          )}
-        </>
+        <div className="border-t border-border pt-4 pb-4">
+          <div className="px-5 mb-2 text-xs text-muted-foreground">
+            씬 구성 ({scenario.scenes.length}개)
+          </div>
+          <div className="flex gap-3 overflow-x-auto px-5 pb-2 scrollbar-hide">
+            {scenario.scenes.map((scene, i) => (
+              <SceneInfoCard key={i} scene={scene} sceneNumber={i + 1} />
+            ))}
+          </div>
+        </div>
       )}
 
       {/* 수정 요청 버튼 */}
@@ -767,7 +745,7 @@ function DetailedScenarioCard({ scenario, index, isSelected, onSelect, onModify 
   )
 }
 
-// 씬 정보 카드
+// 씬 정보 카드 (가로 스크롤용 컴팩트 디자인)
 interface SceneInfoCardProps {
   scene: SceneInfo
   sceneNumber: number
@@ -775,44 +753,60 @@ interface SceneInfoCardProps {
 
 function SceneInfoCard({ scene, sceneNumber }: SceneInfoCardProps) {
   return (
-    <div className="p-4 bg-secondary/30 rounded-lg">
-      <div className="flex items-start gap-3">
-        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-          <Play className="w-4 h-4 text-primary" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h5 className="font-medium text-foreground">
-              씬 {sceneNumber}: {scene.title}
-            </h5>
-            <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded">
-              {scene.duration}초
-            </span>
+    <div className="flex-shrink-0 w-56 p-3 bg-secondary/30 rounded-lg border border-border/50">
+      {/* 헤더 */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 bg-primary/10 rounded flex items-center justify-center">
+            <span className="text-xs font-bold text-primary">{sceneNumber}</span>
           </div>
-          <p className="text-sm text-muted-foreground mb-2">
-            {scene.description}
-          </p>
-          <div className="flex flex-wrap gap-2 text-xs">
-            {scene.location && (
-              <span className="flex items-center gap-1 text-muted-foreground">
-                <MapPin className="w-3 h-3" />
-                {scene.location}
-              </span>
-            )}
-            {scene.mood && (
-              <span className="flex items-center gap-1 text-muted-foreground">
-                <Palette className="w-3 h-3" />
-                {scene.mood}
-              </span>
-            )}
-            {scene.movementAmplitude && scene.movementAmplitude !== 'auto' && (
-              <span className="text-muted-foreground">
-                움직임: {scene.movementAmplitude === 'small' ? '작음' : scene.movementAmplitude === 'medium' ? '보통' : '크게'}
-              </span>
-            )}
-          </div>
+          <span className="text-sm font-medium text-foreground truncate max-w-[120px]">
+            {scene.title}
+          </span>
         </div>
+        <span className="text-xs text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
+          {scene.duration}초
+        </span>
       </div>
+
+      {/* 설명 */}
+      <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+        {scene.description}
+      </p>
+
+      {/* 이미지/모션 요약 (있을 때만 표시) */}
+      <div className="space-y-1.5">
+        {scene.imageSummary && (
+          <div className="flex items-start gap-1.5 text-xs">
+            <ImageIcon className="w-3 h-3 text-blue-500 flex-shrink-0 mt-0.5" />
+            <span className="text-foreground/70 line-clamp-2">{scene.imageSummary}</span>
+          </div>
+        )}
+        {scene.videoSummary && (
+          <div className="flex items-start gap-1.5 text-xs">
+            <Video className="w-3 h-3 text-purple-500 flex-shrink-0 mt-0.5" />
+            <span className="text-foreground/70 line-clamp-2">{scene.videoSummary}</span>
+          </div>
+        )}
+      </div>
+
+      {/* 장소/분위기 태그 */}
+      {(scene.location || scene.mood) && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {scene.location && (
+            <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-secondary text-[10px] text-muted-foreground rounded">
+              <MapPin className="w-2.5 h-2.5" />
+              {scene.location}
+            </span>
+          )}
+          {scene.mood && (
+            <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-secondary text-[10px] text-muted-foreground rounded">
+              <Palette className="w-2.5 h-2.5" />
+              {scene.mood}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   )
 }

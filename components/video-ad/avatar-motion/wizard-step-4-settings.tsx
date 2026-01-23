@@ -164,7 +164,7 @@ export function WizardStep4Settings() {
   }, [storyMethod, selectedScenarioIndex, selectedScenario, applyScenarioSettings, settingsApplied])
 
   // AI 추천 모드인지 확인
-  const isAIAutoMode = storyMethod === 'ai-auto' && selectedScenario?.recommendedSettings
+  const isAIAutoMode = storyMethod === 'ai-auto' && !!selectedScenario?.recommendedSettings
   const isReferenceMode = storyMethod === 'reference'
 
   // 화면 비율 변경
@@ -371,8 +371,18 @@ export function WizardStep4Settings() {
         </div>
       )}
 
-      {/* AI 추천 모드 안내 (AI 추천 또는 참고 모드일 때) */}
-      {(isAIAutoMode || isReferenceMode) && (
+      {/* AI 추천 모드 안내 (AI 추천 모드일 때) */}
+      {isAIAutoMode && (
+        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-start gap-2">
+          <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-blue-600/80 dark:text-blue-400/80">
+            AI 추천 시나리오의 설정입니다. 수정이 필요하면 이전 단계에서 다른 시나리오를 선택하거나 수정 요청을 해주세요.
+          </p>
+        </div>
+      )}
+
+      {/* 참조 모드 안내 */}
+      {isReferenceMode && (
         <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-start gap-2">
           <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-blue-600/80 dark:text-blue-400/80">
@@ -382,21 +392,23 @@ export function WizardStep4Settings() {
       )}
 
       {/* 화면 비율 선택 */}
-      <div className="space-y-3">
+      <div className={`space-y-3 ${isAIAutoMode ? 'opacity-60 pointer-events-none' : ''}`}>
         <div className="flex items-center gap-2">
           <Monitor className="w-4 h-4 text-muted-foreground" />
           <span className="font-medium text-foreground">화면 비율</span>
+          {isAIAutoMode && <span className="text-xs text-muted-foreground">(AI 설정)</span>}
         </div>
         <div className="grid grid-cols-3 gap-3">
           {ASPECT_RATIO_OPTIONS.map((option) => (
             <button
               key={option.value}
               onClick={() => handleAspectRatioChange(option)}
+              disabled={isAIAutoMode}
               className={`p-4 rounded-xl border-2 text-center transition-all ${
                 aspectRatio === option.value
                   ? 'border-primary bg-primary/5'
                   : 'border-border hover:border-primary/50'
-              }`}
+              } ${isAIAutoMode ? 'cursor-not-allowed' : ''}`}
             >
               <div className={`w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center ${
                 aspectRatio === option.value
@@ -413,21 +425,23 @@ export function WizardStep4Settings() {
       </div>
 
       {/* 씬 개수 선택 */}
-      <div className="space-y-3">
+      <div className={`space-y-3 ${isAIAutoMode ? 'opacity-60 pointer-events-none' : ''}`}>
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-muted-foreground" />
           <span className="font-medium text-foreground">씬 개수</span>
+          {isAIAutoMode && <span className="text-xs text-muted-foreground">(AI 설정)</span>}
         </div>
         <div className="grid grid-cols-4 gap-2">
           {SCENE_COUNT_OPTIONS.map((option) => (
             <button
               key={option.value}
               onClick={() => handleSceneCountChange(option.value)}
+              disabled={isAIAutoMode}
               className={`p-3 rounded-xl border-2 text-center transition-all ${
                 sceneCount === option.value
                   ? 'border-primary bg-primary/5'
                   : 'border-border hover:border-primary/50'
-              }`}
+              } ${isAIAutoMode ? 'cursor-not-allowed' : ''}`}
             >
               <div className={`text-xl font-bold ${
                 sceneCount === option.value
@@ -443,11 +457,12 @@ export function WizardStep4Settings() {
       </div>
 
       {/* 씬별 시간 설정 */}
-      <div className="space-y-3">
+      <div className={`space-y-3 ${isAIAutoMode ? 'opacity-60 pointer-events-none' : ''}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium text-foreground">씬별 시간 설정</span>
+            {isAIAutoMode && <span className="text-xs text-muted-foreground">(AI 설정)</span>}
           </div>
           <span className="text-sm text-muted-foreground">
             총 {totalDuration}초
@@ -466,7 +481,8 @@ export function WizardStep4Settings() {
                   max="8"
                   value={sceneDurations[i] || 5}
                   onChange={(e) => handleSceneDurationChange(i, parseInt(e.target.value))}
-                  className="flex-1 h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                  disabled={isAIAutoMode}
+                  className={`flex-1 h-2 bg-secondary rounded-lg appearance-none accent-primary ${isAIAutoMode ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                 />
                 <div className="w-16 px-2 py-1 bg-background border border-border rounded text-center text-sm font-medium">
                   {sceneDurations[i] || 5}초
@@ -477,7 +493,7 @@ export function WizardStep4Settings() {
         </div>
       </div>
 
-      {/* 해상도 선택 */}
+      {/* 해상도 선택 - AI 모드에서도 수정 가능 */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Play className="w-4 h-4 text-muted-foreground" />
@@ -528,8 +544,11 @@ export function WizardStep4Settings() {
         {showAdvancedSettings && (
           <div className="p-4 space-y-4">
             {/* 씬별 움직임 강도 */}
-            <div className="space-y-3">
-              <div className="text-sm font-medium text-foreground">씬별 움직임 강도</div>
+            <div className={`space-y-3 ${isAIAutoMode ? 'opacity-60 pointer-events-none' : ''}`}>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-foreground">씬별 움직임 강도</span>
+                {isAIAutoMode && <span className="text-xs text-muted-foreground">(AI 설정)</span>}
+              </div>
               <div className="space-y-2">
                 {Array.from({ length: sceneCount }, (_, i) => (
                   <div key={i} className="flex items-center gap-3">
@@ -539,11 +558,12 @@ export function WizardStep4Settings() {
                         <button
                           key={opt.value}
                           onClick={() => handleMovementAmplitudeChange(i, opt.value)}
+                          disabled={isAIAutoMode}
                           className={`px-2 py-1 text-xs rounded transition-colors ${
                             movementAmplitudes[i] === opt.value
                               ? 'bg-primary text-primary-foreground'
                               : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
-                          }`}
+                          } ${isAIAutoMode ? 'cursor-not-allowed' : ''}`}
                         >
                           {opt.label}
                         </button>
@@ -554,7 +574,7 @@ export function WizardStep4Settings() {
               </div>
             </div>
 
-            {/* 추가 프롬프트 입력 */}
+            {/* 추가 프롬프트 입력 - AI 모드에서도 사용 가능 */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-muted-foreground" />
