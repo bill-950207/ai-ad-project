@@ -122,6 +122,38 @@ npm run db:migrate   # Run database migrations
 npm run lint         # Run ESLint
 ```
 
+## Git Worktree Setup
+
+이 프로젝트는 여러 워크트리에서 병렬 작업을 지원합니다.
+
+### 워크트리 목록
+```bash
+git worktree list
+```
+
+### 새 워크트리 설정 (필수)
+새 워크트리에서 작업 시작 전 반드시 초기 설정이 필요합니다:
+
+```bash
+./scripts/setup-worktree.sh
+```
+
+또는 수동으로:
+```bash
+npm install
+cp /Users/bill/Desktop/projects/ai_ad_project/.env .
+npm run db:generate
+```
+
+### Claude Code 자동 확인
+**새 세션 시작 시 반드시 확인:**
+1. 현재 디렉토리가 워크트리인지 확인 (`git worktree list`)
+2. `node_modules` 존재 여부 확인
+3. `.env` 파일 존재 여부 확인
+4. `lib/generated/prisma/client` 존재 여부 확인
+
+위 항목 중 하나라도 없으면 `./scripts/setup-worktree.sh` 실행을 제안하세요.
+
 ## Code Conventions
 
 ### TypeScript
