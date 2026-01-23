@@ -33,8 +33,10 @@ import {
   Shirt,
   Settings,
   Film,
+  Music,
 } from 'lucide-react'
 import Image from 'next/image'
+import { MusicSelectModal } from '@/components/video-ad/music-select-modal'
 
 interface SceneKeyframe {
   sceneIndex: number
@@ -100,6 +102,15 @@ interface VideoAdDetail {
     name: string
     image_url: string | null
   }
+  bgm_info?: {
+    music_id: string
+    music_name: string
+    track_index: number
+    start_time: number
+    end_time: number
+    music_volume: number
+    original_video_url: string
+  } | null
 }
 
 export default function VideoAdDetailPage() {
@@ -111,6 +122,9 @@ export default function VideoAdDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  // 음악 추가 상태
+  const [showMusicModal, setShowMusicModal] = useState(false)
 
   // 비디오 컨트롤 상태
   const [isPlaying, setIsPlaying] = useState(false)
@@ -246,6 +260,13 @@ export default function VideoAdDetailPage() {
     if (videoRef.current?.requestFullscreen) {
       videoRef.current.requestFullscreen()
     }
+  }
+
+  // 시간 포맷 함수
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = Math.floor(seconds % 60)
+    return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
   // 번역
@@ -417,6 +438,13 @@ export default function VideoAdDetailPage() {
                 >
                   <Download className="w-4 h-4" />
                   {videoAdT?.download || '다운로드'}
+                </button>
+                <button
+                  onClick={() => setShowMusicModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-lg hover:bg-secondary/80 transition-colors"
+                >
+                  <Music className="w-4 h-4" />
+                  {videoAd.bgm_info ? '음악 변경' : '음악 추가'}
                 </button>
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
@@ -695,6 +723,34 @@ export default function VideoAdDetailPage() {
             </div>
           </div>
 
+          {/* 배경 음악 정보 */}
+          {videoAd.bgm_info && (
+            <div className="bg-card border border-border rounded-xl p-4">
+              <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                <Music className="w-4 h-4" />
+                배경 음악
+              </h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">음악</span>
+                  <span className="text-foreground">{videoAd.bgm_info.music_name}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">구간</span>
+                  <span className="text-foreground">
+                    {formatTime(videoAd.bgm_info.start_time)} - {formatTime(videoAd.bgm_info.end_time)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">볼륨</span>
+                  <span className="text-foreground">
+                    {Math.round(videoAd.bgm_info.music_volume * 100)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 촬영 장소 */}
           {videoAd.location_prompt && (
             <div className="bg-card border border-border rounded-xl p-4">
@@ -755,6 +811,14 @@ export default function VideoAdDetailPage() {
           </div>
         </div>
       )}
+
+      {/* 음악 선택 모달 */}
+      <MusicSelectModal
+        isOpen={showMusicModal}
+        onClose={() => setShowMusicModal(false)}
+        videoDuration={videoAd.video_duration || 10}
+        videoAdId={videoAd.id}
+      />
     </div>
   )
 }
