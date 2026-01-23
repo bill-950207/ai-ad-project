@@ -67,6 +67,10 @@ export function WizardStep2() {
           productSellingPoints: selectedProduct.selling_points || [],
           avatarDescription,
           avatarType: selectedAvatarInfo.type,
+          // 멀티 씬 모드 활성화 - 씬별 프롬프트 포함된 시나리오 생성
+          multiScene: true,
+          sceneCount: 3,
+          totalDuration: 15,
         }),
       })
 
@@ -226,14 +230,22 @@ export function WizardStep2() {
               <div className="space-y-2 text-sm">
                 <p className="text-foreground">{selectedScenario.concept}</p>
                 <div className="flex items-center gap-4 text-muted-foreground">
+                  {/* 멀티 씬 시나리오: 첫 씬의 location 또는 전체 location 사용 */}
                   <span className="flex items-center gap-1">
                     <MapPin className="w-3 h-3" />
-                    {selectedScenario.location}
+                    {selectedScenario.scenes?.[0]?.location || selectedScenario.location || '다양한 장소'}
                   </span>
                   <span className="flex items-center gap-1">
                     <Palette className="w-3 h-3" />
                     {selectedScenario.mood}
                   </span>
+                  {/* 멀티 씬일 경우 씬 개수 표시 */}
+                  {selectedScenario.scenes && selectedScenario.scenes.length > 0 && (
+                    <span className="flex items-center gap-1">
+                      <Film className="w-3 h-3" />
+                      {selectedScenario.scenes.length}개 씬
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-start gap-1 text-muted-foreground">
                   <Package className="w-3 h-3 mt-0.5 flex-shrink-0" />
@@ -327,12 +339,19 @@ function ScenarioCard({ scenario, index, isSelected, onSelect }: ScenarioCardPro
           </p>
           {/* 태그 */}
           <div className="flex flex-wrap gap-1.5 mt-2">
+            {/* 멀티 씬 시나리오: 첫 씬의 location 또는 전체 location 사용 */}
             <span className="px-2 py-0.5 bg-secondary text-xs text-muted-foreground rounded">
-              {scenario.location}
+              {scenario.scenes?.[0]?.location || scenario.location || '다양한 장소'}
             </span>
             <span className="px-2 py-0.5 bg-secondary text-xs text-muted-foreground rounded">
               {scenario.mood}
             </span>
+            {/* 멀티 씬일 경우 씬 개수 표시 */}
+            {scenario.scenes && scenario.scenes.length > 0 && (
+              <span className="px-2 py-0.5 bg-primary/10 text-xs text-primary rounded">
+                {scenario.scenes.length}개 씬 · {scenario.totalDuration || scenario.scenes.reduce((sum, s) => sum + s.duration, 0)}초
+              </span>
+            )}
             {scenario.tags.slice(0, 2).map((tag, i) => (
               <span key={i} className="px-2 py-0.5 bg-secondary text-xs text-muted-foreground rounded">
                 {tag}

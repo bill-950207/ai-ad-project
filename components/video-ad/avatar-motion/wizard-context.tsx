@@ -45,9 +45,9 @@ export interface Scenario {
   productAppearance: string         // 제품 등장 방식 설명 (한국어)
   mood: string                      // 전체 분위기 키워드
   tags: string[]                    // 태그 배열
-  // 멀티 씬 정보
-  scenes: SceneInfo[]               // 씬 배열
-  totalDuration: number             // 총 길이 (초)
+  // 멀티 씬 정보 (선택적 - 멀티 씬 모드에서만 존재)
+  scenes?: SceneInfo[]              // 씬 배열 (멀티 씬 모드)
+  totalDuration?: number            // 총 길이 (초)
   // Legacy (단일 씬 호환)
   firstFramePrompt?: string         // 첫 프레임 생성용 프롬프트 (한국어)
   motionPromptEN?: string           // 영상 모션용 프롬프트 (영어)

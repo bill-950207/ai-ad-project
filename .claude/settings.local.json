@@ -47,7 +47,10 @@
       "Bash(git worktree:*)",
       "Bash(gh pr list:*)",
       "Bash(npm run type-check:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh auth status:*)",
+      "Bash(git worktree add:*)"
     ]
   }
 }
