@@ -32,7 +32,7 @@ const SCENE_SCHEMA = {
     description: { type: Type.STRING, description: '씬 설명 (한국어, 20자 이내)' },
     imageSummary: { type: Type.STRING, description: '이미지 요약 (한국어, 20자)' },
     videoSummary: { type: Type.STRING, description: '모션 요약 (한국어, 20자)' },
-    firstFramePrompt: { type: Type.STRING, description: '첫 프레임 (영어, 80-100단어)' },
+    firstFramePrompt: { type: Type.STRING, description: '첫 프레임 (영어, 80-100단어) - 인물 외모 묘사 금지, 포즈/표정/의상/환경만' },
     motionPromptEN: { type: Type.STRING, description: '모션 설명 (영어, 40-60단어)' },
     duration: { type: Type.NUMBER, description: '씬 길이 (2-5초, 기본 2초 권장)' },
     movementAmplitude: {

@@ -95,7 +95,7 @@ Product: holding | using | nearby | reaching for | in background
     "productAppearance": "제품 등장 방식",
     "imageSummary": "한국어 15-25자",
     "videoSummary": "한국어 15-25자",
-    "firstFramePrompt": "English 60-80 words. Pose, expression, gaze, product position, background, lighting.",
+    "firstFramePrompt": "English 60-80 words. NO person appearance (age/ethnicity/hair/body). ONLY: pose, expression, clothing, product position, background, lighting, camera.",
     "motionPromptEN": "English 60-80 words. Initial state → movements (slowly, smoothly) → expression transitions → product interaction → final pose.",
     "mood": "한국어 2-3단어",
     "location": "장소 (구체적)",
@@ -194,7 +194,8 @@ JSON with scenarios array containing:
 - productAppearance, mood, tags, totalDuration
 - scenes array with all required fields
 - Each scene: sceneIndex, title, description, imageSummary(한국어), videoSummary(한국어)
-- firstFramePrompt(English 60-80 words), motionPromptEN(English 40-60 words)
+- firstFramePrompt(English 60-80 words - NO person appearance, ONLY pose/expression/clothing/environment)
+- motionPromptEN(English 40-60 words)
 - duration, movementAmplitude, location, mood
 
 === LANGUAGE RULES ===
@@ -254,6 +255,17 @@ Think like a music video director or Nike/Apple commercial editor - rhythmic, pu
    - Build anticipation before product reveal
 
 === SEEDREAM 4.5 IMAGE OPTIMIZATION ===
+
+⚠️ CRITICAL - AVATAR REFERENCE IMAGE:
+An avatar reference image will be provided to the image generation model.
+DO NOT describe the person's physical appearance in firstFramePrompt:
+- NO age (20s, young, middle-aged)
+- NO ethnicity/race (Asian, Korean, Caucasian)
+- NO facial features (sharp jawline, big eyes)
+- NO hair (short black hair, long wavy)
+- NO body type (slim, athletic)
+
+ONLY describe: pose, action, expression, clothing, environment, lighting, camera
 
 For firstFramePrompt (English, 80-100 words):
 ${SEEDREAM_FIRST_FRAME_GUIDE}
@@ -335,7 +347,7 @@ JSON with scenarios array. Each scenario contains:
 - concept(한국어 2문장), productAppearance, mood(2단어), location
 - tags(array), recommendedSettings: { aspectRatio, sceneCount }
 - scenes array with: sceneIndex, title, description, imageSummary(한국어), videoSummary(한국어)
-- firstFramePrompt(English 80-100 words with lighting/camera/composition)
+- firstFramePrompt(English 80-100 words - NO person appearance! ONLY pose/expression/clothing/environment/lighting/camera)
 - motionPromptEN(English 40-60 words)
 - duration(2-5), movementAmplitude(small/medium/large), location, mood
 
@@ -445,7 +457,7 @@ Return the complete improved scenario in the same format:
       "description": "수정된 씬 설명",
       "imageSummary": "이미지 요약 (한국어, 15-25자)",
       "videoSummary": "모션 요약 (한국어, 15-25자)",
-      "firstFramePrompt": "Updated first frame prompt (English, 60-80 words)",
+      "firstFramePrompt": "Updated first frame prompt (English, 60-80 words - NO person appearance, ONLY pose/expression/clothing/environment)",
       "motionPromptEN": "Updated motion description (English, 50-70 words)",
       "duration": 조정된_시간,
       "movementAmplitude": "조정된_움직임"
@@ -463,6 +475,7 @@ Return the complete improved scenario in the same format:
 5. firstFramePrompt in ENGLISH, motionPromptEN in ENGLISH
 6. imageSummary and videoSummary in KOREAN for user display
 7. Address the user's request while maintaining quality
+8. ⚠️ NEVER describe person's physical appearance in firstFramePrompt (avatar reference image provided)
 
 ${JSON_RESPONSE_INSTRUCTION}`,
 }
