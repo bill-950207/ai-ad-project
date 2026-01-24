@@ -168,6 +168,7 @@ function SortableKeyframeCard({
     <div
       ref={setNodeRef}
       style={style}
+      className="w-full min-w-[200px]"
     >
       <div className={`relative rounded-xl overflow-hidden border-2 bg-secondary/20 ${
         isDragging ? 'ring-2 ring-primary shadow-lg' :
@@ -657,15 +658,15 @@ export function WizardStep5() {
               strategy={horizontalListSortingStrategy}
             >
               <div className="flex justify-center w-full">
-                <div className={`grid gap-4 ${
-                  sceneKeyframes.length === 1 ? 'grid-cols-1 max-w-xs' :
-                  sceneKeyframes.length === 2 ? 'grid-cols-2 max-w-lg' :
-                  sceneKeyframes.length === 3 ? 'grid-cols-3 max-w-2xl' :
-                  sceneKeyframes.length === 4 ? 'grid-cols-2 max-w-lg' :
-                  sceneKeyframes.length === 5 ? 'grid-cols-3 max-w-2xl' :
-                  sceneKeyframes.length === 6 ? 'grid-cols-3 max-w-2xl' :
-                  sceneKeyframes.length === 7 ? 'grid-cols-4 max-w-3xl' :
-                  'grid-cols-4 max-w-3xl'
+                <div className={`grid gap-6 ${
+                  sceneKeyframes.length === 1 ? 'grid-cols-1 max-w-md' :
+                  sceneKeyframes.length === 2 ? 'grid-cols-2 max-w-3xl' :
+                  sceneKeyframes.length === 3 ? 'grid-cols-3 max-w-5xl' :
+                  sceneKeyframes.length === 4 ? 'grid-cols-2 max-w-3xl' :
+                  sceneKeyframes.length === 5 ? 'grid-cols-3 max-w-5xl' :
+                  sceneKeyframes.length === 6 ? 'grid-cols-3 max-w-5xl' :
+                  sceneKeyframes.length === 7 ? 'grid-cols-4 max-w-6xl' :
+                  'grid-cols-4 max-w-6xl'
                 } justify-items-center`}>
                   {sceneKeyframes.map((kf) => (
                     <SortableKeyframeCard
