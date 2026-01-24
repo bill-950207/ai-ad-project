@@ -117,6 +117,7 @@ export function WizardStep3() {
           adType,
           productName: selectedProduct?.name,
           productDescription: selectedProduct?.description,
+          productSellingPoints: selectedProduct?.selling_points,  // 셀링 포인트 전달
           language,
           multiple: true,  // 다중 시나리오 모드
           hasAvatar: !!selectedAvatarInfo,
