@@ -1412,16 +1412,16 @@ export function WizardStep6() {
                 </div>
               )}
 
-              {/* 키프레임 그리드 (작은 크기) */}
+              {/* 키프레임 그리드 */}
               <div className="flex justify-center w-full">
-              <div className={`grid gap-3 ${
-                sceneKeyframes.length === 1 ? 'grid-cols-1 max-w-[100px]' :
-                sceneKeyframes.length === 2 ? 'grid-cols-2 max-w-[220px]' :
-                sceneKeyframes.length === 3 ? 'grid-cols-3 max-w-[340px]' :
-                sceneKeyframes.length === 4 ? 'grid-cols-4 max-w-[460px]' :
-                sceneKeyframes.length <= 6 ? 'grid-cols-3 sm:grid-cols-6 max-w-[340px] sm:max-w-[700px]' :
-                'grid-cols-4 sm:grid-cols-8 max-w-[460px] sm:max-w-[940px]'
-              } justify-items-center`}>
+              <div className={`grid gap-4 ${
+                sceneKeyframes.length === 1 ? 'grid-cols-1 max-w-xs' :
+                sceneKeyframes.length === 2 ? 'grid-cols-2 max-w-md' :
+                sceneKeyframes.length === 3 ? 'grid-cols-3 max-w-xl' :
+                sceneKeyframes.length === 4 ? 'grid-cols-4 max-w-2xl' :
+                sceneKeyframes.length <= 6 ? 'grid-cols-3 sm:grid-cols-6 max-w-xl sm:max-w-4xl' :
+                'grid-cols-4 sm:grid-cols-8 max-w-2xl sm:max-w-5xl'
+              } justify-items-center w-full`}>
                 {sceneKeyframes
                   .filter(kf => kf.status === 'completed' && kf.imageUrl)
                   .sort((a, b) => a.sceneIndex - b.sceneIndex)
@@ -1434,7 +1434,7 @@ export function WizardStep6() {
                     return (
                       <div
                         key={kf.sceneIndex}
-                        className={`relative aspect-square rounded-lg overflow-hidden bg-secondary/30 border-2 transition-all ${
+                        className={`relative aspect-video w-full min-w-[120px] rounded-lg overflow-hidden bg-secondary/30 border-2 transition-all ${
                           isSceneCompleted
                             ? 'border-green-500/50'
                             : isSceneFailed
