@@ -1104,13 +1104,16 @@ export interface SunoMusicCallbackItem {
 export interface SunoMusicItem {
   id: string
   audioUrl: string
+  sourceAudioUrl?: string
   streamAudioUrl: string
+  sourceStreamAudioUrl?: string
   imageUrl: string
+  sourceImageUrl?: string
   prompt: string
   modelName: string
   title: string
   tags: string
-  createTime: string
+  createTime: number
   duration: number
 }
 

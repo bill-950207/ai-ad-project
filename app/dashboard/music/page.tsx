@@ -46,6 +46,7 @@ interface AdMusic {
   id: string
   name: string
   status: 'PENDING' | 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED'
+  kie_task_id: string | null
   mood: string | null
   genre: string | null
   product_type: string | null
@@ -229,7 +230,7 @@ export default function MusicPage() {
   // 생성 중인 음악 폴링
   useEffect(() => {
     const pendingMusic = musicList.filter(m =>
-      ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(m.status)
+      m && m.kie_task_id && ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(m.status)
     )
 
     if (pendingMusic.length === 0) return
@@ -237,11 +238,23 @@ export default function MusicPage() {
     const pollStatus = async () => {
       for (const music of pendingMusic) {
         try {
-          const res = await fetch(`/api/ad-music/${music.id}/status`)
+          // kie_task_id로 상태 조회
+          const res = await fetch(`/api/ad-music/${music.kie_task_id}/status`)
           if (res.ok) {
             const data = await res.json()
+            // status API 응답 필드 매핑
             setMusicList(prev =>
-              prev.map(m => m.id === music.id ? data.music : m)
+              prev.map(m => m?.id === data.id ? {
+                ...m,
+                status: data.status,
+                audio_url: data.audioUrl,
+                stream_audio_url: data.streamAudioUrl,
+                image_url: data.imageUrl,
+                duration: data.duration,
+                tracks: data.tracks,
+                error_message: data.error,
+                updated_at: data.updatedAt,
+              } : m)
             )
           }
         } catch (error) {
@@ -341,7 +354,8 @@ export default function MusicPage() {
   }
 
   // 현재 선택된 트랙 가져오기
-  const getCurrentTrack = (music: AdMusic): MusicTrack | null => {
+  const getCurrentTrack = (music: AdMusic | null | undefined): MusicTrack | null => {
+    if (!music) return null
     const tracks = music.tracks || []
     if (tracks.length === 0) return null
     const index = selectedTrackIndex[music.id] ?? 0
@@ -413,7 +427,7 @@ export default function MusicPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {musicList.map(music => (
+          {musicList.filter((m): m is AdMusic => m != null).map(music => (
             <div
               key={music.id}
               className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-lg transition-all"
