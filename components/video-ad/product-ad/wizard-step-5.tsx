@@ -27,7 +27,7 @@ import {
 import {
   SortableContext,
   sortableKeyboardCoordinates,
-  horizontalListSortingStrategy,
+  rectSortingStrategy,
   useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -214,10 +214,10 @@ function SortableKeyframeCard({
             <button
               onClick={() => onRegenerate(kf.sceneIndex)}
               disabled={isRegenerating || isGeneratingKeyframes}
-              className="flex items-center gap-1 px-2 py-1 text-xs bg-secondary/50 text-muted-foreground rounded hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50"
+              className="p-1.5 bg-secondary/50 text-muted-foreground rounded hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50"
+              title="다시 생성"
             >
-              <RefreshCw className={`w-3 h-3 ${isRegenerating ? 'animate-spin' : ''}`} />
-              다시
+              <RefreshCw className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
             </button>
           )}
         </div>
@@ -680,7 +680,7 @@ export function WizardStep5() {
           >
             <SortableContext
               items={sceneKeyframes.map(kf => `keyframe-${kf.sceneIndex}`)}
-              strategy={horizontalListSortingStrategy}
+              strategy={rectSortingStrategy}
             >
               <div className="flex justify-center w-full">
                 <div className={`grid gap-6 ${
