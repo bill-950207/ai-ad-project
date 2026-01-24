@@ -134,17 +134,29 @@ function RegenerateModal({
   )
 }
 
+// 비율에 따른 aspect ratio 클래스 반환
+function getAspectRatioClass(ratio: string | null): string {
+  switch (ratio) {
+    case '16:9': return 'aspect-video'
+    case '9:16': return 'aspect-[9/16]'
+    case '1:1': return 'aspect-square'
+    default: return 'aspect-video'
+  }
+}
+
 // 드래그 가능한 키프레임 카드 컴포넌트
 function SortableKeyframeCard({
   kf,
   onRegenerate,
   isRegenerating,
   isGeneratingKeyframes,
+  aspectRatio,
 }: {
   kf: SceneKeyframe
   onRegenerate: (sceneIndex: number) => void
   isRegenerating: boolean
   isGeneratingKeyframes: boolean
+  aspectRatio: string | null
 }) {
   const {
     attributes,
@@ -211,7 +223,7 @@ function SortableKeyframeCard({
         </div>
 
         {/* 이미지 영역 */}
-        <div className="relative aspect-video bg-black/20">
+        <div className={`relative ${getAspectRatioClass(aspectRatio)} bg-black/20`}>
           {kf.status === 'completed' && kf.imageUrl ? (
             <Image
               src={kf.imageUrl}
@@ -688,6 +700,7 @@ export function WizardStep5() {
                       onRegenerate={(sceneIndex) => setModalSceneIndex(sceneIndex)}
                       isRegenerating={regeneratingSceneIndex === kf.sceneIndex}
                       isGeneratingKeyframes={isGeneratingKeyframes}
+                      aspectRatio={aspectRatio}
                     />
                   ))}
                 </div>

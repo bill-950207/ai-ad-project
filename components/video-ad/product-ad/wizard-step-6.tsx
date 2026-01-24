@@ -38,6 +38,16 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
+// 비율에 따른 aspect ratio 클래스 반환
+function getAspectRatioClass(ratio: string | null): string {
+  switch (ratio) {
+    case '16:9': return 'aspect-video'
+    case '9:16': return 'aspect-[9/16]'
+    case '1:1': return 'aspect-square'
+    default: return 'aspect-video'
+  }
+}
+
 // 영상 재생성 모달 컴포넌트
 function VideoRegenerateModal({
   isOpen,
@@ -191,6 +201,7 @@ function SortableVideoCard({
   isRegenerating,
   isMergingVideos,
   regeneratingSceneIndex,
+  aspectRatio,
 }: {
   sceneVideo: SceneVideoStatus
   onRegenerate: (sceneIndex: number) => void
@@ -198,6 +209,7 @@ function SortableVideoCard({
   isRegenerating: boolean
   isMergingVideos: boolean
   regeneratingSceneIndex: number | null
+  aspectRatio: string | null
 }) {
   const {
     attributes,
@@ -264,7 +276,7 @@ function SortableVideoCard({
         </div>
 
         {/* 영상 영역 */}
-        <div className="relative aspect-video bg-black">
+        <div className={`relative ${getAspectRatioClass(aspectRatio)} bg-black`}>
           {isCompleted ? (
             <video
               src={sceneVideo.videoUrl}
@@ -1175,6 +1187,7 @@ export function WizardStep6() {
                                     isRegenerating={regeneratingSceneIndex === sceneVideo.sceneIndex}
                                     isMergingVideos={isMergingVideos}
                                     regeneratingSceneIndex={regeneratingSceneIndex}
+                                    aspectRatio={aspectRatio}
                                   />
                                 ))}
                             </div>
@@ -1434,7 +1447,7 @@ export function WizardStep6() {
                     return (
                       <div
                         key={kf.sceneIndex}
-                        className={`relative aspect-video w-full min-w-[120px] rounded-lg overflow-hidden bg-secondary/30 border-2 transition-all ${
+                        className={`relative ${getAspectRatioClass(aspectRatio)} w-full min-w-[120px] rounded-lg overflow-hidden bg-secondary/30 border-2 transition-all ${
                           isSceneCompleted
                             ? 'border-green-500/50'
                             : isSceneFailed
@@ -1448,7 +1461,7 @@ export function WizardStep6() {
                           src={kf.imageUrl!}
                           alt={`씬 ${kf.sceneIndex + 1}`}
                           fill
-                          className="object-cover"
+                          className="object-contain"
                         />
 
                         {/* 오버레이 상태 표시 */}
