@@ -4,6 +4,8 @@
  * GET: 아바타 모션 영상 목록 조회
  */
 
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 

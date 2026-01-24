@@ -6,6 +6,8 @@
  * - 없으면 실시간 생성 후 캐시하여 반환
  */
 
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import {

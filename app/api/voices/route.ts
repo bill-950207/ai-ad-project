@@ -6,6 +6,8 @@
  * GET /api/voices?all=true - 모든 언어의 음성 목록 조회
  */
 
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 import {
   getKoreanRecommendedVoices,

@@ -5,6 +5,8 @@
  * GET /api/minimax-voices?language=ko - 특정 언어의 음성 목록 조회
  */
 
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 import {
   getVoicesByLanguage,
