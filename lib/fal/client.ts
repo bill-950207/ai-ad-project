@@ -1280,3 +1280,85 @@ export async function cancelViduQ2QueueRequest(requestId: string): Promise<boole
     return false
   }
 }
+
+// ============================================================
+// Z-Image I2I (Image-to-Image) - 아바타 의상 변환용
+// ============================================================
+
+const ZIMAGE_I2I_MODEL_ID = 'fal-ai/flux/dev/image-to-image'
+
+/**
+ * Z-Image I2I 출력 인터페이스
+ */
+export interface ZImageI2IOutput {
+  images: { url: string; width: number; height: number }[]
+  seed: number
+}
+
+/**
+ * 아바타 의상 변환 요청 큐에 제출
+ *
+ * @param imageUrl - 원본 아바타 이미지 URL
+ * @param prompt - 의상 변환 프롬프트
+ * @param strength - 변환 강도 (0.0-1.0)
+ * @returns 큐 제출 응답
+ */
+export async function submitAvatarOutfitTransformToQueue(
+  imageUrl: string,
+  prompt: string,
+  strength: number = 0.55
+): Promise<FalQueueSubmitResponse> {
+  const { request_id } = await fal.queue.submit(ZIMAGE_I2I_MODEL_ID, {
+    input: {
+      image_url: imageUrl,
+      prompt,
+      strength,
+      num_inference_steps: 28,
+      guidance_scale: 3.5,
+    },
+    webhookUrl: process.env.FAL_WEBHOOK_URL,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${ZIMAGE_I2I_MODEL_ID}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${ZIMAGE_I2I_MODEL_ID}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${ZIMAGE_I2I_MODEL_ID}/requests/${request_id}/cancel`,
+  }
+}
+
+/**
+ * Z-Image I2I 큐 상태 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 큐 상태
+ */
+export async function getZImageI2IQueueStatus(requestId: string): Promise<FalQueueStatusResponse> {
+  const status = await fal.queue.status(ZIMAGE_I2I_MODEL_ID, {
+    requestId,
+    logs: true,
+  })
+
+  // 상태 객체에서 속성 안전하게 추출 (타입이 상태에 따라 다름)
+  const statusObj = status as unknown as Record<string, unknown>
+
+  return {
+    status: status.status as 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED',
+    queue_position: statusObj.queue_position as number | undefined,
+    logs: statusObj.logs as FalLog[] | undefined,
+  }
+}
+
+/**
+ * Z-Image I2I 큐 결과 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 생성된 이미지 결과
+ */
+export async function getZImageI2IQueueResponse(requestId: string): Promise<ZImageI2IOutput> {
+  const result = await fal.queue.result(ZIMAGE_I2I_MODEL_ID, {
+    requestId,
+  })
+
+  return result.data as ZImageI2IOutput
+}

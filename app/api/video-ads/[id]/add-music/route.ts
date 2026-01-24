@@ -109,7 +109,7 @@ export async function POST(
     let trackDuration: number | null = null
 
     if (adMusic.tracks && Array.isArray(adMusic.tracks)) {
-      const tracks = adMusic.tracks as MusicTrack[]
+      const tracks = adMusic.tracks as unknown as MusicTrack[]
       if (trackIndex >= 0 && trackIndex < tracks.length) {
         audioUrl = tracks[trackIndex].audioUrl
         trackDuration = tracks[trackIndex].duration
@@ -179,7 +179,7 @@ export async function POST(
       where: { id: videoAdId },
       data: {
         video_url: mergedVideoUrl,
-        bgm_info: bgmInfo,
+        bgm_info: JSON.parse(JSON.stringify(bgmInfo)),
         updated_at: new Date(),
       },
       include: {

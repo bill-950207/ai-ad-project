@@ -1142,3 +1142,250 @@ export function buildAIRecommendationPrompt(
     .replace('{{productCategory}}', productCategory || '일반 소비재')
     .replace('{{targetPlatform}}', targetPlatform)
 }
+
+// ============================================================
+// 배치 프레임 프롬프트 생성
+// ============================================================
+
+/** 배치 프레임 프롬프트 파라미터 */
+export interface BatchFramePromptParams {
+  scenarioTitle: string
+  scenarioConcept: string
+  scenarioMood: string
+  scenarioVisualStyle: string
+  productAppearance?: string
+  productRole?: string
+  productName: string
+  productDescription: string
+  avatarDescription: string
+  aspectRatio: '9:16' | '16:9' | '1:1'
+  sceneCount: number
+  sceneDurations: number[]
+  movementAmplitudes: ('auto' | 'small' | 'medium' | 'large')[]
+  storyType?: string
+  emotionalArc?: string
+  storyBeats?: {
+    setup?: string
+    middle?: string
+    payoff?: string
+  }
+}
+
+/** 씬 프롬프트 결과 */
+export interface ScenePromptResult {
+  sceneIndex: number
+  role: 'opening' | 'development' | 'closing'
+  duration: number
+  connectionFromPrevious: string
+  narrativeContext: string
+  prompt: string
+  motionPromptEN: string
+  negativePrompt: string
+}
+
+/** 배치 프레임 프롬프트 응답 */
+export interface BatchFramePromptResponse {
+  visualConsistency: {
+    outfit: string
+    lighting: string
+    colorGrading: string
+    cameraStyle: string
+  }
+  scenePrompts: ScenePromptResult[]
+}
+
+/** 배치 프레임 프롬프트 시스템 프롬프트 */
+const BATCH_FRAME_PROMPT_SYSTEM = `You are an expert at creating detailed, photorealistic image prompts for multi-scene product advertisement videos.
+
+Your task is to generate prompts for ALL SCENES in a single response, ensuring visual consistency across the entire video.
+
+CRITICAL RULES:
+1. ALL scenes must use the SAME outfit, lighting, and visual style
+2. Each scene prompt must reference "Figure 1" for avatar and "Figure 2" for product
+3. Prompts must be in English for Seedream 4.5 Edit model
+4. Include specific pose, expression, and product interaction for each scene
+5. Maintain narrative flow between scenes
+
+PHOTOREALISM REQUIREMENTS:
+- ${PHOTOREALISM_ESSENTIALS.skin}
+- ${PHOTOREALISM_ESSENTIALS.hair}
+- ${PHOTOREALISM_ESSENTIALS.eyes}
+- End with: ${PHOTOREALISM_ESSENTIALS.quality}`
+
+/** 배치 프레임 프롬프트 빌드 */
+export function buildBatchFramePrompt(params: BatchFramePromptParams): string {
+  const {
+    scenarioTitle,
+    scenarioConcept,
+    scenarioMood,
+    scenarioVisualStyle,
+    productRole,
+    productName,
+    productDescription,
+    avatarDescription,
+    aspectRatio,
+    sceneCount,
+    sceneDurations,
+    movementAmplitudes,
+    storyType,
+    emotionalArc,
+    storyBeats,
+  } = params
+
+  const storyContext = storyBeats
+    ? `
+Story Structure:
+- Setup: ${storyBeats.setup || 'Introduction'}
+- Middle: ${storyBeats.middle || 'Development'}
+- Payoff: ${storyBeats.payoff || 'Conclusion'}`
+    : ''
+
+  return `${BATCH_FRAME_PROMPT_SYSTEM}
+
+=== SCENARIO INFO ===
+Title: ${scenarioTitle}
+Concept: ${scenarioConcept}
+Mood: ${scenarioMood}
+Visual Style: ${scenarioVisualStyle}
+${storyType ? `Story Type: ${storyType}` : ''}
+${emotionalArc ? `Emotional Arc: ${emotionalArc}` : ''}
+${storyContext}
+
+=== PRODUCT INFO ===
+Name: ${productName}
+Description: ${productDescription || 'Consumer product'}
+Role in Story: ${productRole || 'Featured product'}
+
+=== AVATAR INFO ===
+Description: ${avatarDescription}
+
+=== VIDEO SPECS ===
+Aspect Ratio: ${aspectRatio}
+Scene Count: ${sceneCount}
+Scene Durations: ${sceneDurations.join(', ')} seconds
+Movement Amplitudes: ${movementAmplitudes.join(', ')}
+
+=== YOUR TASK ===
+
+Generate prompts for ALL ${sceneCount} scenes in a single JSON response.
+
+For each scene:
+1. Define the role (opening/development/closing)
+2. Write a detailed English prompt (80-100 words)
+3. Write a motion prompt in English (50-70 words)
+4. Ensure visual consistency with previous scenes
+
+OUTPUT FORMAT (JSON):
+{
+  "visualConsistency": {
+    "outfit": "Describe the consistent outfit for all scenes",
+    "lighting": "Describe the consistent lighting setup",
+    "colorGrading": "Describe the color tone",
+    "cameraStyle": "Describe the camera style"
+  },
+  "scenePrompts": [
+    {
+      "sceneIndex": 0,
+      "role": "opening",
+      "duration": ${sceneDurations[0] || 5},
+      "connectionFromPrevious": "첫 장면",
+      "narrativeContext": "영상의 시작, 시청자의 시선을 끄는 인상적인 오프닝",
+      "prompt": "The same person from Figure 1, wearing [outfit], [pose], [expression], holding/near the product from Figure 2, in [environment], [lighting], shot on 85mm lens at f/2.8, ${PHOTOREALISM_ESSENTIALS.quality}",
+      "motionPromptEN": "Starting from [initial pose], the person slowly [movement], while [expression change], [product interaction]. Natural micro-expressions and breathing.",
+      "negativePrompt": "${AVATAR_NEGATIVE_PROMPT}"
+    },
+    ... (for all ${sceneCount} scenes)
+  ]
+}
+
+${JSON_RESPONSE_INSTRUCTION}`
+}
+
+// ============================================================
+// 시나리오 개선 프롬프트
+// ============================================================
+
+/** 시나리오 개선 프롬프트 빌드 */
+export function buildScenarioImprovementPrompt(
+  originalScenario: string,
+  feedback: string,
+  productName: string,
+  productDescription: string
+): string {
+  return `You are an expert video creative director. Your task is to improve an existing video scenario based on user feedback.
+
+=== ORIGINAL SCENARIO ===
+${originalScenario}
+
+=== USER FEEDBACK ===
+${feedback}
+
+=== PRODUCT INFO ===
+Name: ${productName}
+Description: ${productDescription || 'Consumer product'}
+
+=== YOUR TASK ===
+
+Improve the scenario based on the user's feedback while maintaining:
+1. The overall structure and format
+2. Product visibility and appeal
+3. Visual consistency across scenes
+4. UGC-style authenticity
+
+Apply the user's feedback thoughtfully:
+- If they want changes to mood, adjust mood and visual style
+- If they want changes to scenes, modify scene details
+- If they want more/less product focus, adjust product interactions
+
+OUTPUT FORMAT (JSON):
+Return the improved scenario in the EXACT SAME FORMAT as the original, with your improvements applied.
+
+${JSON_RESPONSE_INSTRUCTION}`
+}
+
+// ============================================================
+// 의상 프롬프트 생성
+// ============================================================
+
+/** 시나리오 기반 의상 프롬프트 생성 */
+export function buildOutfitPromptFromScenario(
+  scenario: {
+    mood: string
+    visualStyle?: string
+    concept?: string
+    storyBeats?: {
+      setup?: string
+    }
+  },
+  productCategory: string
+): string {
+  const { mood, visualStyle, concept, storyBeats } = scenario
+
+  // 분위기에 맞는 의상 스타일 결정
+  const moodToOutfit: Record<string, string> = {
+    '밝고 활기찬': 'casual bright-colored outfit, comfortable t-shirt',
+    '차분하고 세련된': 'elegant minimalist outfit, neutral tones',
+    '자연스럽고 친근한': 'casual everyday clothing, relaxed fit',
+    '전문적인': 'smart casual business attire',
+    '편안한': 'cozy comfortable loungewear',
+  }
+
+  let outfitStyle = 'casual comfortable clothing appropriate for the scene'
+  for (const [moodKey, outfit] of Object.entries(moodToOutfit)) {
+    if (mood.includes(moodKey.split(' ')[0])) {
+      outfitStyle = outfit
+      break
+    }
+  }
+
+  const contextHint = storyBeats?.setup || concept || ''
+  const visualHint = visualStyle || ''
+
+  return `Transform the person's outfit to: ${outfitStyle}.
+The outfit should match the ${mood} mood of the scene.
+${contextHint ? `Context: ${contextHint}.` : ''}
+${visualHint ? `Visual style: ${visualHint}.` : ''}
+Product category: ${productCategory}.
+Keep the person's face, hair, and body exactly the same. Only change the clothing.
+Photorealistic, natural fabric texture, proper fit.`
+}

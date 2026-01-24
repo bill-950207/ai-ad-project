@@ -70,6 +70,8 @@ export interface Scenario {
   // 멀티 씬 정보
   scenes: SceneInfo[]               // 씬 배열
   totalDuration: number             // 총 길이 (초)
+  sceneCount?: number               // 씬 개수
+  aspectRatio?: AspectRatio         // 화면 비율
   // AI 추천 설정 (완전 시나리오 생성 시)
   recommendedSettings?: ScenarioRecommendedSettings
   // Legacy (단일 씬 호환)
