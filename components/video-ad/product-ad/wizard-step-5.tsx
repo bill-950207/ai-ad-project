@@ -507,8 +507,7 @@ export function WizardStep5() {
         }
         setIsGeneratingKeyframes(false)
 
-        // 키프레임 완료 시 자동 저장 (이탈 후 복구 지원)
-        saveDraft({ status: 'SCENES_COMPLETED' })
+        // 키프레임 완료 시 저장은 useEffect에서 처리 (최신 상태 보장)
 
         if (hasError) {
           setError('일부 키프레임 생성에 실패했습니다. 실패한 씬은 다시 생성할 수 있습니다.')
@@ -561,6 +560,20 @@ export function WizardStep5() {
       }
     }
   }, [])
+
+  // 키프레임 완료 시 자동 저장 (useEffect로 최신 상태 보장)
+  const hasSavedCompletionRef = useRef(false)
+  useEffect(() => {
+    const allCompleted = sceneKeyframes.length > 0 && sceneKeyframes.every(kf => kf.status === 'completed' || kf.status === 'failed')
+    if (allCompleted && !hasSavedCompletionRef.current) {
+      hasSavedCompletionRef.current = true
+      saveDraft({ status: 'SCENES_COMPLETED' })
+    }
+    // 새로 생성 시작하면 플래그 리셋
+    if (isGeneratingKeyframes) {
+      hasSavedCompletionRef.current = false
+    }
+  }, [sceneKeyframes, isGeneratingKeyframes, saveDraft])
 
   // 다음 단계로
   const handleNext = async () => {
