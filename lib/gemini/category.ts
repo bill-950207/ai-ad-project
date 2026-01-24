@@ -149,12 +149,20 @@ export async function generateMultipleRecommendedOptions(
 ): Promise<MultipleRecommendedOptionsResult> {
   const language = input.language || 'ko'
 
+  const outputLanguageInstructions: Record<string, string> = {
+    ko: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt) in Korean.',
+    en: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt) in English.',
+    ja: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt) in Japanese.',
+  }
+
   const groupsDescription = input.categoryGroups.map(group => {
     const optionsText = group.options.map(opt => `    - ${opt.key}: ${opt.description}`).join('\n')
     return `[${group.key}]\n${optionsText}`
   }).join('\n\n')
 
   const prompt = `You are an expert advertising producer. Create 3 DIFFERENT scenario recommendations.
+
+OUTPUT LANGUAGE: ${outputLanguageInstructions[language] || outputLanguageInstructions.ko}
 
 === PRODUCT ===
 Name: ${input.productName || 'Not provided'}
@@ -166,7 +174,8 @@ ${input.adType}: ${adTypeDescriptions[input.adType]}
 === AVAILABLE OPTIONS ===
 ${groupsDescription}
 
-Create 3 distinct scenarios with different styles/moods. Each should have unique option combinations.`
+Create 3 distinct scenarios with different styles/moods. Each should have unique option combinations.
+IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be written in the specified output language.`
 
   const config: GenerateContentConfig = {
     thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
@@ -250,18 +259,40 @@ Create 3 distinct scenarios with different styles/moods. Each should have unique
       }),
     }
   } catch {
+    const fallbackMessages: Record<string, { title: string; description: string; reason: string; strategy: string }> = {
+      ko: {
+        title: '기본 시나리오',
+        description: '제품에 맞는 기본 설정입니다.',
+        reason: '기본 설정입니다.',
+        strategy: '제품 정보를 기반으로 기본 설정이 적용되었습니다.',
+      },
+      en: {
+        title: 'Default Scenario',
+        description: 'Default settings for the product.',
+        reason: 'Default setting.',
+        strategy: 'Default settings applied based on product information.',
+      },
+      ja: {
+        title: 'デフォルトシナリオ',
+        description: '製品に合ったデフォルト設定です。',
+        reason: 'デフォルト設定です。',
+        strategy: '製品情報に基づいてデフォルト設定が適用されました。',
+      },
+    }
+    const messages = fallbackMessages[language] || fallbackMessages.ko
+
     const fallbackOptions: Record<string, { value: string; reason: string }> = {}
     for (const group of input.categoryGroups) {
       if (group.options.length > 0) {
-        fallbackOptions[group.key] = { value: group.options[0].key, reason: '기본 설정입니다.' }
+        fallbackOptions[group.key] = { value: group.options[0].key, reason: messages.reason }
       }
     }
     return {
       scenarios: [{
-        title: '기본 시나리오',
-        description: '제품에 맞는 기본 설정입니다.',
+        title: messages.title,
+        description: messages.description,
         recommendedOptions: fallbackOptions,
-        overallStrategy: '제품 정보를 기반으로 기본 설정이 적용되었습니다.',
+        overallStrategy: messages.strategy,
         suggestedPrompt: undefined,
       }],
     }
