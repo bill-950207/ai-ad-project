@@ -6,6 +6,7 @@ import { useProductAdWizard, AdProduct } from './wizard-context'
 
 export function WizardStep1() {
   const {
+    draftId,
     selectedProduct,
     setSelectedProduct,
     editableDescription,
@@ -70,7 +71,8 @@ export function WizardStep1() {
   // 다음 단계로
   const handleNext = async () => {
     if (!canProceedToStep2()) return
-    await saveDraft({ wizardStep: 2 })
+    // draftId가 없으면 새로 생성 (기존 DRAFT 덮어쓰기 방지)
+    await saveDraft({ wizardStep: 2, forceNew: !draftId })
     goToNextStep()
   }
 
