@@ -12,6 +12,19 @@ import { useLanguage } from '@/contexts/language-context'
 import { Plus, Video, Play, Loader2, Edit3, ArrowRight, ChevronLeft, ChevronRight, Music } from 'lucide-react'
 import { VideoAdTypeModal, VideoAdCategory } from './video-ad-type-modal'
 
+interface AdProduct {
+  id: string
+  name: string
+  image_url: string | null
+  rembg_image_url: string | null
+}
+
+interface Avatar {
+  id: string
+  name: string
+  image_url: string | null
+}
+
 interface VideoAd {
   id: string
   video_url: string | null
@@ -29,6 +42,8 @@ interface VideoAd {
   bgm_info?: {
     music_name: string
   } | null
+  ad_products: AdProduct | null
+  avatars: Avatar | null
 }
 
 interface PaginationInfo {
@@ -371,24 +386,46 @@ export function VideoAdPageContent() {
                   </div>
                 )}
 
-                {/* 음악 배지 - 우측 하단 */}
-                {video.bgm_info && video.status === 'COMPLETED' && (
-                  <div className="absolute bottom-3 right-3 z-10">
-                    <div className="flex items-center gap-1 px-2 py-1 bg-black/70 rounded-lg text-white text-xs backdrop-blur-sm">
-                      <Music className="w-3 h-3" />
-                      <span className="max-w-[60px] truncate">{video.bgm_info.music_name}</span>
-                    </div>
+                {/* 제품/아바타 이미지 - 좌측 하단 */}
+                {video.status === 'COMPLETED' && (video.ad_products || video.avatars) && (
+                  <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5">
+                    {video.ad_products && (video.ad_products.rembg_image_url || video.ad_products.image_url) && (
+                      <div className="w-10 h-10 rounded-lg bg-white/90 backdrop-blur-sm border border-white/50 shadow-md overflow-hidden flex items-center justify-center">
+                        <img
+                          src={video.ad_products.rembg_image_url || video.ad_products.image_url || ''}
+                          alt={video.ad_products.name}
+                          className="w-8 h-8 object-contain"
+                        />
+                      </div>
+                    )}
+                    {video.avatars && video.avatars.image_url && (
+                      <div className="w-10 h-10 rounded-lg bg-white/90 backdrop-blur-sm border border-white/50 shadow-md overflow-hidden flex items-center justify-center">
+                        <img
+                          src={video.avatars.image_url}
+                          alt={video.avatars.name}
+                          className="w-10 h-10 object-cover"
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* 영상 길이 뱃지 - 좌측 하단 */}
-                {video.status === 'COMPLETED' && (video.video_duration || video.duration) && (
-                  <div className="absolute bottom-3 left-3 z-10">
-                    <span className="px-2 py-1 text-xs font-medium bg-black/60 text-white rounded-lg backdrop-blur-sm">
-                      {video.video_duration
-                        ? `${Math.round(video.video_duration)}초`
-                        : `${video.duration}초`}
-                    </span>
+                {/* 시간/음악 - 우측 하단 (세로 정렬) */}
+                {video.status === 'COMPLETED' && ((video.video_duration || video.duration) || video.bgm_info) && (
+                  <div className="absolute bottom-3 right-3 z-10 flex flex-col items-end gap-1.5">
+                    {(video.video_duration || video.duration) && (
+                      <span className="px-2 py-1 text-xs font-medium bg-black/60 text-white rounded-lg backdrop-blur-sm">
+                        {video.video_duration
+                          ? `${Math.round(video.video_duration)}초`
+                          : `${video.duration}초`}
+                      </span>
+                    )}
+                    {video.bgm_info && (
+                      <div className="flex items-center gap-1 px-2 py-1 bg-black/70 rounded-lg text-white text-xs backdrop-blur-sm">
+                        <Music className="w-3 h-3" />
+                        <span className="max-w-[60px] truncate">{video.bgm_info.music_name}</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

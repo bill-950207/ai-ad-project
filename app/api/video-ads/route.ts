@@ -71,10 +71,16 @@ export async function GET(request: NextRequest) {
       totalCount = count || 0
     }
 
-    // 쿼리 빌드
+    // 쿼리 빌드 (제품/아바타 정보 포함)
     let query = supabase
       .from('video_ads')
-      .select('id, video_url, thumbnail_url, first_scene_image_url, product_id, avatar_id, duration, video_duration, resolution, status, category, wizard_step, bgm_info, created_at, updated_at')
+      .select(`
+        id, video_url, thumbnail_url, first_scene_image_url, product_id, avatar_id,
+        duration, video_duration, resolution, status, category, wizard_step, bgm_info,
+        created_at, updated_at,
+        ad_products:product_id (id, name, image_url, rembg_image_url),
+        avatars:avatar_id (id, name, image_url)
+      `)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .range(offset, offset + actualPageSize - 1)
