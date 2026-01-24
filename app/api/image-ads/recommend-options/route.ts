@@ -244,6 +244,8 @@ export async function POST(request: NextRequest) {
       productUsageMethod,  // 제품 사용 방법 (using 타입 전용)
     } = body
 
+    console.log('[recommend-options] 요청 데이터:', { productName, productSellingPoints, hasAvatar })
+
     if (!adType) {
       return NextResponse.json({ error: 'Ad type is required' }, { status: 400 })
     }
