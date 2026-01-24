@@ -384,6 +384,9 @@ export function WizardStep5() {
 
       setSceneKeyframes(initialKeyframes)
 
+      // 키프레임 생성 시작 시 저장 (이탈 후 복구 지원)
+      await saveDraft({ status: 'GENERATING_SCENES' })
+
       // 폴링 시작
       startKeyframePolling(initialKeyframes)
     } catch (err) {
@@ -513,6 +516,9 @@ export function WizardStep5() {
         }
         setIsGeneratingKeyframes(false)
 
+        // 키프레임 완료 시 자동 저장 (이탈 후 복구 지원)
+        saveDraft({ status: 'SCENES_COMPLETED' })
+
         if (hasError) {
           setError('일부 키프레임 생성에 실패했습니다. 실패한 씬은 다시 생성할 수 있습니다.')
         }
@@ -569,9 +575,10 @@ export function WizardStep5() {
   const handleNext = async () => {
     if (!canProceedToStep6()) return
 
+    // sceneKeyframes는 saveDraft 내부에서 이미 객체로 처리하므로 별도 전달 불필요
     await saveDraft({
       wizardStep: 6,
-      sceneKeyframes: JSON.stringify(sceneKeyframes),
+      status: 'SCENES_COMPLETED',
     })
     goToNextStep()
   }
