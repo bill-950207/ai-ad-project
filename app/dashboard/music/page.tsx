@@ -242,12 +242,16 @@ export default function MusicPage() {
           const res = await fetch(`/api/ad-music/${music.kie_task_id}/status`)
           if (res.ok) {
             const data = await res.json()
-            // status API는 { id, taskId, status, audioUrl, error, updatedAt } 반환
+            // status API 응답 필드 매핑
             setMusicList(prev =>
               prev.map(m => m?.id === data.id ? {
                 ...m,
                 status: data.status,
                 audio_url: data.audioUrl,
+                stream_audio_url: data.streamAudioUrl,
+                image_url: data.imageUrl,
+                duration: data.duration,
+                tracks: data.tracks,
                 error_message: data.error,
                 updated_at: data.updatedAt,
               } : m)
