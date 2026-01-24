@@ -341,7 +341,8 @@ export default function MusicPage() {
   }
 
   // 현재 선택된 트랙 가져오기
-  const getCurrentTrack = (music: AdMusic): MusicTrack | null => {
+  const getCurrentTrack = (music: AdMusic | null | undefined): MusicTrack | null => {
+    if (!music) return null
     const tracks = music.tracks || []
     if (tracks.length === 0) return null
     const index = selectedTrackIndex[music.id] ?? 0
