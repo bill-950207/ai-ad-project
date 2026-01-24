@@ -4,6 +4,7 @@
 
 import { GenerateContentConfig, MediaResolution, ThinkingLevel, Type } from '@google/genai'
 import { genAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
+import { BRAND_PRESERVATION_INSTRUCTION, PRODUCT_NEGATIVE_PROMPT } from '@/lib/prompts/common'
 import type {
   ImageAdType,
   RecommendedOptionsInput,
@@ -271,13 +272,24 @@ Create 3 distinct scenarios with different styles/moods. Each should have unique
  * 이미지 광고 프롬프트를 생성합니다.
  */
 export async function generateImageAdPrompt(input: ImageAdPromptInput): Promise<ImageAdPromptResult> {
-  const prompt = `Generate Seedream 4.5 optimized prompt for ${input.adType} advertisement.
+  const prompt = `You are an expert advertising photographer. Generate a Seedream 4.5 optimized prompt for ${input.adType} advertisement.
 
 Product: ${input.productName || 'Product'} - ${input.productDescription || ''}
 Options: ${JSON.stringify(input.selectedOptions)}
 ${input.additionalPrompt ? `Additional: ${input.additionalPrompt}` : ''}
 
-Output JSON: { "optimizedPrompt": "English 60-100 words", "koreanDescription": "Korean summary" }`
+=== CRITICAL: LOGO & BRAND PRESERVATION ===
+${BRAND_PRESERVATION_INSTRUCTION}
+
+When the product has visible logos, labels, or brand marks:
+- The generated prompt MUST include instructions to preserve them exactly
+- Include phrases like "preserving all product logos and labels exactly as shown"
+- Never instruct to modify, remove, or obscure any branding elements
+
+=== NEGATIVE ELEMENTS (things to avoid in the image) ===
+${PRODUCT_NEGATIVE_PROMPT}
+
+Output JSON: { "optimizedPrompt": "English 60-100 words, must include logo preservation instruction if product has branding", "koreanDescription": "Korean summary" }`
 
   const config: GenerateContentConfig = {
     thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
