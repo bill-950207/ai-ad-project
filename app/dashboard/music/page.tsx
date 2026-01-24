@@ -46,6 +46,7 @@ interface AdMusic {
   id: string
   name: string
   status: 'PENDING' | 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED'
+  kie_task_id: string | null
   mood: string | null
   genre: string | null
   product_type: string | null
@@ -229,7 +230,7 @@ export default function MusicPage() {
   // 생성 중인 음악 폴링
   useEffect(() => {
     const pendingMusic = musicList.filter(m =>
-      m && ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(m.status)
+      m && m.kie_task_id && ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(m.status)
     )
 
     if (pendingMusic.length === 0) return
@@ -237,12 +238,13 @@ export default function MusicPage() {
     const pollStatus = async () => {
       for (const music of pendingMusic) {
         try {
-          const res = await fetch(`/api/ad-music/${music.id}/status`)
+          // kie_task_id로 상태 조회
+          const res = await fetch(`/api/ad-music/${music.kie_task_id}/status`)
           if (res.ok) {
             const data = await res.json()
-            // status API는 { id, status, audioUrl, error, updatedAt } 반환
+            // status API는 { id, taskId, status, audioUrl, error, updatedAt } 반환
             setMusicList(prev =>
-              prev.map(m => m?.id === music.id ? {
+              prev.map(m => m?.id === data.id ? {
                 ...m,
                 status: data.status,
                 audio_url: data.audioUrl,
