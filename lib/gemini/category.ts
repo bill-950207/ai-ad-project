@@ -160,11 +160,19 @@ export async function generateMultipleRecommendedOptions(
     return `[${group.key}]\n${optionsText}`
   }).join('\n\n')
 
-  const prompt = `You are an expert advertising producer. Create 3 DIFFERENT scenario recommendations.
+  const prompt = `You are an expert advertising creative director. Create 3 DISTINCT advertising scenario recommendations that target DIFFERENT audiences.
 
 OUTPUT LANGUAGE: ${outputLanguageInstructions[language] || outputLanguageInstructions.ko}
 
-=== PRODUCT ===
+=== STEP 1: ANALYZE THE PRODUCT IMAGE ===
+Examine the product image carefully and identify:
+1. PRODUCT CATEGORY: (cosmetics, skincare, electronics, food, fashion accessory, beverage, household, etc.)
+2. PRICE POSITIONING: (luxury/premium, mid-range, budget-friendly) based on packaging quality and design sophistication
+3. VISUAL CHARACTERISTICS: Primary colors, materials (glass/matte/glossy/metallic), shape, size
+4. BRAND PERSONALITY: (sophisticated, youthful, natural/organic, professional, playful, minimalist)
+5. TARGET HINTS: Who would typically buy this? (age range, lifestyle indicators from design)
+
+=== PRODUCT INFO ===
 Name: ${input.productName || 'Not provided'}
 Description: ${input.productDescription || 'Not provided'}
 
@@ -174,7 +182,41 @@ ${input.adType}: ${adTypeDescriptions[input.adType]}
 === AVAILABLE OPTIONS ===
 ${groupsDescription}
 
-Create 3 distinct scenarios with different styles/moods. Each should have unique option combinations.
+=== STEP 2: CREATE 3 DISTINCT SCENARIOS ===
+
+**SCENARIO 1 - MAINSTREAM (메인스트림)**
+- Target: Primary, most obvious audience for this product
+- Style: Approachable, trustworthy, product-benefit focused
+- Goal: Appeal to the widest relevant audience
+
+**SCENARIO 2 - PREMIUM (프리미엄)**
+- Target: Aspirational, upscale positioning
+- Style: Sophisticated, elegant, elevated lifestyle aesthetic
+- Goal: Position product as premium/luxury choice
+
+**SCENARIO 3 - TRENDY (트렌디)**
+- Target: Younger, trend-conscious, social-media-savvy audience
+- Style: Dynamic, authentic, SNS-friendly, relatable
+- Goal: Create shareable, modern content
+
+=== CRITICAL REQUIREMENTS ===
+1. Each scenario MUST genuinely differ in:
+   - Target audience (age, lifestyle, values)
+   - Visual mood and atmosphere
+   - Lighting and color temperature
+   - Setting/background choice
+   - Model expression and energy level
+
+2. Match options to product characteristics from image analysis:
+   - LUXURY PRODUCTS → luxury/marble backgrounds, soft/dramatic lighting, elegant mood
+   - YOUTHFUL PRODUCTS → urban/nature backgrounds, natural/golden lighting, vibrant mood
+   - NATURAL/ORGANIC PRODUCTS → nature/minimal backgrounds, soft lighting, calm/fresh mood
+   - TECH/MODERN PRODUCTS → modern/studio backgrounds, high-key/cool lighting, sleek mood
+
+3. Title: 8-15 characters (compelling, descriptive)
+4. Description: 30-50 characters (explain target & concept clearly)
+5. Provide CLEAR REASONING for each option based on product analysis
+
 IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be written in the specified output language.`
 
   const config: GenerateContentConfig = {
@@ -193,6 +235,8 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
             properties: {
               title: { type: Type.STRING },
               description: { type: Type.STRING },
+              targetAudience: { type: Type.STRING },
+              scenarioType: { type: Type.STRING },
               recommendations: {
                 type: Type.ARRAY,
                 items: {
@@ -237,6 +281,8 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
       scenarios: Array<{
         title: string
         description: string
+        targetAudience?: string
+        scenarioType?: string
         recommendations: Array<{ key: string; value: string; customText?: string; reason: string }>
         overallStrategy: string
         suggestedPrompt?: string
@@ -252,6 +298,8 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
         return {
           title: scenario.title,
           description: scenario.description,
+          targetAudience: scenario.targetAudience,
+          scenarioType: scenario.scenarioType as 'mainstream' | 'premium' | 'trendy' | undefined,
           recommendedOptions,
           overallStrategy: scenario.overallStrategy,
           suggestedPrompt: scenario.suggestedPrompt,
