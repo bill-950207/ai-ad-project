@@ -137,13 +137,11 @@ function RegenerateModal({
 // 드래그 가능한 키프레임 카드 컴포넌트
 function SortableKeyframeCard({
   kf,
-  scenePrompt,
   onRegenerate,
   isRegenerating,
   isGeneratingKeyframes,
 }: {
   kf: SceneKeyframe
-  scenePrompt?: string
   onRegenerate: (sceneIndex: number) => void
   isRegenerating: boolean
   isGeneratingKeyframes: boolean
@@ -244,14 +242,6 @@ function SortableKeyframeCard({
           )}
         </div>
 
-        {/* 프롬프트 미리보기 */}
-        {scenePrompt && (
-          <div className="px-3 py-2 border-t border-border/30">
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              {scenePrompt.slice(0, 80)}...
-            </p>
-          </div>
-        )}
       </div>
     </div>
   )
@@ -674,11 +664,10 @@ export function WizardStep5() {
                 sceneKeyframes.length <= 6 ? 'grid-cols-3' :
                 'grid-cols-4'
               }`}>
-                {sceneKeyframes.map((kf, index) => (
+                {sceneKeyframes.map((kf) => (
                   <SortableKeyframeCard
                     key={`keyframe-${kf.sceneIndex}`}
                     kf={kf}
-                    scenePrompt={scenarioInfo?.scenes?.[index]?.scenePrompt}
                     onRegenerate={(sceneIndex) => setModalSceneIndex(sceneIndex)}
                     isRegenerating={regeneratingSceneIndex === kf.sceneIndex}
                     isGeneratingKeyframes={isGeneratingKeyframes}
