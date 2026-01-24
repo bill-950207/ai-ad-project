@@ -1035,6 +1035,29 @@ export function buildMultiSceneScenarioPrompt(
     .replace(/\{\{totalDuration\}\}/g, String(totalDuration))
 }
 
+/** 완전 시나리오 생성 프롬프트 빌드 (AI가 설정까지 추천) */
+export function buildCompleteScenarioPrompt(
+  productName: string,
+  productDescription: string | undefined,
+  productSellingPoints: string[] | undefined,
+  avatarDescription: string,
+  avatarType: string
+): string {
+  const sellingPointsText = productSellingPoints && productSellingPoints.length > 0
+    ? productSellingPoints.join(', ')
+    : '(셀링 포인트 없음)'
+
+  // 기본 3개 씬, 15초 기준으로 생성
+  return MULTI_SCENE_SCENARIO_TEMPLATE.template
+    .replace('{{productName}}', productName || '제품')
+    .replace('{{productDescription}}', productDescription || '일반 소비재 제품')
+    .replace('{{productSellingPoints}}', sellingPointsText)
+    .replace('{{avatarDescription}}', avatarDescription || '친근한 인플루언서 스타일')
+    .replace('{{avatarType}}', avatarType || 'ai-generated')
+    .replace(/\{\{sceneCount\}\}/g, '3')
+    .replace(/\{\{totalDuration\}\}/g, '15')
+}
+
 // ============================================================
 // AI 추천 설정 생성 프롬프트
 // ============================================================
@@ -1341,6 +1364,21 @@ OUTPUT FORMAT (JSON):
 Return the improved scenario in the EXACT SAME FORMAT as the original, with your improvements applied.
 
 ${JSON_RESPONSE_INSTRUCTION}`
+}
+
+/** 시나리오 수정 프롬프트 빌드 (객체 시나리오용) */
+export function buildScenarioModificationPrompt(
+  scenario: object,
+  modificationRequest: string,
+  productName: string,
+  productDescription: string
+): string {
+  return buildScenarioImprovementPrompt(
+    JSON.stringify(scenario, null, 2),
+    modificationRequest,
+    productName,
+    productDescription
+  )
 }
 
 // ============================================================
