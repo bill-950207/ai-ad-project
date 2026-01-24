@@ -414,7 +414,7 @@ export default function MusicPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {musicList.map(music => (
+          {musicList.filter((m): m is AdMusic => m != null).map(music => (
             <div
               key={music.id}
               className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-lg transition-all"
