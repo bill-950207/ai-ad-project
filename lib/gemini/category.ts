@@ -104,6 +104,8 @@ Recommend optimal settings for each category. Use '__custom__' with customText f
 
   parts.push({ text: prompt })
 
+  console.log('[generateRecommendedCategoryOptions] 입력 프롬프트:', prompt)
+
   const response = await genAI.models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts }],
@@ -271,6 +273,8 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
   }
 
   parts.push({ text: prompt })
+
+  console.log('[generateMultipleRecommendedOptions] 입력 프롬프트:', prompt)
 
   const response = await genAI.models.generateContent({
     model: MODEL_NAME,
