@@ -66,6 +66,46 @@ export async function GET(
         // 완료된 경우 DB 업데이트
         if (dbStatus === 'COMPLETED' && kieResult.response?.sunoData?.length) {
           const sunoData = kieResult.response.sunoData
+
+          // 모든 트랙의 audioUrl이 채워졌는지 확인
+          const allTracksReady = sunoData.every(track => track.audioUrl && track.audioUrl.trim() !== '')
+
+          // 아직 모든 트랙이 준비되지 않은 경우 IN_PROGRESS 유지
+          if (!allTracksReady) {
+            // 트랙 데이터는 업데이트하되 상태는 IN_PROGRESS 유지
+            const tracks = sunoData.map(track => ({
+              id: track.id,
+              audioUrl: track.audioUrl,
+              streamAudioUrl: track.streamAudioUrl,
+              imageUrl: track.imageUrl,
+              title: track.title,
+              tags: track.tags,
+              duration: track.duration,
+            }))
+
+            await supabase
+              .from('ad_music')
+              .update({
+                status: 'IN_PROGRESS',
+                tracks: tracks,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', music.id)
+
+            return NextResponse.json({
+              id: music.id,
+              taskId: music.kie_task_id,
+              status: 'IN_PROGRESS',
+              audioUrl: null,
+              streamAudioUrl: null,
+              imageUrl: null,
+              duration: null,
+              tracks: tracks,
+              error: null,
+              updatedAt: new Date().toISOString(),
+            })
+          }
+
           const firstTrack = sunoData[0]
 
           // 트랙 데이터 변환
