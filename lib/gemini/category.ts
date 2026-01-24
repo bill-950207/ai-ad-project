@@ -56,6 +56,7 @@ OUTPUT LANGUAGE: ${outputLanguageInstructions[language] || outputLanguageInstruc
 === PRODUCT ===
 Name: ${input.productName || 'Not provided'}
 Description: ${input.productDescription || 'Not provided'}
+${input.productSellingPoints?.length ? `Selling Points: ${input.productSellingPoints.join(', ')}` : ''}
 
 === AD TYPE ===
 ${input.adType}: ${adTypeDescriptions[input.adType]}
@@ -175,6 +176,7 @@ Examine the product image carefully and identify:
 === PRODUCT INFO ===
 Name: ${input.productName || 'Not provided'}
 Description: ${input.productDescription || 'Not provided'}
+${input.productSellingPoints?.length ? `Selling Points: ${input.productSellingPoints.join(', ')}` : ''}
 
 === AD TYPE ===
 ${input.adType}: ${adTypeDescriptions[input.adType]}

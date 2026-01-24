@@ -235,6 +235,7 @@ export async function POST(request: NextRequest) {
       adType,
       productName,
       productDescription,
+      productSellingPoints,  // 제품 셀링 포인트
       language = 'ko',
       multiple = false,  // 다중 시나리오 모드 (기본: false)
       hasAvatar = false,  // 아바타 포함 여부 (의상 옵션은 카테고리 옵션으로 포함됨)
@@ -268,6 +269,7 @@ export async function POST(request: NextRequest) {
         adType: adType as ImageAdType,
         productName,
         productDescription,
+        productSellingPoints,  // 셀링 포인트 전달
         categoryGroups,
         language,
         hasAvatar,
@@ -284,6 +286,7 @@ export async function POST(request: NextRequest) {
       adType: adType as ImageAdType,
       productName,
       productDescription,
+      productSellingPoints,  // 셀링 포인트 전달
       categoryGroups,
       language,
       hasAvatar,

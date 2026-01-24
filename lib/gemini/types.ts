@@ -355,6 +355,7 @@ export interface RecommendedOptionsInput {
   adType: ImageAdType
   productName?: string
   productDescription?: string
+  productSellingPoints?: string[]  // 제품 셀링 포인트
   categoryGroups: CategoryOptionGroup[]
   language?: string
   hasAvatar?: boolean
