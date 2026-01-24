@@ -1153,27 +1153,31 @@ export function WizardStep6() {
                           items={[...sceneVideoStatuses].sort((a, b) => a.sceneIndex - b.sceneIndex).map(s => `video-${s.sceneIndex}`)}
                           strategy={horizontalListSortingStrategy}
                         >
-                          <div className={`grid gap-4 ${
-                            sceneVideoStatuses.length === 1 ? 'grid-cols-1' :
-                            sceneVideoStatuses.length === 2 ? 'grid-cols-2' :
-                            sceneVideoStatuses.length === 3 ? 'grid-cols-3' :
-                            sceneVideoStatuses.length === 4 ? 'grid-cols-2' :
-                            sceneVideoStatuses.length <= 6 ? 'grid-cols-3' :
-                            'grid-cols-4'
-                          }`}>
-                            {[...sceneVideoStatuses]
-                              .sort((a, b) => a.sceneIndex - b.sceneIndex)
-                              .map((sceneVideo) => (
-                                <SortableVideoCard
-                                  key={sceneVideo.requestId || `scene-${sceneVideo.sceneIndex}`}
-                                  sceneVideo={sceneVideo}
-                                  onRegenerate={(sceneIndex) => setModalSceneIndex(sceneIndex)}
-                                  onDownload={handleDownload}
-                                  isRegenerating={regeneratingSceneIndex === sceneVideo.sceneIndex}
-                                  isMergingVideos={isMergingVideos}
-                                  regeneratingSceneIndex={regeneratingSceneIndex}
-                                />
-                              ))}
+                          <div className="flex justify-center w-full">
+                            <div className={`grid gap-6 ${
+                              sceneVideoStatuses.length === 1 ? 'grid-cols-1 max-w-md' :
+                              sceneVideoStatuses.length === 2 ? 'grid-cols-2 max-w-3xl' :
+                              sceneVideoStatuses.length === 3 ? 'grid-cols-3 max-w-5xl' :
+                              sceneVideoStatuses.length === 4 ? 'grid-cols-2 max-w-3xl' :
+                              sceneVideoStatuses.length === 5 ? 'grid-cols-3 max-w-5xl' :
+                              sceneVideoStatuses.length === 6 ? 'grid-cols-3 max-w-5xl' :
+                              sceneVideoStatuses.length === 7 ? 'grid-cols-4 max-w-6xl' :
+                              'grid-cols-4 max-w-6xl'
+                            } justify-items-center`}>
+                              {[...sceneVideoStatuses]
+                                .sort((a, b) => a.sceneIndex - b.sceneIndex)
+                                .map((sceneVideo) => (
+                                  <SortableVideoCard
+                                    key={sceneVideo.requestId || `scene-${sceneVideo.sceneIndex}`}
+                                    sceneVideo={sceneVideo}
+                                    onRegenerate={(sceneIndex) => setModalSceneIndex(sceneIndex)}
+                                    onDownload={handleDownload}
+                                    isRegenerating={regeneratingSceneIndex === sceneVideo.sceneIndex}
+                                    isMergingVideos={isMergingVideos}
+                                    regeneratingSceneIndex={regeneratingSceneIndex}
+                                  />
+                                ))}
+                            </div>
                           </div>
                         </SortableContext>
                       </DndContext>
@@ -1234,12 +1238,15 @@ export function WizardStep6() {
                 </div>
 
                 {/* 영상 썸네일 목록 (완료된 영상 + 로딩 중인 영상) */}
-                <div className={`grid gap-3 ${
-                  videoStatuses.length <= 3 ? 'grid-cols-1' :
-                  videoStatuses.length === 4 ? 'grid-cols-2' :
-                  videoStatuses.length <= 6 ? 'grid-cols-3' :
-                  'grid-cols-4'
-                }`}>
+                <div className="flex justify-center w-full">
+                <div className={`grid gap-4 ${
+                  videoStatuses.length === 1 ? 'grid-cols-1 max-w-md' :
+                  videoStatuses.length === 2 ? 'grid-cols-2 max-w-2xl' :
+                  videoStatuses.length === 3 ? 'grid-cols-3 max-w-3xl' :
+                  videoStatuses.length === 4 ? 'grid-cols-2 max-w-2xl' :
+                  videoStatuses.length <= 6 ? 'grid-cols-3 max-w-3xl' :
+                  'grid-cols-4 max-w-4xl'
+                } justify-items-center w-full`}>
                   {videoStatuses.map((videoStatus, index) => {
                     const isCompleted = videoStatus.status === 'completed' && videoStatus.resultUrl
                     const isGenerating = videoStatus.status === 'generating'
@@ -1283,6 +1290,7 @@ export function WizardStep6() {
                       </button>
                     )
                   })}
+                </div>
                 </div>
 
                 {/* 액션 버튼 */}
@@ -1405,12 +1413,15 @@ export function WizardStep6() {
               )}
 
               {/* 키프레임 그리드 (작은 크기) */}
-              <div className={`grid gap-2 ${
-                sceneKeyframes.length <= 3 ? 'grid-cols-3' :
-                sceneKeyframes.length === 4 ? 'grid-cols-4' :
-                sceneKeyframes.length <= 6 ? 'grid-cols-3 sm:grid-cols-6' :
-                'grid-cols-4 sm:grid-cols-8'
-              }`}>
+              <div className="flex justify-center w-full">
+              <div className={`grid gap-3 ${
+                sceneKeyframes.length === 1 ? 'grid-cols-1 max-w-[100px]' :
+                sceneKeyframes.length === 2 ? 'grid-cols-2 max-w-[220px]' :
+                sceneKeyframes.length === 3 ? 'grid-cols-3 max-w-[340px]' :
+                sceneKeyframes.length === 4 ? 'grid-cols-4 max-w-[460px]' :
+                sceneKeyframes.length <= 6 ? 'grid-cols-3 sm:grid-cols-6 max-w-[340px] sm:max-w-[700px]' :
+                'grid-cols-4 sm:grid-cols-8 max-w-[460px] sm:max-w-[940px]'
+              } justify-items-center`}>
                 {sceneKeyframes
                   .filter(kf => kf.status === 'completed' && kf.imageUrl)
                   .sort((a, b) => a.sceneIndex - b.sceneIndex)
@@ -1478,6 +1489,7 @@ export function WizardStep6() {
                       </div>
                     )
                   })}
+              </div>
               </div>
 
               {/* 에러 메시지 */}
