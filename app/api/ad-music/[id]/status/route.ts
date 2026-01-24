@@ -25,15 +25,15 @@ export async function GET(
     }
 
     // 음악 정보 조회
-    const { data: music, error } = await supabase
+    const { data: music, error: queryError } = await supabase
       .from('ad_music')
-      .select('id, status, audio_url, error, updated_at')
+      .select('id, status, audio_url, error_message, updated_at')
       .eq('id', id)
       .eq('user_id', user.id)
       .single()
 
-    if (error) {
-      console.error('음악 상태 조회 오류:', error)
+    if (queryError) {
+      console.error('음악 상태 조회 오류:', queryError)
       return NextResponse.json(
         { error: 'Music not found' },
         { status: 404 }
@@ -44,7 +44,7 @@ export async function GET(
       id: music.id,
       status: music.status,
       audioUrl: music.audio_url,
-      error: music.error,
+      error: music.error_message,
       updatedAt: music.updated_at,
     })
   } catch (error) {
