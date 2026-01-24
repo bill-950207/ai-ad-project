@@ -226,9 +226,9 @@ export function ImageAdPageContent() {
       {/* 이미지 광고 섹션 */}
       <section>
         {isAdsLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="aspect-[4/3] bg-secondary/30 rounded-2xl animate-pulse" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+              <div key={i} className="aspect-square bg-secondary/30 rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : imageAds.length === 0 ? (
@@ -246,7 +246,7 @@ export function ImageAdPageContent() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {imageAds.map(ad => {
               const isInProgress = ['IN_QUEUE', 'IN_PROGRESS'].includes(ad.status)
               const isFailed = ad.status === 'FAILED'
@@ -280,7 +280,7 @@ export function ImageAdPageContent() {
                         <div
                           key={idx}
                           className={`aspect-square bg-secondary/30 flex items-center justify-center overflow-hidden rounded-lg ${
-                            imageCount === 1 ? 'aspect-[4/3]' : ''
+                            imageCount === 1 ? 'aspect-square' : ''
                           }`}
                         >
                           <img
@@ -292,14 +292,14 @@ export function ImageAdPageContent() {
                       ))}
                     </div>
                   ) : isInProgress ? (
-                    <div className="w-full aspect-[4/3] flex flex-col items-center justify-center bg-secondary/30 gap-3">
+                    <div className="w-full aspect-square flex flex-col items-center justify-center bg-secondary/30 gap-3">
                       <Loader2 className="w-10 h-10 text-primary animate-spin" />
                       <span className="text-sm text-muted-foreground">
                         이미지 생성 중... {ad.num_images && ad.num_images > 1 ? `(${ad.num_images}장)` : ''}
                       </span>
                     </div>
                   ) : isFailed ? (
-                    <div className="w-full aspect-[4/3] flex flex-col items-center justify-center bg-red-500/5 gap-3 p-4">
+                    <div className="w-full aspect-square flex flex-col items-center justify-center bg-red-500/5 gap-3 p-4">
                       <ImageIcon className="w-10 h-10 text-red-500/50" />
                       <span className="text-sm text-red-500">생성 실패</span>
                       {/* 환불/재시도 버튼 */}
@@ -327,7 +327,7 @@ export function ImageAdPageContent() {
                       </div>
                     </div>
                   ) : (
-                    <div className="w-full aspect-[4/3] flex items-center justify-center bg-secondary/30">
+                    <div className="w-full aspect-square flex items-center justify-center bg-secondary/30">
                       <ImageIcon className="w-12 h-12 text-muted-foreground" />
                     </div>
                   )}
