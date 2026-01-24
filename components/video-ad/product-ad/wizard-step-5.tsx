@@ -656,23 +656,27 @@ export function WizardStep5() {
               items={sceneKeyframes.map(kf => `keyframe-${kf.sceneIndex}`)}
               strategy={horizontalListSortingStrategy}
             >
-              <div className={`grid gap-4 ${
-                sceneKeyframes.length === 1 ? 'grid-cols-1' :
-                sceneKeyframes.length === 2 ? 'grid-cols-2' :
-                sceneKeyframes.length === 3 ? 'grid-cols-3' :
-                sceneKeyframes.length === 4 ? 'grid-cols-2' :
-                sceneKeyframes.length <= 6 ? 'grid-cols-3' :
-                'grid-cols-4'
-              }`}>
-                {sceneKeyframes.map((kf) => (
-                  <SortableKeyframeCard
-                    key={`keyframe-${kf.sceneIndex}`}
-                    kf={kf}
-                    onRegenerate={(sceneIndex) => setModalSceneIndex(sceneIndex)}
-                    isRegenerating={regeneratingSceneIndex === kf.sceneIndex}
-                    isGeneratingKeyframes={isGeneratingKeyframes}
-                  />
-                ))}
+              <div className="flex justify-center w-full">
+                <div className={`grid gap-4 ${
+                  sceneKeyframes.length === 1 ? 'grid-cols-1 max-w-xs' :
+                  sceneKeyframes.length === 2 ? 'grid-cols-2 max-w-lg' :
+                  sceneKeyframes.length === 3 ? 'grid-cols-3 max-w-2xl' :
+                  sceneKeyframes.length === 4 ? 'grid-cols-2 max-w-lg' :
+                  sceneKeyframes.length === 5 ? 'grid-cols-3 max-w-2xl' :
+                  sceneKeyframes.length === 6 ? 'grid-cols-3 max-w-2xl' :
+                  sceneKeyframes.length === 7 ? 'grid-cols-4 max-w-3xl' :
+                  'grid-cols-4 max-w-3xl'
+                } justify-items-center`}>
+                  {sceneKeyframes.map((kf) => (
+                    <SortableKeyframeCard
+                      key={`keyframe-${kf.sceneIndex}`}
+                      kf={kf}
+                      onRegenerate={(sceneIndex) => setModalSceneIndex(sceneIndex)}
+                      isRegenerating={regeneratingSceneIndex === kf.sceneIndex}
+                      isGeneratingKeyframes={isGeneratingKeyframes}
+                    />
+                  ))}
+                </div>
               </div>
             </SortableContext>
           </DndContext>
