@@ -229,7 +229,7 @@ export default function MusicPage() {
   // 생성 중인 음악 폴링
   useEffect(() => {
     const pendingMusic = musicList.filter(m =>
-      ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(m.status)
+      m && ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(m.status)
     )
 
     if (pendingMusic.length === 0) return
@@ -240,8 +240,15 @@ export default function MusicPage() {
           const res = await fetch(`/api/ad-music/${music.id}/status`)
           if (res.ok) {
             const data = await res.json()
+            // status API는 { id, status, audioUrl, error, updatedAt } 반환
             setMusicList(prev =>
-              prev.map(m => m.id === music.id ? data.music : m)
+              prev.map(m => m?.id === music.id ? {
+                ...m,
+                status: data.status,
+                audio_url: data.audioUrl,
+                error_message: data.error,
+                updated_at: data.updatedAt,
+              } : m)
             )
           }
         } catch (error) {
