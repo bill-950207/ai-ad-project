@@ -163,28 +163,28 @@ export function VideoAdPageContent() {
 
   const getStatusBadge = (status: string, wizardStep?: number | null) => {
     const statusConfig: Record<string, { label: string; className: string }> = {
-      'DRAFT': { label: `임시저장 (${wizardStep || 1}단계)`, className: 'bg-orange-500/20 text-orange-500' },
-      'GENERATING_SCRIPTS': { label: '대본 생성 중', className: 'bg-indigo-500/20 text-indigo-500' },
-      'GENERATING_AUDIO': { label: '음성 생성 중', className: 'bg-pink-500/20 text-pink-500' },
-      'PENDING': { label: t.videoAd?.status?.pending || '대기 중', className: 'bg-yellow-500/20 text-yellow-500' },
-      'IN_QUEUE': { label: t.videoAd?.status?.inQueue || '큐 대기', className: 'bg-blue-500/20 text-blue-500' },
-      'IN_PROGRESS': { label: t.videoAd?.status?.inProgress || '생성 중', className: 'bg-purple-500/20 text-purple-500' },
-      'COMPLETED': { label: t.videoAd?.status?.completed || '완료', className: 'bg-green-500/20 text-green-500' },
-      'FAILED': { label: t.videoAd?.status?.failed || '실패', className: 'bg-red-500/20 text-red-500' },
+      'DRAFT': { label: `임시저장 (${wizardStep || 1}단계)`, className: 'bg-orange-500/80 text-white' },
+      'GENERATING_SCRIPTS': { label: '대본 생성 중', className: 'bg-indigo-500/80 text-white animate-pulse' },
+      'GENERATING_AUDIO': { label: '음성 생성 중', className: 'bg-pink-500/80 text-white animate-pulse' },
+      'PENDING': { label: t.videoAd?.status?.pending || '대기 중', className: 'bg-yellow-500/80 text-white' },
+      'IN_QUEUE': { label: t.videoAd?.status?.inQueue || '큐 대기', className: 'bg-blue-500/80 text-white animate-pulse' },
+      'IN_PROGRESS': { label: t.videoAd?.status?.inProgress || '생성 중', className: 'bg-purple-500/80 text-white animate-pulse' },
+      'COMPLETED': { label: t.videoAd?.status?.completed || '완료', className: 'bg-green-500/80 text-white' },
+      'FAILED': { label: t.videoAd?.status?.failed || '실패', className: 'bg-red-500/80 text-white' },
       // Avatar Motion 상태
-      'GENERATING_STORY': { label: '스토리 생성 중', className: 'bg-cyan-500/20 text-cyan-500' },
-      'GENERATING_FRAMES': { label: '프레임 생성 중', className: 'bg-teal-500/20 text-teal-500' },
-      'GENERATING_AVATAR': { label: '아바타 생성 중', className: 'bg-violet-500/20 text-violet-500' },
-      'FRAMES_COMPLETED': { label: '프레임 완료', className: 'bg-emerald-500/20 text-emerald-500' },
+      'GENERATING_STORY': { label: '스토리 생성 중', className: 'bg-cyan-500/80 text-white animate-pulse' },
+      'GENERATING_FRAMES': { label: '프레임 생성 중', className: 'bg-teal-500/80 text-white animate-pulse' },
+      'GENERATING_AVATAR': { label: '아바타 생성 중', className: 'bg-violet-500/80 text-white animate-pulse' },
+      'FRAMES_COMPLETED': { label: '프레임 완료', className: 'bg-emerald-500/80 text-white' },
       // Product Ad 상태
-      'GENERATING_SCENARIO': { label: '시나리오 생성 중', className: 'bg-cyan-500/20 text-cyan-500' },
-      'GENERATING_SCENES': { label: '첫 씬 생성 중', className: 'bg-teal-500/20 text-teal-500' },
-      'SCENES_COMPLETED': { label: '첫 씬 완료', className: 'bg-emerald-500/20 text-emerald-500' },
-      'GENERATING_VIDEO': { label: '영상 생성 중', className: 'bg-violet-500/20 text-violet-500' },
+      'GENERATING_SCENARIO': { label: '시나리오 생성 중', className: 'bg-cyan-500/80 text-white animate-pulse' },
+      'GENERATING_SCENES': { label: '첫 씬 생성 중', className: 'bg-teal-500/80 text-white animate-pulse' },
+      'SCENES_COMPLETED': { label: '첫 씬 완료', className: 'bg-emerald-500/80 text-white' },
+      'GENERATING_VIDEO': { label: '영상 생성 중', className: 'bg-violet-500/80 text-white animate-pulse' },
     }
-    const config = statusConfig[status] || { label: status, className: 'bg-gray-500/20 text-gray-500' }
+    const config = statusConfig[status] || { label: status, className: 'bg-gray-500/80 text-white' }
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded ${config.className}`}>
+      <span className={`px-3 py-1.5 text-xs font-medium rounded-lg backdrop-blur-sm ${config.className}`}>
         {config.label}
       </span>
     )
@@ -221,43 +221,40 @@ export function VideoAdPageContent() {
       {/* 영상 광고 섹션 */}
       <section>
         {isAdsLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="aspect-video bg-secondary/30 rounded-xl animate-pulse" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+              <div key={i} className="aspect-square bg-secondary/30 rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : videoAds.length === 0 ? (
-          <div className="bg-card border border-border rounded-xl p-12 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-              <Video className="w-8 h-8 text-primary" />
+          <div className="bg-card border border-border rounded-2xl p-16 text-center">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
+              <Video className="w-10 h-10 text-primary" />
             </div>
-            <h3 className="text-lg font-medium text-foreground mb-2">{t.videoAd?.emptyAds || '생성된 영상 광고가 없습니다'}</h3>
-            <p className="text-muted-foreground mb-4">영상 광고를 생성해보세요</p>
+            <h3 className="text-xl font-semibold text-foreground mb-3">{t.videoAd?.emptyAds || '생성된 영상 광고가 없습니다'}</h3>
+            <p className="text-muted-foreground mb-6">영상 광고를 생성해보세요</p>
             <button
               onClick={handleCreateVideoAd}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              className="px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors font-medium"
             >
               {t.videoAd?.createAd || '영상 광고 생성'}
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {videoAds.map(video => (
               <div
                 key={video.id}
                 onClick={() => handleVideoClick(video)}
-                className={`relative group bg-card border rounded-xl overflow-hidden cursor-pointer transition-colors ${
-                  video.status === 'DRAFT'
-                    ? 'border-orange-500/50 hover:border-orange-500'
-                    : video.status === 'GENERATING_SCRIPTS'
-                    ? 'border-indigo-500/50 hover:border-indigo-500'
-                    : video.status === 'GENERATING_AUDIO'
-                    ? 'border-pink-500/50 hover:border-pink-500'
-                    : 'border-border hover:border-primary/50'
+                className={`relative group bg-card border border-border rounded-2xl overflow-hidden transition-all ${
+                  video.status === 'COMPLETED'
+                    ? 'cursor-pointer hover:border-primary/50 hover:shadow-lg'
+                    : 'cursor-pointer'
                 }`}
               >
                 {/* 비디오 썸네일 또는 플레이스홀더 */}
-                <div className="aspect-video relative bg-[#1a1a2e]">
+                <div className="p-1">
+                  <div className="aspect-square relative bg-[#1a1a2e] rounded-xl overflow-hidden">
                   {video.video_url && video.status === 'COMPLETED' ? (
                     <>
                       <video
@@ -357,42 +354,43 @@ export function VideoAdPageContent() {
                       )}
                     </div>
                   )}
+                  </div>
                 </div>
 
-                {/* 음악 배지 - 오른쪽 상단 */}
+                {/* 카테고리 뱃지 - 좌측 상단 */}
+                <div className="absolute top-3 left-3 z-10">
+                  <span className="px-3 py-1.5 text-xs font-medium bg-black/60 text-white rounded-lg backdrop-blur-sm">
+                    {getCategoryLabel(video.category)}
+                  </span>
+                </div>
+
+                {/* 상태 뱃지 - 우측 상단 */}
+                {video.status !== 'COMPLETED' && (
+                  <div className="absolute top-3 right-3 z-10">
+                    {getStatusBadge(video.status, video.wizard_step)}
+                  </div>
+                )}
+
+                {/* 음악 배지 - 우측 하단 */}
                 {video.bgm_info && video.status === 'COMPLETED' && (
-                  <div className="absolute top-2 right-2 z-10">
-                    <div className="flex items-center gap-1 px-2 py-1 bg-black/70 rounded-full text-white text-xs">
+                  <div className="absolute bottom-3 right-3 z-10">
+                    <div className="flex items-center gap-1 px-2 py-1 bg-black/70 rounded-lg text-white text-xs backdrop-blur-sm">
                       <Music className="w-3 h-3" />
-                      <span className="max-w-[80px] truncate">{video.bgm_info.music_name}</span>
+                      <span className="max-w-[60px] truncate">{video.bgm_info.music_name}</span>
                     </div>
                   </div>
                 )}
 
-                {/* 정보 */}
-                <div className="p-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-foreground">
-                      {getCategoryLabel(video.category)}
+                {/* 영상 길이 뱃지 - 좌측 하단 */}
+                {video.status === 'COMPLETED' && (video.video_duration || video.duration) && (
+                  <div className="absolute bottom-3 left-3 z-10">
+                    <span className="px-2 py-1 text-xs font-medium bg-black/60 text-white rounded-lg backdrop-blur-sm">
+                      {video.video_duration
+                        ? `${Math.round(video.video_duration)}초`
+                        : `${video.duration}초`}
                     </span>
-                    {getStatusBadge(video.status, video.wizard_step)}
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      {(video.video_duration || video.duration) && (
-                        <span>
-                          {video.video_duration
-                            ? `${Math.round(video.video_duration)}초`
-                            : `${video.duration}초`}
-                        </span>
-                      )}
-                      {video.resolution && <span>{video.resolution}</span>}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(video.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
+                )}
               </div>
             ))}
           </div>
