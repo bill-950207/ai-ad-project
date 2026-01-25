@@ -31,6 +31,7 @@ interface GenerateMultiSceneRequest {
   productName: string
   productDescription?: string | null
   productImageUrl?: string | null
+  sellingPoints?: string[] | null  // 제품 셀링 포인트
   scenarioElements: ScenarioElements
   scenarioDescription?: string
   sceneCount?: number  // 생성할 씬 수 (기본 3)
@@ -80,6 +81,7 @@ export async function POST(request: NextRequest) {
       productName,
       productDescription,
       productImageUrl,
+      sellingPoints,
       scenarioElements,
       scenarioDescription,
       sceneCount = 3,
@@ -105,6 +107,7 @@ export async function POST(request: NextRequest) {
     const prompt = buildMultiScenePrompt(
       productName,
       productDescription,
+      sellingPoints,
       scenarioElements,
       scenarioDescription,
       sceneCount,
@@ -205,11 +208,17 @@ export async function POST(request: NextRequest) {
 function buildMultiScenePrompt(
   productName: string,
   productDescription: string | null | undefined,
+  sellingPoints: string[] | null | undefined,
   elements: ScenarioElements,
   scenarioDescription: string | undefined,
   sceneCount: number,
   avgDuration: number
 ): string {
+  // 셀링 포인트 포맷팅
+  const sellingPointsText = sellingPoints && sellingPoints.length > 0
+    ? sellingPoints.map((p, i) => `  ${i + 1}. ${p}`).join('\n')
+    : 'Not provided'
+
   return `You are an expert advertising video director creating a PREMIUM AD CAMPAIGN with multiple creative scenes.
 
 🎬 GOAL: Create ${sceneCount} DISTINCTLY DIFFERENT scenes that feel like a cohesive professional advertisement.
@@ -233,7 +242,12 @@ Each scene should tell a different part of the product story while maintaining t
 === PRODUCT INFORMATION (⚠️ CRITICAL - READ CAREFULLY) ===
 Product Name: ${productName}
 Product Description: ${productDescription || 'Not provided'}
+Product Selling Points (핵심 특징/장점):
+${sellingPointsText}
 Product Image: [ATTACHED - This is the PRODUCT to feature]
+
+💡 USE SELLING POINTS: Design scenes that visually communicate these selling points.
+For example, if a selling point is "waterproof", show water droplets around the product.
 
 ⚠️ PRODUCT IDENTIFICATION:
 - The attached image shows the PRODUCT: "${productName}"
@@ -328,32 +342,11 @@ Each scenePrompt MUST:
 
 Example format: "The ${productName} product shown in the attached image is elegantly displayed on..."
 
-=== 🎥 VIDU Q2 OPTIMIZED SCENE EXAMPLES ===
-These examples follow all Vidu Q2 optimization rules. Use "${productName}" as the product name.
-Each example includes recommended movementAmplitude value.
+=== 🎥 PROMPT ENDING TEMPLATE ===
+EVERY scenePrompt MUST end with this consistent quality suffix:
+"${elements.colorTone} tones, cinematic lighting, photorealistic, 4K"
 
-Scene Type A - Hero Shot (clean, minimal effects) → movementAmplitude: "medium"
-"The ${productName} product from the attached image stands centered on a smooth dark reflective surface. Warm rim lighting creates a soft glowing silhouette around this product item. Tiny luminous particles float slowly upward in the background. Camera slowly pushes in toward the product. Premium product showcase, warm golden tones, cinematic lighting, 4K."
-
-Scene Type B - Dynamic Elements (limit to 1-2 effects) → movementAmplitude: "medium"
-"The ${productName} product shown in the attached image displayed with gentle water droplets suspended around it. Soft backlighting highlights the product item edges. Camera slowly arcs around the product revealing different angles. Clean product presentation, warm golden tones, professional lighting, 4K."
-
-Scene Type C - Atmospheric Mood (simple, clear language) → movementAmplitude: "small"
-"The ${productName} product from the attached image emerges from soft rising mist. Warm light beams shine from behind this product item. Camera slowly reveals the product through clearing haze. Dreamy product showcase, warm golden tones, cinematic lighting, 4K."
-
-Scene Type D - Detail Focus (no text expectations) → movementAmplitude: "small"
-"Close-up of the ${productName} product from the attached image showing surface details and shape. Soft bokeh lights glow in the dark background behind this product item. Camera slowly pulls back to reveal the full product. Intimate product showcase, warm golden tones, professional lighting, 4K."
-
-Scene Type E - Environmental Context (concrete simple descriptions) → movementAmplitude: "medium"
-"The ${productName} product from the attached image placed elegantly among smooth stones and green leaves. Soft natural light falls on this product item creating gentle shadows. Camera slowly glides past revealing the scene. Nature meets luxury, warm golden tones, cinematic lighting, 4K."
-
-✅ NOTICE: Each example uses:
-- Simple surface descriptions (no contradictions)
-- "slowly" in all camera movements
-- Maximum 2 visual effects per scene
-- NO text/label rendering expectations
-- Short, clear sentences
-- Appropriate movementAmplitude for the scene type
+This ensures visual consistency across all scenes.
 
 === CAMERA MOVEMENTS (⚠️ ALWAYS include "slowly") ===
 ✅ CORRECT camera movement phrases:
@@ -398,25 +391,50 @@ For each scene, choose the appropriate movementAmplitude value:
 === DURATION ===
 - Each scene: ${avgDuration} seconds (range: 3-8)
 
-=== NARRATIVE FLOW ===
-Create a visual story arc:
-- Opening: Intriguing, attention-grabbing
-- Middle: Explore different aspects, build interest
-- Closing: Memorable hero moment, brand statement
+=== 🎬 SCENE PROGRESSION (씬 간 연결성 - 매우 중요!) ===
+Design scenes as a CONNECTED VISUAL JOURNEY, not random separate shots:
 
-Generate ${sceneCount} CREATIVELY DIVERSE scene prompts for "${productName}".
+**OPENING (Scene 1):**
+- Establish the product and setting
+- Create curiosity - partial reveal, mysterious angle, or dramatic entrance
+- Camera: medium/large movement for attention
+- End state should naturally lead to Scene 2
+
+**DEVELOPMENT (Middle scenes):**
+- Each scene reveals MORE about the product
+- Progress logically: far → close, hidden → revealed, mystery → clarity
+- Maintain visual connections:
+  * Same environment/location feel
+  * Consistent lighting direction
+  * Logical camera flow (if Scene 1 ends wide, Scene 2 can start wide)
+- Camera: small/medium movement for elegance
+
+**CLIMAX (Final scene):**
+- Full product reveal or hero moment
+- Culmination of the visual journey
+- Most premium, polished presentation
+- Camera: medium movement for memorable close
+
+**TRANSITION LOGIC:**
+Create scenes that feel like they belong together in one story:
+- If Scene 1 shows product in shadow → Scene 2 shows light hitting product → Scene 3 shows fully illuminated product
+- If Scene 1 is wide environmental → Scene 2 is medium product context → Scene 3 is intimate close-up
+- Each scene should answer a question raised by the previous scene
+
+Generate ${sceneCount} CONNECTED scene prompts for "${productName}".
 
 ⚠️ CRITICAL REQUIREMENTS:
-1. Each prompt MUST start with "The ${productName} product from the attached image" to identify the exact product
-2. Use words like "product", "item", "displayed", "showcased" to clarify it's a PRODUCT being advertised
+1. Each prompt MUST start with "The ${productName} product from the attached image"
+2. Use words like "product", "item", "displayed", "showcased" to clarify it's a PRODUCT
 3. Even if the product resembles a human (figurine, doll, statue), describe it as a PRODUCT ITEM
-4. Each scene must be DISTINCTLY DIFFERENT while sharing the same premium mood and color tone
+4. Each scene must be DISTINCTLY DIFFERENT while sharing the same premium mood
 5. NO REAL PEOPLE - only the product and environment elements
+6. SCENE PROGRESSION: Scenes must feel CONNECTED as a visual journey (opening → development → climax)
+7. Each prompt MUST end with: "${elements.colorTone} tones, cinematic lighting, photorealistic, 4K"
 
 ⚠️ VIDU Q2 VIDEO AI RULES (MANDATORY):
-6. NO text/label rendering expectations - never mention product text or brand names
-7. Simple surface descriptions - no contradictions (e.g., NOT "reflective frosted")
-8. ALL camera movements MUST include "slowly" (e.g., "Camera slowly pulls back")
-9. Maximum 2 visual effects per scene - keep it clean and achievable
-10. Use short, clear sentences with concrete verbs`
+8. NO text/label rendering expectations - never mention product text or brand names
+9. Simple surface descriptions - no contradictions (e.g., NOT "reflective frosted")
+10. ALL camera movements MUST include "slowly" (e.g., "Camera slowly pulls back")
+11. Maximum 2 visual effects per scene - keep it clean and achievable`
 }

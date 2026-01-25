@@ -341,6 +341,7 @@ export function WizardStep5() {
         body: JSON.stringify({
           productName: selectedProduct.name,
           productDescription: selectedProduct.description,
+          sellingPoints: selectedProduct.selling_points,
           productImageUrl: selectedProduct.rembg_image_url || selectedProduct.image_url,
           scenarioElements: scenarioInfo.elements,
           scenarioDescription: scenarioInfo.description,
