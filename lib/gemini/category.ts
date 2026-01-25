@@ -430,14 +430,14 @@ Product: ${input.productName || 'Product'} - ${input.productDescription || ''}
 Options: ${JSON.stringify(input.selectedOptions)}
 ${input.additionalPrompt ? `Additional: ${input.additionalPrompt}` : ''}${avatarBodyInstruction}
 
-=== CRITICAL: LOGO & BRAND PRESERVATION ===
+=== CRITICAL: LOGO & TEXT RULES ===
 ${BRAND_PRESERVATION_INSTRUCTION}
 
-When the product has visible logos, labels, or brand marks:
-- The generated prompt MUST include instructions to preserve them exactly
-- Include phrases like "preserving all product logos and labels exactly as shown"
-- The prompt MUST explicitly state: "do not add any new text, logos, or written elements to the image"
-- Never instruct to modify, remove, or obscure any branding elements
+IMPORTANT PROMPT GENERATION RULES:
+- The generated prompt MUST include: "do not add any new text, logos, or written elements to the image"
+- If the product reference image shows logos/labels, add: "preserve existing product logos and labels exactly as shown"
+- If the product reference image has NO visible logos/labels, do NOT mention preserving logos - just ensure no new ones are added
+- Never generate fake or invented brand names, logos, or text
 
 === NEGATIVE ELEMENTS (things to avoid in the image) ===
 ${PRODUCT_NEGATIVE_PROMPT}
