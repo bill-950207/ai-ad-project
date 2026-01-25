@@ -27,7 +27,7 @@ import {
 import {
   SortableContext,
   sortableKeyboardCoordinates,
-  horizontalListSortingStrategy,
+  rectSortingStrategy,
   useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -134,19 +134,29 @@ function RegenerateModal({
   )
 }
 
+// 비율에 따른 aspect ratio 클래스 반환
+function getAspectRatioClass(ratio: string | null): string {
+  switch (ratio) {
+    case '16:9': return 'aspect-video'
+    case '9:16': return 'aspect-[9/16]'
+    case '1:1': return 'aspect-square'
+    default: return 'aspect-video'
+  }
+}
+
 // 드래그 가능한 키프레임 카드 컴포넌트
 function SortableKeyframeCard({
   kf,
-  scenePrompt,
   onRegenerate,
   isRegenerating,
   isGeneratingKeyframes,
+  aspectRatio,
 }: {
   kf: SceneKeyframe
-  scenePrompt?: string
   onRegenerate: (sceneIndex: number) => void
   isRegenerating: boolean
   isGeneratingKeyframes: boolean
+  aspectRatio: string | null
 }) {
   const {
     attributes,
@@ -170,6 +180,7 @@ function SortableKeyframeCard({
     <div
       ref={setNodeRef}
       style={style}
+      className="w-full min-w-[200px]"
     >
       <div className={`relative rounded-xl overflow-hidden border-2 bg-secondary/20 ${
         isDragging ? 'ring-2 ring-primary shadow-lg' :
@@ -203,16 +214,16 @@ function SortableKeyframeCard({
             <button
               onClick={() => onRegenerate(kf.sceneIndex)}
               disabled={isRegenerating || isGeneratingKeyframes}
-              className="flex items-center gap-1 px-2 py-1 text-xs bg-secondary/50 text-muted-foreground rounded hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50"
+              className="p-1.5 bg-secondary/50 text-muted-foreground rounded hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50"
+              title="다시 생성"
             >
-              <RefreshCw className={`w-3 h-3 ${isRegenerating ? 'animate-spin' : ''}`} />
-              다시
+              <RefreshCw className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
             </button>
           )}
         </div>
 
         {/* 이미지 영역 */}
-        <div className="relative aspect-video bg-black/20">
+        <div className={`relative ${getAspectRatioClass(aspectRatio)} bg-black/20`}>
           {kf.status === 'completed' && kf.imageUrl ? (
             <Image
               src={kf.imageUrl}
@@ -244,14 +255,6 @@ function SortableKeyframeCard({
           )}
         </div>
 
-        {/* 프롬프트 미리보기 */}
-        {scenePrompt && (
-          <div className="px-3 py-2 border-t border-border/30">
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              {scenePrompt.slice(0, 80)}...
-            </p>
-          </div>
-        )}
       </div>
     </div>
   )
@@ -384,6 +387,9 @@ export function WizardStep5() {
 
       setSceneKeyframes(initialKeyframes)
 
+      // 키프레임 생성 시작 시 저장 (이탈 후 복구 지원)
+      await saveDraft({ status: 'GENERATING_SCENES' })
+
       // 폴링 시작
       startKeyframePolling(initialKeyframes)
     } catch (err) {
@@ -513,6 +519,8 @@ export function WizardStep5() {
         }
         setIsGeneratingKeyframes(false)
 
+        // 키프레임 완료 시 저장은 useEffect에서 처리 (최신 상태 보장)
+
         if (hasError) {
           setError('일부 키프레임 생성에 실패했습니다. 실패한 씬은 다시 생성할 수 있습니다.')
         }
@@ -565,13 +573,28 @@ export function WizardStep5() {
     }
   }, [])
 
+  // 키프레임 완료 시 자동 저장 (useEffect로 최신 상태 보장)
+  const hasSavedCompletionRef = useRef(false)
+  useEffect(() => {
+    const allCompleted = sceneKeyframes.length > 0 && sceneKeyframes.every(kf => kf.status === 'completed' || kf.status === 'failed')
+    if (allCompleted && !hasSavedCompletionRef.current) {
+      hasSavedCompletionRef.current = true
+      saveDraft({ status: 'SCENES_COMPLETED' })
+    }
+    // 새로 생성 시작하면 플래그 리셋
+    if (isGeneratingKeyframes) {
+      hasSavedCompletionRef.current = false
+    }
+  }, [sceneKeyframes, isGeneratingKeyframes, saveDraft])
+
   // 다음 단계로
   const handleNext = async () => {
     if (!canProceedToStep6()) return
 
+    // sceneKeyframes는 saveDraft 내부에서 이미 객체로 처리하므로 별도 전달 불필요
     await saveDraft({
       wizardStep: 6,
-      sceneKeyframes: JSON.stringify(sceneKeyframes),
+      status: 'SCENES_COMPLETED',
     })
     goToNextStep()
   }
@@ -657,26 +680,30 @@ export function WizardStep5() {
           >
             <SortableContext
               items={sceneKeyframes.map(kf => `keyframe-${kf.sceneIndex}`)}
-              strategy={horizontalListSortingStrategy}
+              strategy={rectSortingStrategy}
             >
-              <div className={`grid gap-4 ${
-                sceneKeyframes.length === 1 ? 'grid-cols-1' :
-                sceneKeyframes.length === 2 ? 'grid-cols-2' :
-                sceneKeyframes.length === 3 ? 'grid-cols-3' :
-                sceneKeyframes.length === 4 ? 'grid-cols-2' :
-                sceneKeyframes.length <= 6 ? 'grid-cols-3' :
-                'grid-cols-4'
-              }`}>
-                {sceneKeyframes.map((kf, index) => (
-                  <SortableKeyframeCard
-                    key={`keyframe-${kf.sceneIndex}`}
-                    kf={kf}
-                    scenePrompt={scenarioInfo?.scenes?.[index]?.scenePrompt}
-                    onRegenerate={(sceneIndex) => setModalSceneIndex(sceneIndex)}
-                    isRegenerating={regeneratingSceneIndex === kf.sceneIndex}
-                    isGeneratingKeyframes={isGeneratingKeyframes}
-                  />
-                ))}
+              <div className="flex justify-center w-full">
+                <div className={`grid gap-6 ${
+                  sceneKeyframes.length === 1 ? 'grid-cols-1 max-w-md' :
+                  sceneKeyframes.length === 2 ? 'grid-cols-2 max-w-3xl' :
+                  sceneKeyframes.length === 3 ? 'grid-cols-3 max-w-5xl' :
+                  sceneKeyframes.length === 4 ? 'grid-cols-2 max-w-3xl' :
+                  sceneKeyframes.length === 5 ? 'grid-cols-3 max-w-5xl' :
+                  sceneKeyframes.length === 6 ? 'grid-cols-3 max-w-5xl' :
+                  sceneKeyframes.length === 7 ? 'grid-cols-4 max-w-6xl' :
+                  'grid-cols-4 max-w-6xl'
+                } justify-items-center`}>
+                  {sceneKeyframes.map((kf) => (
+                    <SortableKeyframeCard
+                      key={`keyframe-${kf.sceneIndex}`}
+                      kf={kf}
+                      onRegenerate={(sceneIndex) => setModalSceneIndex(sceneIndex)}
+                      isRegenerating={regeneratingSceneIndex === kf.sceneIndex}
+                      isGeneratingKeyframes={isGeneratingKeyframes}
+                      aspectRatio={aspectRatio}
+                    />
+                  ))}
+                </div>
               </div>
             </SortableContext>
           </DndContext>

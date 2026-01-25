@@ -38,6 +38,16 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
+// 비율에 따른 aspect ratio 클래스 반환
+function getAspectRatioClass(ratio: string | null): string {
+  switch (ratio) {
+    case '16:9': return 'aspect-video'
+    case '9:16': return 'aspect-[9/16]'
+    case '1:1': return 'aspect-square'
+    default: return 'aspect-video'
+  }
+}
+
 // 영상 재생성 모달 컴포넌트
 function VideoRegenerateModal({
   isOpen,
@@ -191,6 +201,7 @@ function SortableVideoCard({
   isRegenerating,
   isMergingVideos,
   regeneratingSceneIndex,
+  aspectRatio,
 }: {
   sceneVideo: SceneVideoStatus
   onRegenerate: (sceneIndex: number) => void
@@ -198,6 +209,7 @@ function SortableVideoCard({
   isRegenerating: boolean
   isMergingVideos: boolean
   regeneratingSceneIndex: number | null
+  aspectRatio: string | null
 }) {
   const {
     attributes,
@@ -264,7 +276,7 @@ function SortableVideoCard({
         </div>
 
         {/* 영상 영역 */}
-        <div className="relative aspect-video bg-black">
+        <div className={`relative ${getAspectRatioClass(aspectRatio)} bg-black`}>
           {isCompleted ? (
             <video
               src={sceneVideo.videoUrl}
@@ -1153,27 +1165,32 @@ export function WizardStep6() {
                           items={[...sceneVideoStatuses].sort((a, b) => a.sceneIndex - b.sceneIndex).map(s => `video-${s.sceneIndex}`)}
                           strategy={horizontalListSortingStrategy}
                         >
-                          <div className={`grid gap-4 ${
-                            sceneVideoStatuses.length === 1 ? 'grid-cols-1' :
-                            sceneVideoStatuses.length === 2 ? 'grid-cols-2' :
-                            sceneVideoStatuses.length === 3 ? 'grid-cols-3' :
-                            sceneVideoStatuses.length === 4 ? 'grid-cols-2' :
-                            sceneVideoStatuses.length <= 6 ? 'grid-cols-3' :
-                            'grid-cols-4'
-                          }`}>
-                            {[...sceneVideoStatuses]
-                              .sort((a, b) => a.sceneIndex - b.sceneIndex)
-                              .map((sceneVideo) => (
-                                <SortableVideoCard
-                                  key={sceneVideo.requestId || `scene-${sceneVideo.sceneIndex}`}
-                                  sceneVideo={sceneVideo}
-                                  onRegenerate={(sceneIndex) => setModalSceneIndex(sceneIndex)}
-                                  onDownload={handleDownload}
-                                  isRegenerating={regeneratingSceneIndex === sceneVideo.sceneIndex}
-                                  isMergingVideos={isMergingVideos}
-                                  regeneratingSceneIndex={regeneratingSceneIndex}
-                                />
-                              ))}
+                          <div className="flex justify-center w-full">
+                            <div className={`grid gap-6 ${
+                              sceneVideoStatuses.length === 1 ? 'grid-cols-1 max-w-md' :
+                              sceneVideoStatuses.length === 2 ? 'grid-cols-2 max-w-3xl' :
+                              sceneVideoStatuses.length === 3 ? 'grid-cols-3 max-w-5xl' :
+                              sceneVideoStatuses.length === 4 ? 'grid-cols-2 max-w-3xl' :
+                              sceneVideoStatuses.length === 5 ? 'grid-cols-3 max-w-5xl' :
+                              sceneVideoStatuses.length === 6 ? 'grid-cols-3 max-w-5xl' :
+                              sceneVideoStatuses.length === 7 ? 'grid-cols-4 max-w-6xl' :
+                              'grid-cols-4 max-w-6xl'
+                            } justify-items-center`}>
+                              {[...sceneVideoStatuses]
+                                .sort((a, b) => a.sceneIndex - b.sceneIndex)
+                                .map((sceneVideo) => (
+                                  <SortableVideoCard
+                                    key={sceneVideo.requestId || `scene-${sceneVideo.sceneIndex}`}
+                                    sceneVideo={sceneVideo}
+                                    onRegenerate={(sceneIndex) => setModalSceneIndex(sceneIndex)}
+                                    onDownload={handleDownload}
+                                    isRegenerating={regeneratingSceneIndex === sceneVideo.sceneIndex}
+                                    isMergingVideos={isMergingVideos}
+                                    regeneratingSceneIndex={regeneratingSceneIndex}
+                                    aspectRatio={aspectRatio}
+                                  />
+                                ))}
+                            </div>
                           </div>
                         </SortableContext>
                       </DndContext>
@@ -1234,12 +1251,15 @@ export function WizardStep6() {
                 </div>
 
                 {/* 영상 썸네일 목록 (완료된 영상 + 로딩 중인 영상) */}
-                <div className={`grid gap-3 ${
-                  videoStatuses.length <= 3 ? 'grid-cols-1' :
-                  videoStatuses.length === 4 ? 'grid-cols-2' :
-                  videoStatuses.length <= 6 ? 'grid-cols-3' :
-                  'grid-cols-4'
-                }`}>
+                <div className="flex justify-center w-full">
+                <div className={`grid gap-4 ${
+                  videoStatuses.length === 1 ? 'grid-cols-1 max-w-md' :
+                  videoStatuses.length === 2 ? 'grid-cols-2 max-w-2xl' :
+                  videoStatuses.length === 3 ? 'grid-cols-3 max-w-3xl' :
+                  videoStatuses.length === 4 ? 'grid-cols-2 max-w-2xl' :
+                  videoStatuses.length <= 6 ? 'grid-cols-3 max-w-3xl' :
+                  'grid-cols-4 max-w-4xl'
+                } justify-items-center w-full`}>
                   {videoStatuses.map((videoStatus, index) => {
                     const isCompleted = videoStatus.status === 'completed' && videoStatus.resultUrl
                     const isGenerating = videoStatus.status === 'generating'
@@ -1283,6 +1303,7 @@ export function WizardStep6() {
                       </button>
                     )
                   })}
+                </div>
                 </div>
 
                 {/* 액션 버튼 */}
@@ -1404,13 +1425,16 @@ export function WizardStep6() {
                 </div>
               )}
 
-              {/* 키프레임 그리드 (작은 크기) */}
-              <div className={`grid gap-2 ${
-                sceneKeyframes.length <= 3 ? 'grid-cols-3' :
-                sceneKeyframes.length === 4 ? 'grid-cols-4' :
-                sceneKeyframes.length <= 6 ? 'grid-cols-3 sm:grid-cols-6' :
-                'grid-cols-4 sm:grid-cols-8'
-              }`}>
+              {/* 키프레임 그리드 */}
+              <div className="flex justify-center w-full">
+              <div className={`grid gap-4 ${
+                sceneKeyframes.length === 1 ? 'grid-cols-1 max-w-xs' :
+                sceneKeyframes.length === 2 ? 'grid-cols-2 max-w-md' :
+                sceneKeyframes.length === 3 ? 'grid-cols-3 max-w-xl' :
+                sceneKeyframes.length === 4 ? 'grid-cols-4 max-w-2xl' :
+                sceneKeyframes.length <= 6 ? 'grid-cols-3 sm:grid-cols-6 max-w-xl sm:max-w-4xl' :
+                'grid-cols-4 sm:grid-cols-8 max-w-2xl sm:max-w-5xl'
+              } justify-items-center w-full`}>
                 {sceneKeyframes
                   .filter(kf => kf.status === 'completed' && kf.imageUrl)
                   .sort((a, b) => a.sceneIndex - b.sceneIndex)
@@ -1423,7 +1447,7 @@ export function WizardStep6() {
                     return (
                       <div
                         key={kf.sceneIndex}
-                        className={`relative aspect-square rounded-lg overflow-hidden bg-secondary/30 border-2 transition-all ${
+                        className={`relative ${getAspectRatioClass(aspectRatio)} w-full min-w-[120px] rounded-lg overflow-hidden bg-secondary/30 border-2 transition-all ${
                           isSceneCompleted
                             ? 'border-green-500/50'
                             : isSceneFailed
@@ -1437,7 +1461,7 @@ export function WizardStep6() {
                           src={kf.imageUrl!}
                           alt={`씬 ${kf.sceneIndex + 1}`}
                           fill
-                          className="object-cover"
+                          className="object-contain"
                         />
 
                         {/* 오버레이 상태 표시 */}
@@ -1478,6 +1502,7 @@ export function WizardStep6() {
                       </div>
                     )
                   })}
+              </div>
               </div>
 
               {/* 에러 메시지 */}

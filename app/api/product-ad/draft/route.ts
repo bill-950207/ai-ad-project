@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const {
       id,  // 기존 초안 ID (없으면 새로 생성)
+      forceNew,  // true면 기존 초안 무시하고 새로 생성
       status,  // 상태 업데이트
       wizardStep,
       // Step 1 데이터
@@ -108,42 +109,44 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({ draft: updated })
     } else {
-      // 같은 카테고리의 기존 DRAFT 확인 (하나만 유지)
-      const existingDraft = await prisma.video_ads.findFirst({
-        where: {
-          user_id: user.id,
-          category: 'productAd',
-          status: { in: ['DRAFT', 'GENERATING_SCENARIO', 'GENERATING_SCENES', 'SCENES_COMPLETED'] },
-        },
-      })
-
-      if (existingDraft) {
-        // 기존 초안 업데이트
-        // 참고: scenarioInfo, referenceInfo, firstSceneOptions는 이미 클라이언트에서 JSON.stringify됨
-        const updated = await prisma.video_ads.update({
-          where: { id: existingDraft.id },
-          data: {
-            ...(validStatus && { status: validStatus }),
-            wizard_step: wizardStep,
-            product_id: productId || null,
-            product_info: productInfo || null,
-            scenario_method: scenarioMethod || null,
-            reference_info: typeof referenceInfo === 'string' ? referenceInfo : (referenceInfo ? JSON.stringify(referenceInfo) : null),
-            scenario_info: typeof scenarioInfo === 'string' ? scenarioInfo : (scenarioInfo ? JSON.stringify(scenarioInfo) : null),
-            aspect_ratio: aspectRatio || null,
-            duration: duration || null,
-            first_scene_options: typeof firstSceneOptions === 'string' ? firstSceneOptions : (firstSceneOptions ? JSON.stringify(firstSceneOptions) : null),
-            selected_scene_index: selectedSceneIndex ?? null,
-            start_frame_url: startFrameUrl || null,
-            video_request_id: videoRequestId || null,
-            video_url: videoUrl || null,
-            scene_keyframes: sceneKeyframes || undefined,
-            scene_video_urls: sceneVideoUrls || undefined,
-            updated_at: new Date(),
+      // forceNew가 아닌 경우에만 기존 DRAFT 확인
+      if (!forceNew) {
+        const existingDraft = await prisma.video_ads.findFirst({
+          where: {
+            user_id: user.id,
+            category: 'productAd',
+            status: { in: ['DRAFT', 'GENERATING_SCENARIO', 'GENERATING_SCENES', 'SCENES_COMPLETED'] },
           },
         })
 
-        return NextResponse.json({ draft: updated })
+        if (existingDraft) {
+          // 기존 초안 업데이트
+          // 참고: scenarioInfo, referenceInfo, firstSceneOptions는 이미 클라이언트에서 JSON.stringify됨
+          const updated = await prisma.video_ads.update({
+            where: { id: existingDraft.id },
+            data: {
+              ...(validStatus && { status: validStatus }),
+              wizard_step: wizardStep,
+              product_id: productId || null,
+              product_info: productInfo || null,
+              scenario_method: scenarioMethod || null,
+              reference_info: typeof referenceInfo === 'string' ? referenceInfo : (referenceInfo ? JSON.stringify(referenceInfo) : null),
+              scenario_info: typeof scenarioInfo === 'string' ? scenarioInfo : (scenarioInfo ? JSON.stringify(scenarioInfo) : null),
+              aspect_ratio: aspectRatio || null,
+              duration: duration || null,
+              first_scene_options: typeof firstSceneOptions === 'string' ? firstSceneOptions : (firstSceneOptions ? JSON.stringify(firstSceneOptions) : null),
+              selected_scene_index: selectedSceneIndex ?? null,
+              start_frame_url: startFrameUrl || null,
+              video_request_id: videoRequestId || null,
+              video_url: videoUrl || null,
+              scene_keyframes: sceneKeyframes || undefined,
+              scene_video_urls: sceneVideoUrls || undefined,
+              updated_at: new Date(),
+            },
+          })
+
+          return NextResponse.json({ draft: updated })
+        }
       }
 
       // 새 초안 생성

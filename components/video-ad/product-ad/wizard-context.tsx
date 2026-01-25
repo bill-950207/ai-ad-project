@@ -607,8 +607,18 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
       }
 
       // 씬 키프레임 로드 (진행 중인 것도 복원하여 재개 가능)
-      if (draft.scene_keyframes && Array.isArray(draft.scene_keyframes)) {
-        setSceneKeyframes(draft.scene_keyframes as SceneKeyframe[])
+      if (draft.scene_keyframes) {
+        // 문자열인 경우 JSON 파싱 (레거시 호환)
+        if (typeof draft.scene_keyframes === 'string') {
+          try {
+            const parsed = JSON.parse(draft.scene_keyframes)
+            if (Array.isArray(parsed)) {
+              setSceneKeyframes(parsed as SceneKeyframe[])
+            }
+          } catch { /* ignore */ }
+        } else if (Array.isArray(draft.scene_keyframes)) {
+          setSceneKeyframes(draft.scene_keyframes as SceneKeyframe[])
+        }
       }
 
       // 씬 비디오 세그먼트 로드 (진행 중인 것도 복원하여 재개 가능)
