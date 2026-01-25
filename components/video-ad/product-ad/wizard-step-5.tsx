@@ -285,6 +285,11 @@ export function WizardStep5() {
   const [isMergingPrompt, setIsMergingPrompt] = useState(false)
   const keyframePollingRef = useRef<NodeJS.Timeout | null>(null)
 
+  // 폴링 최적화를 위한 ref
+  const pollingInProgressRef = useRef<Set<number>>(new Set())  // 현재 폴링 중인 씬 인덱스
+  const completedPollingRef = useRef<Set<number>>(new Set())   // 완료된 씬 인덱스
+  const isCancelledRef = useRef(false)  // 폴링 취소 플래그
+
   // DnD 센서 설정
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -478,40 +483,83 @@ export function WizardStep5() {
     }
   }
 
-  // 전체 키프레임 상태 폴링
+  // 전체 키프레임 상태 폴링 (비동기 병렬 처리, 타임아웃, 중복 요청 방지)
   const startKeyframePolling = useCallback((keyframes: SceneKeyframe[]) => {
     if (keyframePollingRef.current) {
       clearInterval(keyframePollingRef.current)
     }
 
-    const pollStatus = async () => {
-      let allCompleted = true
-      let hasError = false
+    // 폴링 시작 시 초기화
+    isCancelledRef.current = false
+    completedPollingRef.current = new Set()
+    pollingInProgressRef.current = new Set()
 
-      for (const kf of keyframes) {
-        if (kf.status === 'completed' || kf.status === 'failed') continue
-
-        try {
-          const res = await fetch(`/api/product-ad/status/${encodeURIComponent(kf.requestId!)}?type=image`)
-          if (!res.ok) continue
-
-          const data = await res.json()
-
-          if (data.status === 'COMPLETED' && data.resultUrl) {
-            updateSceneKeyframe(kf.sceneIndex, {
-              status: 'completed',
-              imageUrl: data.resultUrl,
-            })
-          } else if (data.status === 'FAILED') {
-            updateSceneKeyframe(kf.sceneIndex, { status: 'failed' })
-            hasError = true
-          } else {
-            allCompleted = false
-          }
-        } catch {
-          allCompleted = false
-        }
+    const pollSingleKeyframe = async (kf: SceneKeyframe): Promise<{ sceneIndex: number; completed: boolean; failed: boolean }> => {
+      // 이미 완료된 건 스킵
+      if (completedPollingRef.current.has(kf.sceneIndex)) {
+        return { sceneIndex: kf.sceneIndex, completed: true, failed: false }
       }
+      // 이미 폴링 중이면 스킵
+      if (pollingInProgressRef.current.has(kf.sceneIndex)) {
+        return { sceneIndex: kf.sceneIndex, completed: false, failed: false }
+      }
+      // 이미 완료/실패 상태면 스킵
+      if (kf.status === 'completed' || kf.status === 'failed') {
+        completedPollingRef.current.add(kf.sceneIndex)
+        return { sceneIndex: kf.sceneIndex, completed: true, failed: kf.status === 'failed' }
+      }
+
+      pollingInProgressRef.current.add(kf.sceneIndex)
+
+      try {
+        // 3초 타임아웃 설정
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 3000)
+
+        const res = await fetch(`/api/product-ad/status/${encodeURIComponent(kf.requestId!)}?type=image`, {
+          signal: controller.signal,
+        })
+        clearTimeout(timeoutId)
+
+        if (!res.ok) {
+          return { sceneIndex: kf.sceneIndex, completed: false, failed: false }
+        }
+
+        const data = await res.json()
+
+        if (data.status === 'COMPLETED' && data.resultUrl) {
+          completedPollingRef.current.add(kf.sceneIndex)
+          updateSceneKeyframe(kf.sceneIndex, {
+            status: 'completed',
+            imageUrl: data.resultUrl,
+          })
+          return { sceneIndex: kf.sceneIndex, completed: true, failed: false }
+        } else if (data.status === 'FAILED') {
+          completedPollingRef.current.add(kf.sceneIndex)
+          updateSceneKeyframe(kf.sceneIndex, { status: 'failed' })
+          return { sceneIndex: kf.sceneIndex, completed: true, failed: true }
+        }
+
+        return { sceneIndex: kf.sceneIndex, completed: false, failed: false }
+      } catch (error) {
+        // 타임아웃 오류는 무시 (다음 폴링에서 재시도)
+        if (error instanceof Error && error.name !== 'AbortError') {
+          console.error('키프레임 상태 폴링 오류:', error)
+        }
+        return { sceneIndex: kf.sceneIndex, completed: false, failed: false }
+      } finally {
+        pollingInProgressRef.current.delete(kf.sceneIndex)
+      }
+    }
+
+    const pollStatus = async () => {
+      if (isCancelledRef.current) return
+
+      // 모든 키프레임에 대해 비동기 병렬 요청
+      const results = await Promise.all(keyframes.map(kf => pollSingleKeyframe(kf)))
+
+      const allCompleted = results.every(r => r.completed)
+      const hasError = results.some(r => r.failed)
 
       if (allCompleted) {
         if (keyframePollingRef.current) {
@@ -532,33 +580,69 @@ export function WizardStep5() {
     pollStatus()
   }, [updateSceneKeyframe, setIsGeneratingKeyframes])
 
-  // 단일 키프레임 상태 폴링
+  // 단일 키프레임 상태 폴링 (타임아웃, 중복 요청 방지)
   const startSingleKeyframePolling = useCallback((sceneIndex: number, requestId: string) => {
+    // 개별 폴링용 ref
+    let isPollingInProgress = false
+    let isCancelled = false
+
     const pollStatus = async () => {
+      if (isCancelled) return
+      if (isPollingInProgress) {
+        // 이전 요청이 진행 중이면 다음 폴링 예약
+        setTimeout(() => pollStatus(), 3000)
+        return
+      }
+
+      isPollingInProgress = true
+
       try {
-        const res = await fetch(`/api/product-ad/status/${encodeURIComponent(requestId)}?type=image`)
+        // 3초 타임아웃 설정
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 3000)
+
+        const res = await fetch(`/api/product-ad/status/${encodeURIComponent(requestId)}?type=image`, {
+          signal: controller.signal,
+        })
+        clearTimeout(timeoutId)
+
         if (!res.ok) {
-          setTimeout(() => pollStatus(), 3000)
+          isPollingInProgress = false
+          if (!isCancelled) {
+            setTimeout(() => pollStatus(), 3000)
+          }
           return
         }
 
         const data = await res.json()
 
         if (data.status === 'COMPLETED' && data.resultUrl) {
+          isCancelled = true
           updateSceneKeyframe(sceneIndex, {
             status: 'completed',
             imageUrl: data.resultUrl,
           })
           setRegeneratingSceneIndex(null)
         } else if (data.status === 'FAILED') {
+          isCancelled = true
           updateSceneKeyframe(sceneIndex, { status: 'failed' })
           setRegeneratingSceneIndex(null)
           setError('키프레임 재생성에 실패했습니다.')
         } else {
+          isPollingInProgress = false
+          if (!isCancelled) {
+            setTimeout(() => pollStatus(), 3000)
+          }
+        }
+      } catch (error) {
+        // 타임아웃 오류는 무시 (다음 폴링에서 재시도)
+        if (error instanceof Error && error.name !== 'AbortError') {
+          console.error('키프레임 재생성 폴링 오류:', error)
+        }
+        isPollingInProgress = false
+        if (!isCancelled) {
           setTimeout(() => pollStatus(), 3000)
         }
-      } catch {
-        setTimeout(() => pollStatus(), 3000)
       }
     }
 
@@ -568,9 +652,12 @@ export function WizardStep5() {
   // 컴포넌트 언마운트 시 폴링 정리
   useEffect(() => {
     return () => {
+      isCancelledRef.current = true
       if (keyframePollingRef.current) {
         clearInterval(keyframePollingRef.current)
       }
+      pollingInProgressRef.current.clear()
+      completedPollingRef.current.clear()
     }
   }, [])
 

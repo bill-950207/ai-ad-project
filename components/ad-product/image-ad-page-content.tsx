@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
 import { Plus, Image as ImageIcon, Loader2, ChevronLeft, ChevronRight, RefreshCw, CreditCard } from 'lucide-react'
@@ -80,47 +80,82 @@ export function ImageAdPageContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // 진행 중인 광고 폴링 (배치 지원)
+  // 폴링 완료된 광고 ID 추적 (완료/실패 시 더 이상 폴링하지 않음)
+  const completedPollingIdsRef = useRef<Set<string>>(new Set())
+  // 현재 폴링 중인 광고 ID 추적 (중복 요청 방지)
+  const pollingInProgressRef = useRef<Set<string>>(new Set())
+
+  // 진행 중인 광고 폴링 (배치 지원, 비동기 병렬 처리)
   useEffect(() => {
     const inProgressAds = imageAds.filter(
-      ad => ['IN_QUEUE', 'IN_PROGRESS'].includes(ad.status) && (ad.batch_request_ids || ad.fal_request_id)
+      ad =>
+        ['IN_QUEUE', 'IN_PROGRESS'].includes(ad.status) &&
+        (ad.batch_request_ids || ad.fal_request_id) &&
+        !completedPollingIdsRef.current.has(ad.id) // 이미 완료된 건 제외
     )
 
     if (inProgressAds.length === 0) return
 
-    const pollStatus = async () => {
-      for (const ad of inProgressAds) {
-        try {
-          // 배치 상태 API 사용 (imageAdId로 조회)
-          const res = await fetch(`/api/image-ads/batch-status/${ad.id}`)
-          if (res.ok) {
-            const data = await res.json()
-            if (data.status === 'COMPLETED' && (data.imageUrls || data.imageUrl)) {
-              // 상태 업데이트 (배치 또는 단일)
-              setImageAds(prev =>
-                prev.map(a =>
-                  a.id === ad.id
-                    ? {
-                        ...a,
-                        status: 'COMPLETED' as const,
-                        image_urls: data.imageUrls || (data.imageUrl ? [data.imageUrl] : null),
-                        image_url: data.imageUrls?.[0] || data.imageUrl || a.image_url,
-                      }
-                    : a
-                )
+    const pollSingleAd = async (ad: ImageAd) => {
+      // 이미 폴링 중이면 스킵
+      if (pollingInProgressRef.current.has(ad.id)) return
+      // 이미 완료된 건 스킵
+      if (completedPollingIdsRef.current.has(ad.id)) return
+
+      pollingInProgressRef.current.add(ad.id)
+
+      try {
+        // 3초 타임아웃 설정
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 3000)
+
+        const res = await fetch(`/api/image-ads/batch-status/${ad.id}`, {
+          signal: controller.signal,
+        })
+        clearTimeout(timeoutId)
+
+        if (res.ok) {
+          const data = await res.json()
+          if (data.status === 'COMPLETED' && (data.imageUrls || data.imageUrl)) {
+            // 완료 처리 - 더 이상 폴링하지 않음
+            completedPollingIdsRef.current.add(ad.id)
+            setImageAds(prev =>
+              prev.map(a =>
+                a.id === ad.id
+                  ? {
+                      ...a,
+                      status: 'COMPLETED' as const,
+                      image_urls: data.imageUrls || (data.imageUrl ? [data.imageUrl] : null),
+                      image_url: data.imageUrls?.[0] || data.imageUrl || a.image_url,
+                    }
+                  : a
               )
-            } else if (data.status === 'FAILED') {
-              setImageAds(prev =>
-                prev.map(a =>
-                  a.id === ad.id ? { ...a, status: 'FAILED' as const } : a
-                )
+            )
+          } else if (data.status === 'FAILED') {
+            // 실패 처리 - 더 이상 폴링하지 않음
+            completedPollingIdsRef.current.add(ad.id)
+            setImageAds(prev =>
+              prev.map(a =>
+                a.id === ad.id ? { ...a, status: 'FAILED' as const } : a
               )
-            }
+            )
           }
-        } catch (error) {
+        }
+      } catch (error) {
+        // 타임아웃이나 네트워크 오류는 무시 (다음 폴링에서 재시도)
+        if (error instanceof Error && error.name !== 'AbortError') {
           console.error('이미지 광고 상태 폴링 오류:', error)
         }
+      } finally {
+        pollingInProgressRef.current.delete(ad.id)
       }
+    }
+
+    const pollStatus = () => {
+      // 모든 진행 중인 광고에 대해 비동기 병렬 요청
+      inProgressAds.forEach(ad => {
+        pollSingleAd(ad)
+      })
     }
 
     const interval = setInterval(pollStatus, 2000)
@@ -182,6 +217,8 @@ export function ImageAdPageContent() {
       })
 
       if (res.ok) {
+        // 완료 목록에서 제거하여 다시 폴링 시작
+        completedPollingIdsRef.current.delete(adId)
         // 상태를 IN_QUEUE로 업데이트
         setImageAds(prev =>
           prev.map(ad =>

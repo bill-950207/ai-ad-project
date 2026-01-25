@@ -10,11 +10,10 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
 import { useLanguage } from '@/contexts/language-context'
 import { ProductDescriptionWizard } from '@/components/video-ad/product-description-wizard'
+import { AdCreationHeader } from '@/components/ui/ad-creation-header'
 import {
-  ArrowLeft,
   Sparkles,
   Loader2,
   ChevronDown,
@@ -335,19 +334,21 @@ function VideoAdCreateContent() {
   return (
     <div className="h-full">
       {/* 헤더 */}
-      <div className="flex items-center gap-4 mb-6">
-        <Link
-          href="/dashboard/video-ad"
-          className="p-2 hover:bg-secondary/50 rounded-lg transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-muted-foreground" />
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold text-foreground">
-            {videoAd?.createAd || '영상 광고 생성'}
-          </h1>
-        </div>
-      </div>
+      <AdCreationHeader
+        backHref="/dashboard/video-ad"
+        title={videoAd?.createAd || '영상 광고 생성'}
+        selectedProduct={selectedProduct ? {
+          name: selectedProduct.name,
+          imageUrl: selectedProduct.rembg_image_url || selectedProduct.image_url,
+        } : localImagePreview ? {
+          name: localImageFile?.name || '로컬 이미지',
+          imageUrl: localImagePreview,
+        } : null}
+        selectedAvatar={selectedAvatar ? {
+          name: selectedAvatar.name,
+          imageUrl: selectedAvatar.image_url,
+        } : null}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-8">
         {/* 왼쪽: 입력 폼 */}
