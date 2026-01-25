@@ -77,8 +77,15 @@ export function WizardStep4() {
   // 이미지 편집 모달 상태
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [editImageIndex, setEditImageIndex] = useState(0)
+  // 이미지 로딩 상태 추적 (스켈레톤 UI용)
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set())
 
   const isWearingType = adType === 'wearing'
+
+  // 결과 이미지가 변경되면 로딩 상태 초기화
+  useEffect(() => {
+    setLoadedImages(new Set())
+  }, [resultImages])
 
   // 진행률 업데이트
   useEffect(() => {
@@ -334,39 +341,54 @@ export function WizardStep4() {
           {resultImages.map((url, index) => (
             <div key={index} className="relative group">
               <div className="bg-secondary/30 rounded-xl overflow-hidden">
+                {/* 스켈레톤 UI - 이미지 로딩 전 표시 */}
+                {!loadedImages.has(index) && (
+                  <div className="aspect-square bg-secondary/50 animate-pulse flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
+                      <span className="text-sm text-muted-foreground">이미지 로딩 중...</span>
+                    </div>
+                  </div>
+                )}
                 <img
                   src={url}
                   alt={`생성된 이미지 ${index + 1}`}
-                  className="w-full h-auto"
+                  className={`w-full h-auto transition-opacity duration-300 ${loadedImages.has(index) ? 'opacity-100' : 'opacity-0 absolute'}`}
+                  onLoad={() => {
+                    setLoadedImages(prev => new Set(prev).add(index))
+                  }}
                 />
               </div>
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-3">
-                <button
-                  onClick={() => {
-                    setEditImageIndex(index)
-                    setEditModalOpen(true)
-                  }}
-                  className="p-3 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
-                  title="이미지 편집"
-                >
-                  <Wand2 className="w-5 h-5 text-white" />
-                </button>
-                <a
-                  href={url}
-                  download={`ad-image-${index + 1}.png`}
-                  className="p-3 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
-                >
-                  <Download className="w-5 h-5 text-white" />
-                </a>
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-3 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
-                >
-                  <ExternalLink className="w-5 h-5 text-white" />
-                </a>
-              </div>
+              {/* 호버 오버레이 - 이미지 로딩 완료 후에만 표시 */}
+              {loadedImages.has(index) && (
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-3">
+                  <button
+                    onClick={() => {
+                      setEditImageIndex(index)
+                      setEditModalOpen(true)
+                    }}
+                    className="p-3 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+                    title="이미지 편집"
+                  >
+                    <Wand2 className="w-5 h-5 text-white" />
+                  </button>
+                  <a
+                    href={url}
+                    download={`ad-image-${index + 1}.png`}
+                    className="p-3 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+                  >
+                    <Download className="w-5 h-5 text-white" />
+                  </a>
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+                  >
+                    <ExternalLink className="w-5 h-5 text-white" />
+                  </a>
+                </div>
+              )}
             </div>
           ))}
         </div>
