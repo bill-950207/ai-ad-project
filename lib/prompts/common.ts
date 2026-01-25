@@ -71,9 +71,11 @@ export const PRODUCT_NEGATIVE_PROMPT =
 
 /** 로고/라벨 보존 지시 (Gemini 프롬프트용) */
 export const BRAND_PRESERVATION_INSTRUCTION = `
-CRITICAL: Preserve all existing logos, labels, and brand marks on the product exactly as shown in the reference image.
-Do not add any new text, watermarks, or overlays that are not present in the original reference image.
-Maintain the exact appearance of product packaging and branding.
+CRITICAL LOGO & TEXT RULES:
+1. PRESERVE: All existing logos, labels, brand marks, and text on the product MUST be preserved exactly as shown in the reference image.
+2. DO NOT ADD: Never add any new logos, text, watermarks, brand names, or written elements that are not in the original product image.
+3. DO NOT MODIFY: Do not alter, obscure, blur, or change the size/position of any existing product branding.
+4. MAINTAIN: Keep the exact appearance of product packaging, labels, and all printed text.
 `.trim()
 
 // ============================================================

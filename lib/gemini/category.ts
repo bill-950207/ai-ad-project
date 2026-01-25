@@ -354,14 +354,81 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
 }
 
 /**
+ * 아바타 체형 특성을 프롬프트용 텍스트로 변환
+ * z-image-turbo 프롬프트 빌더와 동일한 상세 묘사 사용
+ */
+function formatAvatarBodyCharacteristics(characteristics: ImageAdPromptInput['avatarCharacteristics']): string {
+  if (!characteristics) return ''
+
+  const parts: string[] = []
+
+  // 키 (height)
+  const heightMap: Record<string, string> = {
+    short: 'petite',
+    average: 'average height',
+    tall: 'tall',
+  }
+  if (characteristics.height && heightMap[characteristics.height]) {
+    parts.push(heightMap[characteristics.height])
+  }
+
+  // 체형 (bodyType) - 성별에 따라 구체적인 신체 비율 사용
+  const femaleBodyTypeMap: Record<string, string> = {
+    slim: 'slim slender body with 32-24-34 inch proportions, narrow shoulders, small bust, thin waist, lean hips',
+    average: 'average female body with 34-26-36 inch proportions, moderate bust, defined waist, balanced hips',
+    athletic: 'athletic toned female body with 34-25-35 inch proportions, firm muscles, toned abs, strong legs, defined arms',
+    curvy: 'hourglass figure body with 36-24-36 inch proportions, full bust (D-cup), very slim tiny waist, shapely round hips, slender toned legs',
+    plussize: 'plus-size female body with 42-36-46 inch proportions, very large bust, soft rounded belly, wide hips, thick thighs',
+  }
+
+  const maleBodyTypeMap: Record<string, string> = {
+    slim: 'slim lean male body with narrow shoulders, thin arms, flat chest, slim waist, lean legs',
+    average: 'average male body with moderate shoulders, normal chest, slight belly, standard proportions',
+    athletic: 'athletic muscular male body with broad shoulders (18+ inches), defined chest muscles, visible six-pack abs, V-shaped torso, muscular arms and legs',
+    curvy: 'stocky male body with broad frame, thick chest, solid midsection, strong thick legs',
+    plussize: 'plus-size male body with large frame, broad chest, round belly, thick arms and legs',
+  }
+
+  const defaultBodyTypeMap: Record<string, string> = {
+    slim: 'slim slender build with lean proportions',
+    average: 'average build with balanced proportions',
+    athletic: 'athletic toned build with defined muscles',
+    curvy: 'curvy build with pronounced proportions',
+    plussize: 'plus-size build with fuller figure',
+  }
+
+  if (characteristics.bodyType) {
+    let bodyDesc: string
+    if (characteristics.gender === 'female') {
+      bodyDesc = femaleBodyTypeMap[characteristics.bodyType] || defaultBodyTypeMap[characteristics.bodyType] || ''
+    } else if (characteristics.gender === 'male') {
+      bodyDesc = maleBodyTypeMap[characteristics.bodyType] || defaultBodyTypeMap[characteristics.bodyType] || ''
+    } else {
+      bodyDesc = defaultBodyTypeMap[characteristics.bodyType] || ''
+    }
+    if (bodyDesc) {
+      parts.push(bodyDesc)
+    }
+  }
+
+  return parts.length > 0 ? parts.join(', ') : ''
+}
+
+/**
  * 이미지 광고 프롬프트를 생성합니다.
  */
 export async function generateImageAdPrompt(input: ImageAdPromptInput): Promise<ImageAdPromptResult> {
+  // 아바타 체형 특성 포맷팅 (아바타가 선택된 경우)
+  const avatarBodyDescription = formatAvatarBodyCharacteristics(input.avatarCharacteristics)
+  const avatarBodyInstruction = avatarBodyDescription
+    ? `\n\n=== AVATAR BODY CONSISTENCY ===\nWhen including the model/avatar in the image, maintain consistent body characteristics: ${avatarBodyDescription}.\nThe model's body proportions should match these characteristics throughout the image.`
+    : ''
+
   const prompt = `You are an expert advertising photographer. Generate a Seedream 4.5 optimized prompt for ${input.adType} advertisement.
 
 Product: ${input.productName || 'Product'} - ${input.productDescription || ''}
 Options: ${JSON.stringify(input.selectedOptions)}
-${input.additionalPrompt ? `Additional: ${input.additionalPrompt}` : ''}
+${input.additionalPrompt ? `Additional: ${input.additionalPrompt}` : ''}${avatarBodyInstruction}
 
 === CRITICAL: LOGO & BRAND PRESERVATION ===
 ${BRAND_PRESERVATION_INSTRUCTION}
@@ -369,12 +436,13 @@ ${BRAND_PRESERVATION_INSTRUCTION}
 When the product has visible logos, labels, or brand marks:
 - The generated prompt MUST include instructions to preserve them exactly
 - Include phrases like "preserving all product logos and labels exactly as shown"
+- The prompt MUST explicitly state: "do not add any new text, logos, or written elements to the image"
 - Never instruct to modify, remove, or obscure any branding elements
 
 === NEGATIVE ELEMENTS (things to avoid in the image) ===
 ${PRODUCT_NEGATIVE_PROMPT}
 
-Output JSON: { "optimizedPrompt": "English 60-100 words, must include logo preservation instruction if product has branding", "koreanDescription": "Korean summary" }`
+Output JSON: { "optimizedPrompt": "English 60-100 words, must include logo preservation instruction AND 'no new text or logos' instruction", "koreanDescription": "Korean summary" }`
 
   const config: GenerateContentConfig = {
     thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
