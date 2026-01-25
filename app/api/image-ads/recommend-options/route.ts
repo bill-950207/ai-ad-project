@@ -235,6 +235,7 @@ export async function POST(request: NextRequest) {
       adType,
       productName,
       productDescription,
+      productSellingPoints,  // 제품 셀링 포인트
       language = 'ko',
       multiple = false,  // 다중 시나리오 모드 (기본: false)
       hasAvatar = false,  // 아바타 포함 여부 (의상 옵션은 카테고리 옵션으로 포함됨)
@@ -242,6 +243,8 @@ export async function POST(request: NextRequest) {
       productImageUrl,  // 제품 이미지 URL
       productUsageMethod,  // 제품 사용 방법 (using 타입 전용)
     } = body
+
+    console.log('[recommend-options] 요청 데이터:', { productName, productSellingPoints, hasAvatar })
 
     if (!adType) {
       return NextResponse.json({ error: 'Ad type is required' }, { status: 400 })
@@ -268,6 +271,7 @@ export async function POST(request: NextRequest) {
         adType: adType as ImageAdType,
         productName,
         productDescription,
+        productSellingPoints,  // 셀링 포인트 전달
         categoryGroups,
         language,
         hasAvatar,
@@ -284,6 +288,7 @@ export async function POST(request: NextRequest) {
       adType: adType as ImageAdType,
       productName,
       productDescription,
+      productSellingPoints,  // 셀링 포인트 전달
       categoryGroups,
       language,
       hasAvatar,

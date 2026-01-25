@@ -70,6 +70,8 @@ export function WizardStep4() {
 
   const [generationStartTime, setGenerationStartTime] = useState<number | null>(null)
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const isPollingRef = useRef(false)  // 중복 요청 방지
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // 이미지 편집 모달 상태
   const [editModalOpen, setEditModalOpen] = useState(false)
@@ -94,6 +96,17 @@ export function WizardStep4() {
       }
     }
   }, [isGenerating, generationStartTime, setGenerationProgress])
+
+  // AbortController cleanup (컴포넌트 언마운트 시 요청 취소)
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+        abortControllerRef.current = null
+      }
+      isPollingRef.current = false
+    }
+  }, [])
 
   // 로컬 이미지 업로드
   const uploadLocalImage = async (): Promise<string | null> => {
@@ -170,48 +183,68 @@ export function WizardStep4() {
         throw new Error(error.error || '생성 요청 실패')
       }
 
-      const { requestIds, imageAdIds } = await createRes.json()
+      const { imageAdIds } = await createRes.json()
 
       // 생성된 광고 ID 저장
       if (imageAdIds && imageAdIds.length > 0) {
         setResultAdIds(imageAdIds)
       }
 
-      // 폴링
+      // 배치 폴링 (단일 API로 모든 이미지 상태 확인)
       const pollInterval = 1000
       const maxAttempts = 90
+      const imageAdId = imageAdIds?.[0]
 
-      // NSFW 오류 카운트
-      let nsfwErrorCount = 0
+      if (!imageAdId) {
+        throw new Error('이미지 광고 ID가 없습니다')
+      }
 
-      const pollSingleStatus = async (requestId: string): Promise<string | null> => {
+      // AbortController 설정
+      abortControllerRef.current = new AbortController()
+
+      const pollBatchStatus = async (): Promise<string[]> => {
         let attempts = 0
 
-        const poll = async (): Promise<string | null> => {
-          const statusRes = await fetch(`/api/image-ads/status/${requestId}`)
-          if (!statusRes.ok) {
-            throw new Error('상태 확인 실패')
+        const poll = async (): Promise<string[]> => {
+          // 이전 요청이 진행 중이면 대기 후 재시도
+          if (isPollingRef.current) {
+            await new Promise(resolve => setTimeout(resolve, pollInterval))
+            return poll()
           }
 
-          const status = await statusRes.json()
+          isPollingRef.current = true
+          try {
+            const statusRes = await fetch(`/api/image-ads/batch-status/${imageAdId}`, {
+              signal: abortControllerRef.current?.signal,
+            })
 
-          if (status.status === 'COMPLETED') {
-            return status.imageUrl || null
-          } else if (status.status === 'FAILED') {
-            // NSFW 오류 체크
-            if (status.errorCode === 'NSFW' || status.error === 'NSFW_CONTENT_DETECTED') {
-              nsfwErrorCount++
-              console.warn(`NSFW 콘텐츠 감지로 이미지 생성 실패 (${requestId})`)
-            } else {
-              console.error(`이미지 생성 실패 (${requestId}):`, status.error)
+            if (!statusRes.ok) {
+              throw new Error('상태 확인 실패')
             }
-            return null
+
+            const status = await statusRes.json()
+
+            if (status.status === 'COMPLETED') {
+              return status.imageUrls || []
+            } else if (status.status === 'FAILED') {
+              // NSFW 오류 체크
+              if (status.error === 'NSFW_CONTENT_DETECTED' || status.error?.includes('NSFW')) {
+                throw new Error('생성된 이미지가 콘텐츠 정책(NSFW)에 위배되어 차단되었습니다. 다른 옵션으로 다시 시도해주세요.')
+              }
+              throw new Error(status.error || '이미지 생성 실패')
+            }
+
+            // 진행률 업데이트 (batch-status API의 progress 필드 활용)
+            if (status.progress !== undefined) {
+              setGenerationProgress(Math.min(status.progress, 99))
+            }
+          } finally {
+            isPollingRef.current = false
           }
 
           attempts++
           if (attempts >= maxAttempts) {
-            console.error(`이미지 생성 시간 초과 (${requestId})`)
-            return null
+            throw new Error('이미지 생성 시간 초과')
           }
 
           await new Promise(resolve => setTimeout(resolve, pollInterval))
@@ -221,30 +254,10 @@ export function WizardStep4() {
         return poll()
       }
 
-      const results = await Promise.all(requestIds.map(pollSingleStatus))
-      const imageUrls = results.filter((url): url is string => url !== null)
+      const imageUrls = await pollBatchStatus()
 
       if (imageUrls.length === 0) {
-        // 모든 이미지가 NSFW 오류로 실패한 경우
-        if (nsfwErrorCount > 0 && nsfwErrorCount === requestIds.length) {
-          throw new Error('생성된 이미지가 콘텐츠 정책(NSFW)에 위배되어 차단되었습니다. 다른 옵션으로 다시 시도해주세요.')
-        }
-        // 일부만 NSFW 오류인 경우
-        if (nsfwErrorCount > 0) {
-          throw new Error(`일부 이미지가 콘텐츠 정책에 위배되어 차단되었습니다. (${nsfwErrorCount}/${requestIds.length}개)`)
-        }
         throw new Error('모든 이미지 생성 실패')
-      }
-
-      // DB 상태를 확실히 COMPLETED로 업데이트하기 위해 batch-status API 호출
-      // (개별 폴링의 경쟁 조건으로 인해 DB 업데이트가 누락될 수 있음)
-      if (imageAdIds && imageAdIds.length > 0) {
-        try {
-          await fetch(`/api/image-ads/batch-status/${imageAdIds[0]}`)
-          console.log('배치 상태 최종 업데이트 완료')
-        } catch (batchError) {
-          console.error('배치 상태 최종 업데이트 실패:', batchError)
-        }
       }
 
       setResultImages(imageUrls)
@@ -257,6 +270,9 @@ export function WizardStep4() {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current)
       }
+      // 폴링 관련 ref 정리
+      abortControllerRef.current = null
+      isPollingRef.current = false
     }
   }
 

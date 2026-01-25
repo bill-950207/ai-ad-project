@@ -355,6 +355,7 @@ export interface RecommendedOptionsInput {
   adType: ImageAdType
   productName?: string
   productDescription?: string
+  productSellingPoints?: string[]  // 제품 셀링 포인트
   categoryGroups: CategoryOptionGroup[]
   language?: string
   hasAvatar?: boolean
@@ -379,6 +380,8 @@ export interface MultipleRecommendedOptionsResult {
   scenarios: Array<{
     title: string
     description: string
+    targetAudience?: string  // 타겟 오디언스 설명 (예: "20-30대 직장인 여성")
+    scenarioType?: 'mainstream' | 'premium' | 'trendy'  // 시나리오 유형
     recommendedOptions: Record<string, {
       value: string
       customText?: string
