@@ -10,10 +10,19 @@
 import { useState, useEffect, useCallback } from 'react'
 import { X, Loader2, Check, Shirt, Sparkles, ChevronDown } from 'lucide-react'
 
+/** 아바타 스타일 옵션 */
+export interface AvatarStyleOptions {
+  vibe?: 'natural' | 'sophisticated' | 'cute' | 'professional'
+  bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'plussize'
+  height?: 'short' | 'average' | 'tall'
+  gender?: 'female' | 'male' | 'nonbinary'
+}
+
 interface Avatar {
   id: string
   name: string
   image_url: string | null
+  options?: AvatarStyleOptions
 }
 
 interface AvatarOutfit {
@@ -45,6 +54,8 @@ export interface SelectedAvatarInfo {
   displayName: string
   // AI 생성 옵션 (type이 'ai-generated'일 때만)
   aiOptions?: AiAvatarOptions
+  // 아바타 스타일 옵션 (실제 아바타 선택 시)
+  avatarOptions?: AvatarStyleOptions
 }
 
 interface AvatarSelectModalProps {
@@ -151,6 +162,7 @@ export function AvatarSelectModal({
       avatarName: avatar.name,
       imageUrl: avatar.image_url,
       displayName: avatar.name,
+      avatarOptions: avatar.options,
     })
   }
 
@@ -166,6 +178,7 @@ export function AvatarSelectModal({
       outfitName: outfit.name,
       imageUrl: outfit.image_url,
       displayName: `${avatar.name} - ${outfit.name}`,
+      avatarOptions: avatar.options,
     })
   }
 

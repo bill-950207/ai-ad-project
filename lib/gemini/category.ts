@@ -163,6 +163,40 @@ export async function generateMultipleRecommendedOptions(
     return `[${group.key}]\n${optionsText}`
   }).join('\n\n')
 
+  // 아바타 정보 컨텍스트 생성
+  const isAiGeneratedAvatar = input.avatarInfo?.type === 'ai-generated'
+  const hasRealAvatar = input.avatarInfo?.type === 'avatar' || input.avatarInfo?.type === 'outfit'
+
+  let avatarContext = ''
+  if (hasRealAvatar && input.avatarInfo?.avatarStyle) {
+    const style = input.avatarInfo.avatarStyle
+    const styleParts: string[] = []
+    if (style.vibe) styleParts.push(`vibe: ${style.vibe}`)
+    if (style.bodyType) styleParts.push(`body type: ${style.bodyType}`)
+    if (style.height) styleParts.push(`height: ${style.height}`)
+    if (styleParts.length > 0) {
+      avatarContext = `\n\n=== AVATAR STYLE INFO ===
+The user has selected a real avatar with the following characteristics:
+${styleParts.join(', ')}
+Consider these avatar traits when recommending options (especially outfit, pose, expression) to create harmonious visuals.`
+    }
+  } else if (isAiGeneratedAvatar) {
+    avatarContext = `\n\n=== AI AVATAR RECOMMENDATION ===
+The user will use an AI-generated avatar. For each scenario, create a detailed avatar description prompt that matches the scenario's mood and target audience.
+
+For recommendedAvatarStyle, provide:
+1. avatarPrompt: A detailed English prompt for AI avatar generation (40-60 words). Include:
+   - Age range and ethnicity appropriate for the product's target market
+   - Body type and height that fits the scenario mood
+   - Facial features and expression matching the scenario vibe
+   - Hair style appropriate for the concept
+   Example: "A sophisticated Korean woman in her late 20s, tall with slim elegant figure, sharp facial features with confident gaze, long straight black hair, natural makeup highlighting her refined beauty"
+
+2. avatarDescription: A brief description in the output language (15-25 characters)
+
+You MUST provide recommendedAvatarStyle for each scenario with both avatarPrompt and avatarDescription.`
+  }
+
   const prompt = `You are an expert advertising creative director. Create 3 DISTINCT advertising scenario recommendations that target DIFFERENT audiences.
 
 OUTPUT LANGUAGE: ${outputLanguageInstructions[language] || outputLanguageInstructions.ko}
@@ -220,6 +254,7 @@ ${groupsDescription}
 3. Title: 8-15 characters (compelling, descriptive)
 4. Description: 30-50 characters (explain target & concept clearly)
 5. Provide CLEAR REASONING for each option based on product analysis
+${avatarContext}
 
 IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be written in the specified output language.`
 
@@ -256,6 +291,13 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
               },
               overallStrategy: { type: Type.STRING },
               suggestedPrompt: { type: Type.STRING },
+              recommendedAvatarStyle: {
+                type: Type.OBJECT,
+                properties: {
+                  avatarPrompt: { type: Type.STRING },
+                  avatarDescription: { type: Type.STRING },
+                },
+              },
             },
           },
         },
@@ -292,6 +334,10 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
         recommendations: Array<{ key: string; value: string; customText?: string; reason: string }>
         overallStrategy: string
         suggestedPrompt?: string
+        recommendedAvatarStyle?: {
+          avatarPrompt: string
+          avatarDescription: string
+        }
       }>
     }
 
@@ -309,6 +355,8 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
           recommendedOptions,
           overallStrategy: scenario.overallStrategy,
           suggestedPrompt: scenario.suggestedPrompt,
+          // AI 추천 아바타용 - 시나리오에 어울리는 아바타 스타일
+          recommendedAvatarStyle: scenario.recommendedAvatarStyle,
         }
       }),
     }

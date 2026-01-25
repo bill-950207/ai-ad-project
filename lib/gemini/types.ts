@@ -337,6 +337,22 @@ export interface CategoryOptionGroup {
   options: CategoryOptionItem[]
 }
 
+/** 아바타 스타일 정보 */
+export interface AvatarStyleInfo {
+  vibe?: 'natural' | 'sophisticated' | 'cute' | 'professional'
+  bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'plussize'
+  height?: 'short' | 'average' | 'tall'
+  gender?: 'female' | 'male' | 'nonbinary'
+}
+
+/** 추천 아바타 스타일 (AI 추천 아바타용) */
+export interface RecommendedAvatarStyle {
+  /** 아바타 생성용 프롬프트 (영어, 예: "A sophisticated elegant Korean woman in her late 20s, tall with slim athletic body...") */
+  avatarPrompt: string
+  /** 아바타 설명 (사용자 언어, 예: "세련된 20대 후반 여성, 키가 크고 날씬한 체형") */
+  avatarDescription: string
+}
+
 /** 아바타 정보 (시나리오 추천용) */
 export interface AvatarInfoForScenario {
   type: 'avatar' | 'outfit' | 'ai-generated'
@@ -348,6 +364,8 @@ export interface AvatarInfoForScenario {
     style: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
     ethnicity: 'korean' | 'asian' | 'western' | 'any'
   }
+  // 실제 아바타 선택 시 스타일 정보
+  avatarStyle?: AvatarStyleInfo
 }
 
 /** AI 자동 설정 입력 */
@@ -389,6 +407,8 @@ export interface MultipleRecommendedOptionsResult {
     }>
     overallStrategy: string
     suggestedPrompt?: string
+    // AI 추천 아바타용 - 시나리오에 어울리는 아바타 스타일
+    recommendedAvatarStyle?: RecommendedAvatarStyle
   }>
 }
 
