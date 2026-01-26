@@ -436,29 +436,29 @@ function formatAvatarBodyCharacteristics(characteristics: ImageAdPromptInput['av
     parts.push(heightMap[characteristics.height])
   }
 
-  // 체형 (bodyType) - 자연스러운 표현 + 가슴 사이즈
+  // 체형 (bodyType) - 추상적이고 상대적인 표현 사용 (구체적 신체 크기 표현 금지)
   const femaleBodyTypeMap: Record<string, string> = {
-    slim: 'slim slender feminine figure with small bust (A-B cup)',
-    average: 'average feminine build with moderate bust (B-C cup)',
-    athletic: 'fit athletic feminine build with firm bust (B-C cup)',
-    curvy: 'naturally curvy feminine silhouette with full bust (C-D cup)',
-    plussize: 'full-figured feminine body with large bust (D-DD cup)',
+    slim: 'slim slender feminine silhouette with delicate proportions',
+    average: 'balanced feminine proportions with natural curves',
+    athletic: 'toned athletic feminine build with defined musculature',
+    curvy: 'feminine silhouette with natural soft curves',
+    plussize: 'full-figured feminine form with generous proportions',
   }
 
   const maleBodyTypeMap: Record<string, string> = {
-    slim: 'slim lean masculine build',
-    average: 'average masculine build with standard proportions',
-    athletic: 'fit athletic masculine build with toned muscles',
-    curvy: 'solid masculine build with sturdy frame',
-    plussize: 'large masculine build with full figure',
+    slim: 'lean masculine frame with slender proportions',
+    average: 'balanced masculine build with standard proportions',
+    athletic: 'toned athletic masculine physique with defined muscles',
+    curvy: 'solid masculine build with broader frame',
+    plussize: 'full masculine frame with generous build',
   }
 
   const defaultBodyTypeMap: Record<string, string> = {
-    slim: 'slim slender build',
-    average: 'average build with balanced proportions',
-    athletic: 'fit athletic build with toned physique',
-    curvy: 'naturally curvy build with soft proportions',
-    plussize: 'full-figured build with soft curves',
+    slim: 'slim slender build with delicate frame',
+    average: 'balanced proportions with natural build',
+    athletic: 'toned athletic build with defined physique',
+    curvy: 'naturally curved silhouette with soft proportions',
+    plussize: 'full-figured build with generous proportions',
   }
 
   if (characteristics.bodyType) {
@@ -485,7 +485,16 @@ export async function generateImageAdPrompt(input: ImageAdPromptInput): Promise<
   // 아바타 체형 특성 포맷팅 (아바타가 선택된 경우)
   const avatarBodyDescription = formatAvatarBodyCharacteristics(input.avatarCharacteristics)
   const avatarBodyInstruction = avatarBodyDescription
-    ? `\n\n=== AVATAR BODY CONSISTENCY ===\nWhen including the model/avatar in the image, maintain consistent body characteristics: ${avatarBodyDescription}.\nThe model's body proportions should match these characteristics throughout the image.`
+    ? `\n\n=== AVATAR BODY CONSISTENCY (CRITICAL) ===
+IMPORTANT: Preserve the EXACT body proportions from the avatar reference image.
+Body type hint: ${avatarBodyDescription}
+
+STRICT RULES:
+- DO NOT exaggerate or enhance any body features beyond the reference
+- DO NOT add curves, bust definition, or body enhancement
+- Keep proportions IDENTICAL to the reference avatar image
+- The body type hint is for maintaining consistency, NOT for enhancing features
+- When uncertain, always use MORE CONSERVATIVE proportions`
     : ''
 
   // 제품 카테고리 추상화 (제품명 대신 사용)

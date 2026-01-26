@@ -453,3 +453,11 @@ IMPORTANT:
 - Use human rhythm descriptions ("natural breath", "unhurried")
 - Include micro-expressions for realism
 `.trim()
+
+// ============================================================
+// 체형 보존 지시
+// ============================================================
+
+/** 체형 관련 네거티브 프롬프트 */
+export const BODY_NEGATIVE_PROMPT =
+  'exaggerated proportions, enhanced curves, unrealistic body, oversized bust, inflated chest, cartoonish proportions, anime proportions, idealized body, enhanced figure, augmented features, unrealistic waist-to-hip ratio'

@@ -74,31 +74,31 @@ const heightMap: Record<string, string> = {
   tall: 'tall',
 }
 
-/** 여성 체형 매핑 (자연스러운 표현 + 가슴 사이즈) */
+/** 여성 체형 매핑 (추상적이고 상대적인 표현 사용 - 구체적 신체 크기 표현 금지) */
 const femaleBodyTypeMap: Record<string, string> = {
-  slim: 'slim slender feminine figure with small bust (A-B cup)',
-  average: 'average feminine build with moderate bust (B-C cup)',
-  athletic: 'fit athletic feminine build with firm bust (B-C cup)',
-  curvy: 'naturally curvy feminine silhouette with full bust (C-D cup)',
-  plussize: 'full-figured feminine body with large bust (D-DD cup)',
+  slim: 'slim slender feminine silhouette with delicate proportions',
+  average: 'balanced feminine proportions with natural curves',
+  athletic: 'toned athletic feminine build with defined musculature',
+  curvy: 'feminine silhouette with natural soft curves',
+  plussize: 'full-figured feminine form with generous proportions',
 }
 
-/** 남성 체형 매핑 (자연스러운 표현 사용) */
+/** 남성 체형 매핑 (추상적이고 상대적인 표현 사용) */
 const maleBodyTypeMap: Record<string, string> = {
-  slim: 'slim lean masculine build',
-  average: 'average masculine build with standard proportions',
-  athletic: 'fit athletic masculine build with toned muscles',
-  curvy: 'solid masculine build with sturdy frame',
-  plussize: 'large masculine build with full figure',
+  slim: 'lean masculine frame with slender proportions',
+  average: 'balanced masculine build with standard proportions',
+  athletic: 'toned athletic masculine physique with defined muscles',
+  curvy: 'solid masculine build with broader frame',
+  plussize: 'full masculine frame with generous build',
 }
 
 /** 기본 체형 매핑 (성별 불명 시) */
 const defaultBodyTypeMap: Record<string, string> = {
-  slim: 'slim slender build',
-  average: 'average build with balanced proportions',
-  athletic: 'fit athletic build with toned physique',
-  curvy: 'naturally curvy build with soft proportions',
-  plussize: 'full-figured build with soft curves',
+  slim: 'slim slender build with delicate frame',
+  average: 'balanced proportions with natural build',
+  athletic: 'toned athletic build with defined physique',
+  curvy: 'naturally curved silhouette with soft proportions',
+  plussize: 'full-figured build with generous proportions',
 }
 
 /** 성별에 따른 체형 설명 반환 */
