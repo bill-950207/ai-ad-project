@@ -7,6 +7,7 @@
  */
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 30  // TTS 생성에 최대 30초 허용
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
@@ -23,7 +24,7 @@ function getLanguageFromVoiceId(voiceId: string): VoiceLanguage {
   if (voiceId.startsWith('Korean_')) return 'ko'
   if (voiceId.startsWith('English_') || voiceId.includes('_female_') || voiceId.includes('_male_')) return 'en'
   if (voiceId.startsWith('Japanese_')) return 'ja'
-  if (voiceId.startsWith('Chinese')) return 'zh'  // "Chinese (Mandarin)_" 형식 지원
+  if (voiceId.startsWith('Chinese (Mandarin)_') || voiceId === 'Arrogant_Miss') return 'zh'
   return 'ko'
 }
 
@@ -69,7 +70,9 @@ export async function GET(request: NextRequest) {
     }
 
     // 캐시가 없으면 실시간 생성
+    console.log(`[TTS Preview] 생성 시작: voiceId=${voiceId}, voiceInfo=`, voiceInfo)
     const audioUrl = await generateVoicePreview(voiceId)
+    console.log(`[TTS Preview] 생성 완료: audioUrl=${audioUrl}`)
 
     // 캐시에 저장
     const language = getLanguageFromVoiceId(voiceId)
