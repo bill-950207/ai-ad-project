@@ -54,8 +54,21 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
   const genderMap: Record<string, string> = { male: '남성', female: '여성', any: '성별 무관' }
   const ageMap: Record<string, string> = { young: '20-30대', middle: '30-40대', mature: '40-50대', any: '연령대 무관' }
   const styleMap: Record<string, string> = { natural: '자연스럽고 편안한', professional: '전문적이고 세련된', casual: '캐주얼하고 편안한', elegant: '우아하고 고급스러운', any: '스타일 무관' }
-  const ethnicityMap: Record<string, string> = { korean: '한국인', asian: '아시아인', western: '서양인', any: '인종 무관' }
+  const ethnicityMap: Record<string, string> = { korean: '한국인', asian: '아시아인', western: '서양인', japanese: '일본인', chinese: '중국인', any: '인종 무관' }
   const bodyTypeMap: Record<string, string> = { slim: '날씬한 체형', average: '보통 체형', athletic: '운동선수 같은 탄탄한 체형', curvy: '글래머러스한 체형', any: '체형 무관 (제품에 어울리게 추천)' }
+
+  // 언어-인종 매핑 (ethnicity가 'any'일 때 언어에 맞는 인종 자동 설정)
+  const languageToEthnicityMap: Record<string, string> = {
+    ko: 'korean',
+    en: 'western',
+    ja: 'japanese',
+    zh: 'chinese',
+  }
+
+  // ethnicity가 'any'이고 language가 있으면 언어에 맞는 인종으로 자동 설정
+  const resolvedEthnicity = (input.ethnicity === 'any' || !input.ethnicity) && input.language
+    ? languageToEthnicityMap[input.language] || 'any'
+    : input.ethnicity || 'any'
 
   // 비디오 타입별 스타일 가이드
   const videoType = input.videoType || 'UGC'
@@ -70,7 +83,7 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
   const targetGenderText = genderMap[input.targetGender || 'any']
   const targetAgeText = ageMap[input.targetAge || 'any']
   const styleText = styleMap[input.style || 'any']
-  const ethnicityText = ethnicityMap[input.ethnicity || 'any']
+  const ethnicityText = ethnicityMap[resolvedEthnicity]
   const bodyTypeText = bodyTypeMap[input.bodyType || 'any']
 
   const cameraConfig = input.cameraComposition

@@ -317,6 +317,9 @@ export interface FirstFramePromptResult {
 /** AI 아바타 몸매 타입 */
 export type AiAvatarBodyType = 'slim' | 'average' | 'athletic' | 'curvy' | 'any'
 
+/** AI 아바타 인종 타입 */
+export type AiAvatarEthnicity = 'korean' | 'asian' | 'western' | 'japanese' | 'chinese' | 'any'
+
 /** AI 아바타 프롬프트 생성 입력 */
 export interface AiAvatarPromptInput {
   productInfo: string
@@ -329,11 +332,13 @@ export interface AiAvatarPromptInput {
   targetGender?: 'male' | 'female' | 'any'
   targetAge?: 'young' | 'middle' | 'mature' | 'any'
   style?: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
-  ethnicity?: 'korean' | 'asian' | 'western' | 'any'
+  ethnicity?: AiAvatarEthnicity
   /** 몸매 타입 */
   bodyType?: AiAvatarBodyType
   /** 비디오 타입 (UGC, 팟캐스트, 전문가) */
   videoType?: VideoType
+  /** 대본 언어 (인종 자동 설정용) */
+  language?: 'ko' | 'en' | 'ja' | 'zh'
 }
 
 /** AI 아바타 프롬프트 생성 결과 */

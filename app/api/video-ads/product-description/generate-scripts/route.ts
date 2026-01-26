@@ -184,6 +184,7 @@ export async function POST(request: NextRequest) {
         ethnicity: aiAvatarOptions?.ethnicity,
         bodyType: aiAvatarOptions?.bodyType,  // 체형 옵션
         videoType,  // 비디오 타입 (UGC, podcast, expert)
+        language,  // 대본 언어 (인종 자동 설정용)
       })
       firstFramePrompt = aiAvatarResult.prompt
       locationDescription = aiAvatarResult.locationDescription
