@@ -650,52 +650,63 @@ export default function VideoAdDetailPage() {
 
         {/* 오른쪽: 정보 패널 */}
         <div className="space-y-4">
-          {/* 제품 정보 (DB에서 조회된 제품 또는 저장된 제품 정보) */}
-          {(videoAd.ad_products || parseProductInfo(videoAd.product_info)) && (() => {
+          {/* 제품 정보 (DB에서 조회된 제품, JSON 형식 제품 정보, 또는 텍스트 제품 정보) */}
+          {(() => {
             const product = videoAd.ad_products || parseProductInfo(videoAd.product_info)
-            if (!product) return null
-            const imageUrl = product.rembg_image_url || product.image_url
+            const hasTextProductInfo = videoAd.product_info && !parseProductInfo(videoAd.product_info)
+
+            // 제품 정보가 전혀 없으면 표시하지 않음
+            if (!product && !hasTextProductInfo) return null
+
             return (
               <div className="bg-card border border-border rounded-xl p-4">
                 <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                   <Package className="w-4 h-4" />
-                  {videoAdT?.product || '제품'}
+                  {videoAdT?.product || '제품'} 정보
                 </h3>
-                {product.id ? (
-                  <Link
-                    href={`/dashboard/ad-products/${product.id}`}
-                    className="flex items-center gap-3 p-2 -m-2 rounded-lg hover:bg-secondary/50 transition-colors"
-                  >
-                    {imageUrl && (
-                      <img
-                        src={imageUrl}
-                        alt={product.name || '제품'}
-                        className="w-12 h-12 object-contain rounded bg-secondary/30"
-                      />
-                    )}
-                    <div>
-                      <span className="text-foreground block">{product.name}</span>
-                      {product.brand && (
-                        <span className="text-xs text-muted-foreground">{product.brand}</span>
+                {product ? (
+                  // DB 제품 또는 JSON 형식 제품 정보
+                  product.id ? (
+                    <Link
+                      href={`/dashboard/ad-products/${product.id}`}
+                      className="flex items-center gap-3 p-2 -m-2 rounded-lg hover:bg-secondary/50 transition-colors"
+                    >
+                      {(product.rembg_image_url || product.image_url) && (
+                        <img
+                          src={product.rembg_image_url || product.image_url || ''}
+                          alt={product.name || '제품'}
+                          className="w-12 h-12 object-contain rounded bg-secondary/30"
+                        />
                       )}
+                      <div>
+                        <span className="text-foreground block">{product.name}</span>
+                        {product.brand && (
+                          <span className="text-xs text-muted-foreground">{product.brand}</span>
+                        )}
+                      </div>
+                    </Link>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      {(product.rembg_image_url || product.image_url) && (
+                        <img
+                          src={product.rembg_image_url || product.image_url || ''}
+                          alt={product.name || '제품'}
+                          className="w-12 h-12 object-contain rounded bg-secondary/30"
+                        />
+                      )}
+                      <div>
+                        <span className="text-foreground block">{product.name}</span>
+                        {product.brand && (
+                          <span className="text-xs text-muted-foreground">{product.brand}</span>
+                        )}
+                      </div>
                     </div>
-                  </Link>
+                  )
                 ) : (
-                  <div className="flex items-center gap-3">
-                    {imageUrl && (
-                      <img
-                        src={imageUrl}
-                        alt={product.name || '제품'}
-                        className="w-12 h-12 object-contain rounded bg-secondary/30"
-                      />
-                    )}
-                    <div>
-                      <span className="text-foreground block">{product.name}</span>
-                      {product.brand && (
-                        <span className="text-xs text-muted-foreground">{product.brand}</span>
-                      )}
-                    </div>
-                  </div>
+                  // 텍스트 형식 제품 정보 (말로만 설명 모드)
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {videoAd.product_info}
+                  </p>
                 )}
               </div>
             )
@@ -886,18 +897,6 @@ export default function VideoAdDetailPage() {
             </div>
           )}
 
-          {/* 제품 정보 (입력한 내용 - JSON이 아닌 경우만 표시) */}
-          {videoAd.product_info && !parseProductInfo(videoAd.product_info) && (
-            <div className="bg-card border border-border rounded-xl p-4">
-              <h3 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                입력한 제품 정보
-              </h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {videoAd.product_info}
-              </p>
-            </div>
-          )}
         </div>
       </div>
 
