@@ -74,31 +74,31 @@ const heightMap: Record<string, string> = {
   tall: 'tall',
 }
 
-/** 여성 체형 매핑 (구체적인 신체 비율 포함) */
+/** 여성 체형 매핑 (자연스러운 표현 + 가슴 사이즈) */
 const femaleBodyTypeMap: Record<string, string> = {
-  slim: 'slim slender body with 32-24-34 inch proportions, narrow shoulders, small bust, thin waist, lean hips',
-  average: 'average female body with 34-26-36 inch proportions, moderate bust, defined waist, balanced hips',
-  athletic: 'athletic toned female body with 34-25-35 inch proportions, firm muscles, toned abs, strong legs, defined arms',
-  curvy: 'hourglass figure body with 36-24-36 inch proportions, full bust (D-cup), very slim tiny waist, shapely round hips, slender toned legs',
-  plussize: 'plus-size female body with 42-36-46 inch proportions, very large bust, soft rounded belly, wide hips, thick thighs',
+  slim: 'slim slender feminine figure with small bust (A-B cup)',
+  average: 'average feminine build with moderate bust (B-C cup)',
+  athletic: 'fit athletic feminine build with firm bust (B-C cup)',
+  curvy: 'naturally curvy feminine silhouette with full bust (C-D cup)',
+  plussize: 'full-figured feminine body with large bust (D-DD cup)',
 }
 
-/** 남성 체형 매핑 (구체적인 신체 비율 포함) */
+/** 남성 체형 매핑 (자연스러운 표현 사용) */
 const maleBodyTypeMap: Record<string, string> = {
-  slim: 'slim lean male body with narrow shoulders, thin arms, flat chest, slim waist, lean legs',
-  average: 'average male body with moderate shoulders, normal chest, slight belly, standard proportions',
-  athletic: 'athletic muscular male body with broad shoulders (18+ inches), defined chest muscles, visible six-pack abs, V-shaped torso, muscular arms and legs',
-  curvy: 'stocky male body with broad frame, thick chest, solid midsection, strong thick legs',
-  plussize: 'plus-size male body with large frame, broad chest, round belly, thick arms and legs',
+  slim: 'slim lean masculine build',
+  average: 'average masculine build with standard proportions',
+  athletic: 'fit athletic masculine build with toned muscles',
+  curvy: 'solid masculine build with sturdy frame',
+  plussize: 'large masculine build with full figure',
 }
 
 /** 기본 체형 매핑 (성별 불명 시) */
 const defaultBodyTypeMap: Record<string, string> = {
-  slim: 'slim slender build with lean proportions',
+  slim: 'slim slender build',
   average: 'average build with balanced proportions',
-  athletic: 'athletic toned build with defined muscles',
-  curvy: 'curvy build with pronounced proportions',
-  plussize: 'plus-size build with fuller figure',
+  athletic: 'fit athletic build with toned physique',
+  curvy: 'naturally curvy build with soft proportions',
+  plussize: 'full-figured build with soft curves',
 }
 
 /** 성별에 따른 체형 설명 반환 */

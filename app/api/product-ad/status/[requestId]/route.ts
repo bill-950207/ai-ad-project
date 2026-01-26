@@ -6,7 +6,7 @@
  * - fal:xxx 형식: fal.ai 상태 조회 (Kling O1)
  * - fal-vidu:xxx 형식: fal.ai 상태 조회 (Vidu Q2)
  * - wavespeed-vidu:xxx 형식: WaveSpeed Vidu Q2 Turbo 상태 조회
- * - 이미지 완료 시 WebP 압축 및 R2 업로드
+ * - 이미지 완료 시 AI 서비스 원본 URL 반환 (클라이언트에서 R2 업로드)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -27,10 +27,6 @@ import {
   getViduQueueStatus as getWaveSpeedViduQueueStatus,
   getViduQueueResponse as getWaveSpeedViduQueueResponse,
 } from '@/lib/wavespeed/client'
-import { uploadExternalImageToR2 } from '@/lib/image/compress'
-
-// 이미 R2에 업로드된 이미지 캐시 (메모리 캐시)
-const uploadedImageCache = new Map<string, { originalUrl: string; compressedUrl: string }>()
 
 interface RouteContext {
   params: Promise<{ requestId: string }>
@@ -103,36 +99,8 @@ export async function GET(
           const externalImageUrl = result.images[0]?.url || null
 
           if (externalImageUrl) {
-            // 캐시 확인
-            const cacheKey = `${taskId}:image`
-            const cached = uploadedImageCache.get(cacheKey)
-
-            if (cached) {
-              resultUrl = cached.compressedUrl
-              originalUrl = cached.originalUrl
-            } else {
-              // WebP 압축 및 R2 업로드
-              try {
-                const uploadResult = await uploadExternalImageToR2(
-                  externalImageUrl,
-                  'product-ad/scenes',
-                  taskId,
-                  { quality: 85 }
-                )
-                resultUrl = uploadResult.compressedUrl
-                originalUrl = uploadResult.originalUrl
-
-                // 캐시 저장
-                uploadedImageCache.set(cacheKey, {
-                  originalUrl: uploadResult.originalUrl,
-                  compressedUrl: uploadResult.compressedUrl,
-                })
-              } catch (uploadError) {
-                console.error('이미지 R2 업로드 오류:', uploadError)
-                // 업로드 실패 시 원본 URL 반환
-                resultUrl = externalImageUrl
-              }
-            }
+            // AI 서비스 원본 URL 반환 (클라이언트에서 R2 업로드)
+            resultUrl = externalImageUrl
           }
         }
       } else if (taskInfo.state === 'fail') {

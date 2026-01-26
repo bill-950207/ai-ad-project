@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
 import { Plus, Image as ImageIcon, Loader2, ChevronLeft, ChevronRight, RefreshCw, CreditCard } from 'lucide-react'
+import { uploadImageAdImage } from '@/lib/client/image-upload'
 
 interface AdProduct {
   id: string
@@ -28,7 +29,7 @@ interface ImageAd {
   product_id: string | null
   avatar_id: string | null
   ad_type: string
-  status: 'COMPLETED' | 'IN_QUEUE' | 'IN_PROGRESS' | 'FAILED'
+  status: 'COMPLETED' | 'IN_QUEUE' | 'IN_PROGRESS' | 'IMAGES_READY' | 'FAILED'
   fal_request_id: string | null
   created_at: string
   ad_products: AdProduct | null
@@ -98,16 +99,23 @@ export function ImageAdPageContent() {
 
     const pollSingleAd = async (ad: ImageAd) => {
       // 이미 폴링 중이면 스킵
-      if (pollingInProgressRef.current.has(ad.id)) return
+      if (pollingInProgressRef.current.has(ad.id)) {
+        console.log(`[polling] 이미 폴링 중, 스킵: ${ad.id}`)
+        return
+      }
       // 이미 완료된 건 스킵
-      if (completedPollingIdsRef.current.has(ad.id)) return
+      if (completedPollingIdsRef.current.has(ad.id)) {
+        console.log(`[polling] 이미 완료됨, 스킵: ${ad.id}`)
+        return
+      }
 
+      console.log(`[polling] 폴링 시작: ${ad.id}, 현재 상태: ${ad.status}`)
       pollingInProgressRef.current.add(ad.id)
 
       try {
-        // 3초 타임아웃 설정
+        // 5초 타임아웃 설정 (R2 업로드 제거로 응답 빨라짐)
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 3000)
+        const timeoutId = setTimeout(() => controller.abort(), 5000)
 
         const res = await fetch(`/api/image-ads/batch-status/${ad.id}`, {
           signal: controller.signal,
@@ -116,8 +124,100 @@ export function ImageAdPageContent() {
 
         if (res.ok) {
           const data = await res.json()
-          if (data.status === 'COMPLETED' && (data.imageUrls || data.imageUrl)) {
-            // 완료 처리 - 더 이상 폴링하지 않음
+
+          // IMAGES_READY: AI 서비스 이미지 완료 - 클라이언트에서 R2 업로드
+          if (data.status === 'IMAGES_READY') {
+            console.log(`[polling] IMAGES_READY 수신: ${ad.id}, pendingImages:`, data.pendingImages?.length || 0)
+
+            // 이미 다른 폴링에서 처리 시작했으면 스킵 (동시 요청 중복 방지)
+            if (completedPollingIdsRef.current.has(ad.id)) {
+              console.log(`[polling] 이미 처리 중, 스킵: ${ad.id}`)
+              return
+            }
+            // 더 이상 폴링하지 않음 - 즉시 등록 (다른 동시 요청보다 먼저)
+            completedPollingIdsRef.current.add(ad.id)
+            console.log(`[polling] completedPollingIdsRef에 추가: ${ad.id}`)
+
+            // pendingImages가 없으면 이미 DB에서 IMAGES_READY 상태 (다른 요청에서 처리 중)
+            if (!data.pendingImages) {
+              console.log(`[polling] pendingImages 없음, 스킵: ${ad.id}`)
+              return
+            }
+
+            // 상태를 업로드 중으로 표시
+            setImageAds(prev =>
+              prev.map(a =>
+                a.id === ad.id ? { ...a, status: 'IMAGES_READY' as const } : a
+              )
+            )
+
+            // 업로드를 비동기로 분리하여 pollSingleAd가 즉시 완료되도록 함
+            // (completedPollingIdsRef가 이미 등록되어 있어 추가 폴링 차단됨)
+            const handleUpload = async () => {
+              try {
+                console.log(`[polling] R2 업로드 시작: ${ad.id}, 이미지 수: ${data.pendingImages.length}`)
+                // 각 이미지 R2 업로드 (순차 처리로 네트워크 부하 분산)
+                const uploadedUrls: Array<{ index: number; compressedUrl: string; originalUrl: string }> = []
+                for (const pending of data.pendingImages as Array<{ index: number; aiServiceUrl: string }>) {
+                  console.log(`[polling] 이미지 업로드 중: index=${pending.index}`)
+                  const result = await uploadImageAdImage(ad.id, pending.index, pending.aiServiceUrl)
+                  uploadedUrls.push({ index: pending.index, ...result })
+                  console.log(`[polling] 이미지 업로드 완료: index=${pending.index}`)
+                }
+
+                // 정렬
+                uploadedUrls.sort((a, b) => a.index - b.index)
+
+                // DB 업데이트 (PATCH API)
+                const patchRes = await fetch(`/api/image-ads/${ad.id}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    updateType: 'batch-urls',
+                    imageUrls: uploadedUrls.map(u => u.compressedUrl),
+                    imageUrlOriginals: uploadedUrls.map(u => u.originalUrl),
+                  }),
+                })
+
+                if (patchRes.ok) {
+                  console.log(`[polling] PATCH 성공, COMPLETED로 상태 변경: ${ad.id}`)
+                  // 로컬 상태 업데이트
+                  setImageAds(prev =>
+                    prev.map(a =>
+                      a.id === ad.id
+                        ? {
+                            ...a,
+                            status: 'COMPLETED' as const,
+                            image_urls: uploadedUrls.map(u => u.compressedUrl),
+                            image_url_originals: uploadedUrls.map(u => u.originalUrl),
+                            image_url: uploadedUrls[0]?.compressedUrl || a.image_url,
+                          }
+                        : a
+                    )
+                  )
+                } else {
+                  console.error(`[polling] PATCH 실패: ${ad.id}`, await patchRes.text())
+                  setImageAds(prev =>
+                    prev.map(a =>
+                      a.id === ad.id ? { ...a, status: 'FAILED' as const } : a
+                    )
+                  )
+                }
+              } catch (uploadError) {
+                console.error(`[polling] R2 업로드 오류: ${ad.id}`, uploadError)
+                setImageAds(prev =>
+                  prev.map(a =>
+                    a.id === ad.id ? { ...a, status: 'FAILED' as const } : a
+                  )
+                )
+              }
+            }
+
+            // await 없이 호출하여 pollSingleAd가 즉시 완료되도록 함
+            handleUpload()
+            console.log(`[polling] 업로드 시작됨, pollSingleAd 즉시 종료: ${ad.id}`)
+          } else if (data.status === 'COMPLETED' && (data.imageUrls || data.imageUrl)) {
+            // 이미 완료된 경우 (DB에 이미지 URL 있음)
             completedPollingIdsRef.current.add(ad.id)
             setImageAds(prev =>
               prev.map(a =>

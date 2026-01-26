@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
 
     let finalAvatarImageUrl: string | null = null
     let avatarDescription: string | undefined  // AI 의상 추천용 아바타 설명
+    let avatarBodyType: string | undefined  // 아바타 체형 정보 (일관성 유지용)
 
     if (!isAiGeneratedAvatar) {
       // 기존 아바타 조회
@@ -98,9 +99,23 @@ export async function POST(request: NextRequest) {
       // 사용할 아바타 이미지 URL (의상이 선택된 경우 해당 URL 사용)
       finalAvatarImageUrl = avatarImageUrl || avatar.image_url
 
-      // 아바타 설명 구성 (AI 의상 추천용)
+      // 아바타 설명 구성 (이름만 - 외모 묘사 제거)
       if (avatar.name) {
         avatarDescription = avatar.name
+      }
+
+      // 아바타 체형 정보 추출 (options에서)
+      if (avatar.options) {
+        try {
+          const options = typeof avatar.options === 'string'
+            ? JSON.parse(avatar.options)
+            : avatar.options
+          if (options.bodyType) {
+            avatarBodyType = options.bodyType
+          }
+        } catch {
+          // options 파싱 실패 시 무시
+        }
       }
     } else {
       // AI 아바타 설명 구성
@@ -110,6 +125,7 @@ export async function POST(request: NextRequest) {
         if (aiAvatarOptions.targetAge) parts.push(aiAvatarOptions.targetAge)
         if (aiAvatarOptions.ethnicity) parts.push(aiAvatarOptions.ethnicity)
         if (aiAvatarOptions.style) parts.push(aiAvatarOptions.style + ' style')
+        if (aiAvatarOptions.bodyType && aiAvatarOptions.bodyType !== 'any') parts.push(aiAvatarOptions.bodyType + ' body type')
         avatarDescription = parts.join(', ')
       }
     }
@@ -166,6 +182,7 @@ export async function POST(request: NextRequest) {
         targetAge: aiAvatarOptions?.targetAge,
         style: aiAvatarOptions?.style,
         ethnicity: aiAvatarOptions?.ethnicity,
+        bodyType: aiAvatarOptions?.bodyType,  // 체형 옵션
         videoType,  // 비디오 타입 (UGC, podcast, expert)
       })
       firstFramePrompt = aiAvatarResult.prompt
@@ -183,6 +200,7 @@ export async function POST(request: NextRequest) {
         outfitPreset: outfitMode === 'preset' ? outfitPreset : undefined,
         outfitCustom: effectiveOutfitCustom,
         videoType,  // 비디오 타입 (UGC, podcast, expert)
+        bodyType: avatarBodyType,  // 아바타 체형 정보 (일관성 유지)
       })
       firstFramePrompt = firstFrameResult.prompt
       locationDescription = firstFrameResult.locationDescription

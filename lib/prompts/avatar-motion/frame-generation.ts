@@ -8,6 +8,8 @@ import {
   SEEDREAM_FORBIDDEN_TERMS,
   JSON_RESPONSE_INSTRUCTION,
   AVATAR_NEGATIVE_PROMPT,
+  LIGHTING_CAMERA_INSTRUCTION,
+  EQUIPMENT_NEGATIVE_PROMPT,
 } from '../common'
 
 // ============================================================
@@ -31,8 +33,11 @@ CRITICAL RULES:
 3. ALWAYS start the prompt with "The same person from the reference image" to ensure identity consistency
 4. Describe the EXACT appearance from reference images - do not invent new features
 5. ALWAYS include "wearing the same outfit/clothing as in the reference image" to maintain clothing consistency
-6. Include specific lighting, camera angle, and composition details
+6. Include specific lighting EFFECT and camera SPECS (but NO visible equipment!)
 7. End with quality tags for photorealism
+
+=== CRITICAL: NO VISIBLE EQUIPMENT ===
+${LIGHTING_CAMERA_INSTRUCTION}
 
 CLOTHING CONSISTENCY (CRITICAL):
 - The avatar MUST wear the EXACT SAME clothing as shown in the reference image
@@ -51,8 +56,8 @@ PROMPT STRUCTURE ORDER:
 3. Pose and expression as described
 4. Product interaction (if applicable, "holding/using the exact product from reference image 2")
 5. Environment/background
-6. Lighting setup
-7. Camera specifications
+6. Lighting EFFECT (e.g., "soft natural light from window" NOT "studio light visible")
+7. Camera SPECS (e.g., "shot on 35mm at f/8" NOT "camera on tripod")
 8. Quality tags`
 
 /** 프레임 프롬프트 개선 템플릿 (시작 프레임용) */

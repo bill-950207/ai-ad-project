@@ -521,7 +521,16 @@ export function ProductDescriptionWizard() {
       if (res.ok) {
         const data = await res.json()
         if (data.draft?.id) {
-          setDraftId(data.draft.id)
+          // 새 드래프트가 생성된 경우 URL에 draftId 추가
+          if (!draftId && data.draft.id) {
+            setDraftId(data.draft.id)
+            // URL 업데이트 (쿼리 파라미터 추가) - window.history 사용하여 새로고침 방지
+            const currentUrl = new URL(window.location.href)
+            currentUrl.searchParams.set('draftId', data.draft.id)
+            window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search)
+          } else {
+            setDraftId(data.draft.id)
+          }
         }
       }
     } catch (error) {
@@ -533,6 +542,9 @@ export function ProductDescriptionWizard() {
 
   // 기존 초안 또는 진행 중인 영상 광고 로드
   const loadExistingData = useCallback(async () => {
+    // URL에서 draftId 쿼리 파라미터 확인
+    const draftIdParam = searchParams.get('draftId')
+
     if (resumeVideoAdId) {
       // URL에서 videoAdId가 있는 경우 해당 데이터 로드
       setIsLoadingDraft(true)
@@ -565,10 +577,10 @@ export function ProductDescriptionWizard() {
         }
 
         // 초안(DRAFT) 데이터 로드
-        const draftRes = await fetch(`/api/video-ads/draft?category=productDescription`)
+        const draftRes = await fetch(`/api/video-ads/draft?id=${resumeVideoAdId}`)
         if (draftRes.ok) {
           const draftData = await draftRes.json()
-          if (draftData.draft && draftData.draft.id === resumeVideoAdId) {
+          if (draftData.draft) {
             restoreDraftData(draftData.draft)
           }
         }
@@ -577,26 +589,27 @@ export function ProductDescriptionWizard() {
       } finally {
         setIsLoadingDraft(false)
       }
-    } else {
-      // 기존 초안 확인
+    } else if (draftIdParam) {
+      // URL에 draftId 쿼리 파라미터가 있으면 해당 드래프트 로드
+      setIsLoadingDraft(true)
       try {
-        const res = await fetch('/api/video-ads/draft?category=productDescription')
+        const res = await fetch(`/api/video-ads/draft?id=${draftIdParam}`)
         if (res.ok) {
           const data = await res.json()
-          if (data.draft && data.draft.wizard_step) {
-            // 기존 초안이 있으면 복원할지 확인
-            const shouldRestore = confirm('이전에 저장된 작업이 있습니다. 이어서 진행하시겠습니까?')
-            if (shouldRestore) {
-              restoreDraftData(data.draft)
-            }
-            // 이어서 하지 않아도 초안은 유지 (삭제하지 않음)
+          if (data.draft) {
+            restoreDraftData(data.draft)
           }
         }
       } catch (error) {
-        console.error('초안 확인 오류:', error)
+        console.error('드래프트 로드 오류:', error)
+      } finally {
+        setIsLoadingDraft(false)
       }
+    } else {
+      // 새로운 영상 생성 (draftId 없이 접근한 경우)
+      // 기존 초안 확인하지 않고 새로 시작
     }
-  }, [resumeVideoAdId, router])
+  }, [resumeVideoAdId, router, searchParams])
 
   // 초안 데이터 복원
   const restoreDraftData = (draft: DraftData) => {
@@ -786,6 +799,14 @@ export function ProductDescriptionWizard() {
       }
     }
   }, [selectedProduct, productInfo])
+
+  // AI 아바타 선택 시 의상 모드 자동 변경
+  useEffect(() => {
+    // AI 아바타인데 '기존 의상 유지' 모드라면 'AI 추천'으로 자동 변경
+    if (selectedAvatarInfo?.type === 'ai-generated' && outfitMode === 'keep_original') {
+      setOutfitMode('ai_recommend')
+    }
+  }, [selectedAvatarInfo?.type, outfitMode])
 
   // 셀링 포인트 관리 함수
   const addSellingPoint = () => {
@@ -1798,22 +1819,25 @@ export function ProductDescriptionWizard() {
             </label>
 
             {/* 의상 모드 선택 */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setOutfitMode('keep_original')
-                  setOutfitPreset(null)
-                  setOutfitCustom('')
-                }}
-                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
-                  outfitMode === 'keep_original'
-                    ? 'border-primary bg-primary/10 text-primary font-medium'
-                    : 'border-border text-muted-foreground hover:border-primary/50'
-                }`}
-              >
-                기존 의상 유지
-              </button>
+            <div className={`grid grid-cols-2 ${selectedAvatarInfo?.type === 'ai-generated' ? 'sm:grid-cols-3' : 'sm:grid-cols-4'} gap-2 mb-4`}>
+              {/* 기존 의상 유지 - AI 아바타가 아닐 때만 표시 */}
+              {selectedAvatarInfo?.type !== 'ai-generated' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOutfitMode('keep_original')
+                    setOutfitPreset(null)
+                    setOutfitCustom('')
+                  }}
+                  className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                    outfitMode === 'keep_original'
+                      ? 'border-primary bg-primary/10 text-primary font-medium'
+                      : 'border-border text-muted-foreground hover:border-primary/50'
+                  }`}
+                >
+                  기존 의상 유지
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -2132,7 +2156,7 @@ export function ProductDescriptionWizard() {
                       <Volume2 className="w-4 h-4 inline mr-1" />
                       AI 음성 {isLoadingVoices && <Loader2 className="w-3 h-3 inline ml-1 animate-spin" />}
                     </label>
-                    <div className="grid grid-cols-1 gap-2 max-h-[280px] overflow-y-auto">
+                    <div className="grid grid-cols-1 gap-2 max-h-[400px] overflow-y-auto">
                       {voices.map((voice) => (
                         <div
                           key={voice.id}

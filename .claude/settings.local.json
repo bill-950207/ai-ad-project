@@ -66,7 +66,16 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nchore: 시나리오 추천 LLM 입력 프롬프트 로그 추가\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(gh pr create --title \"fix: 광고 음악 상태 조회 API 수정\" --body \"$\\(cat <<''EOF''\n## Summary\n- 광고 음악 상태 조회 시 Kie.ai record-info API를 직접 호출하여 최신 상태 확인\n- kie_task_id 기반 조회로 변경\n- 모든 트랙의 audioUrl이 채워질 때까지 폴링 유지\n\n## Changes\n- `SunoMusicItem` 타입에 누락된 필드 추가 \\(sourceAudioUrl, createTime 타입 수정\\)\n- status API에서 Kie.ai API 호출 후 DB 자동 업데이트\n- 프론트엔드 폴링 로직에서 모든 필드 업데이트\n- null/undefined 체크 추가로 TypeError 방지\n\n## Test plan\n- [ ] 음악 생성 후 상태 폴링이 정상 동작하는지 확인\n- [ ] 모든 트랙이 준비되면 COMPLETED 상태로 변경되는지 확인\n- [ ] 완료된 음악을 재생할 수 있는지 확인\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\nEOF\n\\)\")",
       "Bash(gh pr view:*)",
-      "Bash(gh pr edit:*)"
+      "Bash(gh pr edit:*)",
+      "Bash(npm install)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(timeout 30 npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(source .env)",
+      "WebFetch(domain:wavespeed.ai)",
+      "Bash(source /Users/bill/Desktop/projects/ai_ad_project/.env.local)",
+      "Bash(source /Users/bill/Desktop/projects/ai_ad_project/.env echo \"=== Japanese_GentleButler 테스트 ===\" curl -s \"https://api.wavespeed.ai/api/v3/minimax/speech-2.6-hd\"  -H \"Authorization: Bearer $WAVE_SPEED_AI_KEY\"  -H \"Content-Type: application/json\"  -d '{\"\"text\"\":\"\"お客様、こちらの商品をご覧ください。\"\",\"\"voice_id\"\":\"\"Japanese_GentleButler\"\",\"\"speed\"\":1.1,\"\"enable_sync_mode\"\":true}')",
+      "Bash(__NEW_LINE_5f7f70b20a3517e9__ echo \"\")"
     ]
   }
 }

@@ -53,8 +53,9 @@ const outfitPresetDescriptions: Record<OutfitPresetType, string> = {
 export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promise<AiAvatarPromptResult> {
   const genderMap: Record<string, string> = { male: '남성', female: '여성', any: '성별 무관' }
   const ageMap: Record<string, string> = { young: '20-30대', middle: '30-40대', mature: '40-50대', any: '연령대 무관' }
-  const styleMap: Record<string, string> = { natural: '자연스럽고 친근한', professional: '전문적이고 세련된', casual: '캐주얼하고 편안한', elegant: '우아하고 고급스러운', any: '스타일 무관' }
+  const styleMap: Record<string, string> = { natural: '자연스럽고 편안한', professional: '전문적이고 세련된', casual: '캐주얼하고 편안한', elegant: '우아하고 고급스러운', any: '스타일 무관' }
   const ethnicityMap: Record<string, string> = { korean: '한국인', asian: '아시아인', western: '서양인', any: '인종 무관' }
+  const bodyTypeMap: Record<string, string> = { slim: '날씬한 체형', average: '보통 체형', athletic: '운동선수 같은 탄탄한 체형', curvy: '글래머러스한 체형', any: '체형 무관 (제품에 어울리게 추천)' }
 
   // 비디오 타입별 스타일 가이드
   const videoType = input.videoType || 'UGC'
@@ -70,6 +71,7 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
   const targetAgeText = ageMap[input.targetAge || 'any']
   const styleText = styleMap[input.style || 'any']
   const ethnicityText = ethnicityMap[input.ethnicity || 'any']
+  const bodyTypeText = bodyTypeMap[input.bodyType || 'any']
 
   const cameraConfig = input.cameraComposition
     ? cameraCompositionDescriptions[input.cameraComposition]
@@ -99,16 +101,17 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
 ${videoTypeStyle.description}
 ${atmosphereSection}
 
-=== 제품 정보 ===
+=== 제품 맥락 (이해용, 프롬프트에 제품명/브랜드명 포함 금지) ===
 ${input.productInfo}
 
-${input.productImageUrl ? '제품 이미지가 Figure 1로 첨부되어 있습니다. "the product from Figure 1" 형식으로 참조하세요.' : '⚠️ 중요: 이 이미지에는 제품이 등장하지 않습니다. 아바타만 나오고, 손은 비어있는 자연스러운 포즈로 생성하세요.'}
+${input.productImageUrl ? '제품 이미지가 Figure 1로 첨부되어 있습니다. 프롬프트에서는 "the product" 또는 "the product from Figure 1"로만 지칭하세요. 절대로 제품명이나 브랜드명을 프롬프트에 포함하지 마세요.' : '⚠️ 중요: 이 이미지에는 제품이 등장하지 않습니다. 아바타만 나오고, 손은 비어있는 자연스러운 포즈로 생성하세요.'}
 
 === 타겟 아바타 조건 ===
 - 성별: ${targetGenderText}
 - 연령대: ${targetAgeText}
 - 스타일: ${styleText}
 - 인종/민족: ${ethnicityText}
+- 체형: ${bodyTypeText}
 
 === 장소/배경 ===
 ${locationSection}
@@ -125,6 +128,7 @@ ${outfitSection ? `=== 의상 설정 ===\n${outfitSection}` : ''}
 3. 카메라: Shot on Sony A7IV, 35mm f/8, deep depth of field
 4. 품질: ultra-realistic cinematic editorial photography, 8K quality
 5. 중요: 이미지는 "${videoTypeStyle.korean}" 영상 스타일의 분위기를 반영해야 합니다
+6. 중요: 생성된 프롬프트에 제품명, 브랜드명을 절대 포함하지 마세요. 제품은 "the product"로만 지칭하세요.
 
 === 중요: 오버레이 요소 금지 ===
 ${NO_OVERLAY_ELEMENTS}

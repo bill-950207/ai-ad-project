@@ -298,6 +298,10 @@ export interface FirstFramePromptInput {
   outfitCustom?: string
   /** 비디오 타입 (UGC, 팟캐스트, 전문가) */
   videoType?: VideoType
+  /** 아바타 특징 설명 (이름, 성별, 연령대 등) - 더 이상 사용되지 않음 */
+  avatarDescription?: string
+  /** 아바타 체형 정보 (일관성 유지용) */
+  bodyType?: string
 }
 
 /** 첫 프레임 이미지 프롬프트 생성 결과 */
@@ -309,6 +313,9 @@ export interface FirstFramePromptResult {
 // ============================================================
 // AI 아바타 프롬프트 관련 타입
 // ============================================================
+
+/** AI 아바타 몸매 타입 */
+export type AiAvatarBodyType = 'slim' | 'average' | 'athletic' | 'curvy' | 'any'
 
 /** AI 아바타 프롬프트 생성 입력 */
 export interface AiAvatarPromptInput {
@@ -323,6 +330,8 @@ export interface AiAvatarPromptInput {
   targetAge?: 'young' | 'middle' | 'mature' | 'any'
   style?: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
   ethnicity?: 'korean' | 'asian' | 'western' | 'any'
+  /** 몸매 타입 */
+  bodyType?: AiAvatarBodyType
   /** 비디오 타입 (UGC, 팟캐스트, 전문가) */
   videoType?: VideoType
 }
