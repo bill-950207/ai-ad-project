@@ -103,7 +103,7 @@ export const COMMON_NEGATIVE_PROMPT =
 
 /** 아바타/인물용 네거티브 프롬프트 */
 export const AVATAR_NEGATIVE_PROMPT =
-  `${COMMON_NEGATIVE_PROMPT}, unnatural pose, stiff expression, plastic skin, mannequin, wax figure, dead eyes, blurry background, bokeh effect, soft background, ${EQUIPMENT_NEGATIVE_PROMPT}`
+  `${COMMON_NEGATIVE_PROMPT}, unnatural pose, stiff expression, plastic skin, mannequin, wax figure, dead eyes, blurry background, bokeh effect, soft background, forced smile, fake smile, exaggerated smile, toothy grin, unnatural smile, AI smile, stock photo smile, overly cheerful, excessive grinning, ${EQUIPMENT_NEGATIVE_PROMPT}`
 
 /** 제품용 네거티브 프롬프트 */
 export const PRODUCT_NEGATIVE_PROMPT =

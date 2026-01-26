@@ -614,10 +614,11 @@ This image MUST look like a professional advertisement from a major brand campai
 1. LIGHTING: Professional studio-quality lighting effect - soft key light with subtle fill, creating dimensionality and highlighting the product. Mention "commercial photography lighting" or "beauty lighting" effect.
 
 2. MODEL EXPRESSION & POSE (if applicable):
-   - Confident, engaging expression with genuine emotion
+   - Natural, relaxed expression - NOT forced or exaggerated smile
+   - Expression should match the scenario mood (can be neutral, thoughtful, confident, or subtly pleasant)
+   - Avoid typical "AI smile" - instead aim for candid, authentic human expression
    - Natural but polished pose that draws attention to the product
-   - Eyes should convey trust and appeal
-   - Slight smile or pleasant expression that feels authentic
+   - Eyes should convey genuine emotion appropriate to the context
 
 3. PRODUCT PRESENTATION:
    - Product should be the HERO of the image

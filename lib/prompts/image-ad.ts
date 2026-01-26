@@ -205,7 +205,7 @@ export const SEEDREAM_PROMPT_STRUCTURE = {
   /** 각 섹션 예시 */
   examples: {
     subject: 'Young Asian woman with natural makeup',
-    action: 'holding a skincare product at chest level, looking at camera with confident smile',
+    action: 'holding a skincare product at chest level, looking at camera with natural confident expression',
     environment: 'in a bright modern bathroom with white marble surfaces and natural plants',
     lighting: 'soft natural daylight streaming from large window on the left',
     camera: 'shot on 35mm lens at f/11, entire scene in razor sharp focus from foreground to background, no blur, no bokeh',

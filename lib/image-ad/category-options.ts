@@ -905,20 +905,20 @@ function getOptionPrompt(adType: ImageAdType, groupKey: string, optionValue: str
       power_pose: 'Confident power pose exuding strength and self-assurance.',
       candid_moment: 'Natural candid moment captured spontaneously.',
     },
-    // 표정 (개선된 버전)
+    // 표정 (개선된 버전) - 자연스러운 표정 강조, AI스러운 미소 방지
     expression: {
       // 기존 옵션
-      smile: 'Warm genuine smile.',
-      natural: 'Natural relaxed expression.',
-      confident: 'Confident expression.',
-      friendly: 'Friendly approachable look.',
+      smile: 'Subtle natural smile, NOT forced or exaggerated.',
+      natural: 'Natural relaxed neutral expression, candid and authentic.',
+      confident: 'Confident calm expression with subtle intensity.',
+      friendly: 'Soft friendly look, approachable but not overly cheerful.',
       // 새로운 옵션
-      warm_smile: 'Warm genuine smile radiating happiness and authenticity.',
-      natural_glow: 'Natural relaxed expression with inner glow and contentment.',
-      confident_bold: 'Bold confident expression projecting strength and assurance.',
-      friendly_approachable: 'Friendly and approachable expression inviting connection.',
-      mysterious_allure: 'Mysterious alluring expression with captivating intrigue.',
-      excited_joyful: 'Excited joyful expression showing genuine enthusiasm.',
+      warm_smile: 'Subtle warm smile with relaxed eyes - natural and understated, NOT a big toothy grin.',
+      natural_glow: 'Natural relaxed expression with soft contentment, authentic and candid.',
+      confident_bold: 'Bold confident expression with calm intensity, NOT smiling.',
+      friendly_approachable: 'Soft friendly expression, approachable and genuine, subtle warmth.',
+      mysterious_allure: 'Mysterious alluring expression with subtle intrigue, neutral lips.',
+      excited_joyful: 'Genuine subtle excitement, bright eyes with natural slight smile.',
     },
     // 시선 방향 (개선된 버전)
     gaze: {
