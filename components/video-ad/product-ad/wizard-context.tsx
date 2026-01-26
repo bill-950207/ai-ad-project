@@ -736,14 +736,26 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
 
   const goToStep = useCallback((targetStep: WizardStep) => {
     setStep(targetStep)
+    // 스크롤 최상단으로 이동
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
   }, [])
 
   const goToNextStep = useCallback(() => {
     setStep(prev => Math.min(prev + 1, 6) as WizardStep)
+    // 스크롤 최상단으로 이동
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
   }, [])
 
   const goToPrevStep = useCallback(() => {
     setStep(prev => Math.max(prev - 1, 1) as WizardStep)
+    // 스크롤 최상단으로 이동
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
   }, [])
 
   // ============================================================

@@ -1194,6 +1194,8 @@ export function ProductDescriptionWizard() {
     // 이동할 단계를 저장 (현재 단계가 아닌 targetStep 저장)
     await saveDraft(targetStep)
     setStep(targetStep)
+    // 스크롤 최상단으로 이동
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   // ============================================================
