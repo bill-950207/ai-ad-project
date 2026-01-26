@@ -103,7 +103,7 @@ export const CAMERA_COMPOSITION_DETAILED_GUIDES: Record<string, {
     depthOfField: 'f/11 with background clearly visible and mostly sharp, only natural perspective depth - no artificial bokeh, like a real smartphone photo',
   },
   'ugc-selfie': {
-    promptSegment: 'selfie camera angle as if holding phone to take selfie, CRITICAL: hands and phone must NOT be visible in frame - hands are cropped out below frame edge, subject looking directly at camera with natural authentic expression (can be neutral, curious, or subtly engaged - NOT forced smile), intimate selfie perspective at eye level or slightly above, authentic self-portrait vibe, NO visible hands NO visible phone',
+    promptSegment: 'POV selfie shot from smartphone camera perspective, subject looking directly at camera with natural authentic expression (can be neutral, curious, or subtly engaged - NOT forced smile), intimate selfie perspective at eye level or slightly above, NO phone device visible in frame, natural relaxed pose presenting product at chest level, anatomically correct natural hands',
     lightingRecommendation: 'natural daylight or soft indoor lighting, flattering selfie lighting',
     depthOfField: 'f/11 with background clearly visible and mostly sharp, minimal natural perspective blur only - no artificial bokeh, like a real smartphone photo',
   },

@@ -26,6 +26,7 @@ import {
   MapPin,
   Mic,
   Minus,
+  Monitor,
   Package,
   Pause,
   Play,
@@ -84,6 +85,7 @@ interface Voice {
 
 type WizardStep = 1 | 2 | 3 | 4
 type VideoDuration = 15 | 30 | 60
+type VideoResolution = '480p' | '720p'
 type VideoType = 'UGC' | 'podcast' | 'expert'
 
 // 영상 타입 정보
@@ -297,6 +299,7 @@ interface DraftData {
   product_info: string | null
   location_prompt: string | null
   duration: number | null
+  resolution: string | null
   video_background: string | null
   camera_composition: string | null
   model_pose: string | null
@@ -352,6 +355,7 @@ export function ProductDescriptionWizard() {
   const [locationMode, setLocationMode] = useState<'ai_recommend' | 'custom'>('ai_recommend')
   const [locationPrompt, setLocationPrompt] = useState('')
   const [duration, setDuration] = useState<VideoDuration>(30)
+  const [resolution, setResolution] = useState<VideoResolution>('480p')
   const [cameraComposition, setCameraComposition] = useState<CameraComposition>('auto')
   const [modelPose, setModelPose] = useState<ModelPose>('auto')
   const [outfitMode, setOutfitMode] = useState<OutfitMode>('keep_original')
@@ -393,6 +397,9 @@ export function ProductDescriptionWizard() {
 
   // 초안 복원 중 플래그 (useEffect에서 editedScript 덮어쓰기 방지)
   const isRestoringDraft = useRef(false)
+
+  // saveDraft 직후 loadExistingData 스킵용 flag (URL 업데이트 후 불필요한 재로드 방지)
+  const skipNextLoadRef = useRef(false)
 
   // ============================================================
   // 데이터 로드
@@ -504,6 +511,7 @@ export function ProductDescriptionWizard() {
           productInfo,
           locationPrompt,
           duration,
+          resolution,
           cameraComposition: cameraComposition !== 'auto' ? cameraComposition : null,
           modelPose: modelPose !== 'auto' ? modelPose : null,
           outfitMode: outfitMode !== 'keep_original' ? outfitMode : null,
@@ -528,6 +536,8 @@ export function ProductDescriptionWizard() {
           // 새 드래프트가 생성된 경우 URL에 draftId 추가
           if (!draftId && data.draft.id) {
             setDraftId(data.draft.id)
+            // loadExistingData 스킵 설정 (URL 변경 후 불필요한 재로드 방지)
+            skipNextLoadRef.current = true
             // URL 업데이트 (쿼리 파라미터 추가) - window.history 사용하여 새로고침 방지
             const currentUrl = new URL(window.location.href)
             currentUrl.searchParams.set('draftId', data.draft.id)
@@ -542,10 +552,16 @@ export function ProductDescriptionWizard() {
     } finally {
       setIsSavingDraft(false)
     }
-  }, [draftId, selectedAvatarInfo, selectedProduct, productInfo, locationPrompt, duration, cameraComposition, modelPose, outfitMode, outfitPreset, outfitCustom, scripts, selectedScriptIndex, editedScript, firstFrameUrl, firstFrameUrls, firstFrameOriginalUrls, firstFramePrompt, locationDescription, selectedVoice, videoType])
+  }, [draftId, selectedAvatarInfo, selectedProduct, productInfo, locationPrompt, duration, resolution, cameraComposition, modelPose, outfitMode, outfitPreset, outfitCustom, scripts, selectedScriptIndex, editedScript, firstFrameUrl, firstFrameUrls, firstFrameOriginalUrls, firstFramePrompt, locationDescription, selectedVoice, videoType])
 
   // 기존 초안 또는 진행 중인 영상 광고 로드
   const loadExistingData = useCallback(async () => {
+    // saveDraft 직후 호출 시 스킵 (이미 Context에 최신 상태가 있음)
+    if (skipNextLoadRef.current) {
+      skipNextLoadRef.current = false
+      return
+    }
+
     // URL에서 draftId 쿼리 파라미터 확인
     const draftIdParam = searchParams.get('draftId')
 
@@ -662,6 +678,7 @@ export function ProductDescriptionWizard() {
     if (draft.product_info) setProductInfo(draft.product_info)
     if (draft.location_prompt) setLocationPrompt(draft.location_prompt)
     if (draft.duration) setDuration(draft.duration as VideoDuration)
+    if (draft.resolution) setResolution(draft.resolution as VideoResolution)
     if (draft.camera_composition) setCameraComposition(draft.camera_composition as CameraComposition)
     if (draft.model_pose) setModelPose(draft.model_pose as ModelPose)
     if (draft.outfit_mode) setOutfitMode(draft.outfit_mode as OutfitMode)
@@ -1034,6 +1051,7 @@ export function ProductDescriptionWizard() {
           voiceName: selectedVoice.name,
           locationPrompt: locationPrompt || locationDescription,
           duration,
+          resolution,
           // 영상 프롬프트 생성을 위한 추가 정보
           cameraComposition: cameraComposition !== 'auto' ? cameraComposition : undefined,
           productName: selectedProduct?.name,
@@ -1109,15 +1127,22 @@ export function ProductDescriptionWizard() {
     if (playingVoiceId === voice.id) {
       if (audioRef.current) {
         audioRef.current.pause()
-        audioRef.current.currentTime = 0
+        audioRef.current.oncanplaythrough = null
+        audioRef.current.onended = null
+        audioRef.current.onerror = null
+        audioRef.current = null
       }
       setPlayingVoiceId(null)
       return
     }
 
-    // 다른 음성 재생 중이면 정지
+    // 다른 음성 재생 중이면 정지 및 정리
     if (audioRef.current) {
       audioRef.current.pause()
+      audioRef.current.oncanplaythrough = null
+      audioRef.current.onended = null
+      audioRef.current.onerror = null
+      audioRef.current = null
     }
 
     // ElevenLabs 음성은 previewUrl이 이미 제공됨
@@ -1180,9 +1205,11 @@ export function ProductDescriptionWizard() {
   // ============================================================
 
   const goToStep = async (targetStep: WizardStep) => {
-    // 현재 단계의 데이터를 저장
-    await saveDraft(step)
+    // 이동할 단계를 저장 (현재 단계가 아닌 targetStep 저장)
+    await saveDraft(targetStep)
     setStep(targetStep)
+    // 스크롤 최상단으로 이동
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   // ============================================================
@@ -1624,6 +1651,32 @@ export function ProductDescriptionWizard() {
                     }`}
                 >
                   {d}초
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 영상 해상도 */}
+          <div className="bg-card border border-border rounded-xl p-4">
+            <label className="block text-sm font-medium text-foreground mb-3">
+              <Monitor className="w-4 h-4 inline mr-2" />
+              영상 해상도
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {([
+                { value: '480p', label: '480p', desc: '빠른 생성' },
+                { value: '720p', label: '720p', desc: '고화질' },
+              ] as const).map((r) => (
+                <button
+                  key={r.value}
+                  onClick={() => setResolution(r.value)}
+                  className={`py-3 rounded-lg border text-sm font-medium transition-colors ${resolution === r.value
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border text-muted-foreground hover:border-primary/50'
+                    }`}
+                >
+                  <div>{r.label}</div>
+                  <div className="text-xs opacity-70">{r.desc}</div>
                 </button>
               ))}
             </div>

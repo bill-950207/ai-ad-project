@@ -15,14 +15,14 @@ import { PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST } from '@/lib/credits'
 
 /** 카메라 구도별 프롬프트 설명 */
 const CAMERA_COMPOSITION_PROMPTS: Record<string, string> = {
-  'selfie-high': 'holding phone/camera high, looking up at camera from below, selfie angle from above',
-  'selfie-front': 'holding phone at eye level, straight-on selfie angle, front facing camera',
-  'selfie-side': 'holding phone slightly to the side, three-quarter selfie angle',
+  'selfie-high': 'looking up at camera from below, high angle shot from above',
+  'selfie-front': 'eye level straight-on angle, front facing camera',
+  'selfie-side': 'three-quarter angle, slightly from the side',
   'tripod': 'camera mounted on tripod, stable professional framing, presenting to fixed camera',
   'closeup': 'close-up framing on face and upper body, intimate speaking distance',
   'fullbody': 'full body visible in frame, wider shot showing complete posture',
   'ugc-closeup': 'UGC style medium close-up, chest to head framing, casual influencer vlog aesthetic',
-  'ugc-selfie': 'selfie camera perspective, NO visible hands or phone in frame, hands cropped below frame, looking directly at camera, intimate selfie angle at eye level',
+  'ugc-selfie': 'POV selfie camera perspective, looking directly at camera, intimate selfie angle at eye level, NO phone visible, natural pose presenting product',
 }
 
 /** 대본 스타일별 표정/제스처 프롬프트 */
@@ -73,7 +73,7 @@ function generateVideoPrompt(params: {
 
   // 제품 관련 동작
   if (params.productName) {
-    parts.push(`presenting and discussing ${params.productName}`)
+    parts.push(`presenting and discussing ${params.productName}, holding product naturally`)
   } else {
     parts.push('talking about a product in an engaging way')
   }
@@ -118,6 +118,7 @@ export async function POST(request: NextRequest) {
       voiceName,
       locationPrompt,
       duration,
+      resolution = '480p',
       // 영상 프롬프트 생성을 위한 추가 정보
       cameraComposition,
       productName,
@@ -160,7 +161,7 @@ export async function POST(request: NextRequest) {
         category: 'productDescription',
         status: 'IN_QUEUE',
         duration: duration || 30,
-        resolution: '480p',
+        resolution: resolution,
         aspect_ratio: '9:16',
         location_prompt: locationPrompt || null,
         camera_composition: cameraComposition || null,
@@ -195,7 +196,7 @@ export async function POST(request: NextRequest) {
         firstFrameUrl,
         audioUrl,
         videoPrompt,
-        '480p'
+        resolution
       )
       requestId = queueResponse.request_id
       provider = 'wavespeed'

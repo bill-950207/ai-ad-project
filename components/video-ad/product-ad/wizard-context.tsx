@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useRef, ReactNode } from 'react'
 
 // ============================================================
 // 타입 정의
@@ -262,6 +262,9 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
   const [draftId, setDraftId] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
+  // saveDraft 직후 loadDraft 스킵용 flag (URL 업데이트 후 불필요한 재로드 방지)
+  const skipNextLoadRef = useRef(false)
+
   // Step 1 상태
   const [step, setStep] = useState<WizardStep>(1)
   const [selectedProduct, setSelectedProduct] = useState<AdProduct | null>(null)
@@ -503,7 +506,17 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
 
       const data = await res.json()
       if (data.draft?.id) {
+        const isNewDraft = !draftId
         setDraftId(data.draft.id)
+
+        // 새 draft 생성 시 URL 업데이트 (replaceState로 리마운트 방지)
+        if (isNewDraft && typeof window !== 'undefined') {
+          skipNextLoadRef.current = true
+          const currentUrl = new URL(window.location.href)
+          currentUrl.searchParams.set('videoAdId', data.draft.id)
+          window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search)
+        }
+
         return data.draft.id
       }
       return null
@@ -522,6 +535,12 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
 
   // Draft 로드
   const loadDraft = useCallback(async (id: string): Promise<boolean> => {
+    // saveDraft 직후 호출 시 스킵 (이미 Context에 최신 상태가 있음)
+    if (skipNextLoadRef.current) {
+      skipNextLoadRef.current = false
+      return true
+    }
+
     try {
       const res = await fetch(`/api/product-ad/draft?id=${id}`)
       if (!res.ok) return false
@@ -717,14 +736,26 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
 
   const goToStep = useCallback((targetStep: WizardStep) => {
     setStep(targetStep)
+    // 스크롤 최상단으로 이동
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
   }, [])
 
   const goToNextStep = useCallback(() => {
     setStep(prev => Math.min(prev + 1, 6) as WizardStep)
+    // 스크롤 최상단으로 이동
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
   }, [])
 
   const goToPrevStep = useCallback(() => {
     setStep(prev => Math.max(prev - 1, 1) as WizardStep)
+    // 스크롤 최상단으로 이동
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
   }, [])
 
   // ============================================================

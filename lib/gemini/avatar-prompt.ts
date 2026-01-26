@@ -24,13 +24,13 @@ const cameraCompositionDescriptions: Record<CameraCompositionType, { description
   closeup: { description: 'close-up portrait, face and upper body prominent', aperture: 'f/11', lens: '50mm' },
   fullbody: { description: 'full body shot, entire person visible in frame', aperture: 'f/16', lens: '35mm' },
   'ugc-closeup': { description: 'UGC-style intimate medium close-up, chest-up framing, eyes looking DIRECTLY into camera lens', aperture: 'f/11', lens: '35mm' },
-  'ugc-selfie': { description: 'selfie camera angle, HANDS NOT VISIBLE in frame - cropped below edge, direct eye contact, intimate selfie perspective', aperture: 'f/11', lens: '28mm' },
+  'ugc-selfie': { description: 'POV selfie shot, subject looking at camera, NO phone visible, natural relaxed pose presenting product, anatomically correct hands', aperture: 'f/11', lens: '28mm' },
 }
 
 // 모델 포즈 설명
 const modelPoseDescriptions: Record<ModelPoseType, string> = {
-  'holding-product': 'Model holding product naturally at chest level',
-  'showing-product': 'Model presenting product towards camera',
+  'holding-product': 'Model holding product naturally at chest level with ONE hand (free hand only if selfie composition)',
+  'showing-product': 'Model presenting product towards camera with ONE hand (free hand only if selfie composition)',
   'using-product': 'Model actively using the product',
   'talking-only': '⚠️ NO PRODUCT! Avatar only, natural conversational pose',
 }
@@ -55,7 +55,32 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
   const ageMap: Record<string, string> = { young: '20-30대', middle: '30-40대', mature: '40-50대', any: '연령대 무관' }
   const styleMap: Record<string, string> = { natural: '자연스럽고 편안한', professional: '전문적이고 세련된', casual: '캐주얼하고 편안한', elegant: '우아하고 고급스러운', any: '스타일 무관' }
   const ethnicityMap: Record<string, string> = { korean: '한국인', asian: '아시아인', western: '서양인', japanese: '일본인', chinese: '중국인', any: '인종 무관' }
-  const bodyTypeMap: Record<string, string> = { slim: '날씬한 체형', average: '보통 체형', athletic: '운동선수 같은 탄탄한 체형', curvy: '글래머러스한 체형', any: '체형 무관 (제품에 어울리게 추천)' }
+
+  // 성별별 체형 프롬프트 (영어 - 이미지 생성 모델 최적화)
+  const femaleBodyTypeMap: Record<string, string> = {
+    slim: 'slim slender feminine silhouette with delicate proportions',
+    average: 'balanced feminine proportions with natural curves',
+    athletic: 'toned athletic feminine build with defined musculature',
+    curvy: 'feminine silhouette with natural soft curves',
+    any: 'natural feminine proportions',
+  }
+  const maleBodyTypeMap: Record<string, string> = {
+    slim: 'lean masculine frame with slender proportions',
+    average: 'balanced masculine build with standard proportions',
+    athletic: 'toned athletic masculine physique with defined muscles',
+    curvy: 'solid masculine build with broader frame',
+    any: 'natural masculine proportions',
+  }
+
+  // 성별에 따른 체형 설명 반환
+  const getBodyTypeDescription = (bodyType: string, gender?: string): string => {
+    if (gender === 'female') {
+      return femaleBodyTypeMap[bodyType] || femaleBodyTypeMap['any']
+    } else if (gender === 'male') {
+      return maleBodyTypeMap[bodyType] || maleBodyTypeMap['any']
+    }
+    return femaleBodyTypeMap[bodyType] || femaleBodyTypeMap['any']
+  }
 
   // 언어-인종 매핑 (ethnicity가 'any'일 때 언어에 맞는 인종 자동 설정)
   const languageToEthnicityMap: Record<string, string> = {
@@ -84,7 +109,7 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
   const targetAgeText = ageMap[input.targetAge || 'any']
   const styleText = styleMap[input.style || 'any']
   const ethnicityText = ethnicityMap[resolvedEthnicity]
-  const bodyTypeText = bodyTypeMap[input.bodyType || 'any']
+  const bodyTypeText = getBodyTypeDescription(input.bodyType || 'any', input.targetGender)
 
   const cameraConfig = input.cameraComposition
     ? cameraCompositionDescriptions[input.cameraComposition]
@@ -96,6 +121,16 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
   const poseSection = input.modelPose
     ? `모델 포즈: ${modelPoseDescriptions[input.modelPose]}`
     : `모델 포즈: ${videoTypeGuide.posePrompt}`
+
+  // UGC 셀카 + 제품 포즈 조합 시 특별 지시
+  const isUgcSelfie = input.cameraComposition === 'ugc-selfie'
+  const isProductPose = input.modelPose === 'holding-product' || input.modelPose === 'showing-product'
+  const ugcSelfieProductInstruction = isUgcSelfie && isProductPose
+    ? `\n=== 중요: UGC 셀카 규칙 (POV 촬영) ===
+- POV 셀카: 카메라 자체가 스마트폰 (이미지에 휴대폰 나타나면 안 됨)
+- 제품을 자연스럽게 가슴 높이에서 들고 카메라를 바라보는 포즈
+- anatomically correct hands (손 왜곡 방지)`
+    : ''
 
   let outfitSection = ''
   if (input.outfitCustom) {
@@ -124,7 +159,7 @@ ${input.productImageUrl ? '제품 이미지가 Figure 1로 첨부되어 있습�
 - 연령대: ${targetAgeText}
 - 스타일: ${styleText}
 - 인종/민족: ${ethnicityText}
-- 체형: ${bodyTypeText}
+- Body type (use this exact English phrase in prompt): ${bodyTypeText}
 
 === 장소/배경 ===
 ${locationSection}
@@ -132,6 +167,7 @@ ${locationSection}
 ${cameraSection}
 
 ${poseSection}
+${ugcSelfieProductInstruction}
 
 ${outfitSection ? `=== 의상 설정 ===\n${outfitSection}` : ''}
 
