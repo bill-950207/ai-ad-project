@@ -18,6 +18,7 @@ interface Plan {
     music: string
     products: string
     credits: string
+    creditEstimate?: string // 예상 이미지/영상 수량
   }
   popular?: boolean
   current?: boolean
@@ -57,6 +58,7 @@ const plans: Plan[] = [
       music: '15회/월',
       products: '9회/월',
       credits: '50 크레딧/월',
+      creditEstimate: '~25개 이미지 또는 ~5개 영상',
     },
     popular: true,
   },
@@ -71,13 +73,14 @@ const plans: Plan[] = [
       '모든 Starter 기능',
       '워터마크 제거',
       '우선 처리',
-      '월 200 크레딧 지급',
+      '월 300 크레딧 지급',
     ],
     limits: {
       avatars: '30회/월',
       music: '50회/월',
       products: '30회/월',
-      credits: '200 크레딧/월',
+      credits: '300 크레딧/월',
+      creditEstimate: '~150개 이미지 또는 ~30개 영상',
     },
   },
   {
@@ -91,13 +94,14 @@ const plans: Plan[] = [
       '모든 Pro 기능',
       '무제한 생성',
       '전용 지원',
-      '월 500 크레딧 지급',
+      '월 1,000 크레딧 지급',
     ],
     limits: {
       avatars: '무제한',
       music: '무제한',
       products: '무제한',
-      credits: '500 크레딧/월',
+      credits: '1,000 크레딧/월',
+      creditEstimate: '~500개 이미지 또는 ~100개 영상',
     },
   },
 ]
@@ -243,6 +247,11 @@ export function PricingContent() {
                 <span className="text-muted-foreground">크레딧</span>
                 <span className="text-foreground">{plan.limits.credits}</span>
               </div>
+              {plan.limits.creditEstimate && (
+                <div className="pt-1 text-xs text-muted-foreground text-right">
+                  {plan.limits.creditEstimate}
+                </div>
+              )}
             </div>
 
             {/* Features */}
