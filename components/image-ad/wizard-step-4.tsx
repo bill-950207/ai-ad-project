@@ -21,6 +21,7 @@ import { ImageEditModal } from './image-edit-modal'
 import { buildPromptFromOptions } from '@/lib/image-ad/category-options'
 import { useImageAdWizard, AspectRatio, Quality } from './wizard-context'
 import { compressImage } from '@/lib/image/compress-client'
+import { uploadImageAdImage } from '@/lib/client/image-upload'
 
 // 가격 계산
 const calculateCredits = (quality: Quality, numImages: number): number => {
@@ -248,6 +249,52 @@ export function WizardStep4() {
 
             if (status.status === 'COMPLETED') {
               return status.imageUrls || []
+            } else if (status.status === 'IMAGES_READY' && status.pendingImages) {
+              // 클라이언트에서 R2 업로드 수행
+              console.log('[wizard-step-4] IMAGES_READY 수신, R2 업로드 시작:', status.pendingImages.length, '개')
+
+              const uploadedUrls: { index: number; compressedUrl: string; originalUrl: string }[] = []
+
+              for (const pending of status.pendingImages as { index: number; aiServiceUrl: string }[]) {
+                try {
+                  const result = await uploadImageAdImage(imageAdId, pending.index, pending.aiServiceUrl)
+                  uploadedUrls.push({
+                    index: pending.index,
+                    compressedUrl: result.compressedUrl,
+                    originalUrl: result.originalUrl,
+                  })
+                } catch (uploadErr) {
+                  console.error(`[wizard-step-4] 이미지 ${pending.index} 업로드 실패:`, uploadErr)
+                  // 개별 실패 시 원본 URL 사용
+                  uploadedUrls.push({
+                    index: pending.index,
+                    compressedUrl: pending.aiServiceUrl,
+                    originalUrl: pending.aiServiceUrl,
+                  })
+                }
+              }
+
+              // 인덱스 순서로 정렬
+              uploadedUrls.sort((a, b) => a.index - b.index)
+
+              // PATCH API로 DB 업데이트
+              const patchRes = await fetch(`/api/image-ads/${imageAdId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  updateType: 'batch-urls',
+                  imageUrls: uploadedUrls.map(u => u.compressedUrl),
+                  imageUrlOriginals: uploadedUrls.map(u => u.originalUrl),
+                }),
+              })
+
+              if (!patchRes.ok) {
+                console.error('[wizard-step-4] DB 업데이트 실패')
+              } else {
+                console.log('[wizard-step-4] R2 업로드 및 DB 업데이트 완료')
+              }
+
+              return uploadedUrls.map(u => u.compressedUrl)
             } else if (status.status === 'FAILED') {
               // NSFW 오류 체크
               if (status.error === 'NSFW_CONTENT_DETECTED' || status.error?.includes('NSFW')) {

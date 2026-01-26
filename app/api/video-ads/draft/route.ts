@@ -54,6 +54,8 @@ export async function POST(request: NextRequest) {
       // Step 4 데이터
       voiceId,
       voiceName,
+      // 비디오 타입
+      videoType,
     } = body
 
     // 허용된 상태값 (DRAFT 계열 상태만 허용)
@@ -109,55 +111,14 @@ export async function POST(request: NextRequest) {
           first_frame_prompt: firstFramePrompt || null,
           voice_id: voiceId || null,
           voice_name: voiceName || null,
+          video_type: videoType || null,
           updated_at: new Date(),
         },
       })
 
       return NextResponse.json({ draft: updated })
     } else {
-      // 같은 카테고리의 기존 DRAFT 확인 (하나만 유지, 생성 중 상태도 포함)
-      const existingDraft = await prisma.video_ads.findFirst({
-        where: {
-          user_id: user.id,
-          category,
-          status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO'] },
-        },
-      })
-
-      if (existingDraft) {
-        // 기존 초안 업데이트
-        const updated = await prisma.video_ads.update({
-          where: { id: existingDraft.id },
-          data: {
-            ...(validStatus && { status: validStatus }),
-            wizard_step: wizardStep,
-            avatar_id: dbAvatarId,
-            outfit_id: isAiGeneratedAvatar ? null : (outfitId || null),
-            avatar_image_url: avatarImageUrl || null,
-            product_id: productId || null,
-            ai_avatar_options: isAiGeneratedAvatar ? (aiAvatarOptions ? JSON.stringify(aiAvatarOptions) : null) : null,
-            product_info: productInfo || null,
-            location_prompt: locationPrompt || null,
-            duration: duration || null,
-            video_background: videoBackground || null,
-            camera_composition: cameraComposition || null,
-            scripts_json: scriptsJson || null,
-            script_style: scriptStyle || null,
-            script: script || null,
-            first_scene_image_url: firstSceneImageUrl || null,
-            first_frame_urls: firstFrameUrls || null,
-            first_frame_original_urls: firstFrameOriginalUrls || null,
-            first_frame_prompt: firstFramePrompt || null,
-            voice_id: voiceId || null,
-            voice_name: voiceName || null,
-            updated_at: new Date(),
-          },
-        })
-
-        return NextResponse.json({ draft: updated })
-      }
-
-      // 새 초안 생성
+      // 새 초안 생성 (기존 드래프트와 무관하게 항상 새로 생성)
       const draft = await prisma.video_ads.create({
         data: {
           user_id: user.id,
@@ -183,6 +144,7 @@ export async function POST(request: NextRequest) {
           first_frame_prompt: firstFramePrompt || null,
           voice_id: voiceId || null,
           voice_name: voiceName || null,
+          video_type: videoType || null,
         },
       })
 
@@ -200,7 +162,9 @@ export async function POST(request: NextRequest) {
 /**
  * GET /api/video-ads/draft
  *
- * 현재 카테고리의 임시 저장된 초안을 조회합니다.
+ * 임시 저장된 초안을 조회합니다.
+ * - id 파라미터: 특정 드래프트 조회
+ * - category 파라미터: 해당 카테고리의 가장 최근 드래프트 조회
  */
 export async function GET(request: NextRequest) {
   try {
@@ -212,10 +176,24 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
     const category = searchParams.get('category')
 
+    // ID로 특정 드래프트 조회
+    if (id) {
+      const draft = await prisma.video_ads.findFirst({
+        where: {
+          id,
+          user_id: user.id,
+          status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO'] },
+        },
+      })
+      return NextResponse.json({ draft })
+    }
+
+    // 카테고리로 가장 최근 드래프트 조회
     if (!category) {
-      return NextResponse.json({ error: 'Category is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Category or ID is required' }, { status: 400 })
     }
 
     // DRAFT 또는 생성 중 상태의 초안 조회

@@ -301,3 +301,153 @@ export async function uploadOutfitImage(
     compressedUrl: uploadUrls.compressed.publicUrl,
   }
 }
+
+// ============================================================
+// 제품 광고 씬 키프레임 업로드 함수
+// ============================================================
+
+/** 씬 키프레임 업로드 URL 세트 */
+interface SceneKeyframeUploadUrls {
+  original: PresignedUrlResult
+  compressed: PresignedUrlResult
+}
+
+/**
+ * 씬 키프레임용 Presigned URL 요청
+ *
+ * @param sceneId - 씬 ID (requestId)
+ * @param originalExt - 원본 이미지 확장자
+ * @returns 업로드 URL 세트
+ */
+export async function requestSceneKeyframeUploadUrls(
+  sceneId: string,
+  originalExt: string = 'png'
+): Promise<SceneKeyframeUploadUrls> {
+  const response = await fetch('/api/product-ad/scenes/upload-url', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sceneId, originalExt }),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || '업로드 URL 요청 실패')
+  }
+
+  const { uploadUrls } = await response.json()
+  return uploadUrls
+}
+
+/**
+ * 씬 키프레임 이미지를 R2에 업로드
+ *
+ * AI 서비스에서 생성된 키프레임 이미지를 다운로드하고:
+ * 1. 원본 이미지를 R2에 직접 업로드
+ * 2. WebP로 압축한 이미지를 R2에 직접 업로드
+ *
+ * @param sceneId - 씬 ID (requestId)
+ * @param imageUrl - 원본 이미지 URL (AI 서비스 생성 이미지)
+ * @returns 업로드된 이미지 URL (원본 + 압축)
+ */
+export async function uploadSceneKeyframeImage(
+  sceneId: string,
+  imageUrl: string
+): Promise<ImageUploadResult> {
+  // 1. 이미지 다운로드
+  const { blob: originalBlob, contentType } = await fetchImageAsBlob(imageUrl)
+  const originalExt = getExtensionFromContentType(contentType)
+
+  // 2. WebP로 압축
+  const compressedBlob = await compressToWebP(originalBlob)
+
+  // 3. Presigned URL 요청
+  const uploadUrls = await requestSceneKeyframeUploadUrls(sceneId, originalExt)
+
+  // 4. 원본 및 압축 이미지 병렬 업로드
+  await Promise.all([
+    uploadToPresignedUrl(uploadUrls.original.uploadUrl, originalBlob, contentType),
+    uploadToPresignedUrl(uploadUrls.compressed.uploadUrl, compressedBlob, 'image/webp'),
+  ])
+
+  return {
+    originalUrl: uploadUrls.original.publicUrl,
+    compressedUrl: uploadUrls.compressed.publicUrl,
+  }
+}
+
+// ============================================================
+// 이미지 광고 업로드 함수
+// ============================================================
+
+/** 이미지 광고 업로드 URL 세트 */
+interface ImageAdUploadUrls {
+  original: PresignedUrlResult
+  compressed: PresignedUrlResult
+}
+
+/**
+ * 이미지 광고용 Presigned URL 요청
+ *
+ * @param imageAdId - 이미지 광고 ID
+ * @param imageIndex - 이미지 인덱스 (배치 내 순서)
+ * @param originalExt - 원본 이미지 확장자
+ * @returns 업로드 URL 세트
+ */
+export async function requestImageAdUploadUrls(
+  imageAdId: string,
+  imageIndex: number,
+  originalExt: string = 'png'
+): Promise<ImageAdUploadUrls> {
+  const response = await fetch('/api/image-ads/upload-url', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imageAdId, imageIndex, originalExt }),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || '업로드 URL 요청 실패')
+  }
+
+  const { uploadUrls } = await response.json()
+  return uploadUrls
+}
+
+/**
+ * 이미지 광고 이미지를 R2에 업로드
+ *
+ * AI 서비스에서 생성된 이미지를 다운로드하고:
+ * 1. 원본 이미지를 R2에 직접 업로드
+ * 2. WebP로 압축한 이미지를 R2에 직접 업로드
+ *
+ * @param imageAdId - 이미지 광고 ID
+ * @param imageIndex - 이미지 인덱스 (배치 내 순서)
+ * @param imageUrl - 원본 이미지 URL (AI 서비스 생성 이미지)
+ * @returns 업로드된 이미지 URL (원본 + 압축)
+ */
+export async function uploadImageAdImage(
+  imageAdId: string,
+  imageIndex: number,
+  imageUrl: string
+): Promise<ImageUploadResult> {
+  // 1. 이미지 다운로드
+  const { blob: originalBlob, contentType } = await fetchImageAsBlob(imageUrl)
+  const originalExt = getExtensionFromContentType(contentType)
+
+  // 2. WebP로 압축
+  const compressedBlob = await compressToWebP(originalBlob)
+
+  // 3. Presigned URL 요청
+  const uploadUrls = await requestImageAdUploadUrls(imageAdId, imageIndex, originalExt)
+
+  // 4. 원본 및 압축 이미지 병렬 업로드
+  await Promise.all([
+    uploadToPresignedUrl(uploadUrls.original.uploadUrl, originalBlob, contentType),
+    uploadToPresignedUrl(uploadUrls.compressed.uploadUrl, compressedBlob, 'image/webp'),
+  ])
+
+  return {
+    originalUrl: uploadUrls.original.publicUrl,
+    compressedUrl: uploadUrls.compressed.publicUrl,
+  }
+}

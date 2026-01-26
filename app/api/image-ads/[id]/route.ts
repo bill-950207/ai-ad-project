@@ -110,11 +110,52 @@ export async function PATCH(
 
     // 요청 바디 파싱
     const body = await request.json()
-    const { imageIndex, imageUrl, imageUrlOriginal, deleteIndex } = body as {
+    const { updateType, imageIndex, imageUrl, imageUrlOriginal, deleteIndex, imageUrls, imageUrlOriginals } = body as {
+      updateType?: 'batch-urls'
       imageIndex?: number
       imageUrl?: string
       imageUrlOriginal?: string
       deleteIndex?: number
+      imageUrls?: string[]
+      imageUrlOriginals?: string[]
+    }
+
+    // 배치 URL 업데이트 처리 (클라이언트에서 R2 업로드 완료 후)
+    if (updateType === 'batch-urls') {
+      if (!imageUrls || !imageUrlOriginals) {
+        return NextResponse.json(
+          { error: 'imageUrls and imageUrlOriginals are required for batch-urls update' },
+          { status: 400 }
+        )
+      }
+
+      const { error: updateError } = await supabase
+        .from('image_ads')
+        .update({
+          status: 'COMPLETED',
+          image_urls: imageUrls,
+          image_url_originals: imageUrlOriginals,
+          image_url: imageUrls[0],
+          image_url_original: imageUrlOriginals[0],
+          num_images: imageUrls.length,
+          completed_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .eq('user_id', user.id)
+
+      if (updateError) {
+        console.error('배치 URL 업데이트 오류:', updateError)
+        return NextResponse.json(
+          { error: 'Failed to update batch URLs' },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json({
+        success: true,
+        imageUrls,
+        imageUrlOriginals,
+      })
     }
 
     // 기존 이미지 광고 조회

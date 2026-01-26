@@ -426,3 +426,75 @@ export async function uploadBufferToR2(
 
   return `${R2_PUBLIC_URL}/${key}`
 }
+
+// ============================================================
+// 제품 광고 씬 키프레임 관련 함수
+// ============================================================
+
+/**
+ * 제품 광고 씬 키프레임 이미지용 업로드 URL 세트 생성
+ *
+ * @param sceneId - 씬 고유 ID (requestId 등)
+ * @param originalExt - 원본 이미지 확장자
+ * @returns 원본 및 압축 이미지 업로드 URL
+ */
+export async function generateSceneKeyframeUploadUrls(
+  sceneId: string,
+  originalExt: string = 'png'
+): Promise<{ original: PresignedUrlResult; compressed: PresignedUrlResult }> {
+  const timestamp = Date.now()
+  const baseFileName = `${sceneId}_${timestamp}`
+
+  const original = await generatePresignedUrl({
+    fileName: `${baseFileName}.${originalExt}`,
+    contentType: `image/${originalExt === 'jpg' ? 'jpeg' : originalExt}`,
+    folder: 'product-ad/scenes',
+    type: 'original',
+  })
+
+  const compressed = await generatePresignedUrl({
+    fileName: `${baseFileName}.webp`,
+    contentType: 'image/webp',
+    folder: 'product-ad/scenes',
+    type: 'compressed',
+  })
+
+  return { original, compressed }
+}
+
+// ============================================================
+// 이미지 광고 관련 함수
+// ============================================================
+
+/**
+ * 이미지 광고용 업로드 URL 세트 생성
+ *
+ * @param imageAdId - 이미지 광고 ID
+ * @param imageIndex - 이미지 인덱스 (배치 내 순서)
+ * @param originalExt - 원본 이미지 확장자
+ * @returns 원본 및 압축 이미지 업로드 URL
+ */
+export async function generateImageAdUploadUrls(
+  imageAdId: string,
+  imageIndex: number,
+  originalExt: string = 'png'
+): Promise<{ original: PresignedUrlResult; compressed: PresignedUrlResult }> {
+  const timestamp = Date.now()
+  const baseFileName = `${imageAdId}_${imageIndex}_${timestamp}`
+
+  const original = await generatePresignedUrl({
+    fileName: `${baseFileName}.${originalExt}`,
+    contentType: `image/${originalExt === 'jpg' ? 'jpeg' : originalExt}`,
+    folder: 'image-ads',
+    type: 'original',
+  })
+
+  const compressed = await generatePresignedUrl({
+    fileName: `${baseFileName}.webp`,
+    contentType: 'image/webp',
+    folder: 'image-ads',
+    type: 'compressed',
+  })
+
+  return { original, compressed }
+}

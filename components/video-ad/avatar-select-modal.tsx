@@ -42,6 +42,7 @@ export interface AiAvatarOptions {
   targetAge: 'young' | 'middle' | 'mature' | 'any'
   style: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
   ethnicity: 'korean' | 'asian' | 'western' | 'any'
+  bodyType: 'slim' | 'average' | 'athletic' | 'curvy' | 'any'
 }
 
 export interface SelectedAvatarInfo {
@@ -96,6 +97,14 @@ const ETHNICITY_OPTIONS = [
   { value: 'western', label: '서양인' },
 ] as const
 
+const BODY_TYPE_OPTIONS = [
+  { value: 'any', label: 'AI 추천' },
+  { value: 'slim', label: '날씬' },
+  { value: 'average', label: '보통' },
+  { value: 'athletic', label: '탄탄' },
+  { value: 'curvy', label: '글래머' },
+] as const
+
 export function AvatarSelectModal({
   isOpen,
   onClose,
@@ -114,6 +123,7 @@ export function AvatarSelectModal({
   const [aiAge, setAiAge] = useState<'young' | 'middle' | 'mature' | 'any'>('any')
   const [aiStyle, setAiStyle] = useState<'natural' | 'professional' | 'casual' | 'elegant' | 'any'>('any')
   const [aiEthnicity, setAiEthnicity] = useState<'korean' | 'asian' | 'western' | 'any'>('any')
+  const [aiBodyType, setAiBodyType] = useState<'slim' | 'average' | 'athletic' | 'curvy' | 'any'>('any')
 
   // 아바타 및 의상 데이터 로드 (N+1 문제 해결: 단일 쿼리로 의상까지 조회)
   const fetchData = useCallback(async () => {
@@ -325,6 +335,26 @@ export function AvatarSelectModal({
                   </div>
                 </div>
 
+                {/* 체형 선택 */}
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-2 block">체형</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {BODY_TYPE_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setAiBodyType(option.value)}
+                        className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                          aiBodyType === option.value
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary/50 text-foreground hover:bg-secondary'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* 선택 버튼 */}
                 <button
                   onClick={() => {
@@ -339,6 +369,7 @@ export function AvatarSelectModal({
                         targetAge: aiAge,
                         style: aiStyle,
                         ethnicity: aiEthnicity,
+                        bodyType: aiBodyType,
                       },
                     })
                   }}

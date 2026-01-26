@@ -189,7 +189,7 @@ Generate TWO prompts:
  */
 export async function generateUGCPrompts(input: UGCPromptInput): Promise<UGCPromptResult> {
   const durationDesc = input.duration === 5 ? 'short 5 seconds' : input.duration === 8 ? 'medium 8 seconds' : 'longer 12 seconds'
-  const moodDesc = { friendly: 'warm, approachable, casual', professional: 'confident, knowledgeable', energetic: 'excited, enthusiastic' }[input.mood || 'friendly']
+  const moodDesc = { friendly: 'relaxed, natural, casual', professional: 'confident, knowledgeable', energetic: 'excited, enthusiastic' }[input.mood || 'friendly']
 
   const productSection = input.productUrl
     ? `Product URL: ${input.productUrl}\n${input.productInfo || ''}`
@@ -442,12 +442,23 @@ export async function generateFirstFramePrompt(input: FirstFramePromptInput): Pr
   // 비디오 타입별 분위기 가이드
   const atmosphereSection = `Atmosphere: ${videoTypeGuide.atmospherePrompt}`
 
+  // 체형 정보 (일관성 유지용)
+  const bodyTypeSection = input.bodyType
+    ? `Body type to maintain: ${input.bodyType}`
+    : ''
+
+  // 아바타 섹션 - 외모 묘사 없이 Figure 1만 참조
+  const avatarSection = `Avatar: Use the model from Figure 1.
+${bodyTypeSection}
+CRITICAL: Do NOT describe the avatar's appearance (no hair, face, skin descriptions). Just refer to "the model from Figure 1".`
+
   const prompt = `Generate Seedream 4.5 first frame image prompt.
 
 VIDEO STYLE: ${VIDEO_TYPE_SCRIPT_STYLES[videoType]?.korean || 'UGC 스타일'}
 ${atmosphereSection}
 
-Product: ${input.productInfo}
+${avatarSection}
+Product context (for understanding only - DO NOT include product name/brand in prompt): ${input.productInfo}
 ${locationSection}
 ${cameraSection}
 ${poseSection}
@@ -455,10 +466,14 @@ ${outfitSection}
 
 ${NO_OVERLAY_ELEMENTS}
 
-IMPORTANT: The image should reflect the "${VIDEO_TYPE_SCRIPT_STYLES[videoType]?.korean || 'UGC'}" video style atmosphere.
+CRITICAL RULES:
+1. For AVATAR: ONLY use "the model from Figure 1". Do NOT describe facial features, hair, skin tone, or ethnicity.
+2. For PRODUCT: ONLY use "the product from Figure 2" or "the product". NEVER include product name or brand name.
+3. The image should reflect the "${VIDEO_TYPE_SCRIPT_STYLES[videoType]?.korean || 'UGC'}" video style atmosphere.
+${input.bodyType ? `4. Maintain ${input.bodyType} body type consistently.` : ''}
 ${input.productImageUrl
-    ? 'Create photorealistic prompt using "Figure 1" for avatar, "Figure 2" for product.'
-    : 'Create photorealistic prompt using "Figure 1" for avatar. ⚠️ NO PRODUCT should appear in the image - avatar only with empty hands.'}
+    ? 'Create photorealistic prompt using "the model from Figure 1" for avatar, "the product from Figure 2" for product.'
+    : 'Create photorealistic prompt using "the model from Figure 1" for avatar. ⚠️ NO PRODUCT should appear - avatar only with empty hands.'}
 Include: camera specs, lighting direction, quality tags.
 Output JSON: { "prompt": "English 50-80 words", "locationDescription": "Korean location description" }`
 

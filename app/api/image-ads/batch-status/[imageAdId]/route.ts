@@ -13,7 +13,6 @@ import {
   getGPTImageQueueStatus as getKieGptImageStatus,
   getGPTImageQueueResponse as getKieGptImageResponse,
 } from '@/lib/kie/client'
-import { uploadExternalImageToR2 } from '@/lib/image/compress'
 
 interface BatchRequestId {
   provider: 'fal' | 'kie'
@@ -23,8 +22,7 @@ interface BatchRequestId {
 interface ImageResult {
   index: number
   status: 'COMPLETED' | 'IN_PROGRESS' | 'IN_QUEUE' | 'FAILED'
-  imageUrl?: string
-  originalUrl?: string
+  aiServiceUrl?: string  // AI 서비스 원본 URL (클라이언트에서 R2 업로드)
   error?: string
 }
 
@@ -87,6 +85,18 @@ export async function GET(
         error: 'Image generation failed',
       })
     }
+
+    // 이미 IMAGES_READY 상태인 경우 (클라이언트가 R2 업로드 중)
+    // 외부 API 재호출 방지
+    if (imageAd.status === 'IMAGES_READY') {
+      console.log(`[batch-status] 이미 IMAGES_READY 상태, 조기 반환: ${imageAdId}`)
+      return NextResponse.json({
+        status: 'IMAGES_READY',
+        message: 'Images are ready for client upload. Please complete the upload.',
+      })
+    }
+
+    console.log(`[batch-status] 현재 상태: ${imageAd.status}, 외부 API 조회 시작: ${imageAdId}`)
 
     // 하위 호환성: batch_request_ids가 없고 fal_request_id가 있는 경우 (기존 단일 요청)
     if (!imageAd.batch_request_ids && imageAd.fal_request_id) {
@@ -158,29 +168,11 @@ async function processBatchStatus(
             }
 
             if (result.images && result.images.length > 0) {
-              const generatedImageUrl = result.images[0].url
-
-              // R2에 업로드
-              try {
-                const uploadResult = await uploadExternalImageToR2(
-                  generatedImageUrl,
-                  'image-ads',
-                  `${imageAdId}_${index}`
-                )
-                return {
-                  index,
-                  status: 'COMPLETED' as const,
-                  imageUrl: uploadResult.compressedUrl,
-                  originalUrl: uploadResult.originalUrl,
-                }
-              } catch (uploadError) {
-                console.error(`이미지 ${index} R2 업로드 실패:`, uploadError)
-                return {
-                  index,
-                  status: 'COMPLETED' as const,
-                  imageUrl: generatedImageUrl,
-                  originalUrl: generatedImageUrl,
-                }
+              // AI 서비스 원본 URL만 반환 (클라이언트에서 R2 업로드)
+              return {
+                index,
+                status: 'COMPLETED' as const,
+                aiServiceUrl: result.images[0].url,
               }
             }
           } catch (resultError) {
@@ -214,39 +206,37 @@ async function processBatchStatus(
   )
 
   // 결과 집계
-  const completedResults = results.filter(r => r.status === 'COMPLETED' && r.imageUrl)
+  const completedResults = results.filter(r => r.status === 'COMPLETED' && r.aiServiceUrl)
   const failedResults = results.filter(r => r.status === 'FAILED')
   const inProgressResults = results.filter(r => r.status === 'IN_PROGRESS' || r.status === 'IN_QUEUE')
 
   // 모두 완료되었거나 실패한 경우 (진행 중인 것이 없음)
   if (inProgressResults.length === 0) {
-    // 최소 하나라도 성공한 경우 COMPLETED로 처리
+    // 최소 하나라도 성공한 경우 - 클라이언트가 R2 업로드할 이미지 목록 반환
     if (completedResults.length > 0) {
-      const imageUrls = completedResults
+      const pendingImages = completedResults
         .sort((a, b) => a.index - b.index)
-        .map(r => r.imageUrl!)
-      const originalUrls = completedResults
-        .sort((a, b) => a.index - b.index)
-        .map(r => r.originalUrl!)
+        .map(r => ({
+          index: r.index,
+          aiServiceUrl: r.aiServiceUrl!,
+        }))
 
-      // DB 업데이트
-      await supabase
+      // 상태만 IMAGES_READY로 업데이트 (클라이언트가 업로드 후 COMPLETED로 변경)
+      const { error: updateError, count } = await supabase
         .from('image_ads')
-        .update({
-          status: 'COMPLETED',
-          image_urls: imageUrls,
-          image_url_originals: originalUrls,
-          image_url: imageUrls[0],  // 하위 호환성
-          image_url_original: originalUrls[0],  // 하위 호환성
-          completed_at: new Date().toISOString(),
-        })
+        .update({ status: 'IMAGES_READY' })
         .eq('id', imageAdId)
         .eq('user_id', userId)
 
+      if (updateError) {
+        console.error('[batch-status] IMAGES_READY 상태 업데이트 실패:', updateError)
+      } else {
+        console.log(`[batch-status] IMAGES_READY 상태 업데이트 완료: ${imageAdId}, count: ${count}`)
+      }
+
       return NextResponse.json({
-        status: 'COMPLETED',
-        imageUrls,
-        originalUrls,
+        status: 'IMAGES_READY',
+        pendingImages,
         completedCount: completedResults.length,
         failedCount: failedResults.length,
       })

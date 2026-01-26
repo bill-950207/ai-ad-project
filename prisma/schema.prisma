@@ -796,6 +796,7 @@ enum image_ad_status {
   IN_QUEUE
   IN_PROGRESS
   UPLOADING
+  IMAGES_READY
   COMPLETED
   FAILED
 

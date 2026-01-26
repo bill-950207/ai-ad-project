@@ -47,6 +47,7 @@ export type {
   ReferenceStyleAnalysisResult,
   FirstFramePromptInput,
   FirstFramePromptResult,
+  AiAvatarBodyType,
   AiAvatarPromptInput,
   AiAvatarPromptResult,
   CategoryOptionItem,

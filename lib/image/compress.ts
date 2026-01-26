@@ -64,7 +64,7 @@ export async function convertToPng(buffer: Buffer): Promise<Buffer> {
 }
 
 /**
- * 외부 URL 이미지를 R2에 원본/압축본으로 저장
+ * 외부 URL 이미지를 R2에 원본/압축본으로 저장 (병렬 업로드)
  *
  * @param imageUrl - 원본 이미지 URL
  * @param folder - R2 저장 폴더 (예: 'image-ads', 'video-ads')
@@ -83,15 +83,20 @@ export async function uploadExternalImageToR2(
   // 1. 이미지 다운로드
   const imageBuffer = await fetchImageAsBuffer(imageUrl)
 
-  // 2. 원본 PNG로 변환 후 R2 업로드
-  const pngBuffer = await convertToPng(imageBuffer)
-  const originalKey = `${folder}/original/${id}_${timestamp}.png`
-  const originalUrl = await uploadBufferToR2(pngBuffer, originalKey, 'image/png')
+  // 2. 이미지 변환 병렬 처리
+  const [pngBuffer, webpBuffer] = await Promise.all([
+    convertToPng(imageBuffer),
+    compressToWebp(imageBuffer, options),
+  ])
 
-  // 3. WebP로 압축 후 R2 업로드
-  const webpBuffer = await compressToWebp(imageBuffer, options)
+  // 3. R2 업로드 병렬 처리
+  const originalKey = `${folder}/original/${id}_${timestamp}.png`
   const compressedKey = `${folder}/compressed/${id}_${timestamp}.webp`
-  const compressedUrl = await uploadBufferToR2(webpBuffer, compressedKey, 'image/webp')
+
+  const [originalUrl, compressedUrl] = await Promise.all([
+    uploadBufferToR2(pngBuffer, originalKey, 'image/png'),
+    uploadBufferToR2(webpBuffer, compressedKey, 'image/webp'),
+  ])
 
   return {
     originalUrl,
@@ -100,7 +105,7 @@ export async function uploadExternalImageToR2(
 }
 
 /**
- * Buffer 이미지를 R2에 원본/압축본으로 저장
+ * Buffer 이미지를 R2에 원본/압축본으로 저장 (병렬 업로드)
  *
  * @param buffer - 이미지 Buffer
  * @param folder - R2 저장 폴더
@@ -116,15 +121,20 @@ export async function uploadBufferImageToR2(
 ): Promise<ImageUploadResult> {
   const timestamp = Date.now()
 
-  // 1. 원본 PNG로 변환 후 R2 업로드
-  const pngBuffer = await convertToPng(buffer)
-  const originalKey = `${folder}/original/${id}_${timestamp}.png`
-  const originalUrl = await uploadBufferToR2(pngBuffer, originalKey, 'image/png')
+  // 1. 이미지 변환 병렬 처리
+  const [pngBuffer, webpBuffer] = await Promise.all([
+    convertToPng(buffer),
+    compressToWebp(buffer, options),
+  ])
 
-  // 2. WebP로 압축 후 R2 업로드
-  const webpBuffer = await compressToWebp(buffer, options)
+  // 2. R2 업로드 병렬 처리
+  const originalKey = `${folder}/original/${id}_${timestamp}.png`
   const compressedKey = `${folder}/compressed/${id}_${timestamp}.webp`
-  const compressedUrl = await uploadBufferToR2(webpBuffer, compressedKey, 'image/webp')
+
+  const [originalUrl, compressedUrl] = await Promise.all([
+    uploadBufferToR2(pngBuffer, originalKey, 'image/png'),
+    uploadBufferToR2(webpBuffer, compressedKey, 'image/webp'),
+  ])
 
   return {
     originalUrl,

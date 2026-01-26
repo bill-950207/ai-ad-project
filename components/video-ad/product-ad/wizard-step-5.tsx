@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import { useProductAdWizard, SceneKeyframe, SceneInfo } from './wizard-context'
+import { uploadSceneKeyframeImage } from '@/lib/client/image-upload'
 import {
   DndContext,
   closestCenter,
@@ -529,10 +530,22 @@ export function WizardStep5() {
 
         if (data.status === 'COMPLETED' && data.resultUrl) {
           completedPollingRef.current.add(kf.sceneIndex)
-          updateSceneKeyframe(kf.sceneIndex, {
-            status: 'completed',
-            imageUrl: data.resultUrl,
-          })
+
+          // 클라이언트에서 R2로 업로드 (WebP 압축 포함)
+          try {
+            const uploadResult = await uploadSceneKeyframeImage(kf.requestId!, data.resultUrl)
+            updateSceneKeyframe(kf.sceneIndex, {
+              status: 'completed',
+              imageUrl: uploadResult.compressedUrl,  // WebP 이미지 표시
+            })
+          } catch (uploadError) {
+            console.error('이미지 R2 업로드 오류:', uploadError)
+            // 업로드 실패 시 원본 URL 사용
+            updateSceneKeyframe(kf.sceneIndex, {
+              status: 'completed',
+              imageUrl: data.resultUrl,
+            })
+          }
           return { sceneIndex: kf.sceneIndex, completed: true, failed: false }
         } else if (data.status === 'FAILED') {
           completedPollingRef.current.add(kf.sceneIndex)
@@ -618,10 +631,22 @@ export function WizardStep5() {
 
         if (data.status === 'COMPLETED' && data.resultUrl) {
           isCancelled = true
-          updateSceneKeyframe(sceneIndex, {
-            status: 'completed',
-            imageUrl: data.resultUrl,
-          })
+
+          // 클라이언트에서 R2로 업로드 (WebP 압축 포함)
+          try {
+            const uploadResult = await uploadSceneKeyframeImage(requestId, data.resultUrl)
+            updateSceneKeyframe(sceneIndex, {
+              status: 'completed',
+              imageUrl: uploadResult.compressedUrl,  // WebP 이미지 표시
+            })
+          } catch (uploadError) {
+            console.error('이미지 R2 업로드 오류:', uploadError)
+            // 업로드 실패 시 원본 URL 사용
+            updateSceneKeyframe(sceneIndex, {
+              status: 'completed',
+              imageUrl: data.resultUrl,
+            })
+          }
           setRegeneratingSceneIndex(null)
         } else if (data.status === 'FAILED') {
           isCancelled = true
