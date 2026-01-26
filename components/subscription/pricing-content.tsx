@@ -45,7 +45,8 @@ const plans: Plan[] = [
       avatars: '최대 3개',
       music: '최대 5개',
       products: '최대 3개',
-      credits: '0 크레딧',
+      credits: '15 크레딧 (1회)',
+      imageEstimate: '~7개 광고 이미지',
     },
   },
   {

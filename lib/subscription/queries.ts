@@ -34,7 +34,7 @@ const FREE_PLAN: UserPlan = {
   avatarLimit: 3,
   musicLimit: 5,
   productLimit: 3,
-  monthlyCredits: 0,
+  monthlyCredits: 15, // 가입 시 1회 지급
   keyframeCount: 1,
   watermarkFree: false,
   hdUpscale: false,

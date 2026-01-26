@@ -40,7 +40,7 @@ async function main() {
       avatar_limit: 3,
       music_limit: 5,
       product_limit: 3,
-      monthly_credits: 0,
+      monthly_credits: 15, // 가입 시 1회 지급 (체험용)
       keyframe_count: 1,
       watermark_free: false,
       hd_upscale: false,
