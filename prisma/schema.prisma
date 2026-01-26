@@ -451,6 +451,9 @@ model profiles {
   image_ads       image_ads[]
   users           users            @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   video_ads       video_ads[]
+  // 구독 시스템
+  subscription    subscriptions?
+  usage_tracking  usage_tracking[]
 
   @@schema("public")
 }
@@ -890,6 +893,28 @@ enum ad_background_mode {
   @@schema("public")
 }
 
+// ============================================================
+// 구독 시스템
+// ============================================================
+
+enum plan_type {
+  FREE
+  STARTER
+  PRO
+  BUSINESS
+
+  @@schema("public")
+}
+
+enum subscription_status {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+
+  @@schema("public")
+}
+
 /// 광고 배경 (생성된 배경 이미지)
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model ad_background {
@@ -931,5 +956,89 @@ model voice_previews {
 
   @@index([voice_id], map: "idx_voice_previews_voice_id")
   @@index([language], map: "idx_voice_previews_language")
+  @@schema("public")
+}
+
+// ============================================================
+// 구독 시스템 모델
+// ============================================================
+
+/// 구독 플랜 정의
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model plans {
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                    plan_type @unique
+  display_name            String
+  price_monthly           Int       @default(0)  // cents (999 = $9.99)
+  price_yearly            Int       @default(0)  // cents
+  stripe_price_id_monthly String?
+  stripe_price_id_yearly  String?
+
+  // 월간 생성 제한 (-1 = 무제한)
+  avatar_limit            Int       @default(3)
+  music_limit             Int       @default(5)
+  product_limit           Int       @default(3)
+
+  // 월 지급 크레딧
+  monthly_credits         Int       @default(0)
+
+  // 프리미엄 기능
+  keyframe_count          Int       @default(1)   // 키프레임 생성 개수 (1 또는 2)
+  watermark_free          Boolean   @default(false)
+  hd_upscale              Boolean   @default(false)
+
+  created_at              DateTime  @default(now()) @db.Timestamptz(6)
+
+  subscriptions           subscriptions[]
+
+  @@schema("public")
+}
+
+/// 사용자 구독 정보
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model subscriptions {
+  id                      String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                 String              @unique @db.Uuid
+  plan_id                 String              @db.Uuid
+  status                  subscription_status @default(ACTIVE)
+
+  stripe_customer_id      String?
+  stripe_subscription_id  String?
+
+  current_period_start    DateTime            @db.Timestamptz(6)
+  current_period_end      DateTime            @db.Timestamptz(6)
+  cancel_at_period_end    Boolean             @default(false)
+
+  created_at              DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime            @default(now()) @db.Timestamptz(6)
+
+  plan                    plans               @relation(fields: [plan_id], references: [id], onUpdate: NoAction)
+  profile                 profiles            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_subscriptions_user_id")
+  @@index([status], map: "idx_subscriptions_status")
+  @@index([stripe_customer_id], map: "idx_subscriptions_stripe_customer_id")
+  @@schema("public")
+}
+
+/// 월간 사용량 추적
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model usage_tracking {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String   @db.Uuid
+  period         DateTime @db.Date  // 월 시작일 (2024-01-01)
+
+  avatar_count   Int      @default(0)
+  music_count    Int      @default(0)
+  product_count  Int      @default(0)
+
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime @default(now()) @db.Timestamptz(6)
+
+  profile        profiles @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, period])
+  @@index([user_id], map: "idx_usage_tracking_user_id")
+  @@index([period], map: "idx_usage_tracking_period")
   @@schema("public")
 }
