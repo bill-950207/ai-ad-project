@@ -588,14 +588,14 @@ ${BRAND_PRESERVATION_INSTRUCTION}
 === PROMPT GENERATION RULES BASED ON LOGO ANALYSIS ===
 
 IF productHasLogo = true (product HAS visible logos/text):
-- Add this exact phrase: "preserve existing product branding, logos and labels exactly as shown in reference image"
-- Do not describe the logos in detail - just preserve them
+- Add this exact phrase: "reproduce ONLY existing markings from reference image, DO NOT add any new text, logos, or barcodes"
+- Do not describe the logos in detail - just preserve what exists
 
-IF productHasLogo = false (product has NO logos/text - clean product):
-- Add this exact phrase: "the product is clean with no logos or text - keep the product surface completely unbranded, no fake brand names, no invented logos, no added text of any kind"
-- This is CRITICAL for unbranded products
+IF productHasLogo = false (product has NO logos/text - CLEAN product):
+- Add this exact phrase: "CRITICAL: Product is CLEAN with ZERO branding in the reference. DO NOT ADD any logos, text, labels, barcodes, QR codes, or markings of ANY kind. The product surface must remain 100% identical to the reference image."
+- This prohibition is MANDATORY and non-negotiable
 
-ALWAYS include: "do not add any new text, watermarks, or written elements to the image"
+ALWAYS include: "DO NOT invent or hallucinate any product markings, brand names, or surface details that are not in the reference image"
 
 === NEGATIVE ELEMENTS (things to avoid in the image) ===
 ${PRODUCT_NEGATIVE_PROMPT}
@@ -661,11 +661,16 @@ Output JSON format:
     // 모든 프롬프트에 오버레이 방지 문구 강제 추가
     const overlayPrevention = 'Generate a pure photograph only with absolutely no graphic overlays, no logo banners, no text overlays, no barcodes, no product tags, no frames or borders anywhere in the image.'
 
+    // holding 타입에 대한 제품 표면 보존 강화
+    const holdingReinforcement = input.adType === 'holding'
+      ? ' The held product must have the EXACT same surface as the reference - no added markings, logos, or barcodes.'
+      : ''
+
     // productHasLogo가 false인 경우, 로고 방지 문구도 추가
     if (result.productHasLogo === false) {
-      result.optimizedPrompt = `${result.optimizedPrompt}. ${NO_LOGO_PROMPT_SUFFIX} ${overlayPrevention}`
+      result.optimizedPrompt = `${result.optimizedPrompt}. ${NO_LOGO_PROMPT_SUFFIX}${holdingReinforcement} ${overlayPrevention}`
     } else {
-      result.optimizedPrompt = `${result.optimizedPrompt}. ${overlayPrevention}`
+      result.optimizedPrompt = `${result.optimizedPrompt}.${holdingReinforcement} ${overlayPrevention}`
     }
 
     return result

@@ -107,11 +107,11 @@ export const AVATAR_NEGATIVE_PROMPT =
 
 /** 제품용 네거티브 프롬프트 */
 export const PRODUCT_NEGATIVE_PROMPT =
-  `${COMMON_NEGATIVE_PROMPT}, wrong product, different product, modified logo, altered branding, fake label, blurry background, bokeh, out of focus, fake brand name, invented logo, added text, fictional branding, generic brand text, placeholder text, brand name on product, logo on product, text on product, sticker on product, label on product, writing on product, letters on product, product branding, product logo, product label, product text`
+  `${COMMON_NEGATIVE_PROMPT}, wrong product, different product, modified logo, altered branding, fake label, blurry background, bokeh, out of focus, fake brand name, invented logo, added text, fictional branding, generic brand text, placeholder text, brand name on product, logo on product, text on product, sticker on product, label on product, writing on product, letters on product, product branding, product logo, product label, product text, barcode on product, QR code on product, serial number on product, product code, nutrition label, ingredient list, warning label, price tag on product, batch number, expiry date text, surface modification, added graphics, printed pattern`
 
 /** 로고 없는 제품용 프롬프트 강제 추가 문구 */
 export const NO_LOGO_PROMPT_SUFFIX =
-  'CRITICAL: The product surface must remain completely clean and unbranded - absolutely NO logos, NO text, NO brand names, NO labels, NO stickers anywhere on the product. Keep the product exactly as clean as the reference image.'
+  'CRITICAL PRODUCT SURFACE RULE: DO NOT ADD anything to the product surface. The product has NO logos, NO text, NO barcodes, NO QR codes, NO labels in the reference - it MUST remain exactly this clean. DO NOT invent or hallucinate any branding. DO NOT add any marks or elements not in the original. The product surface must be preserved EXACTLY as shown in the reference image.'
 
 /** 오버레이 요소 방지 프롬프트 */
 export const NO_OVERLAY_ELEMENTS =
@@ -125,34 +125,29 @@ export const OVERLAY_NEGATIVE_PROMPT =
 // 브랜드 보존 지시
 // ============================================================
 
-/** 로고/라벨 보존 지시 (Gemini 프롬프트용) */
+/** 제품 표면 무결성 지시 (Gemini 프롬프트용) */
 export const BRAND_PRESERVATION_INSTRUCTION = `
-CRITICAL LOGO & TEXT RULES - STRICTLY ENFORCE:
+CRITICAL: PRODUCT SURFACE INTEGRITY - DO NOT MODIFY
 
-=== FIRST: ANALYZE THE PRODUCT IMAGE ===
-Carefully examine the product reference image and determine:
-- Does the product have ANY visible logos, text, labels, or brand names? (YES/NO)
-- If YES: List exactly what text/logos are visible
+=== STEP 1: ANALYZE THE PRODUCT REFERENCE ===
+Examine the product image and determine:
+- Does the product have ANY visible text, logos, labels, or barcodes? (YES/NO)
 
-=== THEN: APPLY THESE RULES ===
+=== STEP 2: STRICT RULES ===
 
-IF THE PRODUCT HAS EXISTING LOGOS/TEXT:
-- Preserve them EXACTLY as shown - same position, size, color, font
-- Do not modify, blur, distort, or reposition any existing branding
-- Include instruction: "preserve existing product branding exactly as shown in reference"
+IF PRODUCT HAS MARKINGS (productHasLogo = true):
+- Reproduce ONLY what exists in reference - DO NOT add anything new
+- Include: "reproduce existing markings only, DO NOT add any new text or logos"
 
-IF THE PRODUCT HAS NO VISIBLE LOGOS/TEXT (clean/unbranded product):
-- The product MUST remain completely clean without ANY branding
-- DO NOT add any logos, text, labels, watermarks, or brand names
-- DO NOT invent fictional brand names or logos
-- The product surface should remain exactly as clean as the reference
-- Include instruction: "the product has NO logos or text - keep it completely clean and unbranded"
+IF PRODUCT IS CLEAN (productHasLogo = false):
+- The product has ZERO branding - keep it that way
+- Include: "CRITICAL: Product is CLEAN with ZERO branding. DO NOT ADD any logos, text, labels, barcodes, or markings of ANY kind. Surface must remain 100% identical to reference."
 
 === ABSOLUTE PROHIBITIONS ===
-- NEVER generate fake/invented brand names (like "Product Name", "Brand", "Logo")
-- NEVER add text that looks like it could be a brand
-- NEVER add decorative text elements to the product
-- NEVER add promotional text or price tags on the product
+- NEVER add barcodes, QR codes, serial numbers to the product
+- NEVER add fake brand names or placeholder text
+- NEVER add any surface element not present in the reference image
+- NEVER invent or hallucinate product markings
 `.trim()
 
 /** 로고 없는 제품용 강화 지시 */
@@ -165,6 +160,15 @@ The generated image MUST keep the product surface completely clean:
 - No labels
 - No watermarks
 The product should appear exactly as clean and unbranded as in the reference.
+`.trim()
+
+/** holding 광고 유형용 제품 표면 보존 강화 지시 */
+export const HOLDING_PRODUCT_SURFACE_INSTRUCTION = `
+HOLDING SHOT - PRODUCT SURFACE PRESERVATION:
+The product being held must be VISUALLY IDENTICAL to the reference:
+- DO NOT add any text, logos, labels, barcodes that were not in the reference
+- The product should look like the EXACT same item from the reference
+- Focus on natural hand grip while maintaining 100% surface fidelity
 `.trim()
 
 // ============================================================

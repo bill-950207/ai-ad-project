@@ -105,6 +105,7 @@ AVATAR: Do NOT include any human/model in this shot - pure product focus only.`,
 
   holding: `Model naturally holding/presenting the product. Structure: Model + Product interaction → Pose → Expression → Background → Lighting.
 Hand position must be natural and product clearly visible. Avoid phone/selfie references.
+CRITICAL PRODUCT RULE: The product surface must be IDENTICAL to the reference image. DO NOT add any logos, text, barcodes, labels, or markings not in the product reference. The held product should look like the exact same physical item.
 CRITICAL: Use f/11 aperture. Background must be completely sharp and in focus, no blur or bokeh.
 AVATAR: Use the provided avatar reference for the model appearance.`,
 
