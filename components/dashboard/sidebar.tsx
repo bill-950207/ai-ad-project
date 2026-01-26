@@ -257,6 +257,14 @@ export function Sidebar() {
                   <Settings className="w-4 h-4" />
                   <span>{t.common.settings}</span>
                 </Link>
+                <Link
+                  href="/dashboard/subscription"
+                  className="flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-secondary/50 transition-colors"
+                  onClick={() => setShowProfileMenu(false)}
+                >
+                  <CreditCard className="w-4 h-4" />
+                  <span>{t.common.subscription || '구독 관리'}</span>
+                </Link>
 
                 {/* 언어 서브메뉴 */}
                 <div className="relative">
