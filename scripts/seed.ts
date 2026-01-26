@@ -53,7 +53,7 @@ async function main() {
       avatar_limit: 9,
       music_limit: 15,
       product_limit: 9,
-      monthly_credits: 100, // ~50 이미지 or ~10 영상 (원가 30%)
+      monthly_credits: 120, // ~60 이미지 or ~12 영상 (원가 30%)
       keyframe_count: 2,
       watermark_free: false,
       hd_upscale: true,
@@ -66,7 +66,7 @@ async function main() {
       avatar_limit: 30,
       music_limit: 50,
       product_limit: 30,
-      monthly_credits: 330, // ~165 이미지 or ~33 영상 (원가 33%)
+      monthly_credits: 420, // ~210 이미지 or ~42 영상 (원가 35%)
       keyframe_count: 2,
       watermark_free: true,
       hd_upscale: true,
@@ -79,7 +79,7 @@ async function main() {
       avatar_limit: -1, // 무제한
       music_limit: -1,
       product_limit: -1,
-      monthly_credits: 1200, // ~600 이미지 or ~120 영상 (원가 36%)
+      monthly_credits: 1600, // ~800 이미지 or ~160 영상 (원가 40%)
       keyframe_count: 2,
       watermark_free: true,
       hd_upscale: true,

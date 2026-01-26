@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, Sparkles, Zap, Building2, Infinity, Crown } from 'lucide-react'
+import { Check, Sparkles, Zap, Building2, Infinity, Crown, TrendingUp } from 'lucide-react'
 
 type BillingInterval = 'monthly' | 'yearly'
 
@@ -23,6 +23,7 @@ interface Plan {
   }
   popular?: boolean
   bestValue?: boolean
+  valueHighlight?: string
 }
 
 const plans: Plan[] = [
@@ -40,9 +41,9 @@ const plans: Plan[] = [
       '기본 키프레임 1개',
     ],
     limits: {
-      avatars: '3회/월',
-      music: '5회/월',
-      products: '3회/월',
+      avatars: '최대 3개',
+      music: '최대 5개',
+      products: '최대 3개',
       credits: '0 크레딧',
     },
   },
@@ -61,14 +62,15 @@ const plans: Plan[] = [
       '우선 생성 대기열',
     ],
     limits: {
-      avatars: '9회/월',
-      music: '15회/월',
-      products: '9회/월',
-      credits: '100 크레딧/월',
-      imageEstimate: '~50개 광고 이미지',
-      videoEstimate: '~10개 광고 영상',
+      avatars: '최대 9개',
+      music: '최대 15개',
+      products: '최대 9개',
+      credits: '120 크레딧/월',
+      imageEstimate: '~60개 광고 이미지',
+      videoEstimate: '~12개 광고 영상',
     },
     popular: true,
+    valueHighlight: '타사 대비 4배 저렴',
   },
   {
     name: 'PRO',
@@ -86,14 +88,15 @@ const plans: Plan[] = [
       '전문가 템플릿',
     ],
     limits: {
-      avatars: '30회/월',
-      music: '50회/월',
-      products: '30회/월',
-      credits: '330 크레딧/월',
-      imageEstimate: '~165개 광고 이미지',
-      videoEstimate: '~33개 광고 영상',
+      avatars: '최대 30개',
+      music: '최대 50개',
+      products: '최대 30개',
+      credits: '420 크레딧/월',
+      imageEstimate: '~210개 광고 이미지',
+      videoEstimate: '~42개 광고 영상',
     },
     bestValue: true,
+    valueHighlight: '이미지당 $0.14',
   },
   {
     name: 'BUSINESS',
@@ -115,10 +118,11 @@ const plans: Plan[] = [
       avatars: '무제한',
       music: '무제한',
       products: '무제한',
-      credits: '1,200 크레딧/월',
-      imageEstimate: '~600개 광고 이미지',
-      videoEstimate: '~120개 광고 영상',
+      credits: '1,600 크레딧/월',
+      imageEstimate: '~800개 광고 이미지',
+      videoEstimate: '~160개 광고 영상',
     },
+    valueHighlight: '이미지당 $0.12',
   },
 ]
 
@@ -169,6 +173,20 @@ export function PricingContent() {
 
   return (
     <div>
+      {/* Value Comparison Banner */}
+      <div className="bg-gradient-to-r from-primary/10 via-purple-500/10 to-primary/10 border border-primary/20 rounded-xl p-4 mb-8 max-w-3xl mx-auto">
+        <div className="flex items-center justify-center gap-2 text-sm">
+          <TrendingUp className="w-4 h-4 text-primary" />
+          <span className="text-foreground">
+            <strong className="text-primary">AIAD</strong>는 타사 AI 광고 도구 대비{' '}
+            <strong className="text-green-500">최대 75% 저렴</strong>합니다
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground text-center mt-1">
+          AdCreative.ai $39/10개 vs AIAD $9.99/60개 이미지
+        </p>
+      </div>
+
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold text-foreground mb-2">플랜 선택</h1>
         <p className="text-muted-foreground">
@@ -245,7 +263,7 @@ export function PricingContent() {
               {plan.description}
             </p>
 
-            <div className="mb-6">
+            <div className="mb-4">
               <span className="text-3xl font-bold text-foreground">
                 {getPrice(plan)}
               </span>
@@ -260,6 +278,14 @@ export function PricingContent() {
                 </div>
               )}
             </div>
+
+            {/* Value Highlight Badge */}
+            {plan.valueHighlight && (
+              <div className="mb-4 inline-flex items-center gap-1 bg-green-500/10 text-green-600 text-xs font-medium px-2 py-1 rounded-full">
+                <TrendingUp className="w-3 h-3" />
+                {plan.valueHighlight}
+              </div>
+            )}
 
             {/* Limits */}
             <div className="space-y-2 mb-6 pb-6 border-b border-border">
@@ -318,13 +344,13 @@ export function PricingContent() {
             <button
               onClick={() => handleSubscribe(plan.name)}
               disabled={plan.name === 'FREE' || loading === plan.name}
-              className={`w-full py-2.5 rounded-lg font-medium transition-colors ${
+              className={`w-full py-2.5 rounded-lg font-medium transition-all ${
                 plan.name === 'FREE'
                   ? 'bg-secondary text-muted-foreground cursor-default'
                   : plan.popular
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-[1.02]'
                   : plan.bestValue
-                  ? 'bg-purple-500 text-white hover:bg-purple-600'
+                  ? 'bg-purple-500 text-white hover:bg-purple-600 hover:scale-[1.02]'
                   : 'bg-secondary text-foreground hover:bg-secondary/80'
               } disabled:opacity-50`}
             >
@@ -332,14 +358,34 @@ export function PricingContent() {
                 ? '처리 중...'
                 : plan.name === 'FREE'
                 ? '현재 플랜'
+                : plan.popular
+                ? '시작하기'
+                : plan.bestValue
+                ? '업그레이드'
                 : '구독하기'}
             </button>
           </div>
         ))}
       </div>
 
+      {/* Trust Badges */}
+      <div className="mt-10 flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <Check className="w-4 h-4 text-green-500" />
+          <span>언제든 취소 가능</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Check className="w-4 h-4 text-green-500" />
+          <span>생성 콘텐츠 영구 보관</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Check className="w-4 h-4 text-green-500" />
+          <span>크레딧 다음 달 이월</span>
+        </div>
+      </div>
+
       {/* FAQ or Additional Info */}
-      <div className="mt-12 max-w-2xl mx-auto text-center">
+      <div className="mt-8 max-w-2xl mx-auto text-center">
         <p className="text-sm text-muted-foreground">
           모든 유료 플랜은 언제든지 취소할 수 있습니다. 취소 시 다음 결제일까지 서비스를 이용할 수 있으며,
           생성한 콘텐츠는 계속 보관됩니다.
