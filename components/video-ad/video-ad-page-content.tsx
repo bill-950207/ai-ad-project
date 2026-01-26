@@ -86,6 +86,16 @@ export function VideoAdPageContent() {
     }
   }, [])
 
+  // 개별 영상 상태 확인 (외부 서비스 폴링 및 DB 업데이트)
+  const checkVideoStatus = useCallback(async (videoId: string) => {
+    try {
+      await fetch(`/api/video-ads/status/${videoId}`)
+      // 응답 무시 - 상태 API가 DB를 업데이트함
+    } catch (error) {
+      console.error('영상 상태 확인 오류:', error)
+    }
+  }, [])
+
   useEffect(() => {
     fetchVideoAds(currentPage)
   }, [fetchVideoAds, currentPage])
@@ -97,7 +107,7 @@ export function VideoAdPageContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // 진행 중인 상태의 영상들을 폴링
+  // 진행 중인 상태의 영상들을 폴링 (외부 서비스 상태 확인 + DB 업데이트)
   useEffect(() => {
     // 진행 중인 상태인 영상들 필터링 (avatar motion, product ad 상태 포함)
     const inProgressStatuses = [
@@ -111,13 +121,19 @@ export function VideoAdPageContent() {
 
     if (inProgressVideos.length === 0) return
 
-    // 5초마다 목록 새로고침 (폴링 모드로)
-    const intervalId = setInterval(() => {
+    // 5초마다 진행 중인 영상들의 상태 확인 후 목록 새로고침
+    const intervalId = setInterval(async () => {
+      // 각 진행 중인 영상에 대해 상태 API 호출 (병렬 처리)
+      // 상태 API가 외부 서비스를 확인하고 DB를 업데이트함
+      await Promise.all(
+        inProgressVideos.map(video => checkVideoStatus(video.id))
+      )
+      // 상태 업데이트 후 목록 새로고침
       fetchVideoAds(currentPage, true)
     }, 5000)
 
     return () => clearInterval(intervalId)
-  }, [videoAds, fetchVideoAds, currentPage])
+  }, [videoAds, fetchVideoAds, checkVideoStatus, currentPage])
 
   const handleCreateVideoAd = () => {
     setShowTypeModal(true)
