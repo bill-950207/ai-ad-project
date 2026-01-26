@@ -9,10 +9,12 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/db'
 import {
   submitKlingO1ToQueue,
   type KlingO1Duration,
 } from '@/lib/fal/client'
+import { TRANSITION_CREDIT_COST } from '@/lib/credits'
 
 interface SceneKeyframe {
   sceneIndex: number
@@ -54,6 +56,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 전환 개수 계산 (키프레임 수 - 1)
+    const transitionCount = keyframes.length - 1
+    const totalCreditCost = transitionCount * TRANSITION_CREDIT_COST
+
+    // 크레딧 확인
+    const profile = await prisma.profiles.findUnique({
+      where: { id: user.id },
+    })
+
+    if (!profile || (profile.credits ?? 0) < totalCreditCost) {
+      return NextResponse.json(
+        { error: 'Insufficient credits', required: totalCreditCost, available: profile?.credits ?? 0 },
+        { status: 402 }
+      )
+    }
+
     // 키프레임 인덱스 순으로 정렬
     const sortedKeyframes = [...keyframes].sort((a, b) => a.sceneIndex - b.sceneIndex)
 
@@ -87,9 +105,16 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // 크레딧 차감
+    await prisma.profiles.update({
+      where: { id: user.id },
+      data: { credits: { decrement: totalCreditCost } },
+    })
+
     return NextResponse.json({
       transitions: transitionRequests,
       totalTransitions: transitionRequests.length,
+      creditUsed: totalCreditCost,
     })
   } catch (error) {
     console.error('전환 영상 생성 오류:', error)

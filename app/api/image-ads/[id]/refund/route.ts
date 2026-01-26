@@ -7,12 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
-
-/** 이미지 광고 생성 크레딧 비용 (퀄리티별) */
-const IMAGE_AD_CREDIT_COST = {
-  medium: 2,
-  high: 3,
-} as const
+import { IMAGE_AD_CREDIT_COST } from '@/lib/credits'
 
 interface RouteContext {
   params: Promise<{ id: string }>

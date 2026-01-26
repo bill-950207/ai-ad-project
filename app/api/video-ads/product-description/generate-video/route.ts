@@ -11,9 +11,7 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { submitTalkingVideoToQueue } from '@/lib/kie/client'
 import { submitInfiniteTalkToQueue } from '@/lib/wavespeed/client'
-
-/** 제품 설명 영상 크레딧 비용 */
-const PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST = 10
+import { PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST } from '@/lib/credits'
 
 /** 카메라 구도별 프롬프트 설명 */
 const CAMERA_COMPOSITION_PROMPTS: Record<string, string> = {

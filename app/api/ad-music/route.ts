@@ -7,7 +7,9 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/db'
 import { submitAdMusicToQueue } from '@/lib/kie/client'
+import { MUSIC_CREDIT_COST } from '@/lib/credits'
 
 // 요청 바디 타입
 interface AdMusicRequestBody {
@@ -87,6 +89,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 크레딧 확인
+    const profile = await prisma.profiles.findUnique({
+      where: { id: user.id },
+    })
+
+    if (!profile || (profile.credits ?? 0) < MUSIC_CREDIT_COST) {
+      return NextResponse.json(
+        { error: 'Insufficient credits', required: MUSIC_CREDIT_COST, available: profile?.credits ?? 0 },
+        { status: 402 }
+      )
+    }
+
     // 콜백 URL 생성
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://your-app.vercel.app'
     const callbackUrl = `${appUrl}/api/ad-music/callback`
@@ -118,7 +132,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ music })
+    // 크레딧 차감
+    await prisma.profiles.update({
+      where: { id: user.id },
+      data: { credits: { decrement: MUSIC_CREDIT_COST } },
+    })
+
+    return NextResponse.json({ music, creditUsed: MUSIC_CREDIT_COST })
   } catch (error) {
     console.error('광고 음악 생성 오류:', error)
     return NextResponse.json(

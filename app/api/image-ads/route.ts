@@ -15,12 +15,7 @@ import { createClient } from '@/lib/supabase/server'
 import { generateImageAdPrompt, type ImageAdType as GeminiImageAdType } from '@/lib/gemini/client'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-
-/** 이미지 광고 생성 크레딧 비용 (퀄리티별) */
-const IMAGE_AD_CREDIT_COST = {
-  medium: 2,
-  high: 3,
-} as const
+import { IMAGE_AD_CREDIT_COST } from '@/lib/credits'
 
 // 이미지 크기를 Seedream aspect_ratio로 변환
 type ImageAdSize = '1024x1024' | '1536x1024' | '1024x1536'

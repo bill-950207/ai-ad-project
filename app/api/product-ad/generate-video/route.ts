@@ -16,6 +16,7 @@ import {
   type Wan26Duration,
   type Wan26Resolution,
 } from '@/lib/kie/client'
+import { PRODUCT_AD_VIDEO_CREDIT_COST } from '@/lib/credits'
 
 // Gemini 클라이언트 초기화
 const genAI = new GoogleGenAI({
@@ -106,6 +107,31 @@ export async function POST(request: NextRequest) {
     // 생성할 영상 개수 제한 (최대 3개)
     const count = Math.min(Math.max(videoCount, 1), 3)
 
+    // 크레딧 계산
+    const getVideoCreditCost = (): number => {
+      if (videoModel === 'wan2.6') {
+        const durationKey = duration <= 7 ? 5 : duration <= 12 ? 10 : 15
+        return PRODUCT_AD_VIDEO_CREDIT_COST['wan2.6'][durationKey as keyof typeof PRODUCT_AD_VIDEO_CREDIT_COST['wan2.6']]
+      }
+      // seedance (default)
+      const durationKey = duration <= 5 ? 4 : duration <= 10 ? 8 : 12
+      return PRODUCT_AD_VIDEO_CREDIT_COST.seedance[durationKey as keyof typeof PRODUCT_AD_VIDEO_CREDIT_COST.seedance]
+    }
+    const creditCostPerVideo = getVideoCreditCost()
+    const totalCreditCost = creditCostPerVideo * count
+
+    // 크레딧 확인
+    const profile = await prisma.profiles.findUnique({
+      where: { id: user.id },
+    })
+
+    if (!profile || (profile.credits ?? 0) < totalCreditCost) {
+      return NextResponse.json(
+        { error: 'Insufficient credits', required: totalCreditCost, available: profile?.credits ?? 0 },
+        { status: 402 }
+      )
+    }
+
     // 각 영상에 대해 프롬프트 생성 및 요청
     const requests: { requestId: string; prompt: string }[] = []
 
@@ -166,11 +192,18 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // 크레딧 차감
+    await prisma.profiles.update({
+      where: { id: user.id },
+      data: { credits: { decrement: totalCreditCost } },
+    })
+
     return NextResponse.json({
       requests,
       // 하위 호환성을 위해 단일 requestId도 반환
       requestId: requests[0]?.requestId,
       prompt: requests[0]?.prompt,
+      creditUsed: totalCreditCost,
     })
   } catch (error) {
     console.error('영상 생성 오류:', error)

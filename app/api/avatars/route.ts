@@ -13,6 +13,7 @@ import { prisma } from '@/lib/db'
 import { submitToQueue as submitToFalQueue } from '@/lib/fal/client'
 import { submitZImageToQueue } from '@/lib/kie/client'
 import { buildPromptFromOptions, validateAvatarOptions, AvatarOptions } from '@/lib/avatar/prompt-builder'
+import { AVATAR_CREDIT_COST } from '@/lib/credits'
 
 // AI 프로바이더 설정 (기본값: kie, fallback: fal)
 const AI_PROVIDER = process.env.AVATAR_AI_PROVIDER || 'kie'
@@ -149,9 +150,9 @@ export async function POST(request: NextRequest) {
       where: { id: user.id },
     })
 
-    if (!profile || (profile.credits ?? 0) < 1) {
+    if (!profile || (profile.credits ?? 0) < AVATAR_CREDIT_COST) {
       return NextResponse.json(
-        { error: 'Insufficient credits' },
+        { error: 'Insufficient credits', required: AVATAR_CREDIT_COST, available: profile?.credits ?? 0 },
         { status: 402 }  // 402 Payment Required
       )
     }
@@ -173,10 +174,10 @@ export async function POST(request: NextRequest) {
 
     // 트랜잭션으로 크레딧 차감 및 아바타 레코드 생성
     const avatar = await prisma.$transaction(async (tx) => {
-      // 크레딧 1 차감
+      // 크레딧 차감
       await tx.profiles.update({
         where: { id: user.id },
-        data: { credits: { decrement: 1 } },
+        data: { credits: { decrement: AVATAR_CREDIT_COST } },
       })
 
       // 아바타 레코드 생성

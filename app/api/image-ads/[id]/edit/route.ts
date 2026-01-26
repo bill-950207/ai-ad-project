@@ -13,12 +13,7 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { mergeEditPrompt } from '@/lib/gemini/client'
 import { submitSeedreamEditToQueue, type SeedreamAspectRatio } from '@/lib/fal/client'
-
-/** 이미지 편집 크레딧 비용 (퀄리티별) */
-const IMAGE_EDIT_CREDIT_COST = {
-  medium: 2,
-  high: 3,
-} as const
+import { IMAGE_EDIT_CREDIT_COST } from '@/lib/credits'
 
 interface RouteContext {
   params: Promise<{ id: string }>
