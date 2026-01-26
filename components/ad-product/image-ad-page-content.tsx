@@ -423,7 +423,7 @@ export function ImageAdPageContent() {
                           <img
                             src={url}
                             alt={`Generated ad ${idx + 1}`}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain"
                           />
                         </div>
                       ))}
