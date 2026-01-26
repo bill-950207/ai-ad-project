@@ -31,11 +31,19 @@ export interface AdElementOptions {
   colorTone: string         // 색상 톤
 }
 
+// AI 추천 영상 설정
+export interface RecommendedVideoSettings {
+  aspectRatio: '16:9' | '9:16' | '1:1'
+  sceneCount: number
+  sceneDurations: number[]
+}
+
 // 시나리오 정보
 export interface ScenarioInfo {
   title: string
   description: string
   elements: AdElementOptions
+  videoSettings?: RecommendedVideoSettings  // AI 추천 영상 설정
   scenes?: SceneInfo[]          // 개별 씬 배열 (Kling O1 멀티씬용)
   firstScenePrompt?: string     // LLM이 생성한 첫 씬 프롬프트 (레거시)
   videoPrompt?: string          // LLM이 생성한 영상 프롬프트 (레거시)
@@ -116,6 +124,7 @@ export interface ProductAdWizardState {
   multiShot: boolean  // 멀티샷 모드
   videoCount: number  // 생성할 영상 개수 (1-3)
   videoModel: VideoModel  // 영상 생성 모델
+  isVideoSettingsFromScenario: boolean  // AI 시나리오에서 가져온 설정인지 여부
   isGeneratingScenes: boolean
   firstSceneOptions: FirstSceneOption[]
   selectedSceneIndex: number | null
@@ -176,6 +185,8 @@ export interface ProductAdWizardActions {
   setMultiShot: (enabled: boolean) => void
   setVideoCount: (count: number) => void
   setVideoModel: (model: VideoModel) => void
+  applyVideoSettingsFromScenario: (settings: RecommendedVideoSettings) => void  // 시나리오 영상 설정 적용
+  unlockVideoSettings: () => void  // 영상 설정 잠금 해제
   setIsGeneratingScenes: (loading: boolean) => void
   setFirstSceneOptions: (options: FirstSceneOption[]) => void
   updateFirstSceneOption: (index: number, updates: Partial<FirstSceneOption>) => void
@@ -277,6 +288,7 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
   const [multiShot, setMultiShot] = useState(false)
   const [videoModel, setVideoModel] = useState<VideoModel>('vidu-q2')  // 기본 Vidu Q2
   const [videoCount, setVideoCount] = useState(1)
+  const [isVideoSettingsFromScenario, setIsVideoSettingsFromScenario] = useState(false)  // AI 시나리오 영상 설정 적용 여부
   const [isGeneratingScenes, setIsGeneratingScenes] = useState(false)
   const [firstSceneOptions, setFirstSceneOptions] = useState<FirstSceneOption[]>([])
   const [selectedSceneIndex, setSelectedSceneIndex] = useState<number | null>(null)
@@ -348,6 +360,19 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
       }
       return updated
     })
+  }, [])
+
+  // AI 시나리오에서 영상 설정 적용
+  const applyVideoSettingsFromScenario = useCallback((settings: RecommendedVideoSettings) => {
+    setAspectRatio(settings.aspectRatio)
+    setSceneCountState(settings.sceneCount)
+    setSceneDurations(settings.sceneDurations)
+    setIsVideoSettingsFromScenario(true)
+  }, [])
+
+  // 영상 설정 잠금 해제 (사용자가 직접 수정할 수 있도록)
+  const unlockVideoSettings = useCallback(() => {
+    setIsVideoSettingsFromScenario(false)
   }, [])
 
   // ============================================================
@@ -728,6 +753,7 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
     setMultiShot(false)
     setVideoCount(1)
     setVideoModel('vidu-q2')
+    setIsVideoSettingsFromScenario(false)
     setIsGeneratingScenes(false)
     setFirstSceneOptions([])
     setSelectedSceneIndex(null)
@@ -768,6 +794,7 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
     multiShot,
     videoCount,
     videoModel,
+    isVideoSettingsFromScenario,
     isGeneratingScenes,
     firstSceneOptions,
     selectedSceneIndex,
@@ -810,6 +837,8 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
     setMultiShot,
     setVideoCount,
     setVideoModel,
+    applyVideoSettingsFromScenario,
+    unlockVideoSettings,
     setIsGeneratingScenes,
     setFirstSceneOptions,
     updateFirstSceneOption,

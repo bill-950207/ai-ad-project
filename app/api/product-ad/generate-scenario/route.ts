@@ -53,10 +53,18 @@ interface ScenarioElements {
   colorTone: string
 }
 
+// 영상 설정 추천
+interface VideoSettings {
+  aspectRatio: '16:9' | '9:16' | '1:1'
+  sceneCount: number
+  sceneDurations: number[]
+}
+
 interface Scenario {
   title: string
   description: string
   elements: ScenarioElements
+  videoSettings: VideoSettings
 }
 
 export async function POST(request: NextRequest) {
@@ -117,7 +125,7 @@ export async function POST(request: NextRequest) {
             description: '생성된 시나리오 배열',
             items: {
               type: Type.OBJECT,
-              required: ['title', 'description', 'elements'],
+              required: ['title', 'description', 'elements', 'videoSettings'],
               properties: {
                 title: {
                   type: Type.STRING,
@@ -137,6 +145,27 @@ export async function POST(request: NextRequest) {
                     productPlacement: { type: Type.STRING, description: '제품 배치/연출' },
                     lighting: { type: Type.STRING, description: '조명 스타일' },
                     colorTone: { type: Type.STRING, description: '색상 톤' },
+                  },
+                },
+                videoSettings: {
+                  type: Type.OBJECT,
+                  description: '영상 설정 추천',
+                  required: ['aspectRatio', 'sceneCount', 'sceneDurations'],
+                  properties: {
+                    aspectRatio: {
+                      type: Type.STRING,
+                      description: '영상 비율 (16:9, 9:16, 1:1)',
+                      enum: ['16:9', '9:16', '1:1'],
+                    },
+                    sceneCount: {
+                      type: Type.INTEGER,
+                      description: '씬 개수 (2-8)',
+                    },
+                    sceneDurations: {
+                      type: Type.ARRAY,
+                      description: '각 씬별 영상 길이 (초, 1-8초)',
+                      items: { type: Type.INTEGER },
+                    },
                   },
                 },
               },
@@ -242,12 +271,33 @@ Product Image: [Analyze the provided image for visual characteristics]
 6. colorTone (색상 톤): What color palette should dominate?
    - Options: 밝고 화사한, 따뜻한 톤, 차가운 톤, 모노톤, 비비드 컬러, 파스텔 톤, 다크 톤, etc.
 
+=== VIDEO SETTINGS TO RECOMMEND ===
+For each scenario, also recommend optimal video settings:
+
+7. aspectRatio (영상 비율): What aspect ratio suits the scenario?
+   - "16:9": 가로형 (유튜브, 웹사이트) - 풍경, 넓은 배경이 필요한 경우
+   - "9:16": 세로형 (릴스, 숏츠, 틱톡) - 모바일 중심, 빠른 소비 콘텐츠
+   - "1:1": 정방형 (인스타그램 피드) - 균형잡힌 구도, 범용성
+
+8. sceneCount (씬 개수): How many scenes for the scenario? (2-8)
+   - Consider the product complexity and story to tell
+   - Simple products: 2-3 scenes
+   - Medium complexity: 3-5 scenes
+   - Complex/premium products: 5-8 scenes
+
+9. sceneDurations (각 씬별 영상 길이): Duration in seconds for each scene (1-8초 each)
+   - Fast-paced, trendy ads: 2-3초 per scene
+   - Standard product showcase: 3-5초 per scene
+   - Luxury/premium feel: 4-6초 per scene
+   - Must match sceneCount (e.g., 3 scenes = [3, 4, 3])
+
 === GUIDELINES ===
 1. Each scenario should be distinctly different (e.g., one premium, one casual, one trendy)
 2. All elements should harmonize with each other
 3. Consider the product category and target audience
 4. Each scenario needs a creative title and brief description
 5. Provide reasons for the element choices in the first scenario
+6. Video settings should match the scenario mood and target platform
 
 Create ${count} diverse scenarios that will appeal to different customer segments.`
 }
@@ -296,6 +346,11 @@ Adapt the reference video style for this product while:
 4. productPlacement (제품 배치/연출)
 5. lighting (조명 스타일)
 6. colorTone (색상 톤)
+
+=== VIDEO SETTINGS TO RECOMMEND ===
+7. aspectRatio: "16:9" (가로형), "9:16" (세로형), or "1:1" (정방형)
+8. sceneCount: Number of scenes (2-8)
+9. sceneDurations: Duration for each scene in seconds (1-8초 each, array matching sceneCount)
 
 Create 1 optimized scenario that combines the reference style with this product's unique characteristics.
 Explain why each element was chosen (kept from reference or adapted).`

@@ -236,6 +236,7 @@ function SortableVideoCard({
     <div
       ref={setNodeRef}
       style={style}
+      className="w-full"
     >
       <div className={`bg-secondary/20 rounded-xl overflow-hidden border-2 transition-all ${
         isDragging ? 'ring-2 ring-primary shadow-lg border-primary' :
@@ -275,17 +276,17 @@ function SortableVideoCard({
           )}
         </div>
 
-        {/* 영상 영역 */}
+        {/* 영상 영역 - 고정 비율 컨테이너 */}
         <div className={`relative ${getAspectRatioClass(aspectRatio)} bg-black`}>
           {isCompleted ? (
             <video
               src={sceneVideo.videoUrl}
               controls
-              className="w-full h-full object-contain"
+              className="absolute inset-0 w-full h-full object-contain"
               preload="metadata"
             />
           ) : isGenerating || isRegenerating ? (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-secondary/30 to-secondary/50">
+            <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-secondary/30 to-secondary/50">
               <div className="relative">
                 <Loader2 className="w-10 h-10 animate-spin text-primary" />
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -297,7 +298,7 @@ function SortableVideoCard({
               </span>
             </div>
           ) : isFailed ? (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-destructive/5 to-destructive/10">
+            <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-destructive/5 to-destructive/10">
               <AlertCircle className="w-10 h-10 text-destructive mb-2" />
               <span className="text-sm text-destructive">생성 실패</span>
               <button
@@ -1272,7 +1273,7 @@ export function WizardStep6() {
                         key={videoStatus.requestId}
                         onClick={() => isCompleted && completedIndex >= 0 && setSelectedVideoIndex(completedIndex)}
                         disabled={!isCompleted}
-                        className={`relative h-32 bg-black rounded-lg overflow-hidden border-2 transition-all ${
+                        className={`relative w-full ${getAspectRatioClass(aspectRatio)} bg-black rounded-lg overflow-hidden border-2 transition-all ${
                           isCompleted && completedIndex === selectedVideoIndex
                             ? 'border-primary ring-2 ring-primary/20'
                             : isCompleted
@@ -1283,16 +1284,16 @@ export function WizardStep6() {
                         {isCompleted ? (
                           <video
                             src={videoStatus.resultUrl}
-                            className="w-full h-full object-contain"
+                            className="absolute inset-0 w-full h-full object-contain"
                             muted
                           />
                         ) : isGenerating ? (
-                          <div className="w-full h-full flex flex-col items-center justify-center bg-secondary/50">
+                          <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-secondary/50">
                             <Loader2 className="w-6 h-6 animate-spin text-primary mb-2" />
                             <span className="text-xs text-muted-foreground">생성 중...</span>
                           </div>
                         ) : isFailed ? (
-                          <div className="w-full h-full flex flex-col items-center justify-center bg-destructive/10">
+                          <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-destructive/10">
                             <AlertCircle className="w-6 h-6 text-destructive mb-2" />
                             <span className="text-xs text-destructive">실패</span>
                           </div>

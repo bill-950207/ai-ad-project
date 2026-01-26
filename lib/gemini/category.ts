@@ -4,7 +4,7 @@
 
 import { GenerateContentConfig, MediaResolution, ThinkingLevel, Type } from '@google/genai'
 import { genAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
-import { BRAND_PRESERVATION_INSTRUCTION, PRODUCT_NEGATIVE_PROMPT } from '@/lib/prompts/common'
+import { BRAND_PRESERVATION_INSTRUCTION, PRODUCT_NEGATIVE_PROMPT, NO_LOGO_PRODUCT_INSTRUCTION, NO_LOGO_PROMPT_SUFFIX, NO_OVERLAY_ELEMENTS, OVERLAY_NEGATIVE_PROMPT } from '@/lib/prompts/common'
 import type {
   ImageAdType,
   RecommendedOptionsInput,
@@ -197,17 +197,30 @@ For recommendedAvatarStyle, provide:
 You MUST provide recommendedAvatarStyle for each scenario with both avatarPrompt and avatarDescription.`
   }
 
-  const prompt = `You are an expert advertising creative director. Create 3 DISTINCT advertising scenario recommendations that target DIFFERENT audiences.
+  const prompt = `You are an expert advertising creative director. Create 3 DISTINCT advertising scenarios customized specifically for this product.
 
 OUTPUT LANGUAGE: ${outputLanguageInstructions[language] || outputLanguageInstructions.ko}
 
-=== STEP 1: ANALYZE THE PRODUCT IMAGE ===
-Examine the product image carefully and identify:
-1. PRODUCT CATEGORY: (cosmetics, skincare, electronics, food, fashion accessory, beverage, household, etc.)
-2. PRICE POSITIONING: (luxury/premium, mid-range, budget-friendly) based on packaging quality and design sophistication
-3. VISUAL CHARACTERISTICS: Primary colors, materials (glass/matte/glossy/metallic), shape, size
-4. BRAND PERSONALITY: (sophisticated, youthful, natural/organic, professional, playful, minimalist)
-5. TARGET HINTS: Who would typically buy this? (age range, lifestyle indicators from design)
+=== STEP 1: DEEP PRODUCT ANALYSIS ===
+Examine the product image and information carefully. Identify:
+
+1. PRODUCT FUNDAMENTALS:
+   - Category & sub-category (e.g., "anti-aging serum" not just "skincare")
+   - Price tier indication: (budget/mass-market, mid-range, premium/luxury) based on packaging quality
+
+2. VISUAL IDENTITY:
+   - Primary colors, materials, textures (glass/plastic/matte/glossy/metallic)
+   - Design language (minimalist/ornate/playful/clinical/organic)
+   - Packaging sophistication level
+
+3. BRAND SIGNALS:
+   - Brand personality from design (sophisticated, youthful, natural, professional, playful)
+   - Target market hints from packaging choices
+   - Quality positioning indicators
+
+4. UNIQUE SELLING PROPOSITION HINTS:
+   - What problem does this product likely solve?
+   - What emotional benefit does it promise?
 
 === PRODUCT INFO ===
 Name: ${input.productName || 'Not provided'}
@@ -220,38 +233,41 @@ ${input.adType}: ${adTypeDescriptions[input.adType]}
 === AVAILABLE OPTIONS ===
 ${groupsDescription}
 
-=== STEP 2: CREATE 3 DISTINCT SCENARIOS ===
+=== STEP 2: DYNAMIC SCENARIO GENERATION ===
 
-**SCENARIO 1 - MAINSTREAM (메인스트림)**
-- Target: Primary, most obvious audience for this product
-- Style: Approachable, trustworthy, product-benefit focused
-- Goal: Appeal to the widest relevant audience
+Based on your product analysis, create 3 DISTINCT advertising scenarios.
 
-**SCENARIO 2 - PREMIUM (프리미엄)**
-- Target: Aspirational, upscale positioning
-- Style: Sophisticated, elegant, elevated lifestyle aesthetic
-- Goal: Position product as premium/luxury choice
+**NAMING REQUIREMENT:**
+- Create unique creative concept names (8-15 characters)
+- NOT generic labels like "Premium", "Mainstream", "Trendy", "Basic", "Standard"
+- Names should reflect the actual concept: "Morning Glow", "City Confidence", "Self-Care Ritual", "Gift of Beauty", "Daily Essential"
 
-**SCENARIO 3 - TRENDY (트렌디)**
-- Target: Younger, trend-conscious, social-media-savvy audience
-- Style: Dynamic, authentic, SNS-friendly, relatable
-- Goal: Create shareable, modern content
+**TARGETING REQUIREMENT:**
+- Each scenario targets a specific audience segment that makes sense for THIS product
+- Don't force premium positioning on budget products
+- Don't force youthful positioning on products targeting mature audiences
+- Consider the product's actual price point and brand positioning
 
-=== CRITICAL REQUIREMENTS ===
-1. Each scenario MUST genuinely differ in:
-   - Target audience (age, lifestyle, values)
-   - Visual mood and atmosphere
-   - Lighting and color temperature
-   - Setting/background choice
-   - Model expression and energy level
+**DIVERSITY REQUIREMENT:**
+The 3 scenarios MUST genuinely differ in:
+- Target audience (age, lifestyle, values, income level)
+- Emotional tone (inspirational, practical, playful, sophisticated, warm)
+- Visual atmosphere (bright/dark, warm/cool, minimal/rich)
+- Setting/context (home, outdoor, professional, social)
+- Key message angle (benefit-focused, lifestyle-focused, emotional-focused)
 
-2. Match options to product characteristics from image analysis:
-   - LUXURY PRODUCTS → luxury/marble backgrounds, soft/dramatic lighting, elegant mood
-   - YOUTHFUL PRODUCTS → urban/nature backgrounds, natural/golden lighting, vibrant mood
-   - NATURAL/ORGANIC PRODUCTS → nature/minimal backgrounds, soft lighting, calm/fresh mood
-   - TECH/MODERN PRODUCTS → modern/studio backgrounds, high-key/cool lighting, sleek mood
+**QUALITY REQUIREMENT:**
+- Concept authenticity: Scenario should feel natural for the product
+- Option coherence: All options (mood, lighting, background, etc.) should work together harmoniously
+- Target alignment: Options should match target audience expectations
 
-3. Title: 8-15 characters (compelling, descriptive)
+=== PRODUCT-APPROPRIATE CONSTRAINTS ===
+- Budget-friendly products: Avoid overly luxury/aspirational positioning
+- Premium products: At least one scenario should reflect premium positioning
+- Age-specific products: Scenarios should respect that age range
+- Gender-specific products: Maintain gender appropriateness
+
+3. Title: 8-15 characters (creative, concept-reflecting)
 4. Description: 30-50 characters (explain target & concept clearly)
 5. Provide CLEAR REASONING for each option based on product analysis
 ${avatarContext}
@@ -275,7 +291,7 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
               title: { type: Type.STRING },
               description: { type: Type.STRING },
               targetAudience: { type: Type.STRING },
-              scenarioType: { type: Type.STRING },
+              conceptType: { type: Type.STRING },
               recommendations: {
                 type: Type.ARRAY,
                 items: {
@@ -330,7 +346,7 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
         title: string
         description: string
         targetAudience?: string
-        scenarioType?: string
+        conceptType?: string
         recommendations: Array<{ key: string; value: string; customText?: string; reason: string }>
         overallStrategy: string
         suggestedPrompt?: string
@@ -351,7 +367,7 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
           title: scenario.title,
           description: scenario.description,
           targetAudience: scenario.targetAudience,
-          scenarioType: scenario.scenarioType as 'mainstream' | 'premium' | 'trendy' | undefined,
+          conceptType: scenario.conceptType,
           recommendedOptions,
           overallStrategy: scenario.overallStrategy,
           suggestedPrompt: scenario.suggestedPrompt,
@@ -420,29 +436,29 @@ function formatAvatarBodyCharacteristics(characteristics: ImageAdPromptInput['av
     parts.push(heightMap[characteristics.height])
   }
 
-  // 체형 (bodyType) - 성별에 따라 구체적인 신체 비율 사용
+  // 체형 (bodyType) - 자연스러운 표현 + 가슴 사이즈
   const femaleBodyTypeMap: Record<string, string> = {
-    slim: 'slim slender body with 32-24-34 inch proportions, narrow shoulders, small bust, thin waist, lean hips',
-    average: 'average female body with 34-26-36 inch proportions, moderate bust, defined waist, balanced hips',
-    athletic: 'athletic toned female body with 34-25-35 inch proportions, firm muscles, toned abs, strong legs, defined arms',
-    curvy: 'hourglass figure body with 36-24-36 inch proportions, full bust (D-cup), very slim tiny waist, shapely round hips, slender toned legs',
-    plussize: 'plus-size female body with 42-36-46 inch proportions, very large bust, soft rounded belly, wide hips, thick thighs',
+    slim: 'slim slender feminine figure with small bust (A-B cup)',
+    average: 'average feminine build with moderate bust (B-C cup)',
+    athletic: 'fit athletic feminine build with firm bust (B-C cup)',
+    curvy: 'naturally curvy feminine silhouette with full bust (C-D cup)',
+    plussize: 'full-figured feminine body with large bust (D-DD cup)',
   }
 
   const maleBodyTypeMap: Record<string, string> = {
-    slim: 'slim lean male body with narrow shoulders, thin arms, flat chest, slim waist, lean legs',
-    average: 'average male body with moderate shoulders, normal chest, slight belly, standard proportions',
-    athletic: 'athletic muscular male body with broad shoulders (18+ inches), defined chest muscles, visible six-pack abs, V-shaped torso, muscular arms and legs',
-    curvy: 'stocky male body with broad frame, thick chest, solid midsection, strong thick legs',
-    plussize: 'plus-size male body with large frame, broad chest, round belly, thick arms and legs',
+    slim: 'slim lean masculine build',
+    average: 'average masculine build with standard proportions',
+    athletic: 'fit athletic masculine build with toned muscles',
+    curvy: 'solid masculine build with sturdy frame',
+    plussize: 'large masculine build with full figure',
   }
 
   const defaultBodyTypeMap: Record<string, string> = {
-    slim: 'slim slender build with lean proportions',
+    slim: 'slim slender build',
     average: 'average build with balanced proportions',
-    athletic: 'athletic toned build with defined muscles',
-    curvy: 'curvy build with pronounced proportions',
-    plussize: 'plus-size build with fuller figure',
+    athletic: 'fit athletic build with toned physique',
+    curvy: 'naturally curvy build with soft proportions',
+    plussize: 'full-figured build with soft curves',
   }
 
   if (characteristics.bodyType) {
@@ -472,25 +488,131 @@ export async function generateImageAdPrompt(input: ImageAdPromptInput): Promise<
     ? `\n\n=== AVATAR BODY CONSISTENCY ===\nWhen including the model/avatar in the image, maintain consistent body characteristics: ${avatarBodyDescription}.\nThe model's body proportions should match these characteristics throughout the image.`
     : ''
 
-  const prompt = `You are an expert advertising photographer. Generate a Seedream 4.5 optimized prompt for ${input.adType} advertisement.
+  // 제품 카테고리 추상화 (제품명 대신 사용)
+  const productCategory = input.productDescription?.includes('립') || input.productDescription?.includes('tint') || input.productDescription?.includes('립틴트')
+    ? 'cosmetic product (lip tint)'
+    : input.productDescription?.includes('스킨') || input.productDescription?.includes('화장품') || input.productDescription?.includes('skincare')
+      ? 'skincare product'
+      : input.productDescription?.includes('신발') || input.productDescription?.includes('shoes')
+        ? 'footwear product'
+        : input.productDescription?.includes('옷') || input.productDescription?.includes('의류') || input.productDescription?.includes('clothing')
+          ? 'clothing product'
+          : 'product'
 
-Product: ${input.productName || 'Product'} - ${input.productDescription || ''}
+  // 아바타 성별 추상화 (상세 묘사 대신 사용)
+  const avatarGender = input.avatarCharacteristics?.gender === 'female' ? 'female model' : input.avatarCharacteristics?.gender === 'male' ? 'male model' : 'model'
+
+  // 이미지 순서 안내 (아바타 먼저, 제품 나중)
+  const hasAvatar = input.avatarImageUrls && input.avatarImageUrls.length > 0
+  const hasProduct = !!input.productImageUrl
+  let figureGuide = ''
+  if (hasAvatar && hasProduct) {
+    figureGuide = `\n=== ATTACHED IMAGES ===
+- Figure 1: Avatar/Model reference image (${avatarGender})
+- Figure 2: Product reference image (${productCategory})
+
+⚠️ CRITICAL REFERENCE RULES:
+- When referring to the avatar/model, use ONLY "the ${avatarGender} from Figure 1" or "the model in Figure 1"
+- When referring to the product, use ONLY "the ${productCategory} from Figure 2" or "the product in Figure 2"
+- DO NOT describe physical features of the model in detail (no hair color, skin tone, body shape descriptions)
+- DO NOT mention product name or brand - only use category (e.g., "the cosmetic product" not "Waterism Glow Mini Tint")
+- Keep descriptions ABSTRACT: only gender for model, only category for product`
+  } else if (hasAvatar) {
+    figureGuide = `\n=== ATTACHED IMAGES ===
+- Figure 1: Avatar/Model reference image (${avatarGender})
+
+⚠️ CRITICAL: Refer to model as "the ${avatarGender} from Figure 1" only. DO NOT describe physical features in detail.`
+  } else if (hasProduct) {
+    figureGuide = `\n=== ATTACHED IMAGES ===
+- Figure 1: Product reference image (${productCategory})
+
+⚠️ CRITICAL: Refer to product as "the ${productCategory} from Figure 1" only. DO NOT mention product name or brand.`
+  }
+
+  const prompt = `You are an expert advertising photographer creating a HIGH-END COMMERCIAL ADVERTISEMENT image. Generate a Seedream 4.5 optimized prompt for ${input.adType} advertisement.
+
+=== AD TYPE DESCRIPTION ===
+${input.adType}: ${adTypeDescriptions[input.adType]}
+${figureGuide}
+
+Product Category: ${productCategory}
 Options: ${JSON.stringify(input.selectedOptions)}
 ${input.additionalPrompt ? `Additional: ${input.additionalPrompt}` : ''}${avatarBodyInstruction}
 
-=== CRITICAL: LOGO & TEXT RULES ===
+=== COMMERCIAL ADVERTISEMENT STYLE (CRITICAL) ===
+This image MUST look like a professional advertisement from a major brand campaign:
+
+1. LIGHTING: Professional studio-quality lighting effect - soft key light with subtle fill, creating dimensionality and highlighting the product. Mention "commercial photography lighting" or "beauty lighting" effect.
+
+2. MODEL EXPRESSION & POSE (if applicable):
+   - Confident, engaging expression with genuine emotion
+   - Natural but polished pose that draws attention to the product
+   - Eyes should convey trust and appeal
+   - Slight smile or pleasant expression that feels authentic
+
+3. PRODUCT PRESENTATION:
+   - Product should be the HERO of the image
+   - Product placement should feel intentional and aesthetically pleasing
+   - Product should be well-lit and clearly visible
+   - Include "product photography" or "commercial product shot" style
+
+4. OVERALL AESTHETIC:
+   - Clean, premium, aspirational feel
+   - Magazine-worthy composition
+   - High-end brand advertisement quality
+   - Include: "commercial advertisement", "brand campaign style", "editorial quality"
+
+5. COLOR & ATMOSPHERE:
+   - Rich, vibrant colors with professional color grading
+   - Cohesive color palette that complements the product
+   - Premium, polished atmosphere
+
+=== CRITICAL FIRST STEP: ANALYZE PRODUCT FOR LOGOS ===
+Before generating the prompt, carefully examine the product reference image:
+1. Does the product have ANY visible logos, text, labels, or brand names? (Answer YES or NO)
+2. If YES: Note exactly what text/logos are visible and where
+3. If NO: The product is clean/unbranded - this is IMPORTANT information
+
+=== LOGO & TEXT RULES (STRICTLY ENFORCE) ===
 ${BRAND_PRESERVATION_INSTRUCTION}
 
-IMPORTANT PROMPT GENERATION RULES:
-- The generated prompt MUST include: "do not add any new text, logos, or written elements to the image"
-- If the product reference image shows logos/labels, add: "preserve existing product logos and labels exactly as shown"
-- If the product reference image has NO visible logos/labels, do NOT mention preserving logos - just ensure no new ones are added
-- Never generate fake or invented brand names, logos, or text
+=== PROMPT GENERATION RULES BASED ON LOGO ANALYSIS ===
+
+IF productHasLogo = true (product HAS visible logos/text):
+- Add this exact phrase: "preserve existing product branding, logos and labels exactly as shown in reference image"
+- Do not describe the logos in detail - just preserve them
+
+IF productHasLogo = false (product has NO logos/text - clean product):
+- Add this exact phrase: "the product is clean with no logos or text - keep the product surface completely unbranded, no fake brand names, no invented logos, no added text of any kind"
+- This is CRITICAL for unbranded products
+
+ALWAYS include: "do not add any new text, watermarks, or written elements to the image"
 
 === NEGATIVE ELEMENTS (things to avoid in the image) ===
 ${PRODUCT_NEGATIVE_PROMPT}
+${OVERLAY_NEGATIVE_PROMPT}
 
-Output JSON: { "optimizedPrompt": "English 60-100 words, must include logo preservation instruction AND 'no new text or logos' instruction", "koreanDescription": "Korean summary" }`
+=== CRITICAL: NO GRAPHIC OVERLAYS (ABSOLUTE REQUIREMENT) ===
+${NO_OVERLAY_ELEMENTS}
+
+The generated image must be a PURE PHOTOGRAPH only:
+- NO logo banners at top or bottom
+- NO text overlays or captions
+- NO barcodes or QR codes
+- NO product tags or price labels
+- NO decorative frames or borders
+- NO watermarks or stamps
+- NO promotional graphics
+- NO UI elements of any kind
+
+The image should look like a raw camera photograph, not a finished advertisement with added graphics.
+
+Output JSON format:
+{
+  "productHasLogo": true/false,  // Based on your analysis of the product image
+  "optimizedPrompt": "English 80-120 words. ⚠️ CRITICAL: Use ONLY 'the model from Figure 1' and 'the product from Figure 2' to reference images. NO detailed physical descriptions of model (no hair color, skin tone, body features). NO product names or brands - only category (cosmetic, skincare, footwear, etc.). MUST include: (1) commercial advertisement style keywords, (2) professional lighting description, (3) product as hero element, (4) the appropriate logo instruction based on productHasLogo value. End with: professional commercial photography, brand campaign quality, high-end advertisement",
+  "koreanDescription": "Korean summary"
+}`
 
   const config: GenerateContentConfig = {
     thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
@@ -525,10 +647,22 @@ Output JSON: { "optimizedPrompt": "English 60-100 words, must include logo prese
   })
 
   try {
-    return JSON.parse(response.text || '') as ImageAdPromptResult
+    const result = JSON.parse(response.text || '') as ImageAdPromptResult
+
+    // 모든 프롬프트에 오버레이 방지 문구 강제 추가
+    const overlayPrevention = 'Generate a pure photograph only with absolutely no graphic overlays, no logo banners, no text overlays, no barcodes, no product tags, no frames or borders anywhere in the image.'
+
+    // productHasLogo가 false인 경우, 로고 방지 문구도 추가
+    if (result.productHasLogo === false) {
+      result.optimizedPrompt = `${result.optimizedPrompt}. ${NO_LOGO_PROMPT_SUFFIX} ${overlayPrevention}`
+    } else {
+      result.optimizedPrompt = `${result.optimizedPrompt}. ${overlayPrevention}`
+    }
+
+    return result
   } catch {
     return {
-      optimizedPrompt: 'Professional product advertisement. High quality, photorealistic.',
+      optimizedPrompt: `Professional product advertisement. High quality, photorealistic. ${NO_LOGO_PROMPT_SUFFIX} Generate a pure photograph only with absolutely no graphic overlays, no logo banners, no text overlays, no barcodes, no product tags, no frames or borders anywhere in the image.`,
       koreanDescription: '제품 광고 이미지',
     }
   }

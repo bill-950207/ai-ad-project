@@ -59,6 +59,8 @@ export async function POST(request: NextRequest) {
       language = 'ko',  // 대본 생성 언어 (기본값: 한국어)
       // AI 아바타 옵션 (avatarId가 'ai-generated'일 때)
       aiAvatarOptions,
+      // 비디오 타입 (UGC, podcast, expert)
+      videoType = 'UGC',
     } = body
 
     if (!avatarId) {
@@ -126,6 +128,7 @@ export async function POST(request: NextRequest) {
       productInfo: productInfo.trim(),
       durationSeconds: durationSeconds || 30,
       language,  // 대본 생성 언어
+      videoType,  // 비디오 타입 (UGC, podcast, expert)
       // AI 의상 추천 요청 시 추가 파라미터
       requestOutfitRecommendation: outfitMode === 'ai_recommend',
       avatarDescription: outfitMode === 'ai_recommend' ? avatarDescription : undefined,
@@ -141,11 +144,15 @@ export async function POST(request: NextRequest) {
       ? scriptsResult.recommendedOutfit.description
       : outfitMode === 'custom' ? outfitCustom : undefined
 
+    // "말로만 설명" 포즈일 때는 제품 이미지 제외 (아바타만 등장)
+    const isTalkingOnlyPose = modelPose === 'talking-only'
+    const effectiveProductImageUrl = isTalkingOnlyPose ? undefined : productImageUrl
+
     if (isAiGeneratedAvatar) {
       // AI 아바타: generateAiAvatarPrompt 사용 (아바타 묘사 포함 프롬프트 생성)
       const aiAvatarResult = await generateAiAvatarPrompt({
         productInfo: productInfo.trim(),
-        productImageUrl,
+        productImageUrl: effectiveProductImageUrl,
         locationPrompt: locationPrompt?.trim() || undefined,
         cameraComposition: cameraComposition as CameraCompositionType | undefined,
         modelPose,
@@ -155,21 +162,23 @@ export async function POST(request: NextRequest) {
         targetAge: aiAvatarOptions?.targetAge,
         style: aiAvatarOptions?.style,
         ethnicity: aiAvatarOptions?.ethnicity,
+        videoType,  // 비디오 타입 (UGC, podcast, expert)
       })
       firstFramePrompt = aiAvatarResult.prompt
       locationDescription = aiAvatarResult.locationDescription
-      console.log('AI 아바타 프롬프트 생성:', { prompt: firstFramePrompt, avatar: aiAvatarResult.avatarDescription })
+      console.log('AI 아바타 프롬프트 생성:', { prompt: firstFramePrompt, avatar: aiAvatarResult.avatarDescription, videoType, isTalkingOnlyPose })
     } else {
       // 기존 아바타: generateFirstFramePrompt 사용
       const firstFrameResult = await generateFirstFramePrompt({
         productInfo: productInfo.trim(),
         avatarImageUrl: finalAvatarImageUrl!,
         locationPrompt: locationPrompt?.trim() || undefined,
-        productImageUrl,
+        productImageUrl: effectiveProductImageUrl,
         cameraComposition,
         modelPose,
         outfitPreset: outfitMode === 'preset' ? outfitPreset : undefined,
         outfitCustom: effectiveOutfitCustom,
+        videoType,  // 비디오 타입 (UGC, podcast, expert)
       })
       firstFramePrompt = firstFrameResult.prompt
       locationDescription = firstFrameResult.locationDescription
@@ -180,8 +189,8 @@ export async function POST(request: NextRequest) {
     let submitResults: SubmitResult[]
 
     if (isAiGeneratedAvatar) {
-      // AI 아바타: Seedream 4.5 Edit 사용 (제품 이미지를 참조로 활용)
-      const aiAvatarImageUrls: string[] = productImageUrl ? [productImageUrl] : []
+      // AI 아바타: Seedream 4.5 Edit 사용 (제품 이미지를 참조로 활용, talking-only일 때는 제외)
+      const aiAvatarImageUrls: string[] = effectiveProductImageUrl ? [effectiveProductImageUrl] : []
 
       const submitAiAvatarFirstFrame = async (): Promise<SubmitResult> => {
         try {
@@ -206,10 +215,10 @@ export async function POST(request: NextRequest) {
         submitAiAvatarFirstFrame(),
       ])
     } else {
-      // 기존 아바타: Seedream 4.5 또는 Kie.ai 사용
+      // 기존 아바타: Seedream 4.5 또는 Kie.ai 사용 (talking-only일 때는 제품 이미지 제외)
       const imageUrls: string[] = [finalAvatarImageUrl!]
-      if (productImageUrl) {
-        imageUrls.push(productImageUrl)
+      if (effectiveProductImageUrl) {
+        imageUrls.push(effectiveProductImageUrl)
       }
 
       const submitFirstFrame = async (): Promise<SubmitResult> => {

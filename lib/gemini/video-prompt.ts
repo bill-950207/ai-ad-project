@@ -22,7 +22,11 @@ import type {
   CameraCompositionType,
   ModelPoseType,
   OutfitPresetType,
+  VideoType,
 } from './types'
+import { VIDEO_TYPE_SCRIPT_STYLES } from '@/lib/prompts/scripts'
+import { NO_OVERLAY_ELEMENTS } from '@/lib/prompts/common'
+import { VIDEO_TYPE_FIRST_FRAME_GUIDES } from '@/lib/prompts/first-frame'
 
 /**
  * 범용 텍스트 생성 함수
@@ -280,11 +284,30 @@ export async function generateProductScripts(input: ProductScriptInput): Promise
     ? `Product URL: ${input.productUrl}\n${input.productInfo}`
     : `Product info:\n${input.productInfo}`
 
+  // 비디오 타입별 스타일 가이드
+  const videoType = input.videoType || 'UGC'
+  const videoTypeStyle = VIDEO_TYPE_SCRIPT_STYLES[videoType]
+  const videoTypeContext = videoTypeStyle
+    ? `\n=== VIDEO STYLE: ${videoTypeStyle.korean} ===
+Description: ${videoTypeStyle.description}
+
+Script Guidelines:
+${videoTypeStyle.scriptGuidelines.map(g => `- ${g}`).join('\n')}
+
+Example Openings (for reference):
+${videoTypeStyle.openingExamples.map(e => `- "${e}"`).join('\n')}
+
+IMPORTANT: All 3 scripts should follow the "${videoTypeStyle.korean}" video style guidelines above.
+`
+    : ''
+
   const prompt = `Write 3 style scripts for the product in ${config_lang.name}. Target: ~${targetChars} characters each.
 
 ${productSection}
+${videoTypeContext}
+Styles: formal (professional), casual (friendly), energetic (enthusiastic)
 
-Styles: formal (professional), casual (friendly), energetic (enthusiastic)`
+Each script should maintain the overall video style (${videoTypeStyle?.korean || 'UGC'}) while varying in tone according to its style (formal/casual/energetic).`
 
   const tools = input.productUrl ? [{ urlContext: {} }, { googleSearch: {} }] : undefined
 
@@ -372,7 +395,7 @@ const modelPoseDescriptions: Record<ModelPoseType, string> = {
   'holding-product': 'Model holding product naturally at chest level',
   'showing-product': 'Model presenting product towards camera',
   'using-product': 'Model actively using the product',
-  'talking-only': 'Model without product, natural conversational pose',
+  'talking-only': '⚠️ NO PRODUCT IN IMAGE! Model only, natural conversational pose with empty hands, no objects',
 }
 
 // 의상 프리셋 설명
@@ -390,17 +413,23 @@ const outfitPresetDescriptions: Record<OutfitPresetType, string> = {
  * 첫 프레임 이미지 생성용 프롬프트를 생성합니다.
  */
 export async function generateFirstFramePrompt(input: FirstFramePromptInput): Promise<FirstFramePromptResult> {
+  // 비디오 타입별 스타일 가이드
+  const videoType = input.videoType || 'UGC'
+  const videoTypeGuide = VIDEO_TYPE_FIRST_FRAME_GUIDES[videoType]
+
+  // 장소: 사용자 지정 > 비디오 타입 기본값
   const locationSection = input.locationPrompt
     ? `Location: ${input.locationPrompt}`
-    : 'Auto-select best location for the product.'
+    : `Location: ${videoTypeGuide.environmentPrompt}`
 
   const cameraSection = input.cameraComposition
     ? `Camera: ${cameraCompositionDescriptions[input.cameraComposition]}`
     : ''
 
+  // 포즈: 사용자 지정 > 비디오 타입 기본값
   const poseSection = input.modelPose
     ? `Pose: ${modelPoseDescriptions[input.modelPose]}`
-    : ''
+    : `Pose: ${videoTypeGuide.posePrompt}`
 
   let outfitSection = ''
   if (input.outfitCustom) {
@@ -409,7 +438,13 @@ export async function generateFirstFramePrompt(input: FirstFramePromptInput): Pr
     outfitSection = `Outfit: ${outfitPresetDescriptions[input.outfitPreset]}`
   }
 
+  // 비디오 타입별 분위기 가이드
+  const atmosphereSection = `Atmosphere: ${videoTypeGuide.atmospherePrompt}`
+
   const prompt = `Generate Seedream 4.5 first frame image prompt.
+
+VIDEO STYLE: ${VIDEO_TYPE_SCRIPT_STYLES[videoType]?.korean || 'UGC 스타일'}
+${atmosphereSection}
 
 Product: ${input.productInfo}
 ${locationSection}
@@ -417,7 +452,12 @@ ${cameraSection}
 ${poseSection}
 ${outfitSection}
 
-Create photorealistic prompt using "Figure 1" for avatar, "Figure 2" for product.
+${NO_OVERLAY_ELEMENTS}
+
+IMPORTANT: The image should reflect the "${VIDEO_TYPE_SCRIPT_STYLES[videoType]?.korean || 'UGC'}" video style atmosphere.
+${input.productImageUrl
+    ? 'Create photorealistic prompt using "Figure 1" for avatar, "Figure 2" for product.'
+    : 'Create photorealistic prompt using "Figure 1" for avatar. ⚠️ NO PRODUCT should appear in the image - avatar only with empty hands.'}
 Include: camera specs, lighting direction, quality tags.
 Output JSON: { "prompt": "English 50-80 words", "locationDescription": "Korean location description" }`
 
