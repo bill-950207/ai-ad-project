@@ -49,6 +49,60 @@ interface SceneVideoUrl {
   videoUrl: string
 }
 
+// 제품 정보 파싱 (JSON 문자열에서 제품 정보 추출)
+interface ParsedProductInfo {
+  id?: string
+  name?: string
+  description?: string
+  brand?: string
+  image_url?: string
+  rembg_image_url?: string
+}
+
+function parseProductInfo(productInfo: string | null): ParsedProductInfo | null {
+  if (!productInfo) return null
+  try {
+    const parsed = JSON.parse(productInfo)
+    return {
+      id: parsed.id,
+      name: parsed.name,
+      description: parsed.description,
+      brand: parsed.brand,
+      image_url: parsed.image_url,
+      rembg_image_url: parsed.rembg_image_url,
+    }
+  } catch {
+    // JSON이 아닌 경우 일반 텍스트로 처리
+    return null
+  }
+}
+
+// 시나리오 정보 파싱
+interface ParsedScenarioInfo {
+  title?: string
+  concept?: string
+  scenes?: Array<{
+    sceneNumber: number
+    description: string
+    dialogue?: string
+    duration?: number
+  }>
+}
+
+function parseScenarioInfo(scenarioInfo: string | null): ParsedScenarioInfo | null {
+  if (!scenarioInfo) return null
+  try {
+    const parsed = JSON.parse(scenarioInfo)
+    return {
+      title: parsed.title,
+      concept: parsed.concept,
+      scenes: parsed.scenes,
+    }
+  } catch {
+    return null
+  }
+}
+
 interface VideoAdDetail {
   id: string
   status: string
@@ -547,37 +601,105 @@ export default function VideoAdDetailPage() {
               </div>
             </div>
           )}
+
+          {/* 시나리오 정보 (제품 광고용) */}
+          {videoAd.scenario_info && (() => {
+            const scenario = parseScenarioInfo(videoAd.scenario_info)
+            if (!scenario) return null
+            return (
+              <div className="bg-card border border-border rounded-xl p-5">
+                <h3 className="text-base font-semibold text-foreground flex items-center gap-2 mb-4">
+                  <Film className="w-5 h-5 text-primary" />
+                  시나리오
+                </h3>
+                {scenario.title && (
+                  <div className="mb-3">
+                    <span className="text-xs text-muted-foreground">제목</span>
+                    <p className="text-sm font-medium text-foreground">{scenario.title}</p>
+                  </div>
+                )}
+                {scenario.concept && (
+                  <div className="mb-4">
+                    <span className="text-xs text-muted-foreground">컨셉</span>
+                    <p className="text-sm text-foreground">{scenario.concept}</p>
+                  </div>
+                )}
+                {scenario.scenes && scenario.scenes.length > 0 && (
+                  <div className="space-y-3">
+                    <span className="text-xs text-muted-foreground">씬 구성</span>
+                    {scenario.scenes.map((scene, idx) => (
+                      <div key={idx} className="bg-secondary/30 rounded-lg p-3 border border-border/50">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-medium text-primary">씬 {scene.sceneNumber || idx + 1}</span>
+                          {scene.duration && (
+                            <span className="text-xs text-muted-foreground">{scene.duration}초</span>
+                          )}
+                        </div>
+                        <p className="text-sm text-foreground">{scene.description}</p>
+                        {scene.dialogue && (
+                          <p className="text-xs text-muted-foreground mt-1 italic">&quot;{scene.dialogue}&quot;</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </div>
 
         {/* 오른쪽: 정보 패널 */}
         <div className="space-y-4">
-          {/* 제품 정보 */}
-          {videoAd.ad_products && (
-            <div className="bg-card border border-border rounded-xl p-4">
-              <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-                <Package className="w-4 h-4" />
-                {videoAdT?.product || '제품'}
-              </h3>
-              <Link
-                href={`/dashboard/ad-products/${videoAd.ad_products.id}`}
-                className="flex items-center gap-3 p-2 -m-2 rounded-lg hover:bg-secondary/50 transition-colors"
-              >
-                {(videoAd.ad_products.rembg_image_url || videoAd.ad_products.image_url) && (
-                  <img
-                    src={videoAd.ad_products.rembg_image_url || videoAd.ad_products.image_url || ''}
-                    alt={videoAd.ad_products.name}
-                    className="w-12 h-12 object-contain rounded bg-secondary/30"
-                  />
+          {/* 제품 정보 (DB에서 조회된 제품 또는 저장된 제품 정보) */}
+          {(videoAd.ad_products || parseProductInfo(videoAd.product_info)) && (() => {
+            const product = videoAd.ad_products || parseProductInfo(videoAd.product_info)
+            if (!product) return null
+            const imageUrl = product.rembg_image_url || product.image_url
+            return (
+              <div className="bg-card border border-border rounded-xl p-4">
+                <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                  <Package className="w-4 h-4" />
+                  {videoAdT?.product || '제품'}
+                </h3>
+                {product.id ? (
+                  <Link
+                    href={`/dashboard/ad-products/${product.id}`}
+                    className="flex items-center gap-3 p-2 -m-2 rounded-lg hover:bg-secondary/50 transition-colors"
+                  >
+                    {imageUrl && (
+                      <img
+                        src={imageUrl}
+                        alt={product.name || '제품'}
+                        className="w-12 h-12 object-contain rounded bg-secondary/30"
+                      />
+                    )}
+                    <div>
+                      <span className="text-foreground block">{product.name}</span>
+                      {product.brand && (
+                        <span className="text-xs text-muted-foreground">{product.brand}</span>
+                      )}
+                    </div>
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    {imageUrl && (
+                      <img
+                        src={imageUrl}
+                        alt={product.name || '제품'}
+                        className="w-12 h-12 object-contain rounded bg-secondary/30"
+                      />
+                    )}
+                    <div>
+                      <span className="text-foreground block">{product.name}</span>
+                      {product.brand && (
+                        <span className="text-xs text-muted-foreground">{product.brand}</span>
+                      )}
+                    </div>
+                  </div>
                 )}
-                <div>
-                  <span className="text-foreground block">{videoAd.ad_products.name}</span>
-                  {videoAd.ad_products.brand && (
-                    <span className="text-xs text-muted-foreground">{videoAd.ad_products.brand}</span>
-                  )}
-                </div>
-              </Link>
-            </div>
-          )}
+              </div>
+            )
+          })()}
 
           {/* 아바타 정보 */}
           {videoAd.avatars && (
@@ -764,8 +886,8 @@ export default function VideoAdDetailPage() {
             </div>
           )}
 
-          {/* 제품 정보 (입력한 내용) */}
-          {videoAd.product_info && (
+          {/* 제품 정보 (입력한 내용 - JSON이 아닌 경우만 표시) */}
+          {videoAd.product_info && !parseProductInfo(videoAd.product_info) && (
             <div className="bg-card border border-border rounded-xl p-4">
               <h3 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                 <FileText className="w-4 h-4" />
