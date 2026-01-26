@@ -181,20 +181,48 @@ ${styleParts.join(', ')}
 Consider these avatar traits when recommending options (especially outfit, pose, expression) to create harmonious visuals.`
     }
   } else if (isAiGeneratedAvatar) {
-    avatarContext = `\n\n=== AI AVATAR RECOMMENDATION ===
-The user will use an AI-generated avatar. For each scenario, create a detailed avatar description prompt that matches the scenario's mood and target audience.
+    // 사용자 초기 AI 아바타 옵션 텍스트 생성
+    let userPreferencesText = 'None specified - AI will decide all characteristics'
+    if (input.avatarInfo?.aiOptions) {
+      const opts = input.avatarInfo.aiOptions
+      const prefs: string[] = []
+      if (opts.targetGender && opts.targetGender !== 'any') prefs.push(`Gender: ${opts.targetGender}`)
+      if (opts.targetAge && opts.targetAge !== 'any') prefs.push(`Age: ${opts.targetAge}`)
+      if (opts.style && opts.style !== 'any') prefs.push(`Style: ${opts.style}`)
+      if (opts.ethnicity && opts.ethnicity !== 'any') prefs.push(`Ethnicity: ${opts.ethnicity}`)
+      if (opts.bodyType && opts.bodyType !== 'any') prefs.push(`Body Type: ${opts.bodyType}`)
+      if (prefs.length > 0) userPreferencesText = prefs.join(', ')
+    }
 
-For recommendedAvatarStyle, provide:
-1. avatarPrompt: A detailed English prompt for AI avatar generation (40-60 words). Include:
+    avatarContext = `\n\n=== AI AVATAR RECOMMENDATION ===
+The user will use an AI-generated avatar. For each scenario, recommend specific avatar characteristics.
+
+USER'S INITIAL PREFERENCES:
+${userPreferencesText}
+
+For recommendedAvatarStyle, provide ALL these fields:
+
+1. STRUCTURED FIELDS (REQUIRED - exact string values):
+   - gender: "male" | "female" | "any" (if user specified not "any", KEEP their choice)
+   - age: "young" (20-30s) | "middle" (30-40s) | "mature" (40-50s) | "any"
+   - style: "natural" | "professional" | "casual" | "elegant" | "any"
+   - ethnicity: "korean" | "asian" | "western" | "any"
+   - bodyType: "slim" | "average" | "athletic" | "curvy" | "any"
+
+2. avatarPrompt: A detailed English prompt (40-60 words) matching the structured fields above. Include:
    - Age range and ethnicity appropriate for the product's target market
    - Body type and height that fits the scenario mood
    - Facial features and expression matching the scenario vibe
    - Hair style appropriate for the concept
    Example: "A sophisticated Korean woman in her late 20s, tall with slim elegant figure, sharp facial features with confident gaze, long straight black hair, natural makeup highlighting her refined beauty"
 
-2. avatarDescription: A brief description in the output language (15-25 characters)
+3. avatarDescription: Brief description in output language (15-25 characters)
 
-You MUST provide recommendedAvatarStyle for each scenario with both avatarPrompt and avatarDescription.`
+RULES:
+- If user specified a value (NOT "any"), KEEP that exact value in structured fields
+- If user selected "any", YOU decide the best value based on scenario and product
+- Each scenario can have DIFFERENT avatar characteristics
+- Structured fields MUST align with avatarPrompt description`
   }
 
   const prompt = `You are an expert advertising creative director. Create 3 DISTINCT advertising scenarios customized specifically for this product.
@@ -309,9 +337,15 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
               suggestedPrompt: { type: Type.STRING },
               recommendedAvatarStyle: {
                 type: Type.OBJECT,
+                required: ['avatarPrompt', 'avatarDescription', 'gender', 'age', 'style', 'ethnicity', 'bodyType'],
                 properties: {
                   avatarPrompt: { type: Type.STRING },
                   avatarDescription: { type: Type.STRING },
+                  gender: { type: Type.STRING, enum: ['male', 'female', 'any'] },
+                  age: { type: Type.STRING, enum: ['young', 'middle', 'mature', 'any'] },
+                  style: { type: Type.STRING, enum: ['natural', 'professional', 'casual', 'elegant', 'any'] },
+                  ethnicity: { type: Type.STRING, enum: ['korean', 'asian', 'western', 'any'] },
+                  bodyType: { type: Type.STRING, enum: ['slim', 'average', 'athletic', 'curvy', 'any'] },
                 },
               },
             },
@@ -353,6 +387,11 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
         recommendedAvatarStyle?: {
           avatarPrompt: string
           avatarDescription: string
+          gender?: 'male' | 'female' | 'any'
+          age?: 'young' | 'middle' | 'mature' | 'any'
+          style?: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
+          ethnicity?: 'korean' | 'asian' | 'western' | 'any'
+          bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'any'
         }
       }>
     }
