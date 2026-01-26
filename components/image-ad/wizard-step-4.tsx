@@ -167,6 +167,14 @@ export function WizardStep4() {
       const productNameForPrompt = isWearingType && selectedProduct ? selectedProduct.name : undefined
       const generatedPrompt = buildPromptFromOptions(adType, categoryOptions, additionalPrompt, customOptions, productNameForPrompt)
 
+      // options에서 __custom__ 값을 실제 커스텀 텍스트로 대체
+      const resolvedOptions = { ...categoryOptions }
+      for (const [key, value] of Object.entries(resolvedOptions)) {
+        if (value === '__custom__' && customOptions[key]) {
+          resolvedOptions[key] = customOptions[key]
+        }
+      }
+
       // API 요청
       const requestBody = {
         adType,
@@ -180,7 +188,7 @@ export function WizardStep4() {
         numImages,
         referenceStyleImageUrl: referenceUrl,
         aiAvatarOptions: selectedAvatarInfo?.type === 'ai-generated' ? selectedAvatarInfo.aiOptions : undefined,
-        options: categoryOptions,  // 선택한 옵션 저장 (의상 옵션 포함)
+        options: resolvedOptions,  // __custom__ 값을 실제 텍스트로 대체하여 저장
       }
 
       const createRes = await fetch('/api/image-ads', {
