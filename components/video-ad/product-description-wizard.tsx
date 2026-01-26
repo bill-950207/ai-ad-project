@@ -394,6 +394,9 @@ export function ProductDescriptionWizard() {
   // 초안 복원 중 플래그 (useEffect에서 editedScript 덮어쓰기 방지)
   const isRestoringDraft = useRef(false)
 
+  // saveDraft 직후 loadExistingData 스킵용 flag (URL 업데이트 후 불필요한 재로드 방지)
+  const skipNextLoadRef = useRef(false)
+
   // ============================================================
   // 데이터 로드
   // ============================================================
@@ -528,6 +531,8 @@ export function ProductDescriptionWizard() {
           // 새 드래프트가 생성된 경우 URL에 draftId 추가
           if (!draftId && data.draft.id) {
             setDraftId(data.draft.id)
+            // loadExistingData 스킵 설정 (URL 변경 후 불필요한 재로드 방지)
+            skipNextLoadRef.current = true
             // URL 업데이트 (쿼리 파라미터 추가) - window.history 사용하여 새로고침 방지
             const currentUrl = new URL(window.location.href)
             currentUrl.searchParams.set('draftId', data.draft.id)
@@ -546,6 +551,12 @@ export function ProductDescriptionWizard() {
 
   // 기존 초안 또는 진행 중인 영상 광고 로드
   const loadExistingData = useCallback(async () => {
+    // saveDraft 직후 호출 시 스킵 (이미 Context에 최신 상태가 있음)
+    if (skipNextLoadRef.current) {
+      skipNextLoadRef.current = false
+      return
+    }
+
     // URL에서 draftId 쿼리 파라미터 확인
     const draftIdParam = searchParams.get('draftId')
 
@@ -1180,8 +1191,8 @@ export function ProductDescriptionWizard() {
   // ============================================================
 
   const goToStep = async (targetStep: WizardStep) => {
-    // 현재 단계의 데이터를 저장
-    await saveDraft(step)
+    // 이동할 단계를 저장 (현재 단계가 아닌 targetStep 저장)
+    await saveDraft(targetStep)
     setStep(targetStep)
   }
 
