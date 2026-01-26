@@ -85,10 +85,11 @@ export function Sidebar() {
   const [showProfileMenu, setShowProfileMenu] = useState(false)    // 프로필 메뉴 표시 여부
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)  // 언어 메뉴 표시 여부
   const [credits, setCredits] = useState<number | null>(null)
+  const [planType, setPlanType] = useState<string>('FREE')         // 현재 플랜
   const menuRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
-  // 사용자 정보 및 크레딧 조회
+  // 사용자 정보, 크레딧, 플랜 조회
   useEffect(() => {
     const getUserAndCredits = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -104,6 +105,17 @@ export function Sidebar() {
 
         if (profile) {
           setCredits(profile.credits ?? 0)
+        }
+
+        // 구독 정보에서 플랜 조회
+        try {
+          const res = await fetch('/api/subscription')
+          if (res.ok) {
+            const data = await res.json()
+            setPlanType(data.subscription?.planType || 'FREE')
+          }
+        } catch {
+          // 구독 API 실패 시 기본값 유지
         }
       }
     }
@@ -219,8 +231,20 @@ export function Sidebar() {
             className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-secondary/50 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                <UserIcon className="w-4 h-4 text-primary" />
+              <div className="relative">
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                  <UserIcon className="w-4 h-4 text-primary" />
+                </div>
+                {/* 플랜 뱃지 */}
+                <span className={cn(
+                  "absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap",
+                  planType === 'FREE' && "bg-gray-500/20 text-gray-400",
+                  planType === 'STARTER' && "bg-blue-500/20 text-blue-400",
+                  planType === 'PRO' && "bg-purple-500/20 text-purple-400",
+                  planType === 'BUSINESS' && "bg-amber-500/20 text-amber-400"
+                )}>
+                  {planType}
+                </span>
               </div>
               <div className="text-left">
                 <p className="text-sm font-medium text-foreground truncate max-w-[120px]">
