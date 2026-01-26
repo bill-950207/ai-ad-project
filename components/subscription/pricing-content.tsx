@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, Sparkles, Zap, Building2, Infinity, Crown, TrendingUp } from 'lucide-react'
+import { Check, X, Sparkles, Zap, Building2, Infinity, Crown, TrendingUp } from 'lucide-react'
 
 type BillingInterval = 'monthly' | 'yearly'
 
@@ -39,6 +39,7 @@ const plans: Plan[] = [
       'AI 배경 음악 생성',
       '제품 배경 자동 제거',
       '기본 키프레임 1개',
+      '워터마크 포함',
     ],
     limits: {
       avatars: '최대 3개',
@@ -56,6 +57,7 @@ const plans: Plan[] = [
     icon: <Zap className="w-5 h-5" />,
     features: [
       '모든 Free 기능 포함',
+      '워터마크 제거',
       'HD 고화질 업스케일',
       '키프레임 2개 생성',
       '고급 아바타 스타일',
@@ -81,11 +83,11 @@ const plans: Plan[] = [
     icon: <Crown className="w-5 h-5" />,
     features: [
       '모든 Starter 기능 포함',
-      '워터마크 완전 제거',
       '최우선 생성 처리',
       '고급 편집 도구',
       '다양한 출력 포맷',
       '전문가 템플릿',
+      '프리미엄 고객 지원',
     ],
     limits: {
       avatars: '최대 30개',
@@ -333,12 +335,21 @@ export function PricingContent() {
 
             {/* Features */}
             <ul className="space-y-3 mb-6 flex-grow">
-              {plan.features.map((feature, idx) => (
-                <li key={idx} className="flex items-start gap-2 text-sm">
-                  <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-foreground">{feature}</span>
-                </li>
-              ))}
+              {plan.features.map((feature, idx) => {
+                const isLimitation = feature === '워터마크 포함'
+                return (
+                  <li key={idx} className="flex items-start gap-2 text-sm">
+                    {isLimitation ? (
+                      <X className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    ) : (
+                      <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    )}
+                    <span className={isLimitation ? 'text-muted-foreground' : 'text-foreground'}>
+                      {feature}
+                    </span>
+                  </li>
+                )
+              })}
             </ul>
 
             <button

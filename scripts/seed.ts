@@ -55,7 +55,7 @@ async function main() {
       product_limit: 9,
       monthly_credits: 120, // ~60 이미지 or ~12 영상 (원가 30%)
       keyframe_count: 2,
-      watermark_free: false,
+      watermark_free: true,
       hd_upscale: true,
     },
     {
