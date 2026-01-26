@@ -113,6 +113,10 @@ export interface RecommendedOutfit {
 }
 
 /** 제품 설명 대본 생성 입력 */
+/** 비디오 타입 */
+export type VideoType = 'UGC' | 'podcast' | 'expert'
+
+/** 제품 설명 대본 생성 입력 */
 export interface ProductScriptInput {
   productInfo: string
   productUrl?: string
@@ -122,6 +126,8 @@ export interface ProductScriptInput {
   requestOutfitRecommendation?: boolean
   avatarDescription?: string
   productImageUrl?: string
+  /** 비디오 타입 (UGC, 팟캐스트, 전문가) */
+  videoType?: VideoType
 }
 
 /** 제품 설명 대본 생성 결과 */
@@ -241,6 +247,8 @@ export interface ImageAdPromptInput {
 export interface ImageAdPromptResult {
   optimizedPrompt: string
   koreanDescription: string
+  /** 제품에 로고/텍스트가 있는지 여부 (Gemini가 이미지 분석 결과) */
+  productHasLogo?: boolean
 }
 
 /** 참조 스타일 이미지 분석 입력 */
@@ -287,6 +295,8 @@ export interface FirstFramePromptInput {
   modelPose?: ModelPoseType
   outfitPreset?: OutfitPresetType
   outfitCustom?: string
+  /** 비디오 타입 (UGC, 팟캐스트, 전문가) */
+  videoType?: VideoType
 }
 
 /** 첫 프레임 이미지 프롬프트 생성 결과 */
@@ -312,6 +322,8 @@ export interface AiAvatarPromptInput {
   targetAge?: 'young' | 'middle' | 'mature' | 'any'
   style?: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
   ethnicity?: 'korean' | 'asian' | 'western' | 'any'
+  /** 비디오 타입 (UGC, 팟캐스트, 전문가) */
+  videoType?: VideoType
 }
 
 /** AI 아바타 프롬프트 생성 결과 */
@@ -399,7 +411,7 @@ export interface MultipleRecommendedOptionsResult {
     title: string
     description: string
     targetAudience?: string  // 타겟 오디언스 설명 (예: "20-30대 직장인 여성")
-    scenarioType?: 'mainstream' | 'premium' | 'trendy'  // 시나리오 유형
+    conceptType?: string  // 시나리오 컨셉 타입 (자유 형식)
     recommendedOptions: Record<string, {
       value: string
       customText?: string
