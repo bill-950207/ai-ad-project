@@ -24,7 +24,7 @@ const CAMERA_COMPOSITION_PROMPTS: Record<string, string> = {
   'closeup': 'close-up framing on face and upper body, intimate speaking distance',
   'fullbody': 'full body visible in frame, wider shot showing complete posture',
   'ugc-closeup': 'UGC style medium close-up, chest to head framing, casual influencer vlog aesthetic',
-  'ugc-selfie': 'selfie camera perspective, NO visible hands or phone in frame, hands cropped below frame, looking directly at camera, intimate selfie angle at eye level',
+  'ugc-selfie': 'selfie camera perspective, phone-holding hand NOT visible (cropped below frame edge), looking directly at camera, intimate selfie angle at eye level, if holding product use ONE hand only (free hand not holding phone)',
 }
 
 /** 대본 스타일별 표정/제스처 프롬프트 */
@@ -73,11 +73,20 @@ function generateVideoPrompt(params: {
   const videoTypeMotion = VIDEO_TYPE_MOTION_PROMPTS[params.videoType || 'UGC'] || VIDEO_TYPE_MOTION_PROMPTS['UGC']
   parts.push(videoTypeMotion)
 
-  // 제품 관련 동작
+  // 제품 관련 동작 (UGC 셀카일 때는 한 손으로만 제품 들기 명시)
+  const isUgcSelfie = params.cameraComposition === 'ugc-selfie'
   if (params.productName) {
-    parts.push(`presenting and discussing ${params.productName}`)
+    if (isUgcSelfie) {
+      parts.push(`holding and presenting ${params.productName} with one hand only (free hand), phone hand stays invisible off-frame`)
+    } else {
+      parts.push(`presenting and discussing ${params.productName}`)
+    }
   } else {
-    parts.push('talking about a product in an engaging way')
+    if (isUgcSelfie) {
+      parts.push('talking about a product while holding it with one hand (free hand), phone hand invisible')
+    } else {
+      parts.push('talking about a product in an engaging way')
+    }
   }
 
   // 기본 동작 설명

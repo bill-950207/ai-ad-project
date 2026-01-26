@@ -24,13 +24,13 @@ const cameraCompositionDescriptions: Record<CameraCompositionType, { description
   closeup: { description: 'close-up portrait, face and upper body prominent', aperture: 'f/11', lens: '50mm' },
   fullbody: { description: 'full body shot, entire person visible in frame', aperture: 'f/16', lens: '35mm' },
   'ugc-closeup': { description: 'UGC-style intimate medium close-up, chest-up framing, eyes looking DIRECTLY into camera lens', aperture: 'f/11', lens: '35mm' },
-  'ugc-selfie': { description: 'selfie camera angle, HANDS NOT VISIBLE in frame - cropped below edge, direct eye contact, intimate selfie perspective', aperture: 'f/11', lens: '28mm' },
+  'ugc-selfie': { description: 'selfie camera angle, phone-holding hand NOT visible (cropped below frame edge), direct eye contact, intimate selfie perspective, if holding product use ONLY the free hand (one hand holding product)', aperture: 'f/11', lens: '28mm' },
 }
 
 // 모델 포즈 설명
 const modelPoseDescriptions: Record<ModelPoseType, string> = {
-  'holding-product': 'Model holding product naturally at chest level',
-  'showing-product': 'Model presenting product towards camera',
+  'holding-product': 'Model holding product naturally at chest level with ONE hand (free hand only if selfie composition)',
+  'showing-product': 'Model presenting product towards camera with ONE hand (free hand only if selfie composition)',
   'using-product': 'Model actively using the product',
   'talking-only': '⚠️ NO PRODUCT! Avatar only, natural conversational pose',
 }
@@ -97,6 +97,17 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
     ? `모델 포즈: ${modelPoseDescriptions[input.modelPose]}`
     : `모델 포즈: ${videoTypeGuide.posePrompt}`
 
+  // UGC 셀카 + 제품 포즈 조합 시 특별 지시
+  const isUgcSelfie = input.cameraComposition === 'ugc-selfie'
+  const isProductPose = input.modelPose === 'holding-product' || input.modelPose === 'showing-product'
+  const ugcSelfieProductInstruction = isUgcSelfie && isProductPose
+    ? `\n=== 중요: UGC 셀카 + 제품 홀딩 규칙 ===
+- 아바타가 한 손으로 폰을 잡고 셀카를 찍는 상황입니다 (폰 잡는 손은 화면 밖, 프레임 아래로 잘림)
+- 제품은 반드시 나머지 한 손(자유로운 손)으로만 들어야 합니다 - 가슴 높이에서 한 손으로 제품 홀딩
+- 폰을 잡는 손과 폰 자체는 절대 이미지에 나타나면 안 됩니다
+- 결과: 카메라를 바라보는 아바타, 한 손으로 제품을 자연스럽게 들고 있고, 다른 팔/손은 보이지 않음 (프레임 밖에서 폰 잡고 있음)`
+    : ''
+
   let outfitSection = ''
   if (input.outfitCustom) {
     outfitSection = `의상 설정 (사용자 지정): ${input.outfitCustom}`
@@ -132,6 +143,7 @@ ${locationSection}
 ${cameraSection}
 
 ${poseSection}
+${ugcSelfieProductInstruction}
 
 ${outfitSection ? `=== 의상 설정 ===\n${outfitSection}` : ''}
 

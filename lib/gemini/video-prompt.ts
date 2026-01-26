@@ -394,13 +394,13 @@ const cameraCompositionDescriptions: Record<CameraCompositionType, string> = {
   closeup: 'close-up portrait, face and upper body',
   fullbody: 'full body shot, entire person visible',
   'ugc-closeup': 'UGC-style medium close-up, chest-up framing',
-  'ugc-selfie': 'selfie camera angle, hands NOT visible in frame, direct eye contact, intimate selfie perspective',
+  'ugc-selfie': 'selfie camera angle, phone-holding hand NOT visible (cropped below frame edge), direct eye contact, intimate selfie perspective, if holding product use ONLY the free hand (one hand holding product while phone hand stays invisible)',
 }
 
 // 모델 포즈 설명
 const modelPoseDescriptions: Record<ModelPoseType, string> = {
-  'holding-product': 'Model holding product naturally at chest level',
-  'showing-product': 'Model presenting product towards camera',
+  'holding-product': 'Model holding product naturally at chest level with ONE hand (free hand only if selfie composition)',
+  'showing-product': 'Model presenting product towards camera with ONE hand (free hand only if selfie composition)',
   'using-product': 'Model actively using the product',
   'talking-only': '⚠️ NO PRODUCT IN IMAGE! Model only, natural conversational pose with empty hands, no objects',
 }
@@ -438,6 +438,17 @@ export async function generateFirstFramePrompt(input: FirstFramePromptInput): Pr
     ? `Pose: ${modelPoseDescriptions[input.modelPose]}`
     : `Pose: ${videoTypeGuide.posePrompt}`
 
+  // UGC 셀카 + 제품 포즈 조합 시 특별 지시
+  const isUgcSelfie = input.cameraComposition === 'ugc-selfie'
+  const isProductPose = input.modelPose === 'holding-product' || input.modelPose === 'showing-product'
+  const ugcSelfieProductInstruction = isUgcSelfie && isProductPose
+    ? `\nCRITICAL UGC SELFIE + PRODUCT RULE:
+- Model is taking selfie with one hand (phone hand) - this hand must NOT be visible (cropped below frame edge)
+- Product must be held with the OTHER hand (free hand) only - ONE hand holding product at chest level
+- Phone-holding hand and phone itself must NEVER appear in the image
+- Result: Subject looking at camera, one hand holding product naturally, other arm invisible (holding phone off-frame)`
+    : ''
+
   let outfitSection = ''
   if (input.outfitCustom) {
     outfitSection = `Outfit: ${input.outfitCustom}`
@@ -467,7 +478,7 @@ ${avatarSection}
 Product context (for understanding only - DO NOT include product name/brand in prompt): ${input.productInfo}
 ${locationSection}
 ${cameraSection}
-${poseSection}
+${poseSection}${ugcSelfieProductInstruction}
 ${outfitSection}
 
 ${NO_OVERLAY_ELEMENTS}
