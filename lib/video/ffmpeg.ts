@@ -492,6 +492,70 @@ export async function mergeVideoWithAudio(options: {
 }
 
 /**
+ * 오디오 볼륨을 정규화/증폭합니다.
+ * loudnorm 필터로 일정한 음량으로 정규화하고 추가로 볼륨을 증폭합니다.
+ *
+ * @param audioBuffer - 원본 오디오 Buffer
+ * @param volumeBoost - 추가 볼륨 증폭 배수 (기본 1.5 = 150%)
+ * @returns 정규화된 오디오 Buffer
+ */
+export async function normalizeAudioVolume(
+  audioBuffer: Buffer,
+  volumeBoost: number = 1.5
+): Promise<Buffer> {
+  console.log('normalizeAudioVolume: 시작, 원본 크기:', audioBuffer.byteLength, 'bytes, boost:', volumeBoost)
+
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'audio-normalize-'))
+  const inputPath = path.join(tempDir, 'input.mp3')
+  const outputPath = path.join(tempDir, 'output.mp3')
+
+  try {
+    // 1. 오디오 파일 저장
+    await fs.writeFile(inputPath, audioBuffer)
+
+    // 2. FFmpeg로 정규화 + 볼륨 증폭
+    await new Promise<void>((resolve, reject) => {
+      ffmpeg()
+        .input(inputPath)
+        .audioFilters([
+          // EBU R128 표준으로 음량 정규화 (-14 LUFS 타겟)
+          'loudnorm=I=-14:TP=-1:LRA=11',
+          // 추가 볼륨 증폭
+          `volume=${volumeBoost}`,
+        ])
+        .outputOptions([
+          '-c:a', 'libmp3lame',
+          '-b:a', '192k',  // 비트레이트 증가
+        ])
+        .output(outputPath)
+        .on('start', (cmd: string) => {
+          console.log('FFmpeg normalize command:', cmd)
+        })
+        .on('end', () => {
+          console.log('Audio normalization completed')
+          resolve()
+        })
+        .on('error', (err: Error) => {
+          console.error('FFmpeg normalize error:', err)
+          reject(err)
+        })
+        .run()
+    })
+
+    // 3. 결과 파일 읽기
+    const resultBuffer = await fs.readFile(outputPath)
+    console.log('normalizeAudioVolume: 완료, 결과 크기:', resultBuffer.byteLength, 'bytes')
+    return resultBuffer
+  } finally {
+    try {
+      await fs.rm(tempDir, { recursive: true, force: true })
+    } catch {
+      // 무시
+    }
+  }
+}
+
+/**
  * 미디어 파일의 길이(초)를 반환합니다.
  */
 async function getMediaDuration(filePath: string): Promise<number> {

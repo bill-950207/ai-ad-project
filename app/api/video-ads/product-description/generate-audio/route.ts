@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { textToSpeech as minimaxTTS } from '@/lib/wavespeed/client'
 import { textToSpeech as elevenLabsTTS } from '@/lib/elevenlabs/client'
+import { normalizeAudioVolume } from '@/lib/video/ffmpeg'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { randomUUID } from 'crypto'
 
@@ -171,6 +172,16 @@ export async function POST(request: NextRequest) {
         audioBuffer = await downloadAudio(audioUrl)
         usedProvider = 'minimax_fallback'
       }
+    }
+
+    // 오디오 볼륨 정규화 (InfiniteTalk/Kling Avatar API에서 잘 들리도록)
+    try {
+      console.log('[TTS] 오디오 볼륨 정규화 시작...')
+      audioBuffer = await normalizeAudioVolume(audioBuffer, 1.5)
+      console.log('[TTS] 오디오 볼륨 정규화 완료')
+    } catch (normalizeError) {
+      console.warn('[TTS] 오디오 정규화 실패, 원본 사용:', normalizeError)
+      // 정규화 실패 시 원본 오디오 그대로 사용
     }
 
     // R2에 오디오 파일 업로드

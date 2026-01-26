@@ -1181,15 +1181,53 @@ export function ProductDescriptionWizard() {
     audio.load()
   }, [playingVoiceId])
 
+  // 오디오 정리 함수
+  const stopAudioPreview = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.oncanplaythrough = null
+      audioRef.current.onended = null
+      audioRef.current.onerror = null
+      audioRef.current = null
+    }
+    setPlayingVoiceId(null)
+    setLoadingPreviewId(null)
+  }, [])
+
   // 컴포넌트 언마운트 시 오디오 정리
   useEffect(() => {
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause()
-        audioRef.current = null
+      stopAudioPreview()
+    }
+  }, [stopAudioPreview])
+
+  // 스텝 변경 시 오디오 정리 (음성 선택 스텝에서 벗어날 때)
+  useEffect(() => {
+    // 스텝이 변경될 때마다 오디오 중단
+    stopAudioPreview()
+  }, [step, stopAudioPreview])
+
+  // 브라우저 페이지 이탈 시 오디오 정리
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      stopAudioPreview()
+    }
+
+    const handleVisibilityChange = () => {
+      // 탭이 숨겨질 때 (다른 탭으로 이동 등) 오디오 중단
+      if (document.hidden) {
+        stopAudioPreview()
       }
     }
-  }, [])
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [stopAudioPreview])
 
   // ============================================================
   // 단계별 유효성 검사
