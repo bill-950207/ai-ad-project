@@ -24,7 +24,7 @@ const CAMERA_COMPOSITION_PROMPTS: Record<string, string> = {
   'closeup': 'close-up framing on face and upper body, intimate speaking distance',
   'fullbody': 'full body visible in frame, wider shot showing complete posture',
   'ugc-closeup': 'UGC style medium close-up, chest to head framing, casual influencer vlog aesthetic',
-  'ugc-selfie': 'POV selfie camera perspective, looking directly at camera, intimate selfie angle at eye level, NO phone visible in frame, both hands free to hold product naturally',
+  'ugc-selfie': 'POV selfie camera perspective, looking directly at camera, intimate selfie angle at eye level, NO phone visible, natural pose presenting product',
 }
 
 /** 대본 스타일별 표정/제스처 프롬프트 */

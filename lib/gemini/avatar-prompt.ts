@@ -24,7 +24,7 @@ const cameraCompositionDescriptions: Record<CameraCompositionType, { description
   closeup: { description: 'close-up portrait, face and upper body prominent', aperture: 'f/11', lens: '50mm' },
   fullbody: { description: 'full body shot, entire person visible in frame', aperture: 'f/16', lens: '35mm' },
   'ugc-closeup': { description: 'UGC-style intimate medium close-up, chest-up framing, eyes looking DIRECTLY into camera lens', aperture: 'f/11', lens: '35mm' },
-  'ugc-selfie': { description: 'POV selfie shot from smartphone camera perspective - NO phone visible in image, direct eye contact, intimate selfie perspective, both hands free and visible (not holding any phone), if holding product hold it naturally with hands', aperture: 'f/11', lens: '28mm' },
+  'ugc-selfie': { description: 'POV selfie shot, subject looking at camera, NO phone visible, natural relaxed pose presenting product, anatomically correct hands', aperture: 'f/11', lens: '28mm' },
 }
 
 // 모델 포즈 설명
@@ -127,11 +127,9 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
   const isProductPose = input.modelPose === 'holding-product' || input.modelPose === 'showing-product'
   const ugcSelfieProductInstruction = isUgcSelfie && isProductPose
     ? `\n=== 중요: UGC 셀카 규칙 (POV 촬영) ===
-- 이것은 POV(1인칭 시점) 셀카입니다 - 카메라 자체가 스마트폰입니다
-- 절대 금지: 이미지에 휴대폰/스마트폰이 나타나면 안 됩니다 (NO phone device visible)
-- 아바타의 양손은 모두 자유롭고 화면에 보여야 합니다 (폰을 잡고 있지 않음)
-- 제품은 한 손 또는 양손으로 자연스럽게 가슴 높이에서 들고 있습니다
-- 결과: 카메라를 바라보는 아바타, 자유로운 손으로 제품을 들고 있음, 휴대폰 없음`
+- POV 셀카: 카메라 자체가 스마트폰 (이미지에 휴대폰 나타나면 안 됨)
+- 제품을 자연스럽게 가슴 높이에서 들고 카메라를 바라보는 포즈
+- anatomically correct hands (손 왜곡 방지)`
     : ''
 
   let outfitSection = ''

@@ -394,7 +394,7 @@ const cameraCompositionDescriptions: Record<CameraCompositionType, string> = {
   closeup: 'close-up portrait, face and upper body',
   fullbody: 'full body shot, entire person visible',
   'ugc-closeup': 'UGC-style medium close-up, chest-up framing',
-  'ugc-selfie': 'POV selfie shot from smartphone camera perspective - NO phone visible in image, direct eye contact, intimate selfie perspective, both hands free and visible (not holding any phone), if holding product hold it naturally with hands',
+  'ugc-selfie': 'POV selfie shot, subject looking at camera, NO phone visible, natural relaxed pose presenting product, anatomically correct hands',
 }
 
 // 모델 포즈 설명
@@ -443,11 +443,9 @@ export async function generateFirstFramePrompt(input: FirstFramePromptInput): Pr
   const isProductPose = input.modelPose === 'holding-product' || input.modelPose === 'showing-product'
   const ugcSelfieProductInstruction = isUgcSelfie && isProductPose
     ? `\nCRITICAL UGC SELFIE RULE (POV SHOT):
-- This is a POV selfie - the camera itself IS the smartphone (viewer's perspective)
-- ABSOLUTELY NO phone/smartphone device visible in the image
-- Model's BOTH hands must be free and visible (not holding any phone)
-- Product should be held naturally with one or both hands at chest level
-- Result: Subject looking at camera, holding product with free hands, NO phone anywhere in frame`
+- POV selfie: camera IS the smartphone (no phone device visible in image)
+- Natural relaxed pose presenting product at chest level
+- anatomically correct hands`
     : ''
 
   let outfitSection = ''
