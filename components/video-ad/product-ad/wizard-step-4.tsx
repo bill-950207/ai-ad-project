@@ -4,12 +4,13 @@ import { useEffect } from 'react'
 import {
   ArrowLeft,
   ArrowRight,
-  Clock,
   Maximize,
   Sparkles,
   Film,
   Plus,
   Minus,
+  Lock,
+  Unlock,
 } from 'lucide-react'
 import { useProductAdWizard, AspectRatio, VideoResolution } from './wizard-context'
 
@@ -51,6 +52,8 @@ export function WizardStep4() {
     goToNextStep,
     goToPrevStep,
     saveDraft,
+    isVideoSettingsFromScenario,
+    unlockVideoSettings,
   } = useProductAdWizard()
 
   // Vidu Q2 모델 강제 설정
@@ -92,11 +95,35 @@ export function WizardStep4() {
         </p>
       </div>
 
+      {/* AI 추천 설정 알림 */}
+      {isVideoSettingsFromScenario && (
+        <div className="flex items-center justify-between p-4 rounded-xl bg-primary/5 border border-primary/20">
+          <div className="flex items-center gap-2">
+            <Lock className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-foreground">AI 시나리오 추천 설정</span>
+            <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">적용됨</span>
+          </div>
+          <button
+            onClick={unlockVideoSettings}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
+          >
+            <Unlock className="w-3.5 h-3.5" />
+            수정
+          </button>
+        </div>
+      )}
+
       {/* 비율 선택 */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Maximize className="w-4 h-4 text-muted-foreground" />
           <h3 className="text-sm font-medium text-foreground">영상 비율</h3>
+          {isVideoSettingsFromScenario && (
+            <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded-full flex items-center gap-1">
+              <Sparkles className="w-2.5 h-2.5" />
+              AI
+            </span>
+          )}
         </div>
 
         <div className="grid grid-cols-3 gap-3">
@@ -120,39 +147,17 @@ export function WizardStep4() {
         </div>
       </div>
 
-      {/* 영상 해상도 선택 */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-muted-foreground" />
-          <h3 className="text-sm font-medium text-foreground">영상 품질</h3>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          {RESOLUTION_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              onClick={() => setVideoResolution(option.value)}
-              className={`p-4 rounded-xl border-2 transition-all ${
-                videoResolution === option.value
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <div className="text-center">
-                <div className="font-medium text-foreground">{option.label}</div>
-                <div className="text-xs text-muted-foreground mt-1">{option.desc}</div>
-                <div className="text-xs text-primary mt-2">{option.creditsPerSecond} 크레딧/초</div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* 씬 개수 및 씬별 시간 설정 */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Film className="w-4 h-4 text-muted-foreground" />
           <h3 className="text-sm font-medium text-foreground">씬 구성</h3>
+          {isVideoSettingsFromScenario && (
+            <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded-full flex items-center gap-1">
+              <Sparkles className="w-2.5 h-2.5" />
+              AI
+            </span>
+          )}
           <span className="text-xs text-muted-foreground ml-auto">
             총 {totalDuration}초
           </span>
@@ -212,6 +217,34 @@ export function WizardStep4() {
               </div>
             )
           })}
+        </div>
+      </div>
+
+      {/* 영상 해상도 선택 (맨 아래로 이동) */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-muted-foreground" />
+          <h3 className="text-sm font-medium text-foreground">영상 품질</h3>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          {RESOLUTION_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => setVideoResolution(option.value)}
+              className={`p-4 rounded-xl border-2 transition-all ${
+                videoResolution === option.value
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/50'
+              }`}
+            >
+              <div className="text-center">
+                <div className="font-medium text-foreground">{option.label}</div>
+                <div className="text-xs text-muted-foreground mt-1">{option.desc}</div>
+                <div className="text-xs text-primary mt-2">{option.creditsPerSecond} 크레딧/초</div>
+              </div>
+            </button>
+          ))}
         </div>
       </div>
 

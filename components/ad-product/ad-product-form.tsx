@@ -11,8 +11,9 @@
 import { useState, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
-import { Upload, X, Loader2, ArrowLeft, Plus, Minus, Link as LinkIcon, Edit3, ImagePlus } from 'lucide-react'
+import { Upload, X, Loader2, Plus, Minus, Link as LinkIcon, Edit3, ImagePlus } from 'lucide-react'
 import { AdProductScanner } from './ad-product-scanner'
+import { AdCreationHeader } from '@/components/ui/ad-creation-header'
 
 type InputMode = 'url' | 'manual'
 
@@ -316,15 +317,14 @@ export function AdProductForm() {
   return (
     <div className="max-w-lg mx-auto">
       {/* 헤더 */}
-      <div className="flex items-center gap-4 mb-6">
-        <button
-          onClick={() => router.back()}
-          className="p-2 hover:bg-secondary/50 rounded-lg transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-muted-foreground" />
-        </button>
-        <h1 className="text-xl font-bold text-foreground">{t.adProduct.registerProduct}</h1>
-      </div>
+      <AdCreationHeader
+        backHref="/dashboard/image-ad"
+        title={t.adProduct.registerProduct}
+        selectedProduct={previewUrl ? {
+          name: name || '새 제품',
+          imageUrl: previewUrl,
+        } : null}
+      />
 
       <div className="bg-card border border-border rounded-xl p-6 space-y-6">
         {/* 입력 모드 선택 */}

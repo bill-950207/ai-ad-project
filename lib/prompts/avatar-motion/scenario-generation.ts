@@ -12,6 +12,8 @@ import {
   VIDU_OPTIMIZATION,
   SEEDREAM_FIRST_FRAME_GUIDE,
   VIDU_MOTION_GUIDE,
+  LIGHTING_CAMERA_INSTRUCTION,
+  EQUIPMENT_NEGATIVE_PROMPT,
 } from '../common'
 
 // ============================================================
@@ -51,7 +53,12 @@ Think of these as short film scenes - not traditional product ads. The model act
 5. AUTHENTICITY: Real moments, not staged ads
    - Natural expressions and body language
    - Believable scenarios viewers can relate to
-   - The model feels like a real person, not a mannequin`
+   - The model feels like a real person, not a mannequin
+
+=== CRITICAL: NO VISIBLE EQUIPMENT ===
+${LIGHTING_CAMERA_INSTRUCTION}
+
+FORBIDDEN TERMS in firstFramePrompt: ${SEEDREAM_FORBIDDEN_TERMS.join(', ')}`
 
 /** 시나리오 생성 템플릿 */
 export const SCENARIO_GENERATION_TEMPLATE: PromptTemplate = {
@@ -151,7 +158,12 @@ Your task is to create DYNAMIC VIDEO STORIES with QUICK SCENE TRANSITIONS for mo
 5. MOVEMENT AMPLITUDE per scene length:
    - 2초 scenes: "small" (subtle gestures, micro-expressions)
    - 3-4초 scenes: "medium" (natural movements)
-   - 5초 scenes: "large" (significant action)`
+   - 5초 scenes: "large" (significant action)
+
+=== CRITICAL: NO VISIBLE EQUIPMENT ===
+${LIGHTING_CAMERA_INSTRUCTION}
+
+FORBIDDEN TERMS in firstFramePrompt: ${SEEDREAM_FORBIDDEN_TERMS.join(', ')}`
 
 /** 멀티 씬 시나리오 생성 템플릿 */
 export const MULTI_SCENE_SCENARIO_TEMPLATE: PromptTemplate = {
@@ -285,7 +297,7 @@ ${VIDU_MOTION_GUIDE}
 
 Camera movements: ${VIDU_OPTIMIZATION.cameraMovements.dollyIn}, ${VIDU_OPTIMIZATION.cameraMovements.slowZoom}, ${VIDU_OPTIMIZATION.cameraMovements.staticShot}
 
-Micro-expressions: ${VIDU_OPTIMIZATION.microExpressions.blink}, ${VIDU_OPTIMIZATION.microExpressions.smile}
+Micro-expressions: ${VIDU_OPTIMIZATION.microExpressions.blink}, ${VIDU_OPTIMIZATION.microExpressions.expressionShift}
 
 ⚠️ Do NOT describe motion intensity - use API's movement_amplitude parameter
 

@@ -108,6 +108,13 @@ export function WizardStep3() {
         avatarName: selectedAvatarInfo.avatarName,
         outfitName: selectedAvatarInfo.outfitName,
         aiOptions: selectedAvatarInfo.aiOptions,
+        // 실제 아바타 선택 시 스타일 정보 전달
+        avatarStyle: selectedAvatarInfo.avatarOptions ? {
+          vibe: selectedAvatarInfo.avatarOptions.vibe,
+          bodyType: selectedAvatarInfo.avatarOptions.bodyType,
+          height: selectedAvatarInfo.avatarOptions.height,
+          gender: selectedAvatarInfo.avatarOptions.gender,
+        } : undefined,
       } : undefined
 
       const res = await fetch('/api/image-ads/recommend-options', {

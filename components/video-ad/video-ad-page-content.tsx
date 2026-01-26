@@ -176,9 +176,10 @@ export function VideoAdPageContent() {
     router.push(`/dashboard/video-ad/${video.id}`)
   }
 
-  const getStatusBadge = (status: string, wizardStep?: number | null) => {
+  const getStatusBadge = (status: string, wizardStep?: number | null, category?: string | null) => {
+    const stepName = getStepName(category, wizardStep)
     const statusConfig: Record<string, { label: string; className: string }> = {
-      'DRAFT': { label: `임시저장 (${wizardStep || 1}단계)`, className: 'bg-orange-500/80 text-white' },
+      'DRAFT': { label: `임시저장 (${stepName})`, className: 'bg-orange-500/80 text-white' },
       'GENERATING_SCRIPTS': { label: '대본 생성 중', className: 'bg-indigo-500/80 text-white animate-pulse' },
       'GENERATING_AUDIO': { label: '음성 생성 중', className: 'bg-pink-500/80 text-white animate-pulse' },
       'PENDING': { label: t.videoAd?.status?.pending || '대기 중', className: 'bg-yellow-500/80 text-white' },
@@ -209,11 +210,33 @@ export function VideoAdPageContent() {
     const categoryLabels: Record<string, string> = {
       'productDescription': '제품 설명',
       'avatarMotion': '아바타 모션',
+      'productAd': '제품 광고',
       'productShowcase': '제품 쇼케이스',
       'lifestyle': '라이프스타일',
       'testimonial': '후기/추천',
     }
     return categoryLabels[category || ''] || '영상 광고'
+  }
+
+  // 카테고리와 단계 번호에 따른 단계 이름 반환
+  const getStepName = (category: string | null | undefined, step: number | null | undefined): string => {
+    const stepNumber = step || 1
+
+    const stepNames: Record<string, string[]> = {
+      // productDescription: 4단계
+      'productDescription': ['제품/아바타', '영상 정보', '대본/음성', '생성'],
+      // avatarMotion: 6단계
+      'avatarMotion': ['아바타/제품', '스토리 방식', '시나리오', '영상 설정', '프레임 생성', '영상 생성'],
+      // productAd: 6단계
+      'productAd': ['제품 선택', '설정 방식', '시나리오', '설정', '첫 씬', '영상 생성'],
+    }
+
+    const steps = stepNames[category || '']
+    if (steps && stepNumber >= 1 && stepNumber <= steps.length) {
+      return steps[stepNumber - 1]
+    }
+
+    return `${stepNumber}단계`
   }
 
   return (
@@ -382,12 +405,12 @@ export function VideoAdPageContent() {
                 {/* 상태 뱃지 - 우측 상단 */}
                 {video.status !== 'COMPLETED' && (
                   <div className="absolute top-3 right-3 z-10">
-                    {getStatusBadge(video.status, video.wizard_step)}
+                    {getStatusBadge(video.status, video.wizard_step, video.category)}
                   </div>
                 )}
 
-                {/* 제품/아바타 이미지 - 좌측 하단 */}
-                {video.status === 'COMPLETED' && (video.ad_products || video.avatars) && (
+                {/* 제품/아바타 이미지 - 좌측 하단 (임시저장/완료 모두 표시) */}
+                {(video.ad_products || video.avatars) && (
                   <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5">
                     {video.ad_products && (video.ad_products.rembg_image_url || video.ad_products.image_url) && (
                       <div className="w-10 h-10 rounded-lg bg-white/90 backdrop-blur-sm border border-white/50 shadow-md overflow-hidden flex items-center justify-center">

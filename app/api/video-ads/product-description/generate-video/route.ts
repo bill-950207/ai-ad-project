@@ -23,6 +23,8 @@ const CAMERA_COMPOSITION_PROMPTS: Record<string, string> = {
   'tripod': 'camera mounted on tripod, stable professional framing, presenting to fixed camera',
   'closeup': 'close-up framing on face and upper body, intimate speaking distance',
   'fullbody': 'full body visible in frame, wider shot showing complete posture',
+  'ugc-closeup': 'UGC style medium close-up, chest to head framing, casual influencer vlog aesthetic',
+  'ugc-selfie': 'selfie camera perspective, NO visible hands or phone in frame, hands cropped below frame, looking directly at camera, intimate selfie angle at eye level',
 }
 
 /** 대본 스타일별 표정/제스처 프롬프트 */
@@ -31,6 +33,13 @@ const SCRIPT_STYLE_PROMPTS: Record<string, string> = {
   'casual': 'relaxed friendly expression, natural conversational gestures, approachable demeanor, casual speaking manner',
   'energetic': 'enthusiastic expression, animated hand gestures, bright smile, excited speaking style, dynamic energy',
   'custom': 'natural expression, conversational gestures, engaging demeanor',
+}
+
+/** 비디오 타입별 모션 프롬프트 */
+const VIDEO_TYPE_MOTION_PROMPTS: Record<string, string> = {
+  'UGC': 'casual natural gestures, authentic reactions, mobile vlog style movement, engaging energy, relatable influencer vibe',
+  'podcast': 'conversational gestures, thoughtful pauses, nodding, leaning in when making points, intimate storytelling movements, seated comfortably',
+  'expert': 'professional presenting gestures, pointing to emphasize, confident posture, measured deliberate movements, educational hand motions, authoritative stance',
 }
 
 /**
@@ -42,6 +51,7 @@ function generateVideoPrompt(params: {
   locationPrompt?: string
   productName?: string
   productDescription?: string
+  videoType?: string
 }): string {
   const parts: string[] = []
 
@@ -58,6 +68,10 @@ function generateVideoPrompt(params: {
   // 대본 스타일에 따른 표정/제스처
   const stylePrompt = SCRIPT_STYLE_PROMPTS[params.scriptStyle || 'custom'] || SCRIPT_STYLE_PROMPTS.custom
   parts.push(stylePrompt)
+
+  // 비디오 타입별 모션 프롬프트
+  const videoTypeMotion = VIDEO_TYPE_MOTION_PROMPTS[params.videoType || 'UGC'] || VIDEO_TYPE_MOTION_PROMPTS['UGC']
+  parts.push(videoTypeMotion)
 
   // 제품 관련 동작
   if (params.productName) {
@@ -110,6 +124,8 @@ export async function POST(request: NextRequest) {
       cameraComposition,
       productName,
       productDescription,
+      // 비디오 타입 (UGC, podcast, expert)
+      videoType = 'UGC',
     } = body
 
     if (!avatarId) {
@@ -167,6 +183,7 @@ export async function POST(request: NextRequest) {
       locationPrompt,
       productName,
       productDescription,
+      videoType,
     })
     console.log('Generated video prompt:', videoPrompt)
 

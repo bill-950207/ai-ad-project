@@ -465,7 +465,7 @@ Camera movement options for motionPromptEN:
 
 Micro-expression timing for realism:
 - "${VIDU_OPTIMIZATION.microExpressions.blink}"
-- "${VIDU_OPTIMIZATION.microExpressions.smile}"
+- "${VIDU_OPTIMIZATION.microExpressions.expressionShift}"
 - "${VIDU_OPTIMIZATION.microExpressions.breathe}"
 
 ⚠️ Do NOT describe motion intensity in prompt - use API's movement_amplitude parameter`
@@ -897,7 +897,7 @@ For each scene's firstFramePrompt (English, 60-80 words):
 
 For each scene's motionPromptEN (English, 40-60 words):
 - Use timing adverbs: ${VIDU_OPTIMIZATION.movementPace.slow}
-- Include micro-expressions: "${VIDU_OPTIMIZATION.microExpressions.blink}", "${VIDU_OPTIMIZATION.microExpressions.smile}"
+- Include micro-expressions: "${VIDU_OPTIMIZATION.microExpressions.blink}", "${VIDU_OPTIMIZATION.microExpressions.expressionShift}"
 - Camera movement options: "${VIDU_OPTIMIZATION.cameraMovements.staticShot}" or "${VIDU_OPTIMIZATION.cameraMovements.slowZoom}"
 - DO NOT describe motion intensity - use API's movement_amplitude parameter`
 

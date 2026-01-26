@@ -9,7 +9,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
-import { ArrowLeft, Trash2, Plus, Image as ImageIcon, Loader2, RefreshCw, Edit3, X, Check, Tag, DollarSign, Building2, FileText, Sparkles } from 'lucide-react'
+import { Trash2, Plus, Image as ImageIcon, Loader2, RefreshCw, Edit3, X, Check, Tag, DollarSign, Building2, FileText, Sparkles } from 'lucide-react'
+import { AdCreationHeader } from '@/components/ui/ad-creation-header'
 
 interface AdProduct {
   id: string
@@ -254,29 +255,28 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
   return (
     <div className="space-y-6">
       {/* 헤더 */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <AdCreationHeader
+        backHref="/dashboard/image-ad"
+        title={product.name}
+        selectedProduct={{
+          name: product.name,
+          imageUrl: product.rembg_image_url || product.image_url,
+        }}
+        rightContent={
           <button
-            onClick={() => router.push('/dashboard/image-ad')}
-            className="p-2 hover:bg-secondary/50 rounded-lg transition-colors"
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm text-red-500 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
           >
-            <ArrowLeft className="w-5 h-5 text-muted-foreground" />
+            {isDeleting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Trash2 className="w-4 h-4" />
+            )}
+            {t.adProduct.delete}
           </button>
-          <h1 className="text-xl font-bold text-foreground">{product.name}</h1>
-        </div>
-        <button
-          onClick={handleDelete}
-          disabled={isDeleting}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm text-red-500 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
-        >
-          {isDeleting ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Trash2 className="w-4 h-4" />
-          )}
-          {t.adProduct.delete}
-        </button>
-      </div>
+        }
+      />
 
       {/* 콘텐츠 */}
       <div className="space-y-6">

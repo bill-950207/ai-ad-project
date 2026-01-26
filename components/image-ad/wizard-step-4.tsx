@@ -71,13 +71,21 @@ export function WizardStep4() {
   const [generationStartTime, setGenerationStartTime] = useState<number | null>(null)
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const isPollingRef = useRef(false)  // 중복 요청 방지
-  const abortControllerRef = useRef<AbortController | null>(null)
+  const currentProgressRef = useRef(0)  // 현재 진행률 추적 (역행 방지용)
+  const isCancelledRef = useRef(false)  // 폴링 취소 플래그
 
   // 이미지 편집 모달 상태
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [editImageIndex, setEditImageIndex] = useState(0)
+  // 이미지 로딩 상태 추적 (스켈레톤 UI용)
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set())
 
   const isWearingType = adType === 'wearing'
+
+  // 결과 이미지가 변경되면 로딩 상태 초기화
+  useEffect(() => {
+    setLoadedImages(new Set())
+  }, [resultImages])
 
   // 진행률 업데이트
   useEffect(() => {
@@ -86,7 +94,11 @@ export function WizardStep4() {
         const elapsed = (Date.now() - generationStartTime) / 1000
         const baseTime = 60 // 예상 시간 60초
         const progress = Math.min((elapsed / baseTime) * 100, 99)
-        setGenerationProgress(progress)
+        // 역행 방지: 현재 저장된 진행률보다 높을 때만 업데이트
+        if (progress > currentProgressRef.current) {
+          currentProgressRef.current = progress
+          setGenerationProgress(progress)
+        }
       }, 500)
     }
 
@@ -97,13 +109,10 @@ export function WizardStep4() {
     }
   }, [isGenerating, generationStartTime, setGenerationProgress])
 
-  // AbortController cleanup (컴포넌트 언마운트 시 요청 취소)
+  // 컴포넌트 언마운트 시 폴링 취소
   useEffect(() => {
     return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-        abortControllerRef.current = null
-      }
+      isCancelledRef.current = true
       isPollingRef.current = false
     }
   }, [])
@@ -144,6 +153,7 @@ export function WizardStep4() {
     setResultImages([])
     setGenerationStartTime(Date.now())
     setGenerationProgress(0)
+    currentProgressRef.current = 0  // ref도 초기화
 
     try {
       // 로컬 이미지 업로드 (있는 경우)
@@ -191,32 +201,44 @@ export function WizardStep4() {
       }
 
       // 배치 폴링 (단일 API로 모든 이미지 상태 확인)
-      const pollInterval = 1000
-      const maxAttempts = 90
+      const pollInterval = 2000  // 2초 간격으로 폴링
+      const pollTimeout = 3000   // 각 요청 타임아웃 3초
+      const maxAttempts = 60     // 최대 60회 (2초 간격 * 60 = 2분)
       const imageAdId = imageAdIds?.[0]
 
       if (!imageAdId) {
         throw new Error('이미지 광고 ID가 없습니다')
       }
 
-      // AbortController 설정
-      abortControllerRef.current = new AbortController()
+      // 폴링 시작 전 취소 플래그 초기화
+      isCancelledRef.current = false
 
       const pollBatchStatus = async (): Promise<string[]> => {
         let attempts = 0
 
-        const poll = async (): Promise<string[]> => {
+        while (attempts < maxAttempts) {
+          // 컴포넌트 언마운트 시 폴링 중단
+          if (isCancelledRef.current) {
+            throw new Error('폴링이 취소되었습니다')
+          }
+
           // 이전 요청이 진행 중이면 대기 후 재시도
           if (isPollingRef.current) {
             await new Promise(resolve => setTimeout(resolve, pollInterval))
-            return poll()
+            continue
           }
 
           isPollingRef.current = true
+
           try {
+            // 3초 타임아웃 설정
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), pollTimeout)
+
             const statusRes = await fetch(`/api/image-ads/batch-status/${imageAdId}`, {
-              signal: abortControllerRef.current?.signal,
+              signal: controller.signal,
             })
+            clearTimeout(timeoutId)
 
             if (!statusRes.ok) {
               throw new Error('상태 확인 실패')
@@ -235,23 +257,30 @@ export function WizardStep4() {
             }
 
             // 진행률 업데이트 (batch-status API의 progress 필드 활용)
+            // 기존 진행률보다 높을 때만 업데이트하여 역행 방지
             if (status.progress !== undefined) {
-              setGenerationProgress(Math.min(status.progress, 99))
+              const serverProgress = Math.min(status.progress, 99)
+              if (serverProgress > currentProgressRef.current) {
+                currentProgressRef.current = serverProgress
+                setGenerationProgress(serverProgress)
+              }
+            }
+          } catch (error) {
+            // 타임아웃 오류는 무시하고 다음 폴링에서 재시도
+            if (error instanceof Error && error.name === 'AbortError') {
+              console.log('폴링 타임아웃, 재시도...')
+            } else {
+              throw error
             }
           } finally {
             isPollingRef.current = false
           }
 
           attempts++
-          if (attempts >= maxAttempts) {
-            throw new Error('이미지 생성 시간 초과')
-          }
-
           await new Promise(resolve => setTimeout(resolve, pollInterval))
-          return poll()
         }
 
-        return poll()
+        throw new Error('이미지 생성 시간 초과')
       }
 
       const imageUrls = await pollBatchStatus()
@@ -271,8 +300,8 @@ export function WizardStep4() {
         clearInterval(progressIntervalRef.current)
       }
       // 폴링 관련 ref 정리
-      abortControllerRef.current = null
       isPollingRef.current = false
+      isCancelledRef.current = false
     }
   }
 
@@ -312,39 +341,54 @@ export function WizardStep4() {
           {resultImages.map((url, index) => (
             <div key={index} className="relative group">
               <div className="bg-secondary/30 rounded-xl overflow-hidden">
+                {/* 스켈레톤 UI - 이미지 로딩 전 표시 */}
+                {!loadedImages.has(index) && (
+                  <div className="aspect-square bg-secondary/50 animate-pulse flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
+                      <span className="text-sm text-muted-foreground">이미지 로딩 중...</span>
+                    </div>
+                  </div>
+                )}
                 <img
                   src={url}
                   alt={`생성된 이미지 ${index + 1}`}
-                  className="w-full h-auto"
+                  className={`w-full h-auto transition-opacity duration-300 ${loadedImages.has(index) ? 'opacity-100' : 'opacity-0 absolute'}`}
+                  onLoad={() => {
+                    setLoadedImages(prev => new Set(prev).add(index))
+                  }}
                 />
               </div>
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-3">
-                <button
-                  onClick={() => {
-                    setEditImageIndex(index)
-                    setEditModalOpen(true)
-                  }}
-                  className="p-3 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
-                  title="이미지 편집"
-                >
-                  <Wand2 className="w-5 h-5 text-white" />
-                </button>
-                <a
-                  href={url}
-                  download={`ad-image-${index + 1}.png`}
-                  className="p-3 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
-                >
-                  <Download className="w-5 h-5 text-white" />
-                </a>
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-3 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
-                >
-                  <ExternalLink className="w-5 h-5 text-white" />
-                </a>
-              </div>
+              {/* 호버 오버레이 - 이미지 로딩 완료 후에만 표시 */}
+              {loadedImages.has(index) && (
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-3">
+                  <button
+                    onClick={() => {
+                      setEditImageIndex(index)
+                      setEditModalOpen(true)
+                    }}
+                    className="p-3 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+                    title="이미지 편집"
+                  >
+                    <Wand2 className="w-5 h-5 text-white" />
+                  </button>
+                  <a
+                    href={url}
+                    download={`ad-image-${index + 1}.png`}
+                    className="p-3 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+                  >
+                    <Download className="w-5 h-5 text-white" />
+                  </a>
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+                  >
+                    <ExternalLink className="w-5 h-5 text-white" />
+                  </a>
+                </div>
+              )}
             </div>
           ))}
         </div>

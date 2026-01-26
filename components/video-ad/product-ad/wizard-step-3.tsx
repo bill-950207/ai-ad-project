@@ -11,7 +11,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react'
-import { useProductAdWizard, AdElementOptions, ScenarioInfo } from './wizard-context'
+import { useProductAdWizard, AdElementOptions, ScenarioInfo, RecommendedVideoSettings } from './wizard-context'
 
 // 광고 요소 옵션 정의
 const AD_ELEMENT_OPTIONS: Record<keyof AdElementOptions, { label: string; options: string[] }> = {
@@ -226,6 +226,7 @@ export function WizardStep3() {
     goToNextStep,
     goToPrevStep,
     saveDraft,
+    applyVideoSettingsFromScenario,
   } = useProductAdWizard()
 
   const [aiReasons, setAiReasons] = useState<Record<string, string>>({})
@@ -262,6 +263,10 @@ export function WizardStep3() {
       if (data.scenarios.length > 0) {
         setSelectedScenarioIndex(0)
         setScenarioInfo(data.scenarios[0])
+        // AI 추천 영상 설정 적용
+        if (data.scenarios[0].videoSettings) {
+          applyVideoSettingsFromScenario(data.scenarios[0].videoSettings as RecommendedVideoSettings)
+        }
       }
     } catch (error) {
       console.error('시나리오 생성 오류:', error)
@@ -298,6 +303,10 @@ export function WizardStep3() {
       if (data.scenarios.length > 0) {
         setScenarioInfo(data.scenarios[0])
         setAiReasons(data.reasons || {})
+        // AI 추천 영상 설정 적용
+        if (data.scenarios[0].videoSettings) {
+          applyVideoSettingsFromScenario(data.scenarios[0].videoSettings as RecommendedVideoSettings)
+        }
       }
     } catch (error) {
       console.error('시나리오 생성 오류:', error)
@@ -333,7 +342,12 @@ export function WizardStep3() {
   // 시나리오 선택
   const handleSelectScenario = (index: number) => {
     setSelectedScenarioIndex(index)
-    setScenarioInfo(generatedScenarios[index])
+    const scenario = generatedScenarios[index]
+    setScenarioInfo(scenario)
+    // AI 추천 영상 설정 적용
+    if (scenario.videoSettings) {
+      applyVideoSettingsFromScenario(scenario.videoSettings as RecommendedVideoSettings)
+    }
   }
 
   // 다음 단계로

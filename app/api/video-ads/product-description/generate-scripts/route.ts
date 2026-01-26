@@ -26,6 +26,10 @@ import {
   submitFirstFrameToQueue as submitFirstFrameToKieQueue,
   getEditQueueStatus as getKieEditQueueStatus,
   getEditQueueResponse as getKieEditQueueResponse,
+  submitZImageTurboToQueue,
+  getZImageTurboQueueStatus,
+  getZImageTurboQueueResponse,
+  type ZImageAspectRatio,
 } from '@/lib/kie/client'
 import { uploadExternalImageToR2 } from '@/lib/image/compress'
 
@@ -59,6 +63,8 @@ export async function POST(request: NextRequest) {
       language = 'ko',  // 대본 생성 언어 (기본값: 한국어)
       // AI 아바타 옵션 (avatarId가 'ai-generated'일 때)
       aiAvatarOptions,
+      // 비디오 타입 (UGC, podcast, expert)
+      videoType = 'UGC',
     } = body
 
     if (!avatarId) {
@@ -126,6 +132,7 @@ export async function POST(request: NextRequest) {
       productInfo: productInfo.trim(),
       durationSeconds: durationSeconds || 30,
       language,  // 대본 생성 언어
+      videoType,  // 비디오 타입 (UGC, podcast, expert)
       // AI 의상 추천 요청 시 추가 파라미터
       requestOutfitRecommendation: outfitMode === 'ai_recommend',
       avatarDescription: outfitMode === 'ai_recommend' ? avatarDescription : undefined,
@@ -141,11 +148,15 @@ export async function POST(request: NextRequest) {
       ? scriptsResult.recommendedOutfit.description
       : outfitMode === 'custom' ? outfitCustom : undefined
 
+    // "말로만 설명" 포즈일 때는 제품 이미지 제외 (아바타만 등장)
+    const isTalkingOnlyPose = modelPose === 'talking-only'
+    const effectiveProductImageUrl = isTalkingOnlyPose ? undefined : productImageUrl
+
     if (isAiGeneratedAvatar) {
       // AI 아바타: generateAiAvatarPrompt 사용 (아바타 묘사 포함 프롬프트 생성)
       const aiAvatarResult = await generateAiAvatarPrompt({
         productInfo: productInfo.trim(),
-        productImageUrl,
+        productImageUrl: effectiveProductImageUrl,
         locationPrompt: locationPrompt?.trim() || undefined,
         cameraComposition: cameraComposition as CameraCompositionType | undefined,
         modelPose,
@@ -155,37 +166,50 @@ export async function POST(request: NextRequest) {
         targetAge: aiAvatarOptions?.targetAge,
         style: aiAvatarOptions?.style,
         ethnicity: aiAvatarOptions?.ethnicity,
+        videoType,  // 비디오 타입 (UGC, podcast, expert)
       })
       firstFramePrompt = aiAvatarResult.prompt
       locationDescription = aiAvatarResult.locationDescription
-      console.log('AI 아바타 프롬프트 생성:', { prompt: firstFramePrompt, avatar: aiAvatarResult.avatarDescription })
+      console.log('AI 아바타 프롬프트 생성:', { prompt: firstFramePrompt, avatar: aiAvatarResult.avatarDescription, videoType, isTalkingOnlyPose })
     } else {
       // 기존 아바타: generateFirstFramePrompt 사용
       const firstFrameResult = await generateFirstFramePrompt({
         productInfo: productInfo.trim(),
         avatarImageUrl: finalAvatarImageUrl!,
         locationPrompt: locationPrompt?.trim() || undefined,
-        productImageUrl,
+        productImageUrl: effectiveProductImageUrl,
         cameraComposition,
         modelPose,
         outfitPreset: outfitMode === 'preset' ? outfitPreset : undefined,
         outfitCustom: effectiveOutfitCustom,
+        videoType,  // 비디오 타입 (UGC, podcast, expert)
       })
       firstFramePrompt = firstFrameResult.prompt
       locationDescription = firstFrameResult.locationDescription
     }
 
     // 3. 첫 프레임 이미지 생성 (2개)
-    type SubmitResult = { requestId: string; provider: 'fal' | 'kie' }
+    type SubmitResult = { requestId: string; provider: 'fal' | 'kie' | 'kie-zimage' }
     let submitResults: SubmitResult[]
 
     if (isAiGeneratedAvatar) {
-      // AI 아바타: Seedream 4.5 Edit 사용 (제품 이미지를 참조로 활용)
-      const aiAvatarImageUrls: string[] = productImageUrl ? [productImageUrl] : []
+      // AI 아바타: 제품 이미지가 있으면 Seedream 4.5 Edit, 없으면 z-image-turbo 사용
+      const aiAvatarImageUrls: string[] = effectiveProductImageUrl ? [effectiveProductImageUrl] : []
+      const useTextToImage = aiAvatarImageUrls.length === 0
 
       const submitAiAvatarFirstFrame = async (): Promise<SubmitResult> => {
+        if (useTextToImage) {
+          // 이미지 입력이 없으면 z-image-turbo (텍스트-to-이미지) 사용
+          console.log('AI 아바타 + 이미지 없음: z-image-turbo 모델 사용')
+          const zImageResponse = await submitZImageTurboToQueue(
+            firstFramePrompt,
+            '3:4' as ZImageAspectRatio  // 2:3에 가장 가까운 비율
+          )
+          return { requestId: zImageResponse.request_id, provider: 'kie-zimage' }
+        }
+
         try {
-          // fal.ai Seedream 4.5 먼저 시도
+          // 이미지 입력이 있으면 fal.ai Seedream 4.5 먼저 시도
           const falResponse = await submitSeedreamFirstFrameToQueue(
             aiAvatarImageUrls,
             firstFramePrompt,
@@ -206,10 +230,10 @@ export async function POST(request: NextRequest) {
         submitAiAvatarFirstFrame(),
       ])
     } else {
-      // 기존 아바타: Seedream 4.5 또는 Kie.ai 사용
+      // 기존 아바타: Seedream 4.5 또는 Kie.ai 사용 (talking-only일 때는 제품 이미지 제외)
       const imageUrls: string[] = [finalAvatarImageUrl!]
-      if (productImageUrl) {
-        imageUrls.push(productImageUrl)
+      if (effectiveProductImageUrl) {
+        imageUrls.push(effectiveProductImageUrl)
       }
 
       const submitFirstFrame = async (): Promise<SubmitResult> => {
@@ -251,7 +275,15 @@ export async function POST(request: NextRequest) {
               const response = await getSeedreamEditQueueResponse(result.requestId)
               return response.images[0]?.url || null
             }
+          } else if (result.provider === 'kie-zimage') {
+            // z-image-turbo (텍스트-to-이미지)
+            const status = await getZImageTurboQueueStatus(result.requestId)
+            if (status.status === 'COMPLETED') {
+              const response = await getZImageTurboQueueResponse(result.requestId)
+              return response.images[0]?.url || null
+            }
           } else {
+            // kie Seedream 4.5 Edit
             const status = await getKieEditQueueStatus(result.requestId)
             if (status.status === 'COMPLETED') {
               const response = await getKieEditQueueResponse(result.requestId)

@@ -11,6 +11,9 @@ import type {
   ModelPoseType,
   OutfitPresetType,
 } from './types'
+import { NO_OVERLAY_ELEMENTS } from '@/lib/prompts/common'
+import { VIDEO_TYPE_SCRIPT_STYLES } from '@/lib/prompts/scripts'
+import { VIDEO_TYPE_FIRST_FRAME_GUIDES } from '@/lib/prompts/first-frame'
 
 // 카메라 구도별 설정
 const cameraCompositionDescriptions: Record<CameraCompositionType, { description: string; aperture: string; lens: string }> = {
@@ -20,7 +23,8 @@ const cameraCompositionDescriptions: Record<CameraCompositionType, { description
   tripod: { description: 'stable tripod shot, medium distance, waist to head visible', aperture: 'f/16', lens: '50mm' },
   closeup: { description: 'close-up portrait, face and upper body prominent', aperture: 'f/11', lens: '50mm' },
   fullbody: { description: 'full body shot, entire person visible in frame', aperture: 'f/16', lens: '35mm' },
-  'ugc-closeup': { description: 'UGC-style intimate medium close-up, chest-up framing, eyes looking DIRECTLY into camera lens', aperture: 'f/8', lens: '35mm' },
+  'ugc-closeup': { description: 'UGC-style intimate medium close-up, chest-up framing, eyes looking DIRECTLY into camera lens', aperture: 'f/11', lens: '35mm' },
+  'ugc-selfie': { description: 'selfie camera angle, HANDS NOT VISIBLE in frame - cropped below edge, direct eye contact, intimate selfie perspective', aperture: 'f/11', lens: '28mm' },
 }
 
 // 모델 포즈 설명
@@ -52,9 +56,15 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
   const styleMap: Record<string, string> = { natural: '자연스럽고 친근한', professional: '전문적이고 세련된', casual: '캐주얼하고 편안한', elegant: '우아하고 고급스러운', any: '스타일 무관' }
   const ethnicityMap: Record<string, string> = { korean: '한국인', asian: '아시아인', western: '서양인', any: '인종 무관' }
 
+  // 비디오 타입별 스타일 가이드
+  const videoType = input.videoType || 'UGC'
+  const videoTypeGuide = VIDEO_TYPE_FIRST_FRAME_GUIDES[videoType]
+  const videoTypeStyle = VIDEO_TYPE_SCRIPT_STYLES[videoType]
+
+  // 장소: 사용자 지정 > 비디오 타입 기본값
   const locationSection = input.locationPrompt
     ? `사용자가 지정한 장소: ${input.locationPrompt}`
-    : '장소가 지정되지 않았습니다. 제품에 가장 적합한 장소를 선택해주세요.'
+    : `장소: ${videoTypeGuide.environmentPrompt} (${videoTypeStyle.korean} 스타일)`
 
   const targetGenderText = genderMap[input.targetGender || 'any']
   const targetAgeText = ageMap[input.targetAge || 'any']
@@ -67,9 +77,10 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
 
   const cameraSection = `카메라 구도: ${cameraConfig.description}\n카메라 스펙: Shot on Sony A7IV, ${cameraConfig.lens} ${cameraConfig.aperture}, deep depth of field`
 
+  // 포즈: 사용자 지정 > 비디오 타입 기본값
   const poseSection = input.modelPose
     ? `모델 포즈: ${modelPoseDescriptions[input.modelPose]}`
-    : ''
+    : `모델 포즈: ${videoTypeGuide.posePrompt}`
 
   let outfitSection = ''
   if (input.outfitCustom) {
@@ -78,13 +89,20 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
     outfitSection = `의상 설정: ${outfitPresetDescriptions[input.outfitPreset]}`
   }
 
+  // 비디오 타입별 분위기
+  const atmosphereSection = `분위기: ${videoTypeGuide.atmospherePrompt}`
+
   const prompt = `당신은 GPT-Image 1.5 이미지 생성을 위한 프롬프트 전문가입니다.
 제품 설명 영상의 첫 프레임에 사용될 이미지를 생성하기 위한 프롬프트를 작성해주세요.
+
+=== 영상 스타일: ${videoTypeStyle.korean} ===
+${videoTypeStyle.description}
+${atmosphereSection}
 
 === 제품 정보 ===
 ${input.productInfo}
 
-${input.productImageUrl ? '제품 이미지가 Figure 1로 첨부되어 있습니다. "the product from Figure 1" 형식으로 참조하세요.' : ''}
+${input.productImageUrl ? '제품 이미지가 Figure 1로 첨부되어 있습니다. "the product from Figure 1" 형식으로 참조하세요.' : '⚠️ 중요: 이 이미지에는 제품이 등장하지 않습니다. 아바타만 나오고, 손은 비어있는 자연스러운 포즈로 생성하세요.'}
 
 === 타겟 아바타 조건 ===
 - 성별: ${targetGenderText}
@@ -103,9 +121,13 @@ ${outfitSection ? `=== 의상 설정 ===\n${outfitSection}` : ''}
 
 === 작성 지침 ===
 1. 아바타: 인종, 성별, 나이대, 피부톤, 머리카락, 표정, 의상 상세 묘사
-2. 배경: 선명한 배경 (블러 금지), 자연광
+2. 배경: 선명한 배경 (블러 금지), 자연광 - "${videoTypeStyle.korean}" 스타일에 맞는 배경
 3. 카메라: Shot on Sony A7IV, 35mm f/8, deep depth of field
 4. 품질: ultra-realistic cinematic editorial photography, 8K quality
+5. 중요: 이미지는 "${videoTypeStyle.korean}" 영상 스타일의 분위기를 반영해야 합니다
+
+=== 중요: 오버레이 요소 금지 ===
+${NO_OVERLAY_ELEMENTS}
 
 다음 JSON 형식으로 응답하세요:
 {
