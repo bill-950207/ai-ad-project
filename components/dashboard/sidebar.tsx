@@ -237,11 +237,11 @@ export function Sidebar() {
                 </div>
                 {/* 플랜 뱃지 */}
                 <span className={cn(
-                  "absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap",
-                  planType === 'FREE' && "bg-gray-500/20 text-gray-400",
-                  planType === 'STARTER' && "bg-blue-500/20 text-blue-400",
-                  planType === 'PRO' && "bg-purple-500/20 text-purple-400",
-                  planType === 'BUSINESS' && "bg-amber-500/20 text-amber-400"
+                  "absolute -bottom-2.5 left-1/2 -translate-x-1/2 text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap",
+                  planType === 'FREE' && "bg-gray-600 text-gray-100",
+                  planType === 'STARTER' && "bg-blue-600 text-blue-100",
+                  planType === 'PRO' && "bg-purple-600 text-purple-100",
+                  planType === 'BUSINESS' && "bg-amber-600 text-amber-100"
                 )}>
                   {planType}
                 </span>
