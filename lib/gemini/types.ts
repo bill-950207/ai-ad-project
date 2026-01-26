@@ -378,6 +378,12 @@ export interface RecommendedAvatarStyle {
   avatarPrompt: string
   /** 아바타 설명 (사용자 언어, 예: "세련된 20대 후반 여성, 키가 크고 날씬한 체형") */
   avatarDescription: string
+  /** 구조화된 아바타 특성 (시나리오에 맞게 LLM이 결정) */
+  gender?: 'male' | 'female' | 'any'
+  age?: 'young' | 'middle' | 'mature' | 'any'
+  style?: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
+  ethnicity?: 'korean' | 'asian' | 'western' | 'any'
+  bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'any'
 }
 
 /** 아바타 정보 (시나리오 추천용) */
@@ -390,6 +396,7 @@ export interface AvatarInfoForScenario {
     targetAge: 'young' | 'middle' | 'mature' | 'any'
     style: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
     ethnicity: 'korean' | 'asian' | 'western' | 'any'
+    bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'any'
   }
   // 실제 아바타 선택 시 스타일 정보
   avatarStyle?: AvatarStyleInfo

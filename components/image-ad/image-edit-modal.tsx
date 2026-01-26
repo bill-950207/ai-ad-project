@@ -95,12 +95,14 @@ export function ImageEditModal({
     }
   }, [imageAdId, currentImageIndex])
 
-  // 상태 폴링
+  // 상태 폴링 (60초 기준 프로그래스)
   const pollStatus = useCallback(async (reqId: string) => {
+    const maxDuration = 60000 // 60초
     const maxAttempts = 90
+    const startTime = Date.now()
     let attempts = 0
 
-    const poll = async (): Promise<{ imageUrl: string; originalUrl: string } | null> => {
+    const poll = async (): Promise<{ imageUrl: string } | null> => {
       try {
         const res = await fetch(`/api/image-ads/status/${reqId}`)
         if (!res.ok) {
@@ -112,7 +114,6 @@ export function ImageEditModal({
         if (status.status === 'COMPLETED') {
           return {
             imageUrl: status.imageUrl,
-            originalUrl: status.imageUrl,  // status API에서는 동일한 URL 반환
           }
         } else if (status.status === 'FAILED') {
           throw new Error(status.error || '이미지 생성 실패')
@@ -123,8 +124,9 @@ export function ImageEditModal({
           throw new Error('이미지 생성 시간 초과')
         }
 
-        // 진행률 업데이트
-        setProgress(Math.min((attempts / maxAttempts) * 100, 99))
+        // 60초 기준으로 진행률 업데이트
+        const elapsed = Date.now() - startTime
+        setProgress(Math.min((elapsed / maxDuration) * 100, 99))
 
         await new Promise(resolve => setTimeout(resolve, 1000))
         return poll()
@@ -181,8 +183,8 @@ export function ImageEditModal({
         setResultImageUrl(pollResult.imageUrl)
         setProgress(100)
 
-        // 편집된 이미지를 새로 추가 (원본 유지)
-        const newImageIndex = await updateImageAd(pollResult.imageUrl, pollResult.originalUrl)
+        // 편집된 이미지를 새로 추가 (원본 이미지 URL 유지)
+        const newImageIndex = await updateImageAd(pollResult.imageUrl, imageUrl)
 
         if (newImageIndex !== null && onEditComplete) {
           onEditComplete(newImageIndex, pollResult.imageUrl)

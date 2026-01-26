@@ -181,20 +181,48 @@ ${styleParts.join(', ')}
 Consider these avatar traits when recommending options (especially outfit, pose, expression) to create harmonious visuals.`
     }
   } else if (isAiGeneratedAvatar) {
-    avatarContext = `\n\n=== AI AVATAR RECOMMENDATION ===
-The user will use an AI-generated avatar. For each scenario, create a detailed avatar description prompt that matches the scenario's mood and target audience.
+    // 사용자 초기 AI 아바타 옵션 텍스트 생성
+    let userPreferencesText = 'None specified - AI will decide all characteristics'
+    if (input.avatarInfo?.aiOptions) {
+      const opts = input.avatarInfo.aiOptions
+      const prefs: string[] = []
+      if (opts.targetGender && opts.targetGender !== 'any') prefs.push(`Gender: ${opts.targetGender}`)
+      if (opts.targetAge && opts.targetAge !== 'any') prefs.push(`Age: ${opts.targetAge}`)
+      if (opts.style && opts.style !== 'any') prefs.push(`Style: ${opts.style}`)
+      if (opts.ethnicity && opts.ethnicity !== 'any') prefs.push(`Ethnicity: ${opts.ethnicity}`)
+      if (opts.bodyType && opts.bodyType !== 'any') prefs.push(`Body Type: ${opts.bodyType}`)
+      if (prefs.length > 0) userPreferencesText = prefs.join(', ')
+    }
 
-For recommendedAvatarStyle, provide:
-1. avatarPrompt: A detailed English prompt for AI avatar generation (40-60 words). Include:
+    avatarContext = `\n\n=== AI AVATAR RECOMMENDATION ===
+The user will use an AI-generated avatar. For each scenario, recommend specific avatar characteristics.
+
+USER'S INITIAL PREFERENCES:
+${userPreferencesText}
+
+For recommendedAvatarStyle, provide ALL these fields:
+
+1. STRUCTURED FIELDS (REQUIRED - exact string values):
+   - gender: "male" | "female" | "any" (if user specified not "any", KEEP their choice)
+   - age: "young" (20-30s) | "middle" (30-40s) | "mature" (40-50s) | "any"
+   - style: "natural" | "professional" | "casual" | "elegant" | "any"
+   - ethnicity: "korean" | "asian" | "western" | "any"
+   - bodyType: "slim" | "average" | "athletic" | "curvy" | "any"
+
+2. avatarPrompt: A detailed English prompt (40-60 words) matching the structured fields above. Include:
    - Age range and ethnicity appropriate for the product's target market
    - Body type and height that fits the scenario mood
    - Facial features and expression matching the scenario vibe
    - Hair style appropriate for the concept
    Example: "A sophisticated Korean woman in her late 20s, tall with slim elegant figure, sharp facial features with confident gaze, long straight black hair, natural makeup highlighting her refined beauty"
 
-2. avatarDescription: A brief description in the output language (15-25 characters)
+3. avatarDescription: Brief description in output language (15-25 characters)
 
-You MUST provide recommendedAvatarStyle for each scenario with both avatarPrompt and avatarDescription.`
+RULES:
+- If user specified a value (NOT "any"), KEEP that exact value in structured fields
+- If user selected "any", YOU decide the best value based on scenario and product
+- Each scenario can have DIFFERENT avatar characteristics
+- Structured fields MUST align with avatarPrompt description`
   }
 
   const prompt = `You are an expert advertising creative director. Create 3 DISTINCT advertising scenarios customized specifically for this product.
@@ -309,9 +337,15 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
               suggestedPrompt: { type: Type.STRING },
               recommendedAvatarStyle: {
                 type: Type.OBJECT,
+                required: ['avatarPrompt', 'avatarDescription', 'gender', 'age', 'style', 'ethnicity', 'bodyType'],
                 properties: {
                   avatarPrompt: { type: Type.STRING },
                   avatarDescription: { type: Type.STRING },
+                  gender: { type: Type.STRING, enum: ['male', 'female', 'any'] },
+                  age: { type: Type.STRING, enum: ['young', 'middle', 'mature', 'any'] },
+                  style: { type: Type.STRING, enum: ['natural', 'professional', 'casual', 'elegant', 'any'] },
+                  ethnicity: { type: Type.STRING, enum: ['korean', 'asian', 'western', 'any'] },
+                  bodyType: { type: Type.STRING, enum: ['slim', 'average', 'athletic', 'curvy', 'any'] },
                 },
               },
             },
@@ -353,6 +387,11 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
         recommendedAvatarStyle?: {
           avatarPrompt: string
           avatarDescription: string
+          gender?: 'male' | 'female' | 'any'
+          age?: 'young' | 'middle' | 'mature' | 'any'
+          style?: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
+          ethnicity?: 'korean' | 'asian' | 'western' | 'any'
+          bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'any'
         }
       }>
     }
@@ -436,29 +475,29 @@ function formatAvatarBodyCharacteristics(characteristics: ImageAdPromptInput['av
     parts.push(heightMap[characteristics.height])
   }
 
-  // 체형 (bodyType) - 자연스러운 표현 + 가슴 사이즈
+  // 체형 (bodyType) - 추상적이고 상대적인 표현 사용 (구체적 신체 크기 표현 금지)
   const femaleBodyTypeMap: Record<string, string> = {
-    slim: 'slim slender feminine figure with small bust (A-B cup)',
-    average: 'average feminine build with moderate bust (B-C cup)',
-    athletic: 'fit athletic feminine build with firm bust (B-C cup)',
-    curvy: 'naturally curvy feminine silhouette with full bust (C-D cup)',
-    plussize: 'full-figured feminine body with large bust (D-DD cup)',
+    slim: 'slim slender feminine silhouette with delicate proportions',
+    average: 'balanced feminine proportions with natural curves',
+    athletic: 'toned athletic feminine build with defined musculature',
+    curvy: 'feminine silhouette with natural soft curves',
+    plussize: 'full-figured feminine form with generous proportions',
   }
 
   const maleBodyTypeMap: Record<string, string> = {
-    slim: 'slim lean masculine build',
-    average: 'average masculine build with standard proportions',
-    athletic: 'fit athletic masculine build with toned muscles',
-    curvy: 'solid masculine build with sturdy frame',
-    plussize: 'large masculine build with full figure',
+    slim: 'lean masculine frame with slender proportions',
+    average: 'balanced masculine build with standard proportions',
+    athletic: 'toned athletic masculine physique with defined muscles',
+    curvy: 'solid masculine build with broader frame',
+    plussize: 'full masculine frame with generous build',
   }
 
   const defaultBodyTypeMap: Record<string, string> = {
-    slim: 'slim slender build',
-    average: 'average build with balanced proportions',
-    athletic: 'fit athletic build with toned physique',
-    curvy: 'naturally curvy build with soft proportions',
-    plussize: 'full-figured build with soft curves',
+    slim: 'slim slender build with delicate frame',
+    average: 'balanced proportions with natural build',
+    athletic: 'toned athletic build with defined physique',
+    curvy: 'naturally curved silhouette with soft proportions',
+    plussize: 'full-figured build with generous proportions',
   }
 
   if (characteristics.bodyType) {
@@ -485,7 +524,16 @@ export async function generateImageAdPrompt(input: ImageAdPromptInput): Promise<
   // 아바타 체형 특성 포맷팅 (아바타가 선택된 경우)
   const avatarBodyDescription = formatAvatarBodyCharacteristics(input.avatarCharacteristics)
   const avatarBodyInstruction = avatarBodyDescription
-    ? `\n\n=== AVATAR BODY CONSISTENCY ===\nWhen including the model/avatar in the image, maintain consistent body characteristics: ${avatarBodyDescription}.\nThe model's body proportions should match these characteristics throughout the image.`
+    ? `\n\n=== AVATAR BODY CONSISTENCY (CRITICAL) ===
+IMPORTANT: Preserve the EXACT body proportions from the avatar reference image.
+Body type hint: ${avatarBodyDescription}
+
+STRICT RULES:
+- DO NOT exaggerate or enhance any body features beyond the reference
+- DO NOT add curves, bust definition, or body enhancement
+- Keep proportions IDENTICAL to the reference avatar image
+- The body type hint is for maintaining consistency, NOT for enhancing features
+- When uncertain, always use MORE CONSERVATIVE proportions`
     : ''
 
   // 제품 카테고리 추상화 (제품명 대신 사용)
@@ -502,31 +550,52 @@ export async function generateImageAdPrompt(input: ImageAdPromptInput): Promise<
   // 아바타 성별 추상화 (상세 묘사 대신 사용)
   const avatarGender = input.avatarCharacteristics?.gender === 'female' ? 'female model' : input.avatarCharacteristics?.gender === 'male' ? 'male model' : 'model'
 
-  // 이미지 순서 안내 (아바타 먼저, 제품 나중)
+  // AI 아바타 설명 (AI 생성 아바타 사용 시)
+  const aiAvatarInstruction = input.aiAvatarDescription
+    ? `\n\n=== AI-GENERATED MODEL ===\nModel description: ${input.aiAvatarDescription}\nGenerate a photorealistic model matching this description.`
+    : ''
+
+  // 이미지 순서 안내 (아바타 먼저, 의상, 제품, 참조 스타일 순서)
   const hasAvatar = input.avatarImageUrls && input.avatarImageUrls.length > 0
+  const hasOutfit = !!input.outfitImageUrl
   const hasProduct = !!input.productImageUrl
+  const hasReferenceStyle = !!input.referenceStyleImageUrl
+
+  // Figure 번호 동적 할당
+  let figureNum = 1
+  const figureDescriptions: string[] = []
+  const figureRules: string[] = []
+
+  if (hasAvatar) {
+    figureDescriptions.push(`- Figure ${figureNum}: Avatar/Model reference image (${avatarGender})`)
+    figureRules.push(`- Refer to model as "the ${avatarGender} from Figure ${figureNum}" - DO NOT describe physical features`)
+    figureNum++
+  }
+  if (hasOutfit) {
+    figureDescriptions.push(`- Figure ${figureNum}: Outfit/Clothing reference image`)
+    figureRules.push(`- The model should wear the EXACT outfit from Figure ${figureNum} - preserve all clothing details`)
+    figureNum++
+  }
+  if (hasProduct) {
+    figureDescriptions.push(`- Figure ${figureNum}: Product reference image (${productCategory})`)
+    figureRules.push(`- Refer to product as "the ${productCategory} from Figure ${figureNum}" - DO NOT add logos/barcodes not in reference`)
+    figureNum++
+  }
+  if (hasReferenceStyle) {
+    figureDescriptions.push(`- Figure ${figureNum}: Style reference image (use for mood/atmosphere only)`)
+    figureRules.push(`- Use Figure ${figureNum} ONLY for lighting, mood, and composition style - NOT for subject appearance`)
+    figureNum++
+  }
+
   let figureGuide = ''
-  if (hasAvatar && hasProduct) {
+  if (figureDescriptions.length > 0) {
     figureGuide = `\n=== ATTACHED IMAGES ===
-- Figure 1: Avatar/Model reference image (${avatarGender})
-- Figure 2: Product reference image (${productCategory})
+${figureDescriptions.join('\n')}
 
 ⚠️ CRITICAL REFERENCE RULES:
-- When referring to the avatar/model, use ONLY "the ${avatarGender} from Figure 1" or "the model in Figure 1"
-- When referring to the product, use ONLY "the ${productCategory} from Figure 2" or "the product in Figure 2"
-- DO NOT describe physical features of the model in detail (no hair color, skin tone, body shape descriptions)
-- DO NOT mention product name or brand - only use category (e.g., "the cosmetic product" not "Waterism Glow Mini Tint")
-- Keep descriptions ABSTRACT: only gender for model, only category for product`
-  } else if (hasAvatar) {
-    figureGuide = `\n=== ATTACHED IMAGES ===
-- Figure 1: Avatar/Model reference image (${avatarGender})
-
-⚠️ CRITICAL: Refer to model as "the ${avatarGender} from Figure 1" only. DO NOT describe physical features in detail.`
-  } else if (hasProduct) {
-    figureGuide = `\n=== ATTACHED IMAGES ===
-- Figure 1: Product reference image (${productCategory})
-
-⚠️ CRITICAL: Refer to product as "the ${productCategory} from Figure 1" only. DO NOT mention product name or brand.`
+${figureRules.join('\n')}
+- DO NOT mention product name or brand - only use category
+- Keep descriptions ABSTRACT`
   }
 
   const prompt = `You are an expert advertising photographer creating a HIGH-END COMMERCIAL ADVERTISEMENT image. Generate a Seedream 4.5 optimized prompt for ${input.adType} advertisement.
@@ -537,7 +606,7 @@ ${figureGuide}
 
 Product Category: ${productCategory}
 Options: ${JSON.stringify(input.selectedOptions)}
-${input.additionalPrompt ? `Additional: ${input.additionalPrompt}` : ''}${avatarBodyInstruction}
+${input.additionalPrompt ? `Additional: ${input.additionalPrompt}` : ''}${avatarBodyInstruction}${aiAvatarInstruction}
 
 === COMMERCIAL ADVERTISEMENT STYLE (CRITICAL) ===
 This image MUST look like a professional advertisement from a major brand campaign:
@@ -545,10 +614,11 @@ This image MUST look like a professional advertisement from a major brand campai
 1. LIGHTING: Professional studio-quality lighting effect - soft key light with subtle fill, creating dimensionality and highlighting the product. Mention "commercial photography lighting" or "beauty lighting" effect.
 
 2. MODEL EXPRESSION & POSE (if applicable):
-   - Confident, engaging expression with genuine emotion
+   - Natural, relaxed expression - NOT forced or exaggerated smile
+   - Expression should match the scenario mood (can be neutral, thoughtful, confident, or subtly pleasant)
+   - Avoid typical "AI smile" - instead aim for candid, authentic human expression
    - Natural but polished pose that draws attention to the product
-   - Eyes should convey trust and appeal
-   - Slight smile or pleasant expression that feels authentic
+   - Eyes should convey genuine emotion appropriate to the context
 
 3. PRODUCT PRESENTATION:
    - Product should be the HERO of the image
@@ -556,13 +626,22 @@ This image MUST look like a professional advertisement from a major brand campai
    - Product should be well-lit and clearly visible
    - Include "product photography" or "commercial product shot" style
 
-4. OVERALL AESTHETIC:
+4. PRODUCT APPEARANCE PRESERVATION (CRITICAL):
+   - The product must look IDENTICAL to the reference image
+   - Preserve exact COLOR (same hue, saturation, and tone)
+   - Preserve exact SHAPE and FORM (same proportions, contours, angles)
+   - Preserve exact TEXTURE and MATERIAL appearance (glossy, matte, transparent, etc.)
+   - Preserve exact SIZE RATIO relative to other elements
+   - DO NOT modify, stylize, or "improve" the product appearance
+   - The product should be recognizable as the EXACT same item from reference
+
+5. OVERALL AESTHETIC:
    - Clean, premium, aspirational feel
    - Magazine-worthy composition
    - High-end brand advertisement quality
    - Include: "commercial advertisement", "brand campaign style", "editorial quality"
 
-5. COLOR & ATMOSPHERE:
+6. COLOR & ATMOSPHERE:
    - Rich, vibrant colors with professional color grading
    - Cohesive color palette that complements the product
    - Premium, polished atmosphere
@@ -579,14 +658,14 @@ ${BRAND_PRESERVATION_INSTRUCTION}
 === PROMPT GENERATION RULES BASED ON LOGO ANALYSIS ===
 
 IF productHasLogo = true (product HAS visible logos/text):
-- Add this exact phrase: "preserve existing product branding, logos and labels exactly as shown in reference image"
-- Do not describe the logos in detail - just preserve them
+- Add this exact phrase: "reproduce ONLY existing markings from reference image, DO NOT add any new text, logos, or barcodes"
+- Do not describe the logos in detail - just preserve what exists
 
-IF productHasLogo = false (product has NO logos/text - clean product):
-- Add this exact phrase: "the product is clean with no logos or text - keep the product surface completely unbranded, no fake brand names, no invented logos, no added text of any kind"
-- This is CRITICAL for unbranded products
+IF productHasLogo = false (product has NO logos/text - CLEAN product):
+- Add this exact phrase: "CRITICAL: Product is CLEAN with ZERO branding in the reference. DO NOT ADD any logos, text, labels, barcodes, QR codes, or markings of ANY kind. The product surface must remain 100% identical to the reference image."
+- This prohibition is MANDATORY and non-negotiable
 
-ALWAYS include: "do not add any new text, watermarks, or written elements to the image"
+ALWAYS include: "DO NOT invent or hallucinate any product markings, brand names, or surface details that are not in the reference image"
 
 === NEGATIVE ELEMENTS (things to avoid in the image) ===
 ${PRODUCT_NEGATIVE_PROMPT}
@@ -622,6 +701,7 @@ Output JSON format:
 
   const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []
 
+  // 이미지 순서: avatar → outfit → product → referenceStyle (figureGuide와 동일)
   if (input.avatarImageUrls?.length) {
     for (const url of input.avatarImageUrls) {
       const imageData = await fetchImageAsBase64(url)
@@ -631,8 +711,22 @@ Output JSON format:
     }
   }
 
+  if (input.outfitImageUrl) {
+    const imageData = await fetchImageAsBase64(input.outfitImageUrl)
+    if (imageData) {
+      parts.push({ inlineData: { mimeType: imageData.mimeType, data: imageData.base64 } })
+    }
+  }
+
   if (input.productImageUrl) {
     const imageData = await fetchImageAsBase64(input.productImageUrl)
+    if (imageData) {
+      parts.push({ inlineData: { mimeType: imageData.mimeType, data: imageData.base64 } })
+    }
+  }
+
+  if (input.referenceStyleImageUrl) {
+    const imageData = await fetchImageAsBase64(input.referenceStyleImageUrl)
     if (imageData) {
       parts.push({ inlineData: { mimeType: imageData.mimeType, data: imageData.base64 } })
     }
@@ -652,11 +746,16 @@ Output JSON format:
     // 모든 프롬프트에 오버레이 방지 문구 강제 추가
     const overlayPrevention = 'Generate a pure photograph only with absolutely no graphic overlays, no logo banners, no text overlays, no barcodes, no product tags, no frames or borders anywhere in the image.'
 
+    // holding 타입에 대한 제품 표면 보존 강화
+    const holdingReinforcement = input.adType === 'holding'
+      ? ' The held product must have the EXACT same surface as the reference - no added markings, logos, or barcodes.'
+      : ''
+
     // productHasLogo가 false인 경우, 로고 방지 문구도 추가
     if (result.productHasLogo === false) {
-      result.optimizedPrompt = `${result.optimizedPrompt}. ${NO_LOGO_PROMPT_SUFFIX} ${overlayPrevention}`
+      result.optimizedPrompt = `${result.optimizedPrompt}. ${NO_LOGO_PROMPT_SUFFIX}${holdingReinforcement} ${overlayPrevention}`
     } else {
-      result.optimizedPrompt = `${result.optimizedPrompt}. ${overlayPrevention}`
+      result.optimizedPrompt = `${result.optimizedPrompt}.${holdingReinforcement} ${overlayPrevention}`
     }
 
     return result

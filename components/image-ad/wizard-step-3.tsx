@@ -21,6 +21,7 @@ export function WizardStep3() {
     adType,
     selectedProduct,
     selectedAvatarInfo,
+    setSelectedAvatarInfo,
     productUsageMethod,  // 제품 사용 방법 (using 타입 전용)
     settingMethod,
     analysisResult,
@@ -61,6 +62,16 @@ export function WizardStep3() {
     recommendedOptions: Record<string, { value: string; customText?: string; reason: string }>
     overallStrategy: string
     suggestedPrompt?: string
+    // AI 추천 아바타용 구조화된 옵션
+    recommendedAvatarStyle?: {
+      avatarPrompt: string
+      avatarDescription: string
+      gender?: 'male' | 'female' | 'any'
+      age?: 'young' | 'middle' | 'mature' | 'any'
+      style?: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
+      ethnicity?: 'korean' | 'asian' | 'western' | 'any'
+      bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'any'
+    }
   }, index: number) => {
     const newCategoryOptions: Record<string, string> = {}
     const newCustomOptions: Record<string, string> = {}
@@ -88,7 +99,38 @@ export function WizardStep3() {
     if (scenario.suggestedPrompt) {
       setAdditionalPrompt(scenario.suggestedPrompt)
     }
-  }, [setCategoryOptions, setCustomOptions, setCustomInputActive, setAiReasons, setAiStrategy, setAdditionalPrompt, setSelectedScenarioIndex])
+
+    // AI 추천 아바타 옵션 업데이트
+    if (selectedAvatarInfo?.type === 'ai-generated' && scenario.recommendedAvatarStyle) {
+      const style = scenario.recommendedAvatarStyle
+      const current = selectedAvatarInfo.aiOptions || {
+        targetGender: 'any' as const,
+        targetAge: 'any' as const,
+        style: 'any' as const,
+        ethnicity: 'any' as const,
+        bodyType: 'any' as const,
+      }
+
+      // 사용자가 'any'로 설정한 필드만 LLM 추천값으로 업데이트
+      const updatedOptions = {
+        targetGender: (current.targetGender === 'any' && style.gender && style.gender !== 'any')
+          ? (style.gender as 'male' | 'female' | 'any') : current.targetGender,
+        targetAge: (current.targetAge === 'any' && style.age && style.age !== 'any')
+          ? (style.age as 'young' | 'middle' | 'mature' | 'any') : current.targetAge,
+        style: (current.style === 'any' && style.style && style.style !== 'any')
+          ? (style.style as 'natural' | 'professional' | 'casual' | 'elegant' | 'any') : current.style,
+        ethnicity: (current.ethnicity === 'any' && style.ethnicity && style.ethnicity !== 'any')
+          ? (style.ethnicity as 'korean' | 'asian' | 'western' | 'any') : current.ethnicity,
+        bodyType: (current.bodyType === 'any' && style.bodyType && style.bodyType !== 'any')
+          ? (style.bodyType as 'slim' | 'average' | 'athletic' | 'curvy' | 'any') : current.bodyType,
+      }
+
+      setSelectedAvatarInfo({
+        ...selectedAvatarInfo,
+        aiOptions: updatedOptions,
+      })
+    }
+  }, [setCategoryOptions, setCustomOptions, setCustomInputActive, setAiReasons, setAiStrategy, setAdditionalPrompt, setSelectedScenarioIndex, selectedAvatarInfo, setSelectedAvatarInfo])
 
   // AI 추천 로드 (3개 시나리오 생성)
   const loadAiRecommendation = useCallback(async (isManualRefresh = false) => {
