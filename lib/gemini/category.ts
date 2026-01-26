@@ -511,31 +511,52 @@ STRICT RULES:
   // 아바타 성별 추상화 (상세 묘사 대신 사용)
   const avatarGender = input.avatarCharacteristics?.gender === 'female' ? 'female model' : input.avatarCharacteristics?.gender === 'male' ? 'male model' : 'model'
 
-  // 이미지 순서 안내 (아바타 먼저, 제품 나중)
+  // AI 아바타 설명 (AI 생성 아바타 사용 시)
+  const aiAvatarInstruction = input.aiAvatarDescription
+    ? `\n\n=== AI-GENERATED MODEL ===\nModel description: ${input.aiAvatarDescription}\nGenerate a photorealistic model matching this description.`
+    : ''
+
+  // 이미지 순서 안내 (아바타 먼저, 의상, 제품, 참조 스타일 순서)
   const hasAvatar = input.avatarImageUrls && input.avatarImageUrls.length > 0
+  const hasOutfit = !!input.outfitImageUrl
   const hasProduct = !!input.productImageUrl
+  const hasReferenceStyle = !!input.referenceStyleImageUrl
+
+  // Figure 번호 동적 할당
+  let figureNum = 1
+  const figureDescriptions: string[] = []
+  const figureRules: string[] = []
+
+  if (hasAvatar) {
+    figureDescriptions.push(`- Figure ${figureNum}: Avatar/Model reference image (${avatarGender})`)
+    figureRules.push(`- Refer to model as "the ${avatarGender} from Figure ${figureNum}" - DO NOT describe physical features`)
+    figureNum++
+  }
+  if (hasOutfit) {
+    figureDescriptions.push(`- Figure ${figureNum}: Outfit/Clothing reference image`)
+    figureRules.push(`- The model should wear the EXACT outfit from Figure ${figureNum} - preserve all clothing details`)
+    figureNum++
+  }
+  if (hasProduct) {
+    figureDescriptions.push(`- Figure ${figureNum}: Product reference image (${productCategory})`)
+    figureRules.push(`- Refer to product as "the ${productCategory} from Figure ${figureNum}" - DO NOT add logos/barcodes not in reference`)
+    figureNum++
+  }
+  if (hasReferenceStyle) {
+    figureDescriptions.push(`- Figure ${figureNum}: Style reference image (use for mood/atmosphere only)`)
+    figureRules.push(`- Use Figure ${figureNum} ONLY for lighting, mood, and composition style - NOT for subject appearance`)
+    figureNum++
+  }
+
   let figureGuide = ''
-  if (hasAvatar && hasProduct) {
+  if (figureDescriptions.length > 0) {
     figureGuide = `\n=== ATTACHED IMAGES ===
-- Figure 1: Avatar/Model reference image (${avatarGender})
-- Figure 2: Product reference image (${productCategory})
+${figureDescriptions.join('\n')}
 
 ⚠️ CRITICAL REFERENCE RULES:
-- When referring to the avatar/model, use ONLY "the ${avatarGender} from Figure 1" or "the model in Figure 1"
-- When referring to the product, use ONLY "the ${productCategory} from Figure 2" or "the product in Figure 2"
-- DO NOT describe physical features of the model in detail (no hair color, skin tone, body shape descriptions)
-- DO NOT mention product name or brand - only use category (e.g., "the cosmetic product" not "Waterism Glow Mini Tint")
-- Keep descriptions ABSTRACT: only gender for model, only category for product`
-  } else if (hasAvatar) {
-    figureGuide = `\n=== ATTACHED IMAGES ===
-- Figure 1: Avatar/Model reference image (${avatarGender})
-
-⚠️ CRITICAL: Refer to model as "the ${avatarGender} from Figure 1" only. DO NOT describe physical features in detail.`
-  } else if (hasProduct) {
-    figureGuide = `\n=== ATTACHED IMAGES ===
-- Figure 1: Product reference image (${productCategory})
-
-⚠️ CRITICAL: Refer to product as "the ${productCategory} from Figure 1" only. DO NOT mention product name or brand.`
+${figureRules.join('\n')}
+- DO NOT mention product name or brand - only use category
+- Keep descriptions ABSTRACT`
   }
 
   const prompt = `You are an expert advertising photographer creating a HIGH-END COMMERCIAL ADVERTISEMENT image. Generate a Seedream 4.5 optimized prompt for ${input.adType} advertisement.
@@ -546,7 +567,7 @@ ${figureGuide}
 
 Product Category: ${productCategory}
 Options: ${JSON.stringify(input.selectedOptions)}
-${input.additionalPrompt ? `Additional: ${input.additionalPrompt}` : ''}${avatarBodyInstruction}
+${input.additionalPrompt ? `Additional: ${input.additionalPrompt}` : ''}${avatarBodyInstruction}${aiAvatarInstruction}
 
 === COMMERCIAL ADVERTISEMENT STYLE (CRITICAL) ===
 This image MUST look like a professional advertisement from a major brand campaign:
@@ -565,13 +586,22 @@ This image MUST look like a professional advertisement from a major brand campai
    - Product should be well-lit and clearly visible
    - Include "product photography" or "commercial product shot" style
 
-4. OVERALL AESTHETIC:
+4. PRODUCT APPEARANCE PRESERVATION (CRITICAL):
+   - The product must look IDENTICAL to the reference image
+   - Preserve exact COLOR (same hue, saturation, and tone)
+   - Preserve exact SHAPE and FORM (same proportions, contours, angles)
+   - Preserve exact TEXTURE and MATERIAL appearance (glossy, matte, transparent, etc.)
+   - Preserve exact SIZE RATIO relative to other elements
+   - DO NOT modify, stylize, or "improve" the product appearance
+   - The product should be recognizable as the EXACT same item from reference
+
+5. OVERALL AESTHETIC:
    - Clean, premium, aspirational feel
    - Magazine-worthy composition
    - High-end brand advertisement quality
    - Include: "commercial advertisement", "brand campaign style", "editorial quality"
 
-5. COLOR & ATMOSPHERE:
+6. COLOR & ATMOSPHERE:
    - Rich, vibrant colors with professional color grading
    - Cohesive color palette that complements the product
    - Premium, polished atmosphere
@@ -631,6 +661,7 @@ Output JSON format:
 
   const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []
 
+  // 이미지 순서: avatar → outfit → product → referenceStyle (figureGuide와 동일)
   if (input.avatarImageUrls?.length) {
     for (const url of input.avatarImageUrls) {
       const imageData = await fetchImageAsBase64(url)
@@ -640,8 +671,22 @@ Output JSON format:
     }
   }
 
+  if (input.outfitImageUrl) {
+    const imageData = await fetchImageAsBase64(input.outfitImageUrl)
+    if (imageData) {
+      parts.push({ inlineData: { mimeType: imageData.mimeType, data: imageData.base64 } })
+    }
+  }
+
   if (input.productImageUrl) {
     const imageData = await fetchImageAsBase64(input.productImageUrl)
+    if (imageData) {
+      parts.push({ inlineData: { mimeType: imageData.mimeType, data: imageData.base64 } })
+    }
+  }
+
+  if (input.referenceStyleImageUrl) {
+    const imageData = await fetchImageAsBase64(input.referenceStyleImageUrl)
     if (imageData) {
       parts.push({ inlineData: { mimeType: imageData.mimeType, data: imageData.base64 } })
     }
