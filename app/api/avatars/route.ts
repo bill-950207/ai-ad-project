@@ -14,6 +14,7 @@ import { submitToQueue as submitToFalQueue } from '@/lib/fal/client'
 import { submitZImageToQueue } from '@/lib/kie/client'
 import { buildPromptFromOptions, validateAvatarOptions, AvatarOptions } from '@/lib/avatar/prompt-builder'
 import { AVATAR_CREDIT_COST } from '@/lib/credits'
+import { checkUsageLimit, incrementUsage } from '@/lib/subscription'
 
 // AI 프로바이더 설정 (기본값: kie, fallback: fal)
 const AI_PROVIDER = process.env.AVATAR_AI_PROVIDER || 'kie'
@@ -145,16 +146,31 @@ export async function POST(request: NextRequest) {
 
     const finalPrompt = `${rawPrompt}, ${qualityEnhancers}${defaultBackground}${defaultPose}, ${viewType}`
 
-    // 사용자 크레딧 확인
-    const profile = await prisma.profiles.findUnique({
-      where: { id: user.id },
-    })
+    // 사용량 제한 확인 (플랜별 무료 생성 가능 횟수)
+    const usageCheck = await checkUsageLimit(user.id, 'avatar')
+    const needsCredits = !usageCheck.withinLimit
 
-    if (!profile || (profile.credits ?? 0) < AVATAR_CREDIT_COST) {
-      return NextResponse.json(
-        { error: 'Insufficient credits', required: AVATAR_CREDIT_COST, available: profile?.credits ?? 0 },
-        { status: 402 }  // 402 Payment Required
-      )
+    // 크레딧이 필요한 경우 (제한 초과) 크레딧 확인
+    if (needsCredits) {
+      const profile = await prisma.profiles.findUnique({
+        where: { id: user.id },
+      })
+
+      if (!profile || (profile.credits ?? 0) < AVATAR_CREDIT_COST) {
+        return NextResponse.json(
+          {
+            error: 'Insufficient credits',
+            required: AVATAR_CREDIT_COST,
+            available: profile?.credits ?? 0,
+            usageInfo: {
+              used: usageCheck.used,
+              limit: usageCheck.limit,
+              message: `월간 무료 생성 ${usageCheck.limit}회를 모두 사용했습니다. 추가 생성은 ${AVATAR_CREDIT_COST} 크레딧이 필요합니다.`,
+            },
+          },
+          { status: 402 }  // 402 Payment Required
+        )
+      }
     }
 
     // AI 프로바이더에 따라 큐에 생성 요청 제출
@@ -172,13 +188,15 @@ export async function POST(request: NextRequest) {
       queueResponse = await submitToFalQueue(finalPrompt)
     }
 
-    // 트랜잭션으로 크레딧 차감 및 아바타 레코드 생성
+    // 트랜잭션으로 사용량/크레딧 처리 및 아바타 레코드 생성
     const avatar = await prisma.$transaction(async (tx) => {
-      // 크레딧 차감
-      await tx.profiles.update({
-        where: { id: user.id },
-        data: { credits: { decrement: AVATAR_CREDIT_COST } },
-      })
+      if (needsCredits) {
+        // 제한 초과: 크레딧 차감
+        await tx.profiles.update({
+          where: { id: user.id },
+          data: { credits: { decrement: AVATAR_CREDIT_COST } },
+        })
+      }
 
       // 아바타 레코드 생성
       return tx.avatars.create({
@@ -196,6 +214,11 @@ export async function POST(request: NextRequest) {
         },
       })
     })
+
+    // 무료 생성인 경우 사용량 증가 (트랜잭션 외부에서 처리)
+    if (!needsCredits) {
+      await incrementUsage(user.id, 'avatar')
+    }
 
     return NextResponse.json({ avatar }, { status: 201 })
   } catch (error) {

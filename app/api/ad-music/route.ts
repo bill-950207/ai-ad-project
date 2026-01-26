@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { submitAdMusicToQueue } from '@/lib/kie/client'
 import { MUSIC_CREDIT_COST } from '@/lib/credits'
+import { checkUsageLimit, incrementUsage } from '@/lib/subscription'
 
 // 요청 바디 타입
 interface AdMusicRequestBody {
@@ -89,16 +90,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 크레딧 확인
-    const profile = await prisma.profiles.findUnique({
-      where: { id: user.id },
-    })
+    // 사용량 제한 확인 (플랜별 무료 생성 가능 횟수)
+    const usageCheck = await checkUsageLimit(user.id, 'music')
+    const needsCredits = !usageCheck.withinLimit
 
-    if (!profile || (profile.credits ?? 0) < MUSIC_CREDIT_COST) {
-      return NextResponse.json(
-        { error: 'Insufficient credits', required: MUSIC_CREDIT_COST, available: profile?.credits ?? 0 },
-        { status: 402 }
-      )
+    // 크레딧이 필요한 경우 (제한 초과) 크레딧 확인
+    if (needsCredits) {
+      const profile = await prisma.profiles.findUnique({
+        where: { id: user.id },
+      })
+
+      if (!profile || (profile.credits ?? 0) < MUSIC_CREDIT_COST) {
+        return NextResponse.json(
+          {
+            error: 'Insufficient credits',
+            required: MUSIC_CREDIT_COST,
+            available: profile?.credits ?? 0,
+            usageInfo: {
+              used: usageCheck.used,
+              limit: usageCheck.limit,
+              message: `월간 무료 생성 ${usageCheck.limit}회를 모두 사용했습니다. 추가 생성은 ${MUSIC_CREDIT_COST} 크레딧이 필요합니다.`,
+            },
+          },
+          { status: 402 }
+        )
+      }
     }
 
     // 콜백 URL 생성
@@ -132,13 +148,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 크레딧 차감
-    await prisma.profiles.update({
-      where: { id: user.id },
-      data: { credits: { decrement: MUSIC_CREDIT_COST } },
-    })
+    // 제한 초과 시 크레딧 차감
+    if (needsCredits) {
+      await prisma.profiles.update({
+        where: { id: user.id },
+        data: { credits: { decrement: MUSIC_CREDIT_COST } },
+      })
+    } else {
+      // 무료 생성인 경우 사용량 증가
+      await incrementUsage(user.id, 'music')
+    }
 
-    return NextResponse.json({ music, creditUsed: MUSIC_CREDIT_COST })
+    return NextResponse.json({
+      music,
+      creditUsed: needsCredits ? MUSIC_CREDIT_COST : 0,
+      usageInfo: {
+        used: usageCheck.used + (needsCredits ? 0 : 1),
+        limit: usageCheck.limit,
+        freeGeneration: !needsCredits,
+      },
+    })
   } catch (error) {
     console.error('광고 음악 생성 오류:', error)
     return NextResponse.json(

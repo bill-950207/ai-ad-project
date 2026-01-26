@@ -12,6 +12,8 @@ import { submitRembgToQueue } from '@/lib/kie/client'
 import { uploadAdProductSourceFromDataUrl } from '@/lib/storage/r2'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { PRODUCT_CREDIT_COST } from '@/lib/credits'
+import { checkUsageLimit, incrementUsage } from '@/lib/subscription'
 
 /**
  * GET /api/ad-products
@@ -101,6 +103,33 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 사용량 제한 확인 (플랜별 무료 생성 가능 횟수)
+    const usageCheck = await checkUsageLimit(user.id, 'product')
+    const needsCredits = !usageCheck.withinLimit
+
+    // 크레딧이 필요한 경우 (제한 초과) 크레딧 확인
+    if (needsCredits) {
+      const profile = await prisma.profiles.findUnique({
+        where: { id: user.id },
+      })
+
+      if (!profile || (profile.credits ?? 0) < PRODUCT_CREDIT_COST) {
+        return NextResponse.json(
+          {
+            error: 'Insufficient credits',
+            required: PRODUCT_CREDIT_COST,
+            available: profile?.credits ?? 0,
+            usageInfo: {
+              used: usageCheck.used,
+              limit: usageCheck.limit,
+              message: `월간 무료 등록 ${usageCheck.limit}회를 모두 사용했습니다. 추가 등록은 ${PRODUCT_CREDIT_COST} 크레딧이 필요합니다.`,
+            },
+          },
+          { status: 402 }
+        )
+      }
+    }
+
     // 1. 먼저 제품 레코드 생성 (PENDING 상태)
     const product = await prisma.ad_products.create({
       data: {
@@ -147,9 +176,25 @@ export async function POST(request: NextRequest) {
         },
       })
 
+      // 5. 제한 초과 시 크레딧 차감, 아니면 사용량 증가
+      if (needsCredits) {
+        await prisma.profiles.update({
+          where: { id: user.id },
+          data: { credits: { decrement: PRODUCT_CREDIT_COST } },
+        })
+      } else {
+        await incrementUsage(user.id, 'product')
+      }
+
       return NextResponse.json({
         product: updatedProduct,
         sourceImageUrl,
+        creditUsed: needsCredits ? PRODUCT_CREDIT_COST : 0,
+        usageInfo: {
+          used: usageCheck.used + (needsCredits ? 0 : 1),
+          limit: usageCheck.limit,
+          freeGeneration: !needsCredits,
+        },
       }, { status: 201 })
     } catch (uploadError) {
       // 업로드 또는 Kie.ai 요청 실패 시 제품 상태를 FAILED로 업데이트
