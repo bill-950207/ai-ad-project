@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, Sparkles, Zap, Building2 } from 'lucide-react'
+import { Check, Sparkles, Zap, Building2, Infinity, Crown } from 'lucide-react'
 
 type BillingInterval = 'monthly' | 'yearly'
 
@@ -18,10 +18,11 @@ interface Plan {
     music: string
     products: string
     credits: string
-    creditEstimate?: string // 예상 이미지/영상 수량
+    imageEstimate?: string
+    videoEstimate?: string
   }
   popular?: boolean
-  current?: boolean
+  bestValue?: boolean
 }
 
 const plans: Plan[] = [
@@ -32,7 +33,12 @@ const plans: Plan[] = [
     priceMonthly: 0,
     priceYearly: 0,
     icon: <Sparkles className="w-5 h-5" />,
-    features: ['기본 아바타 생성', '기본 음악 생성', '제품 배경 제거'],
+    features: [
+      'AI 아바타 생성',
+      'AI 배경 음악 생성',
+      '제품 배경 자동 제거',
+      '기본 키프레임 1개',
+    ],
     limits: {
       avatars: '3회/월',
       music: '5회/월',
@@ -48,17 +54,19 @@ const plans: Plan[] = [
     priceYearly: 99.90,
     icon: <Zap className="w-5 h-5" />,
     features: [
-      '모든 Free 기능',
-      'HD 업스케일',
+      '모든 Free 기능 포함',
+      'HD 고화질 업스케일',
       '키프레임 2개 생성',
-      '월 50 크레딧 지급',
+      '고급 아바타 스타일',
+      '우선 생성 대기열',
     ],
     limits: {
       avatars: '9회/월',
       music: '15회/월',
       products: '9회/월',
-      credits: '50 크레딧/월',
-      creditEstimate: '~25개 이미지 또는 ~5개 영상',
+      credits: '100 크레딧/월',
+      imageEstimate: '~50개 광고 이미지',
+      videoEstimate: '~10개 광고 영상',
     },
     popular: true,
   },
@@ -68,20 +76,24 @@ const plans: Plan[] = [
     description: '전문가를 위한 프로 플랜',
     priceMonthly: 29.99,
     priceYearly: 299.90,
-    icon: <Sparkles className="w-5 h-5" />,
+    icon: <Crown className="w-5 h-5" />,
     features: [
-      '모든 Starter 기능',
-      '워터마크 제거',
-      '우선 처리',
-      '월 300 크레딧 지급',
+      '모든 Starter 기능 포함',
+      '워터마크 완전 제거',
+      '최우선 생성 처리',
+      '고급 편집 도구',
+      '다양한 출력 포맷',
+      '전문가 템플릿',
     ],
     limits: {
       avatars: '30회/월',
       music: '50회/월',
       products: '30회/월',
-      credits: '300 크레딧/월',
-      creditEstimate: '~150개 이미지 또는 ~30개 영상',
+      credits: '330 크레딧/월',
+      imageEstimate: '~165개 광고 이미지',
+      videoEstimate: '~33개 광고 영상',
     },
+    bestValue: true,
   },
   {
     name: 'BUSINESS',
@@ -91,17 +103,21 @@ const plans: Plan[] = [
     priceYearly: 999.90,
     icon: <Building2 className="w-5 h-5" />,
     features: [
-      '모든 Pro 기능',
-      '무제한 생성',
-      '전용 지원',
-      '월 1,000 크레딧 지급',
+      '모든 Pro 기능 포함',
+      '무제한 콘텐츠 생성',
+      '전용 고객 지원',
+      'API 액세스',
+      '팀 협업 기능',
+      '맞춤 브랜딩 옵션',
+      '우선 기능 업데이트',
     ],
     limits: {
       avatars: '무제한',
       music: '무제한',
       products: '무제한',
-      credits: '1,000 크레딧/월',
-      creditEstimate: '~500개 이미지 또는 ~100개 영상',
+      credits: '1,200 크레딧/월',
+      imageEstimate: '~600개 광고 이미지',
+      videoEstimate: '~120개 광고 영상',
     },
   },
 ]
@@ -149,6 +165,8 @@ export function PricingContent() {
     return savings > 0 ? savings : null
   }
 
+  const isUnlimited = (value: string) => value === '무제한'
+
   return (
     <div>
       <div className="text-center mb-8">
@@ -173,14 +191,16 @@ export function PricingContent() {
           </button>
           <button
             onClick={() => setInterval('yearly')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors relative ${
               interval === 'yearly'
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             연간 결제
-            <span className="ml-1 text-xs text-green-500">2개월 무료</span>
+            <span className="ml-2 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+              -17%
+            </span>
           </button>
         </div>
       </div>
@@ -193,17 +213,27 @@ export function PricingContent() {
             className={`relative bg-card border rounded-xl p-6 flex flex-col ${
               plan.popular
                 ? 'border-primary ring-2 ring-primary/20'
+                : plan.bestValue
+                ? 'border-purple-500 ring-2 ring-purple-500/20'
                 : 'border-border'
             }`}
           >
+            {/* Badges */}
             {plan.popular && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full">
                 인기
               </div>
             )}
+            {plan.bestValue && (
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-xs font-medium px-3 py-1 rounded-full">
+                Best Value
+              </div>
+            )}
 
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                plan.bestValue ? 'bg-purple-500/10 text-purple-500' : 'bg-primary/10 text-primary'
+              }`}>
                 {plan.icon}
               </div>
               <h3 className="text-lg font-semibold text-foreground">
@@ -223,9 +253,11 @@ export function PricingContent() {
                 <span className="text-muted-foreground">/월</span>
               )}
               {interval === 'yearly' && getYearlySavings(plan) && (
-                <p className="text-xs text-green-500 mt-1">
-                  연 ${getYearlySavings(plan)?.toFixed(2)} 절약
-                </p>
+                <div className="mt-1">
+                  <span className="text-sm font-semibold text-green-500">
+                    연 ${getYearlySavings(plan)?.toFixed(2)} 절약!
+                  </span>
+                </div>
               )}
             </div>
 
@@ -233,23 +265,42 @@ export function PricingContent() {
             <div className="space-y-2 mb-6 pb-6 border-b border-border">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">아바타</span>
-                <span className="text-foreground">{plan.limits.avatars}</span>
+                <span className={`font-medium ${isUnlimited(plan.limits.avatars) ? 'text-purple-500 flex items-center gap-1' : 'text-foreground'}`}>
+                  {isUnlimited(plan.limits.avatars) && <Infinity className="w-4 h-4" />}
+                  {plan.limits.avatars}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">음악</span>
-                <span className="text-foreground">{plan.limits.music}</span>
+                <span className={`font-medium ${isUnlimited(plan.limits.music) ? 'text-purple-500 flex items-center gap-1' : 'text-foreground'}`}>
+                  {isUnlimited(plan.limits.music) && <Infinity className="w-4 h-4" />}
+                  {plan.limits.music}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">제품</span>
-                <span className="text-foreground">{plan.limits.products}</span>
+                <span className={`font-medium ${isUnlimited(plan.limits.products) ? 'text-purple-500 flex items-center gap-1' : 'text-foreground'}`}>
+                  {isUnlimited(plan.limits.products) && <Infinity className="w-4 h-4" />}
+                  {plan.limits.products}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">크레딧</span>
-                <span className="text-foreground">{plan.limits.credits}</span>
+                <span className="font-semibold text-primary">{plan.limits.credits}</span>
               </div>
-              {plan.limits.creditEstimate && (
-                <div className="pt-1 text-xs text-muted-foreground text-right">
-                  {plan.limits.creditEstimate}
+              {/* Credit Estimates - Image and Video separately */}
+              {(plan.limits.imageEstimate || plan.limits.videoEstimate) && (
+                <div className="pt-2 space-y-1 border-t border-border/50 mt-2">
+                  {plan.limits.imageEstimate && (
+                    <div className="text-xs text-muted-foreground text-right">
+                      {plan.limits.imageEstimate}
+                    </div>
+                  )}
+                  {plan.limits.videoEstimate && (
+                    <div className="text-xs text-muted-foreground text-right">
+                      {plan.limits.videoEstimate}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -272,6 +323,8 @@ export function PricingContent() {
                   ? 'bg-secondary text-muted-foreground cursor-default'
                   : plan.popular
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  : plan.bestValue
+                  ? 'bg-purple-500 text-white hover:bg-purple-600'
                   : 'bg-secondary text-foreground hover:bg-secondary/80'
               } disabled:opacity-50`}
             >
