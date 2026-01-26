@@ -11,7 +11,11 @@ import {
   SEEDREAM_FORBIDDEN_TERMS,
   UGC_BACKGROUND_STYLE,
   JSON_RESPONSE_INSTRUCTION,
+  LIGHTING_CAMERA_INSTRUCTION,
+  EQUIPMENT_NEGATIVE_PROMPT,
+  NO_OVERLAY_ELEMENTS,
 } from './common'
+import { VideoType } from './scripts'
 
 // ============================================================
 // 첫 프레임 프롬프트 시스템 지시
@@ -28,14 +32,20 @@ CRITICAL RULES:
 3. Background must be: ${UGC_BACKGROUND_STYLE}
 4. Always end with: ${PHOTOREALISM_ESSENTIALS.quality}
 
+=== CRITICAL: NO VISIBLE EQUIPMENT ===
+${LIGHTING_CAMERA_INSTRUCTION}
+
+=== CRITICAL: NO GRAPHIC OVERLAYS ===
+${NO_OVERLAY_ELEMENTS}
+
 PROMPT STRUCTURE:
-Subject (who) → Action/Pose (what) → Environment (where) → Lighting (how lit) → Camera/Technical (specs)
+Subject (who) → Action/Pose (what) → Environment (where) → Lighting effect (NOT equipment) → Camera specs (NOT visible camera)
 
 PHOTOREALISM CHECKLIST:
 - Skin: ${PHOTOREALISM_ESSENTIALS.skin}
 - Hair: ${PHOTOREALISM_ESSENTIALS.hair}
 - Eyes: ${PHOTOREALISM_ESSENTIALS.eyes}
-- Include camera specs: shot on [focal length] lens at f/[aperture]`
+- Include camera specs: shot on [focal length] lens at f/[aperture] (this describes image quality, NOT a visible camera)`
 
 // ============================================================
 // 카메라 구도별 프롬프트 생성
@@ -91,6 +101,37 @@ export const CAMERA_COMPOSITION_DETAILED_GUIDES: Record<string, {
     promptSegment: 'UGC-style intimate medium close-up, subject fills most of the frame from chest up, natural relaxed expression, eyes looking DIRECTLY into camera lens, casual influencer vlog aesthetic like casually talking to viewer, approachable and genuine vibe',
     lightingRecommendation: 'soft natural window light or ring light, flattering front lighting',
     depthOfField: 'f/8 with background slightly visible but subject is clearly the main focus, natural depth',
+  },
+}
+
+// ============================================================
+// 비디오 타입별 첫 프레임 가이드
+// ============================================================
+
+/** 비디오 타입별 첫 프레임 생성 가이드 */
+export const VIDEO_TYPE_FIRST_FRAME_GUIDES: Record<VideoType, {
+  environmentPrompt: string
+  posePrompt: string
+  atmospherePrompt: string
+  recommendedCompositions: string[]
+}> = {
+  UGC: {
+    environmentPrompt: 'casual home setting, cozy room, natural environment',
+    posePrompt: 'relaxed natural pose, holding product casually, authentic expression',
+    atmospherePrompt: 'candid authentic vibe, influencer style',
+    recommendedCompositions: ['ugc-closeup', 'selfie-front', 'selfie-high'],
+  },
+  podcast: {
+    environmentPrompt: 'podcast-style setting, clean background, intimate studio atmosphere, comfortable professional space, warm ambient lighting',
+    posePrompt: 'seated comfortably, conversational posture, engaged expression, slightly leaning forward as if in conversation, hands visible and relaxed',
+    atmospherePrompt: 'intimate interview atmosphere, warm inviting setting, professional yet approachable',
+    recommendedCompositions: ['tripod', 'closeup', 'selfie-front'],
+  },
+  expert: {
+    environmentPrompt: 'professional setting, clean modern office, educational space, minimalist background, well-organized desk or presentation area',
+    posePrompt: 'confident professional posture, presenting stance, authoritative yet approachable, gesturing to explain, standing or seated at desk',
+    atmospherePrompt: 'educational atmosphere, trustworthy professional setting, expert authority vibe',
+    recommendedCompositions: ['tripod', 'fullbody', 'selfie-front'],
   },
 }
 
