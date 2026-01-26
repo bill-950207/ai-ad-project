@@ -26,6 +26,7 @@ import {
   MapPin,
   Mic,
   Minus,
+  Monitor,
   Package,
   Pause,
   Play,
@@ -84,6 +85,7 @@ interface Voice {
 
 type WizardStep = 1 | 2 | 3 | 4
 type VideoDuration = 15 | 30 | 60
+type VideoResolution = '480p' | '720p'
 type VideoType = 'UGC' | 'podcast' | 'expert'
 
 // 영상 타입 정보
@@ -297,6 +299,7 @@ interface DraftData {
   product_info: string | null
   location_prompt: string | null
   duration: number | null
+  resolution: string | null
   video_background: string | null
   camera_composition: string | null
   model_pose: string | null
@@ -352,6 +355,7 @@ export function ProductDescriptionWizard() {
   const [locationMode, setLocationMode] = useState<'ai_recommend' | 'custom'>('ai_recommend')
   const [locationPrompt, setLocationPrompt] = useState('')
   const [duration, setDuration] = useState<VideoDuration>(30)
+  const [resolution, setResolution] = useState<VideoResolution>('480p')
   const [cameraComposition, setCameraComposition] = useState<CameraComposition>('auto')
   const [modelPose, setModelPose] = useState<ModelPose>('auto')
   const [outfitMode, setOutfitMode] = useState<OutfitMode>('keep_original')
@@ -507,6 +511,7 @@ export function ProductDescriptionWizard() {
           productInfo,
           locationPrompt,
           duration,
+          resolution,
           cameraComposition: cameraComposition !== 'auto' ? cameraComposition : null,
           modelPose: modelPose !== 'auto' ? modelPose : null,
           outfitMode: outfitMode !== 'keep_original' ? outfitMode : null,
@@ -547,7 +552,7 @@ export function ProductDescriptionWizard() {
     } finally {
       setIsSavingDraft(false)
     }
-  }, [draftId, selectedAvatarInfo, selectedProduct, productInfo, locationPrompt, duration, cameraComposition, modelPose, outfitMode, outfitPreset, outfitCustom, scripts, selectedScriptIndex, editedScript, firstFrameUrl, firstFrameUrls, firstFrameOriginalUrls, firstFramePrompt, locationDescription, selectedVoice, videoType])
+  }, [draftId, selectedAvatarInfo, selectedProduct, productInfo, locationPrompt, duration, resolution, cameraComposition, modelPose, outfitMode, outfitPreset, outfitCustom, scripts, selectedScriptIndex, editedScript, firstFrameUrl, firstFrameUrls, firstFrameOriginalUrls, firstFramePrompt, locationDescription, selectedVoice, videoType])
 
   // 기존 초안 또는 진행 중인 영상 광고 로드
   const loadExistingData = useCallback(async () => {
@@ -673,6 +678,7 @@ export function ProductDescriptionWizard() {
     if (draft.product_info) setProductInfo(draft.product_info)
     if (draft.location_prompt) setLocationPrompt(draft.location_prompt)
     if (draft.duration) setDuration(draft.duration as VideoDuration)
+    if (draft.resolution) setResolution(draft.resolution as VideoResolution)
     if (draft.camera_composition) setCameraComposition(draft.camera_composition as CameraComposition)
     if (draft.model_pose) setModelPose(draft.model_pose as ModelPose)
     if (draft.outfit_mode) setOutfitMode(draft.outfit_mode as OutfitMode)
@@ -1045,6 +1051,7 @@ export function ProductDescriptionWizard() {
           voiceName: selectedVoice.name,
           locationPrompt: locationPrompt || locationDescription,
           duration,
+          resolution,
           // 영상 프롬프트 생성을 위한 추가 정보
           cameraComposition: cameraComposition !== 'auto' ? cameraComposition : undefined,
           productName: selectedProduct?.name,
@@ -1637,6 +1644,32 @@ export function ProductDescriptionWizard() {
                     }`}
                 >
                   {d}초
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 영상 해상도 */}
+          <div className="bg-card border border-border rounded-xl p-4">
+            <label className="block text-sm font-medium text-foreground mb-3">
+              <Monitor className="w-4 h-4 inline mr-2" />
+              영상 해상도
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {([
+                { value: '480p', label: '480p', desc: '빠른 생성' },
+                { value: '720p', label: '720p', desc: '고화질' },
+              ] as const).map((r) => (
+                <button
+                  key={r.value}
+                  onClick={() => setResolution(r.value)}
+                  className={`py-3 rounded-lg border text-sm font-medium transition-colors ${resolution === r.value
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border text-muted-foreground hover:border-primary/50'
+                    }`}
+                >
+                  <div>{r.label}</div>
+                  <div className="text-xs opacity-70">{r.desc}</div>
                 </button>
               ))}
             </div>

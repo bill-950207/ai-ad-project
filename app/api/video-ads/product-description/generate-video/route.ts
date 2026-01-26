@@ -120,6 +120,7 @@ export async function POST(request: NextRequest) {
       voiceName,
       locationPrompt,
       duration,
+      resolution = '480p',
       // 영상 프롬프트 생성을 위한 추가 정보
       cameraComposition,
       productName,
@@ -162,7 +163,7 @@ export async function POST(request: NextRequest) {
         category: 'productDescription',
         status: 'IN_QUEUE',
         duration: duration || 30,
-        resolution: '480p',
+        resolution: resolution,
         aspect_ratio: '9:16',
         location_prompt: locationPrompt || null,
         camera_composition: cameraComposition || null,
@@ -197,7 +198,7 @@ export async function POST(request: NextRequest) {
         firstFrameUrl,
         audioUrl,
         videoPrompt,
-        '480p'
+        resolution
       )
       requestId = queueResponse.request_id
       provider = 'wavespeed'
