@@ -1127,15 +1127,22 @@ export function ProductDescriptionWizard() {
     if (playingVoiceId === voice.id) {
       if (audioRef.current) {
         audioRef.current.pause()
-        audioRef.current.currentTime = 0
+        audioRef.current.oncanplaythrough = null
+        audioRef.current.onended = null
+        audioRef.current.onerror = null
+        audioRef.current = null
       }
       setPlayingVoiceId(null)
       return
     }
 
-    // 다른 음성 재생 중이면 정지
+    // 다른 음성 재생 중이면 정지 및 정리
     if (audioRef.current) {
       audioRef.current.pause()
+      audioRef.current.oncanplaythrough = null
+      audioRef.current.onended = null
+      audioRef.current.onerror = null
+      audioRef.current = null
     }
 
     // ElevenLabs 음성은 previewUrl이 이미 제공됨
