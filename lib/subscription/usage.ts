@@ -20,10 +20,10 @@ export interface UsageCheckResult {
 }
 
 export interface UsageSummary {
-  avatar: { used: number; limit: number; remaining: number }
-  music: { used: number; limit: number; remaining: number }
-  product: { used: number; limit: number; remaining: number }
-  period: Date
+  avatars: { used: number; limit: number }
+  music: { used: number; limit: number }
+  products: { used: number; limit: number }
+  period: string
 }
 
 /**
@@ -166,26 +166,27 @@ export async function getUsageSummary(userId: string): Promise<UsageSummary> {
     getOrCreateUsageTracking(userId),
   ])
 
-  const calcRemaining = (used: number, limit: number) =>
-    limit === -1 ? -1 : Math.max(0, limit - used)
+  // 기간 문자열 포맷
+  const periodStart = getCurrentPeriodStart()
+  const periodString = periodStart.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+  })
 
   return {
-    avatar: {
+    avatars: {
       used: usage.avatar_count,
       limit: plan.avatarLimit,
-      remaining: calcRemaining(usage.avatar_count, plan.avatarLimit),
     },
     music: {
       used: usage.music_count,
       limit: plan.musicLimit,
-      remaining: calcRemaining(usage.music_count, plan.musicLimit),
     },
-    product: {
+    products: {
       used: usage.product_count,
       limit: plan.productLimit,
-      remaining: calcRemaining(usage.product_count, plan.productLimit),
     },
-    period: usage.period,
+    period: periodString,
   }
 }
 
