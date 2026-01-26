@@ -7,8 +7,10 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/db'
 import { generateBackgroundPrompt, type BackgroundGenerationMode, type BackgroundOptions } from '@/lib/gemini/client'
 import { submitAdBackgroundToQueue, type ZImageAspectRatio } from '@/lib/kie/client'
+import { BACKGROUND_CREDIT_COST } from '@/lib/credits'
 
 interface CreateBackgroundRequest {
   name: string
@@ -44,6 +46,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'name과 mode는 필수입니다' },
         { status: 400 }
+      )
+    }
+
+    // 크레딧 확인
+    const profile = await prisma.profiles.findUnique({
+      where: { id: user.id },
+    })
+
+    if (!profile || (profile.credits ?? 0) < BACKGROUND_CREDIT_COST) {
+      return NextResponse.json(
+        { error: 'Insufficient credits', required: BACKGROUND_CREDIT_COST, available: profile?.credits ?? 0 },
+        { status: 402 }
       )
     }
 
@@ -126,19 +140,21 @@ export async function POST(request: NextRequest) {
         aspectRatio as ZImageAspectRatio
       )
 
-      // Task ID 업데이트
-      const { error: updateError } = await supabase
-        .from('ad_background')
-        .update({
-          kie_task_id: taskId,
-          status: 'IN_PROGRESS',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', background.id)
-
-      if (updateError) {
-        console.error('Task ID 업데이트 오류:', updateError)
-      }
+      // Task ID 업데이트 및 크레딧 차감
+      await Promise.all([
+        supabase
+          .from('ad_background')
+          .update({
+            kie_task_id: taskId,
+            status: 'IN_PROGRESS',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', background.id),
+        prisma.profiles.update({
+          where: { id: user.id },
+          data: { credits: { decrement: BACKGROUND_CREDIT_COST } },
+        }),
+      ])
 
       return NextResponse.json({
         background: {

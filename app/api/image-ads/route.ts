@@ -15,12 +15,9 @@ import { createClient } from '@/lib/supabase/server'
 import { generateImageAdPrompt, type ImageAdType as GeminiImageAdType } from '@/lib/gemini/client'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-
-/** 이미지 광고 생성 크레딧 비용 (퀄리티별) */
-const IMAGE_AD_CREDIT_COST = {
-  medium: 2,
-  high: 3,
-} as const
+import { IMAGE_AD_CREDIT_COST } from '@/lib/credits'
+import { getUserPlan } from '@/lib/subscription/queries'
+import { plan_type } from '@/lib/generated/prisma/client'
 
 // 이미지 크기를 Seedream aspect_ratio로 변환
 type ImageAdSize = '1024x1024' | '1536x1024' | '1024x1536'
@@ -217,11 +214,19 @@ export async function POST(request: NextRequest) {
     const body: ImageAdRequestBody = await request.json()
     const { adType, productId, avatarIds = [], outfitId, prompt, imageSize, quality = 'medium', numImages = 2, referenceStyleImageUrl, options, aiAvatarOptions } = body
 
-    // numImages 범위 제한 (1-5)
-    const validNumImages = Math.min(Math.max(1, numImages), 5)
+    // 구독 플랜 확인
+    const userPlan = await getUserPlan(user.id)
+    const isFreeUser = userPlan.planType === plan_type.FREE
 
-    // 크레딧 비용 계산
-    const creditCostPerImage = IMAGE_AD_CREDIT_COST[quality] || IMAGE_AD_CREDIT_COST.medium
+    // FREE 사용자 제한: 1개씩만 생성, medium 품질만 가능
+    const effectiveNumImages = isFreeUser ? 1 : numImages
+    const effectiveQuality = isFreeUser ? 'medium' : quality
+
+    // numImages 범위 제한 (1-5)
+    const validNumImages = Math.min(Math.max(1, effectiveNumImages), 5)
+
+    // 크레딧 비용 계산 (effectiveQuality 사용)
+    const creditCostPerImage = IMAGE_AD_CREDIT_COST[effectiveQuality] || IMAGE_AD_CREDIT_COST.medium
     const totalCreditCost = creditCostPerImage * validNumImages
 
     // 크레딧 확인
@@ -542,7 +547,7 @@ export async function POST(request: NextRequest) {
 
       // AI 아바타용 입력 이미지 (제품 이미지가 있으면 사용)
       const aiInputUrls = productImageUrl ? [productImageUrl] : []
-      const seedreamQuality = quality === 'high' ? 'high' : 'basic'
+      const seedreamQuality = effectiveQuality === 'high' ? 'high' : 'basic'
 
       console.log('AI 아바타 이미지 광고 생성 (fal.ai Seedream 4.5):', { aiAvatarDescription, aspectRatio, inputUrls: aiInputUrls })
 
@@ -568,7 +573,7 @@ export async function POST(request: NextRequest) {
       // queueResponses = await Promise.all(queuePromises)
     } else {
       // 기존 아바타: fal.ai Seedream 4.5 Edit 사용
-      const seedreamQuality = quality === 'high' ? 'high' : 'basic'
+      const seedreamQuality = effectiveQuality === 'high' ? 'high' : 'basic'
 
       const queuePromises = Array.from({ length: validNumImages }, async () => {
         const response = await submitSeedreamEditToQueue({
@@ -610,7 +615,7 @@ export async function POST(request: NextRequest) {
         num_images: validNumImages,  // 요청된 이미지 개수
         prompt: promptToSave,  // AI 아바타인 경우 아바타 설명 포함된 프롬프트
         image_size: imageSize,
-        quality: quality,
+        quality: effectiveQuality,
         selected_options: selectedOptionsToSave,  // 사용자 선택 옵션 + AI 아바타 옵션
       })
       .select('id')

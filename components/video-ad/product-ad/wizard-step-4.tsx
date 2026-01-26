@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import {
   ArrowLeft,
   ArrowRight,
@@ -11,8 +11,22 @@ import {
   Minus,
   Lock,
   Unlock,
+  Crown,
 } from 'lucide-react'
 import { useProductAdWizard, AspectRatio, VideoResolution } from './wizard-context'
+
+// 사용자 플랜 타입
+interface UserPlan {
+  planType: 'FREE' | 'STARTER' | 'PRO' | 'BUSINESS'
+  displayName: string
+}
+
+// FREE 사용자 제한
+const FREE_USER_LIMITS = {
+  maxResolution: '540p' as VideoResolution,
+  maxDuration: 4,
+  maxSceneCount: 3,
+}
 
 // Vidu Q2 해상도 옵션
 const RESOLUTION_OPTIONS: { value: VideoResolution; label: string; desc: string; creditsPerSecond: number }[] = [
@@ -55,6 +69,33 @@ export function WizardStep4() {
     isVideoSettingsFromScenario,
     unlockVideoSettings,
   } = useProductAdWizard()
+
+  // 사용자 플랜 정보
+  const [userPlan, setUserPlan] = useState<UserPlan | null>(null)
+  const isFreeUser = userPlan?.planType === 'FREE'
+
+  // 사용자 플랜 정보 로드
+  useEffect(() => {
+    const fetchUserPlan = async () => {
+      try {
+        const res = await fetch('/api/user/plan')
+        if (res.ok) {
+          const data = await res.json()
+          setUserPlan(data)
+          // FREE 사용자인 경우 기본값 조정
+          if (data.planType === 'FREE') {
+            setVideoResolution(FREE_USER_LIMITS.maxResolution)
+            if (sceneCount > FREE_USER_LIMITS.maxSceneCount) {
+              setSceneCount(FREE_USER_LIMITS.maxSceneCount)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('플랜 정보 로드 오류:', error)
+      }
+    }
+    fetchUserPlan()
+  }, [setVideoResolution, setSceneCount, sceneCount])
 
   // Vidu Q2 모델 강제 설정
   useEffect(() => {
@@ -170,26 +211,42 @@ export function WizardStep4() {
         <div className="flex items-center gap-3">
           <span className="text-sm text-muted-foreground w-16">씬 개수</span>
           <div className="flex gap-1.5 flex-1">
-            {[2, 3, 4, 5, 6, 7, 8].map((count) => (
-              <button
-                key={count}
-                onClick={() => setSceneCount(count)}
-                className={`flex-1 h-12 rounded-xl border-2 transition-all font-bold text-lg ${
-                  sceneCount === count
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border hover:border-primary/50 text-foreground'
-                }`}
-              >
-                {count}
-              </button>
-            ))}
+            {[2, 3, 4, 5, 6, 7, 8].map((count) => {
+              const isLocked = isFreeUser && count > FREE_USER_LIMITS.maxSceneCount
+              return (
+                <button
+                  key={count}
+                  onClick={() => !isLocked && setSceneCount(count)}
+                  disabled={isLocked}
+                  className={`relative flex-1 h-12 rounded-xl border-2 transition-all font-bold text-lg ${
+                    isLocked
+                      ? 'border-border bg-secondary/30 cursor-not-allowed opacity-60 text-muted-foreground'
+                      : sceneCount === count
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border hover:border-primary/50 text-foreground'
+                  }`}
+                >
+                  {count}
+                  {isLocked && (
+                    <Lock className="absolute top-1 right-1 w-3 h-3 text-muted-foreground" />
+                  )}
+                </button>
+              )
+            })}
           </div>
         </div>
+        {isFreeUser && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1">
+            <Crown className="w-3 h-3" />
+            STARTER 이상 구독 시 최대 8개 씬까지 생성 가능
+          </p>
+        )}
 
         {/* 씬별 영상 길이 */}
         <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(sceneCount, 7)}, 1fr)` }}>
           {Array.from({ length: sceneCount }).map((_, index) => {
             const duration = sceneDurations[index] || 3
+            const maxDuration = isFreeUser ? FREE_USER_LIMITS.maxDuration : 8
             return (
               <div
                 key={index}
@@ -207,7 +264,7 @@ export function WizardStep4() {
                   <span className="w-8 text-center text-lg font-bold text-foreground">{duration}</span>
                   <button
                     onClick={() => updateSceneDuration(index, duration + 1)}
-                    disabled={duration >= 8}
+                    disabled={duration >= maxDuration}
                     className="w-7 h-7 flex items-center justify-center rounded-lg bg-secondary hover:bg-secondary/80 text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -218,6 +275,12 @@ export function WizardStep4() {
             )
           })}
         </div>
+        {isFreeUser && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1">
+            <Crown className="w-3 h-3" />
+            STARTER 이상 구독 시 씬당 최대 8초까지 설정 가능
+          </p>
+        )}
       </div>
 
       {/* 영상 해상도 선택 (맨 아래로 이동) */}
@@ -228,24 +291,44 @@ export function WizardStep4() {
         </div>
 
         <div className="grid grid-cols-3 gap-3">
-          {RESOLUTION_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              onClick={() => setVideoResolution(option.value)}
-              className={`p-4 rounded-xl border-2 transition-all ${
-                videoResolution === option.value
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <div className="text-center">
-                <div className="font-medium text-foreground">{option.label}</div>
-                <div className="text-xs text-muted-foreground mt-1">{option.desc}</div>
-                <div className="text-xs text-primary mt-2">{option.creditsPerSecond} 크레딧/초</div>
-              </div>
-            </button>
-          ))}
+          {RESOLUTION_OPTIONS.map((option) => {
+            const isLocked = isFreeUser && option.value !== FREE_USER_LIMITS.maxResolution
+            return (
+              <button
+                key={option.value}
+                onClick={() => !isLocked && setVideoResolution(option.value)}
+                disabled={isLocked}
+                className={`relative p-4 rounded-xl border-2 transition-all ${
+                  isLocked
+                    ? 'border-border bg-secondary/30 cursor-not-allowed opacity-60'
+                    : videoResolution === option.value
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/50'
+                }`}
+              >
+                {isLocked && (
+                  <div className="absolute top-2 right-2 flex items-center gap-1 text-xs text-muted-foreground">
+                    <Lock className="w-3 h-3" />
+                    <span>STARTER+</span>
+                  </div>
+                )}
+                <div className="text-center">
+                  <div className={`font-medium ${isLocked ? 'text-muted-foreground' : 'text-foreground'}`}>
+                    {option.label}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">{option.desc}</div>
+                  <div className="text-xs text-primary mt-2">{option.creditsPerSecond} 크레딧/초</div>
+                </div>
+              </button>
+            )
+          })}
         </div>
+        {isFreeUser && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1">
+            <Crown className="w-3 h-3" />
+            STARTER 이상 구독 시 HD/FHD 품질 사용 가능
+          </p>
+        )}
       </div>
 
       {/* 예상 크레딧 */}

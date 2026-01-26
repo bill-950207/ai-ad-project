@@ -8,10 +8,12 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/db'
 import {
   submitKling26ToQueue,
   type Kling26Duration,
 } from '@/lib/kie/client'
+import { AVATAR_MOTION_CREDIT_COST, type AvatarMotionDuration } from '@/lib/credits'
 
 interface GenerateVideoRequest {
   startFrameUrl: string          // 첫 프레임 이미지 URL (필수)
@@ -57,6 +59,20 @@ export async function POST(request: NextRequest) {
 
     // Kling 2.6 duration 매핑 (5초 또는 10초만 지원)
     const klingDuration: Kling26Duration = duration >= 10 ? '10' : '5'
+    const creditDuration: AvatarMotionDuration = duration >= 10 ? 10 : 5
+    const creditCost = AVATAR_MOTION_CREDIT_COST[creditDuration]
+
+    // 크레딧 확인
+    const profile = await prisma.profiles.findUnique({
+      where: { id: user.id },
+    })
+
+    if (!profile || (profile.credits ?? 0) < creditCost) {
+      return NextResponse.json(
+        { error: 'Insufficient credits', required: creditCost, available: profile?.credits ?? 0 },
+        { status: 402 }
+      )
+    }
 
     // Kling 2.6 Image-to-Video로 영상 생성 요청
     const response = await submitKling26ToQueue(
@@ -69,18 +85,10 @@ export async function POST(request: NextRequest) {
     )
 
     // 크레딧 차감
-    const creditCost = calculateCreditCost(duration)
-
-    const { error: creditError } = await supabase.rpc('deduct_credits', {
-      p_user_id: user.id,
-      p_amount: creditCost,
-      p_description: `아바타 모션 영상 생성 (${duration}초)`,
+    await prisma.profiles.update({
+      where: { id: user.id },
+      data: { credits: { decrement: creditCost } },
     })
-
-    if (creditError) {
-      console.error('크레딧 차감 오류:', creditError)
-      // 크레딧 차감 실패해도 일단 진행 (로그만 남김)
-    }
 
     return NextResponse.json({
       success: true,
@@ -94,10 +102,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
-
-function calculateCreditCost(duration: number): number {
-  // Kling 2.6: 5초 = 50 크레딧, 10초 = 70 크레딧
-  if (duration <= 5) return 50
-  return 70
 }

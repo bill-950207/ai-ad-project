@@ -11,9 +11,7 @@ import { prisma } from '@/lib/db'
 import { generateOutfitInputUploadUrl } from '@/lib/storage/r2'
 import { submitSeedreamOutfitEditToQueue } from '@/lib/fal/client'
 import { submitOutfitEditToQueue as submitOutfitEditToKieQueue } from '@/lib/kie/client'
-
-/** 의상 교체 크레딧 비용 */
-const OUTFIT_CREDIT_COST = 2
+import { OUTFIT_CREDIT_COST } from '@/lib/credits'
 
 /** 라우트 파라미터 타입 */
 interface RouteParams {

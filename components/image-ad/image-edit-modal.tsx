@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react'
+import { IMAGE_EDIT_CREDIT_COST } from '@/lib/credits'
 
 interface ImageEditModalProps {
   isOpen: boolean
@@ -27,12 +28,6 @@ interface ImageEditModalProps {
   quality?: 'medium' | 'high'
   onEditComplete?: (newImageIndex: number, newImageUrl: string) => void
 }
-
-// 크레딧 비용
-const EDIT_CREDIT_COST = {
-  medium: 2,
-  high: 3,
-} as const
 
 export function ImageEditModal({
   isOpen,
@@ -53,7 +48,7 @@ export function ImageEditModal({
   const [progress, setProgress] = useState(0)
   const [currentImageIndex, setCurrentImageIndex] = useState(imageIndex)
 
-  const creditCost = EDIT_CREDIT_COST[quality]
+  const creditCost = IMAGE_EDIT_CREDIT_COST[quality]
 
   // imageIndex prop 변경 시 업데이트
   useEffect(() => {

@@ -7,10 +7,12 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/db'
 import {
   createEditTask,
   type EditAspectRatio,
 } from '@/lib/kie/client'
+import { KEYFRAME_CREDIT_COST } from '@/lib/credits'
 
 interface SceneInput {
   index: number
@@ -59,6 +61,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 크레딧 계산 (씬 개수 × 키프레임당 비용)
+    const totalCreditCost = scenes.length * KEYFRAME_CREDIT_COST
+
+    // 크레딧 확인
+    const profile = await prisma.profiles.findUnique({
+      where: { id: user.id },
+    })
+
+    if (!profile || (profile.credits ?? 0) < totalCreditCost) {
+      return NextResponse.json(
+        { error: 'Insufficient credits', required: totalCreditCost, available: profile?.credits ?? 0 },
+        { status: 402 }
+      )
+    }
+
     // 각 씬에 대해 Seedream 4.5로 이미지 생성 요청
     const requests = await Promise.all(
       scenes.map(async (scene) => {
@@ -76,8 +93,15 @@ export async function POST(request: NextRequest) {
       })
     )
 
+    // 크레딧 차감
+    await prisma.profiles.update({
+      where: { id: user.id },
+      data: { credits: { decrement: totalCreditCost } },
+    })
+
     return NextResponse.json({
       requests,
+      creditUsed: totalCreditCost,
     })
   } catch (error) {
     console.error('키프레임 생성 오류:', error)
