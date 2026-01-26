@@ -55,7 +55,32 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
   const ageMap: Record<string, string> = { young: '20-30대', middle: '30-40대', mature: '40-50대', any: '연령대 무관' }
   const styleMap: Record<string, string> = { natural: '자연스럽고 편안한', professional: '전문적이고 세련된', casual: '캐주얼하고 편안한', elegant: '우아하고 고급스러운', any: '스타일 무관' }
   const ethnicityMap: Record<string, string> = { korean: '한국인', asian: '아시아인', western: '서양인', japanese: '일본인', chinese: '중국인', any: '인종 무관' }
-  const bodyTypeMap: Record<string, string> = { slim: '날씬한 체형', average: '보통 체형', athletic: '운동선수 같은 탄탄한 체형', curvy: '글래머러스한 체형', any: '체형 무관 (제품에 어울리게 추천)' }
+
+  // 성별별 체형 프롬프트 (영어 - 이미지 생성 모델 최적화)
+  const femaleBodyTypeMap: Record<string, string> = {
+    slim: 'slim slender feminine silhouette with delicate proportions',
+    average: 'balanced feminine proportions with natural curves',
+    athletic: 'toned athletic feminine build with defined musculature',
+    curvy: 'feminine silhouette with natural soft curves',
+    any: 'natural feminine proportions',
+  }
+  const maleBodyTypeMap: Record<string, string> = {
+    slim: 'lean masculine frame with slender proportions',
+    average: 'balanced masculine build with standard proportions',
+    athletic: 'toned athletic masculine physique with defined muscles',
+    curvy: 'solid masculine build with broader frame',
+    any: 'natural masculine proportions',
+  }
+
+  // 성별에 따른 체형 설명 반환
+  const getBodyTypeDescription = (bodyType: string, gender?: string): string => {
+    if (gender === 'female') {
+      return femaleBodyTypeMap[bodyType] || femaleBodyTypeMap['any']
+    } else if (gender === 'male') {
+      return maleBodyTypeMap[bodyType] || maleBodyTypeMap['any']
+    }
+    return femaleBodyTypeMap[bodyType] || femaleBodyTypeMap['any']
+  }
 
   // 언어-인종 매핑 (ethnicity가 'any'일 때 언어에 맞는 인종 자동 설정)
   const languageToEthnicityMap: Record<string, string> = {
@@ -84,7 +109,7 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
   const targetAgeText = ageMap[input.targetAge || 'any']
   const styleText = styleMap[input.style || 'any']
   const ethnicityText = ethnicityMap[resolvedEthnicity]
-  const bodyTypeText = bodyTypeMap[input.bodyType || 'any']
+  const bodyTypeText = getBodyTypeDescription(input.bodyType || 'any', input.targetGender)
 
   const cameraConfig = input.cameraComposition
     ? cameraCompositionDescriptions[input.cameraComposition]
@@ -135,7 +160,7 @@ ${input.productImageUrl ? '제품 이미지가 Figure 1로 첨부되어 있습�
 - 연령대: ${targetAgeText}
 - 스타일: ${styleText}
 - 인종/민족: ${ethnicityText}
-- 체형: ${bodyTypeText}
+- Body type (use this exact English phrase in prompt): ${bodyTypeText}
 
 === 장소/배경 ===
 ${locationSection}
