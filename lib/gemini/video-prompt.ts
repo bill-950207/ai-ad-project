@@ -126,7 +126,13 @@ ${input.additionalInstructions ? `Additional Instructions: ${input.additionalIns
 
 Generate TWO prompts:
 1. **First Scene Image Prompt (firstScenePrompt)**: Seedream 4.5 optimized prompt (English, 50-80 words)
-2. **Video Generation Prompt (videoPrompt)**: Wan 2.6 prompt (English, max 800 characters)`
+2. **Video Generation Prompt (videoPrompt)**: Wan 2.6 prompt (English, max 800 characters)
+
+=== CRITICAL RULES ===
+- NEVER include product names, brand names, or model names in the prompts.
+- Product names often contain words that could be misinterpreted (e.g., "Mushroom" in a shoe name would cause AI to draw actual mushrooms).
+- Instead of product names, use generic terms like "the product", "the item", or refer to the product image as "the product in IMAGE1".
+- Focus on visual characteristics, actions, and composition rather than product identifiers.`
 
   const tools = input.productUrl ? [{ urlContext: {} }, { googleSearch: {} }] : undefined
 
