@@ -24,12 +24,16 @@ export const PHOTOREALISM_ESSENTIALS = {
     `soft natural daylight streaming ${direction}`,
 
   /** 품질 태그 */
-  quality: 'Hyperrealistic photograph, 8K RAW quality',
+  quality: 'professional commercial photography, brand campaign quality, high-end advertisement, Hyperrealistic photograph, 8K RAW quality',
 
   /** 카메라 설정 */
   camera: (lens: string = '85mm', aperture: string = '1.8') =>
     `shot on ${lens} lens at f/${aperture}`,
 }
+
+/** 광고 스타일 강화 프롬프트 */
+export const COMMERCIAL_AD_STYLE =
+  'professional commercial advertisement, brand campaign quality, magazine-worthy composition, premium aesthetic, editorial photography style, high-end product photography'
 
 /** Seedream 4.5에서 금지된 표현들 */
 export const SEEDREAM_FORBIDDEN_TERMS = [
@@ -39,7 +43,47 @@ export const SEEDREAM_FORBIDDEN_TERMS = [
   'camera visible',
   'phone in hand',
   'selfie stick',
+  // 조명 장비 관련 - 조명 "효과"만 설명하고 장비는 보이면 안됨
+  'lighting equipment',
+  'light stand',
+  'softbox',
+  'studio light',
+  'ring light visible',
+  'lamp in frame',
+  'light fixture',
+  'visible lighting',
+  // 카메라 장비 관련 - 카메라 "스펙"만 설명하고 장비는 보이면 안됨
+  'camera in frame',
+  'camera equipment',
+  'tripod visible',
+  'camera lens visible',
+  'filming equipment',
+  'recording setup',
 ]
+
+/** 조명/카메라 장비 방지 네거티브 프롬프트 */
+export const EQUIPMENT_NEGATIVE_PROMPT =
+  'visible lighting equipment, light stand, softbox, studio light, ring light, lamp, light fixture, lighting rig, visible camera, camera in frame, tripod, camera lens, filming equipment, photography equipment, studio equipment, behind the scenes, production setup'
+
+/** 조명/카메라 표현 가이드 (프롬프트 생성 시 참조) */
+export const LIGHTING_CAMERA_INSTRUCTION = `
+CRITICAL: LIGHTING AND CAMERA TERMS DESCRIBE EFFECTS, NOT VISIBLE EQUIPMENT
+
+When describing lighting:
+- CORRECT: "soft natural light from the left" (describes the light effect/direction)
+- WRONG: "softbox on the left" (describes visible equipment)
+- CORRECT: "warm golden hour lighting" (describes light quality)
+- WRONG: "studio light setup" (implies visible equipment)
+
+When describing camera:
+- CORRECT: "shot on 85mm lens at f/1.8" (technical specs that affect image quality)
+- WRONG: "camera on tripod" (describes visible equipment)
+- CORRECT: "eye-level perspective" (describes angle/composition)
+- WRONG: "filming setup visible" (implies equipment in frame)
+
+The scene should look like a CANDID PHOTOGRAPH, not a behind-the-scenes photo.
+NO lighting equipment, cameras, tripods, or any production equipment should be visible in the generated image.
+`.trim()
 
 /** UGC 스타일 배경 (blur/bokeh 절대 금지 - 실제 스마트폰 사진처럼) */
 export const UGC_BACKGROUND_STYLE =
@@ -55,15 +99,27 @@ export const PROFESSIONAL_BACKGROUND_STYLE =
 
 /** 공통 네거티브 프롬프트 */
 export const COMMON_NEGATIVE_PROMPT =
-  'cartoon, anime, illustration, painting, drawing, sketch, low quality, blurry, distorted, deformed, ugly, bad anatomy, bad proportions, extra limbs, missing limbs, floating limbs, disconnected limbs, mutation, mutated, disfigured, watermark, signature, text overlay, bokeh, shallow depth of field, blurred background, soft focus, out of focus background, defocused background'
+  'cartoon, anime, illustration, painting, drawing, sketch, low quality, blurry, distorted, deformed, ugly, bad anatomy, bad proportions, extra limbs, missing limbs, floating limbs, disconnected limbs, mutation, mutated, disfigured, watermark, signature, text overlay, bokeh, shallow depth of field, blurred background, soft focus, out of focus background, defocused background, logo overlay, brand banner, text banner, header banner, footer banner, barcode, QR code, price tag, product label, info graphic, UI elements, graphic overlay, decorative text, promotional text, advertising overlay, frame overlay, border overlay, corner logo, bottom text, top text'
 
 /** 아바타/인물용 네거티브 프롬프트 */
 export const AVATAR_NEGATIVE_PROMPT =
-  `${COMMON_NEGATIVE_PROMPT}, unnatural pose, stiff expression, plastic skin, mannequin, wax figure, dead eyes, blurry background, bokeh effect, soft background`
+  `${COMMON_NEGATIVE_PROMPT}, unnatural pose, stiff expression, plastic skin, mannequin, wax figure, dead eyes, blurry background, bokeh effect, soft background, ${EQUIPMENT_NEGATIVE_PROMPT}`
 
 /** 제품용 네거티브 프롬프트 */
 export const PRODUCT_NEGATIVE_PROMPT =
-  `${COMMON_NEGATIVE_PROMPT}, wrong product, different product, modified logo, altered branding, fake label, blurry background, bokeh, out of focus`
+  `${COMMON_NEGATIVE_PROMPT}, wrong product, different product, modified logo, altered branding, fake label, blurry background, bokeh, out of focus, fake brand name, invented logo, added text, fictional branding, generic brand text, placeholder text, brand name on product, logo on product, text on product, sticker on product, label on product, writing on product, letters on product, product branding, product logo, product label, product text`
+
+/** 로고 없는 제품용 프롬프트 강제 추가 문구 */
+export const NO_LOGO_PROMPT_SUFFIX =
+  'CRITICAL: The product surface must remain completely clean and unbranded - absolutely NO logos, NO text, NO brand names, NO labels, NO stickers anywhere on the product. Keep the product exactly as clean as the reference image.'
+
+/** 오버레이 요소 방지 프롬프트 */
+export const NO_OVERLAY_ELEMENTS =
+  'CRITICAL: Generate a CLEAN photograph only. ABSOLUTELY NO graphic overlays, NO logo banners, NO text banners, NO headers, NO footers, NO barcodes, NO QR codes, NO price tags, NO product labels, NO promotional text, NO watermarks, NO UI elements, NO frames, NO borders, NO corner logos anywhere in the image. The image must be a pure photograph without any added graphic elements or text overlays.'
+
+/** 오버레이 방지 네거티브 프롬프트 */
+export const OVERLAY_NEGATIVE_PROMPT =
+  'logo overlay, brand banner, text banner, header, footer, barcode, QR code, price tag, product label, info graphic, UI elements, graphic overlay, decorative text, promotional text, advertising overlay, frame, border, corner logo, watermark overlay, stamp, badge, sticker overlay, floating text, caption, subtitle, title card'
 
 // ============================================================
 // 브랜드 보존 지시
@@ -71,11 +127,44 @@ export const PRODUCT_NEGATIVE_PROMPT =
 
 /** 로고/라벨 보존 지시 (Gemini 프롬프트용) */
 export const BRAND_PRESERVATION_INSTRUCTION = `
-CRITICAL LOGO & TEXT RULES:
-1. IF product has existing logos/labels/text: Preserve them EXACTLY as shown in the reference image. Do not modify, blur, or reposition.
-2. IF product has NO logos/labels/text: Keep it clean. The product should remain without any branding.
-3. NEVER ADD: Do not add ANY new text, logos, watermarks, brand names, or written elements to the image - whether the product has existing branding or not.
-4. NO FAKE BRANDING: Do not invent or generate any text or logos that are not visible in the original product reference.
+CRITICAL LOGO & TEXT RULES - STRICTLY ENFORCE:
+
+=== FIRST: ANALYZE THE PRODUCT IMAGE ===
+Carefully examine the product reference image and determine:
+- Does the product have ANY visible logos, text, labels, or brand names? (YES/NO)
+- If YES: List exactly what text/logos are visible
+
+=== THEN: APPLY THESE RULES ===
+
+IF THE PRODUCT HAS EXISTING LOGOS/TEXT:
+- Preserve them EXACTLY as shown - same position, size, color, font
+- Do not modify, blur, distort, or reposition any existing branding
+- Include instruction: "preserve existing product branding exactly as shown in reference"
+
+IF THE PRODUCT HAS NO VISIBLE LOGOS/TEXT (clean/unbranded product):
+- The product MUST remain completely clean without ANY branding
+- DO NOT add any logos, text, labels, watermarks, or brand names
+- DO NOT invent fictional brand names or logos
+- The product surface should remain exactly as clean as the reference
+- Include instruction: "the product has NO logos or text - keep it completely clean and unbranded"
+
+=== ABSOLUTE PROHIBITIONS ===
+- NEVER generate fake/invented brand names (like "Product Name", "Brand", "Logo")
+- NEVER add text that looks like it could be a brand
+- NEVER add decorative text elements to the product
+- NEVER add promotional text or price tags on the product
+`.trim()
+
+/** 로고 없는 제품용 강화 지시 */
+export const NO_LOGO_PRODUCT_INSTRUCTION = `
+IMPORTANT: This product has NO visible logos, text, or branding in the reference image.
+The generated image MUST keep the product surface completely clean:
+- No brand names
+- No logos
+- No text of any kind
+- No labels
+- No watermarks
+The product should appear exactly as clean and unbranded as in the reference.
 `.trim()
 
 // ============================================================
