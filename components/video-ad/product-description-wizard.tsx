@@ -70,12 +70,16 @@ interface Script {
 
 interface Voice {
   id: string
+  voice_id?: string
   name: string
   description: string
-  gender: 'male' | 'female'
+  gender: 'male' | 'female' | 'unknown' | string
   style: string
-  sampleText: string
+  sampleText?: string
   previewUrl: string | null
+  preview_url?: string | null
+  labels?: Record<string, string>
+  category?: string
 }
 
 type WizardStep = 1 | 2 | 3 | 4
@@ -394,11 +398,11 @@ export function ProductDescriptionWizard() {
   // 데이터 로드
   // ============================================================
 
-  // 특정 언어의 음성 목록 불러오기 (Minimax API)
+  // 특정 언어의 음성 목록 불러오기 (ElevenLabs API)
   const fetchVoicesByLanguage = useCallback(async (lang: 'ko' | 'en' | 'ja' | 'zh') => {
     setIsLoadingVoices(true)
     try {
-      const res = await fetch(`/api/minimax-voices?language=${lang}`)
+      const res = await fetch(`/api/voices?language=${lang}`)
       if (res.ok) {
         const data = await res.json()
         setVoices(data.voices || [])
@@ -414,7 +418,7 @@ export function ProductDescriptionWizard() {
     try {
       const [productsRes, voicesRes] = await Promise.all([
         fetch('/api/ad-products'),
-        fetch('/api/minimax-voices?language=ko'),  // 기본값: 한국어 음성 (Minimax)
+        fetch('/api/voices?language=ko'),  // 기본값: 한국어 음성 (ElevenLabs)
       ])
 
       if (productsRes.ok) {
@@ -1116,48 +1120,40 @@ export function ProductDescriptionWizard() {
       audioRef.current.pause()
     }
 
-    // 미리듣기 URL이 없으면 실시간 생성
-    let previewUrl = voice.previewUrl
-    if (!previewUrl) {
-      setLoadingPreviewId(voice.id)
-      try {
-        const res = await fetch(`/api/minimax-voices/preview?voiceId=${voice.id}`)
-        if (res.ok) {
-          const data = await res.json()
-          previewUrl = data.audioUrl
-          // 음성 목록에서 해당 음성의 previewUrl 업데이트
-          setVoices(prev => prev.map(v =>
-            v.id === voice.id ? { ...v, previewUrl: previewUrl } : v
-          ))
-        }
-      } catch (err) {
-        console.error('프리뷰 생성 오류:', err)
-      } finally {
-        setLoadingPreviewId(null)
-      }
-    }
+    // ElevenLabs 음성은 previewUrl이 이미 제공됨
+    const previewUrl = voice.previewUrl
 
     if (!previewUrl) {
+      console.warn('프리뷰 URL이 없습니다:', voice.id)
       return
     }
 
     // 새 오디오 재생
+    setLoadingPreviewId(voice.id)
     const audio = new Audio(previewUrl)
     audioRef.current = audio
-    setPlayingVoiceId(voice.id)
 
-    audio.play().catch(err => {
-      console.error('오디오 재생 오류:', err)
-      setPlayingVoiceId(null)
-    })
+    audio.oncanplaythrough = () => {
+      setLoadingPreviewId(null)
+      setPlayingVoiceId(voice.id)
+      audio.play().catch(err => {
+        console.error('오디오 재생 오류:', err)
+        setPlayingVoiceId(null)
+      })
+    }
 
     audio.onended = () => {
       setPlayingVoiceId(null)
     }
 
     audio.onerror = () => {
+      setLoadingPreviewId(null)
       setPlayingVoiceId(null)
+      console.error('오디오 로드 오류:', voice.id)
     }
+
+    // 오디오 로드 시작
+    audio.load()
   }, [playingVoiceId])
 
   // 컴포넌트 언마운트 시 오디오 정리

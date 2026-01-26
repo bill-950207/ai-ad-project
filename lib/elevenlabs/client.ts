@@ -63,11 +63,11 @@ export interface TTSResult {
 // 기본 음성 설정
 // ============================================================
 
-/** 기본 음성 설정 */
+/** 기본 음성 설정 (한국어 최적화) */
 const DEFAULT_VOICE_SETTINGS: VoiceSettings = {
-  stability: 0.5,
-  similarity_boost: 0.75,
-  style: 0.0,
+  stability: 0.75,           // 70-85 권장 (한국어)
+  similarity_boost: 0.85,    // 85-100 (딕션 명확)
+  style: 0.1,                // 5-15 (과하면 부자연스러움)
   use_speaker_boost: true,
 }
 
@@ -337,6 +337,43 @@ export async function getVoices(): Promise<Voice[]> {
 export async function getVoicesByCategory(category: string): Promise<Voice[]> {
   const voices = await getVoices()
   return voices.filter((voice) => voice.category === category)
+}
+
+/**
+ * 언어별로 음성을 필터링합니다.
+ * labels.language 필드를 기준으로 필터링합니다.
+ *
+ * @param voices - 필터링할 음성 목록
+ * @param language - 언어 코드 (ko, en, ja, zh)
+ * @returns 해당 언어의 음성 목록
+ */
+export function filterVoicesByLanguage(voices: Voice[], language: VoiceLanguage): Voice[] {
+  const languageMap: Record<VoiceLanguage, string[]> = {
+    ko: ['korean', 'ko'],
+    en: ['english', 'en', 'american', 'british', 'australian', 'irish', 'scottish'],
+    ja: ['japanese', 'ja'],
+    zh: ['chinese', 'zh', 'mandarin', 'cantonese'],
+  }
+  const targetLanguages = languageMap[language] || [language]
+
+  return voices.filter(voice => {
+    const voiceLanguage = voice.labels?.language?.toLowerCase() || ''
+    const voiceAccent = voice.labels?.accent?.toLowerCase() || ''
+    return targetLanguages.some(lang =>
+      voiceLanguage.includes(lang) || voiceAccent.includes(lang)
+    )
+  })
+}
+
+/**
+ * ElevenLabs API에서 음성 목록을 조회하고 언어별로 필터링합니다.
+ *
+ * @param language - 언어 코드 (ko, en, ja, zh)
+ * @returns 해당 언어의 음성 목록
+ */
+export async function getVoicesFromAPIByLanguage(language: VoiceLanguage): Promise<Voice[]> {
+  const allVoices = await getVoices()
+  return filterVoicesByLanguage(allVoices, language)
 }
 
 /**
