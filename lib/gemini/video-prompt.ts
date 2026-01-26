@@ -388,6 +388,7 @@ const cameraCompositionDescriptions: Record<CameraCompositionType, string> = {
   closeup: 'close-up portrait, face and upper body',
   fullbody: 'full body shot, entire person visible',
   'ugc-closeup': 'UGC-style medium close-up, chest-up framing',
+  'ugc-selfie': 'selfie camera angle, hands NOT visible in frame, direct eye contact, intimate selfie perspective',
 }
 
 // 모델 포즈 설명

@@ -23,7 +23,8 @@ const cameraCompositionDescriptions: Record<CameraCompositionType, { description
   tripod: { description: 'stable tripod shot, medium distance, waist to head visible', aperture: 'f/16', lens: '50mm' },
   closeup: { description: 'close-up portrait, face and upper body prominent', aperture: 'f/11', lens: '50mm' },
   fullbody: { description: 'full body shot, entire person visible in frame', aperture: 'f/16', lens: '35mm' },
-  'ugc-closeup': { description: 'UGC-style intimate medium close-up, chest-up framing, eyes looking DIRECTLY into camera lens', aperture: 'f/8', lens: '35mm' },
+  'ugc-closeup': { description: 'UGC-style intimate medium close-up, chest-up framing, eyes looking DIRECTLY into camera lens', aperture: 'f/11', lens: '35mm' },
+  'ugc-selfie': { description: 'selfie camera angle, HANDS NOT VISIBLE in frame - cropped below edge, direct eye contact, intimate selfie perspective', aperture: 'f/11', lens: '28mm' },
 }
 
 // 모델 포즈 설명

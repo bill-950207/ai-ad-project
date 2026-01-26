@@ -150,6 +150,7 @@ export type CameraCompositionType =
   | 'closeup'
   | 'fullbody'
   | 'ugc-closeup'
+  | 'ugc-selfie'
 
 /** 모델 포즈 타입 */
 export type ModelPoseType =

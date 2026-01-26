@@ -85,9 +85,9 @@ The scene should look like a CANDID PHOTOGRAPH, not a behind-the-scenes photo.
 NO lighting equipment, cameras, tripods, or any production equipment should be visible in the generated image.
 `.trim()
 
-/** UGC 스타일 배경 (blur/bokeh 절대 금지 - 실제 스마트폰 사진처럼) */
+/** UGC 스타일 배경 (인위적 블러 금지 - 자연스러운 스마트폰 사진처럼) */
 export const UGC_BACKGROUND_STYLE =
-  'CRITICALLY IMPORTANT: The entire background MUST be perfectly sharp and crystal clear with every detail visible. ABSOLUTELY NO blur, NO bokeh, NO soft focus, NO shallow depth of field, NO out-of-focus areas anywhere in the image. Use f/11-f/16 aperture for maximum sharpness. Every element from foreground to background must be in razor-sharp focus like a real smartphone photo.'
+  'IMPORTANT: Background should be clearly visible and mostly in focus like a real smartphone photo. Use f/11 aperture. NO heavy bokeh, NO artificial blur, NO shallow depth of field effect. Only minimal natural perspective depth is acceptable - background should be sharp enough to see all details clearly. The image should NOT look like professional DSLR photography with wide aperture blur.'
 
 /** 전문적 스타일 배경 (제한적 사용 - 여전히 블러 최소화) */
 export const PROFESSIONAL_BACKGROUND_STYLE =
@@ -336,7 +336,7 @@ export const VIDU_OPTIMIZATION = {
   /** 마이크로 표정 타이밍 힌트 */
   microExpressions: {
     blink: 'natural blink around 2 seconds',
-    smile: 'subtle smile slowly forming',
+    expressionShift: 'subtle natural expression shift, authentic micro-movements',
     eyeMovement: 'eyes drift naturally before settling',
     breathe: 'chest rises gently with natural breath',
   },
@@ -440,13 +440,13 @@ STRUCTURE:
    "Gently raises the product toward her face, movement unhurried and deliberate"
 
 4. EXPRESSION TRANSITION (10 words):
-   "A subtle smile forms as she examines the product"
+   "Expression shifts naturally as she examines the product" (can be curious, thoughtful, engaged - NOT forced smile)
 
 5. MICRO-EXPRESSION (5-10 words):
-   "Natural blink, eyes softening with contentment"
+   "Natural blink, eyes showing genuine interest"
 
 6. END STATE (10 words):
-   "She brings it closer, settling into quiet satisfaction"
+   "She brings it closer, settling into natural contemplation"
 
 IMPORTANT:
 - Do NOT describe motion intensity (use API's movement_amplitude)

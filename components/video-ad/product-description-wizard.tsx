@@ -21,8 +21,10 @@ import {
   Edit3,
   Expand,
   Globe,
+  GraduationCap,
   Loader2,
   MapPin,
+  Mic,
   Minus,
   Package,
   Pause,
@@ -78,9 +80,49 @@ interface Voice {
 
 type WizardStep = 1 | 2 | 3 | 4
 type VideoDuration = 15 | 30 | 60
+type VideoType = 'UGC' | 'podcast' | 'expert'
+
+// 영상 타입 정보
+interface VideoTypeInfo {
+  label: string
+  desc: string
+  icon: 'User' | 'Mic' | 'GraduationCap'
+  recommendedCompositions: ('auto' | 'selfie-high' | 'selfie-front' | 'selfie-side' | 'tripod' | 'closeup' | 'fullbody' | 'ugc-closeup' | 'ugc-selfie')[]
+  recommendedPoses: ('auto' | 'holding-product' | 'showing-product' | 'using-product' | 'talking-only')[]
+  recommendedOutfits: ('casual_everyday' | 'formal_elegant' | 'professional_business' | 'sporty_athletic' | 'cozy_comfortable' | 'trendy_fashion' | 'minimal_simple')[]
+}
+
+const videoTypeLabels: Record<VideoType, VideoTypeInfo> = {
+  UGC: {
+    label: 'UGC 스타일',
+    desc: '인플루언서처럼 자연스럽게',
+    icon: 'User',
+    recommendedCompositions: ['ugc-selfie', 'ugc-closeup', 'selfie-front', 'selfie-high'],
+    recommendedPoses: ['holding-product', 'showing-product', 'using-product'],
+    recommendedOutfits: ['casual_everyday', 'trendy_fashion', 'cozy_comfortable'],
+  },
+  podcast: {
+    label: '팟캐스트',
+    desc: '대화하듯 친밀하게',
+    icon: 'Mic',
+    recommendedCompositions: ['tripod', 'closeup', 'selfie-front'],
+    recommendedPoses: ['talking-only', 'holding-product'],
+    recommendedOutfits: ['cozy_comfortable', 'casual_everyday', 'minimal_simple'],
+  },
+  expert: {
+    label: '전문가 설명',
+    desc: '전문적으로 설명',
+    icon: 'GraduationCap',
+    recommendedCompositions: ['tripod', 'fullbody', 'selfie-front'],
+    recommendedPoses: ['talking-only', 'showing-product'],
+    recommendedOutfits: ['professional_business', 'formal_elegant', 'minimal_simple'],
+  },
+}
+
+const videoTypeOptions: VideoType[] = ['UGC', 'podcast', 'expert']
 
 // 카메라 구도 타입 (셀카는 각도별로 세분화)
-type CameraComposition = 'auto' | 'selfie-high' | 'selfie-front' | 'selfie-side' | 'tripod' | 'closeup' | 'fullbody' | 'ugc-closeup'
+type CameraComposition = 'auto' | 'selfie-high' | 'selfie-front' | 'selfie-side' | 'tripod' | 'closeup' | 'fullbody' | 'ugc-closeup' | 'ugc-selfie'
 
 // 카메라 구도 정보 (예시 이미지 포함)
 interface CameraCompositionInfo {
@@ -134,13 +176,18 @@ const cameraCompositionLabels: Record<CameraComposition, CameraCompositionInfo> 
     desc: '인플루언서 스타일, 가슴 위부터 얼굴까지 가깝게',
     exampleImage: '/images/camera/ugc-closeup.png',
   },
+  'ugc-selfie': {
+    label: 'UGC 셀카',
+    desc: '폰을 들고 찍는 셀카 구도 (손 안 보임)',
+    exampleImage: '/images/camera/ugc-selfie.png',
+  },
 }
 
 // 카메라 구도 그룹화 (UI 표시용)
 const cameraCompositionGroups = [
   { key: 'basic', label: '기본', compositions: ['auto', 'tripod', 'closeup', 'fullbody'] as CameraComposition[] },
   { key: 'selfie', label: '셀카', compositions: ['selfie-high', 'selfie-front', 'selfie-side'] as CameraComposition[] },
-  { key: 'ugc', label: 'UGC', compositions: ['ugc-closeup'] as CameraComposition[] },
+  { key: 'ugc', label: 'UGC', compositions: ['ugc-selfie', 'ugc-closeup'] as CameraComposition[] },
 ]
 
 // 모델 포즈 타입
@@ -261,6 +308,7 @@ interface DraftData {
   first_frame_prompt: string | null
   voice_id: string | null
   voice_name: string | null
+  video_type: string | null  // 비디오 타입 (UGC, podcast, expert)
   status: string
 }
 
@@ -297,6 +345,7 @@ export function ProductDescriptionWizard() {
 
   // Step 2: 입력
   const [productInfo, setProductInfo] = useState('')
+  const [locationMode, setLocationMode] = useState<'ai_recommend' | 'custom'>('ai_recommend')
   const [locationPrompt, setLocationPrompt] = useState('')
   const [duration, setDuration] = useState<VideoDuration>(30)
   const [cameraComposition, setCameraComposition] = useState<CameraComposition>('auto')
@@ -308,6 +357,7 @@ export function ProductDescriptionWizard() {
   const [scriptLanguage, setScriptLanguage] = useState<'ko' | 'en' | 'ja' | 'zh'>(
     (language as 'ko' | 'en' | 'ja' | 'zh') || 'ko'
   )
+  const [videoType, setVideoType] = useState<VideoType>('UGC')
 
   // Step 3: 대본 및 이미지 + 음성 (통합)
   const [scripts, setScripts] = useState<Script[]>([])
@@ -464,6 +514,7 @@ export function ProductDescriptionWizard() {
           firstFramePrompt: firstFramePromptToSave,
           voiceId: selectedVoice?.id,
           voiceName: selectedVoice?.name,
+          videoType,  // 비디오 타입 (UGC, podcast, expert)
         }),
       })
 
@@ -478,7 +529,7 @@ export function ProductDescriptionWizard() {
     } finally {
       setIsSavingDraft(false)
     }
-  }, [draftId, selectedAvatarInfo, selectedProduct, productInfo, locationPrompt, duration, cameraComposition, modelPose, outfitMode, outfitPreset, outfitCustom, scripts, selectedScriptIndex, editedScript, firstFrameUrl, firstFrameUrls, firstFrameOriginalUrls, firstFramePrompt, locationDescription, selectedVoice])
+  }, [draftId, selectedAvatarInfo, selectedProduct, productInfo, locationPrompt, duration, cameraComposition, modelPose, outfitMode, outfitPreset, outfitCustom, scripts, selectedScriptIndex, editedScript, firstFrameUrl, firstFrameUrls, firstFrameOriginalUrls, firstFramePrompt, locationDescription, selectedVoice, videoType])
 
   // 기존 초안 또는 진행 중인 영상 광고 로드
   const loadExistingData = useCallback(async () => {
@@ -599,6 +650,7 @@ export function ProductDescriptionWizard() {
     if (draft.outfit_mode) setOutfitMode(draft.outfit_mode as OutfitMode)
     if (draft.outfit_preset) setOutfitPreset(draft.outfit_preset as OutfitPreset)
     if (draft.outfit_custom) setOutfitCustom(draft.outfit_custom)
+    if (draft.video_type) setVideoType(draft.video_type as VideoType)
 
     // Step 3 데이터 (대본, 첫 프레임)
     if (draft.scripts_json) {
@@ -816,6 +868,7 @@ export function ProductDescriptionWizard() {
           outfitPreset: outfitMode === 'preset' ? outfitPreset : undefined,
           outfitCustom: outfitMode === 'custom' && outfitCustom.trim() ? outfitCustom.trim() : undefined,
           language: scriptLanguage,  // 대본 생성 언어
+          videoType,  // 비디오 타입 (UGC, podcast, expert)
           // AI 아바타 옵션 (AI 생성 아바타일 때만)
           aiAvatarOptions: selectedAvatarInfo.type === 'ai-generated' ? selectedAvatarInfo.aiOptions : undefined,
         }),
@@ -960,6 +1013,7 @@ export function ProductDescriptionWizard() {
           cameraComposition: cameraComposition !== 'auto' ? cameraComposition : undefined,
           productName: selectedProduct?.name,
           productDescription: productInfo,
+          videoType,  // 비디오 타입 (UGC, podcast, expert)
         }),
       })
 
@@ -1475,24 +1529,6 @@ export function ProductDescriptionWizard() {
             )}
           </div>
 
-          {/* 촬영 장소 입력 */}
-          <div className="bg-card border border-border rounded-xl p-4">
-            <label className="block text-sm font-medium text-foreground mb-2">
-              <MapPin className="w-4 h-4 inline mr-2" />
-              촬영 장소 <span className="text-muted-foreground text-xs">(선택 사항)</span>
-            </label>
-            <input
-              type="text"
-              value={locationPrompt}
-              onChange={(e) => setLocationPrompt(e.target.value)}
-              placeholder="예: 밝은 카페, 현대적인 거실, 야외 공원 등"
-              className="w-full px-4 py-3 bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
-            />
-            <p className="text-xs text-muted-foreground mt-2">
-              비워두면 제품에 어울리는 장소를 AI가 자동으로 선택합니다
-            </p>
-          </div>
-
           {/* 다음 버튼 */}
           <button
             onClick={() => goToStep(2)}
@@ -1576,6 +1612,103 @@ export function ProductDescriptionWizard() {
             </div>
           </div>
 
+          {/* 영상 스타일 선택 */}
+          <div className="bg-card border border-border rounded-xl p-4">
+            <label className="block text-sm font-medium text-foreground mb-3">
+              <Sparkles className="w-4 h-4 inline mr-2" />
+              영상 스타일
+            </label>
+            <div className="grid grid-cols-3 gap-3">
+              {videoTypeOptions.map((type) => {
+                const info = videoTypeLabels[type]
+                const IconComponent = type === 'UGC' ? User : type === 'podcast' ? Mic : GraduationCap
+                return (
+                  <button
+                    key={type}
+                    onClick={() => setVideoType(type)}
+                    className={`relative p-4 rounded-xl border text-center transition-colors ${videoType === type
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:border-primary/50'
+                      }`}
+                  >
+                    <IconComponent className={`w-6 h-6 mx-auto mb-2 ${videoType === type ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <div className={`font-medium text-sm ${videoType === type ? 'text-primary' : 'text-foreground'}`}>
+                      {info.label}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {info.desc}
+                    </div>
+                    {videoType === type && (
+                      <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                        <Check className="w-3 h-3 text-primary-foreground" />
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* 촬영 장소 */}
+          <div className="bg-card border border-border rounded-xl p-4">
+            <label className="block text-sm font-medium text-foreground mb-3">
+              <MapPin className="w-4 h-4 inline mr-2" />
+              촬영 장소
+              <span className="text-xs text-muted-foreground ml-2">(선택 사항)</span>
+            </label>
+
+            {/* 장소 모드 선택 */}
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setLocationMode('ai_recommend')
+                  setLocationPrompt('')
+                }}
+                className={`px-3 py-2.5 text-sm rounded-lg border transition-colors flex items-center justify-center gap-1.5 ${
+                  locationMode === 'ai_recommend'
+                    ? 'border-primary bg-primary/10 text-primary font-medium'
+                    : 'border-border text-muted-foreground hover:border-primary/50'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                AI 추천
+              </button>
+              <button
+                type="button"
+                onClick={() => setLocationMode('custom')}
+                className={`px-3 py-2.5 text-sm rounded-lg border transition-colors ${
+                  locationMode === 'custom'
+                    ? 'border-primary bg-primary/10 text-primary font-medium'
+                    : 'border-border text-muted-foreground hover:border-primary/50'
+                }`}
+              >
+                직접 입력
+              </button>
+            </div>
+
+            {/* AI 추천 설명 */}
+            {locationMode === 'ai_recommend' && (
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+                <p className="text-sm text-foreground flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
+                  제품과 영상 스타일에 어울리는 장소를 AI가 자동으로 선택합니다.
+                </p>
+              </div>
+            )}
+
+            {/* 직접 입력 */}
+            {locationMode === 'custom' && (
+              <input
+                type="text"
+                value={locationPrompt}
+                onChange={(e) => setLocationPrompt(e.target.value)}
+                placeholder="예: 밝은 카페, 현대적인 거실, 야외 공원 등"
+                className="w-full px-4 py-2.5 text-sm bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+              />
+            )}
+          </div>
+
           {/* 카메라 구도 */}
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
@@ -1583,45 +1716,35 @@ export function ProductDescriptionWizard() {
               카메라 구도
               <span className="text-xs text-muted-foreground ml-2">(선택 사항)</span>
             </label>
-            <div className="space-y-4">
-              {cameraCompositionGroups.map((group) => (
-                <div key={group.key}>
-                  <p className="text-xs text-muted-foreground mb-2">{group.label}</p>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {group.compositions.map((comp) => (
-                      <button
-                        key={comp}
-                        type="button"
-                        onClick={() => setCameraComposition(comp)}
-                        className={`relative group flex flex-col items-center p-2 rounded-lg border transition-colors ${cameraComposition === comp
-                            ? 'border-primary bg-primary/10'
-                            : 'border-border hover:border-primary/50'
-                          }`}
-                        title={cameraCompositionLabels[comp].desc}
-                      >
-                        {/* 예시 이미지 (placeholder) */}
-                        <div className="w-full aspect-square rounded bg-secondary/50 mb-1.5 flex items-center justify-center overflow-hidden">
-                          {/* TODO: 실제 이미지로 교체 */}
-                          <Camera className="w-5 h-5 text-muted-foreground/50" />
-                        </div>
-                        <span className={`text-[11px] font-medium ${cameraComposition === comp ? 'text-primary' : 'text-muted-foreground'}`}>
-                          {cameraCompositionLabels[comp].label}
-                        </span>
-                        {cameraComposition === comp && (
-                          <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                            <Check className="w-2.5 h-2.5 text-primary-foreground" />
-                          </div>
-                        )}
-                        {/* 호버 시 설명 표시 */}
-                        <div className="absolute inset-0 bg-black/70 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
-                          <p className="text-[10px] text-white text-center leading-tight">
-                            {cameraCompositionLabels[comp].desc}
-                          </p>
-                        </div>
-                      </button>
-                    ))}
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {videoTypeLabels[videoType].recommendedCompositions.map((comp) => (
+                <button
+                  key={comp}
+                  type="button"
+                  onClick={() => setCameraComposition(comp)}
+                  className={`relative group flex flex-col items-center p-2 rounded-lg border transition-colors ${cameraComposition === comp
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border hover:border-primary/50'
+                    }`}
+                  title={cameraCompositionLabels[comp].desc}
+                >
+                  <div className="w-full aspect-square rounded bg-secondary/50 mb-1.5 flex items-center justify-center overflow-hidden">
+                    <Camera className="w-5 h-5 text-muted-foreground/50" />
                   </div>
-                </div>
+                  <span className={`text-[11px] font-medium ${cameraComposition === comp ? 'text-primary' : 'text-muted-foreground'}`}>
+                    {cameraCompositionLabels[comp].label}
+                  </span>
+                  {cameraComposition === comp && (
+                    <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                      <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/70 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
+                    <p className="text-[10px] text-white text-center leading-tight">
+                      {cameraCompositionLabels[comp].desc}
+                    </p>
+                  </div>
+                </button>
               ))}
             </div>
           </div>
@@ -1633,8 +1756,8 @@ export function ProductDescriptionWizard() {
               모델 포즈
               <span className="text-xs text-muted-foreground ml-2">(선택 사항)</span>
             </label>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-              {modelPoseOptions.map((pose) => (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {videoTypeLabels[videoType].recommendedPoses.map((pose) => (
                 <button
                   key={pose}
                   type="button"
@@ -1645,7 +1768,6 @@ export function ProductDescriptionWizard() {
                     }`}
                   title={modelPoseLabels[pose].desc}
                 >
-                  {/* 아이콘 placeholder */}
                   <div className="w-full aspect-square rounded bg-secondary/50 mb-1.5 flex items-center justify-center overflow-hidden">
                     <User className="w-5 h-5 text-muted-foreground/50" />
                   </div>
@@ -1657,7 +1779,6 @@ export function ProductDescriptionWizard() {
                       <Check className="w-2.5 h-2.5 text-primary-foreground" />
                     </div>
                   )}
-                  {/* 호버 시 설명 표시 */}
                   <div className="absolute inset-0 bg-black/70 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
                     <p className="text-[10px] text-white text-center leading-tight">
                       {modelPoseLabels[pose].desc}

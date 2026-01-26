@@ -98,9 +98,14 @@ export const CAMERA_COMPOSITION_DETAILED_GUIDES: Record<string, {
     depthOfField: 'f/16 with entire scene in perfect sharp focus from foreground to background, every detail visible',
   },
   'ugc-closeup': {
-    promptSegment: 'UGC-style intimate medium close-up, subject fills most of the frame from chest up, natural relaxed expression, eyes looking DIRECTLY into camera lens, casual influencer vlog aesthetic like casually talking to viewer, approachable and genuine vibe',
+    promptSegment: 'UGC-style intimate medium close-up, subject fills most of the frame from chest up, natural authentic expression (can be neutral, thoughtful, or subtly engaged - NOT forced smile), eyes looking DIRECTLY into camera lens, casual influencer vlog aesthetic like casually talking to viewer, approachable and genuine vibe',
     lightingRecommendation: 'soft natural window light or ring light, flattering front lighting',
-    depthOfField: 'f/8 with background slightly visible but subject is clearly the main focus, natural depth',
+    depthOfField: 'f/11 with background clearly visible and mostly sharp, only natural perspective depth - no artificial bokeh, like a real smartphone photo',
+  },
+  'ugc-selfie': {
+    promptSegment: 'selfie camera angle as if holding phone to take selfie, CRITICAL: hands and phone must NOT be visible in frame - hands are cropped out below frame edge, subject looking directly at camera with natural authentic expression (can be neutral, curious, or subtly engaged - NOT forced smile), intimate selfie perspective at eye level or slightly above, authentic self-portrait vibe, NO visible hands NO visible phone',
+    lightingRecommendation: 'natural daylight or soft indoor lighting, flattering selfie lighting',
+    depthOfField: 'f/11 with background clearly visible and mostly sharp, minimal natural perspective blur only - no artificial bokeh, like a real smartphone photo',
   },
 }
 
@@ -119,7 +124,7 @@ export const VIDEO_TYPE_FIRST_FRAME_GUIDES: Record<VideoType, {
     environmentPrompt: 'casual home setting, cozy room, natural environment',
     posePrompt: 'relaxed natural pose, holding product casually, authentic expression',
     atmospherePrompt: 'candid authentic vibe, influencer style',
-    recommendedCompositions: ['ugc-closeup', 'selfie-front', 'selfie-high'],
+    recommendedCompositions: ['ugc-selfie', 'ugc-closeup', 'selfie-front', 'selfie-high'],
   },
   podcast: {
     environmentPrompt: 'podcast-style setting, clean background, intimate studio atmosphere, comfortable professional space, warm ambient lighting',
