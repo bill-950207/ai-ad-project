@@ -26,6 +26,10 @@ import {
   submitFirstFrameToQueue as submitFirstFrameToKieQueue,
   getEditQueueStatus as getKieEditQueueStatus,
   getEditQueueResponse as getKieEditQueueResponse,
+  submitZImageTurboToQueue,
+  getZImageTurboQueueStatus,
+  getZImageTurboQueueResponse,
+  type ZImageAspectRatio,
 } from '@/lib/kie/client'
 import { uploadExternalImageToR2 } from '@/lib/image/compress'
 
@@ -185,16 +189,27 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. 첫 프레임 이미지 생성 (2개)
-    type SubmitResult = { requestId: string; provider: 'fal' | 'kie' }
+    type SubmitResult = { requestId: string; provider: 'fal' | 'kie' | 'kie-zimage' }
     let submitResults: SubmitResult[]
 
     if (isAiGeneratedAvatar) {
-      // AI 아바타: Seedream 4.5 Edit 사용 (제품 이미지를 참조로 활용, talking-only일 때는 제외)
+      // AI 아바타: 제품 이미지가 있으면 Seedream 4.5 Edit, 없으면 z-image-turbo 사용
       const aiAvatarImageUrls: string[] = effectiveProductImageUrl ? [effectiveProductImageUrl] : []
+      const useTextToImage = aiAvatarImageUrls.length === 0
 
       const submitAiAvatarFirstFrame = async (): Promise<SubmitResult> => {
+        if (useTextToImage) {
+          // 이미지 입력이 없으면 z-image-turbo (텍스트-to-이미지) 사용
+          console.log('AI 아바타 + 이미지 없음: z-image-turbo 모델 사용')
+          const zImageResponse = await submitZImageTurboToQueue(
+            firstFramePrompt,
+            '3:4' as ZImageAspectRatio  // 2:3에 가장 가까운 비율
+          )
+          return { requestId: zImageResponse.request_id, provider: 'kie-zimage' }
+        }
+
         try {
-          // fal.ai Seedream 4.5 먼저 시도
+          // 이미지 입력이 있으면 fal.ai Seedream 4.5 먼저 시도
           const falResponse = await submitSeedreamFirstFrameToQueue(
             aiAvatarImageUrls,
             firstFramePrompt,
@@ -260,7 +275,15 @@ export async function POST(request: NextRequest) {
               const response = await getSeedreamEditQueueResponse(result.requestId)
               return response.images[0]?.url || null
             }
+          } else if (result.provider === 'kie-zimage') {
+            // z-image-turbo (텍스트-to-이미지)
+            const status = await getZImageTurboQueueStatus(result.requestId)
+            if (status.status === 'COMPLETED') {
+              const response = await getZImageTurboQueueResponse(result.requestId)
+              return response.images[0]?.url || null
+            }
           } else {
+            // kie Seedream 4.5 Edit
             const status = await getKieEditQueueStatus(result.requestId)
             if (status.status === 'COMPLETED') {
               const response = await getKieEditQueueResponse(result.requestId)
