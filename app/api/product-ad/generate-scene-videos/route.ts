@@ -18,6 +18,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getUserPlan } from '@/lib/subscription/queries'
+import { plan_type } from '@/lib/generated/prisma/client'
 import {
   submitViduToQueue,
   type ViduResolution,
@@ -26,6 +28,13 @@ import {
 import {
   submitViduQ2ToQueue as submitFalViduQ2ToQueue,
 } from '@/lib/fal/client'
+
+// FREE 사용자 제한
+const FREE_USER_LIMITS = {
+  maxResolution: '540p' as ViduResolution,
+  maxDuration: 4,
+  maxSceneCount: 3,
+}
 
 interface SceneKeyframe {
   sceneIndex: number
@@ -84,8 +93,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 사용자 플랜 확인
+    const userPlan = await getUserPlan(user.id)
+    const isFreeUser = userPlan.planType === plan_type.FREE
+
+    // FREE 사용자 제한 적용
+    let effectiveResolution = resolution
+    let effectiveDuration = duration
+    let effectiveKeyframes = keyframes
+
+    if (isFreeUser) {
+      // 해상도 제한: 540p만 허용
+      effectiveResolution = FREE_USER_LIMITS.maxResolution
+      // 씬 영상 길이 제한: 최대 4초
+      effectiveDuration = Math.min(duration, FREE_USER_LIMITS.maxDuration)
+      // 씬 개수 제한: 최대 3개
+      if (keyframes.length > FREE_USER_LIMITS.maxSceneCount) {
+        effectiveKeyframes = keyframes.slice(0, FREE_USER_LIMITS.maxSceneCount)
+      }
+    }
+
     // 키프레임 인덱스 순으로 정렬
-    const sortedKeyframes = [...keyframes].sort((a, b) => a.sceneIndex - b.sceneIndex)
+    const sortedKeyframes = [...effectiveKeyframes].sort((a, b) => a.sceneIndex - b.sceneIndex)
 
     // 각 씬에 대해 영상 생성 요청
     const sceneVideoRequests: SceneVideoRequest[] = []
@@ -96,7 +125,11 @@ export async function POST(request: NextRequest) {
         `Product centered in frame. Camera slowly pushes in on the product. Soft lighting gently shifts creating subtle shadow movement. Premium advertisement aesthetic, photorealistic, 4K.`
 
       // 씬별 duration 사용 (없으면 글로벌 duration 사용)
-      const sceneDuration = keyframe.duration ?? duration
+      // FREE 사용자는 최대 4초로 제한
+      let sceneDuration = keyframe.duration ?? effectiveDuration
+      if (isFreeUser) {
+        sceneDuration = Math.min(sceneDuration, FREE_USER_LIMITS.maxDuration)
+      }
       // 씬별 movementAmplitude 사용 (없으면 'auto')
       const sceneMovementAmplitude = keyframe.movementAmplitude ?? 'auto'
 
@@ -109,7 +142,7 @@ export async function POST(request: NextRequest) {
           prompt: scenePrompt,
           image: keyframe.imageUrl,
           duration: toViduDuration(sceneDuration),
-          resolution: resolution,
+          resolution: effectiveResolution,
           bgm: audioEnabled,
           movement_amplitude: sceneMovementAmplitude,
         })
@@ -124,7 +157,7 @@ export async function POST(request: NextRequest) {
             prompt: scenePrompt,
             image_url: keyframe.imageUrl,
             duration: Math.min(Math.max(sceneDuration, 2), 8) as 2 | 3 | 4 | 5 | 6 | 7 | 8,
-            resolution: resolution === '1080p' ? '1080p' : '720p',  // fal.ai는 720p, 1080p만 지원
+            resolution: effectiveResolution === '1080p' ? '1080p' : '720p',  // fal.ai는 720p, 1080p만 지원
             movement_amplitude: sceneMovementAmplitude,
           })
           requestId = `fal-vidu:${falResult.request_id}`
@@ -146,8 +179,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       sceneVideos: sceneVideoRequests,
       totalScenes: sceneVideoRequests.length,
-      resolution,
-      duration,
+      resolution: effectiveResolution,
+      duration: effectiveDuration,
+      // FREE 사용자에게 제한 적용 여부 알림
+      ...(isFreeUser && {
+        appliedLimits: {
+          resolution: FREE_USER_LIMITS.maxResolution,
+          maxDuration: FREE_USER_LIMITS.maxDuration,
+          maxSceneCount: FREE_USER_LIMITS.maxSceneCount,
+        },
+      }),
     })
   } catch (error) {
     console.error('씬 영상 생성 오류:', error)

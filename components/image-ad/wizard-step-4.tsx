@@ -16,12 +16,21 @@ import {
   Check,
   Coins,
   Wand2,
+  Lock,
+  Crown,
 } from 'lucide-react'
 import { ImageEditModal } from './image-edit-modal'
 import { buildPromptFromOptions } from '@/lib/image-ad/category-options'
 import { useImageAdWizard, AspectRatio, Quality } from './wizard-context'
 import { compressImage } from '@/lib/image/compress-client'
 import { uploadImageAdImage } from '@/lib/client/image-upload'
+
+// 사용자 플랜 타입
+interface UserPlan {
+  planType: 'FREE' | 'STARTER' | 'PRO' | 'BUSINESS'
+  displayName: string
+  hdUpscale: boolean
+}
 
 // 가격 계산
 const calculateCredits = (quality: Quality, numImages: number): number => {
@@ -81,7 +90,34 @@ export function WizardStep4() {
   // 이미지 로딩 상태 추적 (스켈레톤 UI용)
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set())
 
+  // 사용자 플랜 정보
+  const [userPlan, setUserPlan] = useState<UserPlan | null>(null)
+  const isFreeUser = userPlan?.planType === 'FREE'
+
   const isWearingType = adType === 'wearing'
+
+  // 사용자 플랜 정보 로드
+  useEffect(() => {
+    const fetchUserPlan = async () => {
+      try {
+        const res = await fetch('/api/user/plan')
+        if (res.ok) {
+          const data = await res.json()
+          setUserPlan(data)
+          // FREE 사용자인 경우 기본값 조정
+          if (data.planType === 'FREE') {
+            setQuality('medium')
+            if (numImages > 2) {
+              setNumImages(2)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('플랜 정보 로드 오류:', error)
+      }
+    }
+    fetchUserPlan()
+  }, [setQuality, setNumImages, numImages])
 
   // 결과 이미지가 변경되면 로딩 상태 초기화
   useEffect(() => {
@@ -618,43 +654,77 @@ export function WizardStep4() {
           <div>
             <label className="text-sm font-medium text-foreground mb-2 block">퀄리티</label>
             <div className="grid grid-cols-2 gap-3">
-              {qualityOptions.map(({ quality: q, label, description }) => (
-                <button
-                  key={q}
-                  onClick={() => setQuality(q)}
-                  className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all ${
-                    quality === q
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/50'
-                  }`}
-                >
-                  <p className={`font-medium ${quality === q ? 'text-primary' : 'text-foreground'}`}>
-                    {label}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{description}</p>
-                </button>
-              ))}
+              {qualityOptions.map(({ quality: q, label, description }) => {
+                const isLocked = isFreeUser && q === 'high'
+                return (
+                  <button
+                    key={q}
+                    onClick={() => !isLocked && setQuality(q)}
+                    disabled={isLocked}
+                    className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all ${
+                      isLocked
+                        ? 'border-border bg-secondary/30 cursor-not-allowed opacity-60'
+                        : quality === q
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    {isLocked && (
+                      <div className="absolute top-2 right-2 flex items-center gap-1 text-xs text-muted-foreground">
+                        <Lock className="w-3 h-3" />
+                        <span>STARTER+</span>
+                      </div>
+                    )}
+                    <p className={`font-medium ${quality === q && !isLocked ? 'text-primary' : 'text-foreground'}`}>
+                      {label}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{description}</p>
+                  </button>
+                )
+              })}
             </div>
           </div>
 
           {/* 생성 개수 */}
           <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">생성 개수</label>
+            <label className="text-sm font-medium text-foreground mb-2 block">
+              생성 개수
+              {isFreeUser && (
+                <span className="ml-2 text-xs text-muted-foreground font-normal">
+                  (Free: 최대 2개)
+                </span>
+              )}
+            </label>
             <div className="flex gap-2">
-              {[1, 2, 3, 4, 5].map((num) => (
-                <button
-                  key={num}
-                  onClick={() => setNumImages(num)}
-                  className={`flex-1 py-3 rounded-xl border-2 font-medium transition-all ${
-                    numImages === num
-                      ? 'border-primary bg-primary/5 text-primary'
-                      : 'border-border hover:border-primary/50 text-foreground'
-                  }`}
-                >
-                  {num}
-                </button>
-              ))}
+              {[1, 2, 3, 4, 5].map((num) => {
+                const isLocked = isFreeUser && num > 2
+                return (
+                  <button
+                    key={num}
+                    onClick={() => !isLocked && setNumImages(num)}
+                    disabled={isLocked}
+                    className={`relative flex-1 py-3 rounded-xl border-2 font-medium transition-all ${
+                      isLocked
+                        ? 'border-border bg-secondary/30 cursor-not-allowed opacity-60 text-muted-foreground'
+                        : numImages === num
+                          ? 'border-primary bg-primary/5 text-primary'
+                          : 'border-border hover:border-primary/50 text-foreground'
+                    }`}
+                  >
+                    {num}
+                    {isLocked && (
+                      <Lock className="absolute top-1 right-1 w-3 h-3 text-muted-foreground" />
+                    )}
+                  </button>
+                )
+              })}
             </div>
+            {isFreeUser && (
+              <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                <Crown className="w-3 h-3" />
+                STARTER 이상 구독 시 최대 5개까지 생성 가능
+              </p>
+            )}
           </div>
         </div>
       </div>
