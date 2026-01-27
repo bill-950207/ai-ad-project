@@ -65,7 +65,7 @@ export function WizardStep4() {
     canProceedToStep5,
     goToNextStep,
     goToPrevStep,
-    saveDraft,
+    saveDraftAsync,
     isVideoSettingsFromScenario,
     unlockVideoSettings,
   } = useProductAdWizard()
@@ -116,14 +116,13 @@ export function WizardStep4() {
   const estimatedCredits = calculateCredits(sceneDurations.slice(0, sceneCount), videoResolution)
 
   // 다음 단계로
-  const handleNext = async () => {
+  const handleNext = () => {
     if (!canProceedToStep5()) return
-
-    await saveDraft({
+    goToNextStep()
+    saveDraftAsync({
       wizardStep: 5,
       aspectRatio,
     })
-    goToNextStep()
   }
 
   return (

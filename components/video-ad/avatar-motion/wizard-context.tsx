@@ -1,6 +1,7 @@
 'use client'
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useRef, ReactNode } from 'react'
+import { useAsyncDraftSave } from '@/lib/hooks/use-async-draft-save'
 import { SelectedAvatarInfo } from '@/components/video-ad/avatar-select-modal'
 
 // ============================================================
@@ -148,6 +149,9 @@ export interface AvatarMotionWizardState {
   // DB 연동
   draftId: string | null
   isSaving: boolean
+  pendingSave: boolean
+  lastSaveError: Error | null
+  lastSavedAt: Date | null
 
   // Step 1: 기본 정보 (아바타 + 제품 필수)
   step: WizardStep
@@ -204,7 +208,10 @@ export interface AvatarMotionWizardActions {
   // DB 연동
   setDraftId: (id: string | null) => void
   saveDraft: (additionalData?: Record<string, unknown>) => Promise<string | null>
+  saveDraftAsync: (additionalData?: Record<string, unknown>) => void
   loadDraft: (draftId: string) => Promise<boolean>
+  clearSaveError: () => void
+  flushPendingSave: () => Promise<void>
 
   // Step navigation
   goToStep: (step: WizardStep) => void
@@ -616,6 +623,135 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     videoRequestId,
   ])
 
+  // saveDraft 직후 loadDraft 스킵용 ref
+  const skipNextLoadRef = useRef(false)
+
+  // 비동기 Draft 저장 훅
+  const {
+    queueSave,
+    isSaving: isAsyncSaving,
+    pendingSave,
+    lastSaveError,
+    lastSavedAt,
+    flushPending,
+    clearError: clearSaveError,
+  } = useAsyncDraftSave(
+    async (payload: Record<string, unknown>) => {
+      const res = await fetch('/api/avatar-motion/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to save draft')
+      }
+
+      const data = await res.json()
+      if (data.draft?.id) {
+        const isNewDraft = !payload.id
+        setDraftId(data.draft.id)
+
+        // 새 draft 생성 시 URL 업데이트
+        if (isNewDraft && typeof window !== 'undefined') {
+          skipNextLoadRef.current = true
+          const currentUrl = new URL(window.location.href)
+          currentUrl.searchParams.set('videoAdId', data.draft.id)
+          window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search)
+        }
+
+        return data.draft.id
+      }
+      return null
+    },
+    {
+      debounceMs: 300,
+      maxRetries: 3,
+      retryDelayMs: 1000,
+    }
+  )
+
+  // 비동기 Draft 저장 (단계 전환 시 사용)
+  const saveDraftAsync = useCallback((additionalData?: Record<string, unknown>) => {
+    // AI 아바타 옵션 구성
+    const aiAvatarOptions = selectedAvatarInfo?.type === 'ai-generated' ? {
+      index: selectedAiAvatarIndex,
+      imageUrl: selectedAiAvatarUrl,
+      description: selectedAiAvatarDescription,
+      options: generatedAvatarOptions,
+    } : null
+
+    // 제품 정보 구성
+    let productInfo = ''
+    if (selectedProduct) {
+      productInfo = [
+        selectedProduct.name,
+        selectedProduct.description,
+        selectedProduct.selling_points?.join(', '),
+      ].filter(Boolean).join('. ')
+    }
+
+    // 선택된 시나리오를 storyInfo로 변환
+    const selectedScenario = selectedScenarioIndex !== null ? scenarios[selectedScenarioIndex] : null
+    const storyInfoForSave = selectedScenario ? {
+      title: selectedScenario.title,
+      description: selectedScenario.description,
+      concept: selectedScenario.concept,
+      background: selectedScenario.location,
+      mood: selectedScenario.mood,
+      motionPromptEN: selectedScenario.motionPromptEN,
+      startFrame: {
+        id: 'start',
+        order: 1,
+        description: selectedScenario.firstFramePrompt || '',
+      },
+    } : null
+
+    const payload = {
+      id: draftId,
+      wizardStep: step,
+      avatarId: selectedAvatarInfo?.type === 'ai-generated' ? 'ai-generated' : selectedAvatarInfo?.avatarId,
+      outfitId: selectedAvatarInfo?.outfitId,
+      avatarImageUrl: selectedAvatarInfo?.type === 'ai-generated' ? selectedAiAvatarUrl : selectedAvatarInfo?.imageUrl,
+      productId: selectedProduct?.id,
+      productInfo: productInfo || null,
+      aiAvatarOptions,
+      storyMethod,
+      scenarios,
+      selectedScenarioIndex,
+      storyInfo: storyInfoForSave,
+      aspectRatio,
+      imageSize,
+      resolution,
+      sceneCount,
+      sceneDurations,
+      movementAmplitudes,
+      additionalPrompt,
+      sceneKeyframes,
+      sceneVideos,
+      startFrameUrl,
+      videoRequestId,
+      ...additionalData,
+    }
+
+    queueSave(payload)
+  }, [
+    draftId, step, selectedAvatarInfo, selectedProduct,
+    selectedAiAvatarIndex, selectedAiAvatarUrl, selectedAiAvatarDescription,
+    generatedAvatarOptions, storyMethod, scenarios, selectedScenarioIndex,
+    aspectRatio, imageSize, resolution, sceneCount, sceneDurations,
+    movementAmplitudes, additionalPrompt, sceneKeyframes, sceneVideos,
+    startFrameUrl, videoRequestId, queueSave
+  ])
+
+  // 대기 중인 저장 즉시 실행
+  const flushPendingSave = useCallback(async () => {
+    await flushPending()
+  }, [flushPending])
+
+  // isSaving 상태 통합 (동기 + 비동기)
+  const combinedIsSaving = isSaving || isAsyncSaving
+
   // Draft 로드
   const loadDraft = useCallback(async (id: string): Promise<boolean> => {
     try {
@@ -925,7 +1061,10 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
   const value: AvatarMotionWizardContextType = {
     // DB 연동 상태
     draftId,
-    isSaving,
+    isSaving: combinedIsSaving,
+    pendingSave,
+    lastSaveError,
+    lastSavedAt,
 
     // Step 1 상태 (아바타 + 제품)
     step,
@@ -978,7 +1117,10 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     // DB 연동 액션
     setDraftId,
     saveDraft,
+    saveDraftAsync,
     loadDraft,
+    clearSaveError,
+    flushPendingSave,
 
     // Navigation 액션
     goToStep,

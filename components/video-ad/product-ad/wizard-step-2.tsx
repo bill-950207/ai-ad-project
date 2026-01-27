@@ -27,7 +27,7 @@ export function WizardStep2() {
     canProceedToStep3,
     goToNextStep,
     goToPrevStep,
-    saveDraft,
+    saveDraftAsync,
     selectedProduct,
   } = useProductAdWizard()
 
@@ -147,10 +147,10 @@ export function WizardStep2() {
   }
 
   // 다음 단계로
-  const handleNext = async () => {
+  const handleNext = () => {
     if (!canProceedToStep3()) return
-    await saveDraft({ wizardStep: 3 })
     goToNextStep()
+    saveDraftAsync({ wizardStep: 3 })
   }
 
   return (

@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useCallback, useRef, ReactNode } from 'react'
+import { useAsyncDraftSave } from '@/lib/hooks/use-async-draft-save'
 
 // ============================================================
 // 타입 정의
@@ -97,6 +98,9 @@ export interface ProductAdWizardState {
   // DB 연동
   draftId: string | null
   isSaving: boolean
+  pendingSave: boolean
+  lastSaveError: Error | null
+  lastSavedAt: Date | null
 
   // Step 1: 제품 선택
   step: WizardStep
@@ -148,7 +152,10 @@ export interface ProductAdWizardActions {
   // DB 연동
   setDraftId: (id: string | null) => void
   saveDraft: (additionalData?: Record<string, unknown>) => Promise<string | null>
+  saveDraftAsync: (additionalData?: Record<string, unknown>) => void
   loadDraft: (draftId: string) => Promise<boolean>
+  clearSaveError: () => void
+  flushPendingSave: () => Promise<void>
 
   // Step navigation
   goToStep: (step: WizardStep) => void
@@ -533,6 +540,101 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
     resultVideoUrls, sceneKeyframes, sceneVideoSegments
   ])
 
+  // 비동기 Draft 저장 훅
+  const {
+    queueSave,
+    isSaving: isAsyncSaving,
+    pendingSave,
+    lastSaveError,
+    lastSavedAt,
+    flushPending,
+    clearError: clearSaveError,
+  } = useAsyncDraftSave(
+    async (payload: Record<string, unknown>) => {
+      const res = await fetch('/api/product-ad/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to save draft')
+      }
+
+      const data = await res.json()
+      if (data.draft?.id) {
+        const isNewDraft = !payload.id
+        setDraftId(data.draft.id)
+
+        // 새 draft 생성 시 URL 업데이트
+        if (isNewDraft && typeof window !== 'undefined') {
+          skipNextLoadRef.current = true
+          const currentUrl = new URL(window.location.href)
+          currentUrl.searchParams.set('videoAdId', data.draft.id)
+          window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search)
+        }
+
+        return data.draft.id
+      }
+      return null
+    },
+    {
+      debounceMs: 300,
+      maxRetries: 3,
+      retryDelayMs: 1000,
+    }
+  )
+
+  // 비동기 Draft 저장 (단계 전환 시 사용)
+  const saveDraftAsync = useCallback((additionalData?: Record<string, unknown>) => {
+    const payload = {
+      id: draftId,
+      category: 'productAd',
+      wizardStep: step,
+      productId: selectedProduct?.id,
+      productInfo: selectedProduct ? JSON.stringify(selectedProduct) : null,
+      scenarioMethod,
+      referenceInfo: referenceInfo ? JSON.stringify(referenceInfo) : null,
+      scenarioInfo: scenarioInfo ? JSON.stringify({
+        ...scenarioInfo,
+        _videoSettings: { videoResolution, videoModel, sceneCount, sceneDurations },
+      }) : null,
+      aspectRatio,
+      duration,
+      firstSceneOptions: firstSceneOptions.length > 0 ? JSON.stringify(firstSceneOptions) : null,
+      selectedSceneIndex,
+      videoRequestId: videoRequestIds[0] || null,
+      videoUrl: resultVideoUrls[0] || null,
+      videoRequestIds: videoRequestIds.length > 0 ? JSON.stringify(videoRequestIds) : null,
+      videoUrls: resultVideoUrls.length > 0 ? JSON.stringify(resultVideoUrls) : null,
+      sceneKeyframes: sceneKeyframes.length > 0 ? sceneKeyframes : null,
+      sceneVideoUrls: sceneVideoSegments.length > 0
+        ? sceneVideoSegments.map(s => ({
+            sceneIndex: s.fromSceneIndex,
+            requestId: s.requestId,
+            videoUrl: s.videoUrl,
+            status: s.status,
+          }))
+        : null,
+      ...additionalData,
+    }
+
+    queueSave(payload)
+  }, [
+    draftId, step, selectedProduct, scenarioMethod, referenceInfo,
+    scenarioInfo, aspectRatio, duration, sceneDurations, videoResolution, videoModel,
+    sceneCount, firstSceneOptions, selectedSceneIndex, videoRequestIds,
+    resultVideoUrls, sceneKeyframes, sceneVideoSegments, queueSave
+  ])
+
+  // 대기 중인 저장 즉시 실행
+  const flushPendingSave = useCallback(async () => {
+    await flushPending()
+  }, [flushPending])
+
+  // isSaving 상태 통합 (동기 + 비동기)
+  const combinedIsSaving = isSaving || isAsyncSaving
+
   // Draft 로드
   const loadDraft = useCallback(async (id: string): Promise<boolean> => {
     // saveDraft 직후 호출 시 스킵 (이미 Context에 최신 상태가 있음)
@@ -805,7 +907,10 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
   const value: ProductAdWizardContextType = {
     // State
     draftId,
-    isSaving,
+    isSaving: combinedIsSaving,
+    pendingSave,
+    lastSaveError,
+    lastSavedAt,
     step,
     selectedProduct,
     editableDescription,
@@ -841,7 +946,10 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
     // Actions
     setDraftId,
     saveDraft,
+    saveDraftAsync,
     loadDraft,
+    clearSaveError,
+    flushPendingSave,
     goToStep,
     goToNextStep,
     goToPrevStep,

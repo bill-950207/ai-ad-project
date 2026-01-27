@@ -139,8 +139,7 @@ export function WizardStep4Settings() {
     canProceedToStep5,
     goToNextStep,
     goToPrevStep,
-    saveDraft,
-    isSaving,
+    saveDraftAsync,
   } = useAvatarMotionWizard()
 
   const [isLoadingRecommendation, setIsLoadingRecommendation] = useState(false)
@@ -238,10 +237,10 @@ export function WizardStep4Settings() {
   }
 
   // 다음 단계로 이동 (DB 저장 포함)
-  const handleNext = async () => {
+  const handleNext = () => {
     if (!canProceedToStep5()) return
-    await saveDraft({ wizardStep: 5, status: 'GENERATING_FRAMES' })
     goToNextStep()
+    saveDraftAsync({ wizardStep: 5, status: 'GENERATING_FRAMES' })
   }
 
   const totalDuration = getTotalDuration()
@@ -675,7 +674,7 @@ export function WizardStep4Settings() {
         onPrev={goToPrevStep}
         onNext={handleNext}
         canProceed={canProceedToStep5()}
-        loading={isSaving}
+        loading={false}
         showNext={true}
         showPrev={true}
       />

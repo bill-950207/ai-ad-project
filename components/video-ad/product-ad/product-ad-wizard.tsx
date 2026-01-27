@@ -9,6 +9,7 @@ import { WizardStep3 } from './wizard-step-3'
 import { WizardStep4 } from './wizard-step-4'
 import { WizardStep5 } from './wizard-step-5'
 import { WizardStep6 } from './wizard-step-6'
+import { SaveIndicator } from '@/components/ui/save-indicator'
 
 // 단계 정보
 const STEPS = [
@@ -120,7 +121,15 @@ interface WizardInnerProps {
 }
 
 function WizardInner({ onBack, videoAdId }: WizardInnerProps) {
-  const { loadDraft } = useProductAdWizard()
+  const {
+    loadDraft,
+    isSaving,
+    pendingSave,
+    lastSaveError,
+    lastSavedAt,
+    clearSaveError,
+    flushPendingSave,
+  } = useProductAdWizard()
   const [isLoadingDraft, setIsLoadingDraft] = useState(!!videoAdId)
   const loadAttemptedRef = useRef(false)
 
@@ -133,6 +142,19 @@ function WizardInner({ onBack, videoAdId }: WizardInnerProps) {
       })
     }
   }, [videoAdId, loadDraft])
+
+  // 페이지 이탈 방지
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (pendingSave || isSaving) {
+        e.preventDefault()
+        e.returnValue = '저장되지 않은 변경사항이 있습니다.'
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [pendingSave, isSaving])
 
   if (isLoadingDraft) {
     return (
@@ -151,6 +173,14 @@ function WizardInner({ onBack, videoAdId }: WizardInnerProps) {
     <div className="min-h-full flex flex-col bg-background">
       <WizardHeader onBack={onBack} />
       <WizardContent />
+      <SaveIndicator
+        isSaving={isSaving}
+        pendingSave={pendingSave}
+        lastSaveError={lastSaveError}
+        lastSavedAt={lastSavedAt}
+        onRetry={flushPendingSave}
+        onDismiss={clearSaveError}
+      />
     </div>
   )
 }

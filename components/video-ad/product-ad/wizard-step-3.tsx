@@ -225,7 +225,7 @@ export function WizardStep3() {
     canProceedToStep4,
     goToNextStep,
     goToPrevStep,
-    saveDraft,
+    saveDraftAsync,
     applyVideoSettingsFromScenario,
   } = useProductAdWizard()
 
@@ -351,10 +351,10 @@ export function WizardStep3() {
   }
 
   // 다음 단계로
-  const handleNext = async () => {
+  const handleNext = () => {
     if (!canProceedToStep4()) return
-    await saveDraft({ wizardStep: 4 })
     goToNextStep()
+    saveDraftAsync({ wizardStep: 4 })
   }
 
   // 로딩 상태
