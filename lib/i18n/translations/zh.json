@@ -374,6 +374,16 @@
     "myVideos": "我的视频广告",
     "createAd": "创建视频广告",
     "emptyAds": "暂无创建的视频广告",
+    "continueEdit": "继续编辑",
+    "inProgress": "编辑中",
+    "deleteModal": {
+      "title": "删除视频",
+      "confirmWithName": "确定要删除 \"{{name}}\" 视频吗？",
+      "confirm": "确定要删除此视频吗？",
+      "warning": "删除后无法恢复。",
+      "cancel": "取消",
+      "deleting": "删除中..."
+    },
     "createFirstAd": "创建您的第一个视频广告",
     "selectProduct": "选择产品",
     "selectAvatar": "选择虚拟形象",

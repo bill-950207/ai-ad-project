@@ -399,7 +399,7 @@ export function WizardStep4() {
       setSceneKeyframes(initialKeyframes)
 
       // 키프레임 생성 시작 시 저장 (이탈 후 복구 지원)
-      await saveDraft({ status: 'GENERATING_SCENES' })
+      saveDraftAsync({ status: 'GENERATING_SCENES' })
 
       // 폴링 시작
       startKeyframePolling(initialKeyframes)
@@ -696,13 +696,13 @@ export function WizardStep4() {
     const allCompleted = sceneKeyframes.length > 0 && sceneKeyframes.every(kf => kf.status === 'completed' || kf.status === 'failed')
     if (allCompleted && !hasSavedCompletionRef.current) {
       hasSavedCompletionRef.current = true
-      saveDraft({ status: 'SCENES_COMPLETED' })
+      saveDraftAsync({ status: 'SCENES_COMPLETED' })
     }
     // 새로 생성 시작하면 플래그 리셋
     if (isGeneratingKeyframes) {
       hasSavedCompletionRef.current = false
     }
-  }, [sceneKeyframes, isGeneratingKeyframes, saveDraft])
+  }, [sceneKeyframes, isGeneratingKeyframes, saveDraftAsync])
 
   // 다음 단계로
   const handleNext = () => {
