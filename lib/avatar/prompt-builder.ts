@@ -136,21 +136,21 @@ const vibeMap: Record<string, string> = {
   professional: 'professional and confident appearance',
 }
 
-/** 배경 환경 매핑 */
+/** 배경 환경 매핑 (선명한 배경을 위해 NO bokeh 명시) */
 const backgroundMap: Record<string, string> = {
-  studio: 'in a professional photo studio with soft studio lighting and clean white backdrop, well-lit, sharp background',
-  home: 'in a cozy modern home interior with warm ambient lighting and soft natural light from window, detailed background',
-  office: 'in a bright modern office space with large windows and natural daylight streaming in, sharp clear background',
-  outdoor: 'in an outdoor urban setting with soft golden hour lighting, clear detailed background',
-  cafe: 'in a stylish cafe with warm ambient lighting, detailed cafe interior visible in background',
+  studio: 'in a professional photo studio with even studio lighting and clean white backdrop, well-lit, sharp in-focus background, NO bokeh',
+  home: 'in a cozy modern home interior with warm natural light from window, sharp clear background, all details visible, NO bokeh NO blur',
+  office: 'in a bright modern office space with large windows and natural daylight, sharp clear background, NO bokeh NO blur',
+  outdoor: 'in an outdoor urban setting with golden hour lighting, sharp in-focus background, all background details clear, NO bokeh',
+  cafe: 'in a stylish cafe interior with warm lighting, sharp clear background, cafe details visible, NO bokeh NO blur',
 }
 
-/** 포즈 스타일 매핑 */
+/** 포즈 스타일 매핑 (항상 카메라 응시) */
 const poseMap: Record<string, string> = {
-  model: 'striking a professional model pose, looking at camera, neutral relaxed expression',
-  natural: 'in a relaxed natural pose, neutral calm expression, candid shot',
-  casual: 'sitting comfortably in a casual relaxed position, neutral expression',
-  working: 'focused while working at desk, natural working pose, neutral expression',
+  model: 'striking a professional model pose, looking directly at camera, eye contact, neutral relaxed expression',
+  natural: 'in a relaxed natural pose, looking directly at camera, eye contact, neutral calm expression',
+  casual: 'sitting comfortably in a casual relaxed position, looking directly at camera, eye contact, neutral expression',
+  working: 'at desk, looking directly at camera, eye contact, neutral expression',
 }
 
 /** 의상 스타일 매핑 (체형이 보이는 핏한 의상) */

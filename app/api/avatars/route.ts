@@ -143,15 +143,19 @@ export async function POST(request: NextRequest) {
     const hasBackground = options?.background
     const hasPose = options?.pose
 
-    // 품질 향상 문구 (좋은 결과물 프롬프트 참고)
+    // 배경 선명도 강제 문구 + 다큐멘터리 스타일 (배경이 중요한 스타일)
+    const styleAndAntiBlur = 'documentary style environmental portrait, sharp background in focus, NO bokeh, NO blur, NO shallow depth of field, f/11 aperture'
+    // 카메라 응시 강제
+    const gazeDirection = 'looking directly at camera, eye contact with viewer'
+    // 품질 향상 문구
     const qualityEnhancers = 'high quality photo, realistic, professional photography, sharp focus, detailed skin texture'
-    // 기본 배경: 구체적인 스튜디오 설정으로 흐릿함 방지
-    const defaultBackground = hasBackground ? '' : ', in a professional photo studio with soft studio lighting and clean white backdrop, well-lit'
-    // 기본 포즈: 자연스러운 포즈와 중립적 표정 (광고에서 다양한 표정 적용 가능)
-    const defaultPose = hasPose ? '' : ', in a relaxed natural pose, neutral calm expression, candid shot'
+    // 기본 배경: 선명한 배경을 위해 soft 대신 even lighting 사용
+    const defaultBackground = hasBackground ? '' : ', in a professional photo studio with even studio lighting and clean white backdrop, well-lit, sharp clear background'
+    // 기본 포즈: 자연스러운 포즈와 중립적 표정 + 카메라 응시
+    const defaultPose = hasPose ? '' : ', in a relaxed natural pose, neutral calm expression'
     const viewType = 'upper body shot'
 
-    const finalPrompt = `${rawPrompt}, ${qualityEnhancers}${defaultBackground}${defaultPose}, ${viewType}`
+    const finalPrompt = `${styleAndAntiBlur}, ${rawPrompt}, ${gazeDirection}, ${qualityEnhancers}${defaultBackground}${defaultPose}, ${viewType}`
 
     // 사용량 제한 확인 (플랜별 무료 생성 가능 횟수)
     const usageCheck = await checkUsageLimit(user.id, 'avatar')
