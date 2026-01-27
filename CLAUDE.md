@@ -42,7 +42,41 @@ npm run lint         # ESLint
 
 ## Git Worktree
 
-새 워크트리 설정:
+### 워크트리 관리 스크립트
+```bash
+./scripts/worktree.sh create <feature-name>  # 워크트리 + 브랜치 생성 + 초기 설정
+./scripts/worktree.sh list                   # 현재 워크트리 목록
+./scripts/worktree.sh status                 # 모든 워크트리 상태 확인
+./scripts/worktree.sh remove <feature-name>  # 워크트리 제거
+```
+
+### Claude 워크트리 작업 가이드
+Claude가 워크트리 관련 요청을 받으면:
+
+1. **워크트리 생성 요청** (예: "user-auth 기능 워크트리 만들어줘")
+   ```bash
+   ./scripts/worktree.sh create user-auth
+   ```
+   - 자동으로 `feature/user-auth` 브랜치 생성
+   - 워크트리 경로: `../ai_ad_project-user-auth`
+   - npm install, .env 복사, prisma generate 자동 실행
+
+2. **워크트리 목록 확인**
+   ```bash
+   ./scripts/worktree.sh list
+   ```
+
+3. **워크트리 제거**
+   ```bash
+   ./scripts/worktree.sh remove user-auth
+   ```
+
+### 브랜치 네이밍 규칙
+- 기능: `feature/<name>` (예: feature/user-auth)
+- 버그수정: `fix/<name>` (예: fix/login-error)
+- 워크트리 경로: `../ai_ad_project-<name>`
+
+### 수동 설정 (필요시)
 ```bash
 git worktree add ../ai_ad_project-[feature] [branch]
 cd ../ai_ad_project-[feature]
