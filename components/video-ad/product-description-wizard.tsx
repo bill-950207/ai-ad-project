@@ -42,6 +42,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AvatarSelectModal, SelectedAvatarInfo } from './avatar-select-modal'
+import { useAsyncDraftSave } from '@/lib/hooks/use-async-draft-save'
 
 // ============================================================
 // 타입 정의
@@ -332,7 +333,6 @@ export function ProductDescriptionWizard() {
 
   // 초안 저장 관련
   const [draftId, setDraftId] = useState<string | null>(null)
-  const [isSavingDraft, setIsSavingDraft] = useState(false)
   const [isLoadingDraft, setIsLoadingDraft] = useState(!!resumeVideoAdId)
 
   // 데이터
@@ -468,11 +468,84 @@ export function ProductDescriptionWizard() {
   }, [isGeneratingVideo, generationStartTime])
 
   // ============================================================
-  // 초안 저장/로드
+  // 비동기 초안 저장
   // ============================================================
 
-  // 초안 저장 함수 (overrides를 통해 직접 값을 전달할 수 있음 - 상태 업데이트 전에 저장할 때 사용)
-  const saveDraft = useCallback(async (currentStep: WizardStep, overrides?: {
+  // 비동기 저장 함수 (안정적인 참조 유지)
+  const asyncSaveFn = useCallback(async (payload: Record<string, unknown>) => {
+    const res = await fetch('/api/video-ads/draft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    if (!res.ok) {
+      throw new Error('Failed to save draft')
+    }
+
+    const data = await res.json()
+    if (data.draft?.id) {
+      const isNewDraft = !payload.id
+      setDraftId(data.draft.id)
+
+      // 새 draft 생성 시 URL 업데이트
+      if (isNewDraft && typeof window !== 'undefined') {
+        skipNextLoadRef.current = true
+        const currentUrl = new URL(window.location.href)
+        currentUrl.searchParams.set('draftId', data.draft.id)
+        window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search)
+      }
+
+      return data.draft.id
+    }
+    return null
+  }, [])
+
+  // 비동기 Draft 저장 훅
+  const {
+    queueSave,
+    isSaving,
+    pendingSave,
+  } = useAsyncDraftSave(asyncSaveFn, {
+    debounceMs: 300,
+    maxRetries: 3,
+    retryDelayMs: 1000,
+  })
+
+  // 페이지 이탈 방지 (저장 대기 중일 때)
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (pendingSave || isSaving) {
+        e.preventDefault()
+        e.returnValue = '저장되지 않은 변경사항이 있습니다.'
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [pendingSave, isSaving])
+
+  // 최신 상태를 참조하기 위한 ref (클로저 문제 해결)
+  const stateRef = useRef({
+    draftId, selectedAvatarInfo, selectedProduct, productInfo, locationPrompt,
+    duration, resolution, cameraComposition, modelPose, outfitMode, outfitPreset, outfitCustom,
+    scripts, selectedScriptIndex, editedScript, firstFrameUrl, firstFrameUrls,
+    firstFrameOriginalUrls, firstFramePrompt, locationDescription, selectedVoice, videoType
+  })
+  useEffect(() => {
+    stateRef.current = {
+      draftId, selectedAvatarInfo, selectedProduct, productInfo, locationPrompt,
+      duration, resolution, cameraComposition, modelPose, outfitMode, outfitPreset, outfitCustom,
+      scripts, selectedScriptIndex, editedScript, firstFrameUrl, firstFrameUrls,
+      firstFrameOriginalUrls, firstFramePrompt, locationDescription, selectedVoice, videoType
+    }
+  }, [draftId, selectedAvatarInfo, selectedProduct, productInfo, locationPrompt,
+    duration, resolution, cameraComposition, modelPose, outfitMode, outfitPreset, outfitCustom,
+    scripts, selectedScriptIndex, editedScript, firstFrameUrl, firstFrameUrls,
+    firstFrameOriginalUrls, firstFramePrompt, locationDescription, selectedVoice, videoType])
+
+  // 비동기 Draft 저장 (단계 전환 시 사용)
+  const saveDraftAsync = useCallback((currentStep: WizardStep, overrides?: {
     scripts?: Script[]
     locationDescription?: string
     firstFrameUrl?: string | null
@@ -483,76 +556,51 @@ export function ProductDescriptionWizard() {
     selectedScriptIndex?: number
     status?: 'DRAFT' | 'GENERATING_SCRIPTS' | 'GENERATING_AUDIO'
   }) => {
-    setIsSavingDraft(true)
-    try {
-      // overrides가 있으면 overrides 값 사용, 없으면 state 값 사용
-      const scriptsToSave = overrides?.scripts ?? scripts
-      const locationDescToSave = overrides?.locationDescription ?? locationDescription
-      const firstFrameUrlToSave = overrides?.firstFrameUrl !== undefined ? overrides.firstFrameUrl : firstFrameUrl
-      const firstFrameUrlsToSave = overrides?.firstFrameUrls ?? firstFrameUrls
-      const firstFrameOriginalUrlsToSave = overrides?.firstFrameOriginalUrls ?? firstFrameOriginalUrls
-      const firstFramePromptToSave = overrides?.firstFramePrompt ?? firstFramePrompt
-      const editedScriptToSave = overrides?.editedScript ?? editedScript
-      const scriptIndexToSave = overrides?.selectedScriptIndex ?? selectedScriptIndex
+    const state = stateRef.current
 
-      const res = await fetch('/api/video-ads/draft', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: draftId,
-          category: 'productDescription',
-          wizardStep: currentStep,
-          status: overrides?.status,  // 상태 업데이트 (GENERATING_SCRIPTS, GENERATING_AUDIO 등)
-          avatarId: selectedAvatarInfo?.avatarId,
-          outfitId: selectedAvatarInfo?.outfitId,
-          avatarImageUrl: selectedAvatarInfo?.imageUrl,
-          aiAvatarOptions: selectedAvatarInfo?.type === 'ai-generated' ? selectedAvatarInfo.aiOptions : undefined,
-          productId: selectedProduct?.id,
-          productInfo,
-          locationPrompt,
-          duration,
-          resolution,
-          cameraComposition: cameraComposition !== 'auto' ? cameraComposition : null,
-          modelPose: modelPose !== 'auto' ? modelPose : null,
-          outfitMode: outfitMode !== 'keep_original' ? outfitMode : null,
-          outfitPreset: outfitMode === 'preset' ? outfitPreset : null,
-          outfitCustom: outfitMode === 'custom' ? outfitCustom : null,
-          scriptsJson: scriptsToSave.length > 0 ? JSON.stringify({ scripts: scriptsToSave, locationDescription: locationDescToSave }) : null,
-          scriptStyle: scriptsToSave[scriptIndexToSave]?.style,
-          script: editedScriptToSave,
-          firstSceneImageUrl: firstFrameUrlToSave,
-          firstFrameUrls: firstFrameUrlsToSave.length > 0 ? firstFrameUrlsToSave : null,
-          firstFrameOriginalUrls: firstFrameOriginalUrlsToSave.length > 0 ? firstFrameOriginalUrlsToSave : null,
-          firstFramePrompt: firstFramePromptToSave,
-          voiceId: selectedVoice?.id,
-          voiceName: selectedVoice?.name,
-          videoType,  // 비디오 타입 (UGC, podcast, expert)
-        }),
-      })
+    // overrides가 있으면 overrides 값 사용, 없으면 state 값 사용
+    const scriptsToSave = overrides?.scripts ?? state.scripts
+    const locationDescToSave = overrides?.locationDescription ?? state.locationDescription
+    const firstFrameUrlToSave = overrides?.firstFrameUrl !== undefined ? overrides.firstFrameUrl : state.firstFrameUrl
+    const firstFrameUrlsToSave = overrides?.firstFrameUrls ?? state.firstFrameUrls
+    const firstFrameOriginalUrlsToSave = overrides?.firstFrameOriginalUrls ?? state.firstFrameOriginalUrls
+    const firstFramePromptToSave = overrides?.firstFramePrompt ?? state.firstFramePrompt
+    const editedScriptToSave = overrides?.editedScript ?? state.editedScript
+    const scriptIndexToSave = overrides?.selectedScriptIndex ?? state.selectedScriptIndex
 
-      if (res.ok) {
-        const data = await res.json()
-        if (data.draft?.id) {
-          // 새 드래프트가 생성된 경우 URL에 draftId 추가
-          if (!draftId && data.draft.id) {
-            setDraftId(data.draft.id)
-            // loadExistingData 스킵 설정 (URL 변경 후 불필요한 재로드 방지)
-            skipNextLoadRef.current = true
-            // URL 업데이트 (쿼리 파라미터 추가) - window.history 사용하여 새로고침 방지
-            const currentUrl = new URL(window.location.href)
-            currentUrl.searchParams.set('draftId', data.draft.id)
-            window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search)
-          } else {
-            setDraftId(data.draft.id)
-          }
-        }
-      }
-    } catch (error) {
-      console.error('초안 저장 오류:', error)
-    } finally {
-      setIsSavingDraft(false)
+    const payload = {
+      id: state.draftId,
+      category: 'productDescription',
+      wizardStep: currentStep,
+      status: overrides?.status,
+      avatarId: state.selectedAvatarInfo?.avatarId,
+      outfitId: state.selectedAvatarInfo?.outfitId,
+      avatarImageUrl: state.selectedAvatarInfo?.imageUrl,
+      aiAvatarOptions: state.selectedAvatarInfo?.type === 'ai-generated' ? state.selectedAvatarInfo.aiOptions : undefined,
+      productId: state.selectedProduct?.id,
+      productInfo: state.productInfo,
+      locationPrompt: state.locationPrompt,
+      duration: state.duration,
+      resolution: state.resolution,
+      cameraComposition: state.cameraComposition !== 'auto' ? state.cameraComposition : null,
+      modelPose: state.modelPose !== 'auto' ? state.modelPose : null,
+      outfitMode: state.outfitMode !== 'keep_original' ? state.outfitMode : null,
+      outfitPreset: state.outfitMode === 'preset' ? state.outfitPreset : null,
+      outfitCustom: state.outfitMode === 'custom' ? state.outfitCustom : null,
+      scriptsJson: scriptsToSave.length > 0 ? JSON.stringify({ scripts: scriptsToSave, locationDescription: locationDescToSave }) : null,
+      scriptStyle: scriptsToSave[scriptIndexToSave]?.style,
+      script: editedScriptToSave,
+      firstSceneImageUrl: firstFrameUrlToSave,
+      firstFrameUrls: firstFrameUrlsToSave.length > 0 ? firstFrameUrlsToSave : null,
+      firstFrameOriginalUrls: firstFrameOriginalUrlsToSave.length > 0 ? firstFrameOriginalUrlsToSave : null,
+      firstFramePrompt: firstFramePromptToSave,
+      voiceId: state.selectedVoice?.id,
+      voiceName: state.selectedVoice?.name,
+      videoType: state.videoType,
     }
-  }, [draftId, selectedAvatarInfo, selectedProduct, productInfo, locationPrompt, duration, resolution, cameraComposition, modelPose, outfitMode, outfitPreset, outfitCustom, scripts, selectedScriptIndex, editedScript, firstFrameUrl, firstFrameUrls, firstFrameOriginalUrls, firstFramePrompt, locationDescription, selectedVoice, videoType])
+
+    queueSave(payload)
+  }, [queueSave])
 
   // 기존 초안 또는 진행 중인 영상 광고 로드
   const loadExistingData = useCallback(async () => {
@@ -890,8 +938,7 @@ export function ProductDescriptionWizard() {
     setStep(3)
 
     // Step 2 데이터 저장 + GENERATING_SCRIPTS 상태로 변경 (백그라운드에서 실행, 에러 무시)
-    saveDraft(2, { status: 'GENERATING_SCRIPTS' }).catch(console.error)
-
+    saveDraftAsync(2, { status: 'GENERATING_SCRIPTS' })
     try {
       const res = await fetch('/api/video-ads/product-description/generate-scripts', {
         method: 'POST',
@@ -955,7 +1002,7 @@ export function ProductDescriptionWizard() {
       fetchVoicesByLanguage(scriptLanguage)
 
       // 생성된 대본과 이미지 정보 저장 + DRAFT 상태로 복원 (API 응답 값을 직접 전달하여 stale closure 문제 방지)
-      await saveDraft(3, {
+      saveDraftAsync(3, {
         scripts: generatedScripts,
         locationDescription: generatedLocationDesc,
         firstFrameUrl: generatedFirstFrameUrl,
@@ -971,8 +1018,7 @@ export function ProductDescriptionWizard() {
       alert(error instanceof Error ? error.message : '대본 생성 중 오류가 발생했습니다')
       setStep(2)
       // 에러 발생 시 DRAFT 상태로 복원
-      saveDraft(2, { status: 'DRAFT' }).catch(console.error)
-    } finally {
+      saveDraftAsync(2, { status: 'DRAFT' })    } finally {
       setIsGeneratingScripts(false)
     }
   }
@@ -986,7 +1032,7 @@ export function ProductDescriptionWizard() {
       alert('대본 내용을 입력해주세요')
       return
     }
-    await saveDraft(3)
+    saveDraftAsync(3)
 
     // Step 2에서 선택한 언어로 음성 목록 불러오기
     setSelectedVoice(null)  // 음성 선택 초기화
@@ -1011,8 +1057,7 @@ export function ProductDescriptionWizard() {
     setGenerationProgress(0)
 
     // Step 4 데이터 저장 + GENERATING_AUDIO 상태로 변경
-    saveDraft(4, { status: 'GENERATING_AUDIO' }).catch(console.error)
-
+    saveDraftAsync(4, { status: 'GENERATING_AUDIO' })
     try {
       // TTS 생성 요청
       const ttsRes = await fetch('/api/video-ads/product-description/generate-audio', {
@@ -1109,8 +1154,7 @@ export function ProductDescriptionWizard() {
       alert(error instanceof Error ? error.message : '영상 생성 중 오류가 발생했습니다')
       setGenerationStatus('')
       // 에러 발생 시 DRAFT 상태로 복원
-      saveDraft(4, { status: 'DRAFT' }).catch(console.error)
-    } finally {
+      saveDraftAsync(4, { status: 'DRAFT' })    } finally {
       setIsGeneratingAudio(false)
       setIsGeneratingVideo(false)
     }
@@ -1242,10 +1286,10 @@ export function ProductDescriptionWizard() {
   // 단계 네비게이션 (초안 저장 포함)
   // ============================================================
 
-  const goToStep = async (targetStep: WizardStep) => {
-    // 이동할 단계를 저장 (현재 단계가 아닌 targetStep 저장)
-    await saveDraft(targetStep)
+  const goToStep = (targetStep: WizardStep) => {
+    // 즉시 단계 이동 후 백그라운드에서 저장
     setStep(targetStep)
+    saveDraftAsync(targetStep)
     // 스크롤 최상단으로 이동
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -1614,20 +1658,11 @@ export function ProductDescriptionWizard() {
           {/* 다음 버튼 */}
           <button
             onClick={() => goToStep(2)}
-            disabled={!canProceedStep1 || isSavingDraft}
+            disabled={!canProceedStep1}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSavingDraft ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                저장 중...
-              </>
-            ) : (
-              <>
-                다음
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
+            다음
+            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       )}
@@ -2022,8 +2057,7 @@ export function ProductDescriptionWizard() {
           <div className="flex gap-3">
             <button
               onClick={() => goToStep(1)}
-              disabled={isSavingDraft}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               이전
@@ -2307,8 +2341,7 @@ export function ProductDescriptionWizard() {
               <div className="flex gap-3 max-w-2xl mx-auto">
                 <button
                   onClick={() => goToStep(2)}
-                  disabled={isSavingDraft}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   이전
