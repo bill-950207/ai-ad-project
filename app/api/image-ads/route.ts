@@ -275,7 +275,7 @@ export async function POST(request: NextRequest) {
     if (productId) {
       const { data: product, error: productError } = await supabase
         .from('ad_products')
-        .select('id, name, description, rembg_image_url, image_url, status')
+        .select('id, name, description, rembg_image_url, image_url, image_url_original, status')
         .eq('id', productId)
         .eq('user_id', user.id)
         .single()
@@ -298,8 +298,8 @@ export async function POST(request: NextRequest) {
       productName = product.name
       productDescription = product.description || undefined
 
-      // 제품 이미지 추가 (배경 제거된 이미지 우선)
-      productImageUrl = product.rembg_image_url || product.image_url
+      // 제품 이미지 추가 (PNG 원본 우선, 기존 제품 하위 호환)
+      productImageUrl = product.image_url_original || product.rembg_image_url || product.image_url
       if (productImageUrl) {
         imageUrls.push(productImageUrl)
       }
