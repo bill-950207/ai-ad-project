@@ -163,16 +163,8 @@ export function VideoAdPageContent() {
       })
 
       if (res.ok) {
-        // 목록에서 삭제된 영상 제거
-        setVideoAds(prev => prev.filter(v => v.id !== videoToDelete.id))
-        // 페이지네이션 업데이트
-        if (pagination) {
-          setPagination(prev => prev ? {
-            ...prev,
-            totalCount: prev.totalCount - 1,
-            totalPages: Math.ceil((prev.totalCount - 1) / PAGE_SIZE)
-          } : null)
-        }
+        // 현재 페이지 새로고침
+        await fetchVideoAds(currentPage)
       } else {
         console.error('영상 삭제 실패')
       }
