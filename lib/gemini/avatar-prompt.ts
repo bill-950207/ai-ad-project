@@ -71,6 +71,14 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
     curvy: 'solid masculine build with broader frame',
     any: 'natural masculine proportions',
   }
+  // 성별 중립 기본 체형 맵 (성별 미지정 시 사용)
+  const defaultBodyTypeMap: Record<string, string> = {
+    slim: 'slim slender build with delicate frame',
+    average: 'balanced proportions with natural build',
+    athletic: 'toned athletic build with defined physique',
+    curvy: 'naturally curved silhouette with soft proportions',
+    any: 'natural proportions',
+  }
 
   // 성별에 따른 체형 설명 반환
   const getBodyTypeDescription = (bodyType: string, gender?: string): string => {
@@ -79,7 +87,8 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
     } else if (gender === 'male') {
       return maleBodyTypeMap[bodyType] || maleBodyTypeMap['any']
     }
-    return femaleBodyTypeMap[bodyType] || femaleBodyTypeMap['any']
+    // 성별 미지정 시 중립적 기본값 사용
+    return defaultBodyTypeMap[bodyType] || defaultBodyTypeMap['any']
   }
 
   // 언어-인종 매핑 (ethnicity가 'any'일 때 언어에 맞는 인종 자동 설정)
