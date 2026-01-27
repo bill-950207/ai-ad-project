@@ -46,13 +46,12 @@ export function useAsyncDraftSave(
   const latestPayloadRef = useRef<Record<string, unknown> | null>(null)
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
   const isUnmountedRef = useRef(false)
-  const isSavingRef = useRef(false) // 저장 중복 방지용
+  const isSavingRef = useRef(false)
 
   // 최신 saveFn을 참조하기 위한 ref (클로저 문제 해결)
   const saveFnRef = useRef(saveFn)
   const optionsRef = useRef({ onSaveStart, onSaveSuccess, onSaveError, onSaveComplete, maxRetries, retryDelayMs })
 
-  // saveFn과 options가 변경될 때마다 ref 업데이트
   useEffect(() => {
     saveFnRef.current = saveFn
   }, [saveFn])
@@ -61,8 +60,9 @@ export function useAsyncDraftSave(
     optionsRef.current = { onSaveStart, onSaveSuccess, onSaveError, onSaveComplete, maxRetries, retryDelayMs }
   }, [onSaveStart, onSaveSuccess, onSaveError, onSaveComplete, maxRetries, retryDelayMs])
 
-  // cleanup on unmount
+  // mount/unmount 처리 (React Strict Mode 대응)
   useEffect(() => {
+    isUnmountedRef.current = false
     return () => {
       isUnmountedRef.current = true
       if (debounceTimerRef.current) {
@@ -71,14 +71,11 @@ export function useAsyncDraftSave(
     }
   }, [])
 
-  // executeSave는 ref를 통해 최신 saveFn을 사용하므로 의존성이 적음
   const executeSave = useCallback(async (
     payload: Record<string, unknown>,
     retryCount = 0
   ): Promise<void> => {
     if (isUnmountedRef.current) return
-
-    // 중복 실행 방지
     if (isSavingRef.current) return
     isSavingRef.current = true
 
@@ -101,7 +98,6 @@ export function useAsyncDraftSave(
       const { maxRetries: max, retryDelayMs: delay } = optionsRef.current
 
       if (retryCount < max) {
-        // 지수 백오프로 재시도
         const waitTime = delay * Math.pow(1.5, retryCount)
         isSavingRef.current = false
         await new Promise(resolve => setTimeout(resolve, waitTime))
@@ -118,25 +114,21 @@ export function useAsyncDraftSave(
         optionsRef.current.onSaveComplete?.()
       }
     }
-  }, []) // 의존성 없음 - ref를 통해 최신 값 접근
+  }, [])
 
-  // executeSave를 ref로 유지하여 setTimeout 콜백에서 항상 최신 버전 사용
   const executeSaveRef = useRef(executeSave)
   useEffect(() => {
     executeSaveRef.current = executeSave
   }, [executeSave])
 
   const queueSave = useCallback((payload: Record<string, unknown>) => {
-    // 이전 대기 중인 타이머 취소
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current)
     }
 
-    // 최신 payload 저장
     latestPayloadRef.current = payload
     setPendingSave(true)
 
-    // 디바운스 후 실행 (ref를 통해 최신 executeSave 사용)
     debounceTimerRef.current = setTimeout(() => {
       const currentPayload = latestPayloadRef.current
       if (currentPayload && !isSavingRef.current) {
@@ -144,7 +136,7 @@ export function useAsyncDraftSave(
         executeSaveRef.current(currentPayload)
       }
     }, debounceMs)
-  }, [debounceMs]) // executeSave 의존성 제거 - ref 사용
+  }, [debounceMs])
 
   const cancelPending = useCallback(() => {
     if (debounceTimerRef.current) {
@@ -154,7 +146,6 @@ export function useAsyncDraftSave(
     setPendingSave(false)
   }, [])
 
-  // 대기 중인 저장 즉시 실행 (페이지 이탈 등)
   const flushPending = useCallback(async () => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current)
@@ -164,7 +155,7 @@ export function useAsyncDraftSave(
       latestPayloadRef.current = null
       await executeSaveRef.current(currentPayload)
     }
-  }, []) // executeSave 의존성 제거 - ref 사용
+  }, [])
 
   const clearError = useCallback(() => {
     setLastSaveError(null)

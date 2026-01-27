@@ -9,7 +9,6 @@ import { WizardStep3 } from './wizard-step-3'
 import { WizardStep4 } from './wizard-step-4'
 import { WizardStep5 } from './wizard-step-5'
 import { WizardStep6 } from './wizard-step-6'
-import { SaveIndicator } from '@/components/ui/save-indicator'
 
 // 단계 정보
 const STEPS = [
@@ -121,15 +120,7 @@ interface WizardInnerProps {
 }
 
 function WizardInner({ onBack, videoAdId }: WizardInnerProps) {
-  const {
-    loadDraft,
-    isSaving,
-    pendingSave,
-    lastSaveError,
-    lastSavedAt,
-    clearSaveError,
-    flushPendingSave,
-  } = useProductAdWizard()
+  const { loadDraft, isSaving, pendingSave } = useProductAdWizard()
   const [isLoadingDraft, setIsLoadingDraft] = useState(!!videoAdId)
   const loadAttemptedRef = useRef(false)
 
@@ -173,14 +164,6 @@ function WizardInner({ onBack, videoAdId }: WizardInnerProps) {
     <div className="min-h-full flex flex-col bg-background">
       <WizardHeader onBack={onBack} />
       <WizardContent />
-      <SaveIndicator
-        isSaving={isSaving}
-        pendingSave={pendingSave}
-        lastSaveError={lastSaveError}
-        lastSavedAt={lastSavedAt}
-        onRetry={flushPendingSave}
-        onDismiss={clearSaveError}
-      />
     </div>
   )
 }
