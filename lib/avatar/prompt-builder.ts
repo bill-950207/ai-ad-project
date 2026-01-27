@@ -136,13 +136,13 @@ const vibeMap: Record<string, string> = {
   professional: 'professional and confident appearance',
 }
 
-/** 배경 환경 매핑 (선명한 배경을 위해 NO bokeh 명시) */
+/** 배경 환경 매핑 (선명한 배경, 조명 장비 숨김) */
 const backgroundMap: Record<string, string> = {
-  studio: 'in a professional photo studio with even studio lighting and clean white backdrop, well-lit, sharp in-focus background, NO bokeh',
-  home: 'in a cozy modern home interior with warm natural light from window, sharp clear background, all details visible, NO bokeh NO blur',
-  office: 'in a bright modern office space with large windows and natural daylight, sharp clear background, NO bokeh NO blur',
-  outdoor: 'in an outdoor urban setting with golden hour lighting, sharp in-focus background, all background details clear, NO bokeh',
-  cafe: 'in a stylish cafe interior with warm lighting, sharp clear background, cafe details visible, NO bokeh NO blur',
+  studio: 'in a professional photo studio with even soft light and clean white backdrop, well-lit, sharp in-focus background, NO bokeh, NO visible lighting equipment NO softbox NO light stand NO studio lights in frame',
+  home: 'in a cozy modern home interior with warm natural light from window, sharp clear background, all details visible, NO bokeh NO blur, NO visible lamps NO light fixtures in frame',
+  office: 'in a bright modern office space with large windows and natural daylight, sharp clear background, NO bokeh NO blur, NO visible lighting equipment',
+  outdoor: 'in an outdoor urban setting with golden hour natural sunlight, sharp in-focus background, all background details clear, NO bokeh, NO artificial lighting visible',
+  cafe: 'in a stylish cafe interior with warm ambient light, sharp clear background, cafe details visible, NO bokeh NO blur, NO visible light fixtures NO hanging lamps in prominent view',
 }
 
 /** 포즈 스타일 매핑 (항상 카메라 응시) */

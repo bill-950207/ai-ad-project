@@ -458,9 +458,45 @@ export async function generateFirstFramePrompt(input: FirstFramePromptInput): Pr
   // 비디오 타입별 분위기 가이드
   const atmosphereSection = `Atmosphere: ${videoTypeGuide.atmospherePrompt}`
 
-  // 체형 정보 (일관성 유지용)
-  const bodyTypeSection = input.bodyType
-    ? `Body type to maintain: ${input.bodyType}`
+  // 성별별 체형 설명 매핑 (영어 - 이미지 생성 모델 최적화)
+  const femaleBodyTypeMap: Record<string, string> = {
+    slim: 'slim slender feminine silhouette with delicate proportions',
+    average: 'balanced feminine proportions with natural curves',
+    athletic: 'toned athletic feminine build with defined musculature',
+    curvy: 'feminine silhouette with natural soft curves',
+    plussize: 'full-figured feminine form with generous proportions',
+  }
+  const maleBodyTypeMap: Record<string, string> = {
+    slim: 'lean masculine frame with slender proportions',
+    average: 'balanced masculine build with standard proportions',
+    athletic: 'toned athletic masculine physique with defined muscles',
+    curvy: 'solid masculine build with broader frame',
+    plussize: 'full masculine frame with generous build',
+  }
+  const defaultBodyTypeMap: Record<string, string> = {
+    slim: 'slim slender build with delicate frame',
+    average: 'balanced proportions with natural build',
+    athletic: 'toned athletic build with defined physique',
+    curvy: 'naturally curved silhouette with soft proportions',
+    plussize: 'full-figured build with generous proportions',
+  }
+
+  // 성별에 따른 체형 설명 반환
+  const getBodyTypeDescription = (bodyType: string, gender?: string): string => {
+    if (gender === 'female') {
+      return femaleBodyTypeMap[bodyType] || bodyType
+    } else if (gender === 'male') {
+      return maleBodyTypeMap[bodyType] || bodyType
+    }
+    return defaultBodyTypeMap[bodyType] || bodyType
+  }
+
+  // 체형 정보 (일관성 유지용) - 성별에 맞는 체형 설명 사용
+  const bodyTypeDescription = input.bodyType
+    ? getBodyTypeDescription(input.bodyType, input.avatarGender)
+    : ''
+  const bodyTypeSection = bodyTypeDescription
+    ? `Body type to maintain: ${bodyTypeDescription}`
     : ''
 
   // 아바타 섹션 - 외모 묘사 없이 Figure 1만 참조
@@ -486,7 +522,7 @@ CRITICAL RULES:
 1. For AVATAR: ONLY use "the model from Figure 1". Do NOT describe facial features, hair, skin tone, or ethnicity.
 2. For PRODUCT: ONLY use "the product from Figure 2" or "the product". NEVER include product name or brand name.
 3. The image should reflect the "${VIDEO_TYPE_SCRIPT_STYLES[videoType]?.korean || 'UGC'}" video style atmosphere.
-${input.bodyType ? `4. Maintain ${input.bodyType} body type consistently.` : ''}
+${bodyTypeDescription ? `4. Maintain ${bodyTypeDescription} body type consistently.` : ''}
 ${input.productImageUrl
     ? 'Create photorealistic prompt using "the model from Figure 1" for avatar, "the product from Figure 2" for product.'
     : 'Create photorealistic prompt using "the model from Figure 1" for avatar. ⚠️ NO PRODUCT should appear - avatar only with empty hands.'}
