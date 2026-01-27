@@ -117,7 +117,7 @@ interface WizardInnerProps {
 }
 
 function WizardInner({ onBack, videoAdId }: WizardInnerProps) {
-  const { loadDraft } = useProductAdWizard()
+  const { loadDraft, isSaving, pendingSave } = useProductAdWizard()
   const [isLoadingDraft, setIsLoadingDraft] = useState(!!videoAdId)
   const loadAttemptedRef = useRef(false)
 
@@ -130,6 +130,19 @@ function WizardInner({ onBack, videoAdId }: WizardInnerProps) {
       })
     }
   }, [videoAdId, loadDraft])
+
+  // 페이지 이탈 방지
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (pendingSave || isSaving) {
+        e.preventDefault()
+        e.returnValue = '저장되지 않은 변경사항이 있습니다.'
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [pendingSave, isSaving])
 
   if (isLoadingDraft) {
     return (

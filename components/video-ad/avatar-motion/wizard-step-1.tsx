@@ -25,8 +25,7 @@ export function WizardStep1() {
     setSelectedAvatarInfo,
     canProceedToStep2,
     goToNextStep,
-    saveDraft,
-    isSaving,
+    saveDraftAsync,
   } = useAvatarMotionWizard()
 
   // 로컬 상태
@@ -96,7 +95,7 @@ export function WizardStep1() {
   }
 
   // 다음 단계로 이동 (DB 저장 포함)
-  const handleNext = async () => {
+  const handleNext = () => {
     if (!canProceedToStep2()) return
 
     // 편집된 제품 정보로 업데이트
@@ -111,9 +110,9 @@ export function WizardStep1() {
       setSelectedProduct(updatedProduct)
     }
 
-    // DB에 저장
-    await saveDraft({ wizardStep: 2 })
+    // 먼저 다음 단계로 이동 후 백그라운드에서 저장
     goToNextStep()
+    saveDraftAsync({ wizardStep: 2 })
   }
 
   if (isLoading) {
@@ -316,7 +315,7 @@ export function WizardStep1() {
       <WizardNavigation
         onNext={handleNext}
         canProceed={canProceedToStep2()}
-        loading={isSaving}
+        loading={false}
         showNext={canProceedToStep2()}
         showPrev={false}
       />

@@ -18,7 +18,7 @@ export function WizardStep1() {
     updateSellingPoint,
     canProceedToStep2,
     goToNextStep,
-    saveDraft,
+    saveDraftAsync,
   } = useProductAdWizard()
 
   const [products, setProducts] = useState<AdProduct[]>([])
@@ -69,11 +69,12 @@ export function WizardStep1() {
   }
 
   // 다음 단계로
-  const handleNext = async () => {
+  const handleNext = () => {
     if (!canProceedToStep2()) return
-    // draftId가 없으면 새로 생성 (기존 DRAFT 덮어쓰기 방지)
-    await saveDraft({ wizardStep: 2, forceNew: !draftId })
+    // 먼저 다음 단계로 이동 후 백그라운드에서 저장
     goToNextStep()
+    // draftId가 없으면 새로 생성 (기존 DRAFT 덮어쓰기 방지)
+    saveDraftAsync({ wizardStep: 2, forceNew: !draftId })
   }
 
   return (

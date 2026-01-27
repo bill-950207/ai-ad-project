@@ -278,7 +278,9 @@ export function WizardStep4() {
     canProceedToStep5,
     goToNextStep,
     goToPrevStep,
-    saveDraft,
+    saveDraftAsync,
+    isVideoSettingsFromScenario,
+    unlockVideoSettings,
   } = useProductAdWizard()
 
   const [error, setError] = useState<string | null>(null)
@@ -703,15 +705,13 @@ export function WizardStep4() {
   }, [sceneKeyframes, isGeneratingKeyframes, saveDraft])
 
   // 다음 단계로
-  const handleNext = async () => {
+  const handleNext = () => {
     if (!canProceedToStep5()) return
-
-    // sceneKeyframes는 saveDraft 내부에서 이미 객체로 처리하므로 별도 전달 불필요
-    await saveDraft({
+    goToNextStep()
+    saveDraftAsync({
       wizardStep: 5,
       status: 'SCENES_COMPLETED',
     })
-    goToNextStep()
   }
 
   const hasKeyframes = sceneKeyframes.length > 0

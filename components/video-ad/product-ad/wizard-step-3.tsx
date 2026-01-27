@@ -308,7 +308,8 @@ export function WizardStep3() {
     canProceedToStep4,
     goToNextStep,
     goToPrevStep,
-    saveDraft,
+    saveDraftAsync,
+    applyVideoSettingsFromScenario,
   } = useProductAdWizard()
 
   // i18n
@@ -489,13 +490,10 @@ export function WizardStep3() {
   }
 
   // 다음 단계로
-  const handleNext = async () => {
+  const handleNext = () => {
     if (!canProceedToStep4()) return
-    await saveDraft({
-      wizardStep: 4,
-      aspectRatio,
-    })
     goToNextStep()
+    saveDraftAsync({ wizardStep: 4 })
   }
 
   // 총 영상 길이 계산

@@ -51,8 +51,7 @@ export function WizardStep3Scenario() {
     canProceedToStep4,
     goToNextStep,
     goToPrevStep,
-    saveDraft,
-    isSaving,
+    saveDraftAsync,
   } = useAvatarMotionWizard()
 
   // 참조 영상 관련 상태
@@ -291,10 +290,10 @@ export function WizardStep3Scenario() {
   }
 
   // 다음 단계로
-  const handleNext = async () => {
+  const handleNext = () => {
     if (!canProceedToStep4()) return
-    await saveDraft({ wizardStep: 4 })
     goToNextStep()
+    saveDraftAsync({ wizardStep: 4 })
   }
 
   return (
@@ -521,7 +520,7 @@ export function WizardStep3Scenario() {
         onPrev={goToPrevStep}
         onNext={handleNext}
         canProceed={canProceedToStep4()}
-        loading={isSaving}
+        loading={false}
         showNext={canProceedToStep4()}
         showPrev={true}
       />
