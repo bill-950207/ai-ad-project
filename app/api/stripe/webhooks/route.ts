@@ -20,6 +20,45 @@ import Stripe from 'stripe'
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
+// =====================================================
+// 이벤트 중복 처리 방지 (멱등성)
+// =====================================================
+const processedEvents = new Map<string, number>()
+const MAX_CACHE_SIZE = 1000
+const EVENT_TTL = 60 * 60 * 1000 // 1시간
+
+function isEventProcessed(eventId: string): boolean {
+  const timestamp = processedEvents.get(eventId)
+  if (!timestamp) return false
+  if (Date.now() - timestamp > EVENT_TTL) {
+    processedEvents.delete(eventId)
+    return false
+  }
+  return true
+}
+
+function markEventProcessed(eventId: string): void {
+  // 캐시 크기 제한 - 가장 오래된 항목 제거
+  if (processedEvents.size >= MAX_CACHE_SIZE) {
+    const oldestKey = processedEvents.keys().next().value
+    if (oldestKey) processedEvents.delete(oldestKey)
+  }
+  processedEvents.set(eventId, Date.now())
+}
+
+// 주기적 캐시 정리 (만료된 항목 제거)
+function cleanupExpiredEvents(): void {
+  const now = Date.now()
+  const keysToDelete: string[] = []
+  processedEvents.forEach((timestamp, eventId) => {
+    if (now - timestamp > EVENT_TTL) {
+      keysToDelete.push(eventId)
+    }
+  })
+  keysToDelete.forEach((key) => processedEvents.delete(key))
+}
+// =====================================================
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text()
@@ -43,6 +82,18 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid signature' },
         { status: 400 }
       )
+    }
+
+    // 중복 이벤트 검사 (멱등성)
+    if (isEventProcessed(event.id)) {
+      console.log(`Event already processed: ${event.id}`)
+      return NextResponse.json({ received: true, duplicate: true })
+    }
+    markEventProcessed(event.id)
+
+    // 주기적으로 만료된 이벤트 정리 (10% 확률로 실행)
+    if (Math.random() < 0.1) {
+      cleanupExpiredEvents()
     }
 
     // 이벤트 타입별 처리

@@ -23,6 +23,7 @@ export interface UsageSummary {
   avatars: { used: number; limit: number }
   music: { used: number; limit: number }
   products: { used: number; limit: number }
+  credits: { used: number; limit: number }
   period: string
 }
 
@@ -173,6 +174,13 @@ export async function getUsageSummary(userId: string): Promise<UsageSummary> {
     month: 'long',
   })
 
+  // 크레딧 사용량 계산 (무료 한도 초과분)
+  // 아바타: 무료 한도 초과 시 각 2크레딧
+  // 음악: 무료 한도 초과 시 각 3크레딧
+  const avatarOverage = plan.avatarLimit === -1 ? 0 : Math.max(0, usage.avatar_count - plan.avatarLimit)
+  const musicOverage = plan.musicLimit === -1 ? 0 : Math.max(0, usage.music_count - plan.musicLimit)
+  const creditsUsed = (avatarOverage * AVATAR_CREDIT_COST) + (musicOverage * MUSIC_CREDIT_COST)
+
   return {
     avatars: {
       used: usage.avatar_count,
@@ -185,6 +193,10 @@ export async function getUsageSummary(userId: string): Promise<UsageSummary> {
     products: {
       used: usage.product_count,
       limit: plan.productLimit,
+    },
+    credits: {
+      used: creditsUsed,
+      limit: plan.monthlyCredits,
     },
     period: periodString,
   }

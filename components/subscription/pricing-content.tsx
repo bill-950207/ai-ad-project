@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Check, X, Sparkles, Zap, Building2, Infinity, Crown, TrendingUp } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Check, X, Sparkles, Zap, Building2, Infinity, Crown, TrendingUp, Loader2, AlertCircle } from 'lucide-react'
 
 type BillingInterval = 'monthly' | 'yearly'
 
@@ -24,6 +24,7 @@ interface Plan {
   popular?: boolean
   bestValue?: boolean
   valueHighlight?: string
+  tier: number // 플랜 등급 (비교용)
 }
 
 const plans: Plan[] = [
@@ -49,6 +50,7 @@ const plans: Plan[] = [
       credits: '15 크레딧 (1회)',
       imageEstimate: '~7개 광고 이미지',
     },
+    tier: 0,
   },
   {
     name: 'STARTER',
@@ -75,6 +77,7 @@ const plans: Plan[] = [
     },
     popular: true,
     valueHighlight: '타사 대비 4배 저렴',
+    tier: 1,
   },
   {
     name: 'PRO',
@@ -101,6 +104,7 @@ const plans: Plan[] = [
     },
     bestValue: true,
     valueHighlight: '이미지당 $0.14',
+    tier: 2,
   },
   {
     name: 'BUSINESS',
@@ -127,17 +131,55 @@ const plans: Plan[] = [
       videoEstimate: '~160개 광고 영상',
     },
     valueHighlight: '이미지당 $0.12',
+    tier: 3,
   },
 ]
+
+// 플랜 이름으로 tier 가져오기
+const getPlanTier = (planName: string): number => {
+  const plan = plans.find(p => p.name === planName)
+  return plan?.tier ?? 0
+}
 
 export function PricingContent() {
   const [interval, setInterval] = useState<BillingInterval>('monthly')
   const [loading, setLoading] = useState<string | null>(null)
+  const [currentPlanType, setCurrentPlanType] = useState<string>('FREE')
+  const [pageLoading, setPageLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    // 현재 사용자의 플랜 정보 가져오기
+    const fetchCurrentPlan = async () => {
+      try {
+        setError(null)
+        const response = await fetch('/api/user/plan')
+        if (!response.ok) {
+          throw new Error('Failed to fetch plan')
+        }
+        const data = await response.json()
+        setCurrentPlanType(data.planType || 'FREE')
+      } catch (err) {
+        console.error('Failed to fetch current plan:', err)
+        setError('플랜 정보를 불러올 수 없습니다.')
+      } finally {
+        setPageLoading(false)
+      }
+    }
+
+    fetchCurrentPlan()
+  }, [])
+
+  const currentTier = getPlanTier(currentPlanType)
 
   const handleSubscribe = async (planName: string) => {
-    if (planName === 'FREE') return
+    const planTier = getPlanTier(planName)
+
+    // 현재 플랜이거나 낮은 플랜이면 무시
+    if (planTier <= currentTier) return
 
     setLoading(planName)
+    setError(null)
     try {
       const response = await fetch('/api/stripe/checkout', {
         method: 'POST',
@@ -150,10 +192,11 @@ export function PricingContent() {
       if (data.url) {
         window.location.href = data.url
       } else {
-        console.error('Checkout failed:', data.error)
+        setError(data.error || '결제 페이지를 열 수 없습니다.')
       }
-    } catch (error) {
-      console.error('Checkout error:', error)
+    } catch (err) {
+      console.error('Checkout error:', err)
+      setError('결제 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
     } finally {
       setLoading(null)
     }
@@ -175,28 +218,78 @@ export function PricingContent() {
 
   const isUnlimited = (value: string) => value === '무제한'
 
+  const getButtonState = (plan: Plan) => {
+    const isCurrentPlan = plan.name === currentPlanType
+    const isLowerOrEqual = plan.tier <= currentTier
+    const isHigher = plan.tier > currentTier
+
+    if (isCurrentPlan) {
+      return {
+        text: '현재 플랜',
+        disabled: true,
+        className: 'bg-primary/20 text-primary border-2 border-primary cursor-default',
+      }
+    }
+
+    if (isLowerOrEqual && !isCurrentPlan) {
+      return {
+        text: '다운그레이드 불가',
+        disabled: true,
+        className: 'bg-secondary text-muted-foreground cursor-not-allowed opacity-50',
+      }
+    }
+
+    if (isHigher) {
+      return {
+        text: loading === plan.name ? '처리 중...' : '업그레이드',
+        disabled: loading === plan.name,
+        className: plan.popular
+          ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-[1.02]'
+          : plan.bestValue
+          ? 'bg-purple-500 text-white hover:bg-purple-600 hover:scale-[1.02]'
+          : 'bg-secondary text-foreground hover:bg-secondary/80',
+      }
+    }
+
+    return {
+      text: '구독하기',
+      disabled: false,
+      className: 'bg-secondary text-foreground hover:bg-secondary/80',
+    }
+  }
+
+  if (pageLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
   return (
     <div>
-      {/* Value Comparison Banner */}
-      <div className="bg-gradient-to-r from-primary/10 via-purple-500/10 to-primary/10 border border-primary/20 rounded-xl p-4 mb-8 max-w-3xl mx-auto">
-        <div className="flex items-center justify-center gap-2 text-sm">
-          <TrendingUp className="w-4 h-4 text-primary" />
-          <span className="text-foreground">
-            <strong className="text-primary">AIAD</strong>는 타사 AI 광고 도구 대비{' '}
-            <strong className="text-green-500">최대 75% 저렴</strong>합니다
-          </span>
-        </div>
-        <p className="text-xs text-muted-foreground text-center mt-1">
-          AdCreative.ai $39/10개 vs AIAD $9.99/60개 이미지
-        </p>
-      </div>
-
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold text-foreground mb-2">플랜 선택</h1>
         <p className="text-muted-foreground">
-          필요에 맞는 플랜을 선택하세요. 언제든지 업그레이드하거나 다운그레이드할 수 있습니다.
+          필요에 맞는 플랜을 선택하세요. 언제든지 업그레이드할 수 있습니다.
         </p>
       </div>
+
+      {/* Error Toast */}
+      {error && (
+        <div className="max-w-2xl mx-auto mb-6 bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+            <p className="text-red-500 font-medium">{error}</p>
+          </div>
+          <button
+            onClick={() => setError(null)}
+            className="p-1 hover:bg-red-500/20 rounded-lg transition-colors"
+          >
+            <X className="w-4 h-4 text-red-500" />
+          </button>
+        </div>
+      )}
 
       {/* Billing Toggle */}
       <div className="flex justify-center mb-8">
@@ -229,156 +322,163 @@ export function PricingContent() {
 
       {/* Plans Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-        {plans.map((plan) => (
-          <div
-            key={plan.name}
-            className={`relative bg-card border rounded-xl p-6 flex flex-col ${
-              plan.popular
-                ? 'border-primary ring-2 ring-primary/20'
-                : plan.bestValue
-                ? 'border-purple-500 ring-2 ring-purple-500/20'
-                : 'border-border'
-            }`}
-          >
-            {/* Badges */}
-            {plan.popular && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full">
-                인기
-              </div>
-            )}
-            {plan.bestValue && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-xs font-medium px-3 py-1 rounded-full">
-                Best Value
-              </div>
-            )}
+        {plans.map((plan) => {
+          const buttonState = getButtonState(plan)
+          const isCurrentPlan = plan.name === currentPlanType
 
-            <div className="flex items-center gap-2 mb-2">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                plan.bestValue ? 'bg-purple-500/10 text-purple-500' : 'bg-primary/10 text-primary'
-              }`}>
-                {plan.icon}
-              </div>
-              <h3 className="text-lg font-semibold text-foreground">
-                {plan.displayName}
-              </h3>
-            </div>
-
-            <p className="text-sm text-muted-foreground mb-4">
-              {plan.description}
-            </p>
-
-            <div className="mb-4">
-              <span className="text-3xl font-bold text-foreground">
-                {getPrice(plan)}
-              </span>
-              {plan.priceMonthly > 0 && (
-                <span className="text-muted-foreground">/월</span>
+          return (
+            <div
+              key={plan.name}
+              className={`relative bg-card border rounded-xl p-6 flex flex-col ${
+                isCurrentPlan
+                  ? 'border-primary ring-2 ring-primary/30'
+                  : plan.popular
+                  ? 'border-primary ring-2 ring-primary/20'
+                  : plan.bestValue
+                  ? 'border-purple-500 ring-2 ring-purple-500/20'
+                  : 'border-border'
+              }`}
+            >
+              {/* Badges */}
+              {isCurrentPlan && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full">
+                  현재 플랜
+                </div>
               )}
-              {interval === 'yearly' && getYearlySavings(plan) && (
-                <div className="mt-1">
-                  <span className="text-sm font-semibold text-green-500">
-                    연 ${getYearlySavings(plan)?.toFixed(2)} 절약!
+              {!isCurrentPlan && plan.popular && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full">
+                  인기
+                </div>
+              )}
+              {!isCurrentPlan && plan.bestValue && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-xs font-medium px-3 py-1 rounded-full">
+                  Best Value
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  isCurrentPlan
+                    ? 'bg-primary/20 text-primary'
+                    : plan.bestValue
+                    ? 'bg-purple-500/10 text-purple-500'
+                    : 'bg-primary/10 text-primary'
+                }`}>
+                  {plan.icon}
+                </div>
+                <h3 className="text-lg font-semibold text-foreground">
+                  {plan.displayName}
+                </h3>
+              </div>
+
+              <p className="text-sm text-muted-foreground mb-4">
+                {plan.description}
+              </p>
+
+              <div className="mb-4">
+                <span className="text-3xl font-bold text-foreground">
+                  {getPrice(plan)}
+                </span>
+                {plan.priceMonthly > 0 && (
+                  <span className="text-muted-foreground">/월</span>
+                )}
+                {interval === 'yearly' && getYearlySavings(plan) && (
+                  <div className="mt-1">
+                    <span className="text-sm font-semibold text-green-500">
+                      연 ${getYearlySavings(plan)?.toFixed(2)} 절약!
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Value Highlight Badge */}
+              {plan.valueHighlight && (
+                <div className="mb-4 inline-flex items-center gap-1 bg-green-500/10 text-green-600 text-xs font-medium px-2 py-1 rounded-full">
+                  <TrendingUp className="w-3 h-3" />
+                  {plan.valueHighlight}
+                </div>
+              )}
+
+              {/* Limits */}
+              <div className="space-y-2 mb-6 pb-6 border-b border-border">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">아바타</span>
+                  <span className={`font-medium ${isUnlimited(plan.limits.avatars) ? 'text-purple-500 flex items-center gap-1' : 'text-foreground'}`}>
+                    {isUnlimited(plan.limits.avatars) && <Infinity className="w-4 h-4" />}
+                    {plan.limits.avatars}
                   </span>
                 </div>
-              )}
-            </div>
-
-            {/* Value Highlight Badge */}
-            {plan.valueHighlight && (
-              <div className="mb-4 inline-flex items-center gap-1 bg-green-500/10 text-green-600 text-xs font-medium px-2 py-1 rounded-full">
-                <TrendingUp className="w-3 h-3" />
-                {plan.valueHighlight}
-              </div>
-            )}
-
-            {/* Limits */}
-            <div className="space-y-2 mb-6 pb-6 border-b border-border">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">아바타</span>
-                <span className={`font-medium ${isUnlimited(plan.limits.avatars) ? 'text-purple-500 flex items-center gap-1' : 'text-foreground'}`}>
-                  {isUnlimited(plan.limits.avatars) && <Infinity className="w-4 h-4" />}
-                  {plan.limits.avatars}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">음악</span>
-                <span className={`font-medium ${isUnlimited(plan.limits.music) ? 'text-purple-500 flex items-center gap-1' : 'text-foreground'}`}>
-                  {isUnlimited(plan.limits.music) && <Infinity className="w-4 h-4" />}
-                  {plan.limits.music}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">제품</span>
-                <span className={`font-medium ${isUnlimited(plan.limits.products) ? 'text-purple-500 flex items-center gap-1' : 'text-foreground'}`}>
-                  {isUnlimited(plan.limits.products) && <Infinity className="w-4 h-4" />}
-                  {plan.limits.products}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">크레딧</span>
-                <span className="font-semibold text-primary">{plan.limits.credits}</span>
-              </div>
-              {/* Credit Estimates - Image and Video separately */}
-              {(plan.limits.imageEstimate || plan.limits.videoEstimate) && (
-                <div className="pt-2 space-y-1 border-t border-border/50 mt-2">
-                  {plan.limits.imageEstimate && (
-                    <div className="text-xs text-muted-foreground text-right">
-                      {plan.limits.imageEstimate}
-                    </div>
-                  )}
-                  {plan.limits.videoEstimate && (
-                    <div className="text-xs text-muted-foreground text-right">
-                      {plan.limits.videoEstimate}
-                    </div>
-                  )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">음악</span>
+                  <span className={`font-medium ${isUnlimited(plan.limits.music) ? 'text-purple-500 flex items-center gap-1' : 'text-foreground'}`}>
+                    {isUnlimited(plan.limits.music) && <Infinity className="w-4 h-4" />}
+                    {plan.limits.music}
+                  </span>
                 </div>
-              )}
-            </div>
-
-            {/* Features */}
-            <ul className="space-y-3 mb-6 flex-grow">
-              {plan.features.map((feature, idx) => {
-                const isLimitation = feature === '워터마크 포함'
-                return (
-                  <li key={idx} className="flex items-start gap-2 text-sm">
-                    {isLimitation ? (
-                      <X className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    ) : (
-                      <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">제품</span>
+                  <span className={`font-medium ${isUnlimited(plan.limits.products) ? 'text-purple-500 flex items-center gap-1' : 'text-foreground'}`}>
+                    {isUnlimited(plan.limits.products) && <Infinity className="w-4 h-4" />}
+                    {plan.limits.products}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">크레딧</span>
+                  <span className="font-semibold text-primary">{plan.limits.credits}</span>
+                </div>
+                {/* Credit Estimates - Image and Video separately */}
+                {(plan.limits.imageEstimate || plan.limits.videoEstimate) && (
+                  <div className="pt-2 space-y-1 border-t border-border/50 mt-2">
+                    {plan.limits.imageEstimate && (
+                      <div className="text-xs text-muted-foreground text-right">
+                        {plan.limits.imageEstimate}
+                      </div>
                     )}
-                    <span className={isLimitation ? 'text-muted-foreground' : 'text-foreground'}>
-                      {feature}
-                    </span>
-                  </li>
-                )
-              })}
-            </ul>
+                    {plan.limits.videoEstimate && (
+                      <div className="text-xs text-muted-foreground text-right">
+                        {plan.limits.videoEstimate}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
-            <button
-              onClick={() => handleSubscribe(plan.name)}
-              disabled={plan.name === 'FREE' || loading === plan.name}
-              className={`w-full py-2.5 rounded-lg font-medium transition-all ${
-                plan.name === 'FREE'
-                  ? 'bg-secondary text-muted-foreground cursor-default'
-                  : plan.popular
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-[1.02]'
-                  : plan.bestValue
-                  ? 'bg-purple-500 text-white hover:bg-purple-600 hover:scale-[1.02]'
-                  : 'bg-secondary text-foreground hover:bg-secondary/80'
-              } disabled:opacity-50`}
-            >
-              {loading === plan.name
-                ? '처리 중...'
-                : plan.name === 'FREE'
-                ? '현재 플랜'
-                : plan.popular
-                ? '시작하기'
-                : plan.bestValue
-                ? '업그레이드'
-                : '구독하기'}
-            </button>
-          </div>
-        ))}
+              {/* Features */}
+              <ul className="space-y-3 mb-6 flex-grow">
+                {plan.features.map((feature, idx) => {
+                  const isLimitation = feature === '워터마크 포함'
+                  return (
+                    <li key={idx} className="flex items-start gap-2 text-sm">
+                      {isLimitation ? (
+                        <X className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      ) : (
+                        <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      )}
+                      <span className={isLimitation ? 'text-muted-foreground' : 'text-foreground'}>
+                        {feature}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+
+              <button
+                onClick={() => handleSubscribe(plan.name)}
+                disabled={buttonState.disabled}
+                className={`w-full py-2.5 rounded-lg font-medium transition-all ${buttonState.className}`}
+              >
+                {loading === plan.name ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    처리 중...
+                  </span>
+                ) : (
+                  buttonState.text
+                )}
+              </button>
+            </div>
+          )
+        })}
       </div>
 
       {/* Trust Badges */}
