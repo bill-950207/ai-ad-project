@@ -390,7 +390,7 @@ const cameraCompositionDescriptions: Record<CameraCompositionType, string> = {
   'selfie-high': 'high angle selfie perspective, camera looking down from above',
   'selfie-front': 'eye-level frontal view, direct eye contact',
   'selfie-side': 'three-quarter angle, showing facial contours',
-  tripod: 'stable tripod shot, medium distance',
+  tripod: 'side angle shot, three-quarter profile view',
   closeup: 'close-up portrait, face and upper body',
   fullbody: 'full body shot, entire person visible',
   'ugc-closeup': 'UGC-style medium close-up, chest-up framing',
