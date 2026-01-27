@@ -31,14 +31,16 @@ export interface AdElementOptions {
   colorTone: string         // 색상 톤
 }
 
-// 씬별 광고 요소 (Step 4에서 씬별로 개별 설정)
+// 씬별 광고 요소 (Step 3에서 씬별로 개별 설정)
 export interface SceneElementOptions {
-  background: string        // 배경/장소
-  mood: string              // 분위기/톤
-  cameraAngle: string       // 카메라 구도
-  productPlacement: string  // 제품 배치/연출 방식
-  lighting: string          // 조명 스타일
-  colorTone: string         // 색상 톤
+  // 사용자 설정 가능 (UI 표시) - LLM이 자유롭게 생성
+  background: string                                           // 배경/장소
+  mood: string                                                 // 분위기/톤
+  additionalPrompt: string                                     // 추가 지시사항
+  // AI 생성 (UI에 표시하지 않음)
+  movementAmplitude?: 'auto' | 'small' | 'medium' | 'large'    // 카메라 움직임 속도 (Vidu용)
+  imagePrompt?: string                                         // Seedream용 영어 프롬프트
+  videoPrompt?: string                                         // Vidu용 영어 프롬프트
 }
 
 // 기본 씬 요소 생성
@@ -46,10 +48,8 @@ export function createDefaultSceneElement(): SceneElementOptions {
   return {
     background: '',
     mood: '',
-    cameraAngle: '',
-    productPlacement: '',
-    lighting: '',
-    colorTone: '',
+    additionalPrompt: '',
+    movementAmplitude: 'medium',
   }
 }
 
@@ -60,11 +60,16 @@ export interface RecommendedVideoSettings {
   sceneDurations: number[]
 }
 
+// 시나리오 요소 (간소화 - mood만 필수)
+export interface ScenarioElements {
+  mood: string  // 전체 분위기/톤
+}
+
 // 시나리오 정보
 export interface ScenarioInfo {
   title: string
   description: string
-  elements: AdElementOptions
+  elements: ScenarioElements | AdElementOptions  // 새 형식: mood만, 레거시 호환: 6개 전부
   videoSettings?: RecommendedVideoSettings  // AI 추천 영상 설정
   sceneElements?: SceneElementOptions[]     // AI 추천 씬별 광고 요소
   scenes?: SceneInfo[]          // 개별 씬 배열 (Kling O1 멀티씬용)
@@ -266,12 +271,7 @@ const createDefaultScenario = (): ScenarioInfo => ({
   title: '',
   description: '',
   elements: {
-    background: '',
     mood: '',
-    cameraAngle: '',
-    productPlacement: '',
-    lighting: '',
-    colorTone: '',
   },
 })
 
@@ -444,17 +444,20 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
   // Actions
   // ============================================================
 
-  // 시나리오 요소 업데이트
+  // 시나리오 요소 업데이트 (주로 mood만 사용)
   const updateScenarioElement = useCallback((key: keyof AdElementOptions, value: string) => {
     setScenarioInfo(prev => {
       if (!prev) {
         const newScenario = createDefaultScenario()
-        newScenario.elements[key] = value
+        // mood는 항상 존재
+        if (key === 'mood') {
+          newScenario.elements.mood = value
+        }
         return newScenario
       }
       return {
         ...prev,
-        elements: { ...prev.elements, [key]: value },
+        elements: { ...prev.elements, [key]: value } as ScenarioElements | AdElementOptions,
       }
     })
   }, [])
@@ -676,10 +679,14 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
             // 새 형식: 씬별 요소 배열 그대로 복원
             setSceneElements(parsed._sceneElements as SceneElementOptions[])
           } else if (parsed.elements && !parsed._sceneElements) {
-            // 레거시 호환: 기존 elements를 모든 씬에 동일하게 적용
+            // 레거시 호환: 기존 elements를 새 형식으로 변환
             const legacyElements = parsed.elements as AdElementOptions
             const count = parsed._videoSettings?.sceneCount || 3
-            setSceneElements(Array(count).fill(null).map(() => ({ ...legacyElements })))
+            setSceneElements(Array(count).fill(null).map(() => ({
+              background: legacyElements.background || '',
+              mood: legacyElements.mood || '',
+              additionalPrompt: '',
+            })))
           }
 
           // _videoSettings, _sceneElements는 scenarioInfo에서 제거

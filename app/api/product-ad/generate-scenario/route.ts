@@ -25,6 +25,7 @@ interface GenerateScenarioRequest {
   referenceDescription?: string
   count?: number  // 생성할 시나리오 수 (기본 3)
   sceneCount?: number  // 씬 개수 (기본 3, 씬별 요소 생성용)
+  language?: 'ko' | 'en' | 'ja'  // 출력 언어 (기본 ko)
 }
 
 /**
@@ -46,24 +47,19 @@ async function fetchImageAsBase64(url: string): Promise<{ base64: string; mimeTy
   }
 }
 
-// 전체 요소 (레거시 호환 + 전체 분위기)
+// 전체 요소 (간소화 - mood만 필수)
 interface ScenarioElements {
-  background: string
   mood: string
-  cameraAngle: string
-  productPlacement: string
-  lighting: string
-  colorTone: string
 }
 
-// 씬별 요소 (신규)
+// 씬별 요소 (간소화 + AI 생성 프롬프트)
 interface SceneElementOptions {
-  background: string
-  mood: string
-  cameraAngle: string
-  productPlacement: string
-  lighting: string
-  colorTone: string
+  background: string           // 배경/장소 (한국어, 자유 입력)
+  mood: string                 // 분위기/톤 (한국어, 자유 입력)
+  additionalPrompt: string     // 추가 지시사항 (한국어)
+  movementAmplitude: 'auto' | 'small' | 'medium' | 'large'  // 카메라 움직임 속도
+  imagePrompt: string          // Seedream용 영어 프롬프트
+  videoPrompt: string          // Vidu용 영어 프롬프트
 }
 
 // 영상 설정 추천
@@ -103,6 +99,7 @@ export async function POST(request: NextRequest) {
       referenceDescription,
       count = 3,
       sceneCount = 3,  // 기본 3개 씬
+      language = 'ko',  // 기본 한국어
     } = body
 
     if (!productName) {
@@ -112,13 +109,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 언어명 매핑
+    const languageNames: Record<string, string> = {
+      ko: 'Korean',
+      en: 'English',
+      ja: 'Japanese',
+    }
+    const outputLanguage = languageNames[language] || 'Korean'
+
     // 참조 기반인지 확인
     const isReference = !!referenceElements || !!referenceDescription
 
     // 프롬프트 구성
     const prompt = isReference
-      ? buildReferenceBasedPrompt(productName, productDescription, sellingPoints, referenceElements, referenceDescription, sceneCount)
-      : buildAiRecommendPrompt(productName, productDescription, sellingPoints, count, sceneCount)
+      ? buildReferenceBasedPrompt(productName, productDescription, sellingPoints, referenceElements, referenceDescription, sceneCount, outputLanguage)
+      : buildAiRecommendPrompt(productName, productDescription, sellingPoints, count, sceneCount, outputLanguage)
 
     // 제품 이미지 base64 변환 (있을 경우)
     let productImageData: { base64: string; mimeType: string } | null = null
@@ -133,7 +138,7 @@ export async function POST(request: NextRequest) {
       responseMimeType: 'application/json',
       responseSchema: {
         type: Type.OBJECT,
-        required: ['scenarios', 'reasons'],
+        required: ['scenarios'],
         properties: {
           scenarios: {
             type: Type.ARRAY,
@@ -144,38 +149,43 @@ export async function POST(request: NextRequest) {
               properties: {
                 title: {
                   type: Type.STRING,
-                  description: '시나리오 제목 (한국어)',
+                  description: 'Scenario title (in output language)',
                 },
                 description: {
                   type: Type.STRING,
-                  description: '시나리오 설명 (1-2문장, 한국어)',
+                  description: 'Scenario description 1-2 sentences (in output language)',
                 },
                 elements: {
                   type: Type.OBJECT,
-                  description: '전체 영상의 대표 분위기/스타일 (레거시 호환)',
-                  required: ['background', 'mood', 'cameraAngle', 'productPlacement', 'lighting', 'colorTone'],
+                  description: 'Overall mood/style',
+                  required: ['mood'],
                   properties: {
-                    background: { type: Type.STRING, description: '대표 배경/장소' },
-                    mood: { type: Type.STRING, description: '전체 분위기/톤' },
-                    cameraAngle: { type: Type.STRING, description: '대표 카메라 구도' },
-                    productPlacement: { type: Type.STRING, description: '대표 제품 배치' },
-                    lighting: { type: Type.STRING, description: '대표 조명 스타일' },
-                    colorTone: { type: Type.STRING, description: '대표 색상 톤' },
+                    mood: { type: Type.STRING, description: 'Overall mood (in output language)' },
                   },
                 },
                 sceneElements: {
                   type: Type.ARRAY,
-                  description: '씬별 광고 요소 (스토리 흐름에 맞게 연속성 있게)',
+                  description: 'Per-scene elements + AI generated prompts',
                   items: {
                     type: Type.OBJECT,
-                    required: ['background', 'mood', 'cameraAngle', 'productPlacement', 'lighting', 'colorTone'],
+                    required: ['background', 'mood', 'additionalPrompt', 'movementAmplitude', 'imagePrompt', 'videoPrompt'],
                     properties: {
-                      background: { type: Type.STRING, description: '이 씬의 배경/장소' },
-                      mood: { type: Type.STRING, description: '이 씬의 분위기/톤' },
-                      cameraAngle: { type: Type.STRING, description: '이 씬의 카메라 구도' },
-                      productPlacement: { type: Type.STRING, description: '이 씬의 제품 배치' },
-                      lighting: { type: Type.STRING, description: '이 씬의 조명 스타일' },
-                      colorTone: { type: Type.STRING, description: '이 씬의 색상 톤' },
+                      background: { type: Type.STRING, description: 'Background/location - write freely (in output language)' },
+                      mood: { type: Type.STRING, description: 'Mood/tone - write freely (in output language)' },
+                      additionalPrompt: { type: Type.STRING, description: 'Additional direction for this scene (in output language)' },
+                      movementAmplitude: {
+                        type: Type.STRING,
+                        description: '카메라 움직임 속도 (Vidu용)',
+                        enum: ['auto', 'small', 'medium', 'large'],
+                      },
+                      imagePrompt: {
+                        type: Type.STRING,
+                        description: 'Seedream용 영어 이미지 프롬프트 (50-80 words)',
+                      },
+                      videoPrompt: {
+                        type: Type.STRING,
+                        description: 'Vidu용 영어 영상 프롬프트 (50-80 words, motion included)',
+                      },
                     },
                   },
                 },
@@ -201,18 +211,6 @@ export async function POST(request: NextRequest) {
                   },
                 },
               },
-            },
-          },
-          reasons: {
-            type: Type.OBJECT,
-            description: '각 요소별 선택 이유',
-            properties: {
-              background: { type: Type.STRING },
-              mood: { type: Type.STRING },
-              cameraAngle: { type: Type.STRING },
-              productPlacement: { type: Type.STRING },
-              lighting: { type: Type.STRING },
-              colorTone: { type: Type.STRING },
             },
           },
         },
@@ -244,12 +242,10 @@ export async function POST(request: NextRequest) {
     const responseText = response.text || ''
     const result = JSON.parse(responseText) as {
       scenarios: Scenario[]
-      reasons: Record<string, string>
     }
 
     return NextResponse.json({
       scenarios: result.scenarios,
-      reasons: result.reasons,
     })
   } catch (error) {
     console.error('시나리오 생성 오류:', error)
@@ -265,10 +261,14 @@ function buildAiRecommendPrompt(
   productDescription: string | null | undefined,
   sellingPoints: string[] | null | undefined,
   count: number,
-  sceneCount: number
+  _sceneCount: number,  // 미사용 - AI가 자체 결정
+  outputLanguage: string  // 출력 언어
 ): string {
   return `You are an expert advertising producer specializing in product video ads.
 Analyze the product information (including the product image if provided) and recommend ${count} optimal advertising scenarios.
+
+OUTPUT LANGUAGE: All text fields (title, description, background, mood, additionalPrompt, elements.mood) must be in ${outputLanguage}.
+Only imagePrompt and videoPrompt should be in English.
 
 IMPORTANT: If a product image is provided, carefully analyze its visual characteristics:
 - Product shape, size, and form factor
@@ -277,56 +277,58 @@ IMPORTANT: If a product image is provided, carefully analyze its visual characte
 - Visual appeal and premium feel
 Use these visual insights to inform your scenario recommendations.
 
-OUTPUT LANGUAGE: Korean
-
 === PRODUCT INFORMATION ===
 Product Name: ${productName}
 Product Description: ${productDescription || 'Not provided'}
 Selling Points: ${sellingPoints?.join(', ') || 'Not provided'}
 Product Image: [Analyze the provided image for visual characteristics]
 
-=== SCENE COUNT ===
-Number of scenes to create: ${sceneCount}
-You MUST generate exactly ${sceneCount} scene elements for each scenario.
+=== SCENE COUNT (AI DECIDES) ===
+Based on the product characteristics and storytelling needs, YOU decide the optimal number of scenes (2-8).
+- Simple products: 2-3 scenes
+- Products with multiple features: 4-5 scenes
+- Complex or premium products: 5-8 scenes
+Choose what best tells this product's story.
 
 === SCENE-BY-SCENE STORYTELLING ===
 CRITICAL: Design each scene to flow naturally into the next while maintaining the overall mood.
 Think of it as a short film that tells a story about the product.
 Create a unique and creative narrative arc that best suits this specific product.
 
-=== ADVERTISING ELEMENTS ===
-For EACH SCENE, specify:
-1. background (배경/장소): Where is this scene set?
-   - Options: 미니멀 스튜디오, 고급 인테리어, 자연 배경, 도시 풍경, 추상적 배경, 그라데이션 배경, 텍스처 배경, etc.
+=== FOR EACH SCENE, PROVIDE ===
+1. background (배경/장소, 한국어): 제품 특성에 맞는 창의적이고 구체적인 장소 (자유 작성)
 
-2. mood (분위기/톤): What feeling does this scene convey?
-   - Options: 고급스럽고 우아한, 따뜻하고 친근한, 모던하고 세련된, 역동적이고 에너지틱한, 차분하고 편안한, 트렌디하고 젊은, 클래식하고 전통적인, etc.
+2. mood (분위기/톤, 한국어): 제품과 씬에 어울리는 구체적인 분위기 (자유 작성)
 
-3. cameraAngle (카메라 구도): How is the product filmed in this scene?
-   - Options: 정면 클로즈업, 45도 각도, 측면 샷, 탑다운 뷰, 로우앵글, 극적인 앵글, 매크로 샷, etc.
+3. additionalPrompt (추가 지시사항, 한국어): 이 씬만의 특별한 연출/카메라 워크/비주얼 포인트 (자유 작성)
 
-4. productPlacement (제품 배치/연출): How is the product presented in this scene?
-   - Options: 중앙 배치, 플로팅 효과, 회전하는 모션, 언박싱 연출, 사용 장면, 비교 배치, 디테일 강조, etc.
+4. movementAmplitude: "small" | "medium" | "large" | "auto"
 
-5. lighting (조명 스타일): What lighting is used in this scene?
-   - Options: 스튜디오 조명, 자연광, 드라마틱 조명, 소프트 라이트, 백라이트, 네온 조명, 골든 아워, etc.
+5. imagePrompt (영어, 50-80 words): Seedream 이미지 생성용
+   - Start with: "The ${productName} shown in the attached image"
+   - End with: "cinematic lighting, photorealistic, 4K, commercial quality"
+   - NO PEOPLE
 
-6. colorTone (색상 톤): What color palette dominates this scene?
-   - Options: 밝고 화사한, 따뜻한 톤, 차가운 톤, 모노톤, 비비드 컬러, 파스텔 톤, 다크 톤, etc.
+6. videoPrompt (영어, 50-80 words): Vidu 영상 생성용
+   - Start with: "The ${productName} shown in the attached image"
+   - Include motion with "slowly"
+   - End with: "cinematic lighting, photorealistic, 4K"
+   - NO PEOPLE
 
 === VIDEO SETTINGS ===
-7. aspectRatio: "16:9" (landscape), "9:16" (portrait/vertical), or "1:1" (square)
-8. sceneCount: Must be ${sceneCount}
-9. sceneDurations: Array of ${sceneCount} durations (1-8 seconds each)
+- aspectRatio: "16:9" (landscape), "9:16" (portrait/vertical), or "1:1" (square)
+- sceneCount: The number of scenes YOU decided (2-8)
+- sceneDurations: Array of durations matching your sceneCount (1-8 seconds each)
 
-=== OUTPUT REQUIREMENTS ===
-1. "elements" field: Overall/representative style for the entire video (use the dominant mood)
-2. "sceneElements" array: EXACTLY ${sceneCount} elements, one for each scene
-   - Each scene should build on the previous one
-   - Maintain visual continuity while adding variety
-   - The overall mood should be consistent but scenes can have subtle variations
+=== OUTPUT FORMAT ===
+1. "elements": { "mood": "overall mood in ${outputLanguage}" }
+2. "sceneElements": all 6 fields for each scene
+3. title, description, background, mood, additionalPrompt: ${outputLanguage}
+4. imagePrompt, videoPrompt: English only
 
-Create ${count} diverse scenarios that tell different stories about the product.`
+background, mood, additionalPrompt: Write creatively and freely based on the product.
+
+Create ${count} diverse scenarios.`
 }
 
 function buildReferenceBasedPrompt(
@@ -335,10 +337,14 @@ function buildReferenceBasedPrompt(
   sellingPoints: string[] | null | undefined,
   referenceElements: Record<string, string> | undefined,
   referenceDescription: string | undefined,
-  sceneCount: number
+  _sceneCount: number,  // 미사용 - AI가 자체 결정
+  outputLanguage: string  // 출력 언어
 ): string {
   return `You are an expert advertising producer specializing in product video ads.
 Based on the reference video analysis, create an advertising scenario adapted for this product.
+
+OUTPUT LANGUAGE: All text fields (title, description, background, mood, additionalPrompt, elements.mood) must be in ${outputLanguage}.
+Only imagePrompt and videoPrompt should be in English.
 
 IMPORTANT: If a product image is provided, carefully analyze its visual characteristics:
 - Product shape, size, and form factor
@@ -346,8 +352,6 @@ IMPORTANT: If a product image is provided, carefully analyze its visual characte
 - Packaging design
 - Visual appeal and premium feel
 Use these visual insights along with the reference style to create the optimal scenario.
-
-OUTPUT LANGUAGE: Korean
 
 === PRODUCT INFORMATION ===
 Product Name: ${productName}
@@ -361,23 +365,42 @@ ${referenceDescription || 'No description provided'}
 Reference Elements:
 ${referenceElements ? Object.entries(referenceElements).map(([key, value]) => `- ${key}: ${value}`).join('\n') : 'Not provided'}
 
-=== SCENE COUNT ===
-Number of scenes to create: ${sceneCount}
-You MUST generate exactly ${sceneCount} scene elements.
+=== SCENE COUNT (AI DECIDES) ===
+Based on the product characteristics and reference style, YOU decide the optimal number of scenes (2-8).
+Choose what best tells this product's story while adapting the reference style.
 
-=== TASK ===
-Adapt the reference video style for this product while:
-1. Keeping elements that work well for this product type
-2. Adjusting elements that don't fit the product
-3. Maintaining the overall feel but optimizing for this specific product
-4. Creating ${sceneCount} scenes that tell a cohesive story
+=== FOR EACH SCENE, PROVIDE ===
+1. background (배경/장소, 한국어): 참조 스타일을 적용하여 제품에 맞게 자유 작성
 
-=== OUTPUT REQUIREMENTS ===
-1. "elements" field: Overall/representative style (based on reference mood)
-2. "sceneElements" array: EXACTLY ${sceneCount} scene-specific elements
-   - Each scene should flow naturally into the next
-   - Adapt the reference style scene by scene
+2. mood (분위기/톤, 한국어): 참조 영상의 분위기를 기반으로 제품에 맞게 자유 작성
 
-Create 1 optimized scenario that combines the reference style with this product's unique characteristics.
-Explain why each element was chosen (kept from reference or adapted).`
+3. additionalPrompt (추가 지시사항, 한국어): 참조 영상의 연출을 분석하여 적용 (자유 작성)
+
+4. movementAmplitude: "small" | "medium" | "large" | "auto"
+
+5. imagePrompt (영어, 50-80 words): Seedream 이미지 생성용
+   - Start with: "The ${productName} shown in the attached image"
+   - End with: "cinematic lighting, photorealistic, 4K, commercial quality"
+   - NO PEOPLE
+
+6. videoPrompt (영어, 50-80 words): Vidu 영상 생성용
+   - Start with: "The ${productName} shown in the attached image"
+   - Include motion with "slowly"
+   - End with: "cinematic lighting, photorealistic, 4K"
+   - NO PEOPLE
+
+=== VIDEO SETTINGS ===
+- aspectRatio: "16:9" (landscape), "9:16" (portrait/vertical), or "1:1" (square)
+- sceneCount: The number of scenes YOU decided (2-8)
+- sceneDurations: Array of durations matching your sceneCount (1-8 seconds each)
+
+=== OUTPUT FORMAT ===
+1. "elements": { "mood": "overall mood in ${outputLanguage}" }
+2. "sceneElements": all 6 fields for each scene
+3. title, description, background, mood, additionalPrompt: ${outputLanguage}
+4. imagePrompt, videoPrompt: English only
+
+background, mood, additionalPrompt: Write creatively and freely based on the product.
+
+Create 1 optimized scenario adapting the reference style.`
 }
