@@ -139,7 +139,7 @@ Provide realistic and practical suggestions for each element.`
 
   const config: GenerateContentConfig = {
     thinkingConfig: {
-      thinkingLevel: ThinkingLevel.MEDIUM,
+      thinkingLevel: ThinkingLevel.LOW,
     },
     responseMimeType: 'application/json',
     responseSchema: getResponseSchema(),
@@ -175,7 +175,7 @@ Consider what visual styles and techniques would work well for this type of prod
 
   const config: GenerateContentConfig = {
     thinkingConfig: {
-      thinkingLevel: ThinkingLevel.MEDIUM,
+      thinkingLevel: ThinkingLevel.LOW,
     },
     responseMimeType: 'application/json',
     responseSchema: getResponseSchema(),

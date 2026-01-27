@@ -107,7 +107,7 @@ Provide reasoning for each choice.`
 
   const config: GenerateContentConfig = {
     thinkingConfig: {
-      thinkingLevel: ThinkingLevel.MEDIUM,
+      thinkingLevel: ThinkingLevel.LOW,
     },
     responseMimeType: 'application/json',
     responseSchema: {
