@@ -15,13 +15,13 @@ export interface AdProduct {
   selling_points?: string[] | null
 }
 
-export type WizardStep = 1 | 2 | 3 | 4 | 5 | 6
+export type WizardStep = 1 | 2 | 3 | 4 | 5
 export type ScenarioMethod = 'direct' | 'ai-auto' | 'reference'
 export type AspectRatio = '16:9' | '9:16' | '1:1' | null
 export type VideoModel = 'seedance' | 'kling2.6' | 'wan2.6' | 'kling-o1' | 'vidu-q2'
 export type VideoResolution = '540p' | '720p' | '1080p'
 
-// 광고 요소 옵션들
+// 광고 요소 옵션들 (전체 영상용 - 레거시)
 export interface AdElementOptions {
   background: string        // 배경/장소
   mood: string              // 분위기/톤
@@ -29,6 +29,28 @@ export interface AdElementOptions {
   productPlacement: string  // 제품 배치/연출 방식
   lighting: string          // 조명 스타일
   colorTone: string         // 색상 톤
+}
+
+// 씬별 광고 요소 (Step 4에서 씬별로 개별 설정)
+export interface SceneElementOptions {
+  background: string        // 배경/장소
+  mood: string              // 분위기/톤
+  cameraAngle: string       // 카메라 구도
+  productPlacement: string  // 제품 배치/연출 방식
+  lighting: string          // 조명 스타일
+  colorTone: string         // 색상 톤
+}
+
+// 기본 씬 요소 생성
+export function createDefaultSceneElement(): SceneElementOptions {
+  return {
+    background: '',
+    mood: '',
+    cameraAngle: '',
+    productPlacement: '',
+    lighting: '',
+    colorTone: '',
+  }
 }
 
 // AI 추천 영상 설정
@@ -44,6 +66,7 @@ export interface ScenarioInfo {
   description: string
   elements: AdElementOptions
   videoSettings?: RecommendedVideoSettings  // AI 추천 영상 설정
+  sceneElements?: SceneElementOptions[]     // AI 추천 씬별 광고 요소
   scenes?: SceneInfo[]          // 개별 씬 배열 (Kling O1 멀티씬용)
   firstScenePrompt?: string     // LLM이 생성한 첫 씬 프롬프트 (레거시)
   videoPrompt?: string          // LLM이 생성한 영상 프롬프트 (레거시)
@@ -121,6 +144,7 @@ export interface ProductAdWizardState {
   sceneDurations: number[]  // 각 씬별 영상 길이 (초)
   videoResolution: VideoResolution  // 영상 해상도 (540p, 720p, 1080p)
   sceneCount: number  // 씬 개수 (2-8)
+  sceneElements: SceneElementOptions[]  // 씬별 광고 요소 (배경, 카메라앵글, 조명 등)
   multiShot: boolean  // 멀티샷 모드
   videoCount: number  // 생성할 영상 개수 (1-3)
   videoModel: VideoModel  // 영상 생성 모델
@@ -182,6 +206,9 @@ export interface ProductAdWizardActions {
   updateSceneDuration: (sceneIndex: number, duration: number) => void
   setVideoResolution: (resolution: VideoResolution) => void
   setSceneCount: (count: number) => void
+  setSceneElements: (elements: SceneElementOptions[]) => void
+  updateSceneElement: (sceneIndex: number, key: keyof SceneElementOptions, value: string) => void
+  applySceneElementToAll: (sourceIndex: number) => void  // 일괄 적용
   setMultiShot: (enabled: boolean) => void
   setVideoCount: (count: number) => void
   setVideoModel: (model: VideoModel) => void
@@ -217,7 +244,6 @@ export interface ProductAdWizardActions {
   canProceedToStep3: () => boolean
   canProceedToStep4: () => boolean
   canProceedToStep5: () => boolean
-  canProceedToStep6: () => boolean
   canGenerateVideo: () => boolean
 
   // Reset
@@ -288,6 +314,11 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
   const [sceneDurations, setSceneDurations] = useState<number[]>([3, 3, 3])  // 각 씬별 기본 3초
   const [videoResolution, setVideoResolution] = useState<VideoResolution>('720p')  // 영상 해상도
   const [sceneCount, setSceneCountState] = useState(3)  // 씬 개수 기본 3
+  const [sceneElements, setSceneElements] = useState<SceneElementOptions[]>([
+    createDefaultSceneElement(),
+    createDefaultSceneElement(),
+    createDefaultSceneElement(),
+  ])  // 씬별 광고 요소 (기본 3개 씬)
   const [multiShot, setMultiShot] = useState(false)
   const [videoModel, setVideoModel] = useState<VideoModel>('vidu-q2')  // 기본 Vidu Q2
   const [videoCount, setVideoCount] = useState(1)
@@ -340,7 +371,7 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
     })
   }, [])
 
-  // 씬 개수 설정 (sceneDurations도 함께 조정)
+  // 씬 개수 설정 (sceneDurations, sceneElements도 함께 조정)
   const setSceneCount = useCallback((count: number) => {
     setSceneCountState(count)
     setSceneDurations(prev => {
@@ -348,6 +379,17 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
       if (prev.length < count) {
         // 씬 추가: 기본 3초로 채움
         return [...prev, ...Array(count - prev.length).fill(3)]
+      }
+      // 씬 감소: 앞에서부터 유지
+      return prev.slice(0, count)
+    })
+    // sceneElements도 함께 동기화
+    setSceneElements(prev => {
+      if (prev.length === count) return prev
+      if (prev.length < count) {
+        // 씬 추가: 마지막 씬의 설정 복사 또는 기본값
+        const lastElement = prev[prev.length - 1] || createDefaultSceneElement()
+        return [...prev, ...Array(count - prev.length).fill(null).map(() => ({ ...lastElement }))]
       }
       // 씬 감소: 앞에서부터 유지
       return prev.slice(0, count)
@@ -362,6 +404,26 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
         updated[sceneIndex] = Math.max(1, Math.min(8, duration))  // 1-8초 범위
       }
       return updated
+    })
+  }, [])
+
+  // 씬별 광고 요소 업데이트
+  const updateSceneElement = useCallback((sceneIndex: number, key: keyof SceneElementOptions, value: string) => {
+    setSceneElements(prev => {
+      const updated = [...prev]
+      if (sceneIndex >= 0 && sceneIndex < updated.length) {
+        updated[sceneIndex] = { ...updated[sceneIndex], [key]: value }
+      }
+      return updated
+    })
+  }, [])
+
+  // 특정 씬의 설정을 모든 씬에 일괄 적용
+  const applySceneElementToAll = useCallback((sourceIndex: number) => {
+    setSceneElements(prev => {
+      if (sourceIndex < 0 || sourceIndex >= prev.length) return prev
+      const sourceElement = prev[sourceIndex]
+      return prev.map(() => ({ ...sourceElement }))
     })
   }, [])
 
@@ -467,10 +529,11 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
         productInfo: selectedProduct ? JSON.stringify(selectedProduct) : null,
         scenarioMethod,
         referenceInfo: referenceInfo ? JSON.stringify(referenceInfo) : null,
-        // 시나리오 정보에 영상 설정도 함께 저장
+        // 시나리오 정보에 영상 설정과 씬별 요소도 함께 저장
         scenarioInfo: scenarioInfo ? JSON.stringify({
           ...scenarioInfo,
           _videoSettings: { videoResolution, videoModel, sceneCount, sceneDurations },
+          _sceneElements: sceneElements,  // 씬별 광고 요소
         }) : null,
         aspectRatio,
         duration,
@@ -529,7 +592,7 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
   }, [
     draftId, step, selectedProduct, scenarioMethod, referenceInfo,
     scenarioInfo, aspectRatio, duration, sceneDurations, videoResolution, videoModel,
-    sceneCount, firstSceneOptions, selectedSceneIndex, videoRequestIds,
+    sceneCount, sceneElements, firstSceneOptions, selectedSceneIndex, videoRequestIds,
     resultVideoUrls, sceneKeyframes, sceneVideoSegments
   ])
 
@@ -606,12 +669,23 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
                 setSceneDurations(Array(sc).fill(3))
               }
             }
-            // _videoSettings는 scenarioInfo에서 제거
-            const { _videoSettings, ...scenarioData } = parsed
-            setScenarioInfo(scenarioData as ScenarioInfo)
-          } else {
-            setScenarioInfo(parsed as ScenarioInfo)
           }
+
+          // 씬별 광고 요소 복원
+          if (parsed._sceneElements && Array.isArray(parsed._sceneElements)) {
+            // 새 형식: 씬별 요소 배열 그대로 복원
+            setSceneElements(parsed._sceneElements as SceneElementOptions[])
+          } else if (parsed.elements && !parsed._sceneElements) {
+            // 레거시 호환: 기존 elements를 모든 씬에 동일하게 적용
+            const legacyElements = parsed.elements as AdElementOptions
+            const count = parsed._videoSettings?.sceneCount || 3
+            setSceneElements(Array(count).fill(null).map(() => ({ ...legacyElements })))
+          }
+
+          // _videoSettings, _sceneElements는 scenarioInfo에서 제거
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { _videoSettings, _sceneElements, ...scenarioData } = parsed
+          setScenarioInfo(scenarioData as ScenarioInfo)
         } catch { /* ignore */ }
       }
 
@@ -706,18 +780,19 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
   }, [scenarioMethod, referenceInfo, isAnalyzingReference])
 
   const canProceedToStep4 = useCallback(() => {
+    // Step 3 → Step 4 (통합): 시나리오 + 영상 설정 + 씬별 요소 필수
     if (!scenarioInfo) return false
-    // 최소한 배경과 분위기는 있어야 함
-    return !!scenarioInfo.elements.background && !!scenarioInfo.elements.mood
-  }, [scenarioInfo])
+    // 전체 분위기(mood) 필수
+    if (!scenarioInfo.elements.mood) return false
+    // 비율, 해상도 등 영상 설정 필수
+    if (!aspectRatio || !videoResolution) return false
+    // 모든 씬의 필수 요소 (background, mood)가 채워져 있어야 함
+    if (sceneElements.length === 0) return false
+    return sceneElements.every(elem => !!elem.background && !!elem.mood)
+  }, [scenarioInfo, aspectRatio, videoResolution, sceneElements])
 
   const canProceedToStep5 = useCallback(() => {
-    // Step 4 → Step 5: 비율, 해상도 등 영상 설정이 되어야 함
-    return !!aspectRatio && !!videoResolution
-  }, [aspectRatio, videoResolution])
-
-  const canProceedToStep6 = useCallback(() => {
-    // Step 5 → Step 6: 모든 씬 키프레임이 생성되어야 함
+    // Step 4 → Step 5: 모든 씬 키프레임이 생성되어야 함
     if (isGeneratingKeyframes) return false
     if (sceneKeyframes.length === 0) return false
     return sceneKeyframes.every(kf => kf.status === 'completed' && kf.imageUrl)
@@ -743,7 +818,7 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
   }, [])
 
   const goToNextStep = useCallback(() => {
-    setStep(prev => Math.min(prev + 1, 6) as WizardStep)
+    setStep(prev => Math.min(prev + 1, 5) as WizardStep)
     // 스크롤 최상단으로 이동
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -781,6 +856,11 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
     setSceneDurations([3, 3, 3])
     setVideoResolution('720p')
     setSceneCountState(3)
+    setSceneElements([
+      createDefaultSceneElement(),
+      createDefaultSceneElement(),
+      createDefaultSceneElement(),
+    ])
     setMultiShot(false)
     setVideoCount(1)
     setVideoModel('vidu-q2')
@@ -822,6 +902,7 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
     sceneDurations,
     videoResolution,
     sceneCount,
+    sceneElements,
     multiShot,
     videoCount,
     videoModel,
@@ -865,6 +946,9 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
     updateSceneDuration,
     setVideoResolution,
     setSceneCount,
+    setSceneElements,
+    updateSceneElement,
+    applySceneElementToAll,
     setMultiShot,
     setVideoCount,
     setVideoModel,
@@ -892,7 +976,6 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
     canProceedToStep3,
     canProceedToStep4,
     canProceedToStep5,
-    canProceedToStep6,
     canGenerateVideo,
     resetWizard,
   }
