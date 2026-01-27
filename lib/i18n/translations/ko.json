@@ -357,6 +357,16 @@
     "myVideos": "내 영상 광고",
     "createAd": "영상 광고 생성",
     "emptyAds": "생성된 영상 광고가 없습니다",
+    "continueEdit": "이어서 작성",
+    "inProgress": "작성 중",
+    "deleteModal": {
+      "title": "영상 삭제",
+      "confirmWithName": "\"{{name}}\" 영상을 삭제하시겠습니까?",
+      "confirm": "이 영상을 삭제하시겠습니까?",
+      "warning": "삭제된 영상은 복구할 수 없습니다.",
+      "cancel": "취소",
+      "deleting": "삭제 중..."
+    },
     "createFirstAd": "첫 영상 광고를 만들어보세요",
     "selectProduct": "제품 선택",
     "selectAvatar": "아바타 선택",
