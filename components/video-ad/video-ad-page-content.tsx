@@ -374,7 +374,7 @@ export function VideoAdPageContent() {
                         }}
                       />
                       {/* 재생 아이콘 오버레이 */}
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
                           <Play className="w-6 h-6 text-black ml-1" />
                         </div>
@@ -391,7 +391,7 @@ export function VideoAdPageContent() {
                             className="w-full h-full object-contain"
                           />
                           {/* 호버 시 액션 버튼 표시 */}
-                          <div className="absolute inset-0 flex items-center justify-center gap-2 sm:gap-3 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="absolute inset-0 flex items-center justify-center gap-2 sm:gap-3 bg-black/50 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                             <button
                               onClick={(e) => handleContinueEdit(e, video)}
                               className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors text-sm"
@@ -413,7 +413,7 @@ export function VideoAdPageContent() {
                           <Edit3 className="w-8 h-8 text-orange-500 mb-2" />
                           <span className="text-sm text-orange-500 font-medium">{t.videoAd?.inProgress || '작성 중'}</span>
                           {/* 호버 시 액션 버튼 표시 */}
-                          <div className="absolute inset-0 flex items-center justify-center gap-2 sm:gap-3 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="absolute inset-0 flex items-center justify-center gap-2 sm:gap-3 bg-black/50 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                             <button
                               onClick={(e) => handleContinueEdit(e, video)}
                               className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors text-sm"
