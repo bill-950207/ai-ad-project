@@ -87,10 +87,11 @@ export function ImageAdPageContent() {
   const pollingInProgressRef = useRef<Set<string>>(new Set())
 
   // 진행 중인 광고 폴링 (배치 지원, 비동기 병렬 처리)
+  // IMAGES_READY 상태도 포함: 페이지 새로고침 시 업로드 진행 상태 추적
   useEffect(() => {
     const inProgressAds = imageAds.filter(
       ad =>
-        ['IN_QUEUE', 'IN_PROGRESS'].includes(ad.status) &&
+        ['IN_QUEUE', 'IN_PROGRESS', 'IMAGES_READY'].includes(ad.status) &&
         (ad.batch_request_ids || ad.fal_request_id) &&
         !completedPollingIdsRef.current.has(ad.id) // 이미 완료된 건 제외
     )
@@ -385,7 +386,9 @@ export function ImageAdPageContent() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {imageAds.map(ad => {
-              const isInProgress = ['IN_QUEUE', 'IN_PROGRESS'].includes(ad.status)
+              const isGenerating = ['IN_QUEUE', 'IN_PROGRESS'].includes(ad.status)
+              const isUploading = ad.status === 'IMAGES_READY'
+              const isInProgress = isGenerating || isUploading
               const isFailed = ad.status === 'FAILED'
               // 하위 호환성: image_urls가 없으면 image_url로 배열 생성
               const imageUrls = ad.image_urls || (ad.image_url ? [ad.image_url] : [])
@@ -432,7 +435,10 @@ export function ImageAdPageContent() {
                     <div className="w-full aspect-square flex flex-col items-center justify-center bg-secondary/30 gap-3">
                       <Loader2 className="w-10 h-10 text-primary animate-spin" />
                       <span className="text-sm text-muted-foreground">
-                        이미지 생성 중... {ad.num_images && ad.num_images > 1 ? `(${ad.num_images}장)` : ''}
+                        {isUploading
+                          ? '이미지 업로드 중...'
+                          : `이미지 생성 중... ${ad.num_images && ad.num_images > 1 ? `(${ad.num_images}장)` : ''}`
+                        }
                       </span>
                     </div>
                   ) : isFailed ? (
@@ -498,7 +504,7 @@ export function ImageAdPageContent() {
                   {isInProgress && (
                     <div className="absolute top-3 right-3">
                       <span className="px-3 py-1.5 text-xs font-medium bg-primary/80 text-white rounded-lg backdrop-blur-sm animate-pulse">
-                        생성 중...
+                        {isUploading ? '업로드 중...' : '생성 중...'}
                       </span>
                     </div>
                   )}
