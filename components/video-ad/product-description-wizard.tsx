@@ -163,8 +163,8 @@ const cameraCompositionLabels: Record<CameraComposition, CameraCompositionInfo> 
     category: 'selfie',
   },
   tripod: {
-    label: '삼각대',
-    desc: '카메라 설치 후 정면 촬영',
+    label: '측면',
+    desc: '측면에서 촬영하는 구도',
     exampleImage: '/images/camera/tripod.png',
   },
   closeup: {
