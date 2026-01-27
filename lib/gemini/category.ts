@@ -4,7 +4,7 @@
 
 import { GenerateContentConfig, MediaResolution, ThinkingLevel, Type } from '@google/genai'
 import { genAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
-import { BRAND_PRESERVATION_INSTRUCTION, PRODUCT_NEGATIVE_PROMPT, NO_LOGO_PRODUCT_INSTRUCTION, NO_LOGO_PROMPT_SUFFIX, NO_OVERLAY_ELEMENTS, OVERLAY_NEGATIVE_PROMPT } from '@/lib/prompts/common'
+import { BRAND_PRESERVATION_INSTRUCTION, PRODUCT_NEGATIVE_PROMPT, NO_LOGO_PRODUCT_INSTRUCTION, NO_LOGO_PROMPT_SUFFIX, NO_OVERLAY_ELEMENTS, OVERLAY_NEGATIVE_PROMPT, LIGHTING_CAMERA_INSTRUCTION, EQUIPMENT_NEGATIVE_PROMPT } from '@/lib/prompts/common'
 import type {
   ImageAdType,
   RecommendedOptionsInput,
@@ -609,10 +609,29 @@ Product Category: ${productCategory}
 Options: ${JSON.stringify(input.selectedOptions)}
 ${input.additionalPrompt ? `Additional: ${input.additionalPrompt}` : ''}${avatarBodyInstruction}${aiAvatarInstruction}
 
+=== CRITICAL: LIGHTING DESCRIPTION RULES (MUST FOLLOW) ===
+${LIGHTING_CAMERA_INSTRUCTION}
+
+IMPORTANT: When describing lighting in the prompt:
+- Describe ONLY the LIGHT EFFECT (direction, color temperature, quality, shadows)
+- NEVER mention or include visible lighting EQUIPMENT in the scene
+- The image should look like a natural photograph, NOT a behind-the-scenes or production photo
+
+CORRECT EXAMPLES:
+- "soft warm light from the left creating gentle shadows"
+- "bright even illumination with minimal shadows"
+- "professional studio-quality lighting effect with controlled highlights"
+
+WRONG EXAMPLES (NEVER USE):
+- "softbox on the left" (describes equipment)
+- "ring light illuminating" (equipment visible)
+- "studio lights around the model" (equipment in frame)
+- "LED panel lighting" (equipment reference)
+
 === COMMERCIAL ADVERTISEMENT STYLE (CRITICAL) ===
 This image MUST look like a professional advertisement from a major brand campaign:
 
-1. LIGHTING: Professional studio-quality lighting effect - soft key light with subtle fill, creating dimensionality and highlighting the product. Mention "commercial photography lighting" or "beauty lighting" effect.
+1. LIGHTING: Professional studio-quality lighting EFFECT - soft key light effect with subtle fill, creating dimensionality and highlighting the product. Describe the EFFECT of professional lighting, NOT the equipment. Use phrases like "professional lighting effect" or "beauty lighting quality" - NEVER mention actual lighting equipment.
 
 2. MODEL EXPRESSION & POSE (if applicable):
    - Natural, relaxed expression - NOT forced or exaggerated smile
@@ -671,6 +690,7 @@ ALWAYS include: "DO NOT invent or hallucinate any product markings, brand names,
 === NEGATIVE ELEMENTS (things to avoid in the image) ===
 ${PRODUCT_NEGATIVE_PROMPT}
 ${OVERLAY_NEGATIVE_PROMPT}
+${EQUIPMENT_NEGATIVE_PROMPT}
 
 === CRITICAL: NO GRAPHIC OVERLAYS (ABSOLUTE REQUIREMENT) ===
 ${NO_OVERLAY_ELEMENTS}
@@ -690,7 +710,7 @@ The image should look like a raw camera photograph, not a finished advertisement
 Output JSON format:
 {
   "productHasLogo": true/false,  // Based on your analysis of the product image
-  "optimizedPrompt": "English 80-120 words. ⚠️ CRITICAL: Use ONLY 'the model from Figure 1' and 'the product from Figure 2' to reference images. NO detailed physical descriptions of model (no hair color, skin tone, body features). NO product names or brands - only category (cosmetic, skincare, footwear, etc.). MUST include: (1) commercial advertisement style keywords, (2) professional lighting description, (3) product as hero element, (4) the appropriate logo instruction based on productHasLogo value. End with: professional commercial photography, brand campaign quality, high-end advertisement",
+  "optimizedPrompt": "English 80-120 words. ⚠️ CRITICAL: Use ONLY 'the model from Figure 1' and 'the product from Figure 2' to reference images. NO detailed physical descriptions of model (no hair color, skin tone, body features). NO product names or brands - only category (cosmetic, skincare, footwear, etc.). MUST include: (1) commercial advertisement style keywords, (2) professional lighting EFFECT description (NOT equipment - describe light quality, direction, shadows, NOT softboxes/ring lights/LED panels), (3) product as hero element, (4) the appropriate logo instruction based on productHasLogo value. NEVER mention visible lighting equipment - describe only the EFFECT of professional lighting. End with: professional commercial photography, brand campaign quality, high-end advertisement",
   "koreanDescription": "Korean summary"
 }`
 
@@ -747,6 +767,9 @@ Output JSON format:
     // 모든 프롬프트에 오버레이 방지 문구 강제 추가
     const overlayPrevention = 'Generate a pure photograph only with absolutely no graphic overlays, no logo banners, no text overlays, no barcodes, no product tags, no frames or borders anywhere in the image.'
 
+    // 조명 장비 방지 문구 강제 추가
+    const lightingEquipmentPrevention = `CRITICAL: NO lighting equipment should be visible in the image - no softboxes, light stands, ring lights, LED panels, reflectors, or any production equipment. Show only the RESULT of professional lighting, not the equipment itself.`
+
     // holding 타입에 대한 제품 표면 보존 강화
     const holdingReinforcement = input.adType === 'holding'
       ? ' The held product must have the EXACT same surface as the reference - no added markings, logos, or barcodes.'
@@ -754,15 +777,15 @@ Output JSON format:
 
     // productHasLogo가 false인 경우, 로고 방지 문구도 추가
     if (result.productHasLogo === false) {
-      result.optimizedPrompt = `${result.optimizedPrompt}. ${NO_LOGO_PROMPT_SUFFIX}${holdingReinforcement} ${overlayPrevention}`
+      result.optimizedPrompt = `${result.optimizedPrompt}. ${NO_LOGO_PROMPT_SUFFIX}${holdingReinforcement} ${lightingEquipmentPrevention} ${overlayPrevention}`
     } else {
-      result.optimizedPrompt = `${result.optimizedPrompt}.${holdingReinforcement} ${overlayPrevention}`
+      result.optimizedPrompt = `${result.optimizedPrompt}.${holdingReinforcement} ${lightingEquipmentPrevention} ${overlayPrevention}`
     }
 
     return result
   } catch {
     return {
-      optimizedPrompt: `Professional product advertisement. High quality, photorealistic. ${NO_LOGO_PROMPT_SUFFIX} Generate a pure photograph only with absolutely no graphic overlays, no logo banners, no text overlays, no barcodes, no product tags, no frames or borders anywhere in the image.`,
+      optimizedPrompt: `Professional product advertisement. High quality, photorealistic. ${NO_LOGO_PROMPT_SUFFIX} CRITICAL: NO lighting equipment visible - no softboxes, light stands, ring lights, or any production equipment. Generate a pure photograph only with absolutely no graphic overlays, no logo banners, no text overlays, no barcodes, no product tags, no frames or borders anywhere in the image.`,
       koreanDescription: '제품 광고 이미지',
     }
   }

@@ -63,7 +63,7 @@ export const SEEDREAM_FORBIDDEN_TERMS = [
 
 /** 조명/카메라 장비 방지 네거티브 프롬프트 */
 export const EQUIPMENT_NEGATIVE_PROMPT =
-  'visible lighting equipment, light stand, softbox, studio light, ring light, lamp, light fixture, lighting rig, visible camera, camera in frame, tripod, camera lens, filming equipment, photography equipment, studio equipment, behind the scenes, production setup'
+  'visible lighting equipment, light stand, softbox, studio light, ring light, lamp, light fixture, lighting rig, visible camera, camera in frame, tripod, camera lens, filming equipment, photography equipment, studio equipment, behind the scenes, production setup, studio lighting setup, professional lighting equipment, photography light, LED panel, LED light, spotlight visible, light reflector, lighting umbrella, flash unit, strobe light, continuous light, light modifier, barn doors, light diffuser, lighting grid, c-stand, light boom, light tent, photography backdrop stand, reflector panel, scrim, gobo, snoot, beauty dish visible, octabox, parabolic reflector'
 
 /** 조명/카메라 표현 가이드 (프롬프트 생성 시 참조) */
 export const LIGHTING_CAMERA_INSTRUCTION = `
