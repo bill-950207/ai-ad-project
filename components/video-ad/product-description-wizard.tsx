@@ -896,6 +896,24 @@ export function ProductDescriptionWizard() {
     setEditableSellingPoints(updated)
   }
 
+  // 대본 예상 시간 계산 (언어별 다른 계산 방식 적용)
+  const estimateScriptDuration = (text: string): number => {
+    if (scriptLanguage === 'en') {
+      // 영어: 단어 수 기준 (약 2.5 단어/초)
+      const wordCount = text.trim().split(/\s+/).filter(w => w.length > 0).length
+      return Math.round(wordCount / 2.5)
+    } else if (scriptLanguage === 'ja') {
+      // 일본어: 글자 수 기준 (약 4.5 글자/초)
+      return Math.round(text.length / 4.5)
+    } else if (scriptLanguage === 'zh') {
+      // 중국어: 글자 수 기준 (약 4.0 글자/초)
+      return Math.round(text.length / 4.0)
+    } else {
+      // 한국어 기본: 글자 수 기준 (약 5.0 글자/초, 여유 있게 3.7로 계산)
+      return Math.round(text.length / 3.7)
+    }
+  }
+
   // 대본 선택 시 편집 내용 초기화 (초안 복원 중에는 건너뜀)
   useEffect(() => {
     if (isRestoringDraft.current) {
@@ -2224,7 +2242,7 @@ export function ProductDescriptionWizard() {
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-medium text-foreground text-sm">{script.styleName}</span>
                           <span className="text-xs text-muted-foreground">
-                            약 {Math.round(script.content.length / 3.7)}초
+                            약 {estimateScriptDuration(script.content)}초
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground line-clamp-2">
@@ -2257,7 +2275,7 @@ export function ProductDescriptionWizard() {
                         }`}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      {editedScript.length}자 (약 {Math.round(editedScript.length / 3.7)}초)
+                      {editedScript.length}자 (약 {estimateScriptDuration(editedScript)}초)
                     </p>
                   </div>
                 </div>
