@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
-import { Plus, Video, Play, Loader2, Edit3, ArrowRight, ChevronLeft, ChevronRight, Music } from 'lucide-react'
+import { Plus, Video, Play, Loader2, Edit3, ChevronLeft, ChevronRight, Music, Trash2, X } from 'lucide-react'
 import { VideoAdTypeModal, VideoAdCategory } from './video-ad-type-modal'
 
 interface AdProduct {
@@ -64,6 +64,9 @@ export function VideoAdPageContent() {
   const [showTypeModal, setShowTypeModal] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [videoToDelete, setVideoToDelete] = useState<VideoAd | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const fetchVideoAds = useCallback(async (page: number = 1, isPolling: boolean = false) => {
     // 폴링이 아닌 경우에만 로딩 상태 표시
@@ -137,6 +140,54 @@ export function VideoAdPageContent() {
 
   const handleCreateVideoAd = () => {
     setShowTypeModal(true)
+  }
+
+  const handleDeleteClick = (e: React.MouseEvent, video: VideoAd) => {
+    e.stopPropagation()
+    setVideoToDelete(video)
+    setDeleteModalOpen(true)
+  }
+
+  const handleCancelDelete = () => {
+    setDeleteModalOpen(false)
+    setVideoToDelete(null)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!videoToDelete) return
+
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/video-ads/${videoToDelete.id}`, {
+        method: 'DELETE',
+      })
+
+      if (res.ok) {
+        // 목록에서 삭제된 영상 제거
+        setVideoAds(prev => prev.filter(v => v.id !== videoToDelete.id))
+        // 페이지네이션 업데이트
+        if (pagination) {
+          setPagination(prev => prev ? {
+            ...prev,
+            totalCount: prev.totalCount - 1,
+            totalPages: Math.ceil((prev.totalCount - 1) / PAGE_SIZE)
+          } : null)
+        }
+      } else {
+        console.error('영상 삭제 실패')
+      }
+    } catch (error) {
+      console.error('영상 삭제 오류:', error)
+    } finally {
+      setIsDeleting(false)
+      setDeleteModalOpen(false)
+      setVideoToDelete(null)
+    }
+  }
+
+  const handleContinueEdit = (e: React.MouseEvent, video: VideoAd) => {
+    e.stopPropagation()
+    handleVideoClick(video)
   }
 
   const handleSelectCategory = (category: VideoAdCategory) => {
@@ -337,20 +388,47 @@ export function VideoAdPageContent() {
                           <img
                             src={video.first_scene_image_url}
                             alt="첫 프레임"
-                            className="w-full h-full object-contain opacity-70"
+                            className="w-full h-full object-contain"
                           />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                            <div className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg font-medium">
+                          {/* 호버 시 액션 버튼 표시 */}
+                          <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={(e) => handleContinueEdit(e, video)}
+                              className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors"
+                            >
                               <Edit3 className="w-4 h-4" />
                               이어서 작성
-                              <ArrowRight className="w-4 h-4" />
-                            </div>
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteClick(e, video)}
+                              className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              삭제
+                            </button>
                           </div>
                         </>
                       ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center">
+                        <div className="w-full h-full flex flex-col items-center justify-center relative">
                           <Edit3 className="w-8 h-8 text-orange-500 mb-2" />
                           <span className="text-sm text-orange-500 font-medium">작성 중</span>
+                          {/* 호버 시 액션 버튼 표시 */}
+                          <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={(e) => handleContinueEdit(e, video)}
+                              className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                              이어서 작성
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteClick(e, video)}
+                              className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              삭제
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -538,6 +616,63 @@ export function VideoAdPageContent() {
         onClose={() => setShowTypeModal(false)}
         onSelect={handleSelectCategory}
       />
+
+      {/* 삭제 확인 모달 */}
+      {deleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* 배경 오버레이 */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={handleCancelDelete}
+          />
+          {/* 모달 콘텐츠 */}
+          <div className="relative bg-card border border-border rounded-2xl p-6 w-full max-w-md mx-4 shadow-xl">
+            <button
+              onClick={handleCancelDelete}
+              className="absolute top-4 right-4 p-1 rounded-lg hover:bg-secondary transition-colors"
+            >
+              <X className="w-5 h-5 text-muted-foreground" />
+            </button>
+
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/10 flex items-center justify-center">
+                <Trash2 className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-2">영상 삭제</h3>
+              <p className="text-muted-foreground mb-6">
+                {videoToDelete?.ad_products?.name || videoToDelete?.avatars?.name
+                  ? `"${videoToDelete?.ad_products?.name || videoToDelete?.avatars?.name}" 영상을 삭제하시겠습니까?`
+                  : '이 영상을 삭제하시겠습니까?'}
+                <br />
+                <span className="text-sm text-red-500">삭제된 영상은 복구할 수 없습니다.</span>
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCancelDelete}
+                  className="flex-1 px-4 py-3 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-colors font-medium"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      삭제 중...
+                    </>
+                  ) : (
+                    '삭제'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
