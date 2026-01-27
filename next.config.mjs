@@ -6,6 +6,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "**",
       },
+      {
+        protocol: "http",
+        hostname: "**",
+      },
     ],
     // 이미지 캐싱 설정 (기본값: 60초, 여기서는 1시간으로 설정)
     minimumCacheTTL: 3600,
