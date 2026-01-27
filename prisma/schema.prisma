@@ -643,6 +643,7 @@ model video_ads {
   avatars               avatars?         @relation(fields: [avatar_id], references: [id], onUpdate: NoAction)
   ad_products           ad_products?     @relation(fields: [product_id], references: [id], onUpdate: NoAction)
   profiles              profiles         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  scene_versions        video_ad_scene_versions[]
 
   @@index([user_id], map: "idx_video_ads_user_id")
   @@index([product_id], map: "idx_video_ads_product_id")
@@ -832,6 +833,7 @@ enum video_ad_status {
   GENERATING_SCENES
   SCENES_COMPLETED
   GENERATING_VIDEO
+  GENERATING_SCENE_VIDEOS  // 멀티씬 영상 생성 중
 
   @@schema("public")
 }
@@ -1040,5 +1042,29 @@ model usage_tracking {
   @@unique([user_id, period])
   @@index([user_id], map: "idx_usage_tracking_user_id")
   @@index([period], map: "idx_usage_tracking_period")
+  @@schema("public")
+}
+
+/// 씬별 영상 버전 히스토리 (재생성 시 이전 버전 유지)
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model video_ad_scene_versions {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  video_ad_id   String   @db.Uuid
+  scene_index   Int                        // 씬 번호 (0, 1, 2, ...)
+  version       Int      @default(1)       // 버전 번호 (1, 2, 3, ...)
+  video_url     String                     // 생성된 영상 URL
+  prompt        String?                    // 영상 생성에 사용된 프롬프트
+  duration      Int?                       // 영상 길이 (초)
+  resolution    String?                    // 해상도 (540p, 720p, 1080p)
+  request_id    String?                    // AI 서비스 요청 ID
+  is_active     Boolean  @default(true)    // 현재 활성화된 버전 여부
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  video_ads     video_ads @relation(fields: [video_ad_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([video_ad_id, scene_index, version])
+  @@index([video_ad_id], map: "idx_scene_versions_video_ad_id")
+  @@index([video_ad_id, scene_index], map: "idx_scene_versions_video_ad_scene")
+  @@index([video_ad_id, scene_index, is_active], map: "idx_scene_versions_active")
   @@schema("public")
 }
