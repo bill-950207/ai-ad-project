@@ -618,12 +618,12 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                 >
                   <button
                     onClick={() => setSelectedImageIndex(idx)}
-                    className="w-full h-full"
+                    className="w-full h-full bg-[#1a1a2e]"
                   >
                     <img
                       src={url}
                       alt={`Thumbnail ${idx + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   </button>
                   {/* 썸네일 호버 액션 */}
