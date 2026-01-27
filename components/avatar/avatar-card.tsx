@@ -11,7 +11,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
-import { Loader2, MoreVertical, Trash2, ImageIcon, Video, Shirt } from 'lucide-react'
+import { Loader2, MoreVertical, Trash2, ImageIcon } from 'lucide-react'
 import { uploadAvatarImage } from '@/lib/client/image-upload'
 
 // ============================================================

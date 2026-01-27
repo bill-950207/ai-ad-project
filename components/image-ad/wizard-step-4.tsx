@@ -49,7 +49,7 @@ const getImageSize = (ratio: AspectRatio): '1024x1024' | '1536x1024' | '1024x153
 
 export function WizardStep4() {
   const router = useRouter()
-  const { t } = useLanguage()
+  const { t: _t } = useLanguage()
   const {
     adType,
     selectedProduct,

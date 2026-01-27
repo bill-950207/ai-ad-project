@@ -12,14 +12,12 @@ import {
   Film,
   Clock,
   MapPin,
-  Image,
   Sparkles,
   Package,
   Layers,
   Play,
   Merge,
 } from 'lucide-react'
-import { WizardNavigation } from './wizard-navigation-button'
 import { useAvatarMotionWizard, SceneVideo } from './wizard-context'
 
 // 생성 상태
@@ -40,19 +38,19 @@ export function WizardStep6Video() {
     sceneVideos,
     setSceneVideos,
     updateSceneVideo,
-    isMergingVideos,
+    isMergingVideos: _isMergingVideos,
     setIsMergingVideos,
     // Legacy
-    videoRequestId,
-    setVideoRequestId,
-    isGeneratingVideo,
+    videoRequestId: _videoRequestId,
+    setVideoRequestId: _setVideoRequestId,
+    isGeneratingVideo: _isGeneratingVideo,
     setIsGeneratingVideo,
     resultVideoUrl,
     setResultVideoUrl,
     generationProgress,
     setGenerationProgress,
     // Helper
-    canMergeVideos,
+    canMergeVideos: _canMergeVideos,
     getTotalDuration,
     getEstimatedCredits,
     // Navigation
@@ -65,7 +63,7 @@ export function WizardStep6Video() {
 
   const [status, setStatus] = useState<VideoGenerationStatus>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [currentGeneratingScene, setCurrentGeneratingScene] = useState(0)
+  const [_currentGeneratingScene, _setCurrentGeneratingScene] = useState(0)
 
   // 완료 버튼 병합 중 상태 (별도 화면 없이 버튼만 로딩)
   const [isCompletingMerge, setIsCompletingMerge] = useState(false)

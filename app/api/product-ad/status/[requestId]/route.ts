@@ -66,7 +66,7 @@ export async function GET(
 
     let status: 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED'
     let resultUrl: string | null = null
-    let originalUrl: string | null = null
+    const originalUrl: string | null = null
     let errorMessage: string | null = null
 
     if (provider === 'kie') {

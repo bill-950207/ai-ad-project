@@ -18,9 +18,9 @@ interface AdProductSizeEditorProps {
   onComplete: () => void
 }
 
-// 캔버스 크기 (아바타와 동일)
-const CANVAS_WIDTH = 1024
-const CANVAS_HEIGHT = 1536
+// 캔버스 크기 (아바타와 동일) - 서버 처리에서 사용
+// const CANVAS_WIDTH = 1024
+// const CANVAS_HEIGHT = 1536
 
 // 기본값
 const DEFAULT_SCALE = 1.0  // 캔버스 대비 100%

@@ -16,7 +16,6 @@ import {
 import { generateImageAdPrompt, type ImageAdType as GeminiImageAdType } from '@/lib/gemini/client'
 
 // 이미지 크기를 Seedream aspect_ratio로 변환
-type ImageAdSize = '1024x1024' | '1536x1024' | '1024x1536'
 function imageSizeToAspectRatio(size: string): SeedreamAspectRatio {
   switch (size) {
     case '1024x1024':
