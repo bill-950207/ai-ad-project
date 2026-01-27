@@ -214,7 +214,7 @@ For recommendedAvatarStyle, provide ALL these fields:
    - Body type and height that fits the scenario mood
    - Facial features and expression matching the scenario vibe
    - Hair style appropriate for the concept
-   Example: "A sophisticated Korean woman in her late 20s, tall with slim elegant figure, sharp facial features with confident gaze, long straight black hair, natural makeup highlighting her refined beauty"
+   - Create UNIQUE descriptions for each scenario - avoid repetitive patterns
 
 3. avatarDescription: Brief description in output language (15-25 characters)
 
@@ -268,7 +268,8 @@ Based on your product analysis, create 3 DISTINCT advertising scenarios.
 **NAMING REQUIREMENT:**
 - Create unique creative concept names (8-15 characters)
 - NOT generic labels like "Premium", "Mainstream", "Trendy", "Basic", "Standard"
-- Names should reflect the actual concept: "Morning Glow", "City Confidence", "Self-Care Ritual", "Gift of Beauty", "Daily Essential"
+- Names should reflect the actual concept and be UNIQUE to this specific product
+- Each scenario name must be distinctly different - avoid similar patterns or themes
 
 **TARGETING REQUIREMENT:**
 - Each scenario targets a specific audience segment that makes sense for THIS product

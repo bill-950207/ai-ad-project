@@ -37,11 +37,6 @@ export * from './avatar-motion'
 // ============================================================
 
 import {
-  IMAGE_AD_PROMPT_REQUEST_TEMPLATE,
-  REFERENCE_STYLE_ANALYSIS_PROMPT,
-  IMAGE_AD_SYSTEM_PROMPT,
-  AD_TYPE_DESCRIPTIONS,
-  AD_TYPE_PROMPT_GUIDES,
   IMAGE_AD_NEGATIVE_PROMPT,
 } from './image-ad'
 
@@ -87,11 +82,6 @@ import {
 export const PROMPTS = {
   /** 이미지 광고 관련 프롬프트 */
   imageAd: {
-    promptRequest: IMAGE_AD_PROMPT_REQUEST_TEMPLATE,
-    referenceAnalysis: REFERENCE_STYLE_ANALYSIS_PROMPT,
-    systemPrompt: IMAGE_AD_SYSTEM_PROMPT,
-    adTypeDescriptions: AD_TYPE_DESCRIPTIONS,
-    adTypeGuides: AD_TYPE_PROMPT_GUIDES,
     negativePrompt: IMAGE_AD_NEGATIVE_PROMPT,
   },
 
