@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
     let finalAvatarImageUrl: string | null = null
     let avatarDescription: string | undefined  // AI 의상 추천용 아바타 설명
     let avatarBodyType: string | undefined  // 아바타 체형 정보 (일관성 유지용)
+    let avatarGender: 'male' | 'female' | undefined  // 아바타 성별 (체형 설명 시 성별에 맞는 표현 사용)
 
     if (!isAiGeneratedAvatar) {
       // 기존 아바타 조회
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
         avatarDescription = avatar.name
       }
 
-      // 아바타 체형 정보 추출 (options에서)
+      // 아바타 체형 및 성별 정보 추출 (options에서)
       if (avatar.options) {
         try {
           const options = typeof avatar.options === 'string'
@@ -112,6 +113,9 @@ export async function POST(request: NextRequest) {
             : avatar.options
           if (options.bodyType) {
             avatarBodyType = options.bodyType
+          }
+          if (options.gender === 'male' || options.gender === 'female') {
+            avatarGender = options.gender
           }
         } catch {
           // options 파싱 실패 시 무시
@@ -202,6 +206,7 @@ export async function POST(request: NextRequest) {
         outfitCustom: effectiveOutfitCustom,
         videoType,  // 비디오 타입 (UGC, podcast, expert)
         bodyType: avatarBodyType,  // 아바타 체형 정보 (일관성 유지)
+        avatarGender,  // 아바타 성별 (체형 설명 시 성별에 맞는 표현 사용)
       })
       firstFramePrompt = firstFrameResult.prompt
       locationDescription = firstFrameResult.locationDescription

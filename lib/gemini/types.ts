@@ -302,6 +302,8 @@ export interface FirstFramePromptInput {
   avatarDescription?: string
   /** 아바타 체형 정보 (일관성 유지용) */
   bodyType?: string
+  /** 아바타 성별 (체형 설명 시 성별에 맞는 표현 사용) */
+  avatarGender?: 'male' | 'female'
 }
 
 /** 첫 프레임 이미지 프롬프트 생성 결과 */
