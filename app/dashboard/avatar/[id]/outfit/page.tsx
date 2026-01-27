@@ -258,7 +258,6 @@ export default function OutfitChangePage() {
       })
 
       if (res.ok) {
-        const data = await res.json()
         // 생성된 의상 상세 페이지로 이동
         router.push(`/dashboard/avatar/${id}`)
       } else {

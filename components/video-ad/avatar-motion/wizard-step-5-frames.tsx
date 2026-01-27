@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   ArrowLeft,
-  Play,
   Loader2,
   RefreshCw,
   Sparkles,
@@ -17,10 +16,8 @@ import {
   Package,
   Layers,
   ImageIcon,
-  MessageSquare,
   RotateCw,
 } from 'lucide-react'
-import { WizardNavigation } from './wizard-navigation-button'
 import { useAvatarMotionWizard, SceneKeyframe } from './wizard-context'
 
 // 생성 단계
@@ -43,7 +40,7 @@ export function WizardStep5Frames() {
     setSceneKeyframes,
     updateSceneKeyframe,
     // Legacy
-    startFrameUrl,
+    startFrameUrl: _startFrameUrl,
     setStartFrameUrl,
     // AI 아바타 상태
     isGeneratingAvatars,
@@ -67,7 +64,7 @@ export function WizardStep5Frames() {
 
   const [generationPhase, setGenerationPhase] = useState<GenerationPhase>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [currentGeneratingScene, setCurrentGeneratingScene] = useState(0)
+  const [_currentGeneratingScene, _setCurrentGeneratingScene] = useState(0)
 
   // 프레임 재생성 관련 상태
   const [showRegenerateModal, setShowRegenerateModal] = useState(false)

@@ -11,23 +11,25 @@
 
 import { VideoCard } from "@/components/ui/video-card";
 import { mockVideos } from "@/lib/mock-data";
+import { useLanguage } from "@/contexts/language-context";
 
 // ============================================================
 // 컴포넌트
 // ============================================================
 
 export function GallerySection() {
+  const { t } = useLanguage();
+
   return (
-    <section className="px-4 py-16 sm:py-24">
+    <section id="gallery" className="px-4 py-16 sm:py-24">
       <div className="mx-auto max-w-7xl">
         {/* 섹션 헤더 */}
         <div className="mb-12 text-center">
           <h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">
-            Featured Creations
+            {t.landing.galleryTitle}
           </h2>
           <p className="mx-auto max-w-2xl text-muted-foreground">
-            Explore AI-generated ad content created by our community. Hover over
-            any video to preview.
+            {t.landing.gallerySubtitle}
           </p>
         </div>
 

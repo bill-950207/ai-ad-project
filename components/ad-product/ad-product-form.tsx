@@ -247,7 +247,7 @@ export function AdProductForm() {
     setError(null)
 
     try {
-      let imageData: { imageDataUrl?: string; sourceImageUrl?: string } = {}
+      const imageData: { imageDataUrl?: string; sourceImageUrl?: string } = {}
 
       if (selectedFile) {
         const dataUrl = await new Promise<string>((resolve, reject) => {

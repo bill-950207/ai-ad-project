@@ -15,6 +15,7 @@ import { submitZImageToQueue } from '@/lib/kie/client'
 import { buildPromptFromOptions, validateAvatarOptions, AvatarOptions } from '@/lib/avatar/prompt-builder'
 import { AVATAR_CREDIT_COST } from '@/lib/credits'
 import { checkUsageLimit, incrementUsage } from '@/lib/subscription'
+import { applyRateLimit, RateLimits, rateLimitExceededResponse } from '@/lib/rate-limit'
 
 // AI 프로바이더 설정 (기본값: kie, fallback: fal)
 const AI_PROVIDER = process.env.AVATAR_AI_PROVIDER || 'kie'
@@ -96,6 +97,12 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limiting 체크 (크레딧 소모 API)
+    const rateLimitResult = applyRateLimit(user.id, RateLimits.aiGeneration)
+    if (!rateLimitResult.success) {
+      return rateLimitExceededResponse(rateLimitResult.reset)
     }
 
     // 요청 본문 파싱

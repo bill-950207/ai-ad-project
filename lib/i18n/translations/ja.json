@@ -10,6 +10,23 @@
     "cancel": "キャンセル",
     "save": "保存"
   },
+  "landing": {
+    "badge": "AI搭載広告作成",
+    "headline": "",
+    "headlineHighlight": "AIマジック",
+    "headlineEnd": "で魅力的な広告を作成",
+    "subheadline": "数分でプロフェッショナルな広告コンテンツを生成。画像から動画まで、数クリックでAIがマーケティングキャンペーンを革新します。",
+    "ctaStart": "無料で始める",
+    "ctaDemo": "デモを見る",
+    "statsAds": "作成された広告",
+    "statsUsers": "満足ユーザー",
+    "statsSatisfaction": "満足度",
+    "galleryTitle": "AI生成ギャラリー",
+    "gallerySubtitle": "AIで作成された素晴らしい広告コンテンツをご覧ください",
+    "dashboard": "ダッシュボード",
+    "login": "ログイン",
+    "signUp": "新規登録"
+  },
   "nav": {
     "adCreationTools": "広告作成ツール",
     "adWorkflow": "広告ワークフロー",

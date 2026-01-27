@@ -23,7 +23,7 @@ interface DashboardContentProps {
 // 컴포넌트
 // ============================================================
 
-export function DashboardContent({ userEmail }: DashboardContentProps) {
+export function DashboardContent({ userEmail: _userEmail }: DashboardContentProps) {
   const { t } = useLanguage()
 
   return (

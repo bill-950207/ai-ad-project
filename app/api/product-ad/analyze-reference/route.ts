@@ -190,7 +190,8 @@ Consider what visual styles and techniques would work well for this type of prod
   return response.text || ''
 }
 
-function buildAnalysisPrompt(productName: string, productDescription: string): string {
+// 영상 분석용 프롬프트 생성 (향후 Gemini File API 구현 시 사용 예정)
+function _buildAnalysisPrompt(productName: string, productDescription: string): string {
   return `You are an expert advertising analyst.
 Analyze this video advertisement and extract the key advertising elements.
 

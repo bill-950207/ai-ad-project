@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -11,8 +11,22 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [checkingAuth, setCheckingAuth] = useState(true)
   const router = useRouter()
   const supabase = createClient()
+
+  // 이미 로그인된 사용자는 대시보드로 리다이렉트
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        router.replace('/dashboard')
+      } else {
+        setCheckingAuth(false)
+      }
+    }
+    checkUser()
+  }, [supabase.auth, router])
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,6 +62,15 @@ export default function LoginPage() {
       setError(error.message)
       setLoading(false)
     }
+  }
+
+  // 인증 상태 확인 중 로딩 표시
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
   }
 
   return (

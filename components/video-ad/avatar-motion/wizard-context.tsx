@@ -300,7 +300,8 @@ const AvatarMotionWizardContext = createContext<AvatarMotionWizardContextType | 
 // 기본 스토리 생성
 // ============================================================
 
-const createDefaultStory = (): StoryInfo => ({
+// 기본 스토리 생성 함수 (향후 사용 예정)
+const _createDefaultStory = (): StoryInfo => ({
   title: '',
   description: '',
   startFrame: {

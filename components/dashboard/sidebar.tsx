@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
 import { useLanguage } from '@/contexts/language-context'
-import { languages } from '@/lib/i18n'
+import { languages, Language } from '@/lib/i18n'
 import {
   Sparkles,
   Music,
@@ -145,7 +145,7 @@ export function Sidebar() {
   /**
    * 언어 변경 핸들러
    */
-  const handleLanguageChange = (code: 'ko' | 'en' | 'ja') => {
+  const handleLanguageChange = (code: Language) => {
     setLanguage(code)
     setShowLanguageMenu(false)
     setShowProfileMenu(false)
