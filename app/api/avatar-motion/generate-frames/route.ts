@@ -21,6 +21,7 @@ import {
   buildFrameImprovementPrompt,
   AVATAR_MOTION_NEGATIVE_PROMPT,
 } from '@/lib/prompts/avatar-motion'
+import { uploadExternalImageToR2 } from '@/lib/image/compress'
 
 interface GenerateFramesRequest {
   avatarImageUrl: string           // 선택된 아바타 이미지 URL (필수)
@@ -114,7 +115,26 @@ export async function POST(request: NextRequest) {
       throw new Error('Failed to generate first frame')
     }
 
-    console.log('첫 프레임 생성 완료:', startFrameResult.imageUrl)
+    console.log('첫 프레임 생성 완료 (AI 서비스):', startFrameResult.imageUrl)
+
+    // R2에 원본/압축본 업로드
+    let imageUrl = startFrameResult.imageUrl
+    let imageUrlOriginal = startFrameResult.imageUrl
+
+    try {
+      const timestamp = Date.now()
+      const uploadResult = await uploadExternalImageToR2(
+        startFrameResult.imageUrl,
+        'avatar-motion/frames',
+        `${user.id}_${timestamp}`
+      )
+      imageUrl = uploadResult.compressedUrl
+      imageUrlOriginal = uploadResult.originalUrl
+      console.log('첫 프레임 R2 업로드 완료:', imageUrl)
+    } catch (uploadError) {
+      console.error('첫 프레임 R2 업로드 실패, AI 서비스 URL 사용:', uploadError)
+      // 업로드 실패 시 원본 URL 그대로 사용
+    }
 
     return NextResponse.json({
       success: true,
@@ -122,7 +142,8 @@ export async function POST(request: NextRequest) {
         requestId: `fal:${startResponse.request_id}`,
         provider: 'fal',
         improvedPrompt: startFrameImproved.prompt,
-        imageUrl: startFrameResult.imageUrl,
+        imageUrl,  // 압축본 URL (조회용)
+        imageUrlOriginal,  // 원본 URL (영상 생성용)
         status: 'completed',
       },
       // endFrame은 더 이상 필요 없음 - kling-2.6에서는 첫 프레임만 사용

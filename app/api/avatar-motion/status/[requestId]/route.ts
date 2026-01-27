@@ -26,6 +26,7 @@ import {
   getViduQueueStatus,
   getViduQueueResponse,
 } from '@/lib/wavespeed/client'
+import { uploadExternalImageToR2 } from '@/lib/image/compress'
 
 interface RouteContext {
   params: Promise<{ requestId: string }>
@@ -65,6 +66,7 @@ export async function GET(
 
     let status: 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED'
     let resultUrl: string | null = null
+    let resultUrlOriginal: string | null = null  // 원본 URL (이미지용)
     let errorMessage: string | null = null
 
     if (provider === 'kie') {
@@ -89,7 +91,25 @@ export async function GET(
           }
         } else {
           const result = await getGPTImageQueueResponse(taskId)
-          resultUrl = result.images[0]?.url || null
+          const aiImageUrl = result.images[0]?.url || null
+
+          // 이미지인 경우 R2에 업로드
+          if (aiImageUrl) {
+            try {
+              const timestamp = Date.now()
+              const uploadResult = await uploadExternalImageToR2(
+                aiImageUrl,
+                'avatar-motion/frames',
+                `${user.id}_${timestamp}`
+              )
+              resultUrl = uploadResult.compressedUrl
+              resultUrlOriginal = uploadResult.originalUrl
+            } catch (uploadError) {
+              console.error('이미지 R2 업로드 실패, AI 서비스 URL 사용:', uploadError)
+              resultUrl = aiImageUrl
+              resultUrlOriginal = aiImageUrl
+            }
+          }
         }
       } else {
         status = 'FAILED'
@@ -108,7 +128,25 @@ export async function GET(
           const result = await getSeedreamEditQueueResponse(taskId)
           if (result.images && result.images.length > 0) {
             status = 'COMPLETED'
-            resultUrl = result.images[0]?.url || null
+            const aiImageUrl = result.images[0]?.url || null
+
+            // 이미지인 경우 R2에 업로드
+            if (aiImageUrl) {
+              try {
+                const timestamp = Date.now()
+                const uploadResult = await uploadExternalImageToR2(
+                  aiImageUrl,
+                  'avatar-motion/frames',
+                  `${user.id}_${timestamp}`
+                )
+                resultUrl = uploadResult.compressedUrl
+                resultUrlOriginal = uploadResult.originalUrl
+              } catch (uploadError) {
+                console.error('이미지 R2 업로드 실패, AI 서비스 URL 사용:', uploadError)
+                resultUrl = aiImageUrl
+                resultUrlOriginal = aiImageUrl
+              }
+            }
           } else {
             status = 'FAILED'
             errorMessage = '생성된 이미지가 없습니다'
@@ -186,6 +224,7 @@ export async function GET(
     return NextResponse.json({
       status,
       resultUrl,
+      resultUrlOriginal,  // 원본 URL (이미지용, 영상 생성에 사용)
       errorMessage,
     })
   } catch (error) {
