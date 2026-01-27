@@ -303,7 +303,6 @@ export function WizardStep3() {
     setVideoModel,
     isVideoSettingsFromScenario,
     unlockVideoSettings,
-    applyVideoSettingsFromScenario,
     // Navigation
     canProceedToStep4,
     goToNextStep,
