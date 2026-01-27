@@ -275,7 +275,7 @@ export async function POST(request: NextRequest) {
     if (productId) {
       const { data: product, error: productError } = await supabase
         .from('ad_products')
-        .select('id, name, description, rembg_image_url, image_url, status')
+        .select('id, name, description, rembg_image_url, image_url, image_url_original, status')
         .eq('id', productId)
         .eq('user_id', user.id)
         .single()
@@ -298,8 +298,8 @@ export async function POST(request: NextRequest) {
       productName = product.name
       productDescription = product.description || undefined
 
-      // 제품 이미지 추가 (배경 제거된 이미지 우선)
-      productImageUrl = product.rembg_image_url || product.image_url
+      // 제품 이미지 추가 (PNG 원본 우선, 기존 제품 하위 호환)
+      productImageUrl = product.image_url_original || product.rembg_image_url || product.image_url
       if (productImageUrl) {
         imageUrls.push(productImageUrl)
       }
@@ -339,7 +339,7 @@ export async function POST(request: NextRequest) {
 
         const { data: avatar, error: avatarError } = await supabase
           .from('avatars')
-          .select('id, name, image_url, status, options')
+          .select('id, name, image_url, image_url_original, status, options')
           .eq('id', avatarId)
           .eq('user_id', user.id)
           .single()
@@ -358,9 +358,10 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        // Gemini용 아바타 이미지 URL 및 특성 저장
-        if (avatar.image_url) {
-          avatarImageUrls.push(avatar.image_url)
+        // Gemini용 아바타 이미지 URL 및 특성 저장 (원본 우선)
+        const avatarImage = avatar.image_url_original || avatar.image_url
+        if (avatarImage) {
+          avatarImageUrls.push(avatarImage)
         }
         // 아바타 특성 저장 (피부톤, 체형, 키 등)
         if (avatar.options) {
@@ -369,7 +370,7 @@ export async function POST(request: NextRequest) {
 
         const { data: outfit, error: outfitError } = await supabase
           .from('avatar_outfits')
-          .select('id, name, image_url, status')
+          .select('id, name, image_url, image_url_original, status')
           .eq('id', outfitId)
           .eq('avatar_id', avatarId)
           .single()
@@ -388,19 +389,20 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        // Gemini용 의상 이미지 URL 저장
-        outfitImageUrl = outfit.image_url || undefined
+        // Gemini용 의상 이미지 URL 저장 (원본 우선)
+        outfitImageUrl = outfit.image_url_original || outfit.image_url || undefined
 
-        // 의상 이미지 사용 (아바타 + 의상이 합성된 이미지)
-        if (outfit.image_url) {
-          imageUrls.push(outfit.image_url)
+        // 의상 이미지 사용 (아바타 + 의상이 합성된 이미지, 원본 우선)
+        const outfitImage = outfit.image_url_original || outfit.image_url
+        if (outfitImage) {
+          imageUrls.push(outfitImage)
         }
       } else {
         // 다중 아바타 이미지 추가
         for (const avatarId of avatarIds) {
           const { data: avatar, error: avatarError } = await supabase
             .from('avatars')
-            .select('id, name, image_url, status, options')
+            .select('id, name, image_url, image_url_original, status, options')
             .eq('id', avatarId)
             .eq('user_id', user.id)
             .single()
@@ -428,11 +430,12 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // 일반 아바타 이미지 추가
-          if (avatar.image_url) {
-            imageUrls.push(avatar.image_url)
+          // 일반 아바타 이미지 추가 (원본 우선)
+          const avatarImage = avatar.image_url_original || avatar.image_url
+          if (avatarImage) {
+            imageUrls.push(avatarImage)
             // Gemini용 아바타 이미지 URL 저장
-            avatarImageUrls.push(avatar.image_url)
+            avatarImageUrls.push(avatarImage)
           }
         }
       }

@@ -13,7 +13,7 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { getRembgQueueStatus, getRembgQueueResponse } from '@/lib/kie/client'
 import { ad_product_status } from '@/lib/generated/prisma/client'
-import { uploadDataUrlToR2 } from '@/lib/storage/r2'
+import { uploadBufferToR2 } from '@/lib/storage/r2'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -72,34 +72,38 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         const response = await getRembgQueueResponse(product.fal_request_id)
 
         if (response.image && response.image.url) {
-          // 1. Kie.ai 결과 이미지를 R2에 업로드 (카드 표시용)
+          // 1. Kie.ai 결과 이미지 다운로드
           const rembgImageResponse = await fetch(response.image.url)
           if (!rembgImageResponse.ok) {
             throw new Error('Failed to fetch rembg image')
           }
           const rembgBuffer = Buffer.from(await rembgImageResponse.arrayBuffer())
 
-          // WebP로 변환하여 R2에 업로드
+          // 2. WebP로 변환
           const sharp = (await import('sharp')).default
           const webpBuffer = await sharp(rembgBuffer)
             .webp({ quality: 85 })
             .toBuffer()
 
+          // 3. R2 키 생성 (PNG 원본 + WebP 압축본)
           const timestamp = Date.now()
-          const rembgKey = `ad-products/rembg/${id}_${timestamp}.webp`
-          const base64Webp = webpBuffer.toString('base64')
-          const rembgImageUrl = await uploadDataUrlToR2(
-            `data:image/webp;base64,${base64Webp}`,
-            rembgKey
-          )
+          const pngKey = `ad-products/rembg/original/${id}_${timestamp}.png`
+          const webpKey = `ad-products/rembg/compressed/${id}_${timestamp}.webp`
 
-          // 2. DB 업데이트 - COMPLETED 상태로 전환
+          // 4. PNG 원본과 WebP 압축본을 병렬로 R2에 업로드
+          const [originalUrl, compressedUrl] = await Promise.all([
+            uploadBufferToR2(rembgBuffer, pngKey, 'image/png'),
+            uploadBufferToR2(webpBuffer, webpKey, 'image/webp'),
+          ])
+
+          // 5. DB 업데이트 - COMPLETED 상태로 전환
           const updatedProduct = await prisma.ad_products.update({
             where: { id },
             data: {
               status: 'COMPLETED',
-              image_url: rembgImageUrl,       // 최종 이미지 URL (R2)
-              rembg_image_url: rembgImageUrl, // 배경 제거 이미지 URL (R2)
+              image_url: compressedUrl,           // WebP (카드 표시용)
+              image_url_original: originalUrl,    // PNG (AI 모델용)
+              rembg_image_url: compressedUrl,     // WebP (하위 호환)
             },
           })
 
