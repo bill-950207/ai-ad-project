@@ -1,0 +1,513 @@
+/**
+ * 이미지 광고 프롬프트 생성 v2
+ *
+ * 개선사항:
+ * - 시스템 프롬프트 간결화 (중복 제거, 핵심 유지)
+ * - 후처리 최소화 (누락 시에만 추가)
+ * - 출력 프롬프트 60-80 words 명확화
+ *
+ * 보존된 핵심 요소:
+ * - Figure 참조 시스템
+ * - 조명 효과 규칙 (장비 언급 금지)
+ * - 모델 표정 가이드 (AI 스마일 방지)
+ * - 제품 외관 보존
+ * - 로고 분석 및 처리
+ * - 오버레이 방지
+ * - 체형 보존
+ */
+
+import { GenerateContentConfig, MediaResolution, ThinkingLevel } from '@google/genai'
+import { genAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
+import type { ImageAdType, ImageAdPromptInput, ImageAdPromptResult, AvatarCharacteristics } from './types'
+
+// ============================================================
+// 상수 정의
+// ============================================================
+
+/** 광고 유형별 상세 가이드라인 */
+const AD_TYPE_DESCRIPTIONS: Record<ImageAdType, string> = {
+  productOnly: `Product Only (NO MODEL):
+- Hero shot: Product centered, dramatic lighting from 45° angle
+- Composition: Rule of thirds or centered, clean negative space
+- Background: Solid gradient, contextual surface (marble, wood, fabric)
+- Focus: Full product sharpness, every detail crisp
+- Lighting: Rim light for separation, soft fill to show texture
+- Props: Minimal, complementary items only (leaves, droplets, fabric swatches)
+- Camera: 50mm macro or 85mm, f/8-f/11 for full sharpness`,
+
+  holding: `Holding Shot (MODEL + PRODUCT):
+- Product position: Chest to face level, clearly visible to camera
+- Hand grip: Natural hold, fingers NOT covering product label/key features
+- Both in focus: Model face AND product sharp (f/4-f/5.6)
+- Product angle: Show front/main side of product to camera
+- Model engagement: Looking at camera OR looking at product with interest
+- Avoid: Awkward grip, product too small in frame, hidden product features
+- Camera: 85mm portrait lens, eye-level or slightly above`,
+
+  using: `Using Shot (ACTIVE PRODUCT INTERACTION):
+- Capture the ACTION moment of product use:
+  • Cosmetics: Applying to lips/skin, mid-application motion
+  • Skincare: Dispensing product, spreading on face/hands
+  • Beverage: Drinking, pouring, holding near lips
+  • Electronics: Actively operating, screen visible if relevant
+- Show EFFECT: Product texture visible, application result
+- Expression: Focused on action OR enjoying the experience
+- Timing: Mid-action preferred (not before/after, but DURING)
+- Camera: 50-85mm, capture both face and product interaction`,
+
+  wearing: `Wearing Shot (FASHION/WEARABLE):
+- Full visibility: Entire garment/accessory clearly shown
+- Pose types:
+  • Full body: Standing, walking, seated - show complete outfit
+  • Detail: Close-up of accessory, texture, craftsmanship
+- Movement: Can be static (editorial) or dynamic (walking, turning)
+- Fit showcase: How product drapes, fits, moves with body
+- Context: Studio clean background OR lifestyle setting
+- For accessories: Ensure item is hero, not lost in outfit
+- Camera: 35mm for full body, 85mm for detail shots`,
+
+  lifestyle: `Lifestyle Shot (NATURAL SCENE):
+- Setting: Real environment (home, cafe, outdoor, office)
+- Product integration: Naturally placed, not forced or obvious
+- Candid feel: Model appears caught in genuine moment
+- Story element: Scene tells a story about product usage context
+- Product visibility: Clear but not artificially highlighted
+- Environment details: Lived-in, authentic props and setting
+- Mood: Matches product's target lifestyle (cozy, active, professional)
+- Camera: 35mm environmental, natural ambient lighting`,
+
+  unboxing: `Unboxing Shot (PRODUCT REVEAL):
+- Packaging visible: Box/container is part of the composition
+- Reveal moment: Product emerging or just revealed from packaging
+- Hands in frame: Natural unboxing gesture, anticipation
+- Expression: Excitement, curiosity, pleasant surprise
+- Composition: Both packaging and product visible
+- Premium feel: Clean presentation, organized reveal
+- Lighting: Even, shows both package design and product
+- Camera: 50mm, slightly overhead angle`,
+
+  seasonal: `Seasonal/Theme Shot (THEMED ATMOSPHERE):
+- Theme elements: Season-appropriate props and colors
+  • Spring: Flowers, pastels, fresh greenery
+  • Summer: Bright light, outdoor, vibrant colors
+  • Autumn: Warm tones, leaves, cozy textures
+  • Winter: Cool tones, holiday elements, warm lighting
+  • Holiday: Specific decorations (Christmas, Valentine's, etc.)
+- Color palette: Cohesive with seasonal theme
+- Product integration: Product fits naturally in themed scene
+- Atmosphere: Strong mood that evokes the season/occasion
+- Camera: Varies by scene, prioritize atmosphere`,
+}
+
+/** 조명 규칙 (포지티브 지시 중심) */
+const LIGHTING_RULES = `
+LIGHTING (CRITICAL):
+1. Describe light QUALITY and DIRECTION only: "soft diffused light from upper left"
+2. Scene must look like FINAL PHOTOGRAPH - NOT a studio behind-the-scenes
+3. Environment should be CLEAN: only model, product, and background visible
+4. Use terms: "natural window light", "soft ambient light", "golden hour glow", "diffused daylight"
+5. FORBIDDEN in prompt: softbox, ring light, LED panel, light stand, reflector, studio setup, lighting rig
+`.trim()
+
+/** 표정 가이드 (구체적 묘사) */
+const EXPRESSION_GUIDE = `
+EXPRESSION (CRITICAL - avoid artificial "AI smile"):
+- Use SPECIFIC expression terms: "gentle closed-lip smile", "relaxed neutral face", "soft confident gaze", "subtle smirk"
+- Eyes: "relaxed eye contact", "looking at product with interest", "gazing slightly off-camera"
+- Mouth: AVOID "big smile", "wide grin", "teeth showing" - prefer "lips slightly parted", "soft closed smile"
+- Overall: "candid moment", "caught mid-thought", "genuine and unstaged"
+`.trim()
+
+/** 제품 보존 규칙 */
+const PRODUCT_PRESERVATION = `
+PRODUCT APPEARANCE: Must be IDENTICAL to reference.
+- Preserve exact COLOR (hue, saturation, tone)
+- Preserve exact SHAPE and FORM
+- Preserve exact TEXTURE (glossy, matte, transparent)
+- DO NOT modify, stylize, or "improve"
+`.trim()
+
+/** 로고 처리 규칙 */
+const LOGO_RULES = `
+PRODUCT SURFACE: First analyze - does product have visible logos/text?
+→ Set productHasLogo = true/false based on analysis
+
+If productHasLogo = true: "reproduce ONLY existing markings, DO NOT add new"
+If productHasLogo = false: "product surface is CLEAN - DO NOT ADD any logos, text, barcodes, QR codes, or markings"
+`.trim()
+
+/** 오버레이 방지 (통합) */
+const NO_OVERLAYS = `
+OUTPUT: Pure photograph ONLY.
+NO logo banners, text overlays, barcodes, QR codes, price tags, frames, borders, watermarks, UI elements.
+`.trim()
+
+/** 의상 옵션 → 프롬프트 텍스트 매핑 */
+const OUTFIT_DESCRIPTIONS: Record<string, string> = {
+  keep_original: '', // 원본 의상 유지 시 프롬프트 추가 안함
+  casual_everyday: 'wearing casual everyday outfit: comfortable t-shirt or blouse with jeans, relaxed and approachable style',
+  formal_elegant: 'wearing formal elegant outfit: sophisticated dress or tailored suit, refined and polished appearance',
+  professional_business: 'wearing professional business attire: crisp blazer with dress shirt, polished and authoritative look',
+  sporty_athletic: 'wearing sporty athletic wear: comfortable activewear or athleisure, energetic and dynamic style',
+  cozy_comfortable: 'wearing cozy comfortable clothing: soft knit sweater or cardigan, warm and inviting appearance',
+  trendy_fashion: 'wearing trendy fashion-forward outfit: current season styles, stylish and on-trend look',
+  minimal_simple: 'wearing minimal simple outfit: clean solid-colored clothing without busy patterns, understated elegance',
+}
+
+// ============================================================
+// 헬퍼 함수
+// ============================================================
+
+/**
+ * 제품 카테고리 감지
+ */
+function detectProductCategory(description?: string): string {
+  if (!description) return 'product'
+
+  const desc = description.toLowerCase()
+
+  // 화장품/뷰티
+  if (desc.includes('립') || desc.includes('tint') || desc.includes('lipstick')) return 'lip cosmetic'
+  if (desc.includes('스킨') || desc.includes('skincare') || desc.includes('serum') || desc.includes('cream') || desc.includes('lotion')) return 'skincare product'
+  if (desc.includes('화장품') || desc.includes('cosmetic') || desc.includes('makeup')) return 'cosmetic'
+
+  // 패션
+  if (desc.includes('신발') || desc.includes('shoes') || desc.includes('sneaker')) return 'footwear'
+  if (desc.includes('옷') || desc.includes('의류') || desc.includes('clothing') || desc.includes('shirt') || desc.includes('dress')) return 'clothing'
+  if (desc.includes('가방') || desc.includes('bag') || desc.includes('purse')) return 'bag'
+  if (desc.includes('시계') || desc.includes('watch')) return 'watch'
+  if (desc.includes('주얼리') || desc.includes('jewelry') || desc.includes('necklace') || desc.includes('ring')) return 'jewelry'
+
+  // 식품
+  if (desc.includes('음료') || desc.includes('drink') || desc.includes('beverage')) return 'beverage'
+  if (desc.includes('음식') || desc.includes('food') || desc.includes('snack')) return 'food'
+
+  // 전자기기
+  if (desc.includes('폰') || desc.includes('phone') || desc.includes('전자')) return 'electronics'
+
+  return 'product'
+}
+
+/**
+ * 의상 옵션에서 프롬프트 텍스트 추출
+ */
+function getOutfitInstruction(selectedOptions?: Record<string, unknown>): string {
+  if (!selectedOptions) return ''
+
+  const outfitKey = selectedOptions.outfit as string | undefined
+  if (!outfitKey || outfitKey === 'keep_original') return ''
+
+  // 커스텀 의상인 경우
+  if (outfitKey === '__custom__' && selectedOptions.outfitCustom) {
+    return `wearing ${selectedOptions.outfitCustom as string}`
+  }
+
+  return OUTFIT_DESCRIPTIONS[outfitKey] || ''
+}
+
+/**
+ * 체형 설명 포맷팅
+ */
+function formatBodyType(characteristics?: AvatarCharacteristics): string {
+  if (!characteristics?.bodyType) return ''
+
+  const isFemale = characteristics.gender === 'female'
+  const isMale = characteristics.gender === 'male'
+
+  // 키
+  const heightDesc = characteristics.height === 'short' ? 'petite'
+    : characteristics.height === 'tall' ? 'tall' : ''
+
+  // 체형
+  const bodyTypeMap: Record<string, { female: string; male: string; default: string }> = {
+    slim: { female: 'slim feminine silhouette', male: 'lean masculine frame', default: 'slim build' },
+    average: { female: 'balanced feminine proportions', male: 'balanced masculine build', default: 'average build' },
+    athletic: { female: 'toned athletic feminine build', male: 'athletic masculine physique', default: 'athletic build' },
+    curvy: { female: 'feminine silhouette with natural curves', male: 'solid masculine build', default: 'curved build' },
+    plussize: { female: 'full-figured feminine form', male: 'full masculine frame', default: 'full-figured build' },
+  }
+
+  const bodyDesc = bodyTypeMap[characteristics.bodyType]
+  const bodyPart = bodyDesc
+    ? (isFemale ? bodyDesc.female : isMale ? bodyDesc.male : bodyDesc.default)
+    : ''
+
+  return [heightDesc, bodyPart].filter(Boolean).join(', ')
+}
+
+/**
+ * Figure 참조 정보 생성
+ */
+interface FigureInfo {
+  guide: string
+  modelRef: string
+  productRef: string
+  modelFigureNum: number | null
+  productFigureNum: number | null
+}
+
+function buildFigureInfo(input: ImageAdPromptInput, avatarGender: string, productCategory: string): FigureInfo {
+  const hasAvatar = input.avatarImageUrls && input.avatarImageUrls.length > 0
+  const hasOutfit = !!input.outfitImageUrl
+  const hasProduct = !!input.productImageUrl
+  const hasStyle = !!input.referenceStyleImageUrl
+
+  let figNum = 1
+  const descriptions: string[] = []
+  const rules: string[] = []
+
+  let modelFigureNum: number | null = null
+  let productFigureNum: number | null = null
+  let modelRef = 'the model'
+  let productRef = 'the product'
+
+  if (hasAvatar) {
+    modelFigureNum = figNum
+    descriptions.push(`- Figure ${figNum}: ${avatarGender} reference`)
+    rules.push(`- Model = "the ${avatarGender} from Figure ${figNum}" (NO physical descriptions)`)
+    modelRef = `the ${avatarGender} from Figure ${figNum}`
+    figNum++
+  }
+
+  if (hasOutfit) {
+    descriptions.push(`- Figure ${figNum}: Outfit reference`)
+    rules.push(`- Wear EXACT outfit from Figure ${figNum}`)
+    figNum++
+  }
+
+  if (hasProduct) {
+    productFigureNum = figNum
+    descriptions.push(`- Figure ${figNum}: ${productCategory} reference`)
+    rules.push(`- Product = "the ${productCategory} from Figure ${figNum}" (NO brand names)`)
+    productRef = `the ${productCategory} from Figure ${figNum}`
+    figNum++
+  }
+
+  if (hasStyle) {
+    descriptions.push(`- Figure ${figNum}: Style reference (mood/lighting only)`)
+    figNum++
+  }
+
+  const guide = descriptions.length > 0
+    ? `=== ATTACHED IMAGES ===
+${descriptions.join('\n')}
+
+REFERENCE RULES:
+${rules.join('\n')}`
+    : ''
+
+  return { guide, modelRef, productRef, modelFigureNum, productFigureNum }
+}
+
+/**
+ * 이미지 파트 빌드
+ */
+async function buildImageParts(input: ImageAdPromptInput): Promise<Array<{ inlineData: { mimeType: string; data: string } }>> {
+  const parts: Array<{ inlineData: { mimeType: string; data: string } }> = []
+  const urls: string[] = []
+
+  // 순서: avatar → outfit → product → style
+  if (input.avatarImageUrls?.length) urls.push(...input.avatarImageUrls)
+  if (input.outfitImageUrl) urls.push(input.outfitImageUrl)
+  if (input.productImageUrl) urls.push(input.productImageUrl)
+  if (input.referenceStyleImageUrl) urls.push(input.referenceStyleImageUrl)
+
+  for (const url of urls) {
+    const imageData = await fetchImageAsBase64(url)
+    if (imageData) {
+      parts.push({ inlineData: { mimeType: imageData.mimeType, data: imageData.base64 } })
+    }
+  }
+
+  return parts
+}
+
+/**
+ * 프롬프트 후처리 (누락 시에만 추가)
+ */
+function postProcessPrompt(prompt: string, hasLogo: boolean | undefined, adType: ImageAdType): string {
+  const lowerPrompt = prompt.toLowerCase()
+  const wordCount = prompt.split(/\s+/).length
+
+  // 이미 충분히 길면 추가하지 않음
+  if (wordCount > 90) return prompt
+
+  const additions: string[] = []
+
+  // 로고 없는 제품인데 "clean" 또는 "no logo" 언급 없으면 추가
+  if (hasLogo === false) {
+    if (!lowerPrompt.includes('clean') && !lowerPrompt.includes('no logo') && !lowerPrompt.includes('no markings')) {
+      additions.push('Product surface clean, no added markings.')
+    }
+  }
+
+  // holding 타입인데 "identical" 또는 "same" 언급 없으면 추가
+  if (adType === 'holding') {
+    if (!lowerPrompt.includes('identical') && !lowerPrompt.includes('same surface') && !lowerPrompt.includes('exact')) {
+      additions.push('Product identical to reference.')
+    }
+  }
+
+  // "photograph" 또는 "no overlay" 언급 없으면 추가
+  if (!lowerPrompt.includes('photograph') && !lowerPrompt.includes('no overlay') && !lowerPrompt.includes('pure photo')) {
+    additions.push('Pure photograph.')
+  }
+
+  // "commercial" 또는 "brand campaign" 언급 없으면 추가
+  if (!lowerPrompt.includes('commercial') && !lowerPrompt.includes('brand campaign') && !lowerPrompt.includes('advertisement')) {
+    additions.push('Commercial photography quality.')
+  }
+
+  // 카메라 스펙 없으면 추가 (타입별 분기)
+  if (!lowerPrompt.includes('shot on') && !lowerPrompt.includes('lens') && !lowerPrompt.includes('f/')) {
+    if (adType === 'productOnly') {
+      additions.push('Shot on 50mm macro lens at f/8.')
+    } else {
+      additions.push('Shot on 85mm lens at f/1.8.')
+    }
+  }
+
+  // 품질 키워드 없으면 추가 (타입별 분기)
+  if (!lowerPrompt.includes('photorealistic') && !lowerPrompt.includes('8k')) {
+    if (adType === 'productOnly') {
+      additions.push('Photorealistic product photography, every detail crisp.')
+    } else if (!lowerPrompt.includes('skin texture')) {
+      additions.push('Photorealistic, natural skin texture.')
+    }
+  }
+
+  return additions.length > 0 ? `${prompt} ${additions.join(' ')}` : prompt
+}
+
+// ============================================================
+// 메인 함수
+// ============================================================
+
+/**
+ * 이미지 광고 프롬프트 생성 (v2)
+ */
+export async function generateImageAdPromptV2(input: ImageAdPromptInput): Promise<ImageAdPromptResult> {
+  // 기본 정보 추출
+  const productCategory = detectProductCategory(input.productDescription)
+  const avatarGender = input.avatarCharacteristics?.gender === 'female' ? 'female model'
+    : input.avatarCharacteristics?.gender === 'male' ? 'male model' : 'model'
+  const bodyHint = formatBodyType(input.avatarCharacteristics)
+  const figureInfo = buildFigureInfo(input, avatarGender, productCategory)
+
+  // 체형 보존 지시 (모델이 있는 광고 유형이고 체형 정보가 있을 때만)
+  const bodyInstruction = (input.adType !== 'productOnly' && bodyHint)
+    ? `\n=== BODY PRESERVATION ===
+Body type: ${bodyHint}
+- Preserve EXACT proportions from avatar reference
+- DO NOT exaggerate or enhance body features
+- Keep proportions IDENTICAL to reference`
+    : ''
+
+  // AI 아바타 지시 (모델이 있는 광고 유형이고 AI 생성 아바타일 때만)
+  const aiAvatarInstruction = (input.adType !== 'productOnly' && input.aiAvatarDescription)
+    ? `\n=== AI MODEL ===
+Generate photorealistic model: ${input.aiAvatarDescription}`
+    : ''
+
+  // 의상 지시 (모델이 있는 광고 유형이고, 의상 이미지가 없고, 의상 옵션이 선택된 경우)
+  const outfitText = getOutfitInstruction(input.selectedOptions)
+  const outfitInstruction = (input.adType !== 'productOnly' && !input.outfitImageUrl && outfitText)
+    ? `\n=== OUTFIT ===
+Model ${outfitText}.
+- Apply this outfit style naturally
+- Outfit should complement the product and scenario mood${input.adType === 'wearing' ? `
+- NOTE: This describes clothing OTHER than the product being worn. The advertised product must be worn as the main focus.` : ''}`
+    : ''
+
+  // 시스템 프롬프트 (핵심 보존, 중복 제거)
+  const systemPrompt = `You are an expert advertising photographer. Generate a Seedream 4.5 optimized prompt for "${input.adType}" advertisement.
+
+=== AD TYPE ===
+${input.adType}: ${AD_TYPE_DESCRIPTIONS[input.adType]}
+
+${figureInfo.guide}
+
+Product Category: ${productCategory}
+Options: ${JSON.stringify(input.selectedOptions)}${input.additionalPrompt ? `
+Additional: ${input.additionalPrompt}` : ''}${bodyInstruction}${aiAvatarInstruction}${outfitInstruction}
+
+=== CORE RULES (ALL REQUIRED) ===
+
+${LIGHTING_RULES}
+${input.adType !== 'productOnly' ? `
+${EXPRESSION_GUIDE}
+` : ''}
+${PRODUCT_PRESERVATION}
+
+${LOGO_RULES}
+
+${NO_OVERLAYS}
+
+=== COMMERCIAL STYLE ===
+- Professional lighting RESULT (not visible equipment)
+- Magazine-worthy composition
+- High-end brand advertisement quality
+- Clean, polished final photograph look
+
+=== SEEDREAM 4.5 QUALITY REQUIREMENTS ===
+${input.adType === 'productOnly' ? `For PRODUCT ONLY shots:
+- Camera: "shot on 50mm macro lens at f/8" or "shot on 85mm at f/11" for full sharpness
+- Quality: "photorealistic, 8K RAW quality, product photography"
+- Focus: "focus stacking, every detail crisp"` : `For MODEL shots:
+- Camera: "shot on 85mm lens at f/1.8" (portrait) or "shot on 35mm at f/2.8" (environmental)
+- Quality: "photorealistic, 8K RAW quality"
+- Texture: "natural skin texture with visible pores, individual hair strands"`}
+
+=== OUTPUT FORMAT ===
+{
+  "productHasLogo": true/false (based on product image analysis),
+  "optimizedPrompt": "60-80 words. ${input.adType === 'productOnly'
+    ? `Structure: [${figureInfo.productRef}] [as hero subject] [on/against background surface or setting] [dramatic lighting from angle] [camera: f/8-f/11 for sharpness] [quality: product photography, every detail crisp]. NO model, NO hands unless specified.`
+    : `Structure: [${figureInfo.modelRef}] ${outfitText ? '[outfit description] ' : ''}[pose/action] [with ${figureInfo.productRef}] [in CLEAN environment] [natural light from direction] [SPECIFIC expression] [camera specs] [quality]. NO studio equipment.`}",
+  "koreanDescription": "한국어 요약 (15-20자)"
+}`
+
+  const config: GenerateContentConfig = {
+    thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+    mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
+    responseMimeType: 'application/json',
+  }
+
+  // 이미지 + 텍스트 파트
+  const imageParts = await buildImageParts(input)
+  const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [
+    ...imageParts,
+    { text: systemPrompt },
+  ]
+
+  const response = await genAI.models.generateContent({
+    model: MODEL_NAME,
+    contents: [{ role: 'user', parts }],
+    config,
+  })
+
+  try {
+    const result = JSON.parse(response.text || '') as ImageAdPromptResult
+
+    // 최소한의 후처리 (누락된 경우에만)
+    result.optimizedPrompt = postProcessPrompt(result.optimizedPrompt, result.productHasLogo, input.adType)
+
+    return result
+  } catch {
+    // 폴백
+    return {
+      optimizedPrompt: `Professional ${input.adType} advertisement, photorealistic, commercial photography, brand campaign quality, pure photograph without overlays.`,
+      koreanDescription: '제품 광고 이미지',
+    }
+  }
+}
+
+// ============================================================
+// 기존 함수와 호환을 위한 래퍼
+// ============================================================
+
+/**
+ * 기존 generateImageAdPrompt와 동일한 인터페이스
+ * 내부적으로 v2 사용
+ */
+export { generateImageAdPromptV2 as generateImageAdPrompt }
