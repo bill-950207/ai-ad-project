@@ -357,6 +357,16 @@
     "myVideos": "動画広告",
     "createAd": "動画広告作成",
     "emptyAds": "作成された動画広告がありません",
+    "continueEdit": "続けて編集",
+    "inProgress": "作成中",
+    "deleteModal": {
+      "title": "動画を削除",
+      "confirmWithName": "「{{name}}」を削除してもよろしいですか？",
+      "confirm": "この動画を削除してもよろしいですか？",
+      "warning": "削除された動画は復元できません。",
+      "cancel": "キャンセル",
+      "deleting": "削除中..."
+    },
     "createFirstAd": "最初の動画広告を作成しましょう",
     "selectProduct": "製品を選択",
     "selectAvatar": "アバターを選択",

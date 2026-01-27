@@ -357,6 +357,16 @@
     "myVideos": "My Video Ads",
     "createAd": "Create Video Ad",
     "emptyAds": "No video ads created",
+    "continueEdit": "Continue",
+    "inProgress": "In Progress",
+    "deleteModal": {
+      "title": "Delete Video",
+      "confirmWithName": "Are you sure you want to delete \"{{name}}\"?",
+      "confirm": "Are you sure you want to delete this video?",
+      "warning": "Deleted videos cannot be recovered.",
+      "cancel": "Cancel",
+      "deleting": "Deleting..."
+    },
     "createFirstAd": "Create your first video ad",
     "selectProduct": "Select Product",
     "selectAvatar": "Select Avatar",

@@ -391,42 +391,42 @@ export function VideoAdPageContent() {
                             className="w-full h-full object-contain"
                           />
                           {/* 호버 시 액션 버튼 표시 */}
-                          <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="absolute inset-0 flex items-center justify-center gap-2 sm:gap-3 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
                               onClick={(e) => handleContinueEdit(e, video)}
-                              className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors"
+                              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors text-sm"
                             >
                               <Edit3 className="w-4 h-4" />
-                              이어서 작성
+                              <span className="hidden sm:inline">{t.videoAd?.continueEdit || '이어서 작성'}</span>
                             </button>
                             <button
                               onClick={(e) => handleDeleteClick(e, video)}
-                              className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
+                              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors text-sm"
                             >
                               <Trash2 className="w-4 h-4" />
-                              삭제
+                              <span className="hidden sm:inline">{t.videoAd?.delete || '삭제'}</span>
                             </button>
                           </div>
                         </>
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center relative">
                           <Edit3 className="w-8 h-8 text-orange-500 mb-2" />
-                          <span className="text-sm text-orange-500 font-medium">작성 중</span>
+                          <span className="text-sm text-orange-500 font-medium">{t.videoAd?.inProgress || '작성 중'}</span>
                           {/* 호버 시 액션 버튼 표시 */}
-                          <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="absolute inset-0 flex items-center justify-center gap-2 sm:gap-3 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
                               onClick={(e) => handleContinueEdit(e, video)}
-                              className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors"
+                              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors text-sm"
                             >
                               <Edit3 className="w-4 h-4" />
-                              이어서 작성
+                              <span className="hidden sm:inline">{t.videoAd?.continueEdit || '이어서 작성'}</span>
                             </button>
                             <button
                               onClick={(e) => handleDeleteClick(e, video)}
-                              className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
+                              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors text-sm"
                             >
                               <Trash2 className="w-4 h-4" />
-                              삭제
+                              <span className="hidden sm:inline">{t.videoAd?.delete || '삭제'}</span>
                             </button>
                           </div>
                         </div>
@@ -638,13 +638,13 @@ export function VideoAdPageContent() {
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/10 flex items-center justify-center">
                 <Trash2 className="w-8 h-8 text-red-500" />
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">영상 삭제</h3>
+              <h3 className="text-xl font-semibold text-foreground mb-2">{t.videoAd?.deleteModal?.title || '영상 삭제'}</h3>
               <p className="text-muted-foreground mb-6">
                 {videoToDelete?.ad_products?.name || videoToDelete?.avatars?.name
-                  ? `"${videoToDelete?.ad_products?.name || videoToDelete?.avatars?.name}" 영상을 삭제하시겠습니까?`
-                  : '이 영상을 삭제하시겠습니까?'}
+                  ? (t.videoAd?.deleteModal?.confirmWithName || '"{{name}}" 영상을 삭제하시겠습니까?').replace('{{name}}', videoToDelete?.ad_products?.name || videoToDelete?.avatars?.name || '')
+                  : (t.videoAd?.deleteModal?.confirm || '이 영상을 삭제하시겠습니까?')}
                 <br />
-                <span className="text-sm text-red-500">삭제된 영상은 복구할 수 없습니다.</span>
+                <span className="text-sm text-red-500">{t.videoAd?.deleteModal?.warning || '삭제된 영상은 복구할 수 없습니다.'}</span>
               </p>
 
               <div className="flex gap-3">
@@ -652,7 +652,7 @@ export function VideoAdPageContent() {
                   onClick={handleCancelDelete}
                   className="flex-1 px-4 py-3 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-colors font-medium"
                 >
-                  취소
+                  {t.videoAd?.deleteModal?.cancel || '취소'}
                 </button>
                 <button
                   onClick={handleConfirmDelete}
@@ -662,10 +662,10 @@ export function VideoAdPageContent() {
                   {isDeleting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      삭제 중...
+                      {t.videoAd?.deleteModal?.deleting || '삭제 중...'}
                     </>
                   ) : (
-                    '삭제'
+                    t.videoAd?.delete || '삭제'
                   )}
                 </button>
               </div>
