@@ -10,6 +10,23 @@
     "cancel": "Cancel",
     "save": "Save"
   },
+  "landing": {
+    "badge": "AI-Powered Ad Creation",
+    "headline": "Create Stunning Ads with ",
+    "headlineHighlight": "AI Magic",
+    "headlineEnd": "",
+    "subheadline": "Generate professional ad content in minutes. From images to videos, let AI transform your marketing campaigns with just a few clicks.",
+    "ctaStart": "Get Started Free",
+    "ctaDemo": "Watch Demo",
+    "statsAds": "Ads Created",
+    "statsUsers": "Happy Users",
+    "statsSatisfaction": "Satisfaction",
+    "galleryTitle": "AI-Generated Gallery",
+    "gallerySubtitle": "Explore amazing ad content created with AI by our users",
+    "dashboard": "Dashboard",
+    "login": "Login",
+    "signUp": "Sign Up"
+  },
   "nav": {
     "adCreationTools": "Ad Creation Tools",
     "adWorkflow": "Ad Workflow",

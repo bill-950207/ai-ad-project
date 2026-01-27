@@ -52,7 +52,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // 컴포넌트 마운트 시 localStorage에서 언어 설정 로드
   useEffect(() => {
     const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY) as Language | null
-    if (savedLanguage && ['ko', 'en', 'ja'].includes(savedLanguage)) {
+    if (savedLanguage && ['ko', 'en', 'ja', 'zh'].includes(savedLanguage)) {
       setLanguageState(savedLanguage)
     }
     setIsLoaded(true)
