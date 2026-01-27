@@ -84,7 +84,7 @@ export const CAMERA_COMPOSITION_DETAILED_GUIDES: Record<string, {
   },
   'tripod': {
     promptSegment: 'stable fixed-camera composition at chest to eye level, professional framing as if on tripod, both hands free to hold product naturally',
-    lightingRecommendation: 'controlled studio-style lighting or well-lit interior',
+    lightingRecommendation: 'controlled soft even light or well-lit interior (NO visible lighting equipment)',
     depthOfField: 'f/16 with entire scene in perfect sharp focus from nearest to farthest point',
   },
   'closeup': {
@@ -99,7 +99,7 @@ export const CAMERA_COMPOSITION_DETAILED_GUIDES: Record<string, {
   },
   'ugc-closeup': {
     promptSegment: 'UGC-style intimate medium close-up, subject fills most of the frame from chest up, natural authentic expression (can be neutral, thoughtful, or subtly engaged - NOT forced smile), eyes looking DIRECTLY into camera lens, casual influencer vlog aesthetic like casually talking to viewer, approachable and genuine vibe',
-    lightingRecommendation: 'soft natural window light or ring light, flattering front lighting',
+    lightingRecommendation: 'soft natural window light, flattering front lighting (NO visible lighting equipment)',
     depthOfField: 'f/11 with background clearly visible and mostly sharp, only natural perspective depth - no artificial bokeh, like a real smartphone photo',
   },
   'ugc-selfie': {
