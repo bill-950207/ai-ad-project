@@ -67,7 +67,7 @@ ${groupsDescription}
 Recommend optimal settings for each category. Use '__custom__' with customText for specific requirements.`
 
   const config: GenerateContentConfig = {
-    thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
     responseSchema: {
@@ -804,7 +804,7 @@ Analyze and recommend matching options for each category.
 Output JSON with: analyzedOptions, overallStyle, suggestedPrompt, recommendedAdType`
 
   const config: GenerateContentConfig = {
-    thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
   }
@@ -864,7 +864,7 @@ Aspect Ratio: ${input.aspectRatio || '16:9'}
 Output JSON: { "optimizedPrompt": "English background prompt", "koreanDescription": "Korean description" }`
 
   const config: GenerateContentConfig = {
-    thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
   }

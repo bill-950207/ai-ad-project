@@ -41,7 +41,7 @@ Enhanced: "Change the facial expression to a warm, natural smile."
 }`
 
   const config: GenerateContentConfig = {
-    thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     responseMimeType: 'application/json',
     responseSchema: {
       type: Type.OBJECT,

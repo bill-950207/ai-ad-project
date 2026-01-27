@@ -8,16 +8,14 @@ import { WizardStep2 } from './wizard-step-2'
 import { WizardStep3 } from './wizard-step-3'
 import { WizardStep4 } from './wizard-step-4'
 import { WizardStep5 } from './wizard-step-5'
-import { WizardStep6 } from './wizard-step-6'
 
 // 단계 정보
 const STEPS = [
   { step: 1 as WizardStep, title: '제품 선택' },
   { step: 2 as WizardStep, title: '설정 방식' },
-  { step: 3 as WizardStep, title: '시나리오' },
-  { step: 4 as WizardStep, title: '설정' },
-  { step: 5 as WizardStep, title: '첫 씬' },
-  { step: 6 as WizardStep, title: '영상 생성' },
+  { step: 3 as WizardStep, title: '시나리오 및 설정' },
+  { step: 4 as WizardStep, title: '첫 씬' },
+  { step: 5 as WizardStep, title: '영상 생성' },
 ]
 
 interface WizardHeaderProps {
@@ -109,7 +107,6 @@ function WizardContent() {
       {step === 3 && <WizardStep3 />}
       {step === 4 && <WizardStep4 />}
       {step === 5 && <WizardStep5 />}
-      {step === 6 && <WizardStep6 />}
     </div>
   )
 }

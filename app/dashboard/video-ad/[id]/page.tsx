@@ -34,8 +34,9 @@ import {
   Settings,
   Film,
   Music,
+  ChevronDown,
+  History,
 } from 'lucide-react'
-import Image from 'next/image'
 import { MusicSelectModal } from '@/components/video-ad/music-select-modal'
 
 interface SceneKeyframe {
@@ -47,6 +48,21 @@ interface SceneKeyframe {
 interface SceneVideoUrl {
   sceneIndex: number
   videoUrl: string
+}
+
+// 씬 버전 정보
+interface SceneVersion {
+  id: string
+  video_ad_id: string
+  scene_index: number
+  version: number
+  video_url: string
+  prompt: string | null
+  duration: number | null
+  resolution: string | null
+  request_id: string | null
+  is_active: boolean
+  created_at: string
 }
 
 // 제품 정보 파싱 (JSON 문자열에서 제품 정보 추출)
@@ -87,6 +103,7 @@ interface ParsedScenarioInfo {
     dialogue?: string
     duration?: number
   }>
+  sceneDurations?: number[]  // 씬별 영상 길이 배열
 }
 
 function parseScenarioInfo(scenarioInfo: string | null): ParsedScenarioInfo | null {
@@ -97,6 +114,7 @@ function parseScenarioInfo(scenarioInfo: string | null): ParsedScenarioInfo | nu
       title: parsed.title,
       concept: parsed.concept,
       scenes: parsed.scenes,
+      sceneDurations: parsed._videoSettings?.sceneDurations,  // 씬별 시간 추출
     }
   } catch {
     return null
@@ -188,6 +206,11 @@ export default function VideoAdDetailPage() {
   // 폴링을 위한 상태
   const [isPolling, setIsPolling] = useState(false)
 
+  // 씬 버전 관리 상태
+  const [sceneVersions, setSceneVersions] = useState<Record<number, SceneVersion[]>>({})
+  const [isLoadingVersions, setIsLoadingVersions] = useState(false)
+  const [switchingVersionScene, setSwitchingVersionScene] = useState<number | null>(null)
+
   // 영상 메타데이터 로드 시 실제 길이 업데이트
   const handleVideoLoadedMetadata = useCallback(async () => {
     if (!videoRef.current || !videoAd) return
@@ -235,6 +258,66 @@ export default function VideoAdDetailPage() {
   useEffect(() => {
     fetchVideoAd()
   }, [fetchVideoAd])
+
+  // 씬 버전 조회 함수
+  const fetchSceneVersions = useCallback(async () => {
+    if (!params.id) return
+
+    setIsLoadingVersions(true)
+    try {
+      const res = await fetch(`/api/product-ad/scene-version?videoAdId=${params.id}`)
+      if (res.ok) {
+        const data = await res.json()
+        setSceneVersions(data.groupedByScene || {})
+      }
+    } catch (error) {
+      console.error('씬 버전 조회 오류:', error)
+    } finally {
+      setIsLoadingVersions(false)
+    }
+  }, [params.id])
+
+  // 씬 버전 전환 함수
+  const switchSceneVersion = async (sceneIndex: number, versionId: string) => {
+    if (!videoAd) return
+
+    setSwitchingVersionScene(sceneIndex)
+    try {
+      const res = await fetch(`/api/product-ad/scene-version/${versionId}/activate`, {
+        method: 'POST',
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        const activatedVersion = data.version as SceneVersion
+
+        // scene_video_urls 업데이트
+        setVideoAd(prev => {
+          if (!prev) return prev
+          const updatedSceneVideoUrls = prev.scene_video_urls?.map(sv =>
+            sv.sceneIndex === sceneIndex
+              ? { ...sv, videoUrl: activatedVersion.video_url }
+              : sv
+          ) || []
+          return { ...prev, scene_video_urls: updatedSceneVideoUrls }
+        })
+
+        // 버전 목록 갱신
+        await fetchSceneVersions()
+      }
+    } catch (error) {
+      console.error('씬 버전 전환 오류:', error)
+    } finally {
+      setSwitchingVersionScene(null)
+    }
+  }
+
+  // 제품 광고인 경우 씬 버전 조회
+  useEffect(() => {
+    if (videoAd?.category === 'product-ad' && videoAd.scene_video_urls && videoAd.scene_video_urls.length > 0) {
+      fetchSceneVersions()
+    }
+  }, [videoAd?.category, videoAd?.scene_video_urls, fetchSceneVersions])
 
   // 폴링으로 상태 업데이트
   useEffect(() => {
@@ -537,38 +620,95 @@ export default function VideoAdDetailPage() {
             </div>
           )}
 
-          {/* 씬 키프레임 (멀티씬 모드일 때 표시) */}
-          {videoAd.scene_keyframes && videoAd.scene_keyframes.length > 0 && (
-            <div className="bg-card border border-border rounded-xl p-4">
-              <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-                <Film className="w-4 h-4" />
-                씬 키프레임 ({videoAd.scene_keyframes.length}개)
-              </h3>
-              <div className={`grid gap-3 ${
-                videoAd.scene_keyframes.length <= 2 ? 'grid-cols-2' :
-                videoAd.scene_keyframes.length === 3 ? 'grid-cols-3' :
-                videoAd.scene_keyframes.length === 4 ? 'grid-cols-2' :
-                'grid-cols-3'
-              }`}>
-                {videoAd.scene_keyframes
-                  .filter(kf => kf.status === 'completed' && kf.imageUrl)
-                  .sort((a, b) => a.sceneIndex - b.sceneIndex)
-                  .map((kf) => (
-                    <div key={kf.sceneIndex} className="relative aspect-square rounded-lg overflow-hidden bg-secondary/30">
-                      <Image
-                        src={kf.imageUrl!}
-                        alt={`씬 ${kf.sceneIndex + 1}`}
-                        fill
-                        className="object-contain"
-                      />
-                      <div className="absolute bottom-1 left-1 px-2 py-0.5 bg-black/70 rounded text-xs text-white">
-                        씬 {kf.sceneIndex + 1}
+          {/* 씬 구성 (영상 재생 가능한 가로 레이아웃) */}
+          {(() => {
+            const hasSceneVideos = videoAd.scene_video_urls && videoAd.scene_video_urls.length > 0
+            const scenario = parseScenarioInfo(videoAd.scenario_info)
+
+            // 씬 영상이 없으면 표시하지 않음
+            if (!hasSceneVideos) return null
+
+            const sceneVideos = videoAd.scene_video_urls!.sort((a, b) => a.sceneIndex - b.sceneIndex)
+
+            return (
+              <div className="bg-card border border-border rounded-xl p-5">
+                <h3 className="text-base font-semibold text-foreground flex items-center gap-2 mb-4">
+                  <Film className="w-5 h-5 text-primary" />
+                  씬별 영상 ({sceneVideos.length}개)
+                </h3>
+
+                {/* 가로 스크롤 레이아웃 */}
+                <div className="flex gap-3 overflow-x-auto pb-2">
+                  {sceneVideos.map((sv) => {
+                    // 씬별 시간 (sceneDurations 배열에서 가져오기)
+                    const sceneDuration = scenario?.sceneDurations?.[sv.sceneIndex]
+                    // 해당 씬의 버전 목록
+                    const versions = sceneVersions[sv.sceneIndex] || []
+                    const activeVersion = versions.find(v => v.is_active)
+                    const hasMultipleVersions = versions.length > 1
+
+                    return (
+                      <div key={sv.sceneIndex} className="flex-shrink-0 w-40">
+                        {/* 영상 플레이어 */}
+                        <div className="relative aspect-[9/16] rounded-lg overflow-hidden bg-black/20 group">
+                          <video
+                            src={sv.videoUrl}
+                            className="w-full h-full object-contain"
+                            controls
+                            playsInline
+                            preload="metadata"
+                          />
+                          {/* 버전 전환 중 로딩 오버레이 */}
+                          {switchingVersionScene === sv.sceneIndex && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                              <Loader2 className="w-6 h-6 animate-spin text-white" />
+                            </div>
+                          )}
+                        </div>
+                        {/* 씬 라벨 */}
+                        <div className="mt-2 flex items-center justify-between">
+                          <span className="text-sm font-medium text-foreground">씬 {sv.sceneIndex + 1}</span>
+                          {sceneDuration && (
+                            <span className="text-xs text-muted-foreground">{sceneDuration}초</span>
+                          )}
+                        </div>
+                        {/* 버전 드롭다운 (여러 버전이 있을 때만 표시) */}
+                        {hasMultipleVersions && (
+                          <div className="mt-1.5 relative">
+                            <select
+                              value={activeVersion?.id || ''}
+                              onChange={(e) => {
+                                const selectedVersionId = e.target.value
+                                if (selectedVersionId && selectedVersionId !== activeVersion?.id) {
+                                  switchSceneVersion(sv.sceneIndex, selectedVersionId)
+                                }
+                              }}
+                              disabled={switchingVersionScene === sv.sceneIndex || isLoadingVersions}
+                              className="w-full text-xs px-2 py-1.5 pr-6 rounded-md border border-border bg-secondary/50 text-foreground appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {versions.map((version) => (
+                                <option key={version.id} value={version.id}>
+                                  v{version.version} {version.is_active ? '(활성)' : ''}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                          </div>
+                        )}
+                        {/* 단일 버전이지만 버전 정보가 있으면 표시 */}
+                        {!hasMultipleVersions && versions.length === 1 && (
+                          <div className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
+                            <History className="w-3 h-3" />
+                            <span>v{versions[0].version}</span>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* 대본 (제품 설명 영상용 - 왼쪽 영역에 표시) */}
           {videoAd.script && (
@@ -601,51 +741,6 @@ export default function VideoAdDetailPage() {
               </div>
             </div>
           )}
-
-          {/* 시나리오 정보 (제품 광고용) */}
-          {videoAd.scenario_info && (() => {
-            const scenario = parseScenarioInfo(videoAd.scenario_info)
-            if (!scenario) return null
-            return (
-              <div className="bg-card border border-border rounded-xl p-5">
-                <h3 className="text-base font-semibold text-foreground flex items-center gap-2 mb-4">
-                  <Film className="w-5 h-5 text-primary" />
-                  시나리오
-                </h3>
-                {scenario.title && (
-                  <div className="mb-3">
-                    <span className="text-xs text-muted-foreground">제목</span>
-                    <p className="text-sm font-medium text-foreground">{scenario.title}</p>
-                  </div>
-                )}
-                {scenario.concept && (
-                  <div className="mb-4">
-                    <span className="text-xs text-muted-foreground">컨셉</span>
-                    <p className="text-sm text-foreground">{scenario.concept}</p>
-                  </div>
-                )}
-                {scenario.scenes && scenario.scenes.length > 0 && (
-                  <div className="space-y-3">
-                    <span className="text-xs text-muted-foreground">씬 구성</span>
-                    {scenario.scenes.map((scene, idx) => (
-                      <div key={idx} className="bg-secondary/30 rounded-lg p-3 border border-border/50">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-medium text-primary">씬 {scene.sceneNumber || idx + 1}</span>
-                          {scene.duration && (
-                            <span className="text-xs text-muted-foreground">{scene.duration}초</span>
-                          )}
-                        </div>
-                        <p className="text-sm text-foreground">{scene.description}</p>
-                        {scene.dialogue && (
-                          <p className="text-xs text-muted-foreground mt-1 italic">&quot;{scene.dialogue}&quot;</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )
-          })()}
         </div>
 
         {/* 오른쪽: 정보 패널 */}

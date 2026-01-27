@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
     if (productId) {
       const { data: product, error: productError } = await supabase
         .from('ad_products')
-        .select('id, name, rembg_image_url, image_url, status')
+        .select('id, name, rembg_image_url, image_url, image_url_original, status')
         .eq('id', productId)
         .eq('user_id', user.id)
         .single()
@@ -214,14 +214,15 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      productImageUrl = product.rembg_image_url || product.image_url
+      // 원본 이미지 우선 사용 (AI 모델 품질 향상)
+      productImageUrl = product.image_url_original || product.rembg_image_url || product.image_url
     }
 
     // 아바타 이미지
     if (avatarId) {
       const { data: avatar, error: avatarError } = await supabase
         .from('avatars')
-        .select('id, name, image_url, status')
+        .select('id, name, image_url, image_url_original, status')
         .eq('id', avatarId)
         .eq('user_id', user.id)
         .single()
@@ -240,7 +241,8 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      avatarImageUrl = avatar.image_url
+      // 원본 이미지 우선 사용 (AI 모델 품질 향상)
+      avatarImageUrl = avatar.image_url_original || avatar.image_url
     }
 
     // 최소한 하나의 이미지 필요
