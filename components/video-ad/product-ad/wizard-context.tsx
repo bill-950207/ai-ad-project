@@ -540,6 +540,36 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
     resultVideoUrls, sceneKeyframes, sceneVideoSegments
   ])
 
+  // 비동기 Draft 저장 함수 (안정적인 참조 유지)
+  const asyncSaveFn = useCallback(async (payload: Record<string, unknown>) => {
+    const res = await fetch('/api/product-ad/draft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    if (!res.ok) {
+      throw new Error('Failed to save draft')
+    }
+
+    const data = await res.json()
+    if (data.draft?.id) {
+      const isNewDraft = !payload.id
+      setDraftId(data.draft.id)
+
+      // 새 draft 생성 시 URL 업데이트
+      if (isNewDraft && typeof window !== 'undefined') {
+        skipNextLoadRef.current = true
+        const currentUrl = new URL(window.location.href)
+        currentUrl.searchParams.set('videoAdId', data.draft.id)
+        window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search)
+      }
+
+      return data.draft.id
+    }
+    return null
+  }, [])
+
   // 비동기 Draft 저장 훅
   const {
     queueSave,
@@ -549,41 +579,11 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
     lastSavedAt,
     flushPending,
     clearError: clearSaveError,
-  } = useAsyncDraftSave(
-    async (payload: Record<string, unknown>) => {
-      const res = await fetch('/api/product-ad/draft', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-
-      if (!res.ok) {
-        throw new Error('Failed to save draft')
-      }
-
-      const data = await res.json()
-      if (data.draft?.id) {
-        const isNewDraft = !payload.id
-        setDraftId(data.draft.id)
-
-        // 새 draft 생성 시 URL 업데이트
-        if (isNewDraft && typeof window !== 'undefined') {
-          skipNextLoadRef.current = true
-          const currentUrl = new URL(window.location.href)
-          currentUrl.searchParams.set('videoAdId', data.draft.id)
-          window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search)
-        }
-
-        return data.draft.id
-      }
-      return null
-    },
-    {
-      debounceMs: 300,
-      maxRetries: 3,
-      retryDelayMs: 1000,
-    }
-  )
+  } = useAsyncDraftSave(asyncSaveFn, {
+    debounceMs: 300,
+    maxRetries: 3,
+    retryDelayMs: 1000,
+  })
 
   // 비동기 Draft 저장 (단계 전환 시 사용)
   const saveDraftAsync = useCallback((additionalData?: Record<string, unknown>) => {

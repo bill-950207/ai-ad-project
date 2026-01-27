@@ -48,6 +48,19 @@ export function useAsyncDraftSave(
   const isUnmountedRef = useRef(false)
   const isSavingRef = useRef(false) // 저장 중복 방지용
 
+  // 최신 saveFn을 참조하기 위한 ref (클로저 문제 해결)
+  const saveFnRef = useRef(saveFn)
+  const optionsRef = useRef({ onSaveStart, onSaveSuccess, onSaveError, onSaveComplete, maxRetries, retryDelayMs })
+
+  // saveFn과 options가 변경될 때마다 ref 업데이트
+  useEffect(() => {
+    saveFnRef.current = saveFn
+  }, [saveFn])
+
+  useEffect(() => {
+    optionsRef.current = { onSaveStart, onSaveSuccess, onSaveError, onSaveComplete, maxRetries, retryDelayMs }
+  }, [onSaveStart, onSaveSuccess, onSaveError, onSaveComplete, maxRetries, retryDelayMs])
+
   // cleanup on unmount
   useEffect(() => {
     return () => {
@@ -58,6 +71,7 @@ export function useAsyncDraftSave(
     }
   }, [])
 
+  // executeSave는 ref를 통해 최신 saveFn을 사용하므로 의존성이 적음
   const executeSave = useCallback(async (
     payload: Record<string, unknown>,
     retryCount = 0
@@ -70,40 +84,47 @@ export function useAsyncDraftSave(
 
     setIsSaving(true)
     setLastSaveError(null)
-    onSaveStart?.()
+    optionsRef.current.onSaveStart?.()
 
     try {
-      const result = await saveFn(payload)
+      const result = await saveFnRef.current(payload)
 
       if (!isUnmountedRef.current) {
         setLastSavedAt(new Date())
         setLastSaveError(null)
-        onSaveSuccess?.(result)
+        optionsRef.current.onSaveSuccess?.(result)
       }
     } catch (error) {
       if (isUnmountedRef.current) return
 
       const err = error as Error
+      const { maxRetries: max, retryDelayMs: delay } = optionsRef.current
 
-      if (retryCount < maxRetries) {
+      if (retryCount < max) {
         // 지수 백오프로 재시도
-        const delay = retryDelayMs * Math.pow(1.5, retryCount)
+        const waitTime = delay * Math.pow(1.5, retryCount)
         isSavingRef.current = false
-        await new Promise(resolve => setTimeout(resolve, delay))
+        await new Promise(resolve => setTimeout(resolve, waitTime))
         return executeSave(payload, retryCount + 1)
       }
 
       setLastSaveError(err)
-      onSaveError?.(err, retryCount)
+      optionsRef.current.onSaveError?.(err, retryCount)
     } finally {
       if (!isUnmountedRef.current) {
         setIsSaving(false)
         setPendingSave(false)
         isSavingRef.current = false
-        onSaveComplete?.()
+        optionsRef.current.onSaveComplete?.()
       }
     }
-  }, [saveFn, maxRetries, retryDelayMs, onSaveStart, onSaveSuccess, onSaveError, onSaveComplete])
+  }, []) // 의존성 없음 - ref를 통해 최신 값 접근
+
+  // executeSave를 ref로 유지하여 setTimeout 콜백에서 항상 최신 버전 사용
+  const executeSaveRef = useRef(executeSave)
+  useEffect(() => {
+    executeSaveRef.current = executeSave
+  }, [executeSave])
 
   const queueSave = useCallback((payload: Record<string, unknown>) => {
     // 이전 대기 중인 타이머 취소
@@ -115,15 +136,15 @@ export function useAsyncDraftSave(
     latestPayloadRef.current = payload
     setPendingSave(true)
 
-    // 디바운스 후 실행
+    // 디바운스 후 실행 (ref를 통해 최신 executeSave 사용)
     debounceTimerRef.current = setTimeout(() => {
       const currentPayload = latestPayloadRef.current
       if (currentPayload && !isSavingRef.current) {
         latestPayloadRef.current = null
-        executeSave(currentPayload)
+        executeSaveRef.current(currentPayload)
       }
     }, debounceMs)
-  }, [debounceMs, executeSave])
+  }, [debounceMs]) // executeSave 의존성 제거 - ref 사용
 
   const cancelPending = useCallback(() => {
     if (debounceTimerRef.current) {
@@ -141,9 +162,9 @@ export function useAsyncDraftSave(
     const currentPayload = latestPayloadRef.current
     if (currentPayload && !isSavingRef.current) {
       latestPayloadRef.current = null
-      await executeSave(currentPayload)
+      await executeSaveRef.current(currentPayload)
     }
-  }, [executeSave])
+  }, []) // executeSave 의존성 제거 - ref 사용
 
   const clearError = useCallback(() => {
     setLastSaveError(null)
