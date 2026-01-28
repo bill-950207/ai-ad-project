@@ -443,6 +443,7 @@ model profiles {
   industry        String?
   team_size       String?
   referral_source String?
+  role            user_role        @default(MEMBER)
   ad_music        ad_music[]
   ad_products     ad_products[]
   ad_backgrounds  ad_background[]
@@ -455,6 +456,27 @@ model profiles {
   subscription    subscriptions?
   usage_tracking  usage_tracking[]
 
+  @@schema("public")
+}
+
+/// 광고 쇼케이스 (관리자가 등록하는 예시 광고)
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ad_showcases {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type          String   // 'image' | 'video'
+  title         String
+  description   String?
+  thumbnail_url String
+  media_url     String?  // 영상일 경우 영상 URL
+  ad_type       String?  // 광고 타입 (productOnly, holding, productDescription 등)
+  category      String?  // 카테고리
+  is_active     Boolean  @default(true)
+  display_order Int      @default(0)
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([type, is_active], map: "idx_ad_showcases_type_active")
+  @@index([display_order], map: "idx_ad_showcases_display_order")
   @@schema("public")
 }
 
@@ -791,6 +813,13 @@ enum ad_product_status {
   IN_PROGRESS
   COMPLETED
   FAILED
+
+  @@schema("public")
+}
+
+enum user_role {
+  MEMBER
+  ADMIN
 
   @@schema("public")
 }
