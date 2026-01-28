@@ -11,7 +11,7 @@
 'use client'
 
 import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react'
-import { Play, Image as ImageIcon, Video, Sparkles, ArrowRight, Volume2, VolumeX, ChevronDown, X, Wand2 } from 'lucide-react'
+import { Play, Image as ImageIcon, Video, Sparkles, ArrowRight, Volume2, VolumeX, X, Wand2 } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -501,7 +501,10 @@ export function ShowcaseSection() {
   const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(1)
   const [isTransitioning, setIsTransitioning] = useState(false)
-  const ITEMS_PER_PAGE = 12
+  const ITEMS_PER_PAGE = 20
+
+  // 무한 스크롤 감지용 ref
+  const loadMoreRef = useRef<HTMLDivElement>(null)
 
   // 라이트박스 상태
   const [selectedShowcase, setSelectedShowcase] = useState<ShowcaseItem | null>(null)
@@ -601,14 +604,25 @@ export function ShowcaseSection() {
     fetchShowcases(1, false)
   }, [])
 
-  // 더보기 버튼 클릭
-  const handleLoadMore = () => {
-    if (!isLoadingMore && hasMore) {
-      const nextPage = page + 1
-      setPage(nextPage)
-      fetchShowcases(nextPage, true)
-    }
-  }
+  // 무한 스크롤 - IntersectionObserver
+  useEffect(() => {
+    if (!loadMoreRef.current || isLoading) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
+          const nextPage = page + 1
+          setPage(nextPage)
+          fetchShowcases(nextPage, true)
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    )
+
+    observer.observe(loadMoreRef.current)
+
+    return () => observer.disconnect()
+  }, [hasMore, isLoadingMore, isLoading, page])
 
   // 탭 변경 핸들러 (부드러운 전환)
   const handleTabChange = (tab: 'all' | 'image' | 'video') => {
@@ -644,7 +658,7 @@ export function ShowcaseSection() {
       unregisterVisibleVideo,
       onShowcaseClick: handleShowcaseClick,
     }}>
-      <section id="gallery" className="px-4 py-20 sm:py-28 bg-gradient-to-b from-background via-secondary/20 to-background overflow-hidden">
+      <section id="gallery" className="px-4 py-20 sm:py-28 bg-gradient-to-b from-background via-secondary/20 to-background">
         <div className="mx-auto max-w-7xl">
           {/* 섹션 헤더 */}
           <div className="text-center mb-12">
@@ -702,28 +716,15 @@ export function ShowcaseSection() {
                 ))}
               </div>
 
-              {/* 더보기 버튼 */}
-              {hasMore && (
-                <div className="flex justify-center mt-10">
-                  <button
-                    onClick={handleLoadMore}
-                    disabled={isLoadingMore}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-secondary/50 text-foreground font-medium hover:bg-secondary transition-all duration-300 disabled:opacity-50"
-                  >
-                    {isLoadingMore ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                        <span>{language === 'ko' ? '로딩 중...' : 'Loading...'}</span>
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="w-4 h-4" />
-                        <span>{language === 'ko' ? '더 보기' : 'Load More'}</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
+              {/* 무한 스크롤 감지 영역 */}
+              <div ref={loadMoreRef} className="h-10 mt-8">
+                {isLoadingMore && (
+                  <div className="flex justify-center items-center gap-2 text-muted-foreground">
+                    <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    <span className="text-sm">{language === 'ko' ? '로딩 중...' : 'Loading...'}</span>
+                  </div>
+                )}
+              </div>
             </>
           )}
 
