@@ -112,6 +112,8 @@ export async function generateVideoPrompt(input: VideoPromptInput): Promise<Vide
 
 제품 정보:
 ${input.productSummary}
+${input.productImageUrl ? '제품 이미지가 첨부되어 있습니다. 이미지의 제품 외관을 참고하여 프롬프트를 작성하세요.' : ''}
+${input.avatarImageUrl ? '아바타/모델 이미지가 첨부되어 있습니다. 이미지의 인물을 참고하여 프롬프트를 작성하세요.' : ''}
 
 영상 길이: ${durationDesc}
 광고 스타일: ${input.style || '전문적이고 매력적인'}
@@ -136,9 +138,27 @@ ${VIDEO_SELF_VERIFICATION}`
     responseMimeType: 'application/json',
   }
 
+  // 이미지 첨부 처리
+  const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []
+
+  if (input.productImageUrl) {
+    const imageData = await fetchImageAsBase64(input.productImageUrl)
+    if (imageData) {
+      parts.push({ inlineData: { mimeType: imageData.mimeType, data: imageData.base64 } })
+    }
+  }
+  if (input.avatarImageUrl) {
+    const imageData = await fetchImageAsBase64(input.avatarImageUrl)
+    if (imageData) {
+      parts.push({ inlineData: { mimeType: imageData.mimeType, data: imageData.base64 } })
+    }
+  }
+
+  parts.push({ text: prompt })
+
   const response = await genAI.models.generateContent({
     model: MODEL_NAME,
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    contents: [{ role: 'user', parts }],
     config,
   })
 
@@ -340,6 +360,29 @@ export async function generateProductScripts(input: ProductScriptInput): Promise
     ? `Product URL: ${input.productUrl}\n${input.productInfo}`
     : `Product info:\n${input.productInfo}`
 
+  // 추가 지시사항
+  const additionalSection = input.additionalInstructions
+    ? `\n=== ADDITIONAL INSTRUCTIONS ===\n${input.additionalInstructions}`
+    : ''
+
+  // 아바타 정보 (의상 추천 시 참고용)
+  const avatarSection = input.avatarDescription
+    ? `\n=== AVATAR INFO ===\nAvatar presenting the product: ${input.avatarDescription}`
+    : ''
+
+  // 의상 추천 요청 섹션
+  const outfitSection = input.requestOutfitRecommendation
+    ? `\n=== OUTFIT RECOMMENDATION REQUEST ===
+You must also recommend an outfit for the avatar presenting this product.
+${input.avatarDescription ? `The avatar is: ${input.avatarDescription}` : ''}
+${input.productImageUrl ? 'A product image is attached for reference.' : ''}
+
+Add "recommendedOutfit" field to your JSON response with:
+- description: English outfit description (e.g., "casual white cotton t-shirt with light blue jeans")
+- localizedDescription: Outfit description in ${config_lang.name} (e.g., for Korean: "캐주얼한 흰색 티셔츠와 라이트 블루 청바지")
+- reason: Why this outfit suits the product and video style in ${config_lang.name}`
+    : ''
+
   // 비디오 타입별 스타일 가이드
   const videoType = input.videoType || 'UGC'
   const videoTypeStyle = VIDEO_TYPE_SCRIPT_STYLES[videoType]
@@ -357,37 +400,35 @@ IMPORTANT: All 3 scripts should follow the "${videoTypeStyle.korean}" video styl
 `
     : ''
 
-  // 의상 추천 섹션 (요청된 경우에만)
+  // AI 의상 추천 섹션 (requestOutfitRecommendation이 true일 때만 추가) - 다국어 지원
   const outfitRecommendationSection = input.requestOutfitRecommendation
     ? `
 === OUTFIT RECOMMENDATION (REQUIRED) ===
 Based on the product and video style, recommend an appropriate outfit for the model.
 ${input.avatarDescription ? `Model info: ${input.avatarDescription}` : ''}
+${input.productImageUrl ? `Product image is provided for reference.` : ''}
+
 Consider:
 - Product category and target audience
 - Video style (${videoTypeStyle?.korean || 'UGC'})
 - Overall brand image and mood
+- Natural, authentic appearance that matches the product context
 
 The outfit should complement the product without overshadowing it.
-`
-    : ''
+Outfit must be described in ENGLISH for image generation.
 
-  // 출력 형식 (의상 추천 포함 여부에 따라)
-  const outfitOutputSection = input.requestOutfitRecommendation
-    ? `,
-  "recommendedOutfit": {
-    "description": "English outfit description (e.g., 'casual white cotton t-shirt with light blue jeans')",
-    "koreanDescription": "한국어 의상 설명",
-    "reason": "의상 선택 이유 (한국어)"
-  }`
+Include in your response:
+- "recommendedOutfit.description": Detailed English description of the outfit (e.g., "casual white cotton t-shirt with light blue slim-fit jeans")
+- "recommendedOutfit.localizedDescription": Outfit description in ${config_lang.name} for user display
+- "recommendedOutfit.reason": Brief explanation in ${config_lang.name} of why this outfit fits the product/video style
+`
     : ''
 
   const prompt = `You are an expert advertising copywriter. Write 3 style scripts for the product in ${config_lang.name}. Target: ~${targetChars} characters each.
 
-${productSection}
-${videoTypeContext}
+${productSection}${avatarSection}${additionalSection}
+${videoTypeContext}${outfitSection}
 ${outfitRecommendationSection}
-
 === SCRIPT REQUIREMENTS ===
 Styles to generate:
 1. formal (professional/trustworthy tone)
@@ -424,14 +465,20 @@ Each script should:
       "content": "스크립트 전체 내용",
       "estimatedDuration": ${input.durationSeconds}
     }
-  ]${outfitOutputSection}
+  ]${input.requestOutfitRecommendation ? `,
+  "recommendedOutfit": {
+    "description": "English outfit description for image generation (e.g., casual white cotton t-shirt with light blue slim-fit jeans)",
+    "localizedDescription": "의상 설명 in ${config_lang.name} (사용자에게 표시용)",
+    "reason": "의상 선택 이유 in ${config_lang.name}"
+  }` : ''}
 }
 
 === SELF-VERIFICATION ===
 Before responding, check:
 ✓ All 3 scripts are written in ${config_lang.name}?
 ✓ Each script has different tone (formal/casual/energetic)?
-✓ Each script is approximately ${targetChars} characters?${input.requestOutfitRecommendation ? '\n✓ Outfit recommendation included with English description, Korean description, and reason?' : ''}
+✓ Each script is approximately ${targetChars} characters?${input.requestOutfitRecommendation ? `
+✓ recommendedOutfit is included with English description and localizedDescription?` : ''}
 ✓ JSON format is valid and complete?`
 
   const tools = input.productUrl ? [{ urlContext: {} }, { googleSearch: {} }] : undefined
@@ -445,11 +492,24 @@ Before responding, check:
   console.log('[generateProductScripts] 프롬프트 길이:', prompt.length)
   console.log('[generateProductScripts] 비디오 타입:', videoType, '언어:', language)
 
+  // 제품 이미지 포함 여부 확인
+  const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []
+
+  if (input.productImageUrl) {
+    const imageData = await fetchImageAsBase64(input.productImageUrl)
+    if (imageData) {
+      parts.push({ inlineData: { mimeType: imageData.mimeType, data: imageData.base64 } })
+      console.log('[generateProductScripts] 제품 이미지 첨부됨')
+    }
+  }
+
+  parts.push({ text: prompt })
+
   let response
   try {
     response = await genAI.models.generateContent({
       model: MODEL_NAME,
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      contents: [{ role: 'user', parts }],
       config: genConfig,
     })
     console.log('[generateProductScripts] Gemini 응답 성공, 응답 길이:', response.text?.length || 0)
@@ -461,6 +521,24 @@ Before responding, check:
   try {
     const result = JSON.parse(response.text || '') as ProductScriptResult
     console.log('[generateProductScripts] JSON 파싱 성공, 스크립트 수:', result.scripts?.length || 0)
+
+    // AI 의상 추천 요청했는데 응답에 없는 경우 기본값 설정
+    if (input.requestOutfitRecommendation && !result.recommendedOutfit) {
+      console.log('[generateProductScripts] recommendedOutfit 누락, 기본값 설정')
+      const defaultOutfitDescriptions: Record<string, { localized: string; reason: string }> = {
+        ko: { localized: '캐주얼한 흰색 티셔츠와 라이트 블루 슬림핏 청바지', reason: '자연스럽고 깔끔한 캐주얼 스타일로 다양한 제품과 잘 어울립니다.' },
+        en: { localized: 'Casual white t-shirt with light blue slim-fit jeans', reason: 'A natural and clean casual style that suits various products.' },
+        ja: { localized: 'カジュアルな白Tシャツとライトブルーのスリムフィットジーンズ', reason: '自然で清潔感のあるカジュアルスタイルで、様々な製品に合います。' },
+        zh: { localized: '休闲白色T恤搭配浅蓝色修身牛仔裤', reason: '自然简洁的休闲风格，适合各种产品。' },
+      }
+      const defaultOutfit = defaultOutfitDescriptions[language] || defaultOutfitDescriptions.ko
+      result.recommendedOutfit = {
+        description: 'casual white cotton t-shirt with light blue slim-fit jeans',
+        localizedDescription: defaultOutfit.localized,
+        reason: defaultOutfit.reason,
+      }
+    }
+
     return result
   } catch (parseError) {
     console.error('[generateProductScripts] JSON 파싱 실패:', parseError)
@@ -474,10 +552,17 @@ Before responding, check:
       ],
     }
     if (input.requestOutfitRecommendation) {
+      const defaultOutfitDescriptions: Record<string, { localized: string; reason: string }> = {
+        ko: { localized: '캐주얼한 흰색 티셔츠와 라이트 블루 청바지', reason: '자연스럽고 깔끔한 캐주얼 스타일입니다.' },
+        en: { localized: 'Casual white t-shirt with light blue jeans', reason: 'A natural and clean casual style.' },
+        ja: { localized: 'カジュアルな白Tシャツとライトブルージーンズ', reason: '自然で清潔感のあるカジュアルスタイルです。' },
+        zh: { localized: '休闲白色T恤搭配浅蓝色牛仔裤', reason: '自然简洁的休闲风格。' },
+      }
+      const defaultOutfit = defaultOutfitDescriptions[language] || defaultOutfitDescriptions.ko
       result.recommendedOutfit = {
         description: 'casual white cotton t-shirt with light blue jeans',
-        koreanDescription: '캐주얼한 흰색 티셔츠와 라이트 블루 청바지',
-        reason: '자연스럽고 깔끔한 캐주얼 스타일입니다.',
+        localizedDescription: defaultOutfit.localized,
+        reason: defaultOutfit.reason,
       }
     }
     return result

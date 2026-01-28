@@ -18,7 +18,12 @@
  */
 
 import { textToSpeech as minimaxTTS } from '@/lib/wavespeed/client'
-import { textToSpeech as elevenLabsTTS } from '@/lib/elevenlabs/client'
+import {
+  textToSpeech as elevenLabsTTS,
+  type EmotionPreset,
+  EMOTION_PRESETS,
+  type ElevenLabsModelId,
+} from '@/lib/elevenlabs/client'
 
 // ============================================================
 // 타입 정의
@@ -36,6 +41,10 @@ export interface TTSRequest {
   voiceId: string
   language?: TTSLanguage
   preferredProvider?: TTSProvider
+  /** 감정 프리셋 (ElevenLabs 전용) */
+  emotionPreset?: EmotionPreset
+  /** 모델 ID (ElevenLabs 전용, v3 사용 시 'eleven_v3') */
+  modelId?: ElevenLabsModelId
 }
 
 /** TTS 결과 */
@@ -153,16 +162,36 @@ export class UnifiedTTSService {
 
   /**
    * 음성 생성
+   *
+   * @example
+   * // 기본 사용
+   * await service.generateSpeech({ text: '안녕하세요', voiceId: 'Korean_SweetGirl' })
+   *
+   * // 감정 프리셋 사용 (ElevenLabs)
+   * await service.generateSpeech({
+   *   text: '와! 정말 대박이에요!',
+   *   voiceId: 'voice-id',
+   *   emotionPreset: 'energetic',
+   *   preferredProvider: 'elevenlabs'
+   * })
+   *
+   * // v3 모델 사용 (감정 태그 지원)
+   * await service.generateSpeech({
+   *   text: '[excited] 정말 좋아요!',
+   *   voiceId: 'voice-id',
+   *   modelId: 'eleven_v3',
+   *   preferredProvider: 'elevenlabs'
+   * })
    */
   async generateSpeech(request: TTSRequest): Promise<TTSResult> {
-    const { text, voiceId, language, preferredProvider } = request
+    const { text, voiceId, language, preferredProvider, emotionPreset, modelId } = request
 
     // 제공자 및 언어 결정
     const provider = preferredProvider || detectProvider(voiceId)
     const detectedLanguage = language || detectLanguage(text)
 
     // 1차 시도
-    const primaryResult = await this.tryProvider(provider, text, voiceId)
+    const primaryResult = await this.tryProvider(provider, text, voiceId, emotionPreset, modelId)
 
     if (primaryResult.success) {
       return primaryResult
@@ -178,10 +207,13 @@ export class UnifiedTTSService {
     const fallbackProvider: TTSProvider = provider === 'minimax' ? 'elevenlabs' : 'minimax'
     const fallbackVoiceId = FALLBACK_VOICES[detectedLanguage][fallbackProvider]
 
+    // Fallback 시에는 감정 프리셋 유지 (ElevenLabs로 fallback하는 경우)
     const fallbackResult = await this.tryProvider(
       fallbackProvider,
       text,
-      fallbackVoiceId
+      fallbackVoiceId,
+      fallbackProvider === 'elevenlabs' ? emotionPreset : undefined,
+      fallbackProvider === 'elevenlabs' ? modelId : undefined
     )
 
     if (fallbackResult.success) {
@@ -208,14 +240,16 @@ export class UnifiedTTSService {
   private async tryProvider(
     provider: TTSProvider,
     text: string,
-    voiceId: string
+    voiceId: string,
+    emotionPreset?: EmotionPreset,
+    modelId?: ElevenLabsModelId
   ): Promise<TTSResult> {
     for (let attempt = 1; attempt <= this.config.maxRetries; attempt++) {
       try {
         if (provider === 'minimax') {
           return await this.generateWithMinimax(text, voiceId)
         } else {
-          return await this.generateWithElevenLabs(text, voiceId)
+          return await this.generateWithElevenLabs(text, voiceId, emotionPreset, modelId)
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
@@ -265,11 +299,17 @@ export class UnifiedTTSService {
   /**
    * ElevenLabs TTS 생성
    */
-  private async generateWithElevenLabs(text: string, voiceId: string): Promise<TTSResult> {
+  private async generateWithElevenLabs(
+    text: string,
+    voiceId: string,
+    emotionPreset?: EmotionPreset,
+    modelId?: ElevenLabsModelId
+  ): Promise<TTSResult> {
     const result = await elevenLabsTTS({
       text,
       voice_id: voiceId,
-      model_id: 'eleven_multilingual_v2',
+      model_id: modelId || 'eleven_multilingual_v2',
+      emotion_preset: emotionPreset,
     })
 
     return {
