@@ -5,8 +5,8 @@
  * 새 아바타 만들기는 별도 페이지(/dashboard/avatar/new)로 이동합니다.
  *
  * 폴링 최적화:
- * - 기존: 각 AvatarCard에서 개별 폴링 (N개 아바타 = 초당 N개 요청)
- * - 개선: 부모에서 일괄 폴링 (초당 1개 요청으로 모든 아바타 상태 확인)
+ * - 기존: 전체 목록 폴링 (1개라도 생성 중이면 전체 조회)
+ * - 개선: 생성 중인 아바타만 개별 /api/avatars/[id]/status 폴링
  */
 
 'use client'
@@ -69,19 +69,35 @@ export function AvatarPageContent() {
   }, [fetchAvatars])
 
   /**
-   * 처리 중인 아바타가 있을 때 일괄 폴링
-   * 기존: 각 카드에서 개별 폴링 → 개선: 부모에서 1초마다 전체 목록 새로고침
+   * 처리 중인 아바타가 있을 때 개별 폴링
+   * 전체 목록 조회 대신 생성 중인 아바타만 /api/avatars/[id]/status 폴링
    */
   useEffect(() => {
-    const hasProcessingAvatars = avatars.some(a => PROCESSING_STATUSES.includes(a.status))
+    const processingAvatars = avatars.filter(a => PROCESSING_STATUSES.includes(a.status))
 
-    if (hasProcessingAvatars && !isLoading) {
+    if (processingAvatars.length > 0 && !isLoading) {
       // 이미 폴링 중이면 중복 생성 방지
       if (pollingRef.current) return
 
-      pollingRef.current = setInterval(() => {
-        fetchAvatars()
-      }, 2000) // 2초 간격 (기존 1초보다 여유있게)
+      pollingRef.current = setInterval(async () => {
+        // 현재 처리 중인 아바타들의 ID를 기반으로 개별 폴링
+        const currentAvatars = avatars.filter(a => PROCESSING_STATUSES.includes(a.status))
+
+        for (const avatar of currentAvatars) {
+          try {
+            const res = await fetch(`/api/avatars/${avatar.id}/status`)
+            if (res.ok) {
+              const data = await res.json()
+              // 상태가 변경되었으면 해당 아바타만 업데이트
+              setAvatars(prev => prev.map(a =>
+                a.id === avatar.id ? data.avatar : a
+              ))
+            }
+          } catch (error) {
+            console.error('아바타 상태 폴링 오류:', error)
+          }
+        }
+      }, 2000) // 2초 간격
     } else {
       // 처리 중인 아바타가 없으면 폴링 중지
       if (pollingRef.current) {
@@ -96,7 +112,7 @@ export function AvatarPageContent() {
         pollingRef.current = null
       }
     }
-  }, [avatars, isLoading, fetchAvatars])
+  }, [avatars, isLoading])
 
   /**
    * 아바타 삭제 핸들러
