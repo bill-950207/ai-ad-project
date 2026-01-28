@@ -148,17 +148,18 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
     >
       {/* 미디어 컨테이너 */}
       <div className="relative w-full">
-        {/* 썸네일 이미지 - 항상 표시하여 레이아웃 유지 */}
+        {/* 썸네일 이미지 - 항상 표시하여 레이아웃 유지, 크롭 시 상단 표시 */}
         <img
           src={item.thumbnail_url}
           alt={item.title}
-          className={`w-full h-auto block transition-opacity duration-300 ${
+          className={`w-full h-auto block transition-opacity duration-300 object-top ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
+          style={{ objectPosition: 'top' }}
           onLoad={() => setImageLoaded(true)}
         />
 
-        {/* 비디오 - 썸네일 위에 오버레이 */}
+        {/* 비디오 - 썸네일 위에 오버레이, 크롭 시 상단 표시 */}
         {item.type === 'video' && item.media_url && (
           <video
             ref={videoRef}
@@ -166,6 +167,7 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
               shouldPlay ? 'opacity-100' : 'opacity-0'
             }`}
+            style={{ objectPosition: 'top' }}
             muted={isMuted}
             loop
             playsInline
@@ -208,8 +210,11 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
           isHovered ? 'opacity-100' : 'opacity-0'
         }`} />
 
-        {/* 상단: 타입 배지 */}
-        <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-sm text-xs font-medium text-white pointer-events-none">
+        {/* 하단 어두운 그라데이션 */}
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none" />
+
+        {/* 하단 좌측: 타입 배지 */}
+        <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-medium text-white pointer-events-none">
           {item.type === 'video' ? (
             <Video className="w-3 h-3" />
           ) : (
@@ -218,27 +223,24 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
           <span>{item.type === 'video' ? 'Video' : 'Image'}</span>
         </div>
 
-        {/* 하단: 제품 & 아바타 썸네일 */}
+        {/* 하단 우측: 제품 & 아바타 썸네일 */}
         {(item.product_image_url || item.avatar_image_url) && (
-          <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 pointer-events-none">
-            {item.product_image_url && (
-              <div className="w-10 h-10 rounded-lg bg-white/90 p-1 shadow-lg flex-shrink-0">
-                <img
-                  src={item.product_image_url}
-                  alt="Product"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            )}
-            {item.product_image_url && item.avatar_image_url && (
-              <div className="text-white/50 text-xs">+</div>
-            )}
+          <div className="absolute bottom-3 right-3 flex items-center gap-2 pointer-events-none">
             {item.avatar_image_url && (
-              <div className="w-10 h-10 rounded-full overflow-hidden shadow-lg flex-shrink-0 ring-2 ring-white/20">
+              <div className="w-9 h-9 rounded-full overflow-hidden shadow-lg flex-shrink-0 ring-2 ring-white/30">
                 <img
                   src={item.avatar_image_url}
                   alt="Avatar"
                   className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            {item.product_image_url && (
+              <div className="w-9 h-9 rounded-lg bg-white/95 p-0.5 shadow-lg flex-shrink-0">
+                <img
+                  src={item.product_image_url}
+                  alt="Product"
+                  className="w-full h-full object-contain"
                 />
               </div>
             )}
