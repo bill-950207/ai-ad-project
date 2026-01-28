@@ -8,7 +8,12 @@
     "subscription": "Subscription",
     "comingSoon": "Coming soon",
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "error": "Something went wrong",
+    "errorDescription": "An unexpected error occurred. Please try again.",
+    "retry": "Try again",
+    "goBack": "Go back",
+    "goHome": "Go home"
   },
   "landing": {
     "badge": "AI-Powered Ad Creation",

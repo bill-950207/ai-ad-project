@@ -8,7 +8,12 @@
     "subscription": "サブスクリプション",
     "comingSoon": "近日公開",
     "cancel": "キャンセル",
-    "save": "保存"
+    "save": "保存",
+    "error": "エラーが発生しました",
+    "errorDescription": "予期しないエラーが発生しました。もう一度お試しください。",
+    "retry": "再試行",
+    "goBack": "戻る",
+    "goHome": "ホームへ"
   },
   "landing": {
     "badge": "AI搭載広告作成",
