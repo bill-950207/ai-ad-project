@@ -31,7 +31,8 @@ import {
   ChevronLeft,
   Package,
   Menu,
-  X
+  X,
+  Home
 } from 'lucide-react'
 
 // ============================================================
@@ -251,6 +252,59 @@ export function Sidebar() {
           isCollapsed ? "p-2" : "p-4",
           "space-y-4"
         )}>
+          {/* 홈 */}
+          <div className="relative group">
+            <Link
+              href="/dashboard"
+              onClick={handleNavClick}
+              className={cn(
+                "relative flex items-center gap-3 rounded-xl text-sm overflow-hidden",
+                "transition-all duration-200 ease-out",
+                isCollapsed ? "p-3 justify-center" : "px-3 py-2.5",
+                pathname === '/dashboard'
+                  ? "bg-primary/15 text-primary font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+              )}
+            >
+              {/* 호버 그라데이션 배경 */}
+              <div className={cn(
+                "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300",
+                "bg-gradient-to-r from-primary/10 via-transparent to-transparent",
+                pathname === '/dashboard' && "opacity-0"
+              )} />
+
+              {/* 활성 인디케이터 */}
+              {pathname === '/dashboard' && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-primary rounded-r-full" />
+              )}
+
+              {/* 아이콘 */}
+              <span className={cn(
+                "relative z-10 transition-transform duration-200",
+                "group-hover:scale-110"
+              )}>
+                <Home className="w-4 h-4" />
+              </span>
+
+              {/* 라벨 */}
+              {!isCollapsed && (
+                <span className="relative z-10">{'홈'}</span>
+              )}
+            </Link>
+
+            {/* 접힌 상태 툴팁 */}
+            {isCollapsed && (
+              <div className={cn(
+                "absolute left-full ml-3 top-1/2 -translate-y-1/2",
+                "px-2.5 py-1.5 bg-card border border-border rounded-lg text-sm",
+                "opacity-0 group-hover:opacity-100 transition-opacity duration-200",
+                "pointer-events-none whitespace-nowrap z-50 shadow-lg"
+              )}>
+                {'홈'}
+              </div>
+            )}
+          </div>
+
           {navItems.map((item) => (
             <div key={item.labelKey}>
               {/* 상위 메뉴 라벨 */}
