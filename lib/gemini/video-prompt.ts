@@ -112,6 +112,8 @@ export async function generateVideoPrompt(input: VideoPromptInput): Promise<Vide
 
 제품 정보:
 ${input.productSummary}
+${input.productImageUrl ? '제품 이미지가 첨부되어 있습니다. 이미지의 제품 외관을 참고하여 프롬프트를 작성하세요.' : ''}
+${input.avatarImageUrl ? '아바타/모델 이미지가 첨부되어 있습니다. 이미지의 인물을 참고하여 프롬프트를 작성하세요.' : ''}
 
 영상 길이: ${durationDesc}
 광고 스타일: ${input.style || '전문적이고 매력적인'}
@@ -136,9 +138,27 @@ ${VIDEO_SELF_VERIFICATION}`
     responseMimeType: 'application/json',
   }
 
+  // 이미지 첨부 처리
+  const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []
+
+  if (input.productImageUrl) {
+    const imageData = await fetchImageAsBase64(input.productImageUrl)
+    if (imageData) {
+      parts.push({ inlineData: { mimeType: imageData.mimeType, data: imageData.base64 } })
+    }
+  }
+  if (input.avatarImageUrl) {
+    const imageData = await fetchImageAsBase64(input.avatarImageUrl)
+    if (imageData) {
+      parts.push({ inlineData: { mimeType: imageData.mimeType, data: imageData.base64 } })
+    }
+  }
+
+  parts.push({ text: prompt })
+
   const response = await genAI.models.generateContent({
     model: MODEL_NAME,
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    contents: [{ role: 'user', parts }],
     config,
   })
 
@@ -340,6 +360,29 @@ export async function generateProductScripts(input: ProductScriptInput): Promise
     ? `Product URL: ${input.productUrl}\n${input.productInfo}`
     : `Product info:\n${input.productInfo}`
 
+  // 추가 지시사항
+  const additionalSection = input.additionalInstructions
+    ? `\n=== ADDITIONAL INSTRUCTIONS ===\n${input.additionalInstructions}`
+    : ''
+
+  // 아바타 정보 (의상 추천 시 참고용)
+  const avatarSection = input.avatarDescription
+    ? `\n=== AVATAR INFO ===\nAvatar presenting the product: ${input.avatarDescription}`
+    : ''
+
+  // 의상 추천 요청 섹션
+  const outfitSection = input.requestOutfitRecommendation
+    ? `\n=== OUTFIT RECOMMENDATION REQUEST ===
+You must also recommend an outfit for the avatar presenting this product.
+${input.avatarDescription ? `The avatar is: ${input.avatarDescription}` : ''}
+${input.productImageUrl ? 'A product image is attached for reference.' : ''}
+
+Add "recommendedOutfit" field to your JSON response with:
+- description: English outfit description (e.g., "casual white cotton t-shirt with light blue jeans")
+- koreanDescription: Korean outfit description (e.g., "캐주얼한 흰색 티셔츠와 라이트 블루 청바지")
+- reason: Why this outfit suits the product and video style`
+    : ''
+
   // 비디오 타입별 스타일 가이드
   const videoType = input.videoType || 'UGC'
   const videoTypeStyle = VIDEO_TYPE_SCRIPT_STYLES[videoType]
@@ -380,8 +423,8 @@ Include in your response:
 
   const prompt = `You are an expert advertising copywriter. Write 3 style scripts for the product in ${config_lang.name}. Target: ~${targetChars} characters each.
 
-${productSection}
-${videoTypeContext}
+${productSection}${avatarSection}${additionalSection}
+${videoTypeContext}${outfitSection}
 ${outfitRecommendationSection}
 === SCRIPT REQUIREMENTS ===
 Styles to generate:
@@ -446,11 +489,24 @@ Before responding, check:
   console.log('[generateProductScripts] 프롬프트 길이:', prompt.length)
   console.log('[generateProductScripts] 비디오 타입:', videoType, '언어:', language)
 
+  // 제품 이미지 포함 여부 확인
+  const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []
+
+  if (input.productImageUrl) {
+    const imageData = await fetchImageAsBase64(input.productImageUrl)
+    if (imageData) {
+      parts.push({ inlineData: { mimeType: imageData.mimeType, data: imageData.base64 } })
+      console.log('[generateProductScripts] 제품 이미지 첨부됨')
+    }
+  }
+
+  parts.push({ text: prompt })
+
   let response
   try {
     response = await genAI.models.generateContent({
       model: MODEL_NAME,
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      contents: [{ role: 'user', parts }],
       config: genConfig,
     })
     console.log('[generateProductScripts] Gemini 응답 성공, 응답 길이:', response.text?.length || 0)
