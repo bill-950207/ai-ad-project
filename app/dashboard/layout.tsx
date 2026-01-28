@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/dashboard/sidebar'
+import { DashboardProviders } from '@/components/dashboard/dashboard-providers'
 import { prisma } from '@/lib/db'
 
 export default async function DashboardLayout({
@@ -32,11 +33,13 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex -mt-16">
-      <Sidebar />
-      <main className="flex-1 ml-64 p-6 min-h-screen">
-        {children}
-      </main>
-    </div>
+    <DashboardProviders>
+      <div className="flex -mt-16">
+        <Sidebar />
+        <main className="flex-1 ml-64 p-6 min-h-screen">
+          {children}
+        </main>
+      </div>
+    </DashboardProviders>
   )
 }

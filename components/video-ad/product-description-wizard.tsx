@@ -320,7 +320,16 @@ interface DraftData {
   status: string
 }
 
-export function ProductDescriptionWizard() {
+interface ProductDescriptionWizardProps {
+  initialProductId?: string | null
+  initialAvatarType?: 'ai' | 'avatar' | 'outfit' | null
+  initialAvatarId?: string | null
+  initialOutfitId?: string | null
+  initialAiAvatarOptions?: string | null
+  initialStep?: number
+}
+
+export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { t, language } = useLanguage()
@@ -328,8 +337,16 @@ export function ProductDescriptionWizard() {
   // URL에서 videoAdId 파라미터 확인 (재개 시)
   const resumeVideoAdId = searchParams.get('videoAdId')
 
-  // 마법사 단계
-  const [step, setStep] = useState<WizardStep>(1)
+  // 온보딩에서 전달된 쿼리 파라미터 (props 우선, searchParams 폴백)
+  const initialProductId = props.initialProductId ?? searchParams.get('productId')
+  const initialAvatarType = props.initialAvatarType ?? searchParams.get('avatarType') as 'ai' | 'avatar' | 'outfit' | null
+  const initialAvatarId = props.initialAvatarId ?? searchParams.get('avatarId')
+  const initialOutfitId = props.initialOutfitId ?? searchParams.get('outfitId')
+  const initialAiAvatarOptions = props.initialAiAvatarOptions ?? searchParams.get('aiAvatarOptions')
+  const initialStep = props.initialStep ?? parseInt(searchParams.get('step') || '1', 10)
+
+  // 마법사 단계 (온보딩에서 전달된 initialStep 사용)
+  const [step, setStep] = useState<WizardStep>(initialStep as WizardStep)
 
   // 초안 저장 관련
   const [draftId, setDraftId] = useState<string | null>(null)
@@ -450,6 +467,93 @@ export function ProductDescriptionWizard() {
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  // 온보딩에서 전달된 초기 데이터 로드
+  useEffect(() => {
+    // 초기 제품 로드 (재개 중이 아닌 경우에만)
+    if (initialProductId && !resumeVideoAdId) {
+      fetch(`/api/ad-products/${initialProductId}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.product) {
+            setSelectedProduct({
+              id: data.product.id,
+              name: data.product.name,
+              rembg_image_url: data.product.rembg_image_url,
+              image_url: data.product.image_url,
+              description: data.product.description,
+              selling_points: data.product.selling_points,
+              brand: data.product.brand,
+              price: data.product.price,
+              source_url: data.product.source_url,
+            })
+            // 제품 정보도 함께 설정
+            if (data.product.description) {
+              setEditableDescription(data.product.description)
+            }
+            if (data.product.selling_points?.length) {
+              setEditableSellingPoints(data.product.selling_points)
+            }
+          }
+        })
+        .catch(err => console.error('초기 제품 로드 오류:', err))
+    }
+
+    // 초기 아바타 설정 (재개 중이 아닌 경우에만)
+    if (!resumeVideoAdId) {
+      if (initialAvatarType === 'ai' && initialAiAvatarOptions) {
+        // AI 추천 아바타
+        try {
+          const options = JSON.parse(initialAiAvatarOptions)
+          setSelectedAvatarInfo({
+            type: 'ai-generated',
+            avatarId: '',
+            avatarName: 'AI 추천',
+            imageUrl: '',
+            displayName: 'AI 추천 아바타',
+            aiOptions: options,
+          })
+        } catch {
+          console.error('AI 아바타 옵션 파싱 오류')
+        }
+      } else if (initialAvatarType === 'avatar' && initialAvatarId) {
+        // 기존 아바타
+        fetch(`/api/avatars/${initialAvatarId}`)
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data?.avatar) {
+              setSelectedAvatarInfo({
+                type: 'avatar',
+                avatarId: data.avatar.id,
+                avatarName: data.avatar.name,
+                imageUrl: data.avatar.image_url || '',
+                displayName: data.avatar.name,
+              })
+            }
+          })
+          .catch(err => console.error('초기 아바타 로드 오류:', err))
+      } else if (initialAvatarType === 'outfit' && initialAvatarId && initialOutfitId) {
+        // 의상 선택
+        fetch(`/api/avatars/${initialAvatarId}`)
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data?.avatar) {
+              const outfit = data.avatar.outfits?.find((o: { id: string }) => o.id === initialOutfitId)
+              setSelectedAvatarInfo({
+                type: 'outfit',
+                avatarId: data.avatar.id,
+                avatarName: data.avatar.name,
+                imageUrl: outfit?.result_image_url || data.avatar.image_url || '',
+                displayName: outfit?.name || data.avatar.name,
+                outfitId: initialOutfitId,
+                outfitName: outfit?.name,
+              })
+            }
+          })
+          .catch(err => console.error('초기 의상 로드 오류:', err))
+      }
+    }
+  }, [initialProductId, initialAvatarType, initialAvatarId, initialOutfitId, initialAiAvatarOptions, resumeVideoAdId])
 
   // 프로그레스바 업데이트 (Infinitalk: 180초 기준)
   useEffect(() => {

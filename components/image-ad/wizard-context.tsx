@@ -1,8 +1,8 @@
 'use client'
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
 import { ImageAdType } from '@/components/ad-product/image-ad-type-modal'
-import { SelectedAvatarInfo } from '@/components/video-ad/avatar-select-modal'
+import { SelectedAvatarInfo, AiAvatarOptions } from '@/components/video-ad/avatar-select-modal'
 import { getDefaultOptions } from '@/lib/image-ad/category-options'
 
 // ============================================================
@@ -160,11 +160,26 @@ const ImageAdWizardContext = createContext<ImageAdWizardContextType | null>(null
 interface ImageAdWizardProviderProps {
   children: ReactNode
   initialAdType?: ImageAdType
+  initialStep?: number
+  initialProductId?: string | null
+  initialAvatarType?: 'ai' | 'avatar' | 'outfit' | null
+  initialAvatarId?: string | null
+  initialOutfitId?: string | null
+  initialAiAvatarOptions?: AiAvatarOptions | null
 }
 
-export function ImageAdWizardProvider({ children, initialAdType = 'productOnly' }: ImageAdWizardProviderProps) {
+export function ImageAdWizardProvider({
+  children,
+  initialAdType = 'productOnly',
+  initialStep = 1,
+  initialProductId,
+  initialAvatarType,
+  initialAvatarId,
+  initialOutfitId,
+  initialAiAvatarOptions,
+}: ImageAdWizardProviderProps) {
   // Step 1 상태
-  const [step, setStep] = useState<WizardStep>(1)
+  const [step, setStep] = useState<WizardStep>((initialStep >= 1 && initialStep <= 4 ? initialStep : 1) as WizardStep)
   const [adType, setAdTypeState] = useState<ImageAdType>(initialAdType)
   const [selectedProduct, setSelectedProduct] = useState<AdProduct | null>(null)
   const [localImageFile, setLocalImageFile] = useState<File | null>(null)
@@ -203,6 +218,78 @@ export function ImageAdWizardProvider({ children, initialAdType = 'productOnly' 
   const [generationProgress, setGenerationProgress] = useState(0)
   const [resultImages, setResultImages] = useState<string[]>([])
   const [resultAdIds, setResultAdIds] = useState<string[]>([])
+
+  // ============================================================
+  // 초기 데이터 로드 (쿼리 파라미터에서 전달된 경우)
+  // ============================================================
+
+  useEffect(() => {
+    // 초기 제품 로드
+    if (initialProductId) {
+      fetch(`/api/ad-products/${initialProductId}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.product) {
+            setSelectedProduct({
+              id: data.product.id,
+              name: data.product.name,
+              rembg_image_url: data.product.rembg_image_url,
+              image_url: data.product.image_url,
+              description: data.product.description,
+              selling_points: data.product.selling_points,
+            })
+          }
+        })
+        .catch(err => console.error('초기 제품 로드 오류:', err))
+    }
+
+    // 초기 아바타 설정
+    if (initialAvatarType === 'ai' && initialAiAvatarOptions) {
+      // AI 추천 아바타
+      setSelectedAvatarInfo({
+        type: 'ai-generated',
+        avatarId: '',
+        avatarName: 'AI 추천',
+        imageUrl: '',
+        displayName: 'AI 추천 아바타',
+      })
+    } else if (initialAvatarType === 'avatar' && initialAvatarId) {
+      // 기존 아바타
+      fetch(`/api/avatars/${initialAvatarId}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.avatar) {
+            setSelectedAvatarInfo({
+              type: 'avatar',
+              avatarId: data.avatar.id,
+              avatarName: data.avatar.name,
+              imageUrl: data.avatar.image_url || '',
+              displayName: data.avatar.name,
+            })
+          }
+        })
+        .catch(err => console.error('초기 아바타 로드 오류:', err))
+    } else if (initialAvatarType === 'outfit' && initialAvatarId && initialOutfitId) {
+      // 의상 선택
+      fetch(`/api/avatars/${initialAvatarId}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.avatar) {
+            const outfit = data.avatar.outfits?.find((o: { id: string }) => o.id === initialOutfitId)
+            setSelectedAvatarInfo({
+              type: 'outfit',
+              avatarId: data.avatar.id,
+              avatarName: data.avatar.name,
+              imageUrl: outfit?.result_image_url || data.avatar.image_url || '',
+              displayName: outfit?.name || data.avatar.name,
+              outfitId: initialOutfitId,
+              outfitName: outfit?.name,
+            })
+          }
+        })
+        .catch(err => console.error('초기 의상 로드 오류:', err))
+    }
+  }, [initialProductId, initialAvatarType, initialAvatarId, initialOutfitId, initialAiAvatarOptions])
 
   // ============================================================
   // Actions

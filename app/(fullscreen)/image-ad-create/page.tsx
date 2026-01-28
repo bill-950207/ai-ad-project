@@ -8,9 +8,28 @@ import { ImageAdWizard } from '@/components/image-ad/image-ad-wizard'
 
 function ImageAdCreateContent() {
   const searchParams = useSearchParams()
-  const initialAdType = (searchParams.get('type') as ImageAdType) || 'productOnly'
+  // adType 또는 type 파라미터 지원 (온보딩에서는 adType 사용)
+  const initialAdType = (searchParams.get('adType') || searchParams.get('type')) as ImageAdType || 'productOnly'
+  const initialStep = parseInt(searchParams.get('step') || '1', 10)
 
-  return <ImageAdWizard initialAdType={initialAdType} />
+  // 온보딩에서 전달된 쿼리 파라미터
+  const productId = searchParams.get('productId')
+  const avatarType = searchParams.get('avatarType') as 'ai' | 'avatar' | 'outfit' | null
+  const avatarId = searchParams.get('avatarId')
+  const outfitId = searchParams.get('outfitId')
+  const aiAvatarOptions = searchParams.get('aiAvatarOptions')
+
+  return (
+    <ImageAdWizard
+      initialAdType={initialAdType}
+      initialStep={initialStep}
+      initialProductId={productId}
+      initialAvatarType={avatarType}
+      initialAvatarId={avatarId}
+      initialOutfitId={outfitId}
+      initialAiAvatarOptions={aiAvatarOptions}
+    />
+  )
 }
 
 export default function ImageAdCreatePage() {
