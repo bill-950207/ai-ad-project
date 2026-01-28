@@ -6,6 +6,7 @@
  * - 언어 변경 기능
  * - 번역 텍스트 제공
  * - localStorage에 언어 설정 저장
+ * - 브라우저 언어 자동 감지 (없으면 영어 기본값)
  */
 
 'use client'
@@ -31,6 +32,41 @@ interface LanguageContextType {
 /** localStorage 키 */
 const LANGUAGE_STORAGE_KEY = 'adai-language'
 
+/** 지원 언어 목록 */
+const SUPPORTED_LANGUAGES: Language[] = ['ko', 'en', 'ja', 'zh']
+
+/** 기본 언어 (영어) */
+const DEFAULT_LANGUAGE: Language = 'en'
+
+// ============================================================
+// 유틸리티 함수
+// ============================================================
+
+/**
+ * 브라우저 언어 감지
+ * navigator.language를 기반으로 지원 언어를 반환합니다.
+ * 지원하지 않는 언어면 영어(en)를 반환합니다.
+ */
+function detectBrowserLanguage(): Language {
+  if (typeof navigator === 'undefined') return DEFAULT_LANGUAGE
+
+  const browserLang = navigator.language.toLowerCase()
+
+  // 정확한 매칭 (ko, en, ja, zh)
+  const exactMatch = SUPPORTED_LANGUAGES.find(lang => browserLang === lang)
+  if (exactMatch) return exactMatch
+
+  // 언어 코드 접두사 매칭 (ko-KR -> ko, en-US -> en, zh-CN -> zh)
+  const langPrefix = browserLang.split('-')[0] as Language
+  if (SUPPORTED_LANGUAGES.includes(langPrefix)) return langPrefix
+
+  // 중국어 변형 처리 (zh-TW, zh-HK 등)
+  if (browserLang.startsWith('zh')) return 'zh'
+
+  // 지원하지 않는 언어면 영어 기본값
+  return DEFAULT_LANGUAGE
+}
+
 // ============================================================
 // 컨텍스트 생성
 // ============================================================
@@ -44,17 +80,28 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 /**
  * 언어 프로바이더
  * 애플리케이션 전역에서 언어 상태를 관리합니다.
+ * 저장된 언어 > 브라우저 언어 > 영어 순으로 우선순위를 적용합니다.
  */
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>('ko')  // 현재 언어 (기본: 한국어)
-  const [isLoaded, setIsLoaded] = useState(false)                 // 클라이언트 로딩 완료 여부
+  const [language, setLanguageState] = useState<Language>(DEFAULT_LANGUAGE)
+  const [isLoaded, setIsLoaded] = useState(false)
 
-  // 컴포넌트 마운트 시 localStorage에서 언어 설정 로드
+  // 컴포넌트 마운트 시 언어 설정 로드
+  // 우선순위: localStorage > 브라우저 언어 > 영어 기본값
   useEffect(() => {
     const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY) as Language | null
-    if (savedLanguage && ['ko', 'en', 'ja', 'zh'].includes(savedLanguage)) {
+
+    if (savedLanguage && SUPPORTED_LANGUAGES.includes(savedLanguage)) {
+      // localStorage에 저장된 언어가 있으면 사용
       setLanguageState(savedLanguage)
+    } else {
+      // 없으면 브라우저 언어 감지
+      const detectedLanguage = detectBrowserLanguage()
+      setLanguageState(detectedLanguage)
+      // 감지된 언어를 localStorage에 저장
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, detectedLanguage)
     }
+
     setIsLoaded(true)
   }, [])
 
