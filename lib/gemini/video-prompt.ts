@@ -373,8 +373,8 @@ Consider:
 
 Include in your response:
 - "recommendedOutfit.description": Detailed English description of the outfit (e.g., "casual white cotton t-shirt with light blue slim-fit jeans")
-- "recommendedOutfit.koreanDescription": Korean description for user display
-- "recommendedOutfit.reason": Brief explanation of why this outfit fits the product/video style
+- "recommendedOutfit.localizedDescription": Outfit description in ${config_lang.name} for user display
+- "recommendedOutfit.reason": Brief explanation in ${config_lang.name} of why this outfit fits the product/video style
 `
     : ''
 
@@ -422,8 +422,8 @@ Each script should:
   ]${input.requestOutfitRecommendation ? `,
   "recommendedOutfit": {
     "description": "English outfit description for image generation (e.g., casual white cotton t-shirt with light blue slim-fit jeans)",
-    "koreanDescription": "한국어 의상 설명 (사용자에게 표시용)",
-    "reason": "의상 선택 이유 설명"
+    "localizedDescription": "의상 설명 in ${config_lang.name} (사용자에게 표시용)",
+    "reason": "의상 선택 이유 in ${config_lang.name}"
   }` : ''}
 }
 
@@ -466,10 +466,17 @@ Before responding, check:
     // AI 의상 추천 요청했는데 응답에 없는 경우 기본값 설정
     if (input.requestOutfitRecommendation && !result.recommendedOutfit) {
       console.log('[generateProductScripts] recommendedOutfit 누락, 기본값 설정')
+      const defaultOutfitDescriptions: Record<string, { localized: string; reason: string }> = {
+        ko: { localized: '캐주얼한 흰색 티셔츠와 라이트 블루 슬림핏 청바지', reason: '자연스럽고 깔끔한 캐주얼 스타일로 다양한 제품과 잘 어울립니다.' },
+        en: { localized: 'Casual white t-shirt with light blue slim-fit jeans', reason: 'A natural and clean casual style that suits various products.' },
+        ja: { localized: 'カジュアルな白Tシャツとライトブルーのスリムフィットジーンズ', reason: '自然で清潔感のあるカジュアルスタイルで、様々な製品に合います。' },
+        zh: { localized: '休闲白色T恤搭配浅蓝色修身牛仔裤', reason: '自然简洁的休闲风格，适合各种产品。' },
+      }
+      const defaultOutfit = defaultOutfitDescriptions[language] || defaultOutfitDescriptions.ko
       result.recommendedOutfit = {
         description: 'casual white cotton t-shirt with light blue slim-fit jeans',
-        koreanDescription: '캐주얼한 흰색 티셔츠와 라이트 블루 슬림핏 청바지',
-        reason: '자연스럽고 깔끔한 캐주얼 스타일로 다양한 제품과 잘 어울립니다.',
+        localizedDescription: defaultOutfit.localized,
+        reason: defaultOutfit.reason,
       }
     }
 
@@ -486,10 +493,17 @@ Before responding, check:
       ],
     }
     if (input.requestOutfitRecommendation) {
+      const defaultOutfitDescriptions: Record<string, { localized: string; reason: string }> = {
+        ko: { localized: '캐주얼한 흰색 티셔츠와 라이트 블루 청바지', reason: '자연스럽고 깔끔한 캐주얼 스타일입니다.' },
+        en: { localized: 'Casual white t-shirt with light blue jeans', reason: 'A natural and clean casual style.' },
+        ja: { localized: 'カジュアルな白Tシャツとライトブルージーンズ', reason: '自然で清潔感のあるカジュアルスタイルです。' },
+        zh: { localized: '休闲白色T恤搭配浅蓝色牛仔裤', reason: '自然简洁的休闲风格。' },
+      }
+      const defaultOutfit = defaultOutfitDescriptions[language] || defaultOutfitDescriptions.ko
       result.recommendedOutfit = {
         description: 'casual white cotton t-shirt with light blue jeans',
-        koreanDescription: '캐주얼한 흰색 티셔츠와 라이트 블루 청바지',
-        reason: '자연스럽고 깔끔한 캐주얼 스타일입니다.',
+        localizedDescription: defaultOutfit.localized,
+        reason: defaultOutfit.reason,
       }
     }
     return result
