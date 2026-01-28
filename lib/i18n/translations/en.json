@@ -50,7 +50,16 @@
     "creditsRemaining": "Credits Remaining",
     "quickActions": "Quick Actions",
     "recentActivity": "Recent Activity",
-    "noRecentActivity": "No recent activity"
+    "noRecentActivity": "No recent activity",
+    "showcase": {
+      "title": "See What You Can Create",
+      "cta": "Create Your Own Ad"
+    },
+    "recentWork": {
+      "title": "Recent Work",
+      "processing": "Processing",
+      "viewAll": "View All"
+    }
   },
   "avatar": {
     "title": "Avatar Generation",

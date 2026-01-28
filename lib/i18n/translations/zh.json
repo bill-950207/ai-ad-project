@@ -50,7 +50,16 @@
     "creditsRemaining": "剩余积分",
     "quickActions": "快捷操作",
     "recentActivity": "最近活动",
-    "noRecentActivity": "暂无最近活动"
+    "noRecentActivity": "暂无最近活动",
+    "showcase": {
+      "title": "看看您能创建什么",
+      "cta": "创建您的专属广告"
+    },
+    "recentWork": {
+      "title": "最近作品",
+      "processing": "生成中",
+      "viewAll": "查看全部"
+    }
   },
   "avatar": {
     "title": "虚拟形象生成",

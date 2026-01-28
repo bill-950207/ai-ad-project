@@ -50,7 +50,16 @@
     "creditsRemaining": "残りクレジット",
     "quickActions": "クイックアクション",
     "recentActivity": "最近のアクティビティ",
-    "noRecentActivity": "最近のアクティビティはありません"
+    "noRecentActivity": "最近のアクティビティはありません",
+    "showcase": {
+      "title": "こんな広告が作れます",
+      "cta": "自分だけの広告を作る"
+    },
+    "recentWork": {
+      "title": "最近の作業",
+      "processing": "生成中",
+      "viewAll": "すべて見る"
+    }
   },
   "avatar": {
     "title": "アバター生成",

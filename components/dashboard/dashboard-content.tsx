@@ -4,16 +4,18 @@
  * 대시보드 메인 페이지의 콘텐츠를 담당합니다.
  * - 페이지 제목 및 설명
  * - 광고 생성 버튼 (이미지 광고, 영상 광고)
- * - 빠른 통계 카드 (크레딧, 총 광고 수, 이번 달 광고)
+ * - 최근 작업 (기존 유저) 또는 쇼케이스 갤러리 (신규 유저)
  */
 
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Image as ImageIcon, Video, ArrowRight, Sparkles, TrendingUp, CreditCard } from 'lucide-react'
+import { Image as ImageIcon, Video, ArrowRight, Sparkles } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 import { useOnboarding } from '@/components/onboarding/onboarding-context'
 import { OnboardingFlowModal } from '@/components/onboarding/onboarding-flow-modal'
+import { AdListSection } from './ad-list-section'
+import { ShowcaseGallery } from './showcase-gallery'
 
 // ============================================================
 // 타입 정의
@@ -40,10 +42,9 @@ const VIDEO_AD_EXAMPLE = '/examples/video-ad-example.mp4'
 interface BackgroundSliderProps {
   images: string[]
   interval?: number
-  gradientFrom?: string
 }
 
-function BackgroundSlider({ images, interval = 4000, gradientFrom = 'from-primary/30' }: BackgroundSliderProps) {
+function BackgroundSlider({ images, interval = 4000 }: BackgroundSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
   const [hasAnyLoaded, setHasAnyLoaded] = useState(false)
@@ -86,8 +87,7 @@ function BackgroundSlider({ images, interval = 4000, gradientFrom = 'from-primar
         />
       ))}
 
-      {/* 다중 그라데이션 오버레이 - 깊이감 */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${gradientFrom} via-black/70 to-black/90`} />
+      {/* 하단 텍스트 가독성을 위한 최소 그라데이션 */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
       {/* 노이즈 텍스처 (미묘한 그레인) */}
@@ -142,12 +142,11 @@ function AdCreationCard({
             playsInline
             className="absolute inset-0 w-full h-full object-cover"
           />
-          {/* 그라데이션 오버레이 */}
-          <div className={`absolute inset-0 bg-gradient-to-br ${gradientFrom} via-black/60 to-black/80`} />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+          {/* 하단 텍스트 가독성을 위한 최소 그라데이션 */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         </div>
       ) : images ? (
-        <BackgroundSlider images={images} interval={5000} gradientFrom={gradientFrom} />
+        <BackgroundSlider images={images} interval={5000} />
       ) : null}
 
       {/* 폴백 그라데이션 (이미지 없을 때) */}
@@ -191,46 +190,6 @@ function AdCreationCard({
 }
 
 // ============================================================
-// 통계 카드 컴포넌트
-// ============================================================
-
-interface StatCardProps {
-  label: string
-  value: string | number
-  icon: React.ReactNode
-  trend?: string
-  delay?: number
-}
-
-function StatCard({ label, value, icon, trend, delay = 0 }: StatCardProps) {
-  return (
-    <div
-      className="group relative bg-card border border-border/50 rounded-2xl p-5 hover:border-primary/30 hover:bg-card/80 transition-[border-color,background-color] duration-300 animate-[slideUp_0.5s_ease-out_backwards]"
-      style={{ animationDelay: `${delay}ms` }}
-    >
-      {/* 배경 그라데이션 (호버 시) */}
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-      <div className="relative flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground mb-1">{label}</p>
-          <p className="text-3xl font-bold text-foreground tracking-tight">{value}</p>
-          {trend && (
-            <p className="text-xs text-green-500 mt-1 flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" />
-              {trend}
-            </p>
-          )}
-        </div>
-        <div className="w-10 h-10 rounded-xl bg-secondary/50 flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-[background-color,color] duration-300">
-          {icon}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ============================================================
 // 메인 컴포넌트
 // ============================================================
 
@@ -254,8 +213,8 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
       <div className="flex flex-wrap gap-5">
         <AdCreationCard
           type="image"
-          title="이미지 광고"
-          description="제품 사진으로 다양한 스타일의 광고 이미지를 만들어보세요"
+          title={t.nav.imageAd}
+          description={t.imageAd.subtitle}
           images={IMAGE_AD_EXAMPLES}
           gradientFrom="from-violet-600/40"
           icon={<ImageIcon className="w-5 h-5 text-white" />}
@@ -264,8 +223,8 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
         />
         <AdCreationCard
           type="video"
-          title="영상 광고"
-          description="아바타가 제품을 소개하는 영상을 만들어보세요"
+          title={t.nav.videoAd}
+          description={t.videoAd.subtitle}
           videoUrl={VIDEO_AD_EXAMPLE}
           gradientFrom="from-rose-600/40"
           icon={<Video className="w-5 h-5 text-white" />}
@@ -274,34 +233,24 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
         />
       </div>
 
-      {/* 통계 섹션 */}
-      <div>
-        <div className="flex items-center gap-2 mb-4 animate-[fadeIn_0.4s_ease-out_0.3s_backwards]">
-          <div className="w-1 h-5 bg-primary rounded-full" />
-          <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-            내 활동
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <StatCard
-            label={t.dashboard.creditsRemaining}
-            value={5}
-            icon={<CreditCard className="w-5 h-5" />}
-            delay={350}
-          />
-          <StatCard
-            label={t.dashboard.totalAds}
-            value={0}
-            icon={<ImageIcon className="w-5 h-5" />}
-            delay={400}
-          />
-          <StatCard
-            label={t.dashboard.thisMonth}
-            value={0}
-            icon={<TrendingUp className="w-5 h-5" />}
-            delay={450}
-          />
-        </div>
+      {/* 광고 목록 + 쇼케이스 갤러리 */}
+      <div className="animate-[fadeIn_0.4s_ease-out_0.3s_backwards] space-y-8">
+        {/* 이미지 광고 목록 - 없으면 자동으로 숨김 */}
+        <AdListSection
+          type="image"
+          title={t.nav.imageAd}
+          viewAllHref="/dashboard/image-ad"
+        />
+
+        {/* 영상 광고 목록 - 없으면 자동으로 숨김 */}
+        <AdListSection
+          type="video"
+          title={t.nav.videoAd}
+          viewAllHref="/dashboard/video-ad"
+        />
+
+        {/* 쇼케이스 갤러리 - 항상 표시 */}
+        <ShowcaseGallery />
       </div>
 
       {/* 온보딩 플로우 모달 */}
