@@ -303,6 +303,32 @@ Each scenario's visual style should SUPPORT its emphasized benefit
 - Provide CLEAR REASONING for each option based on product analysis
 ${avatarContext}
 
+=== OUTPUT FORMAT (JSON) ===
+{
+  "scenarios": [
+    {
+      "title": "시나리오 제목 (10-20자)",
+      "description": "타겟 및 컨셉 설명 (30-50자)",
+      "targetAudience": "구체적 타겟 설명",
+      "recommendations": [
+        { "key": "category_key", "value": "option_key", "reason": "선택 이유" }
+      ],
+      "overallStrategy": "이 시나리오의 전략 설명",
+      "recommendedAvatarStyle": { ... }
+    }
+  ]
+}
+
+=== SELF-VERIFICATION (before responding) ===
+Check your scenarios before responding:
+✓ All 3 scenarios have UNIQUE creative titles (not "프리미엄", "기본", "스탠다드")?
+✓ Each scenario targets a DIFFERENT audience segment?
+✓ Each scenario emphasizes a DIFFERENT product benefit?
+✓ Options within each scenario are COHERENT (mood + lighting + background align)?
+✓ Titles are 10-20 characters in output language?
+✓ JSON format is valid and complete?
+If any check fails, revise before responding.
+
 IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be written in the specified output language.`
 
   const config: GenerateContentConfig = {
@@ -322,13 +348,21 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
 
   parts.push({ text: prompt })
 
-  console.log('[generateMultipleRecommendedOptions] 입력 프롬프트:', prompt)
+  console.log('[generateMultipleRecommendedOptions] 입력 프롬프트 길이:', prompt.length)
+  console.log('[generateMultipleRecommendedOptions] 제품명:', input.productName)
 
-  const response = await genAI.models.generateContent({
-    model: MODEL_NAME,
-    contents: [{ role: 'user', parts }],
-    config,
-  })
+  let response
+  try {
+    response = await genAI.models.generateContent({
+      model: MODEL_NAME,
+      contents: [{ role: 'user', parts }],
+      config,
+    })
+    console.log('[generateMultipleRecommendedOptions] Gemini 응답 성공, 응답 길이:', response.text?.length || 0)
+  } catch (apiError) {
+    console.error('[generateMultipleRecommendedOptions] Gemini API 호출 실패:', apiError)
+    throw apiError
+  }
 
   try {
     const rawResult = JSON.parse(response.text || '') as {
@@ -371,7 +405,10 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
         }
       }),
     }
-  } catch {
+  } catch (error) {
+    console.error('[generateMultipleRecommendedOptions] JSON 파싱 에러:', error)
+    console.error('[generateMultipleRecommendedOptions] Gemini 응답 텍스트:', response.text?.substring(0, 500))
+
     const fallbackMessages: Record<string, { title: string; description: string; reason: string; strategy: string }> = {
       ko: {
         title: '기본 시나리오',

@@ -65,6 +65,9 @@ export async function POST(request: NextRequest) {
       aiAvatarOptions,
       // 비디오 타입 (UGC, podcast, expert)
       videoType = 'UGC',
+      // 표정/조명 옵션 (새로 추가)
+      expressionPrompt,  // 표정 프롬프트 (영문)
+      lightingPrompt,    // 조명 프롬프트 (영문)
     } = body
 
     if (!avatarId) {
@@ -207,6 +210,8 @@ export async function POST(request: NextRequest) {
         videoType,  // 비디오 타입 (UGC, podcast, expert)
         bodyType: avatarBodyType,  // 아바타 체형 정보 (일관성 유지)
         avatarGender,  // 아바타 성별 (체형 설명 시 성별에 맞는 표현 사용)
+        expressionPrompt,  // 표정 프롬프트
+        lightingPrompt,    // 조명 프롬프트
       })
       firstFramePrompt = firstFrameResult.prompt
       locationDescription = firstFrameResult.locationDescription

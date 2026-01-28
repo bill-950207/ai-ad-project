@@ -526,3 +526,153 @@ CRITICAL - PRODUCT NAME PROHIBITION:
 - Use only: "the product", "the item", "the product from Figure 1"
 - Focus on visual characteristics, not product identifiers
 `.trim()
+
+// ============================================================
+// 손+제품 자연스러움 가이드 (Few-Shot)
+// ============================================================
+
+/** 손 묘사 가이드 (Few-Shot) */
+export const HAND_DESCRIPTION_GUIDE = `
+=== ANATOMICALLY CORRECT HANDS GUIDE ===
+
+CRITICAL RULES FOR NATURAL HANDS:
+1. FIVE FINGERS ONLY - exactly 5 fingers per hand, no extra or missing
+2. NATURAL FINGER SPACING - fingers slightly apart, not merged or spread too wide
+3. RELAXED GRIP - fingers gently curved, not stiff or clenched
+4. VISIBLE KNUCKLES - natural bends at joints
+5. PROPER THUMB POSITION - thumb opposing fingers naturally
+
+GOOD HAND DESCRIPTIONS:
+✓ "relaxed hand with fingers gently curved around product, thumb naturally supporting from opposite side"
+✓ "natural grip with all five fingers visible, palm facing slightly toward camera"
+✓ "casual hold with index finger and thumb pinching product edge, other fingers relaxed"
+✓ "both hands cradling product with fingers interlaced naturally underneath"
+
+BAD HAND DESCRIPTIONS:
+✗ "holding product" (too vague - AI may generate distorted hands)
+✗ "gripping tightly" (causes unnatural tension)
+✗ "hand on product" (ambiguous positioning)
+✗ Any description missing finger count or grip type
+`.trim()
+
+/** 제품 유형별 그립 가이드 */
+export const PRODUCT_GRIP_GUIDE = `
+=== PRODUCT-SPECIFIC GRIP GUIDE ===
+
+SMALL PRODUCTS (cosmetics, skincare bottles, phones):
+- "delicate pinch grip between thumb and first two fingers"
+- "cradled in palm with fingers gently curved over top"
+- "held at base with thumb and fingers forming C-shape"
+
+MEDIUM PRODUCTS (boxes, jars, devices):
+- "wrapped grip with all fingers around product body"
+- "supported from bottom with one hand, other hand presenting top"
+- "natural two-hand hold at product sides"
+
+LARGE PRODUCTS (bags, equipment):
+- "handle grip with relaxed wrist angle"
+- "supporting weight from bottom with arm slightly bent"
+- "casual carry position at hip level"
+
+BOTTLES/TUBES:
+- "wrapped around body with thumb on front label area"
+- "held at neck/cap area with fingertips"
+- "pump bottle: one hand on body, finger on pump"
+`.trim()
+
+/** 손-제품 접촉면 묘사 */
+export const HAND_PRODUCT_CONTACT_GUIDE = `
+=== HAND-PRODUCT CONTACT REALISM ===
+
+CONTACT POINTS - Always specify:
+1. Which fingers touch the product
+2. Where on the product they touch
+3. Pressure level (light touch, gentle grip, secure hold)
+
+GOOD CONTACT DESCRIPTIONS:
+✓ "fingertips resting lightly on product surface, thumb supporting from behind"
+✓ "palm pressed gently against product back, fingers wrapped around sides"
+✓ "product nestled in curved palm, fingers naturally draped over edge"
+
+SHADOW CONSISTENCY:
+✓ "consistent shadow under hand where it contacts product"
+✓ "fingers casting small natural shadows on product surface"
+
+AVOID:
+✗ Product appearing to float near hand
+✗ Fingers merging into or through product
+✗ Unnatural gap between palm and product
+`.trim()
+
+/** 조명 일관성 가이드 */
+export const LIGHTING_CONSISTENCY_GUIDE = `
+=== AVATAR-PRODUCT LIGHTING CONSISTENCY ===
+
+CRITICAL: Avatar and product must appear in SAME lighting environment.
+
+UNIFIED LIGHTING RULES:
+1. SAME LIGHT SOURCE - both avatar and product lit from same direction
+2. MATCHING SHADOWS - shadow direction identical for face and product
+3. CONSISTENT HIGHLIGHTS - specular highlights on same side for skin and product surface
+4. COLOR TEMPERATURE - same warm/cool tone on skin and product
+
+GOOD:
+✓ "soft window light from left illuminating both face and product with matching shadows falling to right"
+✓ "warm overhead light creating consistent highlights on forehead, nose, and product surface"
+
+BAD:
+✗ Face lit from left, but product appears lit from right
+✗ Sharp shadows on product but diffused shadows on face
+✗ Different color temperatures on skin vs product
+`.trim()
+
+/** 시선-표정 매트릭스 */
+export const GAZE_EXPRESSION_MATRIX = `
+=== GAZE + EXPRESSION COMBINATIONS ===
+
+LOOKING AT CAMERA:
+- "direct eye contact with gentle closed-lip smile, confident and approachable"
+- "eyes meeting camera with soft curious expression, slightly raised eyebrow"
+- "warm friendly gaze into camera, relaxed natural expression"
+
+LOOKING AT PRODUCT:
+- "eyes focused on product with genuine curiosity, slight head tilt"
+- "examining product closely with thoughtful engaged expression"
+- "admiring product with soft appreciative look, subtle smile forming"
+
+LOOKING AWAY (CANDID):
+- "gazing to side with relaxed contemplative expression"
+- "looking past camera with natural unfocused gaze, genuine moment"
+- "eyes directed downward at product in hand, absorbed in inspection"
+
+AVOID COMBINATIONS:
+✗ Looking at camera + examining product expression (conflicting focus)
+✗ Looking at product + direct eye contact (impossible)
+✗ Any gaze + exaggerated smile (unnatural)
+`.trim()
+
+/** 손+제품 Few-Shot 종합 예시 */
+export const HAND_PRODUCT_EXAMPLES = `
+=== HAND + PRODUCT NATURAL EXAMPLES (Few-Shot) ===
+
+GOOD EXAMPLES (photorealistic, natural):
+✓ "Woman holding skincare bottle with relaxed right hand, all five fingers visible - thumb on front, four fingers wrapped around back, product at chest level, eyes looking at camera with gentle smile, soft window light from left illuminating both face and product consistently"
+
+✓ "Man presenting smartphone in open palm, fingers slightly curved supporting device from below, thumb resting naturally on side edge, product angled 15 degrees toward camera, matching warm ambient light on both skin and device surface"
+
+✓ "Close-up of hands cradling cosmetic jar, thumbs on lid, fingers interlaced underneath supporting base, natural skin texture with visible pores, consistent soft overhead lighting creating matching shadows under chin and under jar"
+
+BAD EXAMPLES (avoid these patterns):
+✗ "Person holding product happily" (too vague, no hand details, no lighting)
+✗ "Hand gripping bottle tightly" (tense, unnatural)
+✗ "Model with product" (no grip description, no spatial relationship)
+✗ "Showing product to camera with big smile" (exaggerated expression)
+✗ "Professional photo of person with item" (no specific details)
+
+SELF-CHECK BEFORE OUTPUT:
+□ Hand description includes finger count/position?
+□ Grip type matches product size/shape?
+□ Contact points specified?
+□ Lighting direction consistent for avatar and product?
+□ Expression natural and matching gaze direction?
+`.trim()

@@ -141,23 +141,42 @@ export interface ProductScriptResult {
 // 카메라/포즈/의상 타입
 // ============================================================
 
-/** 카메라 구도 타입 */
+/** 카메라 구도 타입 (영상 스타일별로 다른 옵션 제공) */
 export type CameraCompositionType =
+  // 공통
+  | 'closeup'
+  // UGC용 (셀카 스타일)
   | 'selfie-high'
   | 'selfie-front'
   | 'selfie-side'
-  | 'tripod'
-  | 'closeup'
-  | 'fullbody'
   | 'ugc-closeup'
   | 'ugc-selfie'
+  // Podcast용 (웹캠/데스크 스타일)
+  | 'webcam'
+  | 'medium-shot'
+  | 'three-quarter'
+  // Expert용 (전문가 스타일)
+  | 'tripod'
+  | 'fullbody'
+  | 'presenter'
 
-/** 모델 포즈 타입 */
+/** 모델 포즈 타입 (영상 스타일별로 다른 옵션 제공) */
 export type ModelPoseType =
-  | 'holding-product'
-  | 'showing-product'
-  | 'using-product'
+  // 공통
   | 'talking-only'
+  | 'showing-product'
+  // UGC용
+  | 'holding-product'
+  | 'using-product'
+  | 'unboxing'
+  | 'reaction'
+  // Podcast용
+  | 'desk-presenter'
+  | 'casual-chat'
+  // Expert용
+  | 'demonstrating'
+  | 'presenting'
+  | 'explaining'
 
 /** 의상 프리셋 타입 */
 export type OutfitPresetType =
@@ -304,6 +323,10 @@ export interface FirstFramePromptInput {
   bodyType?: string
   /** 아바타 성별 (체형 설명 시 성별에 맞는 표현 사용) */
   avatarGender?: 'male' | 'female'
+  /** 표정 프롬프트 (프리셋에서 변환된 영문 프롬프트) */
+  expressionPrompt?: string
+  /** 조명 프롬프트 (프리셋에서 변환된 영문 프롬프트) */
+  lightingPrompt?: string
 }
 
 /** 첫 프레임 이미지 프롬프트 생성 결과 */

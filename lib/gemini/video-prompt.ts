@@ -25,7 +25,15 @@ import type {
   VideoType,
 } from './types'
 import { VIDEO_TYPE_SCRIPT_STYLES } from '@/lib/prompts/scripts'
-import { NO_OVERLAY_ELEMENTS } from '@/lib/prompts/common'
+import {
+  NO_OVERLAY_ELEMENTS,
+  HAND_DESCRIPTION_GUIDE,
+  PRODUCT_GRIP_GUIDE,
+  HAND_PRODUCT_CONTACT_GUIDE,
+  LIGHTING_CONSISTENCY_GUIDE,
+  GAZE_EXPRESSION_MATRIX,
+  HAND_PRODUCT_EXAMPLES,
+} from '@/lib/prompts/common'
 import { VIDEO_TYPE_FIRST_FRAME_GUIDES } from '@/lib/prompts/first-frame'
 
 // ============================================================
@@ -72,6 +80,11 @@ Check your prompts:
 ✓ No lighting EQUIPMENT words (softbox, ring light, LED)?
 ✓ Has camera specs (lens, f/stop)?
 ✓ Word count appropriate (50-80 for image, max 800 for video)?
+✓ HAND CHECK (if product present):
+  - Finger count specified? (five fingers per hand)
+  - Grip type described? (wrapped, pinch, palm, etc.)
+  - Contact points mentioned? (thumb position, fingertips, palm)
+  - Lighting consistent between avatar and product?
 If any check fails, revise before responding.
 `.trim()
 
@@ -119,7 +132,7 @@ ${VIDEO_LIGHTING_EXAMPLES}
 ${VIDEO_SELF_VERIFICATION}`
 
   const config: GenerateContentConfig = {
-    thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     responseMimeType: 'application/json',
   }
 
@@ -189,7 +202,7 @@ ${VIDEO_SELF_VERIFICATION}`
 
   const config: GenerateContentConfig = {
     tools,
-    thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
+    thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
     mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
   }
@@ -344,31 +357,88 @@ IMPORTANT: All 3 scripts should follow the "${videoTypeStyle.korean}" video styl
 `
     : ''
 
-  const prompt = `Write 3 style scripts for the product in ${config_lang.name}. Target: ~${targetChars} characters each.
+  const prompt = `You are an expert advertising copywriter. Write 3 style scripts for the product in ${config_lang.name}. Target: ~${targetChars} characters each.
 
 ${productSection}
 ${videoTypeContext}
-Styles: formal (professional), casual (friendly), energetic (enthusiastic)
 
-Each script should maintain the overall video style (${videoTypeStyle?.korean || 'UGC'}) while varying in tone according to its style (formal/casual/energetic).`
+=== SCRIPT REQUIREMENTS ===
+Styles to generate:
+1. formal (professional/trustworthy tone)
+2. casual (friendly/conversational tone)
+3. energetic (enthusiastic/exciting tone)
+
+Each script should:
+- Maintain the overall video style (${videoTypeStyle?.korean || 'UGC'}) while varying in tone
+- Be approximately ${targetChars} characters (${Math.round(targetChars / config_lang.charsPerSecond)}초 분량)
+- Be written entirely in ${config_lang.name}
+- Start with an engaging hook
+- Include key product benefits
+- End with a call-to-action
+
+=== OUTPUT FORMAT (JSON) ===
+{
+  "productSummary": "제품의 핵심 특징 요약 (1-2문장)",
+  "scripts": [
+    {
+      "style": "formal",
+      "styleName": "${config_lang.styleName.formal}",
+      "content": "스크립트 전체 내용 (${config_lang.name}으로 작성)",
+      "estimatedDuration": ${input.durationSeconds}
+    },
+    {
+      "style": "casual",
+      "styleName": "${config_lang.styleName.casual}",
+      "content": "스크립트 전체 내용",
+      "estimatedDuration": ${input.durationSeconds}
+    },
+    {
+      "style": "energetic",
+      "styleName": "${config_lang.styleName.energetic}",
+      "content": "스크립트 전체 내용",
+      "estimatedDuration": ${input.durationSeconds}
+    }
+  ]
+}
+
+=== SELF-VERIFICATION ===
+Before responding, check:
+✓ All 3 scripts are written in ${config_lang.name}?
+✓ Each script has different tone (formal/casual/energetic)?
+✓ Each script is approximately ${targetChars} characters?
+✓ JSON format is valid and complete?`
 
   const tools = input.productUrl ? [{ urlContext: {} }, { googleSearch: {} }] : undefined
 
   const genConfig: GenerateContentConfig = {
     tools,
-    thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     responseMimeType: 'application/json',
   }
 
-  const response = await genAI.models.generateContent({
-    model: MODEL_NAME,
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    config: genConfig,
-  })
+  console.log('[generateProductScripts] 프롬프트 길이:', prompt.length)
+  console.log('[generateProductScripts] 비디오 타입:', videoType, '언어:', language)
+
+  let response
+  try {
+    response = await genAI.models.generateContent({
+      model: MODEL_NAME,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config: genConfig,
+    })
+    console.log('[generateProductScripts] Gemini 응답 성공, 응답 길이:', response.text?.length || 0)
+  } catch (apiError) {
+    console.error('[generateProductScripts] Gemini API 호출 실패:', apiError)
+    throw apiError
+  }
 
   try {
-    return JSON.parse(response.text || '') as ProductScriptResult
-  } catch {
+    const result = JSON.parse(response.text || '') as ProductScriptResult
+    console.log('[generateProductScripts] JSON 파싱 성공, 스크립트 수:', result.scripts?.length || 0)
+    return result
+  } catch (parseError) {
+    console.error('[generateProductScripts] JSON 파싱 실패:', parseError)
+    console.error('[generateProductScripts] Gemini 응답 텍스트:', response.text?.substring(0, 500))
     const result: ProductScriptResult = {
       productSummary: '제품 정보가 분석되었습니다.',
       scripts: [
@@ -388,24 +458,43 @@ Each script should maintain the overall video style (${videoTypeStyle?.korean ||
   }
 }
 
-// 카메라 구도 설명
+// 카메라 구도 설명 (영상 스타일별로 최적화된 프롬프트)
 const cameraCompositionDescriptions: Record<CameraCompositionType, string> = {
-  'selfie-high': 'high angle selfie perspective, camera looking down from above',
-  'selfie-front': 'eye-level frontal view, direct eye contact',
-  'selfie-side': 'three-quarter angle, showing facial contours',
-  tripod: 'side angle shot, three-quarter profile view',
-  closeup: 'close-up portrait, face and upper body',
-  fullbody: 'full body shot, entire person visible',
-  'ugc-closeup': 'UGC-style medium close-up, chest-up framing',
-  'ugc-selfie': 'POV selfie shot, subject looking at camera, NO phone visible, natural relaxed pose presenting product, anatomically correct hands',
+  // 공통
+  closeup: 'close-up portrait framing, face and upper chest, intimate conversational distance',
+  // UGC용 (셀카 스타일) - 자연스럽고 친근한 느낌
+  'selfie-high': 'high angle selfie perspective, camera looking down from above, flattering casual angle',
+  'selfie-front': 'eye-level frontal selfie view, direct eye contact, natural smartphone distance',
+  'selfie-side': 'three-quarter selfie angle, showing facial contours, casual authentic vibe',
+  'ugc-closeup': 'UGC influencer style medium close-up, chest-up framing, casual and approachable feel',
+  'ugc-selfie': 'POV selfie shot, subject looking at camera, NO phone visible, natural relaxed pose, anatomically correct hands',
+  // Podcast용 (웹캠/데스크 스타일) - 대화형, 편안한 전문성
+  webcam: 'webcam-style frontal view, desktop setup distance, conversational podcast framing',
+  'medium-shot': 'medium shot showing upper body from waist up, balanced composition, professional yet casual',
+  'three-quarter': 'three-quarter angle view, slight turn adding depth and visual interest, engaging perspective',
+  // Expert용 (전문가 스타일) - 권위있고 신뢰감
+  tripod: 'stable tripod-mounted frontal shot, professional broadcast quality, authoritative framing',
+  fullbody: 'full body shot showing entire person, suitable for demonstrations and presentations',
+  presenter: 'professional presenter framing, confident stance, TED-talk style composition, authority position',
 }
 
-// 모델 포즈 설명
+// 모델 포즈 설명 (영상 스타일별로 최적화 + 손 묘사 강화)
 const modelPoseDescriptions: Record<ModelPoseType, string> = {
-  'holding-product': 'Model holding product naturally at chest level with one or both hands',
-  'showing-product': 'Model presenting product towards camera with one or both hands',
-  'using-product': 'Model actively using the product',
-  'talking-only': '⚠️ NO PRODUCT IN IMAGE! Model only, natural conversational pose with empty hands, no objects',
+  // 공통
+  'talking-only': '⚠️ NO PRODUCT IN IMAGE! Model only, natural conversational pose with EMPTY HANDS relaxed at sides or gesturing naturally, all five fingers visible and anatomically correct, no objects held',
+  'showing-product': 'Model presenting product towards camera - ONE hand wrapped around product with thumb on front and four fingers behind, product angled 15° toward camera, other hand may support from below with open palm',
+  // UGC용 - 자연스럽고 진정성 있는 포즈 (손 묘사 강화)
+  'holding-product': 'Model holding product naturally at chest level - relaxed grip with all five fingers gently curved around product, thumb visible on front surface, fingertips making natural contact, casual authentic vibe',
+  'using-product': 'Model actively demonstrating product use - fingers interacting naturally with product (pressing, applying, opening), anatomically correct hand positioning, genuine engagement shown through hand movement',
+  unboxing: 'Model opening/unboxing product - both hands visible with fingers working on packaging, one hand stabilizing box while other hand lifts/pulls, excited discovery expression, all ten fingers clearly rendered',
+  reaction: 'Model showing genuine reaction to product - product held loosely in one hand at mid-chest, other hand may touch face or gesture, expressive authentic enthusiasm, relaxed finger positioning',
+  // Podcast용 - 대화형 프레젠터 스타일 (손 묘사 강화)
+  'desk-presenter': 'Model seated at desk - product placed on desk surface within reach, one hand resting near product with fingers relaxed, other hand may gesture while speaking, casual professional demeanor',
+  'casual-chat': 'Model in relaxed conversational pose - if holding product, loose one-hand grip at table level, fingers naturally wrapped, other hand gesturing openly, friendly approachable vibe',
+  // Expert용 - 권위있는 전문가 스타일 (손 묘사 강화)
+  demonstrating: 'Model professionally demonstrating product - secure two-hand hold with fingers positioned to NOT obscure product features, thumbs on top, palms supporting from sides/below, educational pointing gestures',
+  presenting: 'Model in confident presenter stance - product held at optimal viewing angle with deliberate grip, four fingers wrapped behind and thumb in front, arm slightly extended toward camera, authoritative yet approachable',
+  explaining: 'Model in thoughtful explanation pose - product cradled in open palm or held loosely, occasional hand gestures toward product features, engaged knowledgeable expression, trustworthy demeanor',
 }
 
 // 의상 프리셋 설명
@@ -458,8 +547,33 @@ export async function generateFirstFramePrompt(input: FirstFramePromptInput): Pr
     outfitSection = `Outfit: ${outfitPresetDescriptions[input.outfitPreset]}`
   }
 
+  // 표정 섹션 (프리셋에서 전달된 프롬프트 사용)
+  const expressionSection = input.expressionPrompt
+    ? `Expression: ${input.expressionPrompt}`
+    : ''
+
+  // 조명 섹션 (프리셋에서 전달된 프롬프트 사용)
+  const lightingSection = input.lightingPrompt
+    ? `Lighting: ${input.lightingPrompt}`
+    : ''
+
   // 비디오 타입별 분위기 가이드
   const atmosphereSection = `Atmosphere: ${videoTypeGuide.atmospherePrompt}`
+
+  // 비디오 타입별 표정 가이드 (새로 추가)
+  const expressionGuideSection = videoTypeGuide.expressionGuide
+    ? `Expression Guide (${videoType}): ${videoTypeGuide.expressionGuide}`
+    : ''
+
+  // 비디오 타입별 카메라 느낌 힌트 (새로 추가)
+  const cameraHintSection = videoTypeGuide.cameraMovementHint
+    ? `Camera Feel: ${videoTypeGuide.cameraMovementHint}`
+    : ''
+
+  // 비디오 타입별 손+제품 가이드 (새로 추가)
+  const videoTypeHandGuide = input.productImageUrl && videoTypeGuide.handProductGuide
+    ? `Hand+Product Style (${videoType}): ${videoTypeGuide.handProductGuide}`
+    : ''
 
   // 성별별 체형 설명 매핑 (영어 - 이미지 생성 모델 최적화)
   const femaleBodyTypeMap: Record<string, string> = {
@@ -507,10 +621,31 @@ export async function generateFirstFramePrompt(input: FirstFramePromptInput): Pr
 ${bodyTypeSection}
 CRITICAL: Do NOT describe the avatar's appearance (no hair, face, skin descriptions). Just refer to "the model from Figure 1".`
 
+  // 제품이 있을 때만 손+제품 가이드 포함
+  const handProductGuideSection = input.productImageUrl
+    ? `
+=== NATURAL HAND + PRODUCT GUIDE (CRITICAL FOR REALISM) ===
+${HAND_DESCRIPTION_GUIDE}
+
+${PRODUCT_GRIP_GUIDE}
+
+${HAND_PRODUCT_CONTACT_GUIDE}
+
+${LIGHTING_CONSISTENCY_GUIDE}
+
+${GAZE_EXPRESSION_MATRIX}
+
+${HAND_PRODUCT_EXAMPLES}
+`
+    : ''
+
   const prompt = `Generate Seedream 4.5 first frame image prompt.
 
 VIDEO STYLE: ${VIDEO_TYPE_SCRIPT_STYLES[videoType]?.korean || 'UGC 스타일'}
 ${atmosphereSection}
+${expressionGuideSection}
+${cameraHintSection}
+${videoTypeHandGuide}
 
 ${avatarSection}
 Product context (for understanding only - DO NOT include product name/brand in prompt): ${input.productInfo}
@@ -518,23 +653,26 @@ ${locationSection}
 ${cameraSection}
 ${poseSection}${ugcSelfieProductInstruction}
 ${outfitSection}
+${expressionSection}
+${lightingSection}
 
 ${NO_OVERLAY_ELEMENTS}
-
+${handProductGuideSection}
 CRITICAL RULES:
 1. For AVATAR: ONLY use "the model from Figure 1". Do NOT describe facial features, hair, skin tone, or ethnicity.
 2. For PRODUCT: ONLY use "the product from Figure 2" or "the product". NEVER include product name or brand name.
 3. The image should reflect the "${VIDEO_TYPE_SCRIPT_STYLES[videoType]?.korean || 'UGC'}" video style atmosphere.
 ${bodyTypeDescription ? `4. Maintain ${bodyTypeDescription} body type consistently.` : ''}
 ${input.productImageUrl
-    ? 'Create photorealistic prompt using "the model from Figure 1" for avatar, "the product from Figure 2" for product.'
+    ? `5. HAND REALISM: Describe hand grip with specific finger positions, contact points, and consistent lighting between avatar and product.
+Create photorealistic prompt using "the model from Figure 1" for avatar, "the product from Figure 2" for product.`
     : 'Create photorealistic prompt using "the model from Figure 1" for avatar. ⚠️ NO PRODUCT should appear - avatar only with empty hands.'}
 
 ${VIDEO_EXPRESSION_EXAMPLES}
 
 ${VIDEO_LIGHTING_EXAMPLES}
 
-Include: camera specs, lighting direction, quality tags.
+Include: camera specs, lighting direction, quality tags, AND detailed hand grip description if product is present.
 Output JSON: { "prompt": "English 50-80 words", "locationDescription": "Korean location description" }
 
 ${VIDEO_SELF_VERIFICATION}`

@@ -61,17 +61,6 @@ Check your scenarios:
 If any check fails, revise before responding.
 `.trim()
 
-/** Chain-of-Thought 시간 분배 가이드 */
-const DURATION_DISTRIBUTION_GUIDE = `
-=== DURATION DISTRIBUTION (Chain-of-Thought) ===
-Step 1: Calculate average duration = totalDuration ÷ sceneCount
-Step 2: Adjust for scene importance:
-  - Opening scene: +1 second (establish mood)
-  - Climax scene: +1 second (product highlight)
-  - Transition scenes: -1 second (keep pace)
-Step 3: Verify total equals target duration
-`.trim()
-
 // ============================================================
 // 시나리오 생성 함수
 // ============================================================
