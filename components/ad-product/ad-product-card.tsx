@@ -3,14 +3,21 @@
  *
  * 개별 광고 제품을 카드 형태로 표시합니다.
  * 가로 스크롤 목록에서 사용됩니다.
+ *
+ * 폴링 최적화:
+ * - 개별 폴링 제거, 부모(AdProductsPage)에서 순차 폴링 처리
+ * - 카드는 props로 전달받은 상태만 렌더링
  */
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
 import { Loader2, Package, Trash2, RefreshCw } from 'lucide-react'
+
+/** 처리 중인 상태 목록 */
+const PROCESSING_STATUSES = ['PENDING', 'IN_QUEUE', 'IN_PROGRESS']
 
 interface AdProduct {
   id: string
@@ -26,46 +33,18 @@ interface AdProduct {
 
 interface AdProductCardProps {
   product: AdProduct
-  onStatusUpdate: (product: AdProduct) => void
   onDelete?: (productId: string) => void
   onRetry?: (product: AdProduct) => void
 }
 
-export function AdProductCard({ product, onStatusUpdate, onDelete, onRetry }: AdProductCardProps) {
+export function AdProductCard({ product, onDelete, onRetry }: AdProductCardProps) {
   const { t } = useLanguage()
   const router = useRouter()
-  // 초기 상태를 제품 상태에 따라 설정 (첫 렌더링부터 로딩 표시)
-  const [isPolling, setIsPolling] = useState(
-    ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(product.status)
-  )
+  // 처리 중인 상태인지 여부 (부모에서 폴링, 카드는 상태만 표시)
+  const isPolling = PROCESSING_STATUSES.includes(product.status)
   const [showActions, setShowActions] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isRetrying, setIsRetrying] = useState(false)
-
-  useEffect(() => {
-    if (['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(product.status)) {
-      setIsPolling(true)
-
-      const pollStatus = async () => {
-        try {
-          const res = await fetch(`/api/ad-products/${product.id}/status`)
-          if (res.ok) {
-            const data = await res.json()
-            onStatusUpdate(data.product)
-
-            if (['COMPLETED', 'FAILED'].includes(data.product.status)) {
-              setIsPolling(false)
-            }
-          }
-        } catch (error) {
-          console.error('상태 폴링 오류:', error)
-        }
-      }
-
-      const interval = setInterval(pollStatus, 1000)
-      return () => clearInterval(interval)
-    }
-  }, [product.id, product.status, onStatusUpdate])
 
   const handleCardClick = () => {
     if (product.status === 'COMPLETED') {

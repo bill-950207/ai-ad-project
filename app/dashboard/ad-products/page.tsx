@@ -2,11 +2,15 @@
  * 광고 제품 관리 페이지
  *
  * 사용자의 광고 제품 목록을 관리합니다.
+ *
+ * 폴링 최적화:
+ * - 처리 중인 제품들을 순차적으로 폴링 (이전 완료 후 다음 요청)
+ * - 동시 API 요청 최소화
  */
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
 import { Plus, Package } from 'lucide-react'
@@ -24,11 +28,15 @@ interface AdProduct {
   error_message?: string | null
 }
 
+/** 처리 중인 상태 목록 */
+const PROCESSING_STATUSES = ['PENDING', 'IN_QUEUE', 'IN_PROGRESS']
+
 export default function AdProductsPage() {
   const { t } = useLanguage()
   const router = useRouter()
   const [products, setProducts] = useState<AdProduct[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -48,11 +56,51 @@ export default function AdProductsPage() {
     fetchProducts()
   }, [fetchProducts])
 
-  const handleProductStatusUpdate = (updatedProduct: AdProduct) => {
-    setProducts(prev =>
-      prev.map(p => p.id === updatedProduct.id ? updatedProduct : p)
-    )
-  }
+  /**
+   * 처리 중인 제품들을 순차적으로 폴링
+   * 이전 요청 완료 후 다음 요청 (동시 요청 방지)
+   */
+  useEffect(() => {
+    const processingProducts = products.filter(p => PROCESSING_STATUSES.includes(p.status))
+
+    if (processingProducts.length > 0 && !isLoading) {
+      // 이미 폴링 중이면 중복 생성 방지
+      if (pollingRef.current) return
+
+      pollingRef.current = setInterval(async () => {
+        // 현재 처리 중인 제품들을 순차적으로 폴링
+        const currentProcessing = products.filter(p => PROCESSING_STATUSES.includes(p.status))
+
+        for (const product of currentProcessing) {
+          try {
+            const res = await fetch(`/api/ad-products/${product.id}/status`)
+            if (res.ok) {
+              const data = await res.json()
+              // 상태가 변경되었으면 해당 제품만 업데이트
+              setProducts(prev => prev.map(p =>
+                p.id === product.id ? data.product : p
+              ))
+            }
+          } catch (error) {
+            console.error('제품 상태 폴링 오류:', error)
+          }
+        }
+      }, 2000) // 2초 간격
+    } else {
+      // 처리 중인 제품이 없으면 폴링 중지
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+    }
+
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+    }
+  }, [products, isLoading])
 
   const handleProductDelete = (productId: string) => {
     setProducts(prev => prev.filter(p => p.id !== productId))
@@ -114,7 +162,6 @@ export default function AdProductsPage() {
             <AdProductCard
               key={product.id}
               product={product}
-              onStatusUpdate={handleProductStatusUpdate}
               onDelete={handleProductDelete}
               onRetry={handleProductRetry}
             />
