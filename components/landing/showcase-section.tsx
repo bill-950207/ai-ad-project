@@ -346,7 +346,7 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-4xl max-h-[90vh] bg-card rounded-2xl overflow-hidden shadow-2xl"
+        className="relative w-full max-w-5xl max-h-[90vh] bg-card rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 닫기 버튼 */}
@@ -357,52 +357,51 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
           <X className="w-5 h-5" />
         </button>
 
-        <div className="flex flex-col md:flex-row">
-          {/* 미디어 영역 */}
-          <div className="flex-1 bg-black flex items-center justify-center min-h-[300px] md:min-h-[500px]">
-            {item.type === 'video' && item.media_url ? (
-              <div className="relative w-full h-full">
-                <video
-                  ref={videoRef}
-                  src={item.media_url}
-                  className="w-full h-full object-contain"
-                  controls
-                  autoPlay
-                  loop
-                  playsInline
-                  muted={isMuted}
-                />
-                {/* 음소거 토글 */}
-                <button
-                  onClick={() => {
-                    if (videoRef.current) {
-                      videoRef.current.muted = !isMuted
-                      setIsMuted(!isMuted)
-                    }
-                  }}
-                  className="absolute bottom-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
-                >
-                  {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                </button>
-              </div>
-            ) : (
-              <img
-                src={item.media_url || item.thumbnail_url}
-                alt={item.title}
-                className="w-full h-full object-contain max-h-[70vh]"
+        {/* 미디어 영역 */}
+        <div className="flex-1 bg-black flex items-center justify-center min-h-[250px] md:min-h-0 md:max-h-[85vh]">
+          {item.type === 'video' && item.media_url ? (
+            <div className="relative w-full h-full flex items-center justify-center">
+              <video
+                ref={videoRef}
+                src={item.media_url}
+                className="w-full h-full object-contain max-h-[50vh] md:max-h-[85vh]"
+                controls
+                autoPlay
+                loop
+                playsInline
+                muted={isMuted}
               />
-            )}
-          </div>
+              {/* 음소거 토글 */}
+              <button
+                onClick={() => {
+                  if (videoRef.current) {
+                    videoRef.current.muted = !isMuted
+                    setIsMuted(!isMuted)
+                  }
+                }}
+                className="absolute bottom-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+              >
+                {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+              </button>
+            </div>
+          ) : (
+            <img
+              src={item.media_url || item.thumbnail_url}
+              alt={item.title}
+              className="w-full h-full object-contain max-h-[50vh] md:max-h-[85vh]"
+            />
+          )}
+        </div>
 
-          {/* 정보 영역 */}
-          <div className="w-full md:w-80 p-6 flex flex-col">
+        {/* 정보 영역 */}
+        <div className="w-full md:w-72 p-5 flex flex-col flex-shrink-0 max-h-[40vh] md:max-h-[85vh] overflow-y-auto">
             {/* 광고 타입 배지 */}
-            <div className="flex items-center gap-2 mb-4">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
                 {item.type === 'video' ? (
-                  <Video className="w-4 h-4" />
+                  <Video className="w-3.5 h-3.5" />
                 ) : (
-                  <ImageIcon className="w-4 h-4" />
+                  <ImageIcon className="w-3.5 h-3.5" />
                 )}
                 <span>{getAdTypeLabel()}</span>
               </div>
@@ -410,38 +409,38 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
 
             {/* 제품 & 아바타 정보 */}
             {(item.product_image_url || item.avatar_image_url) && (
-              <div className="mb-6">
-                <p className="text-sm text-muted-foreground mb-3">
+              <div className="mb-4">
+                <p className="text-xs text-muted-foreground mb-2">
                   {language === 'ko' ? '사용된 에셋' : 'Assets Used'}
                 </p>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   {item.product_image_url && (
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="w-16 h-16 rounded-xl bg-secondary/50 p-1 border border-border">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <div className="w-12 h-12 rounded-lg bg-secondary/50 p-0.5 border border-border">
                         <img
                           src={item.product_image_url}
                           alt="Product"
                           className="w-full h-full object-contain"
                         />
                       </div>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-[10px] text-muted-foreground">
                         {language === 'ko' ? '제품' : 'Product'}
                       </span>
                     </div>
                   )}
                   {item.product_image_url && item.avatar_image_url && (
-                    <div className="text-muted-foreground text-lg">+</div>
+                    <div className="text-muted-foreground text-sm">+</div>
                   )}
                   {item.avatar_image_url && (
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-border">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-border">
                         <img
                           src={item.avatar_image_url}
                           alt="Avatar"
                           className="w-full h-full object-cover object-top"
                         />
                       </div>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-[10px] text-muted-foreground">
                         {language === 'ko' ? '아바타' : 'Avatar'}
                       </span>
                     </div>
@@ -452,39 +451,38 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
 
             {/* 설명 */}
             {item.description && (
-              <p className="text-sm text-muted-foreground mb-6 line-clamp-3">
+              <p className="text-xs text-muted-foreground mb-4 line-clamp-2">
                 {item.description}
               </p>
             )}
 
-            {/* 스페이서 */}
-            <div className="flex-1" />
+            {/* 스페이서 - 모바일에서는 최소화 */}
+            <div className="flex-1 min-h-2" />
 
             {/* 광고 만들기 버튼 */}
             <button
               onClick={handleCreateClick}
               disabled={isCheckingAuth}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all duration-300 shadow-lg shadow-primary/25 disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all duration-300 shadow-lg shadow-primary/25 disabled:opacity-50"
             >
               {isCheckingAuth ? (
-                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  <Wand2 className="w-5 h-5" />
-                  <span>
+                  <Wand2 className="w-4 h-4" />
+                  <span className="text-sm">
                     {language === 'ko' ? '이런 광고 만들기' : 'Create This Ad'}
                   </span>
                 </>
               )}
             </button>
 
-            <p className="text-xs text-muted-foreground text-center mt-3">
+            <p className="text-[10px] text-muted-foreground text-center mt-2">
               {language === 'ko'
                 ? 'AI가 비슷한 스타일의 광고를 생성합니다'
                 : 'AI will generate a similar style ad'}
             </p>
           </div>
-        </div>
       </div>
     </div>
   )
