@@ -18,4 +18,13 @@ export {
 
 // 개별 클라이언트 (필요시 직접 접근)
 export { textToSpeech as minimaxTTS } from '@/lib/wavespeed/client'
-export { textToSpeech as elevenLabsTTS } from '@/lib/elevenlabs/client'
+export {
+  textToSpeech as elevenLabsTTS,
+  type EmotionPreset,
+  EMOTION_PRESETS,
+  addAudioTag,
+  getRecommendedAudioTags,
+  isV3Model,
+  type AudioTag,
+  AUDIO_TAG_DESCRIPTIONS,
+} from '@/lib/elevenlabs/client'
