@@ -2,6 +2,7 @@
 
 import { Sidebar } from '@/components/dashboard/sidebar'
 import { SidebarProvider, useSidebar } from '@/contexts/sidebar-context'
+import { DashboardProviders } from '@/components/dashboard/dashboard-providers'
 import { cn } from '@/lib/utils'
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
@@ -27,7 +28,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 export function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
-      <DashboardContent>{children}</DashboardContent>
+      <DashboardProviders>
+        <DashboardContent>{children}</DashboardContent>
+      </DashboardProviders>
     </SidebarProvider>
   )
 }

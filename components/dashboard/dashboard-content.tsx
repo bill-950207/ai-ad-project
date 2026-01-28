@@ -12,10 +12,11 @@
 import { useState, useEffect } from 'react'
 import { Image as ImageIcon, Video, ArrowRight, Sparkles } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
-import { useOnboarding } from '@/components/onboarding/onboarding-context'
+import { useOnboarding, VideoAdType } from '@/components/onboarding/onboarding-context'
 import { OnboardingFlowModal } from '@/components/onboarding/onboarding-flow-modal'
-import { AdListSection } from './ad-list-section'
+import { RecentAdsSection } from './recent-ads-section'
 import { ShowcaseGallery } from './showcase-gallery'
+import { useSearchParams, useRouter } from 'next/navigation'
 
 // ============================================================
 // 타입 정의
@@ -195,7 +196,33 @@ function AdCreationCard({
 
 export function DashboardContent({ userEmail: _userEmail }: DashboardContentProps) {
   const { t } = useLanguage()
-  const { startOnboarding } = useOnboarding()
+  const { startOnboarding, setVideoAdType, isOpen } = useOnboarding()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  // URL 쿼리 파라미터로 온보딩 자동 시작
+  useEffect(() => {
+    const createType = searchParams.get('create')
+    const videoType = searchParams.get('videoType') as VideoAdType | null
+
+    if (createType && !isOpen) {
+      if (createType === 'image') {
+        startOnboarding('image')
+      } else if (createType === 'video') {
+        startOnboarding('video')
+        // 영상 타입이 지정된 경우 자동 설정
+        if (videoType === 'productDescription' || videoType === 'productAd') {
+          // 약간의 지연 후 영상 타입 설정 (온보딩 시작 후 상태가 업데이트되도록)
+          setTimeout(() => {
+            setVideoAdType(videoType)
+          }, 100)
+        }
+      }
+
+      // 쿼리 파라미터 제거 (URL 정리)
+      router.replace('/dashboard', { scroll: false })
+    }
+  }, [searchParams, startOnboarding, setVideoAdType, isOpen, router])
 
   return (
     <div className="space-y-10">
@@ -233,23 +260,12 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
         />
       </div>
 
-      {/* 광고 목록 + 쇼케이스 갤러리 */}
+      {/* 최근 생성 광고 + 쇼케이스 갤러리 */}
       <div className="animate-[fadeIn_0.4s_ease-out_0.3s_backwards] space-y-8">
-        {/* 이미지 광고 목록 - 없으면 자동으로 숨김 */}
-        <AdListSection
-          type="image"
-          title={t.nav.imageAd}
-          viewAllHref="/dashboard/image-ad"
-        />
+        {/* 최근 생성 광고 - 이미지+영상 혼합, 최근 5개 */}
+        <RecentAdsSection />
 
-        {/* 영상 광고 목록 - 없으면 자동으로 숨김 */}
-        <AdListSection
-          type="video"
-          title={t.nav.videoAd}
-          viewAllHref="/dashboard/video-ad"
-        />
-
-        {/* 쇼케이스 갤러리 - 항상 표시 */}
+        {/* 쇼케이스 갤러리 - 이미지/영상 각각 5x3 그리드 */}
         <ShowcaseGallery />
       </div>
 
