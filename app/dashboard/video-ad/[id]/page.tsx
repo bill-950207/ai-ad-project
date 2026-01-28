@@ -36,7 +36,9 @@ import {
   Music,
   ChevronDown,
   History,
+  Star,
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import { MusicSelectModal } from '@/components/video-ad/music-select-modal'
 
 interface SceneKeyframe {
@@ -210,6 +212,31 @@ export default function VideoAdDetailPage() {
   const [sceneVersions, setSceneVersions] = useState<Record<number, SceneVersion[]>>({})
   const [isLoadingVersions, setIsLoadingVersions] = useState(false)
   const [switchingVersionScene, setSwitchingVersionScene] = useState<number | null>(null)
+
+  // 어드민 상태
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [isRegisteringShowcase, setIsRegisteringShowcase] = useState(false)
+
+  // 어드민 권한 확인
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+          setIsAdmin(profile?.role === 'ADMIN')
+        }
+      } catch (error) {
+        console.error('권한 확인 오류:', error)
+      }
+    }
+    checkAdmin()
+  }, [])
 
   // 영상 메타데이터 로드 시 실제 길이 업데이트
   const handleVideoLoadedMetadata = useCallback(async () => {
@@ -399,6 +426,66 @@ export default function VideoAdDetailPage() {
     }
   }
 
+  // 쇼케이스 등록 함수
+  const handleRegisterShowcase = async () => {
+    if (!videoAd || !videoAd.video_url) return
+
+    // 썸네일 URL 확인 (여러 소스에서 fallback)
+    // 1. 썸네일 URL
+    // 2. 첫 번째 씬 이미지
+    // 3. 키프레임 이미지
+    // 4. 제품 이미지
+    const getFirstKeyframeImage = () => {
+      if (!videoAd.scene_keyframes || videoAd.scene_keyframes.length === 0) return null
+      const firstKeyframe = videoAd.scene_keyframes.find(kf => kf.imageUrl)
+      return firstKeyframe?.imageUrl || null
+    }
+
+    const thumbnailUrl =
+      videoAd.thumbnail_url ||
+      videoAd.first_scene_image_url ||
+      getFirstKeyframeImage() ||
+      videoAd.ad_products?.rembg_image_url ||
+      videoAd.ad_products?.image_url
+
+    if (!thumbnailUrl) {
+      alert('썸네일이 없어 쇼케이스로 등록할 수 없습니다.')
+      return
+    }
+
+    setIsRegisteringShowcase(true)
+    try {
+      const res = await fetch('/api/admin/showcases/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'video',
+          adId: videoAd.id,
+          title: videoAd.ad_products?.name || '영상 광고',
+          description: videoAd.product_summary || videoAd.prompt || null,
+          thumbnailUrl: thumbnailUrl,
+          mediaUrl: videoAd.video_url,
+          adType: videoAd.category === 'product-description' ? 'productDescription' : 'productAd',
+          category: videoAd.ad_products?.brand || null,
+          productImageUrl: videoAd.ad_products?.rembg_image_url || videoAd.ad_products?.image_url || null,
+          avatarImageUrl: videoAd.avatars?.image_url || null,
+        }),
+      })
+
+      if (res.ok) {
+        alert('쇼케이스에 등록되었습니다.')
+      } else {
+        const error = await res.json()
+        alert(error.error || '등록 실패')
+      }
+    } catch (error) {
+      console.error('쇼케이스 등록 오류:', error)
+      alert('등록 중 오류가 발생했습니다.')
+    } finally {
+      setIsRegisteringShowcase(false)
+    }
+  }
+
   // 시간 포맷 함수
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -583,6 +670,20 @@ export default function VideoAdDetailPage() {
                   <Music className="w-4 h-4" />
                   {videoAd.bgm_info ? '음악 변경' : '음악 추가'}
                 </button>
+                {isAdmin && (
+                  <button
+                    onClick={handleRegisterShowcase}
+                    disabled={isRegisteringShowcase}
+                    className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-500 rounded-lg hover:bg-amber-500/20 transition-colors disabled:opacity-50"
+                  >
+                    {isRegisteringShowcase ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Star className="w-4 h-4" />
+                    )}
+                    쇼케이스 등록
+                  </button>
+                )}
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors"

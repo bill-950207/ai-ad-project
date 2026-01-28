@@ -9,8 +9,8 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Play, Sparkles, ArrowRight, Loader2 } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Play, Sparkles, ArrowRight, Loader2, Volume2, VolumeX } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 import { useOnboarding } from '@/components/onboarding/onboarding-context'
 
@@ -78,34 +78,119 @@ interface ShowcaseCardProps {
 function ShowcaseCard({ item, onClick, getAdTypeLabel }: ShowcaseCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [isMuted, setIsMuted] = useState(true)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const cardRef = useRef<HTMLButtonElement>(null)
+
+  // Intersection Observer로 화면에 보일 때 자동 재생 (모바일 지원)
+  useEffect(() => {
+    if (item.type !== 'video' || !item.media_url) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && videoRef.current) {
+            videoRef.current.play().catch(() => {})
+            setIsPlaying(true)
+          } else if (videoRef.current) {
+            videoRef.current.pause()
+            setIsPlaying(false)
+            // 화면 밖으로 나가면 음소거로 초기화
+            setIsMuted(true)
+            videoRef.current.muted = true
+          }
+        })
+      },
+      { threshold: 0.5 } // 50% 이상 보일 때 재생
+    )
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [item.type, item.media_url])
+
+  // 소리 토글
+  const handleToggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation() // 카드 클릭 이벤트 전파 방지
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted
+      setIsMuted(!isMuted)
+    }
+  }
+
+  // 데스크탑: 호버 시 재생/정지
+  const handleMouseEnter = () => {
+    setIsHovered(true)
+  }
+
+  const handleMouseLeave = () => {
+    setIsHovered(false)
+  }
 
   return (
     <button
+      ref={cardRef}
       onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       className="group relative aspect-[3/4] rounded-xl overflow-hidden bg-secondary/30 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-transform duration-300 hover:scale-[1.02]"
     >
-      {/* 썸네일 이미지 */}
+      {/* 썸네일 이미지 (비디오 재생 중이면 숨김) */}
       <img
         src={item.thumbnail_url}
         alt={item.title}
         className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
           imageLoaded ? 'opacity-100' : 'opacity-0'
-        }`}
+        } ${item.type === 'video' && isPlaying ? 'opacity-0' : ''}`}
         onLoad={() => setImageLoaded(true)}
       />
+
+      {/* 비디오 (화면에 보이면 자동 재생) */}
+      {item.type === 'video' && item.media_url && (
+        <video
+          ref={videoRef}
+          src={item.media_url}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+            isPlaying ? 'opacity-100' : 'opacity-0'
+          }`}
+          muted={isMuted}
+          loop
+          playsInline
+          preload="metadata"
+        />
+      )}
 
       {/* 로딩 스켈레톤 */}
       {!imageLoaded && (
         <div className="absolute inset-0 bg-secondary/50 animate-pulse" />
       )}
 
-      {/* 비디오 표시 아이콘 */}
+      {/* 비디오: 재생 중이면 소리 토글 버튼, 아니면 재생 아이콘 */}
       {item.type === 'video' && (
-        <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-          <Play className="w-3 h-3 text-white fill-white" />
-        </div>
+        <>
+          {/* 재생 아이콘 (재생 중이 아닐 때) */}
+          <div className={`absolute top-2 right-2 w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity duration-300 ${
+            isPlaying ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          }`}>
+            <Play className="w-3 h-3 text-white fill-white" />
+          </div>
+          {/* 소리 토글 버튼 (재생 중일 때) */}
+          <button
+            onClick={handleToggleMute}
+            className={`absolute top-2 right-2 w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center transition-all duration-300 hover:bg-black/70 ${
+              isPlaying ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
+          >
+            {isMuted ? (
+              <VolumeX className="w-3 h-3 text-white" />
+            ) : (
+              <Volume2 className="w-3 h-3 text-white" />
+            )}
+          </button>
+        </>
       )}
 
       {/* 하단 그라데이션 오버레이 */}

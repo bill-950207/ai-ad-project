@@ -21,7 +21,9 @@ import {
   Shirt,
   Settings2,
   Wand2,
+  Star,
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import { ImageEditModal } from './image-edit-modal'
 
 interface AdProduct {
@@ -104,6 +106,29 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
   const [isDownloadingAll, setIsDownloadingAll] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [isDeletingSingle, setIsDeletingSingle] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [isRegisteringShowcase, setIsRegisteringShowcase] = useState(false)
+
+  // 어드민 권한 확인
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+          setIsAdmin(profile?.role === 'ADMIN')
+        }
+      } catch (error) {
+        console.error('권한 확인 오류:', error)
+      }
+    }
+    checkAdmin()
+  }, [])
 
   const fetchImageAd = useCallback(async () => {
     try {
@@ -194,6 +219,45 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
       }
     } finally {
       setIsDownloadingAll(false)
+    }
+  }
+
+  // 쇼케이스 등록 (어드민 전용)
+  const handleRegisterShowcase = async () => {
+    if (!imageAd || !selectedImageUrl) return
+
+    if (!confirm('이 이미지 광고를 쇼케이스로 등록하시겠습니까?')) return
+
+    setIsRegisteringShowcase(true)
+    try {
+      const res = await fetch('/api/admin/showcases/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'image',
+          adId: imageAd.id,
+          title: imageAd.ad_products?.name || '이미지 광고',
+          description: imageAd.prompt?.slice(0, 200) || null,
+          thumbnailUrl: selectedImageUrl,
+          mediaUrl: selectedOriginalUrl,
+          adType: imageAd.ad_type,
+          category: imageAd.ad_products?.name || null,
+          productImageUrl: imageAd.ad_products?.rembg_image_url || imageAd.ad_products?.image_url || null,
+          avatarImageUrl: imageAd.avatars?.image_url || null,
+        }),
+      })
+
+      if (res.ok) {
+        alert('쇼케이스로 등록되었습니다.')
+      } else {
+        const data = await res.json()
+        alert(data.error || '등록에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('쇼케이스 등록 오류:', error)
+      alert('등록 중 오류가 발생했습니다.')
+    } finally {
+      setIsRegisteringShowcase(false)
     }
   }
 
@@ -522,6 +586,21 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                 <Download className="w-4 h-4" />
               )}
               전체 다운로드 ({imageUrls.length})
+            </button>
+          )}
+          {/* 쇼케이스 등록 (어드민 전용) */}
+          {isAdmin && imageAd.status === 'COMPLETED' && (
+            <button
+              onClick={handleRegisterShowcase}
+              disabled={isRegisteringShowcase}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors disabled:opacity-50"
+            >
+              {isRegisteringShowcase ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Star className="w-4 h-4" />
+              )}
+              쇼케이스 등록
             </button>
           )}
           <button
