@@ -357,11 +357,32 @@ IMPORTANT: All 3 scripts should follow the "${videoTypeStyle.korean}" video styl
 `
     : ''
 
+  // AI 의상 추천 섹션 (requestOutfitRecommendation이 true일 때만 추가)
+  const outfitRecommendationSection = input.requestOutfitRecommendation
+    ? `
+=== OUTFIT RECOMMENDATION REQUEST ===
+Please recommend an appropriate outfit for the avatar in this video ad.
+${input.avatarDescription ? `Avatar description: ${input.avatarDescription}` : ''}
+${input.productImageUrl ? `Product image is provided for reference.` : ''}
+
+Consider:
+- The product type and brand image
+- The video style (${videoTypeStyle?.korean || 'UGC'})
+- Natural, authentic appearance that matches the product context
+- Outfit should be described in ENGLISH for image generation
+
+Include in your response:
+- "recommendedOutfit.description": Detailed English description of the outfit (e.g., "casual white cotton t-shirt with light blue slim-fit jeans")
+- "recommendedOutfit.koreanDescription": Korean description for user display
+- "recommendedOutfit.reason": Brief explanation of why this outfit fits the product/video style
+`
+    : ''
+
   const prompt = `You are an expert advertising copywriter. Write 3 style scripts for the product in ${config_lang.name}. Target: ~${targetChars} characters each.
 
 ${productSection}
 ${videoTypeContext}
-
+${outfitRecommendationSection}
 === SCRIPT REQUIREMENTS ===
 Styles to generate:
 1. formal (professional/trustworthy tone)
@@ -398,14 +419,20 @@ Each script should:
       "content": "스크립트 전체 내용",
       "estimatedDuration": ${input.durationSeconds}
     }
-  ]
+  ]${input.requestOutfitRecommendation ? `,
+  "recommendedOutfit": {
+    "description": "English outfit description for image generation (e.g., casual white cotton t-shirt with light blue slim-fit jeans)",
+    "koreanDescription": "한국어 의상 설명 (사용자에게 표시용)",
+    "reason": "의상 선택 이유 설명"
+  }` : ''}
 }
 
 === SELF-VERIFICATION ===
 Before responding, check:
 ✓ All 3 scripts are written in ${config_lang.name}?
 ✓ Each script has different tone (formal/casual/energetic)?
-✓ Each script is approximately ${targetChars} characters?
+✓ Each script is approximately ${targetChars} characters?${input.requestOutfitRecommendation ? `
+✓ recommendedOutfit is included with English description?` : ''}
 ✓ JSON format is valid and complete?`
 
   const tools = input.productUrl ? [{ urlContext: {} }, { googleSearch: {} }] : undefined
@@ -435,6 +462,17 @@ Before responding, check:
   try {
     const result = JSON.parse(response.text || '') as ProductScriptResult
     console.log('[generateProductScripts] JSON 파싱 성공, 스크립트 수:', result.scripts?.length || 0)
+
+    // AI 의상 추천 요청했는데 응답에 없는 경우 기본값 설정
+    if (input.requestOutfitRecommendation && !result.recommendedOutfit) {
+      console.log('[generateProductScripts] recommendedOutfit 누락, 기본값 설정')
+      result.recommendedOutfit = {
+        description: 'casual white cotton t-shirt with light blue slim-fit jeans',
+        koreanDescription: '캐주얼한 흰색 티셔츠와 라이트 블루 슬림핏 청바지',
+        reason: '자연스럽고 깔끔한 캐주얼 스타일로 다양한 제품과 잘 어울립니다.',
+      }
+    }
+
     return result
   } catch (parseError) {
     console.error('[generateProductScripts] JSON 파싱 실패:', parseError)
