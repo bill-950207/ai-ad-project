@@ -108,7 +108,7 @@ export interface Script {
 /** AI 추천 의상 정보 */
 export interface RecommendedOutfit {
   description: string
-  koreanDescription: string
+  localizedDescription: string  // 사용자 선택 언어로 표시
   reason: string
 }
 
