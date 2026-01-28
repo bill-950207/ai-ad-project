@@ -25,15 +25,15 @@ interface DashboardContentProps {
 
 // 예시 이미지 URL (실제 서비스에서는 CDN이나 R2 URL 사용)
 const IMAGE_AD_EXAMPLES = [
-  '/examples/image-ad-1.jpg',
-  '/examples/image-ad-2.jpg',
-  '/examples/image-ad-3.jpg',
+  '/examples/image-ad-1.webp',
+  '/examples/image-ad-2.webp',
+  '/examples/image-ad-3.webp',
 ]
 
 const VIDEO_AD_EXAMPLES = [
-  '/examples/video-ad-1.jpg',
-  '/examples/video-ad-2.jpg',
-  '/examples/video-ad-3.jpg',
+  '/examples/video-ad-1.webp',
+  '/examples/video-ad-2.webp',
+  '/examples/video-ad-3.webp',
 ]
 
 // ============================================================
