@@ -151,6 +151,7 @@ function ShowcaseCard({ item, onClick, getAdTypeLabel }: ShowcaseCardProps) {
 // ============================================================
 
 interface ShowcaseSectionProps {
+  title: string
   items: ShowcaseItem[]
   totalCount: number
   onItemClick: (item: ShowcaseItem) => void
@@ -159,36 +160,49 @@ interface ShowcaseSectionProps {
   viewMoreLabel: string
 }
 
-function ShowcaseSection({ items, totalCount, onItemClick, onViewMore, getAdTypeLabel, viewMoreLabel }: ShowcaseSectionProps) {
+function ShowcaseSection({ title, items, totalCount, onItemClick, onViewMore, getAdTypeLabel, viewMoreLabel }: ShowcaseSectionProps) {
   const showViewMore = totalCount > MAX_VISIBLE_ITEMS
 
   if (items.length === 0) return null
 
   return (
-    <div className="relative">
-      <div className="grid grid-cols-5 gap-3">
-        {items.slice(0, MAX_VISIBLE_ITEMS).map((item) => (
-          <ShowcaseCard
-            key={item.id}
-            item={item}
-            onClick={() => onItemClick(item)}
-            getAdTypeLabel={getAdTypeLabel}
-          />
-        ))}
-      </div>
-
-      {/* 15개 초과 시 하단 그라데이션 + 더보기 버튼 */}
-      {showViewMore && onViewMore && (
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background via-background/80 to-transparent flex items-end justify-center pb-2 pointer-events-none">
+    <div className="space-y-3">
+      {/* 섹션 헤더 */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-1 h-4 bg-primary/60 rounded-full" />
+          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+          <span className="text-xs text-muted-foreground">({totalCount})</span>
+        </div>
+        {showViewMore && onViewMore && (
           <button
             onClick={onViewMore}
-            className="pointer-events-auto flex items-center gap-1.5 px-4 py-2 bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium rounded-lg transition-colors"
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             <span>{viewMoreLabel}</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-3 h-3" />
           </button>
+        )}
+      </div>
+
+      {/* 그리드 */}
+      <div className="relative">
+        <div className="grid grid-cols-5 gap-3">
+          {items.slice(0, MAX_VISIBLE_ITEMS).map((item) => (
+            <ShowcaseCard
+              key={item.id}
+              item={item}
+              onClick={() => onItemClick(item)}
+              getAdTypeLabel={getAdTypeLabel}
+            />
+          ))}
         </div>
-      )}
+
+        {/* 15개 초과 시 하단 그라데이션 */}
+        {showViewMore && (
+          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background via-background/60 to-transparent pointer-events-none" />
+        )}
+      </div>
     </div>
   )
 }
@@ -289,13 +303,9 @@ export function ShowcaseGallery() {
     return null
   }
 
-  // 모든 쇼케이스를 하나로 합침
-  const allShowcases = [...imageShowcases, ...videoShowcases]
-  const totalCount = imageTotalCount + videoTotalCount
-
   return (
-    <div className="space-y-6">
-      {/* 섹션 헤더 */}
+    <div className="space-y-8">
+      {/* 메인 섹션 헤더 */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-1 h-5 bg-primary rounded-full" />
@@ -309,10 +319,21 @@ export function ShowcaseGallery() {
         </div>
       </div>
 
-      {/* 통합 쇼케이스 그리드 */}
+      {/* 이미지 광고 쇼케이스 */}
       <ShowcaseSection
-        items={allShowcases}
-        totalCount={totalCount}
+        title={t.nav?.imageAd || '이미지 광고'}
+        items={imageShowcases}
+        totalCount={imageTotalCount}
+        onItemClick={handleShowcaseClick}
+        getAdTypeLabel={getAdTypeLabel}
+        viewMoreLabel={t.dashboard?.recentWork?.viewAll || '더보기'}
+      />
+
+      {/* 영상 광고 쇼케이스 */}
+      <ShowcaseSection
+        title={t.nav?.videoAd || '영상 광고'}
+        items={videoShowcases}
+        totalCount={videoTotalCount}
         onItemClick={handleShowcaseClick}
         getAdTypeLabel={getAdTypeLabel}
         viewMoreLabel={t.dashboard?.recentWork?.viewAll || '더보기'}

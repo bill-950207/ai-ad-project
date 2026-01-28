@@ -14,7 +14,7 @@ import { Image as ImageIcon, Video, ArrowRight, Sparkles } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 import { useOnboarding } from '@/components/onboarding/onboarding-context'
 import { OnboardingFlowModal } from '@/components/onboarding/onboarding-flow-modal'
-import { AdListSection } from './ad-list-section'
+import { RecentAdsSection } from './recent-ads-section'
 import { ShowcaseGallery } from './showcase-gallery'
 
 // ============================================================
@@ -233,23 +233,12 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
         />
       </div>
 
-      {/* 광고 목록 + 쇼케이스 갤러리 */}
+      {/* 최근 생성 광고 + 쇼케이스 갤러리 */}
       <div className="animate-[fadeIn_0.4s_ease-out_0.3s_backwards] space-y-8">
-        {/* 이미지 광고 목록 - 없으면 자동으로 숨김 */}
-        <AdListSection
-          type="image"
-          title={t.nav.imageAd}
-          viewAllHref="/dashboard/image-ad"
-        />
+        {/* 최근 생성 광고 - 이미지+영상 혼합, 최근 5개 */}
+        <RecentAdsSection />
 
-        {/* 영상 광고 목록 - 없으면 자동으로 숨김 */}
-        <AdListSection
-          type="video"
-          title={t.nav.videoAd}
-          viewAllHref="/dashboard/video-ad"
-        />
-
-        {/* 쇼케이스 갤러리 - 항상 표시 */}
+        {/* 쇼케이스 갤러리 - 이미지/영상 각각 5x3 그리드 */}
         <ShowcaseGallery />
       </div>
 
