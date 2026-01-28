@@ -295,16 +295,16 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
     }
   }, [item.type])
 
-  // 광고 타입에 따른 생성 페이지 URL
+  // 광고 타입에 따른 대시보드 URL (온보딩 팝업 자동 오픈)
   const getCreateUrl = () => {
     if (item.type === 'image') {
-      return '/dashboard/image-ad'
+      return '/dashboard?create=image'
     }
     // 영상 광고 타입에 따라 분기
     if (item.ad_type === 'productDescription') {
-      return '/dashboard/video-ad/create?type=product-description'
+      return '/dashboard?create=video&videoType=productDescription'
     }
-    return '/dashboard/video-ad/create?type=product-ad'
+    return '/dashboard?create=video&videoType=productAd'
   }
 
   // "이 광고 만들기" 버튼 클릭
@@ -315,7 +315,7 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (user) {
-        // 로그인된 사용자: 해당 광고 생성 페이지로 이동
+        // 로그인된 사용자: 대시보드로 이동 (온보딩 팝업 자동 오픈)
         router.push(getCreateUrl())
       } else {
         // 비로그인 사용자: 로그인 페이지로 이동

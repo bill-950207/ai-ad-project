@@ -12,10 +12,11 @@
 import { useState, useEffect } from 'react'
 import { Image as ImageIcon, Video, ArrowRight, Sparkles } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
-import { useOnboarding } from '@/components/onboarding/onboarding-context'
+import { useOnboarding, VideoAdType } from '@/components/onboarding/onboarding-context'
 import { OnboardingFlowModal } from '@/components/onboarding/onboarding-flow-modal'
 import { RecentAdsSection } from './recent-ads-section'
 import { ShowcaseGallery } from './showcase-gallery'
+import { useSearchParams, useRouter } from 'next/navigation'
 
 // ============================================================
 // 타입 정의
@@ -195,7 +196,33 @@ function AdCreationCard({
 
 export function DashboardContent({ userEmail: _userEmail }: DashboardContentProps) {
   const { t } = useLanguage()
-  const { startOnboarding } = useOnboarding()
+  const { startOnboarding, setVideoAdType, isOpen } = useOnboarding()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  // URL 쿼리 파라미터로 온보딩 자동 시작
+  useEffect(() => {
+    const createType = searchParams.get('create')
+    const videoType = searchParams.get('videoType') as VideoAdType | null
+
+    if (createType && !isOpen) {
+      if (createType === 'image') {
+        startOnboarding('image')
+      } else if (createType === 'video') {
+        startOnboarding('video')
+        // 영상 타입이 지정된 경우 자동 설정
+        if (videoType === 'productDescription' || videoType === 'productAd') {
+          // 약간의 지연 후 영상 타입 설정 (온보딩 시작 후 상태가 업데이트되도록)
+          setTimeout(() => {
+            setVideoAdType(videoType)
+          }, 100)
+        }
+      }
+
+      // 쿼리 파라미터 제거 (URL 정리)
+      router.replace('/dashboard', { scroll: false })
+    }
+  }, [searchParams, startOnboarding, setVideoAdType, isOpen, router])
 
   return (
     <div className="space-y-10">
