@@ -255,16 +255,15 @@ export function Sidebar() {
             <div key={item.labelKey}>
               {/* 상위 메뉴 라벨 */}
               {!isCollapsed && (
-                <div className="flex items-center gap-3 px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  {item.icon}
-                  <span>{getNavLabel(item.labelKey)}</span>
+                <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  {getNavLabel(item.labelKey)}
                 </div>
               )}
 
               {/* 하위 메뉴 아이템 */}
               <div className={cn(
                 "space-y-1",
-                !isCollapsed && "ml-2 mt-1"
+                !isCollapsed && "ml-5 mt-1"
               )}>
                 {item.children.map((child) => (
                   <div key={child.href} className="relative group">
