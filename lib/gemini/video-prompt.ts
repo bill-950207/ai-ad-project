@@ -379,8 +379,8 @@ ${input.productImageUrl ? 'A product image is attached for reference.' : ''}
 
 Add "recommendedOutfit" field to your JSON response with:
 - description: English outfit description (e.g., "casual white cotton t-shirt with light blue jeans")
-- koreanDescription: Korean outfit description (e.g., "캐주얼한 흰색 티셔츠와 라이트 블루 청바지")
-- reason: Why this outfit suits the product and video style`
+- localizedDescription: Outfit description in ${config_lang.name} (e.g., for Korean: "캐주얼한 흰색 티셔츠와 라이트 블루 청바지")
+- reason: Why this outfit suits the product and video style in ${config_lang.name}`
     : ''
 
   // 비디오 타입별 스타일 가이드
@@ -400,19 +400,22 @@ IMPORTANT: All 3 scripts should follow the "${videoTypeStyle.korean}" video styl
 `
     : ''
 
-  // AI 의상 추천 섹션 (requestOutfitRecommendation이 true일 때만 추가)
+  // AI 의상 추천 섹션 (requestOutfitRecommendation이 true일 때만 추가) - 다국어 지원
   const outfitRecommendationSection = input.requestOutfitRecommendation
     ? `
-=== OUTFIT RECOMMENDATION REQUEST ===
-Please recommend an appropriate outfit for the avatar in this video ad.
-${input.avatarDescription ? `Avatar description: ${input.avatarDescription}` : ''}
+=== OUTFIT RECOMMENDATION (REQUIRED) ===
+Based on the product and video style, recommend an appropriate outfit for the model.
+${input.avatarDescription ? `Model info: ${input.avatarDescription}` : ''}
 ${input.productImageUrl ? `Product image is provided for reference.` : ''}
 
 Consider:
-- The product type and brand image
-- The video style (${videoTypeStyle?.korean || 'UGC'})
+- Product category and target audience
+- Video style (${videoTypeStyle?.korean || 'UGC'})
+- Overall brand image and mood
 - Natural, authentic appearance that matches the product context
-- Outfit should be described in ENGLISH for image generation
+
+The outfit should complement the product without overshadowing it.
+Outfit must be described in ENGLISH for image generation.
 
 Include in your response:
 - "recommendedOutfit.description": Detailed English description of the outfit (e.g., "casual white cotton t-shirt with light blue slim-fit jeans")
@@ -475,7 +478,7 @@ Before responding, check:
 ✓ All 3 scripts are written in ${config_lang.name}?
 ✓ Each script has different tone (formal/casual/energetic)?
 ✓ Each script is approximately ${targetChars} characters?${input.requestOutfitRecommendation ? `
-✓ recommendedOutfit is included with English description?` : ''}
+✓ recommendedOutfit is included with English description and localizedDescription?` : ''}
 ✓ JSON format is valid and complete?`
 
   const tools = input.productUrl ? [{ urlContext: {} }, { googleSearch: {} }] : undefined
