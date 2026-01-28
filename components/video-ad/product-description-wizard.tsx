@@ -70,6 +70,13 @@ interface Script {
   estimatedDuration: number
 }
 
+// 이미지 생성 요청 정보 (비동기 폴링용)
+interface ImageRequest {
+  requestId: string
+  provider: 'fal' | 'kie' | 'kie-zimage'
+  index: number
+}
+
 interface Voice {
   id: string
   voice_id?: string
@@ -611,6 +618,11 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
   const [locationDescription, setLocationDescription] = useState<string>('')
   const [isGeneratingScripts, setIsGeneratingScripts] = useState(false)
   const [firstFramePrompt, setFirstFramePrompt] = useState<string>('')
+
+  // 이미지 비동기 로딩 상태
+  const [imageRequests, setImageRequests] = useState<ImageRequest[]>([])  // 이미지 생성 요청 정보
+  const [isLoadingImages, setIsLoadingImages] = useState(false)  // 이미지 로딩 중 여부
+  const imagePollingRef = useRef<NodeJS.Timeout | null>(null)  // 폴링 타이머 ref
 
   // Step 3: 음성 (Step 4에서 통합됨)
   const [selectedVoice, setSelectedVoice] = useState<Voice | null>(null)
@@ -1246,6 +1258,130 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
   }, [selectedScriptIndex, scripts])
 
   // ============================================================
+  // 이미지 폴링 함수 (비동기 이미지 로딩)
+  // ============================================================
+
+  const startImagePolling = useCallback(async (
+    requests: ImageRequest[],
+    generatedScripts: Script[],
+    generatedLocationDesc: string,
+    generatedFirstFramePrompt: string,
+    generatedEditedScript: string
+  ) => {
+    // 기존 폴링 타이머 정리
+    if (imagePollingRef.current) {
+      clearInterval(imagePollingRef.current)
+    }
+
+    const maxAttempts = 40  // 최대 40회 (2분)
+    let attempts = 0
+
+    const pollImages = async () => {
+      attempts++
+      console.log(`[이미지 폴링] 시도 ${attempts}/${maxAttempts}`)
+
+      try {
+        const res = await fetch(`/api/video-ads/product-description/image-status?requests=${encodeURIComponent(JSON.stringify(requests))}`)
+        if (!res.ok) {
+          console.error('이미지 상태 확인 실패:', res.status)
+          return
+        }
+
+        const data = await res.json()
+        console.log('[이미지 폴링] 응답:', data)
+
+        if (data.allCompleted) {
+          // 모든 이미지 완료 - 폴링 중지
+          if (imagePollingRef.current) {
+            clearInterval(imagePollingRef.current)
+            imagePollingRef.current = null
+          }
+
+          // 완료된 이미지 URL 추출
+          const completedUrls = data.results
+            .filter((r: { status: string; imageUrl: string | null }) => r.status === 'COMPLETED' && r.imageUrl)
+            .sort((a: { index: number }, b: { index: number }) => a.index - b.index)
+            .map((r: { imageUrl: string }) => r.imageUrl)
+
+          if (completedUrls.length > 0) {
+            // R2 업로드 요청
+            const uploadRes = await fetch('/api/video-ads/product-description/image-status', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ imageUrls: completedUrls }),
+            })
+
+            if (uploadRes.ok) {
+              const uploadData = await uploadRes.json()
+              const uploadedUrls = uploadData.uploadResults
+                .sort((a: { index: number }, b: { index: number }) => a.index - b.index)
+                .map((r: { compressedUrl: string }) => r.compressedUrl)
+              const originalUrls = uploadData.uploadResults
+                .sort((a: { index: number }, b: { index: number }) => a.index - b.index)
+                .map((r: { originalUrl: string }) => r.originalUrl)
+
+              setFirstFrameUrls(uploadedUrls)
+              setFirstFrameOriginalUrls(originalUrls)
+              setFirstFrameUrl(uploadedUrls[0] || null)
+              setFirstFrameOriginalUrl(originalUrls[0] || null)
+              setSelectedFirstFrameIndex(0)
+
+              // 이미지 로딩 완료 후 draft 저장
+              saveDraftAsync(3, {
+                scripts: generatedScripts,
+                locationDescription: generatedLocationDesc,
+                firstFrameUrl: uploadedUrls[0] || null,
+                firstFrameUrls: uploadedUrls,
+                firstFrameOriginalUrls: originalUrls,
+                firstFramePrompt: generatedFirstFramePrompt,
+                editedScript: generatedEditedScript,
+                selectedScriptIndex: 0,
+                status: 'DRAFT',
+              })
+            } else {
+              // 업로드 실패 시 원본 URL 사용
+              setFirstFrameUrls(completedUrls)
+              setFirstFrameOriginalUrls(completedUrls)
+              setFirstFrameUrl(completedUrls[0] || null)
+              setFirstFrameOriginalUrl(completedUrls[0] || null)
+              setSelectedFirstFrameIndex(0)
+            }
+          }
+
+          setIsLoadingImages(false)
+          setImageRequests([])
+          console.log('[이미지 폴링] 완료!')
+        } else if (data.anyFailed || attempts >= maxAttempts) {
+          // 실패 또는 타임아웃
+          if (imagePollingRef.current) {
+            clearInterval(imagePollingRef.current)
+            imagePollingRef.current = null
+          }
+          setIsLoadingImages(false)
+          setImageRequests([])
+          console.error('[이미지 폴링] 실패 또는 타임아웃')
+        }
+      } catch (error) {
+        console.error('[이미지 폴링] 오류:', error)
+      }
+    }
+
+    // 첫 폴링 (3초 후)
+    setTimeout(pollImages, 3000)
+    // 이후 3초 간격으로 폴링
+    imagePollingRef.current = setInterval(pollImages, 3000)
+  }, [saveDraftAsync])
+
+  // 컴포넌트 언마운트 시 폴링 정리
+  useEffect(() => {
+    return () => {
+      if (imagePollingRef.current) {
+        clearInterval(imagePollingRef.current)
+      }
+    }
+  }, [])
+
+  // ============================================================
   // Step 2 → Step 3: 대본 및 첫 프레임 생성
   // ============================================================
 
@@ -1308,21 +1444,13 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
 
       const data = await res.json()
 
+      // 대본 즉시 설정 (이미지 로딩 전)
       const generatedScripts = data.scripts || []
-      const generatedFirstFrameUrls: string[] = data.firstFrameUrls || (data.firstFrameUrl ? [data.firstFrameUrl] : [])
-      const generatedFirstFrameOriginalUrls: string[] = data.firstFrameOriginalUrls || generatedFirstFrameUrls  // 원본 URL (없으면 압축본 사용)
-      const generatedFirstFrameUrl = generatedFirstFrameUrls[0] || null
-      const generatedFirstFrameOriginalUrl = generatedFirstFrameOriginalUrls[0] || null
       const generatedLocationDesc = data.locationDescription || ''
       const generatedFirstFramePrompt = data.firstFramePrompt || ''
       const generatedEditedScript = generatedScripts.length > 0 ? generatedScripts[0].content : ''
 
       setScripts(generatedScripts)
-      setFirstFrameUrls(generatedFirstFrameUrls)
-      setFirstFrameOriginalUrls(generatedFirstFrameOriginalUrls)
-      setFirstFrameUrl(generatedFirstFrameUrl)
-      setFirstFrameOriginalUrl(generatedFirstFrameOriginalUrl)
-      setSelectedFirstFrameIndex(0)
       setLocationDescription(generatedLocationDesc)
       setFirstFramePrompt(generatedFirstFramePrompt)
 
@@ -1339,18 +1467,36 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       // 대본 언어로 음성 목록 불러오기 (Step 2에서 선택한 언어)
       fetchVoicesByLanguage(scriptLanguage)
 
-      // 생성된 대본과 이미지 정보 저장 + DRAFT 상태로 복원 (API 응답 값을 직접 전달하여 stale closure 문제 방지)
-      saveDraftAsync(3, {
-        scripts: generatedScripts,
-        locationDescription: generatedLocationDesc,
-        firstFrameUrl: generatedFirstFrameUrl,
-        firstFrameUrls: generatedFirstFrameUrls,
-        firstFrameOriginalUrls: generatedFirstFrameOriginalUrls,
-        firstFramePrompt: generatedFirstFramePrompt,
-        editedScript: generatedEditedScript,
-        selectedScriptIndex: 0,
-        status: 'DRAFT',  // 생성 완료 후 DRAFT 상태로 복원
-      })
+      // 이미지 요청 정보가 있으면 폴링 시작
+      const receivedImageRequests: ImageRequest[] = data.imageRequests || []
+      if (receivedImageRequests.length > 0) {
+        setImageRequests(receivedImageRequests)
+        setIsLoadingImages(true)
+        // 이미지 폴링 시작 (백그라운드에서 실행)
+        startImagePolling(receivedImageRequests, generatedScripts, generatedLocationDesc, generatedFirstFramePrompt, generatedEditedScript)
+      } else {
+        // 하위 호환성: imageRequests가 없으면 기존 방식 (이미 완료된 이미지)
+        const generatedFirstFrameUrls: string[] = data.firstFrameUrls || (data.firstFrameUrl ? [data.firstFrameUrl] : [])
+        const generatedFirstFrameOriginalUrls: string[] = data.firstFrameOriginalUrls || generatedFirstFrameUrls
+        setFirstFrameUrls(generatedFirstFrameUrls)
+        setFirstFrameOriginalUrls(generatedFirstFrameOriginalUrls)
+        setFirstFrameUrl(generatedFirstFrameUrls[0] || null)
+        setFirstFrameOriginalUrl(generatedFirstFrameOriginalUrls[0] || null)
+        setSelectedFirstFrameIndex(0)
+
+        // 생성된 대본과 이미지 정보 저장
+        saveDraftAsync(3, {
+          scripts: generatedScripts,
+          locationDescription: generatedLocationDesc,
+          firstFrameUrl: generatedFirstFrameUrls[0] || null,
+          firstFrameUrls: generatedFirstFrameUrls,
+          firstFrameOriginalUrls: generatedFirstFrameOriginalUrls,
+          firstFramePrompt: generatedFirstFramePrompt,
+          editedScript: generatedEditedScript,
+          selectedScriptIndex: 0,
+          status: 'DRAFT',
+        })
+      }
     } catch (error) {
       console.error('대본 생성 오류:', error)
       alert(error instanceof Error ? error.message : '대본 생성 중 오류가 발생했습니다')
@@ -1617,7 +1763,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
 
   const canProceedStep1 = selectedAvatarInfo !== null && selectedProduct !== null
   const canProceedStep2 = productInfo.trim().length > 0
-  const canProceedStep3 = editedScript.trim().length > 0 && firstFrameUrl !== null
+  const canProceedStep3 = editedScript.trim().length > 0 && firstFrameUrl !== null && !isLoadingImages
   const canProceedStep4 = selectedVoice !== null
 
   // ============================================================
@@ -2439,15 +2585,31 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   </div>
                   <button
                     onClick={generateScriptsAndImage}
-                    className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors"
+                    disabled={isLoadingImages}
+                    className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <RefreshCw className="w-4 h-4" />
-                    다시 생성
+                    <RefreshCw className={`w-4 h-4 ${isLoadingImages ? 'animate-spin' : ''}`} />
+                    {isLoadingImages ? '이미지 생성 중...' : '다시 생성'}
                   </button>
                 </div>
 
                 <div className="flex flex-wrap justify-center gap-4 max-w-xl mx-auto">
-                  {firstFrameUrls.length > 0 ? (
+                  {isLoadingImages ? (
+                    // 이미지 로딩 중 스켈레톤 표시
+                    <>
+                      {[0, 1].map((index) => (
+                        <div key={index} className="relative">
+                          <div className="w-[180px] aspect-[2/3] rounded-lg overflow-hidden border-2 border-border bg-secondary/30 animate-pulse flex flex-col items-center justify-center gap-3">
+                            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                            <p className="text-muted-foreground text-sm">이미지 생성 중...</p>
+                          </div>
+                          <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 rounded text-white text-xs">
+                            옵션 {index + 1}
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  ) : firstFrameUrls.length > 0 ? (
                     firstFrameUrls.map((url, index) => (
                       <div key={index} className="relative">
                         <button
@@ -2679,11 +2841,20 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                 </button>
                 <button
                   onClick={generateVideo}
-                  disabled={!canProceedStep3 || !selectedVoice}
+                  disabled={!canProceedStep3 || !selectedVoice || isLoadingImages}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  영상 생성하기
-                  <Play className="w-4 h-4" />
+                  {isLoadingImages ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      이미지 로딩 중...
+                    </>
+                  ) : (
+                    <>
+                      영상 생성하기
+                      <Play className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
               </div>
             </>

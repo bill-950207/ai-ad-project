@@ -3,8 +3,9 @@
  *
  * POST /api/video-ads/product-description/generate-scripts
  * - 제품 정보를 바탕으로 3가지 스타일의 대본 생성
- * - 첫 프레임 이미지 프롬프트 생성 및 이미지 생성
- * - AI 아바타/기존 아바타 모두 Seedream 4.5 Edit로 이미지 생성
+ * - 첫 프레임 이미지 프롬프트 생성 및 이미지 생성 요청
+ * - 대본은 즉시 반환, 이미지는 request ID 반환 (비동기)
+ * - 이미지 상태는 /image-status 엔드포인트로 폴링
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -18,20 +19,13 @@ import {
 } from '@/lib/gemini/client'
 import {
   submitSeedreamFirstFrameToQueue,
-  getSeedreamEditQueueStatus,
-  getSeedreamEditQueueResponse,
   type SeedreamAspectRatio,
 } from '@/lib/fal/client'
 import {
   submitFirstFrameToQueue as submitFirstFrameToKieQueue,
-  getEditQueueStatus as getKieEditQueueStatus,
-  getEditQueueResponse as getKieEditQueueResponse,
   submitZImageTurboToQueue,
-  getZImageTurboQueueStatus,
-  getZImageTurboQueueResponse,
   type ZImageAspectRatio,
 } from '@/lib/kie/client'
-import { uploadExternalImageToR2 } from '@/lib/image/compress'
 
 /**
  * POST /api/video-ads/product-description/generate-scripts
@@ -289,96 +283,33 @@ export async function POST(request: NextRequest) {
       ])
     }
 
-    // 이미지 생성 완료까지 병렬로 폴링 (최대 2분)
-    const pollForImage = async (result: SubmitResult): Promise<string | null> => {
-      const maxAttempts = 40
-      let attempts = 0
+    // 이미지 요청 정보를 배열로 변환 (프론트엔드에서 폴링용)
+    const imageRequests = submitResults.map((result, index) => ({
+      requestId: result.requestId,
+      provider: result.provider,
+      index,
+    }))
 
-      while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 3000))
+    console.log('[generate-scripts] 대본 + 이미지 요청 완료:', {
+      scriptsCount: scriptsResult.scripts.length,
+      imageRequestsCount: imageRequests.length,
+    })
 
-        try {
-          if (result.provider === 'fal') {
-            const status = await getSeedreamEditQueueStatus(result.requestId)
-            if (status.status === 'COMPLETED') {
-              const response = await getSeedreamEditQueueResponse(result.requestId)
-              return response.images[0]?.url || null
-            }
-          } else if (result.provider === 'kie-zimage') {
-            // z-image-turbo (텍스트-to-이미지)
-            const status = await getZImageTurboQueueStatus(result.requestId)
-            if (status.status === 'COMPLETED') {
-              const response = await getZImageTurboQueueResponse(result.requestId)
-              return response.images[0]?.url || null
-            }
-          } else {
-            // kie Seedream 4.5 Edit
-            const status = await getKieEditQueueStatus(result.requestId)
-            if (status.status === 'COMPLETED') {
-              const response = await getKieEditQueueResponse(result.requestId)
-              return response.images[0]?.url || null
-            }
-          }
-        } catch (err) {
-          console.error('첫 프레임 이미지 결과 조회 실패:', err)
-          return null
-        }
-
-        attempts++
-      }
-      return null
-    }
-
-    // 모든 이미지를 병렬로 폴링
-    const polledUrls = await Promise.all(
-      submitResults.map(result => pollForImage(result))
-    )
-
-    // 유효한 이미지 URL만 필터링
-    const rawFirstFrameUrls = polledUrls.filter((url): url is string => url !== null)
-
-    // R2에 원본/압축본 업로드 (병렬 처리)
-    const timestamp = Date.now()
-    const uploadToR2 = async (url: string, index: number): Promise<{ original: string; compressed: string } | null> => {
-      try {
-        const result = await uploadExternalImageToR2(
-          url,
-          'video-ads/first-frame',
-          `${user.id}_${timestamp}_${index}`
-        )
-        console.log(`첫 프레임 이미지 ${index + 1} R2 업로드 완료:`, result.compressedUrl)
-        return { original: result.originalUrl, compressed: result.compressedUrl }
-      } catch (uploadError) {
-        console.error(`첫 프레임 이미지 ${index + 1} R2 업로드 실패:`, uploadError)
-        // 업로드 실패 시 원본 URL 사용
-        return { original: url, compressed: url }
-      }
-    }
-
-    const uploadResults = await Promise.all(
-      rawFirstFrameUrls.map((url, index) => uploadToR2(url, index))
-    )
-
-    // 압축본 URL 배열 (조회용)
-    const firstFrameUrls = uploadResults
-      .filter((r): r is { original: string; compressed: string } => r !== null)
-      .map(r => r.compressed)
-
-    // 원본 URL 배열 (영상 생성용)
-    const firstFrameOriginalUrls = uploadResults
-      .filter((r): r is { original: string; compressed: string } => r !== null)
-      .map(r => r.original)
-
+    // 대본과 이미지 요청 ID를 즉시 반환 (이미지 완료 대기 없음)
     return NextResponse.json({
       scripts: scriptsResult.scripts,
       productSummary: scriptsResult.productSummary,
-      firstFrameUrl: firstFrameUrls[0] || null,  // 하위 호환성 (압축본)
-      firstFrameUrls,  // 압축본 URL 배열 (조회용)
-      firstFrameOriginalUrls,  // 원본 URL 배열 (영상 생성용)
+      // 이미지는 아직 생성 중이므로 URL 대신 요청 정보 반환
+      imageRequests,  // 프론트엔드에서 /image-status로 폴링
+      // 하위 호환성을 위한 필드 (null로 설정)
+      firstFrameUrl: null,
+      firstFrameUrls: [],
+      firstFrameOriginalUrls: [],
+      // 기타 정보
       locationDescription,
       firstFramePrompt,
-      isAiGeneratedAvatar,  // AI 아바타 사용 여부
-      recommendedOutfit: scriptsResult.recommendedOutfit,  // AI 추천 의상 (요청 시에만)
+      isAiGeneratedAvatar,
+      recommendedOutfit: scriptsResult.recommendedOutfit,
     })
   } catch (error) {
     console.error('대본 생성 오류:', error)
