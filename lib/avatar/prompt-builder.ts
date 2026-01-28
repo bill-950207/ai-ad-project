@@ -283,3 +283,94 @@ export function validateAvatarOptions(options: unknown): options is AvatarOption
 
   return true
 }
+
+// ============================================================
+// AI 아바타 옵션 변환 및 이미지 생성
+// ============================================================
+
+/** AI 아바타 옵션 타입 (이미지/영상 광고에서 사용) */
+export interface AiAvatarOptions {
+  targetGender?: 'male' | 'female' | 'any'
+  targetAge?: 'young' | 'middle' | 'mature' | 'any'
+  style?: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
+  ethnicity?: 'korean' | 'asian' | 'western' | 'any'
+  bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'any'
+}
+
+/** AI 아바타 옵션을 AvatarOptions로 변환 */
+export function convertAiAvatarOptionsToAvatarOptions(aiOptions: AiAvatarOptions): AvatarOptions {
+  const options: AvatarOptions = {}
+
+  // 성별 변환
+  if (aiOptions.targetGender && aiOptions.targetGender !== 'any') {
+    options.gender = aiOptions.targetGender as 'female' | 'male'
+  }
+
+  // 나이 변환
+  if (aiOptions.targetAge && aiOptions.targetAge !== 'any') {
+    const ageConvertMap: Record<string, AvatarOptions['age']> = {
+      young: 'early20s',
+      middle: '30s',
+      mature: '40plus',
+    }
+    options.age = ageConvertMap[aiOptions.targetAge]
+  }
+
+  // 인종 변환
+  if (aiOptions.ethnicity && aiOptions.ethnicity !== 'any') {
+    const ethnicityConvertMap: Record<string, AvatarOptions['ethnicity']> = {
+      korean: 'korean',
+      asian: 'eastAsian',
+      western: 'western',
+    }
+    options.ethnicity = ethnicityConvertMap[aiOptions.ethnicity]
+  }
+
+  // 스타일 → 분위기 변환
+  if (aiOptions.style && aiOptions.style !== 'any') {
+    const vibeConvertMap: Record<string, AvatarOptions['vibe']> = {
+      natural: 'natural',
+      professional: 'professional',
+      casual: 'natural',
+      elegant: 'sophisticated',
+    }
+    options.vibe = vibeConvertMap[aiOptions.style]
+  }
+
+  // 체형 변환
+  if (aiOptions.bodyType && aiOptions.bodyType !== 'any') {
+    options.bodyType = aiOptions.bodyType as AvatarOptions['bodyType']
+  }
+
+  // 기본값: 스튜디오 배경, 자연스러운 포즈
+  options.background = 'studio'
+  options.pose = 'natural'
+
+  return options
+}
+
+/**
+ * AI 아바타용 z-image-turbo 프롬프트 생성
+ *
+ * 아바타 생성 API와 동일한 품질 향상 문구를 적용합니다.
+ */
+export function buildAiAvatarPrompt(aiOptions: AiAvatarOptions): string {
+  // 옵션 변환
+  const avatarOptions = convertAiAvatarOptionsToAvatarOptions(aiOptions)
+
+  // 기본 프롬프트 생성
+  const rawPrompt = buildPromptFromOptions(avatarOptions)
+
+  // 품질 향상 문구 추가 (아바타 생성 API와 동일)
+  const hasBackground = avatarOptions.background
+  const hasPose = avatarOptions.pose
+
+  const styleAndAntiBlur = 'documentary style environmental portrait, sharp background in focus, NO bokeh, NO blur, NO shallow depth of field, f/11 aperture'
+  const gazeDirection = 'looking directly at camera, eye contact with viewer'
+  const qualityEnhancers = 'high quality photo, realistic, professional photography, sharp focus, detailed skin texture'
+  const defaultBackground = hasBackground ? '' : ', in a professional photo studio with even studio lighting and clean white backdrop, well-lit, sharp clear background'
+  const defaultPose = hasPose ? '' : ', in a relaxed natural pose, neutral calm expression'
+  const viewType = 'upper body shot'
+
+  return `${styleAndAntiBlur}, ${rawPrompt}, ${gazeDirection}, ${qualityEnhancers}${defaultBackground}${defaultPose}, ${viewType}`
+}

@@ -6,11 +6,13 @@
  */
 
 import { submitSeedreamEditToQueue, type SeedreamAspectRatio } from '@/lib/fal/client'
-// [주석 처리] AI 아바타용 kie.ai GPT-Image 1.5 (현재 Seedream 사용)
-// import {
-//   submitGPTImageToQueue as submitKieGptImageToQueue,
-//   type GPTImageAspectRatio,
-// } from '@/lib/kie/client'
+import {
+  submitZImageTurboToQueue,
+  getZImageTurboQueueStatus,
+  getZImageTurboQueueResponse,
+  type ZImageAspectRatio,
+} from '@/lib/kie/client'
+import { buildAiAvatarPrompt, type AiAvatarOptions } from '@/lib/avatar/prompt-builder'
 import { createClient } from '@/lib/supabase/server'
 import { generateImageAdPrompt, type ImageAdType as GeminiImageAdType } from '@/lib/gemini/client'
 import { NextRequest, NextResponse } from 'next/server'
@@ -326,11 +328,52 @@ export async function POST(request: NextRequest) {
     // 아바타가 제공된 경우에만 아바타 처리
     if (hasAvatar) {
 
-      // AI 생성 아바타인 경우 - 아바타 이미지 없이 진행 (GPT-Image가 프롬프트만으로 생성)
+      // AI 생성 아바타인 경우 - z-image-turbo로 아바타 이미지 먼저 생성
       if (isAiGeneratedAvatar) {
         // AI 생성 아바타는 DB에 null로 저장
         primaryAvatarId = null
-        // 아바타 이미지 URL은 추가하지 않음 - 프롬프트만으로 생성
+
+        // z-image-turbo로 아바타 이미지 생성
+        console.log('AI 아바타 이미지 생성 시작 (z-image-turbo):', aiAvatarOptions)
+
+        // 아바타 프롬프트 생성 (아바타 생성 API와 동일한 방식)
+        const avatarPrompt = buildAiAvatarPrompt((aiAvatarOptions || {}) as AiAvatarOptions)
+        console.log('AI 아바타 프롬프트:', avatarPrompt)
+
+        // 화면 비율 결정 (세로형 권장)
+        const avatarAspectRatio: ZImageAspectRatio = imageSize === '1024x1536' ? '9:16' : imageSize === '1536x1024' ? '16:9' : '9:16'
+
+        // z-image-turbo 요청 제출
+        const avatarQueueResponse = await submitZImageTurboToQueue(avatarPrompt, avatarAspectRatio)
+        console.log('AI 아바타 요청 제출:', avatarQueueResponse.request_id)
+
+        // 폴링으로 완료 대기 (최대 60초)
+        let avatarImageUrl: string | null = null
+        const maxRetries = 60
+        for (let i = 0; i < maxRetries; i++) {
+          const status = await getZImageTurboQueueStatus(avatarQueueResponse.request_id)
+          if (status.status === 'COMPLETED') {
+            const result = await getZImageTurboQueueResponse(avatarQueueResponse.request_id)
+            if (result.images && result.images.length > 0) {
+              avatarImageUrl = result.images[0].url
+              console.log('AI 아바타 이미지 생성 완료:', avatarImageUrl)
+            }
+            break
+          } else if (status.status === 'IN_QUEUE' || status.status === 'IN_PROGRESS') {
+            await new Promise(resolve => setTimeout(resolve, 1000))
+          } else {
+            console.error('AI 아바타 생성 실패:', status)
+            break
+          }
+        }
+
+        // 생성된 아바타 이미지를 imageUrls에 추가 (figure 1으로 참조됨)
+        if (avatarImageUrl) {
+          imageUrls.unshift(avatarImageUrl)  // 첫 번째 이미지로 추가
+          avatarImageUrls.push(avatarImageUrl)
+        } else {
+          console.warn('AI 아바타 이미지 생성 실패, 프롬프트만으로 진행')
+        }
       }
       // 착용샷이고 의상이 선택된 경우, 의상 이미지 사용 (단일 아바타만)
       else if (isWearingType && outfitId) {
