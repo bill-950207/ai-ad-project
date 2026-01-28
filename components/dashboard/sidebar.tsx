@@ -32,7 +32,8 @@ import {
   Package,
   Menu,
   X,
-  Home
+  Home,
+  Shield
 } from 'lucide-react'
 
 // ============================================================
@@ -85,10 +86,11 @@ export function Sidebar() {
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
   const [credits, setCredits] = useState<number | null>(null)
   const [planType, setPlanType] = useState<string>('FREE')
+  const [isAdmin, setIsAdmin] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
-  // 사용자 정보, 크레딧, 플랜 조회 (단일 API 호출로 N+1 최적화)
+  // 사용자 정보, 크레딧, 플랜, 역할 조회 (N+1 최적화)
   useEffect(() => {
     const fetchUserData = async () => {
       // 1. 인증 정보 조회 (필수)
@@ -97,7 +99,18 @@ export function Sidebar() {
 
       if (!user) return
 
-      // 2. 구독 API에서 크레딧 + 플랜 한 번에 조회
+      // 2. 프로필에서 role 조회 (admin 체크용)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile) {
+        setIsAdmin(profile.role === 'ADMIN')
+      }
+
+      // 3. 구독 API에서 크레딧 + 플랜 한 번에 조회
       try {
         const res = await fetch('/api/subscription')
         if (res.ok) {
@@ -320,6 +333,61 @@ export function Sidebar() {
               </div>
             )}
           </div>
+
+          {/* 관리자 메뉴 */}
+          {isAdmin && (
+            <div className="relative group">
+              <Link
+                href="/dashboard/admin"
+                onClick={handleNavClick}
+                className={cn(
+                  "relative flex items-center gap-3 rounded-xl text-sm overflow-hidden",
+                  "transition-all duration-200 ease-out",
+                  isCollapsed ? "p-3 justify-center" : "px-3 py-2.5",
+                  pathname === '/dashboard/admin'
+                    ? "bg-amber-500/15 text-amber-400 font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                )}
+              >
+                {/* 호버 그라데이션 배경 */}
+                <div className={cn(
+                  "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300",
+                  "bg-gradient-to-r from-amber-500/10 via-transparent to-transparent",
+                  pathname === '/dashboard/admin' && "opacity-0"
+                )} />
+
+                {/* 활성 인디케이터 */}
+                {pathname === '/dashboard/admin' && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-amber-400 rounded-r-full" />
+                )}
+
+                {/* 아이콘 */}
+                <span className={cn(
+                  "relative z-10 transition-transform duration-200",
+                  "group-hover:scale-110"
+                )}>
+                  <Shield className="w-4 h-4" />
+                </span>
+
+                {/* 라벨 */}
+                {!isCollapsed && (
+                  <span className="relative z-10">{'관리자'}</span>
+                )}
+              </Link>
+
+              {/* 접힌 상태 툴팁 */}
+              {isCollapsed && (
+                <div className={cn(
+                  "absolute left-full ml-3 top-1/2 -translate-y-1/2",
+                  "px-2.5 py-1.5 bg-card border border-border rounded-lg text-sm",
+                  "opacity-0 group-hover:opacity-100 transition-opacity duration-200",
+                  "pointer-events-none whitespace-nowrap z-50 shadow-lg"
+                )}>
+                  {'관리자'}
+                </div>
+              )}
+            </div>
+          )}
 
           {navItems.map((item) => (
             <div key={item.labelKey}>
