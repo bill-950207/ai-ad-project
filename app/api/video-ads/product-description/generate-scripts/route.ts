@@ -24,8 +24,11 @@ import {
 import {
   submitFirstFrameToQueue as submitFirstFrameToKieQueue,
   submitZImageTurboToQueue,
+  getZImageTurboQueueStatus,
+  getZImageTurboQueueResponse,
   type ZImageAspectRatio,
 } from '@/lib/kie/client'
+import { buildAiAvatarPrompt, type AiAvatarOptions } from '@/lib/avatar/prompt-builder'
 
 /**
  * POST /api/video-ads/product-description/generate-scripts
@@ -216,23 +219,60 @@ export async function POST(request: NextRequest) {
     let submitResults: SubmitResult[]
 
     if (isAiGeneratedAvatar) {
-      // AI 아바타: 제품 이미지가 있으면 Seedream 4.5 Edit, 없으면 z-image-turbo 사용
-      const aiAvatarImageUrls: string[] = effectiveProductImageUrl ? [effectiveProductImageUrl] : []
-      const useTextToImage = aiAvatarImageUrls.length === 0
+      // AI 아바타: z-image-turbo로 아바타 이미지 먼저 생성 후 Seedream에 첨부
+      console.log('AI 아바타 이미지 생성 시작 (z-image-turbo):', aiAvatarOptions)
+
+      // 아바타 프롬프트 생성 (아바타 생성 API와 동일한 방식)
+      const avatarPrompt = buildAiAvatarPrompt((aiAvatarOptions || {}) as AiAvatarOptions)
+      console.log('AI 아바타 프롬프트:', avatarPrompt)
+
+      // z-image-turbo 요청 제출 (9:16 세로형)
+      const avatarQueueResponse = await submitZImageTurboToQueue(avatarPrompt, '9:16')
+      console.log('AI 아바타 요청 제출:', avatarQueueResponse.request_id)
+
+      // 폴링으로 완료 대기 (최대 60초)
+      let generatedAvatarImageUrl: string | null = null
+      const maxRetries = 60
+      for (let i = 0; i < maxRetries; i++) {
+        const status = await getZImageTurboQueueStatus(avatarQueueResponse.request_id)
+        if (status.status === 'COMPLETED') {
+          const result = await getZImageTurboQueueResponse(avatarQueueResponse.request_id)
+          if (result.images && result.images.length > 0) {
+            generatedAvatarImageUrl = result.images[0].url
+            console.log('AI 아바타 이미지 생성 완료:', generatedAvatarImageUrl)
+          }
+          break
+        } else if (status.status === 'IN_QUEUE' || status.status === 'IN_PROGRESS') {
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        } else {
+          console.error('AI 아바타 생성 실패:', status)
+          break
+        }
+      }
+
+      // 입력 이미지 배열 구성 (아바타 이미지 + 제품 이미지)
+      const aiAvatarImageUrls: string[] = []
+      if (generatedAvatarImageUrl) {
+        aiAvatarImageUrls.push(generatedAvatarImageUrl)  // figure 1: 아바타
+      }
+      if (effectiveProductImageUrl) {
+        aiAvatarImageUrls.push(effectiveProductImageUrl)  // figure 2: 제품
+      }
 
       const submitAiAvatarFirstFrame = async (): Promise<SubmitResult> => {
-        if (useTextToImage) {
-          // 이미지 입력이 없으면 z-image-turbo (텍스트-to-이미지) 사용
-          console.log('AI 아바타 + 이미지 없음: z-image-turbo 모델 사용')
+        // 아바타 이미지 생성 실패 시 z-image-turbo로 첫 프레임 직접 생성
+        if (aiAvatarImageUrls.length === 0) {
+          console.log('AI 아바타 이미지 없음: z-image-turbo로 첫 프레임 생성')
           const zImageResponse = await submitZImageTurboToQueue(
             firstFramePrompt,
-            '3:4' as ZImageAspectRatio  // 2:3에 가장 가까운 비율
+            '3:4' as ZImageAspectRatio
           )
           return { requestId: zImageResponse.request_id, provider: 'kie-zimage' }
         }
 
         try {
-          // 이미지 입력이 있으면 fal.ai Seedream 4.5 먼저 시도
+          // 아바타 이미지 + 제품 이미지를 Seedream에 전달
+          console.log('AI 아바타 첫 프레임 생성 (Seedream):', aiAvatarImageUrls.length, '개 이미지')
           const falResponse = await submitSeedreamFirstFrameToQueue(
             aiAvatarImageUrls,
             firstFramePrompt,
@@ -241,7 +281,6 @@ export async function POST(request: NextRequest) {
           return { requestId: falResponse.request_id, provider: 'fal' }
         } catch (falError) {
           console.warn('fal.ai Seedream 실패, Kie.ai로 폴백:', falError)
-          // Kie.ai Seedream 4.5 Edit 폴백
           const kieResponse = await submitFirstFrameToKieQueue(aiAvatarImageUrls, firstFramePrompt, '2:3')
           return { requestId: kieResponse.request_id, provider: 'kie' }
         }
