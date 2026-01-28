@@ -4,7 +4,7 @@
  * Gemini Structured Output을 사용한 시나리오 생성 함수들
  */
 
-import { GenerateContentConfig, GoogleGenAI, ThinkingLevel, Type } from '@google/genai'
+import { GenerateContentConfig, GoogleGenAI, ThinkingLevel } from '@google/genai'
 import type { GenerateScenariosResult } from './types'
 
 // Gemini 클라이언트 초기화
@@ -15,88 +15,51 @@ const genAI = new GoogleGenAI({
 const MODEL_NAME = 'gemini-3-flash-preview'
 
 // ============================================================
-// Structured Output 스키마 정의
+// Few-Shot 예시 및 검증 규칙
 // ============================================================
 
-/** 씬 스키마 (재사용) */
-const SCENE_SCHEMA = {
-  type: Type.OBJECT,
-  required: [
-    'sceneIndex', 'title', 'description', 'imageSummary', 'videoSummary',
-    'firstFramePrompt', 'motionPromptEN', 'duration', 'movementAmplitude',
-    'location', 'mood'
-  ],
-  properties: {
-    sceneIndex: { type: Type.NUMBER, description: '씬 인덱스 (0부터)' },
-    title: { type: Type.STRING, description: '씬 제목 (한국어, 8자 이내)' },
-    description: { type: Type.STRING, description: '씬 설명 (한국어, 20자 이내)' },
-    imageSummary: { type: Type.STRING, description: '이미지 요약 (한국어, 20자)' },
-    videoSummary: { type: Type.STRING, description: '모션 요약 (한국어, 20자)' },
-    firstFramePrompt: { type: Type.STRING, description: '첫 프레임 (영어, 80-100단어) - 인물 외모 묘사 금지, 포즈/표정/의상/환경만' },
-    motionPromptEN: { type: Type.STRING, description: '모션 설명 (영어, 40-60단어)' },
-    duration: { type: Type.NUMBER, description: '씬 길이 (2-5초, 기본 2초 권장)' },
-    movementAmplitude: {
-      type: Type.STRING,
-      enum: ['auto', 'small', 'medium', 'large'],
-      description: '움직임 강도',
-    },
-    location: { type: Type.STRING, description: '장소 (한국어)' },
-    mood: { type: Type.STRING, description: '분위기 (한국어)' },
-  },
-} as const
+/** 씬 설명 예시 (Few-Shot - 한국어) */
+const SCENE_DESCRIPTION_EXAMPLES = `
+=== SCENE DESCRIPTION EXAMPLES (한국어) ===
 
-/** 시나리오 스키마 (재사용) */
-const SCENARIO_SCHEMA = {
-  type: Type.OBJECT,
-  required: [
-    'id', 'title', 'description', 'concept', 'productAppearance',
-    'mood', 'location', 'tags', 'recommendedSettings', 'scenes'
-  ],
-  properties: {
-    id: { type: Type.STRING, description: '시나리오 ID' },
-    title: { type: Type.STRING, description: '제목 (한국어, 10자 이내)' },
-    description: { type: Type.STRING, description: '요약 (한국어, 30자 이내)' },
-    concept: { type: Type.STRING, description: '컨셉 (한국어, 2-3문장)' },
-    productAppearance: { type: Type.STRING, description: '제품 등장 방식 (한국어)' },
-    mood: { type: Type.STRING, description: '분위기 (한국어, 2단어)' },
-    location: { type: Type.STRING, description: '장소 (한국어)' },
-    tags: {
-      type: Type.ARRAY,
-      items: { type: Type.STRING },
-      description: '태그 (한국어)',
-    },
-    recommendedSettings: {
-      type: Type.OBJECT,
-      required: ['aspectRatio', 'sceneCount'],
-      properties: {
-        aspectRatio: {
-          type: Type.STRING,
-          enum: ['9:16', '16:9', '1:1'],
-          description: '화면 비율',
-        },
-        sceneCount: { type: Type.NUMBER, description: '씬 개수 (4-8)' },
-      },
-    },
-    scenes: {
-      type: Type.ARRAY,
-      description: '씬 배열 (4-8개, 빠른 씬 전환 권장)',
-      items: SCENE_SCHEMA,
-    },
-  },
-} as const
+GOOD (구체적, 액션 중심):
+✓ title: "첫 만남" / description: "제품 상자를 천천히 열며 기대감 표현"
+✓ title: "발견" / description: "제품 텍스처를 손끝으로 느끼며 놀라는 표정"
+✓ title: "사용" / description: "제품을 피부에 부드럽게 바르는 모습"
 
-/** 시나리오 배열 스키마 */
-const SCENARIOS_RESPONSE_SCHEMA = {
-  type: Type.OBJECT,
-  required: ['scenarios'],
-  properties: {
-    scenarios: {
-      type: Type.ARRAY,
-      description: '3개의 시나리오',
-      items: SCENARIO_SCHEMA,
-    },
-  },
-} as const
+BAD (모호, 일반적):
+✗ title: "시작" / description: "제품을 보여준다"
+✗ title: "소개" / description: "제품 설명"
+✗ title: "끝" / description: "마무리"
+`.trim()
+
+/** 모션 프롬프트 예시 (Few-Shot - 영어) */
+const MOTION_PROMPT_EXAMPLES = `
+=== MOTION PROMPT EXAMPLES (English) ===
+
+GOOD (specific, cinematic):
+✓ "Camera slowly dollies in as model gently picks up the product, soft smile forming"
+✓ "Model turns product in hands examining texture, subtle eyebrow raise shows interest"
+✓ "Slow push-in on face as model applies product, expression shifts to satisfaction"
+
+BAD (vague, static):
+✗ "Model holds product"
+✗ "Shows the product to camera"
+✗ "Product appears in frame"
+`.trim()
+
+/** Self-Verification 체크리스트 */
+const SCENARIO_SELF_VERIFICATION = `
+=== SELF-VERIFICATION (before responding) ===
+Check your scenarios:
+✓ All 3 scenarios are DISTINCT concepts (not similar moods)?
+✓ Scene titles are UNIQUE within each scenario?
+✓ Total duration matches target (sum of scene durations)?
+✓ Scene flow is LOGICAL (beginning → middle → end)?
+✓ No person description in firstFramePrompt (only pose/expression/outfit)?
+✓ Motion prompts include camera movement AND expression changes?
+If any check fails, revise before responding.
+`.trim()
 
 // ============================================================
 // 시나리오 생성 함수
@@ -108,15 +71,23 @@ const SCENARIOS_RESPONSE_SCHEMA = {
  * - 설정(aspectRatio, sceneCount)과 씬 정보 포함
  */
 export async function generateCompleteScenarios(prompt: string): Promise<GenerateScenariosResult> {
+  // Few-Shot 및 Self-Verification 추가
+  const enhancedPrompt = `${prompt}
+
+${SCENE_DESCRIPTION_EXAMPLES}
+
+${MOTION_PROMPT_EXAMPLES}
+
+${SCENARIO_SELF_VERIFICATION}`
+
   const config: GenerateContentConfig = {
     thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
     responseMimeType: 'application/json',
-    responseSchema: SCENARIOS_RESPONSE_SCHEMA,
   }
 
   const response = await genAI.models.generateContent({
     model: MODEL_NAME,
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    contents: [{ role: 'user', parts: [{ text: enhancedPrompt }] }],
     config,
   })
 
@@ -134,18 +105,34 @@ export async function generateMultiSceneScenarios(
   sceneCount: number,
   totalDuration: number
 ): Promise<GenerateScenariosResult> {
-  // 동적으로 씬 개수 힌트 추가
+  const avgDuration = Math.round(totalDuration / sceneCount)
+
+  // Chain-of-Thought + Few-Shot + Self-Verification 추가
   const enhancedPrompt = `${prompt}
+
+=== DURATION CONSTRAINTS (Chain-of-Thought) ===
+Step 1: Total ${totalDuration} seconds ÷ ${sceneCount} scenes = ~${avgDuration} seconds each
+Step 2: Adjust for scene importance:
+  - Opening: ${avgDuration + 1}s (establish mood)
+  - Middle: ${avgDuration}s (build story)
+  - Climax: ${avgDuration + 1}s (product highlight)
+  - Ending: ${avgDuration - 1}s (quick wrap-up)
+Step 3: Verify sum = ${totalDuration} seconds
 
 IMPORTANT CONSTRAINTS:
 - Each scenario MUST have exactly ${sceneCount} scenes
-- Total duration should be approximately ${totalDuration} seconds
-- Distribute duration across scenes (${Math.floor(totalDuration / sceneCount)}-${Math.ceil(totalDuration / sceneCount)} seconds each)`
+- Total duration MUST equal ${totalDuration} seconds
+- Each scene: 2-5 seconds (recommend 2-3s for fast pacing)
+
+${SCENE_DESCRIPTION_EXAMPLES}
+
+${MOTION_PROMPT_EXAMPLES}
+
+${SCENARIO_SELF_VERIFICATION}`
 
   const config: GenerateContentConfig = {
     thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
     responseMimeType: 'application/json',
-    responseSchema: SCENARIOS_RESPONSE_SCHEMA,
   }
 
   const response = await genAI.models.generateContent({
@@ -166,12 +153,20 @@ IMPORTANT CONSTRAINTS:
 export async function generateSingleSceneScenarios(prompt: string): Promise<GenerateScenariosResult> {
   const enhancedPrompt = `${prompt}
 
-IMPORTANT: Each scenario should have exactly 1 scene (single-scene mode).`
+IMPORTANT: Each scenario should have exactly 1 scene (single-scene mode).
+
+${SCENE_DESCRIPTION_EXAMPLES}
+
+${MOTION_PROMPT_EXAMPLES}
+
+=== SINGLE-SCENE VERIFICATION ===
+✓ Each scenario has exactly 1 scene?
+✓ Scene captures the entire story arc?
+✓ Duration is appropriate (5-15 seconds)?`
 
   const config: GenerateContentConfig = {
     thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     responseMimeType: 'application/json',
-    responseSchema: SCENARIOS_RESPONSE_SCHEMA,
   }
 
   const response = await genAI.models.generateContent({

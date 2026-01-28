@@ -128,77 +128,120 @@ const videoTypeLabels: Record<VideoType, VideoTypeInfo> = {
 
 const videoTypeOptions: VideoType[] = ['UGC', 'podcast', 'expert']
 
-// 카메라 구도 타입 (셀카는 각도별로 세분화)
-type CameraComposition = 'auto' | 'selfie-high' | 'selfie-front' | 'selfie-side' | 'tripod' | 'closeup' | 'fullbody' | 'ugc-closeup' | 'ugc-selfie'
+// 카메라 구도 타입 (영상 스타일별로 다른 옵션 제공)
+type CameraComposition =
+  // 공통
+  | 'auto' | 'closeup'
+  // UGC용 (셀카 스타일)
+  | 'selfie-high' | 'selfie-front' | 'selfie-side' | 'ugc-closeup' | 'ugc-selfie'
+  // Podcast용 (웹캠/데스크 스타일)
+  | 'webcam' | 'medium-shot' | 'three-quarter'
+  // Expert용 (전문가 스타일)
+  | 'tripod' | 'fullbody' | 'presenter'
 
-// 카메라 구도 정보 (예시 이미지 포함)
+// 카메라 구도 정보
 interface CameraCompositionInfo {
   label: string
   desc: string
-  exampleImage: string  // mock 이미지 경로
-  category?: 'selfie'   // 셀카 카테고리 표시
+  exampleImage: string
 }
 
 const cameraCompositionLabels: Record<CameraComposition, CameraCompositionInfo> = {
+  // 공통
   auto: {
     label: '자동',
     desc: 'AI가 자연스러운 구도 선택',
     exampleImage: '/images/camera/auto.png',
-  },
-  'selfie-high': {
-    label: '위에서',
-    desc: '위에서 아래로 내려다보는 셀카',
-    exampleImage: '/images/camera/selfie-high.png',
-    category: 'selfie',
-  },
-  'selfie-front': {
-    label: '정면',
-    desc: '눈높이에서 정면으로 촬영',
-    exampleImage: '/images/camera/selfie-front.png',
-    category: 'selfie',
-  },
-  'selfie-side': {
-    label: '측면',
-    desc: '약간 측면에서 촬영',
-    exampleImage: '/images/camera/selfie-side.png',
-    category: 'selfie',
-  },
-  tripod: {
-    label: '측면',
-    desc: '측면에서 촬영하는 구도',
-    exampleImage: '/images/camera/tripod.png',
   },
   closeup: {
     label: '클로즈업',
     desc: '얼굴 위주 가까운 촬영',
     exampleImage: '/images/camera/closeup.png',
   },
+  // UGC용
+  'selfie-high': {
+    label: '셀카 (위에서)',
+    desc: '위에서 아래로 내려다보는 셀카',
+    exampleImage: '/images/camera/selfie-high.png',
+  },
+  'selfie-front': {
+    label: '셀카 (정면)',
+    desc: '눈높이에서 정면으로 촬영',
+    exampleImage: '/images/camera/selfie-front.png',
+  },
+  'selfie-side': {
+    label: '셀카 (측면)',
+    desc: '약간 측면에서 촬영',
+    exampleImage: '/images/camera/selfie-side.png',
+  },
+  'ugc-closeup': {
+    label: '인플루언서 클로즈업',
+    desc: '가슴 위부터 얼굴까지 가깝게',
+    exampleImage: '/images/camera/ugc-closeup.png',
+  },
+  'ugc-selfie': {
+    label: 'UGC 셀카',
+    desc: '폰을 들고 찍는 셀카 구도',
+    exampleImage: '/images/camera/ugc-selfie.png',
+  },
+  // Podcast용
+  webcam: {
+    label: '웹캠 정면',
+    desc: '일반적인 팟캐스트 스타일',
+    exampleImage: '/images/camera/webcam.png',
+  },
+  'medium-shot': {
+    label: '미디엄샷',
+    desc: '상반신이 보이는 구도',
+    exampleImage: '/images/camera/medium-shot.png',
+  },
+  'three-quarter': {
+    label: '3/4 뷰',
+    desc: '약간 측면을 바라보는 앵글',
+    exampleImage: '/images/camera/three-quarter.png',
+  },
+  // Expert용
+  tripod: {
+    label: '정면 (삼각대)',
+    desc: '안정적인 정면 촬영',
+    exampleImage: '/images/camera/tripod.png',
+  },
   fullbody: {
     label: '전신',
     desc: '전신이 보이는 구도',
     exampleImage: '/images/camera/fullbody.png',
   },
-  'ugc-closeup': {
-    label: 'UGC 클로즈업',
-    desc: '인플루언서 스타일, 가슴 위부터 얼굴까지 가깝게',
-    exampleImage: '/images/camera/ugc-closeup.png',
-  },
-  'ugc-selfie': {
-    label: 'UGC 셀카',
-    desc: '폰을 들고 찍는 셀카 구도 (손 안 보임)',
-    exampleImage: '/images/camera/ugc-selfie.png',
+  presenter: {
+    label: '프레젠터',
+    desc: '강연자/발표자 스타일',
+    exampleImage: '/images/camera/presenter.png',
   },
 }
 
-// 카메라 구도 그룹화 (UI 표시용)
-const cameraCompositionGroups = [
-  { key: 'basic', label: '기본', compositions: ['auto', 'tripod', 'closeup', 'fullbody'] as CameraComposition[] },
-  { key: 'selfie', label: '셀카', compositions: ['selfie-high', 'selfie-front', 'selfie-side'] as CameraComposition[] },
-  { key: 'ugc', label: 'UGC', compositions: ['ugc-selfie', 'ugc-closeup'] as CameraComposition[] },
-]
+// 영상 스타일별 카메라 구도 옵션
+const cameraCompositionsByVideoType: Record<VideoType, CameraComposition[]> = {
+  UGC: ['auto', 'selfie-front', 'selfie-high', 'selfie-side', 'ugc-selfie', 'ugc-closeup'],
+  podcast: ['auto', 'webcam', 'medium-shot', 'closeup', 'three-quarter'],
+  expert: ['auto', 'tripod', 'medium-shot', 'closeup', 'fullbody', 'presenter'],
+}
 
-// 모델 포즈 타입
-type ModelPose = 'auto' | 'holding-product' | 'showing-product' | 'using-product' | 'talking-only'
+// 영상 스타일별 기본 카메라 구도
+const defaultCameraByVideoType: Record<VideoType, CameraComposition> = {
+  UGC: 'auto',
+  podcast: 'webcam',
+  expert: 'tripod',
+}
+
+// 모델 포즈 타입 (영상 스타일별로 다른 옵션 제공)
+type ModelPose =
+  // 공통
+  | 'auto' | 'talking-only' | 'showing-product'
+  // UGC용
+  | 'holding-product' | 'using-product' | 'unboxing' | 'reaction'
+  // Podcast용
+  | 'desk-presenter' | 'casual-chat'
+  // Expert용
+  | 'demonstrating' | 'presenting' | 'explaining'
 
 // 모델 포즈 정보
 interface ModelPoseInfo {
@@ -207,30 +250,73 @@ interface ModelPoseInfo {
 }
 
 const modelPoseLabels: Record<ModelPose, ModelPoseInfo> = {
+  // 공통
   auto: {
     label: '자동',
     desc: 'AI가 제품에 맞는 포즈 선택',
-  },
-  'holding-product': {
-    label: '제품 들기',
-    desc: '제품을 손에 들고 보여주기',
-  },
-  'showing-product': {
-    label: '제품 제시',
-    desc: '제품을 카메라 앞에 제시하기',
-  },
-  'using-product': {
-    label: '제품 사용',
-    desc: '제품을 직접 사용하는 모습',
   },
   'talking-only': {
     label: '말로만 설명',
     desc: '제품 없이 말로만 설명하기',
   },
+  'showing-product': {
+    label: '제품 제시',
+    desc: '제품을 카메라 앞에 보여주기',
+  },
+  // UGC용
+  'holding-product': {
+    label: '제품 들기',
+    desc: '제품을 손에 들고 자연스럽게',
+  },
+  'using-product': {
+    label: '제품 사용',
+    desc: '제품을 직접 사용하는 모습',
+  },
+  unboxing: {
+    label: '언박싱',
+    desc: '제품 개봉/꺼내는 모습',
+  },
+  reaction: {
+    label: '리액션',
+    desc: '제품에 대한 감탄/반응',
+  },
+  // Podcast용
+  'desk-presenter': {
+    label: '책상 앞',
+    desc: '책상에 앉아 제품 소개',
+  },
+  'casual-chat': {
+    label: '캐주얼 대화',
+    desc: '친구와 대화하듯 자연스럽게',
+  },
+  // Expert용
+  demonstrating: {
+    label: '시연',
+    desc: '제품 기능/사용법 시연',
+  },
+  presenting: {
+    label: '프레젠터',
+    desc: '전문가처럼 설명하는 포즈',
+  },
+  explaining: {
+    label: '설명',
+    desc: '진지하게 설명하는 모습',
+  },
 }
 
-// 모델 포즈 목록 (UI 표시용)
-const modelPoseOptions: ModelPose[] = ['auto', 'holding-product', 'showing-product', 'using-product', 'talking-only']
+// 영상 스타일별 모델 포즈 옵션
+const modelPosesByVideoType: Record<VideoType, ModelPose[]> = {
+  UGC: ['auto', 'holding-product', 'using-product', 'showing-product', 'unboxing', 'reaction'],
+  podcast: ['auto', 'desk-presenter', 'casual-chat', 'showing-product', 'talking-only'],
+  expert: ['auto', 'presenting', 'explaining', 'demonstrating', 'showing-product', 'talking-only'],
+}
+
+// 영상 스타일별 기본 모델 포즈
+const defaultPoseByVideoType: Record<VideoType, ModelPose> = {
+  UGC: 'auto',
+  podcast: 'desk-presenter',
+  expert: 'presenting',
+}
 
 // 의상 설정 모드 타입
 type OutfitMode = 'keep_original' | 'ai_recommend' | 'preset' | 'custom'
@@ -284,6 +370,111 @@ const outfitPresetLabels: Record<OutfitPreset, OutfitPresetInfo> = {
 
 // 의상 프리셋 목록
 const outfitPresetOptions: OutfitPreset[] = ['casual_everyday', 'formal_elegant', 'professional_business', 'sporty_athletic', 'cozy_comfortable', 'trendy_fashion', 'minimal_simple']
+
+// ============================================================
+// 배경/장소 프리셋 (영상 스타일별로 다른 옵션 제공)
+// ============================================================
+type LocationPreset =
+  // UGC용 (일상적, 자연스러운)
+  | 'living_room' | 'bedroom' | 'cafe' | 'outdoor' | 'bathroom'
+  // Podcast용 (전문적이면서 캐주얼)
+  | 'home_office' | 'study' | 'podcast_studio'
+  // Expert용 (권위적, 전문적)
+  | 'studio' | 'office' | 'meeting_room' | 'minimal'
+  // 공통
+  | 'custom'
+
+interface LocationPresetInfo {
+  label: string
+  desc: string
+  promptValue: string  // 프롬프트에 사용될 영문 설명
+}
+
+const locationPresetLabels: Record<LocationPreset, LocationPresetInfo> = {
+  // UGC용
+  living_room: {
+    label: '거실',
+    desc: '따뜻한 홈 인테리어 배경',
+    promptValue: 'cozy modern living room with warm ambient lighting, comfortable sofa visible in background',
+  },
+  bedroom: {
+    label: '침실',
+    desc: '편안한 침실 분위기',
+    promptValue: 'cozy bedroom setting with soft bedding visible, intimate and relaxed atmosphere',
+  },
+  cafe: {
+    label: '카페',
+    desc: '트렌디한 카페 분위기',
+    promptValue: 'trendy cafe interior with warm lighting, coffee shop atmosphere, blurred background elements',
+  },
+  outdoor: {
+    label: '야외',
+    desc: '자연광 야외 배경',
+    promptValue: 'bright outdoor setting with natural daylight, greenery in soft focus background',
+  },
+  bathroom: {
+    label: '욕실',
+    desc: '뷰티/스킨케어 제품용',
+    promptValue: 'clean modern bathroom with bright lighting, mirror and vanity visible, skincare routine setting',
+  },
+  // Podcast용
+  home_office: {
+    label: '홈오피스',
+    desc: '깔끔한 책상/작업공간',
+    promptValue: 'clean home office setup with minimal desk, organized bookshelf, natural light from window',
+  },
+  study: {
+    label: '서재',
+    desc: '책장이 보이는 지적인 공간',
+    promptValue: 'intellectual study room with bookshelves in background, warm desk lamp lighting, scholarly atmosphere',
+  },
+  podcast_studio: {
+    label: '팟캐스트 스튜디오',
+    desc: '마이크/조명이 있는 전문 공간',
+    promptValue: 'professional podcast studio setup with acoustic panels, warm ambient lighting, content creator atmosphere',
+  },
+  // Expert용
+  studio: {
+    label: '스튜디오',
+    desc: '심플한 단색 배경',
+    promptValue: 'professional studio setting with soft gradient background, clean and minimal',
+  },
+  office: {
+    label: '사무실',
+    desc: '전문적인 오피스 환경',
+    promptValue: 'professional corporate office with modern furniture, clean lines, business environment',
+  },
+  meeting_room: {
+    label: '회의실',
+    desc: '프레젠테이션/세미나 분위기',
+    promptValue: 'professional meeting room with presentation setup, corporate environment, authority setting',
+  },
+  minimal: {
+    label: '미니멀',
+    desc: '깨끗한 화이트/그레이 배경',
+    promptValue: 'clean minimal white or light gray background, simple and distraction-free',
+  },
+  // 공통
+  custom: {
+    label: '직접 입력',
+    desc: '원하는 장소 직접 설명',
+    promptValue: '',
+  },
+}
+
+// 영상 스타일별 추천 장소 프리셋
+const locationPresetsByVideoType: Record<VideoType, LocationPreset[]> = {
+  UGC: ['living_room', 'bedroom', 'cafe', 'outdoor', 'bathroom', 'custom'],
+  podcast: ['home_office', 'study', 'podcast_studio', 'living_room', 'custom'],
+  expert: ['studio', 'office', 'meeting_room', 'minimal', 'custom'],
+}
+
+// 영상 스타일별 기본 장소
+const defaultLocationByVideoType: Record<VideoType, LocationPreset> = {
+  UGC: 'living_room',
+  podcast: 'home_office',
+  expert: 'studio',
+}
 
 // ============================================================
 // 컴포넌트
@@ -369,8 +560,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
 
   // Step 2: 입력
   const [productInfo, setProductInfo] = useState('')
-  const [locationMode, setLocationMode] = useState<'ai_recommend' | 'custom'>('ai_recommend')
-  const [locationPrompt, setLocationPrompt] = useState('')
+  const [locationPrompt, setLocationPrompt] = useState('')  // custom 장소 입력용
   const [duration, setDuration] = useState<VideoDuration>(30)
   const [resolution, setResolution] = useState<VideoResolution>('480p')
   const [cameraComposition, setCameraComposition] = useState<CameraComposition>('auto')
@@ -383,6 +573,30 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     (language as 'ko' | 'en' | 'ja' | 'zh') || 'ko'
   )
   const [videoType, setVideoType] = useState<VideoType>('UGC')
+
+  // 새 옵션: 배경/장소
+  const [locationPreset, setLocationPreset] = useState<LocationPreset>('living_room')
+
+  // videoType 변경 시 해당 스타일에 맞는 기본값으로 자동 변경
+  useEffect(() => {
+    // 장소 프리셋 체크
+    const availableLocations = locationPresetsByVideoType[videoType]
+    if (!availableLocations.includes(locationPreset)) {
+      setLocationPreset(defaultLocationByVideoType[videoType])
+    }
+
+    // 카메라 구도 체크
+    const availableCameras = cameraCompositionsByVideoType[videoType]
+    if (!availableCameras.includes(cameraComposition)) {
+      setCameraComposition(defaultCameraByVideoType[videoType])
+    }
+
+    // 모델 포즈 체크
+    const availablePoses = modelPosesByVideoType[videoType]
+    if (!availablePoses.includes(modelPose)) {
+      setModelPose(defaultPoseByVideoType[videoType])
+    }
+  }, [videoType, locationPreset, cameraComposition, modelPose])
 
   // Step 3: 대본 및 이미지 + 음성 (통합)
   const [scripts, setScripts] = useState<Script[]>([])
@@ -1070,7 +1284,9 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           avatarId: selectedAvatarInfo.avatarId,
           avatarImageUrl: selectedAvatarInfo.imageUrl,  // 의상 선택 시 해당 이미지 URL
           productInfo: currentProductInfo.trim(),
-          locationPrompt: locationPrompt.trim() || undefined,
+          // 배경/장소 설정
+          locationPreset,  // 장소 프리셋
+          locationPrompt: locationPreset === 'custom' ? locationPrompt.trim() : locationPresetLabels[locationPreset].promptValue,
           durationSeconds: duration,
           cameraComposition: cameraComposition !== 'auto' ? cameraComposition : undefined,
           modelPose: modelPose !== 'auto' ? modelPose : undefined,
@@ -1914,62 +2130,55 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
             </div>
           </div>
 
-          {/* 촬영 장소 */}
+          {/* 배경/장소 프리셋 */}
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <MapPin className="w-4 h-4 inline mr-2" />
-              촬영 장소
+              배경/장소
               <span className="text-xs text-muted-foreground ml-2">(선택 사항)</span>
             </label>
 
-            {/* 장소 모드 선택 */}
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setLocationMode('ai_recommend')
-                  setLocationPrompt('')
-                }}
-                className={`px-3 py-2.5 text-sm rounded-lg border transition-colors flex items-center justify-center gap-1.5 ${
-                  locationMode === 'ai_recommend'
-                    ? 'border-primary bg-primary/10 text-primary font-medium'
-                    : 'border-border text-muted-foreground hover:border-primary/50'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                AI 추천
-              </button>
-              <button
-                type="button"
-                onClick={() => setLocationMode('custom')}
-                className={`px-3 py-2.5 text-sm rounded-lg border transition-colors ${
-                  locationMode === 'custom'
-                    ? 'border-primary bg-primary/10 text-primary font-medium'
-                    : 'border-border text-muted-foreground hover:border-primary/50'
-                }`}
-              >
-                직접 입력
-              </button>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {locationPresetsByVideoType[videoType].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => {
+                    setLocationPreset(preset)
+                    if (preset !== 'custom') {
+                      setLocationPrompt('')
+                    }
+                  }}
+                  className={`relative group p-3 rounded-lg border transition-colors text-left ${
+                    locationPreset === preset
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border hover:border-primary/50'
+                  }`}
+                  title={locationPresetLabels[preset].desc}
+                >
+                  <span className={`text-sm font-medium ${locationPreset === preset ? 'text-primary' : 'text-foreground'}`}>
+                    {locationPresetLabels[preset].label}
+                  </span>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
+                    {locationPresetLabels[preset].desc}
+                  </p>
+                  {locationPreset === preset && (
+                    <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                      <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                    </div>
+                  )}
+                </button>
+              ))}
             </div>
 
-            {/* AI 추천 설명 */}
-            {locationMode === 'ai_recommend' && (
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
-                <p className="text-sm text-foreground flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
-                  제품과 영상 스타일에 어울리는 장소를 AI가 자동으로 선택합니다.
-                </p>
-              </div>
-            )}
-
-            {/* 직접 입력 */}
-            {locationMode === 'custom' && (
+            {/* 직접 입력 필드 */}
+            {locationPreset === 'custom' && (
               <input
                 type="text"
                 value={locationPrompt}
                 onChange={(e) => setLocationPrompt(e.target.value)}
-                placeholder="예: 밝은 카페, 현대적인 거실, 야외 공원 등"
-                className="w-full px-4 py-2.5 text-sm bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+                placeholder="원하는 장소를 설명해주세요... (예: 햇살이 들어오는 밝은 거실)"
+                className="mt-3 w-full px-4 py-2.5 text-sm bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
               />
             )}
           </div>
@@ -1982,7 +2191,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               <span className="text-xs text-muted-foreground ml-2">(선택 사항)</span>
             </label>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {videoTypeLabels[videoType].recommendedCompositions.map((comp) => (
+              {cameraCompositionsByVideoType[videoType].map((comp) => (
                 <button
                   key={comp}
                   type="button"
@@ -2022,7 +2231,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               <span className="text-xs text-muted-foreground ml-2">(선택 사항)</span>
             </label>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {videoTypeLabels[videoType].recommendedPoses.map((pose) => (
+              {modelPosesByVideoType[videoType].map((pose) => (
                 <button
                   key={pose}
                   type="button"

@@ -11,28 +11,121 @@ import type {
   ModelPoseType,
   OutfitPresetType,
 } from './types'
-import { NO_OVERLAY_ELEMENTS } from '@/lib/prompts/common'
+import {
+  NO_OVERLAY_ELEMENTS,
+  HAND_DESCRIPTION_GUIDE,
+  PRODUCT_GRIP_GUIDE,
+  HAND_PRODUCT_CONTACT_GUIDE,
+  LIGHTING_CONSISTENCY_GUIDE,
+  GAZE_EXPRESSION_MATRIX,
+  HAND_PRODUCT_EXAMPLES,
+} from '@/lib/prompts/common'
 import { VIDEO_TYPE_SCRIPT_STYLES } from '@/lib/prompts/scripts'
 import { VIDEO_TYPE_FIRST_FRAME_GUIDES } from '@/lib/prompts/first-frame'
 
-// 카메라 구도별 설정
+// ============================================================
+// Few-Shot 예시 및 검증 규칙
+// ============================================================
+
+/** 아바타 외모 묘사 예시 (Few-Shot) */
+const AVATAR_APPEARANCE_EXAMPLES = `
+AVATAR DESCRIPTION EXAMPLES:
+
+GOOD (specific, natural):
+✓ "Korean woman in her late 20s with soft natural makeup, shoulder-length dark brown hair"
+✓ "Athletic East Asian man, early 30s, clean-shaven with natural skin texture"
+✓ "Japanese woman with warm skin tone, gentle features, hair in loose waves"
+
+BAD (vague, stereotypical):
+✗ "Beautiful Asian woman" (too generic)
+✗ "Perfect skin, flawless features" (unrealistic)
+✗ "Model-like appearance" (vague)
+`.trim()
+
+/** 표정 예시 (Few-Shot) */
+const AVATAR_EXPRESSION_EXAMPLES = `
+EXPRESSION EXAMPLES:
+
+GOOD (natural, relatable):
+✓ "gentle closed-lip smile with relaxed eye contact"
+✓ "soft confident gaze, natural resting expression"
+✓ "approachable expression with subtle warmth"
+
+BAD (exaggerated, artificial):
+✗ "big smile", "wide grin", "teeth showing"
+✗ "excited expression", "overly enthusiastic"
+✗ "perfect smile", "beaming at camera"
+`.trim()
+
+/** 조명 예시 (Few-Shot) */
+const AVATAR_LIGHTING_EXAMPLES = `
+LIGHTING EXAMPLES:
+
+GOOD (describe effect):
+✓ "soft natural daylight from window"
+✓ "warm golden hour glow with gentle shadows"
+✓ "even ambient light, natural skin tones"
+
+BAD (equipment visible):
+✗ "ring light", "softbox", "studio lighting"
+✗ "LED panel", "reflector", "lighting rig"
+`.trim()
+
+/** Self-Verification 체크리스트 */
+const AVATAR_SELF_VERIFICATION = `
+=== SELF-VERIFICATION (before responding) ===
+Check your prompt:
+✓ No product names or brand names?
+✓ No "big smile", "wide grin", "teeth showing"?
+✓ No lighting EQUIPMENT words (ring light, softbox, LED)?
+✓ Body type matches input specification?
+✓ Has camera specs (lens, f/stop)?
+✓ 50-100 words?
+✓ HAND CHECK (if product present):
+  - Finger count specified? (five fingers per hand)
+  - Grip type described? (wrapped, pinch, palm, etc.)
+  - Contact points mentioned? (thumb position, fingertips)
+  - No extra or missing fingers?
+If any check fails, revise before responding.
+`.trim()
+
+// 카메라 구도별 설정 (영상 스타일별로 확장)
 const cameraCompositionDescriptions: Record<CameraCompositionType, { description: string; aperture: string; lens: string }> = {
+  // 공통
+  closeup: { description: 'close-up portrait, face and upper body prominent', aperture: 'f/11', lens: '50mm' },
+  // UGC용 (셀카 스타일)
   'selfie-high': { description: 'high angle selfie perspective, camera looking down from above eye level', aperture: 'f/11', lens: '28mm' },
   'selfie-front': { description: 'eye-level frontal view, direct eye contact with camera', aperture: 'f/11', lens: '35mm' },
   'selfie-side': { description: 'three-quarter angle, showing facial contours, slight side view', aperture: 'f/11', lens: '35mm' },
-  tripod: { description: 'stable tripod shot, medium distance, waist to head visible', aperture: 'f/16', lens: '50mm' },
-  closeup: { description: 'close-up portrait, face and upper body prominent', aperture: 'f/11', lens: '50mm' },
-  fullbody: { description: 'full body shot, entire person visible in frame', aperture: 'f/16', lens: '35mm' },
   'ugc-closeup': { description: 'UGC-style intimate medium close-up, chest-up framing, eyes looking DIRECTLY into camera lens', aperture: 'f/11', lens: '35mm' },
-  'ugc-selfie': { description: 'POV selfie shot, subject looking at camera, NO phone visible, natural relaxed pose presenting product, anatomically correct hands', aperture: 'f/11', lens: '28mm' },
+  'ugc-selfie': { description: 'POV selfie shot, subject looking at camera, NO phone visible, natural relaxed pose', aperture: 'f/11', lens: '28mm' },
+  // Podcast용 (웹캠/데스크 스타일)
+  webcam: { description: 'webcam-style frontal view, desktop setup distance, conversational framing', aperture: 'f/11', lens: '35mm' },
+  'medium-shot': { description: 'medium shot showing upper body from waist up, balanced composition', aperture: 'f/11', lens: '50mm' },
+  'three-quarter': { description: 'three-quarter angle view, slight turn adding depth and visual interest', aperture: 'f/11', lens: '35mm' },
+  // Expert용 (전문가 스타일)
+  tripod: { description: 'stable tripod shot, medium distance, waist to head visible, professional framing', aperture: 'f/16', lens: '50mm' },
+  fullbody: { description: 'full body shot, entire person visible in frame', aperture: 'f/16', lens: '35mm' },
+  presenter: { description: 'professional presenter framing, confident stance, authoritative composition', aperture: 'f/16', lens: '50mm' },
 }
 
-// 모델 포즈 설명
+// 모델 포즈 설명 (영상 스타일별로 확장 + 손 묘사 강화)
 const modelPoseDescriptions: Record<ModelPoseType, string> = {
-  'holding-product': 'Model holding product naturally at chest level with ONE hand (free hand only if selfie composition)',
-  'showing-product': 'Model presenting product towards camera with ONE hand (free hand only if selfie composition)',
-  'using-product': 'Model actively using the product',
-  'talking-only': '⚠️ NO PRODUCT! Avatar only, natural conversational pose',
+  // 공통
+  'talking-only': '⚠️ NO PRODUCT! Avatar only, natural conversational pose with EMPTY HANDS relaxed at sides or gesturing, all five fingers visible and anatomically correct',
+  'showing-product': 'Model presenting product towards camera - ONE hand wrapped around product with thumb on front, four fingers behind, product angled toward camera',
+  // UGC용 (손 묘사 강화)
+  'holding-product': 'Model holding product at chest level - relaxed grip with all five fingers gently curved around product, thumb visible on front, fingertips making natural contact',
+  'using-product': 'Model actively using the product - fingers interacting naturally (pressing, applying, opening), anatomically correct hand positioning',
+  unboxing: 'Model opening/unboxing product - both hands visible with fingers working on packaging, one hand stabilizing while other lifts/pulls, all ten fingers rendered',
+  reaction: 'Model showing genuine reaction - product held loosely in one hand, other hand may gesture, expressive face, relaxed finger positioning',
+  // Podcast용 (손 묘사 강화)
+  'desk-presenter': 'Model seated at desk - product on desk within reach, one hand resting near product with relaxed fingers, other hand gesturing, casual professional',
+  'casual-chat': 'Model in relaxed pose - if holding product, loose one-hand grip at table level, fingers naturally wrapped, other hand gesturing openly',
+  // Expert용 (손 묘사 강화)
+  demonstrating: 'Model demonstrating product - secure two-hand hold with fingers NOT obscuring product features, thumbs on top, palms supporting from sides/below',
+  presenting: 'Model in presenter stance - product held at optimal viewing angle, four fingers wrapped behind, thumb in front, arm extended toward camera',
+  explaining: 'Model in explanation pose - product cradled in open palm or held loosely, occasional gestures toward product features, knowledgeable expression',
 }
 
 // 의상 프리셋 설명
@@ -151,12 +244,24 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
   // 비디오 타입별 분위기
   const atmosphereSection = `분위기: ${videoTypeGuide.atmospherePrompt}`
 
+  // 비디오 타입별 표정 가이드 (새 필드 활용)
+  const expressionGuideSection = videoTypeGuide.expressionGuide
+    ? `표정 가이드 (${videoTypeStyle.korean}): ${videoTypeGuide.expressionGuide}`
+    : ''
+
+  // 비디오 타입별 카메라 느낌 (새 필드 활용)
+  const cameraHintSection = videoTypeGuide.cameraMovementHint
+    ? `카메라 느낌: ${videoTypeGuide.cameraMovementHint}`
+    : ''
+
   const prompt = `당신은 GPT-Image 1.5 이미지 생성을 위한 프롬프트 전문가입니다.
 제품 설명 영상의 첫 프레임에 사용될 이미지를 생성하기 위한 프롬프트를 작성해주세요.
 
 === 영상 스타일: ${videoTypeStyle.korean} ===
 ${videoTypeStyle.description}
 ${atmosphereSection}
+${expressionGuideSection}
+${cameraHintSection}
 
 === 제품 맥락 (이해용, 프롬프트에 제품명/브랜드명 포함 금지) ===
 ${input.productInfo}
@@ -187,16 +292,40 @@ ${outfitSection ? `=== 의상 설정 ===\n${outfitSection}` : ''}
 4. 품질: ultra-realistic cinematic editorial photography, 8K quality
 5. 중요: 이미지는 "${videoTypeStyle.korean}" 영상 스타일의 분위기를 반영해야 합니다
 6. 중요: 생성된 프롬프트에 제품명, 브랜드명을 절대 포함하지 마세요. 제품은 "the product"로만 지칭하세요.
+${input.productImageUrl ? '7. 손+제품: 손가락 위치, 그립 방식, 접촉면을 구체적으로 묘사하세요. 아바타와 제품의 조명이 일치해야 합니다.' : ''}
 
 === 중요: 오버레이 요소 금지 ===
 ${NO_OVERLAY_ELEMENTS}
+
+${input.productImageUrl ? `
+=== 자연스러운 손+제품 가이드 (핵심 - 리얼리즘) ===
+${HAND_DESCRIPTION_GUIDE}
+
+${PRODUCT_GRIP_GUIDE}
+
+${HAND_PRODUCT_CONTACT_GUIDE}
+
+${LIGHTING_CONSISTENCY_GUIDE}
+
+${GAZE_EXPRESSION_MATRIX}
+
+${HAND_PRODUCT_EXAMPLES}
+` : ''}
+
+${AVATAR_APPEARANCE_EXAMPLES}
+
+${AVATAR_EXPRESSION_EXAMPLES}
+
+${AVATAR_LIGHTING_EXAMPLES}
 
 다음 JSON 형식으로 응답하세요:
 {
   "prompt": "영어로 작성된 GPT-Image 1.5 프롬프트 (50-100단어)",
   "avatarDescription": "생성될 아바타에 대한 한국어 설명",
   "locationDescription": "장소/배경에 대한 한국어 설명"
-}`
+}
+
+${AVATAR_SELF_VERIFICATION}`
 
   const config: GenerateContentConfig = {
     thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },

@@ -18,6 +18,58 @@ import {
 import { VideoType } from './scripts'
 
 // ============================================================
+// Few-Shot 예시 및 검증 규칙
+// ============================================================
+
+/** 첫 프레임 프롬프트 Few-Shot 예시 */
+const FIRST_FRAME_EXAMPLES = `
+=== FIRST FRAME PROMPT EXAMPLES ===
+
+GOOD (specific, UGC-authentic):
+✓ "Young woman in casual cream sweater, sitting comfortably on grey sofa, holding skincare product at chest level, looking at camera with gentle smile, cozy modern living room with soft morning light from window, shot on 35mm f/11, natural skin texture, 8K quality"
+
+✓ "Man in his 30s, relaxed expression, presenting fitness supplement naturally, standing in bright home gym with natural daylight, POV selfie perspective, shot on 28mm f/11, authentic UGC style"
+
+BAD (equipment visible, unnatural):
+✗ "Model with ring light illuminating her face" (equipment visible)
+✗ "Big smile showing teeth, excited expression" (unnatural)
+✗ "Perfect studio setup with softbox" (behind-the-scenes)
+✗ "Blurred background with bokeh" (not UGC-style)
+`.trim()
+
+/** 카메라 선택 Chain-of-Thought */
+const CAMERA_SELECTION_COT = `
+=== CAMERA SELECTION (Chain-of-Thought) ===
+
+Step 1: IDENTIFY video type
+- UGC → prefer ugc-selfie, ugc-closeup
+- Podcast → prefer tripod, closeup
+- Expert → prefer tripod, fullbody
+
+Step 2: CONSIDER product interaction
+- Holding product → selfie-front, ugc-closeup
+- Using product → closeup
+- Presenting product → tripod, fullbody
+
+Step 3: SELECT depth of field
+- UGC style → f/11, background SHARP
+- Professional → f/16, everything in focus
+- NEVER use shallow depth of field or bokeh for UGC
+`.trim()
+
+/** 첫 프레임 Self-Verification */
+const FIRST_FRAME_VERIFICATION = `
+=== SELF-VERIFICATION (before responding) ===
+Check your prompt:
+✓ No lighting EQUIPMENT words (softbox, ring light)?
+✓ No "big smile", "wide grin", "teeth showing"?
+✓ Background is SHARP (f/11+), no bokeh?
+✓ Has camera specs (lens, f/stop)?
+✓ 50-80 words?
+If any check fails, revise before responding.
+`.trim()
+
+// ============================================================
 // 첫 프레임 프롬프트 시스템 지시
 // ============================================================
 
@@ -107,6 +159,28 @@ export const CAMERA_COMPOSITION_DETAILED_GUIDES: Record<string, {
     lightingRecommendation: 'natural daylight or soft indoor lighting, flattering selfie lighting',
     depthOfField: 'f/11 with background clearly visible and mostly sharp, minimal natural perspective blur only - no artificial bokeh, like a real smartphone photo',
   },
+  // Podcast 스타일 카메라 구도
+  webcam: {
+    promptSegment: 'webcam-style frontal view at desktop distance, subject centered in frame at eye level, conversational podcast framing with slight head room, natural relaxed posture as if speaking to viewer through computer screen',
+    lightingRecommendation: 'soft front-facing window light or ambient room lighting, warm comfortable atmosphere',
+    depthOfField: 'f/11 with background mostly sharp, natural room depth visible, no artificial blur',
+  },
+  'medium-shot': {
+    promptSegment: 'medium shot showing subject from waist up, balanced composition with comfortable breathing room, professional yet casual framing suitable for extended viewing',
+    lightingRecommendation: 'even balanced lighting from front and side, creating depth without harsh shadows',
+    depthOfField: 'f/11-f/16 with entire scene in sharp focus, suitable for any video style',
+  },
+  'three-quarter': {
+    promptSegment: 'three-quarter angle view with subject turned 30-45 degrees from camera, adding visual depth and interest, dynamic yet professional composition',
+    lightingRecommendation: 'key light from turned side creating natural dimension, subtle fill from opposite side',
+    depthOfField: 'f/11 with full scene clarity, engaging perspective without distraction',
+  },
+  // Expert 스타일 카메라 구도
+  presenter: {
+    promptSegment: 'professional presenter framing with subject in power position, confident stance with shoulders squared, TED-talk style composition conveying authority and expertise, adequate space for gestures',
+    lightingRecommendation: 'professional broadcast-quality lighting, even illumination conveying credibility',
+    depthOfField: 'f/16 with entire scene in perfect sharp focus, professional presentation quality',
+  },
 }
 
 // ============================================================
@@ -119,24 +193,36 @@ export const VIDEO_TYPE_FIRST_FRAME_GUIDES: Record<VideoType, {
   posePrompt: string
   atmospherePrompt: string
   recommendedCompositions: string[]
+  expressionGuide: string
+  cameraMovementHint: string
+  handProductGuide: string
 }> = {
   UGC: {
-    environmentPrompt: 'casual home setting, cozy room, natural environment',
-    posePrompt: 'relaxed natural pose, holding product casually, authentic expression',
-    atmospherePrompt: 'candid authentic vibe, influencer style',
-    recommendedCompositions: ['ugc-selfie', 'ugc-closeup', 'selfie-front', 'selfie-high'],
+    environmentPrompt: 'casual home setting, cozy living room or bedroom, natural lived-in environment with personal touches',
+    posePrompt: 'relaxed natural pose, holding product casually at chest level with relaxed grip - all five fingers visible, thumb supporting from behind, authentic genuine expression (NOT forced smile)',
+    atmospherePrompt: 'candid authentic vibe, real influencer sharing discovery, warm personal connection with viewer',
+    recommendedCompositions: ['ugc-selfie', 'ugc-closeup', 'selfie-front', 'selfie-high', 'selfie-side'],
+    expressionGuide: 'natural relaxed expression, can be neutral/curious/subtly engaged - avoid big smiles or exaggerated reactions',
+    cameraMovementHint: 'handheld selfie feel, slight natural movement okay, POV perspective',
+    handProductGuide: 'casual one-hand grip with fingers gently curved around product, palm visible, product angled slightly toward camera, fingertips resting naturally on surface',
   },
   podcast: {
-    environmentPrompt: 'podcast-style setting, clean background, intimate studio atmosphere, comfortable professional space, warm ambient lighting',
-    posePrompt: 'seated comfortably, conversational posture, engaged expression, slightly leaning forward as if in conversation, hands visible and relaxed',
-    atmospherePrompt: 'intimate interview atmosphere, warm inviting setting, professional yet approachable',
-    recommendedCompositions: ['tripod', 'closeup', 'selfie-front'],
+    environmentPrompt: 'intimate podcast studio atmosphere, clean organized desk setup, warm ambient lighting, comfortable professional space with minimal distractions',
+    posePrompt: 'seated comfortably at desk or couch, conversational leaning posture, engaged attentive expression, hands visible - one hand gesturing naturally, other hand may rest on product on table or hold product loosely',
+    atmospherePrompt: 'intimate one-on-one conversation feel, warm inviting setting, like chatting with a trusted friend who happens to be knowledgeable',
+    recommendedCompositions: ['webcam', 'medium-shot', 'closeup', 'three-quarter'],
+    expressionGuide: 'warm engaged expression, attentive listener/speaker vibe, occasional thoughtful pauses',
+    cameraMovementHint: 'stable webcam or tripod feel, minimal movement, focus on connection',
+    handProductGuide: 'product placed on desk within easy reach, or held casually in one hand at table level, relaxed open hand posture with fingers naturally spread, occasional demonstrative touch',
   },
   expert: {
-    environmentPrompt: 'professional setting, clean modern office, educational space, minimalist background, well-organized desk or presentation area',
-    posePrompt: 'confident professional posture, presenting stance, authoritative yet approachable, gesturing to explain, standing or seated at desk',
-    atmospherePrompt: 'educational atmosphere, trustworthy professional setting, expert authority vibe',
-    recommendedCompositions: ['tripod', 'fullbody', 'selfie-front'],
+    environmentPrompt: 'professional educational setting, modern office or studio, clean minimalist background, well-lit presentation area conveying credibility',
+    posePrompt: 'confident presenter stance, authoritative yet approachable posture, product held in presenting position with clear visibility - fingers wrapped securely but not tightly, palm supporting from below',
+    atmospherePrompt: 'educational authority atmosphere, TED-talk credibility, trustworthy expert sharing valuable knowledge',
+    recommendedCompositions: ['tripod', 'presenter', 'medium-shot', 'fullbody'],
+    expressionGuide: 'confident knowledgeable expression, professional demeanor, occasional reassuring smile',
+    cameraMovementHint: 'stable professional framing, broadcast quality, authority positioning',
+    handProductGuide: 'deliberate presenter grip - product held at optimal viewing angle, fingers positioned to not obscure key features, secure two-hand hold for larger items, professional display positioning',
   },
 }
 
@@ -179,6 +265,10 @@ REFERENCE IMAGES PROVIDED:
 
 Generate an optimized prompt for the first frame image.
 
+${FIRST_FRAME_EXAMPLES}
+
+${CAMERA_SELECTION_COT}
+
 OUTPUT FORMAT (JSON):
 {
   "prompt": "English prompt for Seedream 4.5 (50-80 words, max 100)",
@@ -189,6 +279,8 @@ Remember:
 - ${UGC_BACKGROUND_STYLE}
 - End with: ${PHOTOREALISM_ESSENTIALS.quality}
 - Include camera specs in the prompt
+
+${FIRST_FRAME_VERIFICATION}
 
 ${JSON_RESPONSE_INSTRUCTION}`,
 }
@@ -235,12 +327,16 @@ Create a prompt that:
 3. Uses UGC-style authentic setting
 4. Includes all photorealism elements
 
+${FIRST_FRAME_EXAMPLES}
+
 OUTPUT FORMAT (JSON):
 {
   "prompt": "English prompt for GPT-Image 1.5 (60-90 words)",
   "locationDescription": "사용된 장소/배경 설명 (한국어)",
   "avatarDescription": "생성될 아바타 설명 (한국어)"
 }
+
+${FIRST_FRAME_VERIFICATION}
 
 ${JSON_RESPONSE_INSTRUCTION}`,
 }
