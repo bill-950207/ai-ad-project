@@ -2,9 +2,47 @@
  * 이미지 편집 프롬프트 개선
  */
 
-import { GenerateContentConfig, ThinkingLevel, Type } from '@google/genai'
+import { GenerateContentConfig, ThinkingLevel } from '@google/genai'
 import { genAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
 import type { MergeEditPromptInput, MergeEditPromptResult } from './types'
+
+// ============================================================
+// Few-Shot 예시 및 검증 규칙
+// ============================================================
+
+/** 이미지 편집 Few-Shot 예시 */
+const IMAGE_EDIT_EXAMPLES = `
+=== IMAGE EDITING EXAMPLES (Few-Shot) ===
+
+GOOD (specific, actionable):
+User: "배경을 해변으로 바꿔줘"
+✓ Enhanced: "Change the background to a tropical beach with clear blue sky, soft sand, and gentle ocean waves."
+
+User: "더 밝게"
+✓ Enhanced: "Increase brightness and make the overall image brighter and more luminous."
+
+User: "표정을 웃는 얼굴로"
+✓ Enhanced: "Change the facial expression to a warm, natural smile with relaxed eyes."
+
+User: "옷을 빨간색으로"
+✓ Enhanced: "Change the clothing color to a vibrant red while maintaining the same style and texture."
+
+BAD (vague or overreaching):
+✗ "Make it better" (too vague)
+✗ "Change everything to look perfect" (unclear scope)
+✗ Adding unrequested changes like pose or lighting
+`.trim()
+
+/** 이미지 편집 Self-Verification */
+const IMAGE_EDIT_VERIFICATION = `
+=== SELF-VERIFICATION (before responding) ===
+Check your enhanced prompt:
+✓ ONLY describes what user explicitly requested?
+✓ No unrequested additions (pose, lighting, framing)?
+✓ Specific and actionable?
+✓ In English?
+If any check fails, revise before responding.
+`.trim()
 
 /**
  * 이미지 편집 프롬프트 개선
@@ -24,33 +62,19 @@ ${input.userEditRequest}
 4. ONLY describe what the user explicitly wants to change.
 5. Translate Korean to English if needed.
 
-=== EXAMPLES ===
-User: "배경을 해변으로 바꿔줘"
-Enhanced: "Change the background to a tropical beach with clear blue sky, soft sand, and gentle ocean waves."
-
-User: "더 밝게"
-Enhanced: "Increase brightness and make the overall image brighter and more luminous."
-
-User: "표정을 웃는 얼굴로"
-Enhanced: "Change the facial expression to a warm, natural smile."
+${IMAGE_EDIT_EXAMPLES}
 
 === OUTPUT FORMAT ===
 {
   "mergedPrompt": "Enhanced edit prompt in English",
   "editSummary": "Brief summary in Korean"
-}`
+}
+
+${IMAGE_EDIT_VERIFICATION}`
 
   const config: GenerateContentConfig = {
     thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     responseMimeType: 'application/json',
-    responseSchema: {
-      type: Type.OBJECT,
-      required: ['mergedPrompt', 'editSummary'],
-      properties: {
-        mergedPrompt: { type: Type.STRING, description: 'Enhanced prompt in English' },
-        editSummary: { type: Type.STRING, description: 'Brief summary in Korean' },
-      },
-    },
   }
 
   const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []

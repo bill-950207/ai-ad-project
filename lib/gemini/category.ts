@@ -2,7 +2,7 @@
  * AI 카테고리 옵션 추천
  */
 
-import { GenerateContentConfig, MediaResolution, ThinkingLevel, Type } from '@google/genai'
+import { GenerateContentConfig, MediaResolution, ThinkingLevel } from '@google/genai'
 import { genAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
 import type {
   ImageAdType,
@@ -90,27 +90,6 @@ Recommend optimal settings for each category. Use '__custom__' with customText f
     thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
-    responseSchema: {
-      type: Type.OBJECT,
-      required: ['recommendations', 'overallStrategy', 'suggestedPrompt'],
-      properties: {
-        recommendations: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            required: ['key', 'value', 'reason'],
-            properties: {
-              key: { type: Type.STRING },
-              value: { type: Type.STRING },
-              customText: { type: Type.STRING },
-              reason: { type: Type.STRING },
-            },
-          },
-        },
-        overallStrategy: { type: Type.STRING },
-        suggestedPrompt: { type: Type.STRING },
-      },
-    },
   }
 
   const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []
@@ -330,53 +309,6 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
     thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
     mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
-    responseSchema: {
-      type: Type.OBJECT,
-      required: ['scenarios'],
-      properties: {
-        scenarios: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            required: ['title', 'description', 'recommendations', 'overallStrategy'],
-            properties: {
-              title: { type: Type.STRING },
-              description: { type: Type.STRING },
-              targetAudience: { type: Type.STRING },
-              conceptType: { type: Type.STRING },
-              recommendations: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  required: ['key', 'value', 'reason'],
-                  properties: {
-                    key: { type: Type.STRING },
-                    value: { type: Type.STRING },
-                    customText: { type: Type.STRING },
-                    reason: { type: Type.STRING },
-                  },
-                },
-              },
-              overallStrategy: { type: Type.STRING },
-              suggestedPrompt: { type: Type.STRING },
-              recommendedAvatarStyle: {
-                type: Type.OBJECT,
-                required: ['avatarPrompt', 'avatarDescription', 'gender', 'age', 'style', 'ethnicity', 'bodyType'],
-                properties: {
-                  avatarPrompt: { type: Type.STRING },
-                  avatarDescription: { type: Type.STRING },
-                  gender: { type: Type.STRING, enum: ['male', 'female', 'any'] },
-                  age: { type: Type.STRING, enum: ['young', 'middle', 'mature', 'any'] },
-                  style: { type: Type.STRING, enum: ['natural', 'professional', 'casual', 'elegant', 'any'] },
-                  ethnicity: { type: Type.STRING, enum: ['korean', 'asian', 'western', 'any'] },
-                  bodyType: { type: Type.STRING, enum: ['slim', 'average', 'athletic', 'curvy', 'any'] },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
   }
 
   const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []

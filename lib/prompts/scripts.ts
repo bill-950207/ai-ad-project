@@ -128,6 +128,77 @@ export function calculateScriptLength(durationSeconds: number, language: 'korean
 }
 
 // ============================================================
+// Few-Shot 예시 및 검증 규칙
+// ============================================================
+
+/** 대본 스타일별 Few-Shot 예시 */
+const SCRIPT_STYLE_EXAMPLES = `
+=== SCRIPT STYLE EXAMPLES (Few-Shot) ===
+
+FORMAL (공식적) - Professional, trustworthy:
+GOOD:
+✓ "안녕하세요, 오늘 소개해드릴 제품입니다. 엄선된 성분으로 제작되었으며, 품질 테스트를 거쳤습니다."
+✓ "이 제품의 특별한 점은 기술력에 있습니다. 사용해 보시면 차이를 느끼실 수 있습니다."
+
+BAD:
+✗ "이 제품은 완벽합니다!" (과장)
+✗ "100% 효과 보장!" (허위 광고 가능성)
+
+CASUAL (캐주얼) - Friendly, relatable:
+GOOD:
+✓ "저도 처음엔 반신반의했는데요, 써보니까 진짜 다르더라고요."
+✓ "요즘 이거 없으면 좀 불편해요, 솔직히."
+
+BAD:
+✗ "대박대박대박!!!" (과도한 감탄)
+✗ "이거 안 사면 후회함" (강압적)
+
+ENERGETIC (활기찬) - Enthusiastic, action-oriented:
+GOOD:
+✓ "여러분! 드디어 찾았어요! 제가 그렇게 찾던 그 제품!"
+✓ "이거 진짜 추천이에요! 직접 써보시면 아실 거예요!"
+
+BAD:
+✗ "지금 당장 사세요!!!" (과도한 압박)
+✗ "이거 최고! 무조건 최고!" (근거 없는 주장)
+`.trim()
+
+/** 대본 번역 Chain-of-Thought */
+const SCRIPT_TRANSLATION_COT = `
+=== TRANSLATION (Chain-of-Thought) ===
+
+Step 1: ANALYZE original tone and intent
+- Is it formal, casual, or energetic?
+- What emotion should it evoke?
+
+Step 2: IDENTIFY cultural adaptations needed
+- Idioms that don't translate directly
+- Cultural references to localize
+- Formality level appropriate for target culture
+
+Step 3: TRANSLATE with natural flow
+- Prioritize spoken rhythm over literal accuracy
+- Ensure TTS-friendly phrasing
+- Maintain persuasive impact
+
+Step 4: VERIFY length and timing
+- Check character count matches target
+- Read aloud to check natural flow
+`.trim()
+
+/** 대본 Self-Verification 체크리스트 */
+const SCRIPT_SELF_VERIFICATION = `
+=== SELF-VERIFICATION (before responding) ===
+Check your script:
+✓ No exaggerated claims (최고, 완벽, 100%, 무조건)?
+✓ No false advertising language?
+✓ Suitable for TTS (no complex symbols)?
+✓ Character count within target range (±10%)?
+✓ Natural spoken rhythm?
+If any check fails, revise before responding.
+`.trim()
+
+// ============================================================
 // 프롬프트 템플릿
 // ============================================================
 
@@ -178,6 +249,8 @@ REQUIREMENTS:
 
 {{additionalInstructions}}
 
+${SCRIPT_STYLE_EXAMPLES}
+
 OUTPUT FORMAT (JSON):
 {
   "productSummary": "One-sentence product summary in Korean",
@@ -202,6 +275,8 @@ OUTPUT FORMAT (JSON):
     }
   ]
 }
+
+${SCRIPT_SELF_VERIFICATION}
 
 Respond with valid JSON only.`,
 }
@@ -232,12 +307,16 @@ TRANSLATION PRINCIPLES:
 3. Consider cultural context
 4. Use expressions suitable for TTS recording
 
+${SCRIPT_TRANSLATION_COT}
+
 OUTPUT FORMAT (JSON):
 {
   "translatedScript": "Translated script",
   "estimatedDuration": estimated_seconds,
   "notes": "Translation considerations (optional)"
 }
+
+${SCRIPT_SELF_VERIFICATION}
 
 Respond with valid JSON only.`,
 }

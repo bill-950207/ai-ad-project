@@ -18,6 +18,58 @@ import {
 import { VideoType } from './scripts'
 
 // ============================================================
+// Few-Shot 예시 및 검증 규칙
+// ============================================================
+
+/** 첫 프레임 프롬프트 Few-Shot 예시 */
+const FIRST_FRAME_EXAMPLES = `
+=== FIRST FRAME PROMPT EXAMPLES ===
+
+GOOD (specific, UGC-authentic):
+✓ "Young woman in casual cream sweater, sitting comfortably on grey sofa, holding skincare product at chest level, looking at camera with gentle smile, cozy modern living room with soft morning light from window, shot on 35mm f/11, natural skin texture, 8K quality"
+
+✓ "Man in his 30s, relaxed expression, presenting fitness supplement naturally, standing in bright home gym with natural daylight, POV selfie perspective, shot on 28mm f/11, authentic UGC style"
+
+BAD (equipment visible, unnatural):
+✗ "Model with ring light illuminating her face" (equipment visible)
+✗ "Big smile showing teeth, excited expression" (unnatural)
+✗ "Perfect studio setup with softbox" (behind-the-scenes)
+✗ "Blurred background with bokeh" (not UGC-style)
+`.trim()
+
+/** 카메라 선택 Chain-of-Thought */
+const CAMERA_SELECTION_COT = `
+=== CAMERA SELECTION (Chain-of-Thought) ===
+
+Step 1: IDENTIFY video type
+- UGC → prefer ugc-selfie, ugc-closeup
+- Podcast → prefer tripod, closeup
+- Expert → prefer tripod, fullbody
+
+Step 2: CONSIDER product interaction
+- Holding product → selfie-front, ugc-closeup
+- Using product → closeup
+- Presenting product → tripod, fullbody
+
+Step 3: SELECT depth of field
+- UGC style → f/11, background SHARP
+- Professional → f/16, everything in focus
+- NEVER use shallow depth of field or bokeh for UGC
+`.trim()
+
+/** 첫 프레임 Self-Verification */
+const FIRST_FRAME_VERIFICATION = `
+=== SELF-VERIFICATION (before responding) ===
+Check your prompt:
+✓ No lighting EQUIPMENT words (softbox, ring light)?
+✓ No "big smile", "wide grin", "teeth showing"?
+✓ Background is SHARP (f/11+), no bokeh?
+✓ Has camera specs (lens, f/stop)?
+✓ 50-80 words?
+If any check fails, revise before responding.
+`.trim()
+
+// ============================================================
 // 첫 프레임 프롬프트 시스템 지시
 // ============================================================
 
@@ -179,6 +231,10 @@ REFERENCE IMAGES PROVIDED:
 
 Generate an optimized prompt for the first frame image.
 
+${FIRST_FRAME_EXAMPLES}
+
+${CAMERA_SELECTION_COT}
+
 OUTPUT FORMAT (JSON):
 {
   "prompt": "English prompt for Seedream 4.5 (50-80 words, max 100)",
@@ -189,6 +245,8 @@ Remember:
 - ${UGC_BACKGROUND_STYLE}
 - End with: ${PHOTOREALISM_ESSENTIALS.quality}
 - Include camera specs in the prompt
+
+${FIRST_FRAME_VERIFICATION}
 
 ${JSON_RESPONSE_INSTRUCTION}`,
 }
@@ -235,12 +293,16 @@ Create a prompt that:
 3. Uses UGC-style authentic setting
 4. Includes all photorealism elements
 
+${FIRST_FRAME_EXAMPLES}
+
 OUTPUT FORMAT (JSON):
 {
   "prompt": "English prompt for GPT-Image 1.5 (60-90 words)",
   "locationDescription": "사용된 장소/배경 설명 (한국어)",
   "avatarDescription": "생성될 아바타 설명 (한국어)"
 }
+
+${FIRST_FRAME_VERIFICATION}
 
 ${JSON_RESPONSE_INSTRUCTION}`,
 }

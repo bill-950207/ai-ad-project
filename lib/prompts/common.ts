@@ -465,3 +465,64 @@ IMPORTANT:
 /** 체형 관련 네거티브 프롬프트 */
 export const BODY_NEGATIVE_PROMPT =
   'exaggerated proportions, enhanced curves, unrealistic body, oversized bust, inflated chest, cartoonish proportions, anime proportions, idealized body, enhanced figure, augmented features, unrealistic waist-to-hip ratio'
+
+// ============================================================
+// Few-Shot 예시 (공용)
+// ============================================================
+
+/** 표정 예시 (Few-Shot) - 공용 */
+export const EXPRESSION_EXAMPLES = `
+EXPRESSION EXAMPLES (use these patterns):
+
+GOOD (natural, relatable):
+✓ "gentle closed-lip smile with relaxed eye contact"
+✓ "soft confident gaze, natural resting expression"
+✓ "looking at product with genuine curiosity"
+✓ "candid moment, caught mid-thought"
+
+BAD (exaggerated, artificial):
+✗ "big smile", "wide grin", "teeth showing", "beaming"
+✗ "excited expression", "enthusiastic smile", "overly cheerful"
+✗ "perfect smile", "dramatic reaction"
+
+Use words: gentle, soft, subtle, relaxed, natural, candid
+`.trim()
+
+/** 조명 예시 (Few-Shot) - 공용 */
+export const LIGHTING_EXAMPLES = `
+LIGHTING EXAMPLES (describe EFFECT, not equipment):
+
+GOOD:
+✓ "soft natural daylight from left window"
+✓ "warm golden hour glow creating gentle shadows"
+✓ "diffused ambient light, even illumination"
+✓ "backlight from behind creating rim light"
+
+BAD (equipment visible):
+✗ "ring light illuminating face"
+✗ "softbox on the left", "LED panel"
+✗ "studio lighting rig", "reflector panel"
+✗ "lighting equipment", "photography setup"
+
+Scene = FINAL PHOTOGRAPH, not behind-the-scenes.
+`.trim()
+
+/** 공용 Self-Verification 체크리스트 */
+export const COMMON_SELF_VERIFICATION = `
+=== SELF-VERIFICATION (before responding) ===
+Check your output:
+✓ No product names or brand names?
+✓ No "big smile", "wide grin", "teeth showing"?
+✓ No lighting EQUIPMENT words (softbox, ring light, LED, reflector)?
+✓ Has camera specs (lens, f/stop)?
+If any check fails, revise before responding.
+`.trim()
+
+/** 제품명 금지 규칙 */
+export const NO_PRODUCT_NAME_RULE = `
+CRITICAL - PRODUCT NAME PROHIBITION:
+- NEVER include product names, brand names, or model names
+- Product names may contain misleading words (e.g., "Mushroom" in a shoe name would generate actual mushrooms)
+- Use only: "the product", "the item", "the product from Figure 1"
+- Focus on visual characteristics, not product identifiers
+`.trim()

@@ -99,23 +99,37 @@ const AD_TYPE_DESCRIPTIONS: Record<ImageAdType, string> = {
 - Camera: Varies by scene, prioritize atmosphere`,
 }
 
-/** 조명 규칙 (포지티브 지시 중심) */
+/** 조명 규칙 (포지티브 지시 중심 + Few-Shot 예시) */
 const LIGHTING_RULES = `
-LIGHTING (CRITICAL):
-1. Describe light QUALITY and DIRECTION only: "soft diffused light from upper left"
-2. Scene must look like FINAL PHOTOGRAPH - NOT a studio behind-the-scenes
-3. Environment should be CLEAN: only model, product, and background visible
-4. Use terms: "natural window light", "soft ambient light", "golden hour glow", "diffused daylight"
-5. FORBIDDEN in prompt: softbox, ring light, LED panel, light stand, reflector, studio setup, lighting rig
+LIGHTING (CRITICAL - describe EFFECT, not equipment):
+
+GOOD examples:
+✓ "soft warm light from upper left creating gentle shadows"
+✓ "natural window light streaming from the right"
+✓ "golden hour glow with rim lighting from behind"
+
+BAD examples (NEVER use):
+✗ "softbox on the left", "ring light illuminating"
+✗ "studio lights around the model", "LED panel setup"
+✗ "lighting rig", "reflector panel", "studio equipment"
+
+Scene = FINAL PHOTOGRAPH, not behind-the-scenes.
 `.trim()
 
-/** 표정 가이드 (구체적 묘사) */
+/** 표정 가이드 (구체적 묘사 + Few-Shot 예시) */
 const EXPRESSION_GUIDE = `
 EXPRESSION (CRITICAL - avoid artificial "AI smile"):
-- Use SPECIFIC expression terms: "gentle closed-lip smile", "relaxed neutral face", "soft confident gaze", "subtle smirk"
-- Eyes: "relaxed eye contact", "looking at product with interest", "gazing slightly off-camera"
-- Mouth: AVOID "big smile", "wide grin", "teeth showing" - prefer "lips slightly parted", "soft closed smile"
-- Overall: "candid moment", "caught mid-thought", "genuine and unstaged"
+
+GOOD examples:
+✓ "gentle closed-lip smile with relaxed eye contact"
+✓ "soft confident gaze, lips slightly parted"
+✓ "looking at product with genuine curiosity, candid moment"
+
+BAD examples (NEVER use):
+✗ "big smile", "wide grin", "teeth showing", "beaming"
+✗ "excited expression", "overly cheerful", "enthusiastic smile"
+
+Use: "relaxed", "gentle", "soft", "subtle", "candid", "natural"
 `.trim()
 
 /** 제품 보존 규칙 */
@@ -127,13 +141,14 @@ PRODUCT APPEARANCE: Must be IDENTICAL to reference.
 - DO NOT modify, stylize, or "improve"
 `.trim()
 
-/** 로고 처리 규칙 */
+/** 로고 처리 규칙 (Chain-of-Thought) */
 const LOGO_RULES = `
-PRODUCT SURFACE: First analyze - does product have visible logos/text?
-→ Set productHasLogo = true/false based on analysis
-
-If productHasLogo = true: "reproduce ONLY existing markings, DO NOT add new"
-If productHasLogo = false: "product surface is CLEAN - DO NOT ADD any logos, text, barcodes, QR codes, or markings"
+PRODUCT SURFACE ANALYSIS (Step-by-step):
+1. EXAMINE: Look closely at product image - are there ANY visible logos, text, labels, barcodes?
+2. DECIDE: Set productHasLogo = true (has markings) or false (clean surface)
+3. APPLY:
+   - If true → "reproduce ONLY existing markings, DO NOT add new"
+   - If false → "product surface is CLEAN - DO NOT ADD any logos, text, barcodes, QR codes"
 `.trim()
 
 /** 오버레이 방지 (통합) */
@@ -465,7 +480,15 @@ ${input.adType === 'productOnly' ? `For PRODUCT ONLY shots:
     ? `Structure: [${figureInfo.productRef}] [as hero subject] [on/against background surface or setting] [dramatic lighting from angle] [camera: f/8-f/11 for sharpness] [quality: product photography, every detail crisp]. NO model, NO hands unless specified.`
     : `Structure: [${figureInfo.modelRef}] ${outfitText ? '[outfit description] ' : ''}[pose/action] [with ${figureInfo.productRef}] [in CLEAN environment] [natural light from direction] [SPECIFIC expression] [camera specs] [quality]. NO studio equipment.`}",
   "koreanDescription": "한국어 요약 (15-20자)"
-}`
+}
+
+=== SELF-VERIFICATION (before responding) ===
+Check your optimizedPrompt:
+✓ No lighting EQUIPMENT words (softbox, ring light, LED, reflector)?
+✓ No "big smile", "wide grin", "teeth showing"?
+✓ Has camera specs (lens, f/stop)?
+✓ 60-80 words?
+If any check fails, revise before responding.`
 
   const config: GenerateContentConfig = {
     thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },

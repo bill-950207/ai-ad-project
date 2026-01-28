@@ -4,8 +4,39 @@
  * - URL에서 제품 정보 추출
  */
 
+import { GenerateContentConfig, ThinkingLevel } from '@google/genai'
 import { genAI, MODEL_NAME } from './shared'
 import type { ProductInfoInput, ProductSummary, UrlExtractResult } from './types'
+
+// ============================================================
+// Few-Shot 예시 및 검증 규칙
+// ============================================================
+
+/** 제품 요약 예시 (Few-Shot) */
+const PRODUCT_SUMMARY_EXAMPLES = `
+=== PRODUCT SUMMARY EXAMPLES ===
+
+GOOD (specific, benefit-focused):
+✓ summary: "천연 성분 기반의 수분 크림으로, 건조한 피부에 즉각적인 보습과 진정 효과를 제공합니다."
+✓ keyPoints: ["히알루론산 고함량", "무향료 저자극", "48시간 지속 보습"]
+✓ suggestedTone: "신뢰감 있는 전문적"
+
+BAD (vague, exaggerated):
+✗ summary: "정말 좋은 크림입니다" (구체성 부족)
+✗ keyPoints: ["최고의 품질", "완벽한 제품"] (과장)
+✗ suggestedTone: "최고급" (모호)
+`.trim()
+
+/** 제품 분석 Self-Verification */
+const PRODUCT_SELF_VERIFICATION = `
+=== SELF-VERIFICATION (before responding) ===
+Check your summary:
+✓ No exaggerated claims (최고, 완벽, 유일)?
+✓ Key points are specific and factual?
+✓ Suggested tone matches product category?
+✓ Summary is 2-3 sentences?
+If any check fails, revise before responding.
+`.trim()
 
 /**
  * 제품 정보를 요약합니다.
@@ -25,6 +56,8 @@ export async function summarizeProductInfo(input: ProductInfoInput): Promise<Pro
 제품 정보:
 ${inputText}
 
+${PRODUCT_SUMMARY_EXAMPLES}
+
 다음 형식으로 JSON 응답해주세요:
 {
   "summary": "제품의 핵심 가치와 특징을 2-3문장으로 요약",
@@ -32,11 +65,17 @@ ${inputText}
   "suggestedTone": "추천하는 광고 톤 (예: 고급스러운, 친근한, 에너지틱한 등)"
 }
 
-반드시 유효한 JSON 형식으로만 응답하세요.`
+${PRODUCT_SELF_VERIFICATION}`
+
+  const config: GenerateContentConfig = {
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+    responseMimeType: 'application/json',
+  }
 
   const response = await genAI.models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    config,
   })
 
   const responseText = response.text || ''
@@ -79,15 +118,19 @@ URL: ${url}
 정보가 없거나 찾을 수 없으면 해당 필드는 null로 표시하세요.
 반드시 유효한 JSON으로만 응답하세요.`
 
+    const config: GenerateContentConfig = {
+      thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+      tools: [
+        { urlContext: {} },
+        { googleSearch: {} },
+      ],
+      responseMimeType: 'application/json',
+    }
+
     const response = await genAI.models.generateContent({
       model: MODEL_NAME,
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      config: {
-        tools: [
-          { urlContext: {} },
-          { googleSearch: {} },
-        ],
-      },
+      config,
     })
 
     const responseText = response.text || ''

@@ -6,7 +6,7 @@
  * - 첫 프레임 프롬프트 생성
  */
 
-import { GenerateContentConfig, MediaResolution, ThinkingLevel, Type } from '@google/genai'
+import { GenerateContentConfig, MediaResolution, ThinkingLevel } from '@google/genai'
 import { genAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
 import type {
   VideoPromptInput,
@@ -27,6 +27,53 @@ import type {
 import { VIDEO_TYPE_SCRIPT_STYLES } from '@/lib/prompts/scripts'
 import { NO_OVERLAY_ELEMENTS } from '@/lib/prompts/common'
 import { VIDEO_TYPE_FIRST_FRAME_GUIDES } from '@/lib/prompts/first-frame'
+
+// ============================================================
+// Few-Shot 예시 및 검증 규칙
+// ============================================================
+
+/** 영상 프롬프트 표정/분위기 예시 (Few-Shot) */
+const VIDEO_EXPRESSION_EXAMPLES = `
+EXPRESSION/MOOD EXAMPLES:
+
+GOOD (natural, subtle):
+✓ "gentle smile with relaxed eye contact"
+✓ "soft confident gaze, natural expression"
+✓ "looking at product with genuine curiosity"
+✓ "candid moment, caught mid-thought"
+
+BAD (exaggerated, artificial):
+✗ "big smile", "wide grin", "teeth showing"
+✗ "excited expression", "enthusiastic pose"
+✗ "overly cheerful", "dramatic reaction"
+`.trim()
+
+/** 영상 조명 예시 (Few-Shot) */
+const VIDEO_LIGHTING_EXAMPLES = `
+LIGHTING EXAMPLES:
+
+GOOD (describe effect, not equipment):
+✓ "soft natural daylight from left window"
+✓ "warm golden hour glow creating gentle shadows"
+✓ "diffused ambient light, even illumination"
+
+BAD (equipment visible):
+✗ "ring light illuminating face"
+✗ "softbox setup", "LED panel"
+✗ "studio lighting rig"
+`.trim()
+
+/** Self-Verification 체크리스트 */
+const VIDEO_SELF_VERIFICATION = `
+=== SELF-VERIFICATION (before responding) ===
+Check your prompts:
+✓ No product names or brand names?
+✓ No "big smile", "wide grin", "teeth showing"?
+✓ No lighting EQUIPMENT words (softbox, ring light, LED)?
+✓ Has camera specs (lens, f/stop)?
+✓ Word count appropriate (50-80 for image, max 800 for video)?
+If any check fails, revise before responding.
+`.trim()
 
 /**
  * 범용 텍스트 생성 함수
@@ -65,27 +112,25 @@ ${input.additionalInstructions ? `추가 요청: ${input.additionalInstructions}
 5. 카메라 움직임, 조명 변화, 제품/모델의 동작을 구체적으로 묘사하세요.
 6. 최대 800자 이내로 작성하세요.
 
-다음 형식으로 JSON 응답해주세요:
-{
-  "prompt": "영어 프롬프트 (800자 이내)",
-  "negativePrompt": "피해야 할 요소들 (영어, 500자 이내)"
-}
+${VIDEO_EXPRESSION_EXAMPLES}
 
-반드시 유효한 JSON으로만 응답하세요.`
+${VIDEO_LIGHTING_EXAMPLES}
+
+${VIDEO_SELF_VERIFICATION}`
+
+  const config: GenerateContentConfig = {
+    thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+    responseMimeType: 'application/json',
+  }
 
   const response = await genAI.models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    config,
   })
 
-  const responseText = response.text || ''
-
   try {
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/)
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]) as VideoPromptResult
-    }
-    throw new Error('JSON 형식 응답 없음')
+    return JSON.parse(response.text || '') as VideoPromptResult
   } catch {
     return {
       prompt: `Professional product advertisement video. The product slowly rotates with soft studio lighting. Smooth camera movement reveals product details. High-quality commercial style. ${input.duration} seconds duration.`,
@@ -132,7 +177,13 @@ Generate TWO prompts:
 - NEVER include product names, brand names, or model names in the prompts.
 - Product names often contain words that could be misinterpreted (e.g., "Mushroom" in a shoe name would cause AI to draw actual mushrooms).
 - Instead of product names, use generic terms like "the product", "the item", or refer to the product image as "the product in IMAGE1".
-- Focus on visual characteristics, actions, and composition rather than product identifiers.`
+- Focus on visual characteristics, actions, and composition rather than product identifiers.
+
+${VIDEO_EXPRESSION_EXAMPLES}
+
+${VIDEO_LIGHTING_EXAMPLES}
+
+${VIDEO_SELF_VERIFICATION}`
 
   const tools = input.productUrl ? [{ urlContext: {} }, { googleSearch: {} }] : undefined
 
@@ -141,16 +192,6 @@ Generate TWO prompts:
     thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
     mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
-    responseSchema: {
-      type: Type.OBJECT,
-      required: ['productSummary', 'firstScenePrompt', 'videoPrompt', 'negativePrompt'],
-      properties: {
-        productSummary: { type: Type.STRING, description: 'Product summary in Korean' },
-        firstScenePrompt: { type: Type.STRING, description: 'Seedream 4.5 image prompt (English)' },
-        videoPrompt: { type: Type.STRING, description: 'Video generation prompt (English)' },
-        negativePrompt: { type: Type.STRING, description: 'Elements to avoid (English)' },
-      },
-    },
   }
 
   const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []
@@ -212,7 +253,13 @@ Video Duration: ${durationDesc}
 Mood/Tone: ${moodDesc}
 ${input.additionalInstructions ? `Additional: ${input.additionalInstructions}` : ''}
 
-Generate: productSummary (Korean), firstScenePrompt (English, gpt-image-1.5), videoPrompt (English, Seedance), suggestedScript (Korean, if no user script)`
+${VIDEO_EXPRESSION_EXAMPLES}
+
+${VIDEO_LIGHTING_EXAMPLES}
+
+Generate: productSummary (Korean), firstScenePrompt (English, gpt-image-1.5), videoPrompt (English, Seedance), suggestedScript (Korean, if no user script)
+
+${VIDEO_SELF_VERIFICATION}`
 
   const tools = input.productUrl ? [{ urlContext: {} }, { googleSearch: {} }] : undefined
 
@@ -221,16 +268,6 @@ Generate: productSummary (Korean), firstScenePrompt (English, gpt-image-1.5), vi
     thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
     mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
-    responseSchema: {
-      type: Type.OBJECT,
-      required: ['productSummary', 'firstScenePrompt', 'videoPrompt'],
-      properties: {
-        productSummary: { type: Type.STRING },
-        firstScenePrompt: { type: Type.STRING },
-        videoPrompt: { type: Type.STRING },
-        suggestedScript: { type: Type.STRING, nullable: true },
-      },
-    },
   }
 
   const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []
@@ -317,44 +354,10 @@ Each script should maintain the overall video style (${videoTypeStyle?.korean ||
 
   const tools = input.productUrl ? [{ urlContext: {} }, { googleSearch: {} }] : undefined
 
-  const schemaProperties: Record<string, unknown> = {
-    productSummary: { type: Type.STRING },
-    scripts: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        required: ['style', 'styleName', 'content', 'estimatedDuration'],
-        properties: {
-          style: { type: Type.STRING, enum: ['formal', 'casual', 'energetic'] },
-          styleName: { type: Type.STRING },
-          content: { type: Type.STRING },
-          estimatedDuration: { type: Type.NUMBER },
-        },
-      },
-    },
-  }
-
-  if (input.requestOutfitRecommendation) {
-    schemaProperties.recommendedOutfit = {
-      type: Type.OBJECT,
-      required: ['description', 'koreanDescription', 'reason'],
-      properties: {
-        description: { type: Type.STRING },
-        koreanDescription: { type: Type.STRING },
-        reason: { type: Type.STRING },
-      },
-    }
-  }
-
   const genConfig: GenerateContentConfig = {
     tools,
     thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
     responseMimeType: 'application/json',
-    responseSchema: {
-      type: Type.OBJECT,
-      required: input.requestOutfitRecommendation ? ['productSummary', 'scripts', 'recommendedOutfit'] : ['productSummary', 'scripts'],
-      properties: schemaProperties,
-    },
   }
 
   const response = await genAI.models.generateContent({
@@ -526,21 +529,20 @@ ${bodyTypeDescription ? `4. Maintain ${bodyTypeDescription} body type consistent
 ${input.productImageUrl
     ? 'Create photorealistic prompt using "the model from Figure 1" for avatar, "the product from Figure 2" for product.'
     : 'Create photorealistic prompt using "the model from Figure 1" for avatar. ⚠️ NO PRODUCT should appear - avatar only with empty hands.'}
+
+${VIDEO_EXPRESSION_EXAMPLES}
+
+${VIDEO_LIGHTING_EXAMPLES}
+
 Include: camera specs, lighting direction, quality tags.
-Output JSON: { "prompt": "English 50-80 words", "locationDescription": "Korean location description" }`
+Output JSON: { "prompt": "English 50-80 words", "locationDescription": "Korean location description" }
+
+${VIDEO_SELF_VERIFICATION}`
 
   const config: GenerateContentConfig = {
     thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
     mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
-    responseSchema: {
-      type: Type.OBJECT,
-      required: ['prompt', 'locationDescription'],
-      properties: {
-        prompt: { type: Type.STRING },
-        locationDescription: { type: Type.STRING },
-      },
-    },
   }
 
   const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []

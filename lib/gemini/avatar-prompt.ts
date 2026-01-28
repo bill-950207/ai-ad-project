@@ -15,6 +15,67 @@ import { NO_OVERLAY_ELEMENTS } from '@/lib/prompts/common'
 import { VIDEO_TYPE_SCRIPT_STYLES } from '@/lib/prompts/scripts'
 import { VIDEO_TYPE_FIRST_FRAME_GUIDES } from '@/lib/prompts/first-frame'
 
+// ============================================================
+// Few-Shot 예시 및 검증 규칙
+// ============================================================
+
+/** 아바타 외모 묘사 예시 (Few-Shot) */
+const AVATAR_APPEARANCE_EXAMPLES = `
+AVATAR DESCRIPTION EXAMPLES:
+
+GOOD (specific, natural):
+✓ "Korean woman in her late 20s with soft natural makeup, shoulder-length dark brown hair"
+✓ "Athletic East Asian man, early 30s, clean-shaven with natural skin texture"
+✓ "Japanese woman with warm skin tone, gentle features, hair in loose waves"
+
+BAD (vague, stereotypical):
+✗ "Beautiful Asian woman" (too generic)
+✗ "Perfect skin, flawless features" (unrealistic)
+✗ "Model-like appearance" (vague)
+`.trim()
+
+/** 표정 예시 (Few-Shot) */
+const AVATAR_EXPRESSION_EXAMPLES = `
+EXPRESSION EXAMPLES:
+
+GOOD (natural, relatable):
+✓ "gentle closed-lip smile with relaxed eye contact"
+✓ "soft confident gaze, natural resting expression"
+✓ "approachable expression with subtle warmth"
+
+BAD (exaggerated, artificial):
+✗ "big smile", "wide grin", "teeth showing"
+✗ "excited expression", "overly enthusiastic"
+✗ "perfect smile", "beaming at camera"
+`.trim()
+
+/** 조명 예시 (Few-Shot) */
+const AVATAR_LIGHTING_EXAMPLES = `
+LIGHTING EXAMPLES:
+
+GOOD (describe effect):
+✓ "soft natural daylight from window"
+✓ "warm golden hour glow with gentle shadows"
+✓ "even ambient light, natural skin tones"
+
+BAD (equipment visible):
+✗ "ring light", "softbox", "studio lighting"
+✗ "LED panel", "reflector", "lighting rig"
+`.trim()
+
+/** Self-Verification 체크리스트 */
+const AVATAR_SELF_VERIFICATION = `
+=== SELF-VERIFICATION (before responding) ===
+Check your prompt:
+✓ No product names or brand names?
+✓ No "big smile", "wide grin", "teeth showing"?
+✓ No lighting EQUIPMENT words (ring light, softbox, LED)?
+✓ Body type matches input specification?
+✓ Has camera specs (lens, f/stop)?
+✓ 50-100 words?
+If any check fails, revise before responding.
+`.trim()
+
 // 카메라 구도별 설정
 const cameraCompositionDescriptions: Record<CameraCompositionType, { description: string; aperture: string; lens: string }> = {
   'selfie-high': { description: 'high angle selfie perspective, camera looking down from above eye level', aperture: 'f/11', lens: '28mm' },
@@ -191,12 +252,20 @@ ${outfitSection ? `=== 의상 설정 ===\n${outfitSection}` : ''}
 === 중요: 오버레이 요소 금지 ===
 ${NO_OVERLAY_ELEMENTS}
 
+${AVATAR_APPEARANCE_EXAMPLES}
+
+${AVATAR_EXPRESSION_EXAMPLES}
+
+${AVATAR_LIGHTING_EXAMPLES}
+
 다음 JSON 형식으로 응답하세요:
 {
   "prompt": "영어로 작성된 GPT-Image 1.5 프롬프트 (50-100단어)",
   "avatarDescription": "생성될 아바타에 대한 한국어 설명",
   "locationDescription": "장소/배경에 대한 한국어 설명"
-}`
+}
+
+${AVATAR_SELF_VERIFICATION}`
 
   const config: GenerateContentConfig = {
     thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
