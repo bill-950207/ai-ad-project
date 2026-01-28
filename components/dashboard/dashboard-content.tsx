@@ -141,25 +141,25 @@ function AdCreationCard({
       <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-colors duration-300" />
 
       {/* 컨텐츠 */}
-      <div className="relative z-10 h-full p-6 flex flex-col justify-between">
+      <div className="relative z-10 h-full p-4 flex flex-col justify-between">
         {/* 상단 */}
         <div className="flex items-start justify-between">
-          <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center ring-1 ring-white/20 group-hover:bg-white/20 group-hover:scale-105 transition-[background-color,transform] duration-300">
+          <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center ring-1 ring-white/20 group-hover:bg-white/20 group-hover:scale-105 transition-[background-color,transform] duration-300">
             {icon}
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm text-xs font-medium text-white/80">
-            <Sparkles className="w-3 h-3" />
-            AI 생성
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/10 backdrop-blur-sm text-[10px] font-medium text-white/80">
+            <Sparkles className="w-2.5 h-2.5" />
+            AI
           </div>
         </div>
 
         {/* 하단 */}
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-2xl font-bold text-white tracking-tight">{title}</h3>
-            <ArrowRight className="w-5 h-5 text-white/50 group-hover:text-white group-hover:translate-x-1.5 transition-[color,transform] duration-300" />
+          <div className="flex items-center gap-1.5 mb-1">
+            <h3 className="text-lg font-bold text-white tracking-tight">{title}</h3>
+            <ArrowRight className="w-4 h-4 text-white/50 group-hover:text-white group-hover:translate-x-1 transition-[color,transform] duration-300" />
           </div>
-          <p className="text-sm text-white/60 leading-relaxed">
+          <p className="text-xs text-white/60 leading-relaxed line-clamp-2">
             {description}
           </p>
         </div>
@@ -242,7 +242,7 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
           description="제품 사진으로 다양한 스타일의 광고 이미지를 만들어보세요"
           images={IMAGE_AD_EXAMPLES}
           gradientFrom="from-violet-600/40"
-          icon={<ImageIcon className="w-7 h-7 text-white" />}
+          icon={<ImageIcon className="w-5 h-5 text-white" />}
           onClick={() => startOnboarding('image')}
           delay={100}
         />
@@ -252,7 +252,7 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
           description="아바타가 제품을 소개하는 영상을 만들어보세요"
           images={VIDEO_AD_EXAMPLES}
           gradientFrom="from-rose-600/40"
-          icon={<Video className="w-7 h-7 text-white" />}
+          icon={<Video className="w-5 h-5 text-white" />}
           onClick={() => startOnboarding('video')}
           delay={200}
         />
