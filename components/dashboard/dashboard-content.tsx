@@ -128,7 +128,7 @@ function AdCreationCard({
   return (
     <button
       onClick={onClick}
-      className="group relative overflow-hidden rounded-2xl text-left aspect-square w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background animate-[slideUp_0.5s_ease-out_backwards]"
+      className="group relative overflow-hidden rounded-2xl text-left aspect-square w-full max-w-[280px] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background animate-[slideUp_0.5s_ease-out_backwards]"
       style={{ animationDelay: `${delay}ms` }}
     >
       {/* 배경 */}
@@ -235,7 +235,7 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
       </div>
 
       {/* 광고 생성 카드 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="flex flex-wrap gap-5">
         <AdCreationCard
           type="image"
           title="이미지 광고"
