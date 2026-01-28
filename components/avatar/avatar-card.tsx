@@ -138,15 +138,18 @@ export function AvatarCard({ avatar, onDelete, onStatusUpdate }: AvatarCardProps
   const getStatusColor = () => {
     switch (avatar.status) {
       case 'COMPLETED':
-        return 'text-green-500 bg-green-500/10'
+        return 'text-success bg-success/15 border border-success/20'
       case 'FAILED':
-        return 'text-red-500 bg-red-500/10'
+        return 'text-destructive bg-destructive/15 border border-destructive/20'
       case 'CANCELLED':
-        return 'text-gray-500 bg-gray-500/10'
+        return 'text-muted-foreground bg-muted/50 border border-border'
       case 'UPLOADING':
-        return 'text-blue-500 bg-blue-500/10'
+        return 'text-accent bg-accent/15 border border-accent/20'
+      case 'IN_PROGRESS':
+      case 'IN_QUEUE':
+        return 'text-primary bg-primary/15 border border-primary/20 animate-pulse'
       default:
-        return 'text-yellow-500 bg-yellow-500/10'
+        return 'text-warning bg-warning/15 border border-warning/20'
     }
   }
 
@@ -206,10 +209,10 @@ export function AvatarCard({ avatar, onDelete, onStatusUpdate }: AvatarCardProps
   return (
     <div
       onClick={handleCardClick}
-      className="bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/50 transition-colors group"
+      className="bg-card border border-border rounded-2xl overflow-hidden cursor-pointer hover:border-primary/40 hover:shadow-glow-sm transition-all duration-300 group"
     >
       {/* 이미지 영역 */}
-      <div className="aspect-square relative bg-secondary/30">
+      <div className="aspect-square relative bg-gradient-to-br from-secondary/30 to-muted/20">
         {avatar.image_url ? (
           <img
             src={avatar.image_url}
@@ -217,21 +220,24 @@ export function AvatarCard({ avatar, onDelete, onStatusUpdate }: AvatarCardProps
             className="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5">
             {isProcessing ? (
               <div className="text-center">
-                <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto mb-2" />
+                <div className="relative">
+                  <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+                  <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto mb-2 relative" />
+                </div>
                 {isUploading && (
                   <p className="text-xs text-muted-foreground">{t.avatar.status.uploading || '업로드 중...'}</p>
                 )}
               </div>
             ) : (
               <div className="text-center">
-                <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-secondary/50 flex items-center justify-center">
-                  <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                <div className="w-14 h-14 mx-auto mb-2 rounded-xl bg-muted/50 flex items-center justify-center">
+                  <ImageIcon className="w-7 h-7 text-muted-foreground" />
                 </div>
                 {avatar.status === 'FAILED' && avatar.error_message && (
-                  <p className="text-xs text-red-500 px-4">{avatar.error_message}</p>
+                  <p className="text-xs text-destructive px-4">{avatar.error_message}</p>
                 )}
               </div>
             )}
@@ -240,8 +246,8 @@ export function AvatarCard({ avatar, onDelete, onStatusUpdate }: AvatarCardProps
 
         {/* 상태 배지 (완료 상태가 아닐 때만 이미지 우측 상단에 표시) */}
         {avatar.status !== 'COMPLETED' && (
-          <div className="absolute top-2 right-2">
-            <span className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${getStatusColor()}`}>
+          <div className="absolute top-3 right-3">
+            <span className={`text-xs px-2.5 py-1 rounded-lg font-medium whitespace-nowrap backdrop-blur-sm ${getStatusColor()}`}>
               {getStatusLabel()}
             </span>
           </div>
@@ -289,21 +295,21 @@ export function AvatarCard({ avatar, onDelete, onStatusUpdate }: AvatarCardProps
           <div className="flex gap-2 mt-3 pt-3 border-t border-border">
             <button
               onClick={handleImageAdClick}
-              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium text-foreground bg-secondary/50 hover:bg-secondary rounded-lg transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium text-foreground bg-muted/50 hover:bg-primary/10 hover:text-primary rounded-lg transition-all duration-200"
               title={t.avatar.createImageAd}
             >
               {t.avatar.createImageAd}
             </button>
             <button
               onClick={handleVideoAdClick}
-              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium text-foreground bg-secondary/50 hover:bg-secondary rounded-lg transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium text-foreground bg-muted/50 hover:bg-primary/10 hover:text-primary rounded-lg transition-all duration-200"
               title={t.avatar.createVideoAd}
             >
               {t.avatar.createVideoAd}
             </button>
             <button
               onClick={handleOutfitClick}
-              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium text-foreground bg-secondary/50 hover:bg-secondary rounded-lg transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium text-foreground bg-muted/50 hover:bg-accent/10 hover:text-accent rounded-lg transition-all duration-200"
               title={t.avatar.changeOutfit}
             >
               {t.avatar.changeOutfit}

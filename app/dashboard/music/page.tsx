@@ -393,7 +393,7 @@ export default function MusicPage() {
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
         >
           <Plus className="w-4 h-4" />
           {(musicT?.createNew as string) || '새 음악 생성'}
@@ -402,17 +402,17 @@ export default function MusicPage() {
 
       {/* 음악 목록 */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map(i => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
             <div key={i} className="h-48 bg-secondary/30 rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : musicList.length === 0 ? (
-        <div className="bg-card border border-border rounded-2xl p-16 text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
-            <Music className="w-10 h-10 text-primary" />
+        <div className="bg-card border border-dashed border-border rounded-2xl p-16 text-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-secondary/50 flex items-center justify-center">
+            <Music className="w-10 h-10 text-muted-foreground" />
           </div>
-          <h3 className="text-xl font-semibold text-foreground mb-3">
+          <h3 className="text-lg font-semibold text-foreground mb-2">
             {(musicT?.emptyList as string) || '생성된 음악이 없습니다'}
           </h3>
           <p className="text-muted-foreground mb-6">
@@ -420,17 +420,17 @@ export default function MusicPage() {
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors font-medium"
+            className="px-5 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
           >
             {(musicT?.createNew as string) || '새 음악 생성'}
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {musicList.filter((m): m is AdMusic => m != null).map(music => (
             <div
               key={music.id}
-              className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-lg transition-all"
+              className="group bg-card border border-border/80 rounded-2xl overflow-hidden shadow-sm hover:shadow-glow-sm hover:border-primary/30 transition-all duration-300"
             >
               {/* 이미지/아이콘 영역 */}
               {(() => {
@@ -464,19 +464,25 @@ export default function MusicPage() {
                     {music.status === 'COMPLETED' && currentTrack && (
                       <button
                         onClick={() => handlePlayPause(currentTrack)}
-                        className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/50 transition-colors"
+                        className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-all duration-300"
                       >
-                        {playingTrackId === currentTrack.id ? (
-                          <Pause className="w-12 h-12 text-white" />
-                        ) : (
-                          <Play className="w-12 h-12 text-white" />
-                        )}
+                        <div className={`rounded-full bg-primary p-4 shadow-lg transition-all duration-300 ${
+                          playingTrackId === currentTrack.id
+                            ? 'opacity-100 scale-100'
+                            : 'opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100'
+                        }`}>
+                          {playingTrackId === currentTrack.id ? (
+                            <Pause className="w-8 h-8 text-white" />
+                          ) : (
+                            <Play className="w-8 h-8 text-white ml-1" />
+                          )}
+                        </div>
                       </button>
                     )}
 
                     {/* 트랙 선택 버튼 (여러 트랙이 있는 경우) */}
                     {music.status === 'COMPLETED' && tracks.length > 1 && (
-                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 bg-black/60 rounded-full px-2 py-1">
+                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/70 backdrop-blur-sm rounded-full px-3 py-1.5">
                         {tracks.map((track, index) => (
                           <button
                             key={track.id}
@@ -484,9 +490,9 @@ export default function MusicPage() {
                               e.stopPropagation()
                               selectTrack(music.id, index)
                             }}
-                            className={`w-6 h-6 rounded-full text-xs font-medium transition-colors ${
+                            className={`w-7 h-7 sm:w-6 sm:h-6 rounded-full text-xs font-bold transition-all ${
                               currentIndex === index
-                                ? 'bg-primary text-primary-foreground'
+                                ? 'bg-primary text-white shadow-lg scale-110'
                                 : 'bg-white/20 text-white hover:bg-white/40'
                             }`}
                           >
@@ -522,19 +528,19 @@ export default function MusicPage() {
                       )}
                     </div>
 
-                    <div className="flex flex-wrap gap-1 mb-3">
+                    <div className="flex flex-wrap gap-1.5 mb-3">
                       {music.mood && (
-                        <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded">
+                        <span className="text-xs px-2.5 py-1 bg-primary/15 text-primary rounded-lg font-medium">
                           {((musicT?.moods as Record<string, string>)?.[music.mood]) || music.mood}
                         </span>
                       )}
                       {music.genre && (
-                        <span className="text-xs px-2 py-0.5 bg-secondary text-secondary-foreground rounded">
+                        <span className="text-xs px-2.5 py-1 bg-accent/15 text-accent rounded-lg font-medium">
                           {((musicT?.genres as Record<string, string>)?.[music.genre]) || music.genre}
                         </span>
                       )}
                       {(music.tracks?.length || 0) > 1 && (
-                        <span className="text-xs px-2 py-0.5 bg-blue-500/10 text-blue-500 rounded">
+                        <span className="text-xs px-2.5 py-1 bg-secondary text-muted-foreground rounded-lg">
                           Track {currentIndex + 1}/{music.tracks?.length}
                         </span>
                       )}
@@ -568,9 +574,9 @@ export default function MusicPage() {
 
       {/* 생성 모달 */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center animate-in fade-in duration-200">
           <div
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => {
               setShowCreateModal(false)
               setSelectedProductId(null)
@@ -578,21 +584,25 @@ export default function MusicPage() {
               setUseAiRecommendation(false)
             }}
           />
-          <div className="relative bg-card border border-border rounded-2xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="relative bg-card/95 backdrop-blur-xl border border-white/10 rounded-2xl p-6 w-full max-w-lg mx-4 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-200">
             <h2 className="text-xl font-bold text-foreground mb-6">
               {(musicT?.createNew as string) || '새 음악 생성'}
             </h2>
 
             <div className="space-y-4">
               {/* AI 추천 섹션 */}
-              <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl">
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  <span className="font-medium text-foreground">AI 자동 설정</span>
+              <div className="p-4 bg-gradient-to-br from-primary/15 via-primary/10 to-accent/10 border border-primary/30 rounded-xl">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-gradient-to-br from-primary/30 to-accent/30 rounded-lg">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <span className="font-semibold text-foreground">AI 자동 설정</span>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      제품에 맞는 최적의 음악을 추천받으세요
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground mb-3">
-                  등록된 제품을 선택하면 AI가 제품에 맞는 최적의 음악 설정을 추천합니다.
-                </p>
 
                 {/* 제품 선택 드롭다운 */}
                 <div className="relative mb-3">
@@ -674,7 +684,7 @@ export default function MusicPage() {
                 <button
                   onClick={handleAiRecommend}
                   disabled={!selectedProductId || isRecommending}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                 >
                   {isRecommending ? (
                     <>
@@ -691,12 +701,14 @@ export default function MusicPage() {
 
                 {/* AI 추천 결과 표시 */}
                 {recommendation && useAiRecommendation && (
-                  <div className="mt-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Info className="w-4 h-4 text-green-600" />
-                      <span className="text-sm font-medium text-green-700">AI 추천 완료</span>
+                  <div className="mt-3 p-4 bg-success/10 border border-success/30 rounded-xl">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="p-1.5 bg-success/20 rounded-lg">
+                        <Info className="w-4 h-4 text-success" />
+                      </div>
+                      <span className="text-sm font-semibold text-success">AI 추천 완료</span>
                     </div>
-                    <div className="space-y-1 text-xs text-muted-foreground">
+                    <div className="space-y-2 text-sm text-muted-foreground">
                       <p><span className="text-foreground font-medium">분위기:</span> {recommendation.reasoning.mood}</p>
                       <p><span className="text-foreground font-medium">장르:</span> {recommendation.reasoning.genre}</p>
                       <p><span className="text-foreground font-medium">제품 유형:</span> {recommendation.reasoning.productType}</p>
@@ -745,10 +757,10 @@ export default function MusicPage() {
                         setFormData(prev => ({ ...prev, mood: option.value }))
                         setUseAiRecommendation(false)
                       }}
-                      className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                      className={`px-3 py-2.5 text-sm font-medium rounded-xl border-2 transition-all ${
                         formData.mood === option.value
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-secondary border-border hover:border-primary/50'
+                          ? 'bg-primary text-primary-foreground border-primary shadow-md'
+                          : 'bg-card border-border/60 text-foreground hover:border-primary/40 hover:bg-primary/5'
                       }`}
                     >
                       {((musicT?.moods as Record<string, string>)?.[option.labelKey]) || option.labelKey}
@@ -773,10 +785,10 @@ export default function MusicPage() {
                         setFormData(prev => ({ ...prev, genre: option.value }))
                         setUseAiRecommendation(false)
                       }}
-                      className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                      className={`px-3 py-2.5 text-sm font-medium rounded-xl border-2 transition-all ${
                         formData.genre === option.value
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-secondary border-border hover:border-primary/50'
+                          ? 'bg-primary text-primary-foreground border-primary shadow-md'
+                          : 'bg-card border-border/60 text-foreground hover:border-primary/40 hover:bg-primary/5'
                       }`}
                     >
                       {((musicT?.genres as Record<string, string>)?.[option.labelKey]) || option.labelKey}
@@ -801,10 +813,10 @@ export default function MusicPage() {
                         setFormData(prev => ({ ...prev, productType: option.value }))
                         setUseAiRecommendation(false)
                       }}
-                      className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                      className={`px-3 py-2.5 text-sm font-medium rounded-xl border-2 transition-all ${
                         formData.productType === option.value
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-secondary border-border hover:border-primary/50'
+                          ? 'bg-primary text-primary-foreground border-primary shadow-md'
+                          : 'bg-card border-border/60 text-foreground hover:border-primary/40 hover:bg-primary/5'
                       }`}
                     >
                       {((musicT?.productTypes as Record<string, string>)?.[option.labelKey]) || option.labelKey}
@@ -823,14 +835,14 @@ export default function MusicPage() {
                   setRecommendation(null)
                   setUseAiRecommendation(false)
                 }}
-                className="flex-1 px-4 py-3 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-colors"
+                className="flex-1 px-4 py-3 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-colors font-medium"
               >
                 {(musicT?.cancel as string) || '취소'}
               </button>
               <button
                 onClick={handleCreate}
                 disabled={isCreating || !formData.name || !formData.mood || !formData.genre || !formData.productType}
-                className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium"
               >
                 {isCreating ? (
                   <>

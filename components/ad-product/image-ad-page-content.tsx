@@ -364,9 +364,9 @@ export function ImageAdPageContent() {
       {/* 이미지 광고 섹션 */}
       <section>
         {isAdsLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-              <div key={i} className="aspect-square bg-secondary/30 rounded-2xl animate-pulse" />
+              <div key={i} className="aspect-square bg-gradient-to-br from-card to-secondary/30 rounded-2xl animate-pulse border border-border/50" />
             ))}
           </div>
         ) : imageAds.length === 0 ? (
@@ -384,7 +384,7 @@ export function ImageAdPageContent() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {imageAds.map(ad => {
               const isGenerating = ['IN_QUEUE', 'IN_PROGRESS'].includes(ad.status)
               const isUploading = ad.status === 'IMAGES_READY'
@@ -408,9 +408,9 @@ export function ImageAdPageContent() {
                 <div
                   key={ad.id}
                   onClick={() => ad.status === 'COMPLETED' && router.push(`/dashboard/image-ad/${ad.id}`)}
-                  className={`relative group bg-card border border-border rounded-2xl overflow-hidden transition-all ${
+                  className={`relative group bg-card border border-border rounded-2xl overflow-hidden transition-all duration-300 ${
                     ad.status === 'COMPLETED'
-                      ? 'cursor-pointer hover:border-primary/50 hover:shadow-lg'
+                      ? 'cursor-pointer hover:border-primary/40 hover:shadow-glow-sm'
                       : ''
                   }`}
                 >
@@ -432,8 +432,11 @@ export function ImageAdPageContent() {
                       ))}
                     </div>
                   ) : isInProgress ? (
-                    <div className="w-full aspect-square flex flex-col items-center justify-center bg-secondary/30 gap-3">
-                      <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                    <div className="w-full aspect-square flex flex-col items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10 gap-3">
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+                        <Loader2 className="w-10 h-10 text-primary animate-spin relative" />
+                      </div>
                       <span className="text-sm text-muted-foreground">
                         {isUploading
                           ? '이미지 업로드 중...'
@@ -442,15 +445,15 @@ export function ImageAdPageContent() {
                       </span>
                     </div>
                   ) : isFailed ? (
-                    <div className="w-full aspect-square flex flex-col items-center justify-center bg-red-500/5 gap-3 p-4">
-                      <ImageIcon className="w-10 h-10 text-red-500/50" />
-                      <span className="text-sm text-red-500">생성 실패</span>
+                    <div className="w-full aspect-square flex flex-col items-center justify-center bg-destructive/5 gap-3 p-4">
+                      <ImageIcon className="w-10 h-10 text-destructive/50" />
+                      <span className="text-sm text-destructive font-medium">생성 실패</span>
                       {/* 환불/재시도 버튼 */}
                       <div className="flex gap-2 mt-2">
                         <button
                           onClick={(e) => handleRetry(ad.id, e)}
                           disabled={processingIds.has(ad.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-xs font-medium rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                           {processingIds.has(ad.id) ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -462,7 +465,7 @@ export function ImageAdPageContent() {
                         <button
                           onClick={(e) => handleRefund(ad.id, e)}
                           disabled={processingIds.has(ad.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-secondary-foreground text-xs font-medium rounded-lg hover:bg-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-muted-foreground text-xs font-medium rounded-lg hover:bg-muted/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                           <CreditCard className="w-3.5 h-3.5" />
                           환불
@@ -477,8 +480,8 @@ export function ImageAdPageContent() {
 
                   {/* 호버 오버레이 - 완료된 경우만 */}
                   {ad.status === 'COMPLETED' && (
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="px-5 py-2.5 bg-white text-black rounded-xl text-sm font-medium">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
+                      <span className="px-6 py-2.5 bg-white text-black rounded-xl text-sm font-semibold shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
                         {t.imageAdDetail?.viewDetail || '상세보기'}
                       </span>
                     </div>
@@ -486,7 +489,7 @@ export function ImageAdPageContent() {
 
                   {/* 광고 타입 뱃지 */}
                   <div className="absolute top-3 left-3">
-                    <span className="px-3 py-1.5 text-xs font-medium bg-black/60 text-white rounded-lg backdrop-blur-sm">
+                    <span className="px-3 py-1.5 text-xs font-medium bg-card/80 text-foreground rounded-lg backdrop-blur-md border border-border/50">
                       {(t.imageAdTypes as Record<string, { title?: string }>)?.[ad.ad_type]?.title || ad.ad_type}
                     </span>
                   </div>
@@ -494,7 +497,7 @@ export function ImageAdPageContent() {
                   {/* 이미지 개수 뱃지 (배치인 경우) */}
                   {hasMultipleImages && ad.status === 'COMPLETED' && (
                     <div className="absolute top-3 right-3">
-                      <span className="px-2.5 py-1 text-xs font-medium bg-white/90 text-black rounded-lg backdrop-blur-sm">
+                      <span className="px-2.5 py-1 text-xs font-semibold bg-accent/90 text-accent-foreground rounded-lg backdrop-blur-sm">
                         {imageCount}장
                       </span>
                     </div>
@@ -503,7 +506,7 @@ export function ImageAdPageContent() {
                   {/* 진행 중 상태 뱃지 */}
                   {isInProgress && (
                     <div className="absolute top-3 right-3">
-                      <span className="px-3 py-1.5 text-xs font-medium bg-primary/80 text-white rounded-lg backdrop-blur-sm animate-pulse">
+                      <span className="px-3 py-1.5 text-xs font-medium bg-gradient-to-r from-primary to-accent text-white rounded-lg backdrop-blur-sm animate-pulse">
                         {isUploading ? '업로드 중...' : '생성 중...'}
                       </span>
                     </div>
@@ -512,7 +515,7 @@ export function ImageAdPageContent() {
                   {/* 실패 상태 뱃지 */}
                   {isFailed && (
                     <div className="absolute top-3 right-3">
-                      <span className="px-3 py-1.5 text-xs font-medium bg-red-500/80 text-white rounded-lg backdrop-blur-sm">
+                      <span className="px-3 py-1.5 text-xs font-medium bg-destructive/90 text-white rounded-lg backdrop-blur-sm">
                         실패
                       </span>
                     </div>
@@ -538,16 +541,16 @@ export function ImageAdPageContent() {
 
         {/* 페이지네이션 */}
         {pagination && pagination.totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-8">
+          <div className="flex items-center justify-center gap-2 mt-10">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage <= 1}
-              className="p-2 rounded-lg border border-border hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-2.5 rounded-xl border border-border bg-card hover:bg-muted hover:border-primary/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               {/* 페이지 버튼들 */}
               {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
                 .filter(page => {
@@ -567,10 +570,10 @@ export function ImageAdPageContent() {
                       )}
                       <button
                         onClick={() => handlePageChange(page)}
-                        className={`min-w-[40px] h-10 px-3 rounded-lg font-medium transition-colors ${
+                        className={`min-w-[42px] h-10 px-3 rounded-xl font-medium transition-all duration-200 ${
                           currentPage === page
-                            ? 'bg-primary text-primary-foreground'
-                            : 'hover:bg-secondary text-foreground'
+                            ? 'bg-gradient-to-r from-primary to-accent text-white shadow-glow-sm'
+                            : 'bg-card border border-border hover:border-primary/30 hover:bg-muted text-foreground'
                         }`}
                       >
                         {page}
@@ -583,13 +586,13 @@ export function ImageAdPageContent() {
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage >= pagination.totalPages}
-              className="p-2 rounded-lg border border-border hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-2.5 rounded-xl border border-border bg-card hover:bg-muted hover:border-primary/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
 
             {/* 총 개수 표시 */}
-            <span className="ml-4 text-sm text-muted-foreground">
+            <span className="ml-4 text-sm text-muted-foreground font-medium">
               총 {pagination.totalCount}개
             </span>
           </div>

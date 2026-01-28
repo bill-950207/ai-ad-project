@@ -117,11 +117,11 @@ export function AdProductCard({ product, onStatusUpdate, onDelete, onRetry }: Ad
       onClick={handleCardClick}
       className={`w-full bg-card border border-border rounded-2xl overflow-hidden ${
         product.status === 'COMPLETED' || product.status === 'FAILED'
-          ? 'cursor-pointer hover:border-primary/50 hover:shadow-lg'
+          ? 'cursor-pointer hover:border-primary/40 hover:shadow-glow-sm'
           : ''
-      } transition-all relative group`}
+      } transition-all duration-300 relative group`}
     >
-      <div className="aspect-square relative bg-secondary/30 overflow-hidden">
+      <div className="aspect-square relative bg-gradient-to-br from-secondary/30 to-muted/20 overflow-hidden">
         {/* 카드 이미지: rembg_image_url(배경제거 원본) > image_url(최종 결과) 순으로 표시 */}
         {product.rembg_image_url ? (
           <img
@@ -140,32 +140,38 @@ export function AdProductCard({ product, onStatusUpdate, onDelete, onRetry }: Ad
             <img
               src={product.source_image_url}
               alt={product.name}
-              className="absolute inset-0 w-full h-full object-cover object-center opacity-50"
+              className="absolute inset-0 w-full h-full object-cover object-center opacity-40"
             />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10">
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+                <Loader2 className="w-10 h-10 text-primary animate-spin relative" />
+              </div>
             </div>
           </>
         ) : product.source_image_url && product.status === 'FAILED' ? (
           <img
             src={product.source_image_url}
             alt={product.name}
-            className="absolute inset-0 w-full h-full object-cover object-center opacity-50"
+            className="absolute inset-0 w-full h-full object-cover object-center opacity-40"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5">
             {isPolling ? (
-              <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+                <Loader2 className="w-10 h-10 text-primary animate-spin relative" />
+              </div>
             ) : (
-              <Package className="w-10 h-10 text-muted-foreground" />
+              <Package className="w-12 h-12 text-muted-foreground" />
             )}
           </div>
         )}
 
         {/* 진행 중 상태 태그 표시 */}
         {isPolling && ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(product.status) && (
-          <div className="absolute top-2 right-2">
-            <span className="text-xs px-2 py-1 rounded-lg whitespace-nowrap text-primary bg-primary/10 font-medium animate-pulse">
+          <div className="absolute top-3 right-3">
+            <span className="text-xs px-2.5 py-1 rounded-lg whitespace-nowrap bg-gradient-to-r from-primary to-accent text-white font-medium animate-pulse backdrop-blur-sm">
               배경 제거 중...
             </span>
           </div>
@@ -173,8 +179,8 @@ export function AdProductCard({ product, onStatusUpdate, onDelete, onRetry }: Ad
 
         {/* 실패 상태일 때만 태그 표시 */}
         {product.status === 'FAILED' && (
-          <div className="absolute top-2 right-2">
-            <span className="text-xs px-2 py-1 rounded-lg whitespace-nowrap text-red-500 bg-red-500/10 font-medium">
+          <div className="absolute top-3 right-3">
+            <span className="text-xs px-2.5 py-1 rounded-lg whitespace-nowrap text-destructive bg-destructive/15 border border-destructive/20 font-medium backdrop-blur-sm">
               {t.adProduct.status.failed}
             </span>
           </div>
@@ -182,8 +188,8 @@ export function AdProductCard({ product, onStatusUpdate, onDelete, onRetry }: Ad
 
         {/* 완료 상태 호버 오버레이 */}
         {product.status === 'COMPLETED' && (
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <span className="px-4 py-2 bg-white text-black rounded-xl text-sm font-medium">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
+            <span className="px-5 py-2.5 bg-white text-black rounded-xl text-sm font-semibold shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
               상세보기
             </span>
           </div>
@@ -191,11 +197,11 @@ export function AdProductCard({ product, onStatusUpdate, onDelete, onRetry }: Ad
 
         {/* 실패 상태 액션 버튼 오버레이 */}
         {product.status === 'FAILED' && showActions && (
-          <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-3">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
             <button
               onClick={handleRetry}
               disabled={isRetrying || !product.source_image_url}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-accent text-white rounded-lg text-sm font-medium hover:shadow-glow-sm disabled:opacity-50 transition-all duration-200"
             >
               {isRetrying ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -207,7 +213,7 @@ export function AdProductCard({ product, onStatusUpdate, onDelete, onRetry }: Ad
             <button
               onClick={handleDelete}
               disabled={isDeleting}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-destructive text-white rounded-lg text-sm font-medium hover:bg-destructive/90 disabled:opacity-50 transition-all duration-200"
             >
               {isDeleting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
