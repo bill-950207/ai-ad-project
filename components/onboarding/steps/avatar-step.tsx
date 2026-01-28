@@ -9,9 +9,9 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { Sparkles, User, Plus, Check, Loader2, ChevronDown, ChevronLeft, Shirt } from 'lucide-react'
-import { useOnboarding, OnboardingAvatar, AvatarSelectionMode } from '../onboarding-context'
+import { useState, useEffect } from 'react'
+import { Sparkles, User, Plus, Check, Loader2, ChevronDown, Shirt } from 'lucide-react'
+import { useOnboarding, OnboardingAvatar } from '../onboarding-context'
 import { AiAvatarOptions, SelectedAvatarInfo } from '@/components/video-ad/avatar-select-modal'
 import { AvatarOptions } from '@/lib/avatar/prompt-builder'
 

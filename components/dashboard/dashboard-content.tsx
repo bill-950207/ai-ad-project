@@ -10,7 +10,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Image, Video, ArrowRight, Sparkles, TrendingUp, CreditCard } from 'lucide-react'
+import { Image as ImageIcon, Video, ArrowRight, Sparkles, TrendingUp, CreditCard } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 import { useOnboarding } from '@/components/onboarding/onboarding-context'
 import { OnboardingFlowModal } from '@/components/onboarding/onboarding-flow-modal'
@@ -242,7 +242,7 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
           description="제품 사진으로 다양한 스타일의 광고 이미지를 만들어보세요"
           images={IMAGE_AD_EXAMPLES}
           gradientFrom="from-violet-600/40"
-          icon={<Image className="w-7 h-7 text-white" />}
+          icon={<ImageIcon className="w-7 h-7 text-white" />}
           onClick={() => startOnboarding('image')}
           delay={100}
         />
@@ -276,7 +276,7 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
           <StatCard
             label={t.dashboard.totalAds}
             value={0}
-            icon={<Image className="w-5 h-5" />}
+            icon={<ImageIcon className="w-5 h-5" />}
             delay={400}
           />
           <StatCard

@@ -209,7 +209,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
   // ============================================================
 
   const startOnboarding = useCallback((targetType: AdTargetType) => {
-    setState(prev => ({
+    setState(() => ({
       ...initialState,
       isOpen: true,
       targetType,

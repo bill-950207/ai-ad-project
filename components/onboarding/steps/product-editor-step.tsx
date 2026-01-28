@@ -25,8 +25,6 @@ export function ProductEditorStep() {
     newProductId,
     productRembgTempUrl,
     onProductEditingComplete,
-    setError,
-    goToStep,
   } = useOnboarding()
 
   const canvasRef = useRef<HTMLDivElement>(null)
