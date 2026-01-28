@@ -23,18 +23,15 @@ interface DashboardContentProps {
   userEmail?: string
 }
 
-// 예시 이미지 URL (실제 서비스에서는 CDN이나 R2 URL 사용)
+// 예시 이미지/영상 URL (실제 서비스에서는 CDN이나 R2 URL 사용)
 const IMAGE_AD_EXAMPLES = [
   '/examples/image-ad-1.webp',
   '/examples/image-ad-2.webp',
   '/examples/image-ad-3.webp',
 ]
 
-const VIDEO_AD_EXAMPLES = [
-  '/examples/video-ad-1.webp',
-  '/examples/video-ad-2.webp',
-  '/examples/video-ad-3.webp',
-]
+// 영상 광고 예시 비디오
+const VIDEO_AD_EXAMPLE = '/examples/video-ad-example.mp4'
 
 // ============================================================
 // 배경 이미지 슬라이더 컴포넌트
@@ -109,7 +106,8 @@ interface AdCreationCardProps {
   type: 'image' | 'video'
   title: string
   description: string
-  images: string[]
+  images?: string[]
+  videoUrl?: string
   gradientFrom: string
   icon: React.ReactNode
   onClick: () => void
@@ -117,9 +115,11 @@ interface AdCreationCardProps {
 }
 
 function AdCreationCard({
+  type,
   title,
   description,
   images,
+  videoUrl,
   gradientFrom,
   icon,
   onClick,
@@ -131,8 +131,24 @@ function AdCreationCard({
       className="group relative overflow-hidden rounded-2xl text-left aspect-square w-full max-w-[280px] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background animate-[slideUp_0.5s_ease-out_backwards]"
       style={{ animationDelay: `${delay}ms` }}
     >
-      {/* 배경 */}
-      <BackgroundSlider images={images} interval={5000} gradientFrom={gradientFrom} />
+      {/* 배경 - 이미지 또는 비디오 */}
+      {type === 'video' && videoUrl ? (
+        <div className="absolute inset-0 overflow-hidden">
+          <video
+            src={videoUrl}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* 그라데이션 오버레이 */}
+          <div className={`absolute inset-0 bg-gradient-to-br ${gradientFrom} via-black/60 to-black/80`} />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+        </div>
+      ) : images ? (
+        <BackgroundSlider images={images} interval={5000} gradientFrom={gradientFrom} />
+      ) : null}
 
       {/* 폴백 그라데이션 (이미지 없을 때) */}
       <div className={`absolute inset-0 bg-gradient-to-br ${gradientFrom} via-card to-card -z-10`} />
@@ -250,7 +266,7 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
           type="video"
           title="영상 광고"
           description="아바타가 제품을 소개하는 영상을 만들어보세요"
-          images={VIDEO_AD_EXAMPLES}
+          videoUrl={VIDEO_AD_EXAMPLE}
           gradientFrom="from-rose-600/40"
           icon={<Video className="w-5 h-5 text-white" />}
           onClick={() => startOnboarding('video')}
