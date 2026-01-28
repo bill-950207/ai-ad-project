@@ -34,6 +34,37 @@ const ITEMS_PER_ROW = 5
 const MAX_ROWS = 3
 const MAX_VISIBLE_ITEMS = ITEMS_PER_ROW * MAX_ROWS // 15개
 
+// ad_type 번역 키 매핑
+const AD_TYPE_TRANSLATION_KEY: Record<string, string> = {
+  productOnly: 'productOnly',
+  holding: 'holding',
+  using: 'using',
+  wearing: 'wearing',
+  beforeAfter: 'beforeAfter',
+  lifestyle: 'lifestyle',
+  unboxing: 'unboxing',
+  comparison: 'comparison',
+  seasonal: 'seasonal',
+  productDescription: 'productDescription',
+  productAd: 'productAd',
+}
+
+// 비디오 광고 타입 폴백 번역
+const VIDEO_AD_TYPE_FALLBACK: Record<string, Record<string, string>> = {
+  productDescription: {
+    ko: '제품 설명 영상',
+    en: 'Product Description',
+    ja: '商品説明動画',
+    zh: '产品说明视频',
+  },
+  productAd: {
+    ko: '제품 광고 영상',
+    en: 'Product Ad',
+    ja: '商品広告動画',
+    zh: '产品广告视频',
+  },
+}
+
 // ============================================================
 // 개별 쇼케이스 카드 컴포넌트
 // ============================================================
@@ -41,9 +72,10 @@ const MAX_VISIBLE_ITEMS = ITEMS_PER_ROW * MAX_ROWS // 15개
 interface ShowcaseCardProps {
   item: ShowcaseItem
   onClick: () => void
+  getAdTypeLabel: (adType: string | null) => string
 }
 
-function ShowcaseCard({ item, onClick }: ShowcaseCardProps) {
+function ShowcaseCard({ item, onClick, getAdTypeLabel }: ShowcaseCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
 
@@ -86,16 +118,11 @@ function ShowcaseCard({ item, onClick }: ShowcaseCardProps) {
 
       {/* 콘텐츠 */}
       <div className="absolute inset-0 p-3 flex flex-col justify-between">
-        {/* 상단: 카테고리 & 광고 유형 */}
-        <div className="flex items-start justify-between gap-1">
-          {item.category && (
-            <span className="px-1.5 py-0.5 rounded-md bg-white/10 backdrop-blur-sm text-[9px] font-medium text-white/80 truncate max-w-[60px]">
-              {item.category}
-            </span>
-          )}
+        {/* 상단: 광고 유형 */}
+        <div className="flex items-start">
           {item.ad_type && (
-            <span className="px-1.5 py-0.5 rounded-md bg-primary/20 backdrop-blur-sm text-[9px] font-medium text-white truncate max-w-[60px]">
-              {item.ad_type}
+            <span className="px-2 py-1 rounded-lg bg-primary/30 backdrop-blur-sm text-xs font-semibold text-white">
+              {getAdTypeLabel(item.ad_type)}
             </span>
           )}
         </div>
@@ -124,55 +151,44 @@ function ShowcaseCard({ item, onClick }: ShowcaseCardProps) {
 // ============================================================
 
 interface ShowcaseSectionProps {
-  type: 'image' | 'video'
-  title: string
   items: ShowcaseItem[]
   totalCount: number
   onItemClick: (item: ShowcaseItem) => void
   onViewMore?: () => void
+  getAdTypeLabel: (adType: string | null) => string
+  viewMoreLabel: string
 }
 
-function ShowcaseSection({ type, title, items, totalCount, onItemClick, onViewMore }: ShowcaseSectionProps) {
+function ShowcaseSection({ items, totalCount, onItemClick, onViewMore, getAdTypeLabel, viewMoreLabel }: ShowcaseSectionProps) {
   const showViewMore = totalCount > MAX_VISIBLE_ITEMS
 
   if (items.length === 0) return null
 
   return (
-    <div className="space-y-3">
-      {/* 섹션 헤더 */}
-      <div className="flex items-center gap-2">
-        <div className="w-1 h-4 bg-primary/60 rounded-full" />
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          {title}
-        </h3>
-        <span className="text-[10px] text-muted-foreground/60">({totalCount})</span>
+    <div className="relative">
+      <div className="grid grid-cols-5 gap-3">
+        {items.slice(0, MAX_VISIBLE_ITEMS).map((item) => (
+          <ShowcaseCard
+            key={item.id}
+            item={item}
+            onClick={() => onItemClick(item)}
+            getAdTypeLabel={getAdTypeLabel}
+          />
+        ))}
       </div>
 
-      {/* 그리드 + 그라데이션 영역 */}
-      <div className="relative">
-        <div className="grid grid-cols-5 gap-3">
-          {items.slice(0, MAX_VISIBLE_ITEMS).map((item) => (
-            <ShowcaseCard
-              key={item.id}
-              item={item}
-              onClick={() => onItemClick(item)}
-            />
-          ))}
+      {/* 15개 초과 시 하단 그라데이션 + 더보기 버튼 */}
+      {showViewMore && onViewMore && (
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background via-background/80 to-transparent flex items-end justify-center pb-2 pointer-events-none">
+          <button
+            onClick={onViewMore}
+            className="pointer-events-auto flex items-center gap-1.5 px-4 py-2 bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium rounded-lg transition-colors"
+          >
+            <span>{viewMoreLabel}</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
-
-        {/* 15개 초과 시 하단 그라데이션 + 더보기 버튼 */}
-        {showViewMore && onViewMore && (
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background via-background/80 to-transparent flex items-end justify-center pb-2 pointer-events-none">
-            <button
-              onClick={onViewMore}
-              className="pointer-events-auto flex items-center gap-1.5 px-4 py-2 bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium rounded-lg transition-colors"
-            >
-              <span>{type === 'image' ? '이미지 예시 더보기' : '영상 예시 더보기'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   )
 }
@@ -182,13 +198,35 @@ function ShowcaseSection({ type, title, items, totalCount, onItemClick, onViewMo
 // ============================================================
 
 export function ShowcaseGallery() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const { startOnboarding } = useOnboarding()
   const [imageShowcases, setImageShowcases] = useState<ShowcaseItem[]>([])
   const [videoShowcases, setVideoShowcases] = useState<ShowcaseItem[]>([])
   const [imageTotalCount, setImageTotalCount] = useState(0)
   const [videoTotalCount, setVideoTotalCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+
+  // ad_type을 현재 언어에 맞게 번역
+  const getAdTypeLabel = (adType: string | null): string => {
+    if (!adType) return ''
+
+    const translationKey = AD_TYPE_TRANSLATION_KEY[adType]
+    if (!translationKey) return adType
+
+    // 이미지 광고 타입 번역 확인
+    const imageAdTypeTranslation = t.imageAdTypes?.[translationKey as keyof typeof t.imageAdTypes]
+    if (imageAdTypeTranslation && typeof imageAdTypeTranslation === 'object' && 'title' in imageAdTypeTranslation) {
+      return imageAdTypeTranslation.title as string
+    }
+
+    // 영상 광고 타입 폴백 번역 확인
+    const videoFallback = VIDEO_AD_TYPE_FALLBACK[adType]
+    if (videoFallback) {
+      return videoFallback[language] || videoFallback.ko
+    }
+
+    return adType
+  }
 
   // 쇼케이스 데이터 로드
   useEffect(() => {
@@ -251,6 +289,10 @@ export function ShowcaseGallery() {
     return null
   }
 
+  // 모든 쇼케이스를 하나로 합침
+  const allShowcases = [...imageShowcases, ...videoShowcases]
+  const totalCount = imageTotalCount + videoTotalCount
+
   return (
     <div className="space-y-6">
       {/* 섹션 헤더 */}
@@ -267,22 +309,13 @@ export function ShowcaseGallery() {
         </div>
       </div>
 
-      {/* 이미지 광고 예시 */}
+      {/* 통합 쇼케이스 그리드 */}
       <ShowcaseSection
-        type="image"
-        title="이미지 광고 예시"
-        items={imageShowcases}
-        totalCount={imageTotalCount}
+        items={allShowcases}
+        totalCount={totalCount}
         onItemClick={handleShowcaseClick}
-      />
-
-      {/* 영상 광고 예시 */}
-      <ShowcaseSection
-        type="video"
-        title="영상 광고 예시"
-        items={videoShowcases}
-        totalCount={videoTotalCount}
-        onItemClick={handleShowcaseClick}
+        getAdTypeLabel={getAdTypeLabel}
+        viewMoreLabel={t.dashboard?.recentWork?.viewAll || '더보기'}
       />
 
       {/* CTA */}
