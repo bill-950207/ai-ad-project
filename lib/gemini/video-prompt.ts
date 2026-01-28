@@ -357,10 +357,36 @@ IMPORTANT: All 3 scripts should follow the "${videoTypeStyle.korean}" video styl
 `
     : ''
 
+  // 의상 추천 섹션 (요청된 경우에만)
+  const outfitRecommendationSection = input.requestOutfitRecommendation
+    ? `
+=== OUTFIT RECOMMENDATION (REQUIRED) ===
+Based on the product and video style, recommend an appropriate outfit for the model.
+${input.avatarDescription ? `Model info: ${input.avatarDescription}` : ''}
+Consider:
+- Product category and target audience
+- Video style (${videoTypeStyle?.korean || 'UGC'})
+- Overall brand image and mood
+
+The outfit should complement the product without overshadowing it.
+`
+    : ''
+
+  // 출력 형식 (의상 추천 포함 여부에 따라)
+  const outfitOutputSection = input.requestOutfitRecommendation
+    ? `,
+  "recommendedOutfit": {
+    "description": "English outfit description (e.g., 'casual white cotton t-shirt with light blue jeans')",
+    "koreanDescription": "한국어 의상 설명",
+    "reason": "의상 선택 이유 (한국어)"
+  }`
+    : ''
+
   const prompt = `You are an expert advertising copywriter. Write 3 style scripts for the product in ${config_lang.name}. Target: ~${targetChars} characters each.
 
 ${productSection}
 ${videoTypeContext}
+${outfitRecommendationSection}
 
 === SCRIPT REQUIREMENTS ===
 Styles to generate:
@@ -398,14 +424,14 @@ Each script should:
       "content": "스크립트 전체 내용",
       "estimatedDuration": ${input.durationSeconds}
     }
-  ]
+  ]${outfitOutputSection}
 }
 
 === SELF-VERIFICATION ===
 Before responding, check:
 ✓ All 3 scripts are written in ${config_lang.name}?
 ✓ Each script has different tone (formal/casual/energetic)?
-✓ Each script is approximately ${targetChars} characters?
+✓ Each script is approximately ${targetChars} characters?${input.requestOutfitRecommendation ? '\n✓ Outfit recommendation included with English description, Korean description, and reason?' : ''}
 ✓ JSON format is valid and complete?`
 
   const tools = input.productUrl ? [{ urlContext: {} }, { googleSearch: {} }] : undefined
