@@ -10,13 +10,60 @@
 // ============================================================
 
 const KIE_API_BASE = 'https://api.kie.ai/api/v1'
-const KIE_API_KEY = process.env.KIE_KEY!
+const KIE_API_KEY = process.env.KIE_KEY
+
+/**
+ * API 키 검증
+ * API 호출 전 키가 설정되어 있는지 확인
+ */
+function validateApiKey(): void {
+  if (!KIE_API_KEY) {
+    throw new Error(
+      'Kie.ai API 키가 설정되지 않았습니다. 환경 변수 KIE_KEY를 확인해주세요.'
+    )
+  }
+}
+
+/**
+ * Kie.ai API 에러 상세 정보 파싱
+ */
+interface KieErrorResponse {
+  code?: number
+  msg?: string
+  message?: string
+  error?: string
+}
+
+function parseKieError(status: number, responseText: string): string {
+  try {
+    const errorJson: KieErrorResponse = JSON.parse(responseText)
+    const errorMessage = errorJson.msg || errorJson.message || errorJson.error || responseText
+
+    // 403 에러에 대한 구체적인 안내
+    if (status === 403) {
+      return `Kie.ai 인증 실패 (403 Forbidden): ${errorMessage}. ` +
+        '가능한 원인: 1) API 키가 유효하지 않음, 2) API 키 권한 부족, 3) 계정 할당량 초과. ' +
+        'KIE_KEY 환경 변수를 확인하고 Kie.ai 대시보드에서 API 키 상태를 확인해주세요.'
+    }
+
+    return `Kie.ai API 오류 (${status}): ${errorMessage}`
+  } catch {
+    if (status === 403) {
+      return `Kie.ai 인증 실패 (403 Forbidden). ` +
+        'KIE_KEY 환경 변수가 올바르게 설정되어 있는지 확인해주세요.'
+    }
+    return `Kie.ai API 오류: ${status} - ${responseText}`
+  }
+}
 
 // API 요청 헤더
-const getHeaders = () => ({
-  'Authorization': `Bearer ${KIE_API_KEY}`,
-  'Content-Type': 'application/json',
-})
+const getHeaders = () => {
+  validateApiKey()
+  return {
+    'Authorization': `Bearer ${KIE_API_KEY}`,
+    'Content-Type': 'application/json',
+  }
+}
 
 // ============================================================
 // 공통 타입
@@ -103,7 +150,7 @@ export async function createRembgTask(
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`Kie.ai API 오류: ${response.status} - ${errorText}`)
+    throw new Error(parseKieError(response.status, errorText))
   }
 
   const result: KieApiResponse<KieTaskData> = await response.json()
@@ -134,7 +181,7 @@ export async function getTaskInfo(taskId: string): Promise<KieTaskInfo> {
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`Kie.ai API 오류: ${response.status} - ${errorText}`)
+    throw new Error(parseKieError(response.status, errorText))
   }
 
   const result: KieApiResponse<KieTaskInfo> = await response.json()
@@ -367,7 +414,7 @@ export async function createZImageTask(
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`Kie.ai API 오류: ${response.status} - ${errorText}`)
+    throw new Error(parseKieError(response.status, errorText))
   }
 
   const result: KieApiResponse<KieTaskData> = await response.json()
@@ -519,7 +566,7 @@ export async function createEditTask(
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`Kie.ai API 오류: ${response.status} - ${errorText}`)
+    throw new Error(parseKieError(response.status, errorText))
   }
 
   const result: KieApiResponse<KieTaskData> = await response.json()
@@ -667,7 +714,7 @@ export async function createGPTImageTask(
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`Kie.ai API 오류: ${response.status} - ${errorText}`)
+    throw new Error(parseKieError(response.status, errorText))
   }
 
   const result: KieApiResponse<KieTaskData> = await response.json()
@@ -839,7 +886,7 @@ export async function createKlingAvatarTask(
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`Kie.ai API 오류: ${response.status} - ${errorText}`)
+    throw new Error(parseKieError(response.status, errorText))
   }
 
   const result: KieApiResponse<KieTaskData> = await response.json()
@@ -1186,7 +1233,7 @@ export async function createMusicTask(
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`Kie.ai Music API 오류: ${response.status} - ${errorText}`)
+    throw new Error(parseKieError(response.status, errorText))
   }
 
   const result: KieApiResponse<KieMusicTaskData> = await response.json()
@@ -1217,7 +1264,7 @@ export async function getMusicTaskInfo(taskId: string): Promise<SunoMusicDetailR
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`Kie.ai Music API 오류: ${response.status} - ${errorText}`)
+    throw new Error(parseKieError(response.status, errorText))
   }
 
   const result: KieApiResponse<SunoMusicDetailResponse> = await response.json()
@@ -1313,7 +1360,7 @@ export async function createZImageTurboTask(
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`Kie.ai API 오류: ${response.status} - ${errorText}`)
+    throw new Error(parseKieError(response.status, errorText))
   }
 
   const result: KieApiResponse<KieTaskData> = await response.json()
@@ -1647,7 +1694,7 @@ export async function createSeedreamV4Task(
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`Kie.ai API 오류: ${response.status} - ${errorText}`)
+    throw new Error(parseKieError(response.status, errorText))
   }
 
   const result: KieApiResponse<KieTaskData> = await response.json()
@@ -1812,7 +1859,7 @@ export async function createSeedanceTask(
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`Kie.ai API 오류: ${response.status} - ${errorText}`)
+    throw new Error(parseKieError(response.status, errorText))
   }
 
   const result: KieApiResponse<KieTaskData> = await response.json()
@@ -1970,7 +2017,7 @@ export async function createKling26Task(
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`Kie.ai API 오류: ${response.status} - ${errorText}`)
+    throw new Error(parseKieError(response.status, errorText))
   }
 
   const result: KieApiResponse<KieTaskData> = await response.json()
@@ -2123,7 +2170,7 @@ export async function createWan26Task(
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`Kie.ai API 오류: ${response.status} - ${errorText}`)
+    throw new Error(parseKieError(response.status, errorText))
   }
 
   const result: KieApiResponse<KieTaskData> = await response.json()

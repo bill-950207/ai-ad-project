@@ -2,7 +2,7 @@
  * AI 카테고리 옵션 추천
  */
 
-import { GenerateContentConfig, MediaResolution, ThinkingLevel, Type } from '@google/genai'
+import { GenerateContentConfig, MediaResolution, ThinkingLevel } from '@google/genai'
 import { genAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
 import { BRAND_PRESERVATION_INSTRUCTION, PRODUCT_NEGATIVE_PROMPT, NO_LOGO_PRODUCT_INSTRUCTION, NO_LOGO_PROMPT_SUFFIX, NO_OVERLAY_ELEMENTS, OVERLAY_NEGATIVE_PROMPT, LIGHTING_CAMERA_INSTRUCTION, EQUIPMENT_NEGATIVE_PROMPT } from '@/lib/prompts/common'
 import type {
@@ -28,6 +28,70 @@ const adTypeDescriptions: Record<ImageAdType, string> = {
   unboxing: 'Unboxing - Product reveal style',
   seasonal: 'Seasonal/Theme - Themed atmosphere',
 }
+
+// ============================================================
+// Few-Shot 예시 및 검증 규칙
+// ============================================================
+
+/** 시나리오 추천 Few-Shot 예시 */
+const SCENARIO_RECOMMENDATION_EXAMPLES = `
+=== SCENARIO EXAMPLES (Few-Shot) ===
+
+GOOD (specific, diverse, product-appropriate):
+
+Example 1 - Skincare Serum:
+✓ Scenario 1: "모닝 글로우" (Morning Glow)
+  - Target: 20-30대 직장인 여성
+  - Mood: Fresh, energetic
+  - Background: bright bathroom with morning sunlight
+  - Concept: 아침 루틴에서 빛나는 피부 표현
+
+✓ Scenario 2: "잇템 리뷰어" (It-Item Reviewer)
+  - Target: 뷰티 관심 MZ세대
+  - Mood: Authentic, relatable
+  - Background: cozy bedroom desk setup
+  - Concept: 인플루언서 스타일 솔직한 사용기
+
+✓ Scenario 3: "럭셔리 케어" (Luxury Care)
+  - Target: 30-40대 프리미엄 소비층
+  - Mood: Sophisticated, premium
+  - Background: marble vanity with soft lighting
+  - Concept: 고급스러운 자기관리 시간
+
+BAD (generic, repetitive, product-inappropriate):
+
+✗ "프리미엄 시나리오" - Too generic, no creative concept
+✗ "기본 시나리오" - No differentiation
+✗ "시나리오 1", "시나리오 2" - Just numbers, no concept
+✗ All 3 scenarios targeting same audience - No diversity
+✗ Budget snack product → "럭셔리 프리미엄" - Price tier mismatch
+`.trim()
+
+/** 시나리오 다양성 검증 */
+const SCENARIO_DIVERSITY_CHECK = `
+=== DIVERSITY REQUIREMENTS ===
+
+Each scenario MUST differ in at least 3 of these dimensions:
+1. Target Age: (20대 vs 30대 vs 40대+)
+2. Target Lifestyle: (직장인 vs 학생 vs 전업주부 vs 인플루언서)
+3. Emotional Tone: (활기찬 vs 차분한 vs 고급스러운 vs 친근한)
+4. Visual Mood: (밝고 화사 vs 따뜻하고 포근 vs 세련되고 모던)
+5. Setting: (집 vs 사무실 vs 카페 vs 야외 vs 스튜디오)
+6. Time: (아침 vs 낮 vs 저녁 vs 밤)
+`.trim()
+
+/** 시나리오 Self-Verification 체크리스트 */
+const SCENARIO_SELF_VERIFICATION = `
+=== SELF-VERIFICATION (before responding) ===
+Check your scenarios:
+✓ All 3 scenarios have UNIQUE creative titles (not "프리미엄", "기본", "스탠다드")?
+✓ Each scenario targets a DIFFERENT audience segment?
+✓ Price positioning matches product's actual tier?
+✓ Options within each scenario are COHERENT (mood + lighting + background align)?
+✓ Titles are 8-15 characters in output language?
+✓ Descriptions explain the concept clearly (30-50 characters)?
+If any check fails, revise before responding.
+`.trim()
 
 /**
  * 제품 정보와 광고 유형에 맞는 최적의 카테고리 옵션을 AI가 추천합니다.
@@ -64,33 +128,23 @@ ${input.adType}: ${adTypeDescriptions[input.adType]}
 === AVAILABLE OPTIONS ===
 ${groupsDescription}
 
-Recommend optimal settings for each category. Use '__custom__' with customText for specific requirements.`
+Recommend optimal settings for each category. Use '__custom__' with customText for specific requirements.
+
+=== OUTPUT FORMAT (JSON) ===
+{
+  "recommendations": [
+    { "key": "category_key", "value": "option_key", "reason": "Why this option" }
+  ],
+  "overallStrategy": "Overall strategy explanation",
+  "suggestedPrompt": "Optional suggested prompt"
+}
+
+${SCENARIO_SELF_VERIFICATION}`
 
   const config: GenerateContentConfig = {
     thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
-    responseSchema: {
-      type: Type.OBJECT,
-      required: ['recommendations', 'overallStrategy', 'suggestedPrompt'],
-      properties: {
-        recommendations: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            required: ['key', 'value', 'reason'],
-            properties: {
-              key: { type: Type.STRING },
-              value: { type: Type.STRING },
-              customText: { type: Type.STRING },
-              reason: { type: Type.STRING },
-            },
-          },
-        },
-        overallStrategy: { type: Type.STRING },
-        suggestedPrompt: { type: Type.STRING },
-      },
-    },
   }
 
   const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []
@@ -301,59 +355,34 @@ The 3 scenarios MUST genuinely differ in:
 5. Provide CLEAR REASONING for each option based on product analysis
 ${avatarContext}
 
+${SCENARIO_RECOMMENDATION_EXAMPLES}
+
+${SCENARIO_DIVERSITY_CHECK}
+
+=== OUTPUT FORMAT (JSON) ===
+{
+  "scenarios": [
+    {
+      "title": "Creative concept name (8-15 chars)",
+      "description": "Target & concept explanation (30-50 chars)",
+      "targetAudience": "Specific target description",
+      "recommendations": [
+        { "key": "category_key", "value": "option_key", "reason": "Why this option" }
+      ],
+      "overallStrategy": "Strategy for this scenario",
+      "recommendedAvatarStyle": { ... }  // If AI avatar mode
+    }
+  ]
+}
+
+${SCENARIO_SELF_VERIFICATION}
+
 IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be written in the specified output language.`
 
   const config: GenerateContentConfig = {
     thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
     mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
-    responseSchema: {
-      type: Type.OBJECT,
-      required: ['scenarios'],
-      properties: {
-        scenarios: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            required: ['title', 'description', 'recommendations', 'overallStrategy'],
-            properties: {
-              title: { type: Type.STRING },
-              description: { type: Type.STRING },
-              targetAudience: { type: Type.STRING },
-              conceptType: { type: Type.STRING },
-              recommendations: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  required: ['key', 'value', 'reason'],
-                  properties: {
-                    key: { type: Type.STRING },
-                    value: { type: Type.STRING },
-                    customText: { type: Type.STRING },
-                    reason: { type: Type.STRING },
-                  },
-                },
-              },
-              overallStrategy: { type: Type.STRING },
-              suggestedPrompt: { type: Type.STRING },
-              recommendedAvatarStyle: {
-                type: Type.OBJECT,
-                required: ['avatarPrompt', 'avatarDescription', 'gender', 'age', 'style', 'ethnicity', 'bodyType'],
-                properties: {
-                  avatarPrompt: { type: Type.STRING },
-                  avatarDescription: { type: Type.STRING },
-                  gender: { type: Type.STRING, enum: ['male', 'female', 'any'] },
-                  age: { type: Type.STRING, enum: ['young', 'middle', 'mature', 'any'] },
-                  style: { type: Type.STRING, enum: ['natural', 'professional', 'casual', 'elegant', 'any'] },
-                  ethnicity: { type: Type.STRING, enum: ['korean', 'asian', 'western', 'any'] },
-                  bodyType: { type: Type.STRING, enum: ['slim', 'average', 'athletic', 'curvy', 'any'] },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
   }
 
   const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []
@@ -367,13 +396,21 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
 
   parts.push({ text: prompt })
 
-  console.log('[generateMultipleRecommendedOptions] 입력 프롬프트:', prompt)
+  console.log('[generateMultipleRecommendedOptions] 입력 프롬프트 길이:', prompt.length)
+  console.log('[generateMultipleRecommendedOptions] 제품명:', input.productName)
 
-  const response = await genAI.models.generateContent({
-    model: MODEL_NAME,
-    contents: [{ role: 'user', parts }],
-    config,
-  })
+  let response
+  try {
+    response = await genAI.models.generateContent({
+      model: MODEL_NAME,
+      contents: [{ role: 'user', parts }],
+      config,
+    })
+    console.log('[generateMultipleRecommendedOptions] Gemini 응답 성공, 응답 길이:', response.text?.length || 0)
+  } catch (apiError) {
+    console.error('[generateMultipleRecommendedOptions] Gemini API 호출 실패:', apiError)
+    throw apiError
+  }
 
   try {
     const rawResult = JSON.parse(response.text || '') as {
@@ -416,7 +453,10 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
         }
       }),
     }
-  } catch {
+  } catch (error) {
+    console.error('[generateMultipleRecommendedOptions] 에러 발생:', error)
+    console.error('[generateMultipleRecommendedOptions] Gemini 응답:', response.text)
+
     const fallbackMessages: Record<string, { title: string; description: string; reason: string; strategy: string }> = {
       ko: {
         title: '기본 시나리오',
