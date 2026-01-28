@@ -28,6 +28,10 @@
     "statsSatisfaction": "満足度",
     "galleryTitle": "AI生成ギャラリー",
     "gallerySubtitle": "AIで作成された素晴らしい広告コンテンツをご覧ください",
+    "filterAll": "すべて",
+    "filterVideo": "動画",
+    "filterImage": "画像",
+    "noShowcases": "ショーケースがありません",
     "dashboard": "ダッシュボード",
     "login": "ログイン",
     "signUp": "新規登録"
