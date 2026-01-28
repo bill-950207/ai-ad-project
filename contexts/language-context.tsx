@@ -31,6 +31,28 @@ interface LanguageContextType {
 /** localStorage 키 */
 const LANGUAGE_STORAGE_KEY = 'adai-language'
 
+/**
+ * 브라우저 locale에서 지원 언어 감지
+ * 지원 언어: ko, en, ja, zh
+ * 기본값: en (영어)
+ */
+function detectBrowserLanguage(): Language {
+  if (typeof navigator === 'undefined') return 'en'
+
+  const browserLang = navigator.language || (navigator as Navigator & { userLanguage?: string }).userLanguage || ''
+  const langCode = browserLang.split('-')[0].toLowerCase()
+
+  // 지원 언어 매핑
+  const supportedLanguages: Record<string, Language> = {
+    'ko': 'ko',
+    'en': 'en',
+    'ja': 'ja',
+    'zh': 'zh',
+  }
+
+  return supportedLanguages[langCode] || 'en'
+}
+
 // ============================================================
 // 컨텍스트 생성
 // ============================================================
@@ -49,11 +71,16 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>('ko')  // 현재 언어 (기본: 한국어)
   const [isLoaded, setIsLoaded] = useState(false)                 // 클라이언트 로딩 완료 여부
 
-  // 컴포넌트 마운트 시 localStorage에서 언어 설정 로드
+  // 컴포넌트 마운트 시 localStorage에서 언어 설정 로드, 없으면 브라우저 언어 감지
   useEffect(() => {
     const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY) as Language | null
     if (savedLanguage && ['ko', 'en', 'ja', 'zh'].includes(savedLanguage)) {
       setLanguageState(savedLanguage)
+    } else {
+      // 저장된 언어가 없으면 브라우저 언어 감지 (기본값: 영어)
+      const detectedLanguage = detectBrowserLanguage()
+      setLanguageState(detectedLanguage)
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, detectedLanguage)
     }
     setIsLoaded(true)
   }, [])

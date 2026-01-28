@@ -3,8 +3,11 @@
  *
  * 랜딩 페이지 상단의 네비게이션 바를 담당합니다.
  * - 로고 표시
+ * - 네비게이션 링크 (Features, Gallery)
+ * - 언어 선택기
  * - 인증 상태에 따른 버튼 표시 (로그인/회원가입 또는 사용자 메뉴)
- * - Supabase 인증 상태 실시간 구독
+ * - 스크롤 시 배경 변화
+ * - 모바일 메뉴 지원
  */
 
 'use client'
@@ -16,7 +19,19 @@ import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
 import { Button } from './ui/button'
 import { useLanguage } from '@/contexts/language-context'
-import { LayoutDashboard, LogOut, ChevronDown } from 'lucide-react'
+import { Language } from '@/lib/i18n'
+import { LayoutDashboard, LogOut, ChevronDown, Menu, X, Globe, Sparkles, Image, Video } from 'lucide-react'
+
+// ============================================================
+// 언어 옵션
+// ============================================================
+
+const LANGUAGES: { code: Language; label: string; flag: string }[] = [
+  { code: 'ko', label: '한국어', flag: '🇰🇷' },
+  { code: 'en', label: 'English', flag: '🇺🇸' },
+  { code: 'ja', label: '日本語', flag: '🇯🇵' },
+  { code: 'zh', label: '中文', flag: '🇨🇳' },
+]
 
 // ============================================================
 // 컴포넌트
@@ -24,13 +39,28 @@ import { LayoutDashboard, LogOut, ChevronDown } from 'lucide-react'
 
 export function Navbar() {
   const pathname = usePathname()
-  const { t } = useLanguage()
+  const { t, language, setLanguage } = useLanguage()
+
   // 상태 관리
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [showMenu, setShowMenu] = useState(false)
+  const [showLangMenu, setShowLangMenu] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
   const menuRef = useRef<HTMLDivElement>(null)
+  const langMenuRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
+
+  // 스크롤 감지
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   // 사용자 인증 상태 확인 및 구독
   useEffect(() => {
@@ -54,6 +84,9 @@ export function Navbar() {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setShowMenu(false)
       }
+      if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
+        setShowLangMenu(false)
+      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -63,6 +96,7 @@ export function Navbar() {
     await supabase.auth.signOut()
     setUser(null)
     setShowMenu(false)
+    setMobileMenuOpen(false)
   }
 
   // 사용자 이니셜 추출
@@ -71,95 +105,260 @@ export function Navbar() {
     return user.email.charAt(0).toUpperCase()
   }
 
+  // 현재 언어 정보
+  const currentLang = LANGUAGES.find(l => l.code === language) || LANGUAGES[1]
+
+  // 네비게이션 링크
+  const navLinks = [
+    { href: '#features', label: t.landing?.featuresTitle || 'Features' },
+    { href: '#workflow', label: t.landing?.workflowTitle || 'How it works' },
+    { href: '#gallery', label: t.landing?.galleryTitle || 'Gallery' },
+  ]
+
   // 대시보드에서는 Navbar 숨김
   if (pathname?.startsWith('/dashboard')) {
     return null
   }
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* 로고 */}
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-primary to-purple-400 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">AD</span>
-            </div>
-            <span className="text-xl font-bold text-foreground">AIAD</span>
-          </Link>
+    <>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? 'bg-background/95 backdrop-blur-lg border-b border-border shadow-lg shadow-black/5'
+          : 'bg-transparent'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* 로고 */}
+            <Link href="/" className="flex items-center space-x-2.5 group">
+              <div className="relative w-9 h-9">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary via-purple-500 to-pink-500 rounded-xl rotate-3 group-hover:rotate-6 transition-transform duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-br from-primary to-purple-500 rounded-xl flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                AIAD
+              </span>
+            </Link>
 
-          {/* 인증 버튼 영역 */}
-          <div className="flex items-center space-x-3">
-            {loading ? (
-              <div className="h-10 w-10 bg-secondary animate-pulse rounded-full" />
-            ) : user ? (
-              // 로그인 상태 - 아바타 + 드롭다운 메뉴
-              <div className="relative" ref={menuRef}>
-                <button
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="flex items-center gap-2 p-1.5 rounded-full hover:bg-secondary/50 transition-colors"
+            {/* 데스크톱 네비게이션 */}
+            <div className="hidden md:flex items-center gap-1">
+              {navLinks.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-secondary/50"
                 >
-                  {/* 사용자 아바타 */}
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-purple-400 flex items-center justify-center">
-                    <span className="text-white font-semibold text-sm">
-                      {getUserInitials()}
-                    </span>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showMenu ? 'rotate-180' : ''}`} />
+                  {link.label}
+                </a>
+              ))}
+            </div>
+
+            {/* 우측 영역 */}
+            <div className="flex items-center gap-2">
+              {/* 언어 선택기 */}
+              <div className="relative" ref={langMenuRef}>
+                <button
+                  onClick={() => setShowLangMenu(!showLangMenu)}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground rounded-lg hover:bg-secondary/50 transition-colors"
+                >
+                  <Globe className="w-4 h-4" />
+                  <span className="hidden sm:inline">{currentLang.flag}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showLangMenu ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* 드롭다운 메뉴 */}
-                {showMenu && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-xl border border-border bg-background/95 backdrop-blur-md shadow-lg py-2">
-                    {/* 사용자 정보 */}
-                    <div className="px-4 py-3 border-b border-border">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {user.email}
-                      </p>
-                    </div>
-
-                    {/* 메뉴 항목들 */}
-                    <div className="py-1">
-                      <Link
-                        href="/dashboard"
-                        onClick={() => setShowMenu(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary/50 transition-colors"
-                      >
-                        <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
-                        {t.landing.dashboard}
-                      </Link>
-                    </div>
-
-                    <div className="border-t border-border pt-1">
+                {showLangMenu && (
+                  <div className="absolute right-0 mt-2 w-40 rounded-xl border border-border bg-background/95 backdrop-blur-lg shadow-xl py-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                    {LANGUAGES.map((lang) => (
                       <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                        key={lang.code}
+                        onClick={() => {
+                          setLanguage(lang.code)
+                          setShowLangMenu(false)
+                        }}
+                        className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm transition-colors ${
+                          language === lang.code
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-foreground hover:bg-secondary/50'
+                        }`}
                       >
-                        <LogOut className="w-4 h-4" />
-                        {t.common.logout}
+                        <span className="text-base">{lang.flag}</span>
+                        <span>{lang.label}</span>
                       </button>
-                    </div>
+                    ))}
                   </div>
                 )}
               </div>
-            ) : (
-              // 비로그인 상태 - 로그인/회원가입 버튼
+
+              {/* 인증 버튼 영역 - 데스크톱 */}
+              <div className="hidden md:flex items-center gap-2">
+                {loading ? (
+                  <div className="h-9 w-9 bg-secondary animate-pulse rounded-full" />
+                ) : user ? (
+                  // 로그인 상태 - 아바타 + 드롭다운 메뉴
+                  <div className="relative" ref={menuRef}>
+                    <button
+                      onClick={() => setShowMenu(!showMenu)}
+                      className="flex items-center gap-2 p-1 rounded-full hover:bg-secondary/50 transition-colors"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary via-purple-500 to-pink-500 flex items-center justify-center ring-2 ring-background">
+                        <span className="text-white font-semibold text-sm">
+                          {getUserInitials()}
+                        </span>
+                      </div>
+                      <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showMenu ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {showMenu && (
+                      <div className="absolute right-0 mt-2 w-56 rounded-xl border border-border bg-background/95 backdrop-blur-lg shadow-xl py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="px-4 py-3 border-b border-border">
+                          <p className="text-sm font-medium text-foreground truncate">
+                            {user.email}
+                          </p>
+                        </div>
+
+                        <div className="py-1">
+                          <Link
+                            href="/dashboard"
+                            onClick={() => setShowMenu(false)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary/50 transition-colors"
+                          >
+                            <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
+                            {t.landing?.dashboard || 'Dashboard'}
+                          </Link>
+                        </div>
+
+                        <div className="border-t border-border pt-1">
+                          <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            {t.common?.logout || 'Logout'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  // 비로그인 상태
+                  <>
+                    <Link href="/login">
+                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                        {t.landing?.login || 'Login'}
+                      </Button>
+                    </Link>
+                    <Link href="/signup">
+                      <Button size="sm" className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 shadow-lg shadow-primary/25">
+                        {t.landing?.signUp || 'Sign Up'}
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </div>
+
+              {/* 모바일 메뉴 버튼 */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 rounded-lg hover:bg-secondary/50 transition-colors"
+              >
+                {mobileMenuOpen ? (
+                  <X className="w-5 h-5 text-foreground" />
+                ) : (
+                  <Menu className="w-5 h-5 text-foreground" />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* 모바일 메뉴 */}
+      <div className={`fixed inset-0 z-40 md:hidden transition-all duration-300 ${
+        mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+      }`}>
+        {/* 백드롭 */}
+        <div
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+
+        {/* 메뉴 패널 */}
+        <div className={`absolute top-16 left-0 right-0 bg-background border-b border-border shadow-xl transition-transform duration-300 ${
+          mobileMenuOpen ? 'translate-y-0' : '-translate-y-full'
+        }`}>
+          <div className="p-4 space-y-3">
+            {/* 네비게이션 링크 */}
+            {navLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 text-foreground rounded-xl hover:bg-secondary/50 transition-colors"
+              >
+                {link.href === '#features' ? (
+                  <Image className="w-5 h-5 text-muted-foreground" />
+                ) : (
+                  <Video className="w-5 h-5 text-muted-foreground" />
+                )}
+                <span className="font-medium">{link.label}</span>
+              </a>
+            ))}
+
+            {/* 구분선 */}
+            <div className="border-t border-border my-3" />
+
+            {/* 인증 영역 */}
+            {loading ? (
+              <div className="h-12 bg-secondary animate-pulse rounded-xl" />
+            ) : user ? (
               <>
-                <Link href="/login">
-                  <Button variant="ghost" size="sm">
-                    {t.landing.login}
-                  </Button>
+                <div className="flex items-center gap-3 px-4 py-3 bg-secondary/30 rounded-xl">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary via-purple-500 to-pink-500 flex items-center justify-center">
+                    <span className="text-white font-semibold">
+                      {getUserInitials()}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium text-foreground truncate flex-1">
+                    {user.email}
+                  </p>
+                </div>
+
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 text-foreground rounded-xl hover:bg-secondary/50 transition-colors"
+                >
+                  <LayoutDashboard className="w-5 h-5 text-muted-foreground" />
+                  <span className="font-medium">{t.landing?.dashboard || 'Dashboard'}</span>
                 </Link>
-                <Link href="/signup">
-                  <Button size="sm">
-                    {t.landing.signUp}
-                  </Button>
-                </Link>
+
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-red-500 rounded-xl hover:bg-red-500/10 transition-colors"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span className="font-medium">{t.common?.logout || 'Logout'}</span>
+                </button>
               </>
+            ) : (
+              <div className="flex gap-3">
+                <Link href="/login" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="outline" className="w-full">
+                    {t.landing?.login || 'Login'}
+                  </Button>
+                </Link>
+                <Link href="/signup" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                  <Button className="w-full bg-gradient-to-r from-primary to-purple-600">
+                    {t.landing?.signUp || 'Sign Up'}
+                  </Button>
+                </Link>
+              </div>
             )}
           </div>
         </div>
       </div>
-    </nav>
+    </>
   )
 }

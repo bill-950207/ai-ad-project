@@ -1,11 +1,17 @@
 import { HeroSection } from "@/components/hero-section";
-import { GallerySection } from "@/components/gallery-section";
+import { FeaturesSection } from "@/components/landing/features-section";
+import { WorkflowSection } from "@/components/landing/workflow-section";
+import { ShowcaseSection } from "@/components/landing/showcase-section";
+import { Footer } from "@/components/landing/footer";
 
 export default function Home() {
   return (
     <main className="min-h-screen">
       <HeroSection />
-      <GallerySection />
+      <FeaturesSection />
+      <WorkflowSection />
+      <ShowcaseSection />
+      <Footer />
     </main>
   );
 }
