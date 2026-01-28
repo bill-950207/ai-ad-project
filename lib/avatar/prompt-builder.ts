@@ -12,28 +12,39 @@
 /** 아바타 생성 옵션 */
 export interface AvatarOptions {
   // 기본 정보
-  gender?: 'female' | 'male' | 'nonbinary'  // 성별
+  gender?: 'female' | 'male'  // 성별
   age?: 'teen' | 'early20s' | 'late20s' | '30s' | '40plus'  // 나이대
-  ethnicity?: 'korean' | 'eastAsian' | 'western' | 'southeastAsian' | 'black' | 'hispanic' | 'mixed'  // 인종
+  ethnicity?: 'asian' | 'caucasian' | 'black' | 'hispanic'  // 인종
 
   // 체형
   height?: 'short' | 'average' | 'tall'  // 키
   bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'plussize'  // 체형
 
   // 외모
-  hairStyle?: 'longStraight' | 'bob' | 'wavy' | 'ponytail' | 'short'  // 헤어스타일
+  // 여성 헤어스타일
+  hairStyle?:
+    | 'longStraight' | 'longLayered' | 'bob' | 'shortBob' | 'wavy' | 'curly'
+    | 'ponytail' | 'bun' | 'halfUp' | 'bangs' | 'pixie'
+    // 남성 헤어스타일
+    | 'maleShort' | 'buzz' | 'twoBlock' | 'undercut' | 'pompadour'
+    | 'slickedBack' | 'sidePart' | 'maleWavy' | 'maleMedium'
   hairColor?: 'blackhair' | 'brown' | 'blonde' | 'custom'  // 머리 색상
   customHairColor?: string  // 커스텀 머리 색상 (hairColor가 'custom'일 때)
-  vibe?: 'natural' | 'sophisticated' | 'cute' | 'professional'  // 분위기/느낌
 
   // 의상
-  outfitStyle?: 'casual' | 'office' | 'sporty' | 'homewear'  // 의상 스타일
-  colorTone?: 'light' | 'dark' | 'neutral' | 'brandColor'  // 색상 톤
-  brandColorHex?: string  // 브랜드 색상 (colorTone이 'brandColor'일 때)
+  outfitStyle?:
+    | 'tshirtJeans' | 'shirtSlacks' | 'blouseSkirt' | 'dress' | 'suit'
+    | 'knitSweater' | 'athletic' | 'lounge' | 'jacket'
 
-  // 배경 및 포즈
-  background?: 'studio' | 'home' | 'office' | 'outdoor' | 'cafe'  // 배경 환경
-  pose?: 'model' | 'natural' | 'casual' | 'working'  // 포즈 스타일
+  // 배경
+  background?:
+    | 'studioWhite' | 'studioGray' | 'home' | 'office' | 'cafe'
+    | 'restaurant' | 'street' | 'park' | 'beach' | 'gym'
+
+  // 포즈
+  pose?:
+    | 'standingFull' | 'standingHalf' | 'sitting' | 'walking'
+    | 'leaning' | 'armsCrossed' | 'handsInPocket' | 'holding'
 }
 
 // ============================================================
@@ -44,7 +55,6 @@ export interface AvatarOptions {
 const genderMap: Record<string, string> = {
   female: 'woman',
   male: 'man',
-  nonbinary: 'person',
 }
 
 /** 나이대 매핑 */
@@ -58,13 +68,10 @@ const ageMap: Record<string, string> = {
 
 /** 인종 매핑 */
 const ethnicityMap: Record<string, string> = {
-  korean: 'Korean',
-  eastAsian: 'East Asian',
-  western: 'Caucasian',
-  southeastAsian: 'Southeast Asian',
-  black: 'African',
-  hispanic: 'Hispanic',
-  mixed: 'mixed ethnicity',
+  asian: 'Asian',
+  caucasian: 'Caucasian',
+  black: 'Black African',
+  hispanic: 'Hispanic Latino',
 }
 
 /** 키 매핑 */
@@ -113,11 +120,28 @@ function getBodyTypeDescription(bodyType: string, gender?: string): string {
 
 /** 헤어스타일 매핑 */
 const hairStyleMap: Record<string, string> = {
+  // 여성 헤어스타일
   longStraight: 'long straight hair',
-  bob: 'bob haircut',
-  wavy: 'wavy hair',
-  ponytail: 'ponytail',
-  short: 'short hair',
+  longLayered: 'long layered hair with face-framing layers',
+  bob: 'chin-length bob haircut',
+  shortBob: 'short bob haircut above the chin',
+  wavy: 'soft wavy hair',
+  curly: 'natural curly hair',
+  ponytail: 'high ponytail',
+  bun: 'elegant hair bun updo',
+  halfUp: 'half-up half-down hairstyle',
+  bangs: 'hair with bangs fringe',
+  pixie: 'short pixie cut',
+  // 남성 헤어스타일
+  maleShort: 'short cropped hair',
+  buzz: 'buzz cut very short hair',
+  twoBlock: 'two-block haircut with longer top and shaved sides',
+  undercut: 'undercut hairstyle with disconnected sides',
+  pompadour: 'pompadour hairstyle with volume on top',
+  slickedBack: 'slicked back hair',
+  sidePart: 'classic side part hairstyle',
+  maleWavy: 'textured wavy hair',
+  maleMedium: 'medium length hair',
 }
 
 /** 머리 색상 매핑 */
@@ -128,37 +152,43 @@ const hairColorMap: Record<string, string> = {
   custom: '',  // 커스텀 색상은 별도 처리
 }
 
-/** 분위기/느낌 매핑 */
-const vibeMap: Record<string, string> = {
-  natural: 'natural and approachable appearance',
-  sophisticated: 'sophisticated and elegant appearance',
-  cute: 'cute appearance',
-  professional: 'professional and confident appearance',
-}
-
-/** 배경 환경 매핑 (선명한 배경, 조명 장비 숨김) */
+/** 배경 환경 매핑 */
 const backgroundMap: Record<string, string> = {
-  studio: 'in a professional photo studio with even soft light and clean white backdrop, well-lit, sharp in-focus background, NO bokeh, NO visible lighting equipment NO softbox NO light stand NO studio lights in frame',
-  home: 'in a cozy modern home interior with warm natural light from window, sharp clear background, all details visible, NO bokeh NO blur, NO visible lamps NO light fixtures in frame',
-  office: 'in a bright modern office space with large windows and natural daylight, sharp clear background, NO bokeh NO blur, NO visible lighting equipment',
-  outdoor: 'in an outdoor urban setting with golden hour natural sunlight, sharp in-focus background, all background details clear, NO bokeh, NO artificial lighting visible',
-  cafe: 'in a stylish cafe interior with warm ambient light, sharp clear background, cafe details visible, NO bokeh NO blur, NO visible light fixtures NO hanging lamps in prominent view',
+  studioWhite: 'in a professional photo studio with clean white backdrop, soft even lighting, sharp in-focus background',
+  studioGray: 'in a professional photo studio with neutral gray backdrop, soft even lighting, sharp in-focus background',
+  home: 'in a cozy modern home interior living room with warm natural light from window, sharp clear background',
+  office: 'in a bright modern office space with large windows and natural daylight, sharp clear background',
+  cafe: 'in a stylish cafe interior with warm ambient light, coffee shop atmosphere, sharp clear background',
+  restaurant: 'in an elegant restaurant interior with sophisticated lighting, fine dining atmosphere',
+  street: 'on a modern city street with urban architecture, natural daylight, sharp in-focus background',
+  park: 'in a beautiful green park with trees and nature, golden hour natural sunlight, sharp background',
+  beach: 'on a beach with ocean view, warm sunlight, clear blue sky, sharp in-focus background',
+  gym: 'in a modern fitness gym with exercise equipment, bright lighting, sharp clear background',
 }
 
 /** 포즈 스타일 매핑 (항상 카메라 응시) */
 const poseMap: Record<string, string> = {
-  model: 'striking a professional model pose, looking directly at camera, eye contact, neutral relaxed expression',
-  natural: 'in a relaxed natural pose, looking directly at camera, eye contact, neutral calm expression',
-  casual: 'sitting comfortably in a casual relaxed position, looking directly at camera, eye contact, neutral expression',
-  working: 'at desk, looking directly at camera, eye contact, neutral expression',
+  standingFull: 'standing full body shot, looking directly at camera, eye contact, confident posture',
+  standingHalf: 'standing upper body shot from waist up, looking directly at camera, eye contact',
+  sitting: 'sitting comfortably, looking directly at camera, eye contact, relaxed posture',
+  walking: 'walking pose mid-stride, looking at camera, natural movement',
+  leaning: 'leaning against wall or surface, relaxed pose, looking at camera, eye contact',
+  armsCrossed: 'standing with arms crossed, confident pose, looking directly at camera, eye contact',
+  handsInPocket: 'standing with hands in pockets, casual relaxed pose, looking at camera',
+  holding: 'holding an object or product, looking at camera, eye contact, natural pose',
 }
 
-/** 의상 스타일 매핑 (체형이 보이는 핏한 의상) */
+/** 의상 스타일 매핑 */
 const outfitStyleMap: Record<string, string> = {
-  casual: 'wearing a fitted casual outfit that shows body shape (slim-fit jeans and form-fitting top)',
-  office: 'wearing a body-conscious office attire (fitted blouse and pencil skirt or tailored pants)',
-  sporty: 'wearing form-fitting athletic wear that accentuates the figure (yoga pants and fitted sports top)',
-  homewear: 'wearing comfortable but fitted loungewear that shows body contours (fitted t-shirt and leggings)',
+  tshirtJeans: 'wearing a fitted t-shirt and slim-fit jeans, casual everyday style',
+  shirtSlacks: 'wearing a crisp button-down shirt and tailored slacks, smart casual style',
+  blouseSkirt: 'wearing an elegant blouse and pencil skirt, feminine professional style',
+  dress: 'wearing a stylish fitted dress, elegant feminine style',
+  suit: 'wearing a well-tailored business suit, professional formal style',
+  knitSweater: 'wearing a cozy knit sweater, warm casual style',
+  athletic: 'wearing form-fitting athletic wear, sporty activewear style',
+  lounge: 'wearing comfortable loungewear, relaxed home style',
+  jacket: 'wearing a stylish jacket or coat over casual outfit, layered style',
 }
 
 // ============================================================
@@ -213,11 +243,6 @@ export function buildPromptFromOptions(options: AvatarOptions): string {
     parts.push(`with ${hair}`)
   }
 
-  // 분위기/느낌
-  if (options.vibe) {
-    parts.push(vibeMap[options.vibe])
-  }
-
   // 의상 스타일 (체형이 보이는 핏한 의상)
   if (options.outfitStyle) {
     parts.push(outfitStyleMap[options.outfitStyle])
@@ -254,18 +279,32 @@ export function validateAvatarOptions(options: unknown): options is AvatarOption
   const o = options as Record<string, unknown>
 
   // 허용된 값 목록
-  const validGenders = ['female', 'male', 'nonbinary']
+  const validGenders = ['female', 'male']
   const validAges = ['teen', 'early20s', 'late20s', '30s', '40plus']
-  const validEthnicities = ['korean', 'eastAsian', 'western', 'southeastAsian', 'black', 'hispanic', 'mixed']
+  const validEthnicities = ['asian', 'caucasian', 'black', 'hispanic']
   const validHeights = ['short', 'average', 'tall']
   const validBodyTypes = ['slim', 'average', 'athletic', 'curvy', 'plussize']
-  const validHairStyles = ['longStraight', 'bob', 'wavy', 'ponytail', 'short']
+  const validHairStyles = [
+    // 여성
+    'longStraight', 'longLayered', 'bob', 'shortBob', 'wavy', 'curly',
+    'ponytail', 'bun', 'halfUp', 'bangs', 'pixie',
+    // 남성
+    'maleShort', 'buzz', 'twoBlock', 'undercut', 'pompadour',
+    'slickedBack', 'sidePart', 'maleWavy', 'maleMedium',
+  ]
   const validHairColors = ['blackhair', 'brown', 'blonde', 'custom']
-  const validVibes = ['natural', 'sophisticated', 'cute', 'professional']
-  const validOutfitStyles = ['casual', 'office', 'sporty', 'homewear']
-  const validColorTones = ['light', 'dark', 'neutral', 'brandColor']
-  const validBackgrounds = ['studio', 'home', 'office', 'outdoor', 'cafe']
-  const validPoses = ['model', 'natural', 'casual', 'working']
+  const validOutfitStyles = [
+    'tshirtJeans', 'shirtSlacks', 'blouseSkirt', 'dress', 'suit',
+    'knitSweater', 'athletic', 'lounge', 'jacket',
+  ]
+  const validBackgrounds = [
+    'studioWhite', 'studioGray', 'home', 'office', 'cafe',
+    'restaurant', 'street', 'park', 'beach', 'gym',
+  ]
+  const validPoses = [
+    'standingFull', 'standingHalf', 'sitting', 'walking',
+    'leaning', 'armsCrossed', 'handsInPocket', 'holding',
+  ]
 
   // 각 필드 검증
   if (o.gender && !validGenders.includes(o.gender as string)) return false
@@ -275,9 +314,7 @@ export function validateAvatarOptions(options: unknown): options is AvatarOption
   if (o.bodyType && !validBodyTypes.includes(o.bodyType as string)) return false
   if (o.hairStyle && !validHairStyles.includes(o.hairStyle as string)) return false
   if (o.hairColor && !validHairColors.includes(o.hairColor as string)) return false
-  if (o.vibe && !validVibes.includes(o.vibe as string)) return false
   if (o.outfitStyle && !validOutfitStyles.includes(o.outfitStyle as string)) return false
-  if (o.colorTone && !validColorTones.includes(o.colorTone as string)) return false
   if (o.background && !validBackgrounds.includes(o.background as string)) return false
   if (o.pose && !validPoses.includes(o.pose as string)) return false
 
