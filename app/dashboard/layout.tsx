@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { Sidebar } from '@/components/dashboard/sidebar'
+import { DashboardLayoutClient } from '@/components/dashboard/dashboard-layout-client'
 import { prisma } from '@/lib/db'
 
 export default async function DashboardLayout({
@@ -31,12 +31,5 @@ export default async function DashboardLayout({
     // 오류 발생 시에도 대시보드 접근 허용 (graceful degradation)
   }
 
-  return (
-    <div className="flex -mt-16">
-      <Sidebar />
-      <main className="flex-1 ml-64 p-6 min-h-screen">
-        {children}
-      </main>
-    </div>
-  )
+  return <DashboardLayoutClient>{children}</DashboardLayoutClient>
 }
