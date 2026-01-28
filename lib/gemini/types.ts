@@ -237,7 +237,7 @@ export type ImageAdType =
 
 /** 아바타 특성 정보 */
 export interface AvatarCharacteristics {
-  gender?: 'female' | 'male' | 'nonbinary'
+  gender?: 'female' | 'male'
   age?: 'teen' | 'early20s' | 'late20s' | '30s' | '40plus'
   ethnicity?: 'korean' | 'eastAsian' | 'western' | 'southeastAsian' | 'black' | 'hispanic' | 'mixed'
   height?: 'short' | 'average' | 'tall'
@@ -394,7 +394,7 @@ export interface AvatarStyleInfo {
   vibe?: 'natural' | 'sophisticated' | 'cute' | 'professional'
   bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'plussize'
   height?: 'short' | 'average' | 'tall'
-  gender?: 'female' | 'male' | 'nonbinary'
+  gender?: 'female' | 'male'
 }
 
 /** 추천 아바타 스타일 (AI 추천 아바타용) */

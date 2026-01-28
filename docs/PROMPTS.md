@@ -419,7 +419,7 @@ Structured Output 스키마 사용
 **옵션**
 | 카테고리 | 필드 | 값 |
 |----------|------|-----|
-| 기본 | gender | female, male, nonbinary |
+| 기본 | gender | female, male |
 | | age | teen, early20s, late20s, 30s, 40plus |
 | | ethnicity | korean, eastAsian, western, black, hispanic |
 | 체형 | height | short, average, tall |
