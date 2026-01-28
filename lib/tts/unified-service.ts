@@ -21,7 +21,6 @@ import { textToSpeech as minimaxTTS } from '@/lib/wavespeed/client'
 import {
   textToSpeech as elevenLabsTTS,
   type EmotionPreset,
-  EMOTION_PRESETS,
   type ElevenLabsModelId,
 } from '@/lib/elevenlabs/client'
 

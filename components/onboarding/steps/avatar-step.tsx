@@ -597,7 +597,7 @@ export function AvatarStep() {
               <div>
                 <label className="block text-xs text-muted-foreground mb-2">인종</label>
                 <div className="flex gap-2 flex-wrap">
-                  {(['korean', 'eastAsian', 'western'] as const).map((v) => (
+                  {(['asian', 'caucasian', 'black', 'hispanic'] as const).map((v) => (
                     <button
                       key={v}
                       type="button"
@@ -608,7 +608,7 @@ export function AvatarStep() {
                           : 'bg-secondary/50 text-foreground hover:bg-secondary'
                       }`}
                     >
-                      {v === 'korean' ? '한국인' : v === 'eastAsian' ? '동양인' : '서양인'}
+                      {v === 'asian' ? '아시아인' : v === 'caucasian' ? '백인' : v === 'black' ? '흑인' : '히스패닉'}
                     </button>
                   ))}
                 </div>

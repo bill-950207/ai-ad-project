@@ -118,7 +118,8 @@
       "Bash(gh auth:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: Gemini API 403 에러 수정 및 프롬프트 패턴 개선\n\n- responseSchema 제거로 API 호환성 문제 해결 \\(403 Forbidden 에러 수정\\)\n- Type import 제거, responseMimeType: ''application/json''만 사용\n- Few-Shot Learning 패턴 추가 \\(GOOD/BAD 예시\\)\n- Self-Verification 체크리스트 추가\n- Chain-of-Thought 추론 가이드 추가 \\(scenario.ts\\)\n- 모든 Gemini 파일에 Prompt Engineering 패턴 통일 적용\n\n영향받는 파일:\n- lib/gemini/* \\(6개 파일\\)\n- lib/prompts/* \\(3개 파일\\)\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "WebSearch",
-      "WebFetch(domain:elevenlabs.io)"
+      "WebFetch(domain:elevenlabs.io)",
+      "Bash(git merge:*)"
     ]
   }
 }
