@@ -31,6 +31,10 @@
     "workflowTitle": "使用方法",
     "galleryTitle": "AI生成作品展示",
     "gallerySubtitle": "探索我们用户用AI创作的精彩广告内容",
+    "filterAll": "全部",
+    "filterVideo": "视频",
+    "filterImage": "图片",
+    "noShowcases": "暂无展示内容",
     "dashboard": "控制面板",
     "login": "登录",
     "signUp": "注册"

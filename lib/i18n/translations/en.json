@@ -31,6 +31,10 @@
     "workflowTitle": "How it works",
     "galleryTitle": "AI-Generated Gallery",
     "gallerySubtitle": "Explore amazing ad content created with AI by our users",
+    "filterAll": "All",
+    "filterVideo": "Video",
+    "filterImage": "Image",
+    "noShowcases": "No showcases available",
     "dashboard": "Dashboard",
     "login": "Login",
     "signUp": "Sign Up"

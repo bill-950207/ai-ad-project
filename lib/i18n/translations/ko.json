@@ -31,6 +31,10 @@
     "workflowTitle": "이용 방법",
     "galleryTitle": "AI 생성 광고 콘텐츠",
     "gallerySubtitle": "AI로 제작된 놀라운 광고 콘텐츠를 확인하세요",
+    "filterAll": "전체",
+    "filterVideo": "영상",
+    "filterImage": "이미지",
+    "noShowcases": "쇼케이스가 없습니다",
     "dashboard": "대시보드",
     "login": "로그인",
     "signUp": "회원가입"
