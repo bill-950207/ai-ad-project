@@ -393,7 +393,7 @@ export default function MusicPage() {
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-accent text-white rounded-xl hover:opacity-90 transition-all shadow-glow-sm font-medium"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
         >
           <Plus className="w-4 h-4" />
           {(musicT?.createNew as string) || '새 음악 생성'}
@@ -402,17 +402,17 @@ export default function MusicPage() {
 
       {/* 음악 목록 */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map(i => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
             <div key={i} className="h-48 bg-secondary/30 rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : musicList.length === 0 ? (
-        <div className="bg-gradient-to-br from-card to-secondary/30 border-2 border-dashed border-border/50 rounded-2xl p-16 text-center">
-          <div className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shadow-glow-sm">
-            <Music className="w-12 h-12 text-primary" />
+        <div className="bg-card border border-dashed border-border rounded-2xl p-16 text-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-secondary/50 flex items-center justify-center">
+            <Music className="w-10 h-10 text-muted-foreground" />
           </div>
-          <h3 className="text-xl font-semibold text-foreground mb-3">
+          <h3 className="text-lg font-semibold text-foreground mb-2">
             {(musicT?.emptyList as string) || '생성된 음악이 없습니다'}
           </h3>
           <p className="text-muted-foreground mb-6">
@@ -420,13 +420,13 @@ export default function MusicPage() {
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-6 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-xl hover:opacity-90 transition-all shadow-glow-sm font-medium"
+            className="px-5 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
           >
             {(musicT?.createNew as string) || '새 음악 생성'}
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {musicList.filter((m): m is AdMusic => m != null).map(music => (
             <div
               key={music.id}
@@ -466,7 +466,7 @@ export default function MusicPage() {
                         onClick={() => handlePlayPause(currentTrack)}
                         className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-all duration-300"
                       >
-                        <div className={`rounded-full bg-gradient-to-r from-primary to-accent p-4 shadow-glow transition-all duration-300 ${
+                        <div className={`rounded-full bg-primary p-4 shadow-lg transition-all duration-300 ${
                           playingTrackId === currentTrack.id
                             ? 'opacity-100 scale-100'
                             : 'opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100'
@@ -492,7 +492,7 @@ export default function MusicPage() {
                             }}
                             className={`w-7 h-7 sm:w-6 sm:h-6 rounded-full text-xs font-bold transition-all ${
                               currentIndex === index
-                                ? 'bg-gradient-to-r from-primary to-accent text-white shadow-lg scale-110'
+                                ? 'bg-primary text-white shadow-lg scale-110'
                                 : 'bg-white/20 text-white hover:bg-white/40'
                             }`}
                           >
@@ -684,7 +684,7 @@ export default function MusicPage() {
                 <button
                   onClick={handleAiRecommend}
                   disabled={!selectedProductId || isRecommending}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-xl hover:opacity-90 transition-all shadow-glow-sm disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                 >
                   {isRecommending ? (
                     <>
@@ -842,7 +842,7 @@ export default function MusicPage() {
               <button
                 onClick={handleCreate}
                 disabled={isCreating || !formData.name || !formData.mood || !formData.genre || !formData.productType}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-xl hover:opacity-90 transition-all shadow-glow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2 font-medium"
+                className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium"
               >
                 {isCreating ? (
                   <>

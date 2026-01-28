@@ -303,16 +303,14 @@ export function VideoAdPageContent() {
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold mb-2">
-            <span className="gradient-brand-text">{t.videoAd?.title || '영상 광고'}</span>
-          </h1>
-          <p className="text-muted-foreground text-lg">{t.videoAd?.subtitle || 'AI로 영상 광고를 제작하세요'}</p>
+          <h1 className="text-2xl font-bold text-foreground mb-2">{t.videoAd?.title || '영상 광고'}</h1>
+          <p className="text-muted-foreground">{t.videoAd?.subtitle || 'AI로 영상 광고를 제작하세요'}</p>
         </div>
         <button
           onClick={handleCreateVideoAd}
-          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-medium shadow-glow-sm hover:shadow-glow transition-all duration-300"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-4 h-4" />
           {t.videoAd?.createAd || '영상 광고 생성'}
         </button>
       </div>
@@ -326,22 +324,18 @@ export function VideoAdPageContent() {
             ))}
           </div>
         ) : videoAds.length === 0 ? (
-          <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-card to-accent/10 border border-border rounded-2xl p-16 text-center">
-            {/* 배경 글로우 */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-            <div className="relative">
-              <div className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border border-primary/20">
-                <Video className="w-12 h-12 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground mb-3">{t.videoAd?.emptyAds || '생성된 영상 광고가 없습니다'}</h3>
-              <p className="text-muted-foreground mb-8">영상 광고를 생성해보세요</p>
-              <button
-                onClick={handleCreateVideoAd}
-                className="px-8 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-medium shadow-glow-sm hover:shadow-glow transition-all duration-300"
-              >
-                {t.videoAd?.createAd || '영상 광고 생성'}
-              </button>
+          <div className="bg-card border border-border rounded-2xl p-16 text-center">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
+              <Video className="w-10 h-10 text-primary" />
             </div>
+            <h3 className="text-xl font-semibold text-foreground mb-3">{t.videoAd?.emptyAds || '생성된 영상 광고가 없습니다'}</h3>
+            <p className="text-muted-foreground mb-6">영상 광고를 생성해보세요</p>
+            <button
+              onClick={handleCreateVideoAd}
+              className="px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors font-medium"
+            >
+              {t.videoAd?.createAd || '영상 광고 생성'}
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">

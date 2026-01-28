@@ -142,10 +142,8 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
     <div className="space-y-10">
       {/* 페이지 헤더 */}
       <div>
-        <h1 className="text-3xl font-bold mb-2">
-          <span className="gradient-brand-text">{t.dashboard.title}</span>
-        </h1>
-        <p className="text-muted-foreground text-lg">
+        <h1 className="text-2xl font-bold text-foreground mb-2">{t.dashboard.title}</h1>
+        <p className="text-muted-foreground">
           {t.dashboard.subtitle}
         </p>
       </div>
@@ -156,7 +154,7 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
           <Sparkles className="w-5 h-5 text-primary" />
           통계
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
           <StatCard
             icon={<Coins className="w-5 h-5" />}
             label={t.dashboard.creditsRemaining}
@@ -184,7 +182,7 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
           <Sparkles className="w-5 h-5 text-accent" />
           빠른 시작
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <QuickAction
             icon={<ImageIcon className="w-5 h-5" />}
             label="이미지 광고"
