@@ -3,7 +3,11 @@
  *
  * 개별 아바타를 카드 형태로 표시합니다.
  * 클릭 시 상세 페이지로 이동합니다.
- * 생성 중인 아바타는 1초 간격으로 상태를 폴링합니다.
+ *
+ * 폴링 최적화 (2024.01):
+ * - 기존: 각 카드에서 개별 1초 폴링 (N개 카드 = 초당 N개 요청)
+ * - 개선: 부모(AvatarPageContent)에서 일괄 폴링, 카드는 props 렌더링만 수행
+ * - UPLOADING 상태는 카드에서 한 번만 상태 조회 후 클라이언트 업로드 처리
  */
 
 'use client'
@@ -42,7 +46,6 @@ interface AvatarCardProps {
 export function AvatarCard({ avatar, onDelete, onStatusUpdate }: AvatarCardProps) {
   const { t } = useLanguage()
   const router = useRouter()
-  const [isPolling, setIsPolling] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const uploadingRef = useRef(false)  // 업로드 중복 방지
@@ -90,39 +93,28 @@ export function AvatarCard({ avatar, onDelete, onStatusUpdate }: AvatarCardProps
     }
   }
 
-  // 생성 중인 아바타 상태 폴링
+  /**
+   * UPLOADING 상태 감지 시 tempImageUrl 조회 후 업로드 처리
+   * (부모의 일괄 폴링에서 UPLOADING 상태 감지됨, 여기서 상세 정보만 조회)
+   */
   useEffect(() => {
-    if (['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(avatar.status)) {
-      setIsPolling(true)
-
-      const pollStatus = async () => {
+    if (avatar.status === 'UPLOADING' && !uploadingRef.current && !isUploading) {
+      const fetchAndUpload = async () => {
         try {
           const res = await fetch(`/api/avatars/${avatar.id}/status`)
           if (res.ok) {
             const data = await res.json()
-
-            if (data.avatar.status === 'UPLOADING' && data.tempImageUrl) {
-              onStatusUpdate(data.avatar)
-              setIsPolling(false)
+            if (data.tempImageUrl) {
               handleClientUpload(avatar.id, data.tempImageUrl)
-              return
-            }
-
-            onStatusUpdate(data.avatar)
-
-            if (['COMPLETED', 'FAILED', 'CANCELLED'].includes(data.avatar.status)) {
-              setIsPolling(false)
             }
           }
         } catch (error) {
-          console.error('상태 폴링 오류:', error)
+          console.error('UPLOADING 상태 조회 오류:', error)
         }
       }
-
-      const interval = setInterval(pollStatus, 1000)
-      return () => clearInterval(interval)
+      fetchAndUpload()
     }
-  }, [avatar.id, avatar.status, onStatusUpdate])
+  }, [avatar.id, avatar.status, isUploading])
 
   /**
    * 상태에 따른 라벨 텍스트 반환
@@ -208,7 +200,8 @@ export function AvatarCard({ avatar, onDelete, onStatusUpdate }: AvatarCardProps
     router.push(`/dashboard/avatar/${avatar.id}/outfit`)
   }
 
-  const isProcessing = isPolling || isUploading
+  // 처리 중 상태 판단 (상태 기반으로 변경, isPolling 제거됨)
+  const isProcessing = ['PENDING', 'IN_QUEUE', 'IN_PROGRESS', 'UPLOADING'].includes(avatar.status) || isUploading
 
   return (
     <div

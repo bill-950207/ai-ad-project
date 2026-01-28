@@ -3,11 +3,15 @@
  *
  * 아바타 목록을 표시하고 관리합니다.
  * 새 아바타 만들기는 별도 페이지(/dashboard/avatar/new)로 이동합니다.
+ *
+ * 폴링 최적화:
+ * - 기존: 각 AvatarCard에서 개별 폴링 (N개 아바타 = 초당 N개 요청)
+ * - 개선: 부모에서 일괄 폴링 (초당 1개 요청으로 모든 아바타 상태 확인)
  */
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useLanguage } from '@/contexts/language-context'
 import { AvatarList } from './avatar-list'
 import { Plus } from 'lucide-react'
@@ -27,6 +31,9 @@ interface Avatar {
   error_message?: string | null
 }
 
+/** 처리 중인 상태 목록 */
+const PROCESSING_STATUSES = ['PENDING', 'IN_QUEUE', 'IN_PROGRESS']
+
 // ============================================================
 // 컴포넌트
 // ============================================================
@@ -37,6 +44,7 @@ export function AvatarPageContent() {
   // 상태 관리
   const [avatars, setAvatars] = useState<Avatar[]>([])  // 아바타 목록
   const [isLoading, setIsLoading] = useState(true)      // 초기 로딩 상태
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
 
   /**
    * 아바타 목록 조회
@@ -59,6 +67,36 @@ export function AvatarPageContent() {
   useEffect(() => {
     fetchAvatars()
   }, [fetchAvatars])
+
+  /**
+   * 처리 중인 아바타가 있을 때 일괄 폴링
+   * 기존: 각 카드에서 개별 폴링 → 개선: 부모에서 1초마다 전체 목록 새로고침
+   */
+  useEffect(() => {
+    const hasProcessingAvatars = avatars.some(a => PROCESSING_STATUSES.includes(a.status))
+
+    if (hasProcessingAvatars && !isLoading) {
+      // 이미 폴링 중이면 중복 생성 방지
+      if (pollingRef.current) return
+
+      pollingRef.current = setInterval(() => {
+        fetchAvatars()
+      }, 2000) // 2초 간격 (기존 1초보다 여유있게)
+    } else {
+      // 처리 중인 아바타가 없으면 폴링 중지
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+    }
+
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+    }
+  }, [avatars, isLoading, fetchAvatars])
 
   /**
    * 아바타 삭제 핸들러

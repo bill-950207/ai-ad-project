@@ -89,37 +89,30 @@ export function Sidebar() {
   const menuRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
-  // 사용자 정보, 크레딧, 플랜 조회
+  // 사용자 정보, 크레딧, 플랜 조회 (단일 API 호출로 N+1 최적화)
   useEffect(() => {
-    const getUserAndCredits = async () => {
+    const fetchUserData = async () => {
+      // 1. 인증 정보 조회 (필수)
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
 
-      if (user) {
-        // 프로필에서 크레딧 조회
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('credits')
-          .eq('id', user.id)
-          .single()
+      if (!user) return
 
-        if (profile) {
-          setCredits(profile.credits ?? 0)
+      // 2. 구독 API에서 크레딧 + 플랜 한 번에 조회
+      // 기존: profiles 쿼리 + subscription API = 2회 호출
+      // 개선: subscription API 1회로 통합 (이미 profile.credits 포함)
+      try {
+        const res = await fetch('/api/subscription')
+        if (res.ok) {
+          const data = await res.json()
+          setCredits(data.profile?.credits ?? 0)
+          setPlanType(data.subscription?.planType || 'FREE')
         }
-
-        // 구독 정보에서 플랜 조회
-        try {
-          const res = await fetch('/api/subscription')
-          if (res.ok) {
-            const data = await res.json()
-            setPlanType(data.subscription?.planType || 'FREE')
-          }
-        } catch {
-          // 구독 API 실패 시 기본값 유지
-        }
+      } catch {
+        // 구독 API 실패 시 기본값 유지
       }
     }
-    getUserAndCredits()
+    fetchUserData()
   }, [supabase])
 
   // 메뉴 외부 클릭 시 닫기
@@ -133,6 +126,21 @@ export function Sidebar() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // ESC 키로 메뉴 닫기
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (showLanguageMenu) {
+          setShowLanguageMenu(false)
+        } else if (showProfileMenu) {
+          setShowProfileMenu(false)
+        }
+      }
+    }
+    document.addEventListener('keydown', handleEscKey)
+    return () => document.removeEventListener('keydown', handleEscKey)
+  }, [showProfileMenu, showLanguageMenu])
 
   /**
    * 로그아웃 핸들러
@@ -173,8 +181,12 @@ export function Sidebar() {
     <aside className="w-64 bg-card border-r border-border h-screen fixed left-0 top-0 flex flex-col">
       {/* 로고 */}
       <div className="h-16 flex items-center px-4 border-b border-border">
-        <Link href="/dashboard" className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-primary to-purple-400 rounded-lg flex items-center justify-center">
+        <Link
+          href="/dashboard"
+          aria-label="ADAI 대시보드 홈"
+          className="flex items-center space-x-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card rounded-lg"
+        >
+          <div className="w-8 h-8 bg-gradient-to-br from-primary to-purple-400 rounded-lg flex items-center justify-center" aria-hidden="true">
             <span className="text-white font-bold text-sm">AD</span>
           </div>
           <span className="text-xl font-bold text-foreground">ADAI</span>
@@ -228,7 +240,10 @@ export function Sidebar() {
         <div className="relative">
           <button
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-secondary/50 transition-colors"
+            aria-expanded={showProfileMenu}
+            aria-haspopup="menu"
+            aria-label={`${getUserDisplayName()} 프로필 메뉴`}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card transition-colors"
           >
             <div className="flex items-center gap-3">
               <div className="relative">
@@ -263,30 +278,37 @@ export function Sidebar() {
 
           {/* 프로필 드롭다운 메뉴 */}
           {showProfileMenu && (
-            <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-50">
+            <div
+              role="menu"
+              aria-label="프로필 메뉴"
+              className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-50"
+            >
               <div className="py-1">
                 <Link
                   href="/dashboard/profile"
-                  className="flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-secondary/50 transition-colors"
+                  role="menuitem"
+                  className="flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-secondary/50 focus-visible:outline-none focus-visible:bg-secondary/50 transition-colors"
                   onClick={() => setShowProfileMenu(false)}
                 >
-                  <UserIcon className="w-4 h-4" />
+                  <UserIcon className="w-4 h-4" aria-hidden="true" />
                   <span>{t.common.myProfile}</span>
                 </Link>
                 <Link
                   href="/dashboard/settings"
-                  className="flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-secondary/50 transition-colors"
+                  role="menuitem"
+                  className="flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-secondary/50 focus-visible:outline-none focus-visible:bg-secondary/50 transition-colors"
                   onClick={() => setShowProfileMenu(false)}
                 >
-                  <Settings className="w-4 h-4" />
+                  <Settings className="w-4 h-4" aria-hidden="true" />
                   <span>{t.common.settings}</span>
                 </Link>
                 <Link
                   href="/dashboard/subscription"
-                  className="flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-secondary/50 transition-colors"
+                  role="menuitem"
+                  className="flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-secondary/50 focus-visible:outline-none focus-visible:bg-secondary/50 transition-colors"
                   onClick={() => setShowProfileMenu(false)}
                 >
-                  <CreditCard className="w-4 h-4" />
+                  <CreditCard className="w-4 h-4" aria-hidden="true" />
                   <span>{t.common.subscription || '구독 관리'}</span>
                 </Link>
 
@@ -294,10 +316,13 @@ export function Sidebar() {
                 <div className="relative">
                   <button
                     onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-                    className="w-full flex items-center justify-between px-4 py-2 text-sm text-foreground hover:bg-secondary/50 transition-colors"
+                    role="menuitem"
+                    aria-expanded={showLanguageMenu}
+                    aria-haspopup="menu"
+                    className="w-full flex items-center justify-between px-4 py-2 text-sm text-foreground hover:bg-secondary/50 focus-visible:outline-none focus-visible:bg-secondary/50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <Languages className="w-4 h-4" />
+                      <Languages className="w-4 h-4" aria-hidden="true" />
                       <span>{t.common.language}</span>
                     </div>
                     <span className="text-xs text-muted-foreground">
@@ -306,16 +331,18 @@ export function Sidebar() {
                   </button>
 
                   {showLanguageMenu && (
-                    <div className="border-t border-border bg-secondary/20">
+                    <div role="menu" aria-label="언어 선택" className="border-t border-border bg-secondary/20">
                       {languages.map((lang) => (
                         <button
                           key={lang.code}
+                          role="menuitem"
+                          aria-current={language === lang.code ? 'true' : undefined}
                           onClick={() => handleLanguageChange(lang.code)}
                           className={cn(
-                            "w-full flex items-center gap-3 px-8 py-2 text-sm transition-colors",
+                            "w-full flex items-center gap-3 px-8 py-2 text-sm focus-visible:outline-none transition-colors",
                             language === lang.code
                               ? "text-primary bg-primary/10"
-                              : "text-foreground hover:bg-secondary/50"
+                              : "text-foreground hover:bg-secondary/50 focus-visible:bg-secondary/50"
                           )}
                         >
                           {lang.label}
@@ -329,9 +356,10 @@ export function Sidebar() {
 
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                  role="menuitem"
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 focus-visible:outline-none focus-visible:bg-red-500/10 transition-colors"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-4 h-4" aria-hidden="true" />
                   <span>{t.common.logout}</span>
                 </button>
               </div>
