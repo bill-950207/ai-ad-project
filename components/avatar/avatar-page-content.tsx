@@ -85,17 +85,19 @@ export function AvatarPageContent() {
   }
 
   return (
-    <div>
+    <div className="space-y-8">
       {/* 페이지 헤더 */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">{t.avatar.title}</h1>
-          <p className="text-muted-foreground">{t.avatar.subtitle}</p>
+          <h1 className="text-3xl font-bold mb-2">
+            <span className="gradient-brand-text">{t.avatar.title}</span>
+          </h1>
+          <p className="text-muted-foreground text-lg">{t.avatar.subtitle}</p>
         </div>
         {/* 새 아바타 만들기 버튼 - 항상 표시 */}
         <Link
           href="/dashboard/avatar/new"
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-medium shadow-glow-sm hover:shadow-glow transition-all duration-300"
         >
           <Plus className="w-5 h-5" />
           {t.avatar.createNew}
@@ -105,8 +107,11 @@ export function AvatarPageContent() {
       {/* 아바타 목록 */}
       {isLoading ? (
         // 로딩 중
-        <div className="bg-card border border-border rounded-xl p-12 text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+        <div className="bg-gradient-to-br from-primary/10 via-card to-accent/10 border border-border rounded-2xl p-16 text-center">
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+            <div className="animate-spin w-10 h-10 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4 relative" />
+          </div>
           <p className="text-muted-foreground">로딩 중...</p>
         </div>
       ) : (
