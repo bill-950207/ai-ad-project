@@ -75,41 +75,47 @@ export default function AdProductsPage() {
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">{t.adProduct.title}</h1>
-          <p className="text-muted-foreground">{t.adProduct.subtitle}</p>
+          <h1 className="text-3xl font-bold mb-2">
+            <span className="gradient-brand-text">{t.adProduct.title}</span>
+          </h1>
+          <p className="text-muted-foreground text-lg">{t.adProduct.subtitle}</p>
         </div>
         <button
           onClick={handleRegisterProduct}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-medium shadow-glow-sm hover:shadow-glow transition-all duration-300"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-5 h-5" />
           {t.adProduct.registerProduct}
         </button>
       </div>
 
       {/* 광고 제품 목록 */}
       {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
           {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-            <div key={i} className="aspect-square bg-secondary/30 rounded-2xl animate-pulse" />
+            <div key={i} className="aspect-square bg-gradient-to-br from-card to-secondary/30 rounded-2xl animate-pulse border border-border/50" />
           ))}
         </div>
       ) : products.length === 0 ? (
-        <div className="bg-card border border-border rounded-2xl p-16 text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
-            <Package className="w-10 h-10 text-primary" />
+        <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-card to-accent/10 border border-border rounded-2xl p-16 text-center">
+          {/* 배경 글로우 */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
+          <div className="relative">
+            <div className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border border-primary/20">
+              <Package className="w-12 h-12 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground mb-3">{t.adProduct.emptyProducts}</h3>
+            <p className="text-muted-foreground mb-8">광고에 사용할 제품을 등록해주세요</p>
+            <button
+              onClick={handleRegisterProduct}
+              className="px-8 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-medium shadow-glow-sm hover:shadow-glow transition-all duration-300"
+            >
+              {t.adProduct.registerProduct}
+            </button>
           </div>
-          <h3 className="text-xl font-semibold text-foreground mb-3">{t.adProduct.emptyProducts}</h3>
-          <p className="text-muted-foreground mb-6">광고에 사용할 제품을 등록해주세요</p>
-          <button
-            onClick={handleRegisterProduct}
-            className="px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors font-medium"
-          >
-            {t.adProduct.registerProduct}
-          </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
           {products.map(product => (
             <AdProductCard
               key={product.id}
