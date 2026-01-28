@@ -40,6 +40,107 @@ export type EmotionPreset =
   | 'friendly'      // 친근한 (일상 대화)
   | 'excited'       // 흥분된 (프로모션)
 
+/** 감정 컨텍스트 타입 (next_text 워크어라운드용) */
+export type EmotionContext =
+  // 긍정적 감정
+  | 'excited'       // 흥분, 설렘
+  | 'happy'         // 행복
+  | 'enthusiastic'  // 열정적
+  | 'cheerful'      // 쾌활한
+  | 'warm'          // 따뜻한
+  | 'confident'     // 자신감 있는
+  | 'proud'         // 자랑스러운
+  | 'hopeful'       // 희망찬
+  | 'grateful'      // 감사하는
+  | 'playful'       // 장난스러운
+  // 중립/전문적
+  | 'neutral'       // 중립
+  | 'calm'          // 차분한
+  | 'professional'  // 전문적
+  | 'informative'   // 정보 전달
+  | 'thoughtful'    // 사려깊은
+  | 'sincere'       // 진심어린
+  // 부정적/감정적
+  | 'concerned'     // 걱정하는
+  | 'sympathetic'   // 공감하는
+  | 'urgent'        // 긴급한
+  | 'serious'       // 진지한
+  // 특수 톤
+  | 'whispering'    // 속삭이는
+  | 'dramatic'      // 극적인
+  | 'mysterious'    // 신비로운
+  | 'sarcastic'     // 비꼬는
+
+/** 감정 컨텍스트 → next_text 변환 맵 (영문) */
+export const EMOTION_CONTEXT_MAP: Record<EmotionContext, string> = {
+  // 긍정적 감정
+  excited: ', she said with excitement',
+  happy: ', she said happily',
+  enthusiastic: ', she said enthusiastically',
+  cheerful: ', she said cheerfully',
+  warm: ', she said warmly',
+  confident: ', she said confidently',
+  proud: ', she said proudly',
+  hopeful: ', she said hopefully',
+  grateful: ', she said gratefully',
+  playful: ', she said playfully',
+  // 중립/전문적
+  neutral: '',  // 중립은 next_text 없음
+  calm: ', she said calmly',
+  professional: ', she explained professionally',
+  informative: ', she explained informatively',
+  thoughtful: ', she said thoughtfully',
+  sincere: ', she said sincerely',
+  // 부정적/감정적
+  concerned: ', she said with concern',
+  sympathetic: ', she said sympathetically',
+  urgent: ', she said urgently',
+  serious: ', she said seriously',
+  // 특수 톤
+  whispering: ', she whispered',
+  dramatic: ', she said dramatically',
+  mysterious: ', she said mysteriously',
+  sarcastic: ', she said sarcastically',
+}
+
+/** 감정 컨텍스트 한국어 설명 */
+export const EMOTION_CONTEXT_LABELS: Record<EmotionContext, string> = {
+  excited: '흥분된, 설레는',
+  happy: '행복한',
+  enthusiastic: '열정적인',
+  cheerful: '쾌활한',
+  warm: '따뜻한',
+  confident: '자신감 있는',
+  proud: '자랑스러운',
+  hopeful: '희망찬',
+  grateful: '감사하는',
+  playful: '장난스러운',
+  neutral: '중립적인',
+  calm: '차분한',
+  professional: '전문적인',
+  informative: '정보 전달',
+  thoughtful: '사려깊은',
+  sincere: '진심어린',
+  concerned: '걱정하는',
+  sympathetic: '공감하는',
+  urgent: '긴급한',
+  serious: '진지한',
+  whispering: '속삭이는',
+  dramatic: '극적인',
+  mysterious: '신비로운',
+  sarcastic: '비꼬는',
+}
+
+/**
+ * 광고 스타일별 추천 감정 컨텍스트
+ */
+export const RECOMMENDED_EMOTION_CONTEXTS: Record<string, EmotionContext[]> = {
+  UGC: ['excited', 'enthusiastic', 'happy', 'playful', 'confident'],
+  podcast: ['calm', 'thoughtful', 'warm', 'sincere', 'informative'],
+  expert: ['professional', 'confident', 'informative', 'sincere', 'calm'],
+  promo: ['excited', 'enthusiastic', 'urgent', 'confident', 'dramatic'],
+}
+
 /** 감정 프리셋별 음성 설정 */
 export const EMOTION_PRESETS: Record<EmotionPreset, VoiceSettings> = {
   neutral: {
@@ -109,7 +210,11 @@ export interface TTSInput {
   model_id?: ElevenLabsModelId   // 모델 ID (기본: eleven_multilingual_v2)
   voice_settings?: VoiceSettings // 음성 설정 (선택사항)
   emotion_preset?: EmotionPreset // 감정 프리셋 (voice_settings 대신 사용 가능)
+  emotion_context?: EmotionContext // 감정 컨텍스트 (next_text로 전달, 음성에 포함되지 않음)
   output_format?: string         // 출력 포맷 (기본: mp3_44100_128)
+  // 연속성 파라미터
+  previous_text?: string         // 이전 텍스트 (연속성 유지용)
+  seed?: number                  // 재현 가능한 생성 (0 ~ 4294967295)
 }
 
 /** TTS 결과 */
@@ -196,6 +301,45 @@ export function getRecommendedAudioTags(style: 'formal' | 'casual' | 'energetic'
  */
 export function isV3Model(modelId?: ElevenLabsModelId): boolean {
   return modelId === 'eleven_v3'
+}
+
+/**
+ * 비디오 타입에 따른 추천 감정 컨텍스트를 반환합니다.
+ *
+ * @param videoType - 비디오 타입 (UGC, podcast, expert, promo)
+ * @returns 추천 감정 컨텍스트 목록
+ */
+export function getRecommendedEmotionContexts(videoType: string): EmotionContext[] {
+  return RECOMMENDED_EMOTION_CONTEXTS[videoType] || RECOMMENDED_EMOTION_CONTEXTS['UGC']
+}
+
+/**
+ * 감정 컨텍스트에서 next_text 문자열을 생성합니다.
+ *
+ * @param context - 감정 컨텍스트
+ * @returns next_text 문자열 (예: ", she said excitedly")
+ */
+export function getEmotionContextNextText(context: EmotionContext): string {
+  return EMOTION_CONTEXT_MAP[context] || ''
+}
+
+/**
+ * 대본 스타일에 따른 최적의 감정 컨텍스트를 추천합니다.
+ *
+ * @param scriptStyle - 대본 스타일 (formal, casual, energetic, informative)
+ * @returns 추천 감정 컨텍스트
+ */
+export function getEmotionContextForStyle(scriptStyle: string): EmotionContext {
+  const styleMap: Record<string, EmotionContext> = {
+    formal: 'professional',
+    casual: 'warm',
+    energetic: 'enthusiastic',
+    informative: 'informative',
+    friendly: 'warm',
+    exciting: 'excited',
+    calm: 'calm',
+  }
+  return styleMap[scriptStyle] || 'neutral'
 }
 
 /** 음성 언어 타입 */
@@ -615,6 +759,13 @@ export function detectLanguage(text: string): VoiceLanguage {
  *   emotion_preset: 'energetic'
  * })
  *
+ * // 감정 컨텍스트 사용 (next_text 워크어라운드 - 읽히지 않음!)
+ * await textToSpeech({
+ *   text: '이 제품 정말 좋아요!',
+ *   voice_id: 'voice-id',
+ *   emotion_context: 'excited'  // next_text로 감정 전달
+ * })
+ *
  * // v3 모델 + Audio Tags
  * await textToSpeech({
  *   text: '[excited] 정말 좋아요!',
@@ -629,13 +780,37 @@ export async function textToSpeech(input: TTSInput): Promise<TTSResult> {
     model_id = 'eleven_multilingual_v2',
     voice_settings,
     emotion_preset,
+    emotion_context,
     output_format = 'mp3_44100_128',
+    previous_text,
+    seed,
   } = input
 
   // 감정 프리셋이 있으면 해당 설정 사용, 없으면 직접 지정한 설정 또는 기본값
   const finalVoiceSettings = emotion_preset
     ? EMOTION_PRESETS[emotion_preset]
     : (voice_settings || DEFAULT_VOICE_SETTINGS)
+
+  // 감정 컨텍스트가 있으면 next_text 생성 (음성에 포함되지 않음)
+  const next_text = emotion_context ? EMOTION_CONTEXT_MAP[emotion_context] : undefined
+
+  // API 요청 body 구성
+  const requestBody: Record<string, unknown> = {
+    text,
+    model_id,
+    voice_settings: finalVoiceSettings,
+  }
+
+  // 선택적 파라미터 추가
+  if (next_text) {
+    requestBody.next_text = next_text
+  }
+  if (previous_text) {
+    requestBody.previous_text = previous_text
+  }
+  if (seed !== undefined) {
+    requestBody.seed = seed
+  }
 
   const response = await fetch(
     `${ELEVENLABS_API_URL}/text-to-speech/${voice_id}?output_format=${output_format}`,
@@ -645,11 +820,7 @@ export async function textToSpeech(input: TTSInput): Promise<TTSResult> {
         'xi-api-key': ELEVENLABS_API_KEY,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        text,
-        model_id,
-        voice_settings: finalVoiceSettings,
-      }),
+      body: JSON.stringify(requestBody),
     }
   )
 
