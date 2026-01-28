@@ -15,7 +15,7 @@ export interface AvatarStyleOptions {
   vibe?: 'natural' | 'sophisticated' | 'cute' | 'professional'
   bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'plussize'
   height?: 'short' | 'average' | 'tall'
-  gender?: 'female' | 'male' | 'nonbinary'
+  gender?: 'female' | 'male'
 }
 
 interface Avatar {

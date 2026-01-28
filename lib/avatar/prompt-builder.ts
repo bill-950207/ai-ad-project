@@ -356,22 +356,11 @@ export function convertAiAvatarOptionsToAvatarOptions(aiOptions: AiAvatarOptions
   // 인종 변환
   if (aiOptions.ethnicity && aiOptions.ethnicity !== 'any') {
     const ethnicityConvertMap: Record<string, AvatarOptions['ethnicity']> = {
-      korean: 'korean',
-      asian: 'eastAsian',
-      western: 'western',
+      korean: 'asian',
+      asian: 'asian',
+      western: 'caucasian',
     }
     options.ethnicity = ethnicityConvertMap[aiOptions.ethnicity]
-  }
-
-  // 스타일 → 분위기 변환
-  if (aiOptions.style && aiOptions.style !== 'any') {
-    const vibeConvertMap: Record<string, AvatarOptions['vibe']> = {
-      natural: 'natural',
-      professional: 'professional',
-      casual: 'natural',
-      elegant: 'sophisticated',
-    }
-    options.vibe = vibeConvertMap[aiOptions.style]
   }
 
   // 체형 변환
@@ -380,8 +369,8 @@ export function convertAiAvatarOptionsToAvatarOptions(aiOptions: AiAvatarOptions
   }
 
   // 기본값: 스튜디오 배경, 자연스러운 포즈
-  options.background = 'studio'
-  options.pose = 'natural'
+  options.background = 'studioWhite'
+  options.pose = 'standingHalf'
 
   return options
 }
