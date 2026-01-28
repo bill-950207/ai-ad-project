@@ -303,14 +303,16 @@ export function VideoAdPageContent() {
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">{t.videoAd?.title || '영상 광고'}</h1>
-          <p className="text-muted-foreground">{t.videoAd?.subtitle || 'AI로 영상 광고를 제작하세요'}</p>
+          <h1 className="text-3xl font-bold mb-2">
+            <span className="gradient-brand-text">{t.videoAd?.title || '영상 광고'}</span>
+          </h1>
+          <p className="text-muted-foreground text-lg">{t.videoAd?.subtitle || 'AI로 영상 광고를 제작하세요'}</p>
         </div>
         <button
           onClick={handleCreateVideoAd}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-medium shadow-glow-sm hover:shadow-glow transition-all duration-300"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-5 h-5" />
           {t.videoAd?.createAd || '영상 광고 생성'}
         </button>
       </div>
@@ -318,35 +320,39 @@ export function VideoAdPageContent() {
       {/* 영상 광고 섹션 */}
       <section>
         {isAdsLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-              <div key={i} className="aspect-square bg-secondary/30 rounded-2xl animate-pulse" />
+              <div key={i} className="aspect-square bg-gradient-to-br from-card to-secondary/30 rounded-2xl animate-pulse border border-border/50" />
             ))}
           </div>
         ) : videoAds.length === 0 ? (
-          <div className="bg-card border border-border rounded-2xl p-16 text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
-              <Video className="w-10 h-10 text-primary" />
+          <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-card to-accent/10 border border-border rounded-2xl p-16 text-center">
+            {/* 배경 글로우 */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
+            <div className="relative">
+              <div className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border border-primary/20">
+                <Video className="w-12 h-12 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-3">{t.videoAd?.emptyAds || '생성된 영상 광고가 없습니다'}</h3>
+              <p className="text-muted-foreground mb-8">영상 광고를 생성해보세요</p>
+              <button
+                onClick={handleCreateVideoAd}
+                className="px-8 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-medium shadow-glow-sm hover:shadow-glow transition-all duration-300"
+              >
+                {t.videoAd?.createAd || '영상 광고 생성'}
+              </button>
             </div>
-            <h3 className="text-xl font-semibold text-foreground mb-3">{t.videoAd?.emptyAds || '생성된 영상 광고가 없습니다'}</h3>
-            <p className="text-muted-foreground mb-6">영상 광고를 생성해보세요</p>
-            <button
-              onClick={handleCreateVideoAd}
-              className="px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors font-medium"
-            >
-              {t.videoAd?.createAd || '영상 광고 생성'}
-            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {videoAds.map(video => (
               <div
                 key={video.id}
                 onClick={() => handleVideoClick(video)}
-                className={`relative group bg-card border border-border rounded-2xl overflow-hidden transition-all ${
+                className={`relative group bg-card border border-border rounded-2xl overflow-hidden transition-all duration-300 ${
                   video.status === 'COMPLETED'
-                    ? 'cursor-pointer hover:border-primary/50 hover:shadow-lg'
-                    : 'cursor-pointer'
+                    ? 'cursor-pointer hover:border-primary/40 hover:shadow-glow-sm'
+                    : 'cursor-pointer hover:border-border/80'
                 }`}
               >
                 {/* 비디오 썸네일 또는 플레이스홀더 */}
@@ -366,9 +372,9 @@ export function VideoAdPageContent() {
                         }}
                       />
                       {/* 재생 아이콘 오버레이 */}
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/30 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                        <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
-                          <Play className="w-6 h-6 text-black ml-1" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/60 via-black/20 to-transparent sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300">
+                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-glow transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                          <Play className="w-6 h-6 text-white ml-1" />
                         </div>
                       </div>
                     </>
@@ -483,7 +489,7 @@ export function VideoAdPageContent() {
 
                 {/* 카테고리 뱃지 - 좌측 상단 */}
                 <div className="absolute top-3 left-3 z-10">
-                  <span className="px-3 py-1.5 text-xs font-medium bg-black/60 text-white rounded-lg backdrop-blur-sm">
+                  <span className="px-3 py-1.5 text-xs font-medium bg-card/80 text-foreground rounded-lg backdrop-blur-md border border-border/50">
                     {getCategoryLabel(video.category)}
                   </span>
                 </div>
@@ -544,16 +550,16 @@ export function VideoAdPageContent() {
 
         {/* 페이지네이션 */}
         {pagination && pagination.totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-8">
+          <div className="flex items-center justify-center gap-2 mt-10">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage <= 1}
-              className="p-2 rounded-lg border border-border hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-2.5 rounded-xl border border-border bg-card hover:bg-muted hover:border-primary/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               {/* 페이지 버튼들 */}
               {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
                 .filter(page => {
@@ -573,10 +579,10 @@ export function VideoAdPageContent() {
                       )}
                       <button
                         onClick={() => handlePageChange(page)}
-                        className={`min-w-[40px] h-10 px-3 rounded-lg font-medium transition-colors ${
+                        className={`min-w-[42px] h-10 px-3 rounded-xl font-medium transition-all duration-200 ${
                           currentPage === page
-                            ? 'bg-primary text-primary-foreground'
-                            : 'hover:bg-secondary text-foreground'
+                            ? 'bg-gradient-to-r from-primary to-accent text-white shadow-glow-sm'
+                            : 'bg-card border border-border hover:border-primary/30 hover:bg-muted text-foreground'
                         }`}
                       >
                         {page}
@@ -589,13 +595,13 @@ export function VideoAdPageContent() {
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage >= pagination.totalPages}
-              className="p-2 rounded-lg border border-border hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-2.5 rounded-xl border border-border bg-card hover:bg-muted hover:border-primary/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
 
             {/* 총 개수 표시 */}
-            <span className="ml-4 text-sm text-muted-foreground">
+            <span className="ml-4 text-sm text-muted-foreground font-medium">
               총 {pagination.totalCount}개
             </span>
           </div>
@@ -611,24 +617,24 @@ export function VideoAdPageContent() {
 
       {/* 삭제 확인 모달 */}
       {deleteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center animate-in fade-in duration-200">
           {/* 배경 오버레이 */}
           <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/70 backdrop-blur-md"
             onClick={handleCancelDelete}
           />
           {/* 모달 콘텐츠 */}
-          <div className="relative bg-card border border-border rounded-2xl p-6 w-full max-w-md mx-4 shadow-xl">
+          <div className="relative bg-card/95 backdrop-blur-xl border border-border rounded-2xl p-8 w-full max-w-md mx-4 shadow-2xl animate-in zoom-in-95 duration-200">
             <button
               onClick={handleCancelDelete}
-              className="absolute top-4 right-4 p-1 rounded-lg hover:bg-secondary transition-colors"
+              className="absolute top-4 right-4 p-2 rounded-xl hover:bg-muted transition-colors"
             >
               <X className="w-5 h-5 text-muted-foreground" />
             </button>
 
             <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/10 flex items-center justify-center">
-                <Trash2 className="w-8 h-8 text-red-500" />
+              <div className="w-18 h-18 mx-auto mb-5 rounded-2xl bg-destructive/10 flex items-center justify-center border border-destructive/20">
+                <Trash2 className="w-9 h-9 text-destructive" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">{t.videoAd?.deleteModal?.title || '영상 삭제'}</h3>
               <p className="text-muted-foreground mb-6">
@@ -636,20 +642,20 @@ export function VideoAdPageContent() {
                   ? (t.videoAd?.deleteModal?.confirmWithName || '"{{name}}" 영상을 삭제하시겠습니까?').replace('{{name}}', videoToDelete?.ad_products?.name || videoToDelete?.avatars?.name || '')
                   : (t.videoAd?.deleteModal?.confirm || '이 영상을 삭제하시겠습니까?')}
                 <br />
-                <span className="text-sm text-red-500">{t.videoAd?.deleteModal?.warning || '삭제된 영상은 복구할 수 없습니다.'}</span>
+                <span className="text-sm text-destructive font-medium">{t.videoAd?.deleteModal?.warning || '삭제된 영상은 복구할 수 없습니다.'}</span>
               </p>
 
               <div className="flex gap-3">
                 <button
                   onClick={handleCancelDelete}
-                  className="flex-1 px-4 py-3 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-colors font-medium"
+                  className="flex-1 px-4 py-3 bg-muted text-foreground rounded-xl hover:bg-muted/80 transition-all duration-200 font-medium border border-border"
                 >
                   {t.videoAd?.deleteModal?.cancel || '취소'}
                 </button>
                 <button
                   onClick={handleConfirmDelete}
                   disabled={isDeleting}
-                  className="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-3 bg-destructive text-white rounded-xl hover:bg-destructive/90 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isDeleting ? (
                     <>
