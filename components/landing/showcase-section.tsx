@@ -10,10 +10,12 @@
 
 'use client'
 
-import { useState, useEffect, useRef, createContext, useContext } from 'react'
-import { Play, Image as ImageIcon, Video, Sparkles, ArrowRight, Volume2, VolumeX, ChevronDown } from 'lucide-react'
+import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react'
+import { Play, Image as ImageIcon, Video, Sparkles, ArrowRight, Volume2, VolumeX, ChevronDown, X, Wand2 } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 
 // ============================================================
 // 타입 정의
@@ -42,6 +44,7 @@ interface VideoContextType {
   setHoveredVideoId: (id: string | null) => void
   registerVisibleVideo: (id: string) => void
   unregisterVisibleVideo: (id: string) => void
+  onShowcaseClick: (item: ShowcaseItem) => void
 }
 
 const VideoContext = createContext<VideoContextType>({
@@ -50,6 +53,7 @@ const VideoContext = createContext<VideoContextType>({
   setHoveredVideoId: () => {},
   registerVisibleVideo: () => {},
   unregisterVisibleVideo: () => {},
+  onShowcaseClick: () => {},
 })
 
 // ============================================================
@@ -67,7 +71,7 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
 
-  const { activeVideoId, hoveredVideoId, setHoveredVideoId, registerVisibleVideo, unregisterVisibleVideo } = useContext(VideoContext)
+  const { activeVideoId, hoveredVideoId, setHoveredVideoId, registerVisibleVideo, unregisterVisibleVideo, onShowcaseClick } = useContext(VideoContext)
 
   // 이 비디오가 재생되어야 하는지 확인
   const shouldPlay = item.type === 'video' && (
@@ -139,9 +143,14 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
     }
   }
 
+  const handleCardClick = () => {
+    onShowcaseClick(item)
+  }
+
   return (
     <div
       ref={cardRef}
+      onClick={handleCardClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className="group relative rounded-2xl overflow-hidden bg-secondary/30 cursor-pointer"
@@ -255,6 +264,233 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
 }
 
 // ============================================================
+// 라이트박스 모달 컴포넌트
+// ============================================================
+
+interface ShowcaseLightboxProps {
+  item: ShowcaseItem
+  onClose: () => void
+}
+
+function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
+  const { language, t } = useLanguage()
+  const router = useRouter()
+  const [isCheckingAuth, setIsCheckingAuth] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [isMuted, setIsMuted] = useState(true)
+
+  // ESC 키로 닫기
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
+  // 비디오 자동 재생
+  useEffect(() => {
+    if (item.type === 'video' && videoRef.current) {
+      videoRef.current.play().catch(() => {})
+    }
+  }, [item.type])
+
+  // 광고 타입에 따른 생성 페이지 URL
+  const getCreateUrl = () => {
+    if (item.type === 'image') {
+      return '/dashboard/image-ad'
+    }
+    // 영상 광고 타입에 따라 분기
+    if (item.ad_type === 'productDescription') {
+      return '/dashboard/video-ad/create?type=product-description'
+    }
+    return '/dashboard/video-ad/create?type=product-ad'
+  }
+
+  // "이 광고 만들기" 버튼 클릭
+  const handleCreateClick = async () => {
+    setIsCheckingAuth(true)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (user) {
+        // 로그인된 사용자: 해당 광고 생성 페이지로 이동
+        router.push(getCreateUrl())
+      } else {
+        // 비로그인 사용자: 로그인 페이지로 이동
+        router.push('/login')
+      }
+    } catch (error) {
+      console.error('Auth check error:', error)
+      router.push('/login')
+    } finally {
+      setIsCheckingAuth(false)
+    }
+  }
+
+  // 광고 타입 레이블
+  const getAdTypeLabel = () => {
+    if (item.type === 'image') {
+      return language === 'ko' ? '이미지 광고' : 'Image Ad'
+    }
+    if (item.ad_type === 'productDescription') {
+      return language === 'ko' ? '제품 설명 영상' : 'Product Description Video'
+    }
+    return language === 'ko' ? '제품 광고 영상' : 'Product Ad Video'
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-4xl max-h-[90vh] bg-card rounded-2xl overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* 닫기 버튼 */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <div className="flex flex-col md:flex-row">
+          {/* 미디어 영역 */}
+          <div className="flex-1 bg-black flex items-center justify-center min-h-[300px] md:min-h-[500px]">
+            {item.type === 'video' && item.media_url ? (
+              <div className="relative w-full h-full">
+                <video
+                  ref={videoRef}
+                  src={item.media_url}
+                  className="w-full h-full object-contain"
+                  controls
+                  autoPlay
+                  loop
+                  playsInline
+                  muted={isMuted}
+                />
+                {/* 음소거 토글 */}
+                <button
+                  onClick={() => {
+                    if (videoRef.current) {
+                      videoRef.current.muted = !isMuted
+                      setIsMuted(!isMuted)
+                    }
+                  }}
+                  className="absolute bottom-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+                >
+                  {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                </button>
+              </div>
+            ) : (
+              <img
+                src={item.media_url || item.thumbnail_url}
+                alt={item.title}
+                className="w-full h-full object-contain max-h-[70vh]"
+              />
+            )}
+          </div>
+
+          {/* 정보 영역 */}
+          <div className="w-full md:w-80 p-6 flex flex-col">
+            {/* 광고 타입 배지 */}
+            <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                {item.type === 'video' ? (
+                  <Video className="w-4 h-4" />
+                ) : (
+                  <ImageIcon className="w-4 h-4" />
+                )}
+                <span>{getAdTypeLabel()}</span>
+              </div>
+            </div>
+
+            {/* 제품 & 아바타 정보 */}
+            {(item.product_image_url || item.avatar_image_url) && (
+              <div className="mb-6">
+                <p className="text-sm text-muted-foreground mb-3">
+                  {language === 'ko' ? '사용된 에셋' : 'Assets Used'}
+                </p>
+                <div className="flex items-center gap-3">
+                  {item.product_image_url && (
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-16 h-16 rounded-xl bg-secondary/50 p-1 border border-border">
+                        <img
+                          src={item.product_image_url}
+                          alt="Product"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {language === 'ko' ? '제품' : 'Product'}
+                      </span>
+                    </div>
+                  )}
+                  {item.product_image_url && item.avatar_image_url && (
+                    <div className="text-muted-foreground text-lg">+</div>
+                  )}
+                  {item.avatar_image_url && (
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-border">
+                        <img
+                          src={item.avatar_image_url}
+                          alt="Avatar"
+                          className="w-full h-full object-cover object-top"
+                        />
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {language === 'ko' ? '아바타' : 'Avatar'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 설명 */}
+            {item.description && (
+              <p className="text-sm text-muted-foreground mb-6 line-clamp-3">
+                {item.description}
+              </p>
+            )}
+
+            {/* 스페이서 */}
+            <div className="flex-1" />
+
+            {/* 광고 만들기 버튼 */}
+            <button
+              onClick={handleCreateClick}
+              disabled={isCheckingAuth}
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all duration-300 shadow-lg shadow-primary/25 disabled:opacity-50"
+            >
+              {isCheckingAuth ? (
+                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Wand2 className="w-5 h-5" />
+                  <span>
+                    {language === 'ko' ? '이런 광고 만들기' : 'Create This Ad'}
+                  </span>
+                </>
+              )}
+            </button>
+
+            <p className="text-xs text-muted-foreground text-center mt-3">
+              {language === 'ko'
+                ? 'AI가 비슷한 스타일의 광고를 생성합니다'
+                : 'AI will generate a similar style ad'}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================================
 // 메인 컴포넌트
 // ============================================================
 
@@ -268,6 +504,9 @@ export function ShowcaseSection() {
   const [page, setPage] = useState(1)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const ITEMS_PER_PAGE = 12
+
+  // 라이트박스 상태
+  const [selectedShowcase, setSelectedShowcase] = useState<ShowcaseItem | null>(null)
 
   // 비디오 재생 상태 관리
   const [hoveredVideoId, setHoveredVideoId] = useState<string | null>(null)
@@ -299,6 +538,11 @@ export function ShowcaseSection() {
       setActiveVideoId(firstVisible)
     }
   }, [hoveredVideoId])
+
+  // 쇼케이스 클릭 핸들러
+  const handleShowcaseClick = useCallback((item: ShowcaseItem) => {
+    setSelectedShowcase(item)
+  }, [])
 
   // 쇼케이스 데이터 로드
   const fetchShowcases = async (pageNum: number, append: boolean = false) => {
@@ -400,6 +644,7 @@ export function ShowcaseSection() {
       setHoveredVideoId,
       registerVisibleVideo,
       unregisterVisibleVideo,
+      onShowcaseClick: handleShowcaseClick,
     }}>
       <section id="gallery" className="px-4 py-20 sm:py-28 bg-gradient-to-b from-background via-secondary/20 to-background overflow-hidden">
         <div className="mx-auto max-w-7xl">
@@ -496,6 +741,14 @@ export function ShowcaseSection() {
           </div>
         </div>
       </section>
+
+      {/* 라이트박스 모달 */}
+      {selectedShowcase && (
+        <ShowcaseLightbox
+          item={selectedShowcase}
+          onClose={() => setSelectedShowcase(null)}
+        />
+      )}
     </VideoContext.Provider>
   )
 }
