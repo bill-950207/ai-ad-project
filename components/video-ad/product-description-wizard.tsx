@@ -334,8 +334,8 @@ type OutfitPreset = 'casual_everyday' | 'formal_elegant' | 'professional_busines
 // AI 추천 의상 정보 타입
 interface RecommendedOutfit {
   description: string           // 의상 설명 (영어, 프롬프트용)
-  koreanDescription: string     // 의상 설명 (한국어, 사용자 표시용)
-  reason: string                // 추천 이유 (한국어)
+  localizedDescription: string  // 의상 설명 (사용자 선택 언어로 표시)
+  reason: string                // 추천 이유 (사용자 선택 언어)
 }
 
 // 의상 프리셋 정보
@@ -2686,7 +2686,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                     <h2 className="text-lg font-semibold text-foreground">AI 추천 의상</h2>
                   </div>
                   <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                    <p className="text-foreground font-medium mb-2">{recommendedOutfit.koreanDescription}</p>
+                    <p className="text-foreground font-medium mb-2">{recommendedOutfit.localizedDescription}</p>
                     <p className="text-sm text-muted-foreground">{recommendedOutfit.reason}</p>
                   </div>
                 </div>
