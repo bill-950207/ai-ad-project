@@ -284,12 +284,12 @@ export function AdminContent() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="w-16 h-10 rounded-lg overflow-hidden bg-muted">
+                    <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={showcase.thumbnail_url}
                         alt={showcase.title}
-                        className="w-full h-full object-cover"
+                        className="max-w-full max-h-full object-contain"
                       />
                     </div>
                   </td>
