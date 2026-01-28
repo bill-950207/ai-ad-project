@@ -205,11 +205,44 @@ function WizardContent() {
 
 interface ImageAdWizardProps {
   initialAdType?: ImageAdType
+  initialStep?: number
+  initialProductId?: string | null
+  initialAvatarType?: 'ai' | 'avatar' | 'outfit' | null
+  initialAvatarId?: string | null
+  initialOutfitId?: string | null
+  initialAiAvatarOptions?: string | null  // JSON string
 }
 
-export function ImageAdWizard({ initialAdType = 'productOnly' }: ImageAdWizardProps) {
+export function ImageAdWizard({
+  initialAdType = 'productOnly',
+  initialStep = 1,
+  initialProductId,
+  initialAvatarType,
+  initialAvatarId,
+  initialOutfitId,
+  initialAiAvatarOptions,
+}: ImageAdWizardProps) {
+  // Parse AI avatar options if provided as JSON string
+  const parsedAiAvatarOptions = initialAiAvatarOptions
+    ? (() => {
+        try {
+          return JSON.parse(initialAiAvatarOptions)
+        } catch {
+          return null
+        }
+      })()
+    : null
+
   return (
-    <ImageAdWizardProvider initialAdType={initialAdType}>
+    <ImageAdWizardProvider
+      initialAdType={initialAdType}
+      initialStep={initialStep}
+      initialProductId={initialProductId}
+      initialAvatarType={initialAvatarType}
+      initialAvatarId={initialAvatarId}
+      initialOutfitId={initialOutfitId}
+      initialAiAvatarOptions={parsedAiAvatarOptions}
+    >
       <div className="min-h-full flex flex-col bg-background">
         <WizardHeader />
         <div className="flex-1">

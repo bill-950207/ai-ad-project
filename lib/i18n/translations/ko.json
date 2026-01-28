@@ -8,7 +8,12 @@
     "subscription": "구독 관리",
     "comingSoon": "곧 출시 예정",
     "cancel": "취소",
-    "save": "저장"
+    "save": "저장",
+    "error": "오류가 발생했습니다",
+    "errorDescription": "예기치 않은 문제가 발생했습니다. 다시 시도해 주세요.",
+    "retry": "다시 시도",
+    "goBack": "뒤로 가기",
+    "goHome": "홈으로"
   },
   "landing": {
     "badge": "AI 기반 광고 제작",
@@ -45,7 +50,16 @@
     "creditsRemaining": "남은 크레딧",
     "quickActions": "빠른 작업",
     "recentActivity": "최근 활동",
-    "noRecentActivity": "최근 활동이 없습니다"
+    "noRecentActivity": "최근 활동이 없습니다",
+    "showcase": {
+      "title": "이런 광고를 만들 수 있어요",
+      "cta": "나만의 광고 만들기"
+    },
+    "recentWork": {
+      "title": "최근 작업",
+      "processing": "생성 중",
+      "viewAll": "전체 보기"
+    }
   },
   "avatar": {
     "title": "아바타 생성",

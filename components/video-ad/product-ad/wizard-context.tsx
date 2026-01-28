@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useCallback, useRef, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react'
 import { useAsyncDraftSave } from '@/lib/hooks/use-async-draft-save'
 
 // ============================================================
@@ -288,9 +288,11 @@ const createDefaultScenario = (): ScenarioInfo => ({
 
 interface ProductAdWizardProviderProps {
   children: ReactNode
+  initialProductId?: string | null
+  initialStep?: number
 }
 
-export function ProductAdWizardProvider({ children }: ProductAdWizardProviderProps) {
+export function ProductAdWizardProvider({ children, initialProductId, initialStep }: ProductAdWizardProviderProps) {
   // DB 연동 상태
   const [draftId, setDraftId] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -298,8 +300,8 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
   // saveDraft 직후 loadDraft 스킵용 flag (URL 업데이트 후 불필요한 재로드 방지)
   const skipNextLoadRef = useRef(false)
 
-  // Step 1 상태
-  const [step, setStep] = useState<WizardStep>(1)
+  // Step 1 상태 (온보딩에서 전달된 initialStep 사용)
+  const [step, setStep] = useState<WizardStep>((initialStep || 1) as WizardStep)
   const [selectedProduct, setSelectedProduct] = useState<AdProduct | null>(null)
   const [editableDescription, setEditableDescription] = useState('')
   const [editableSellingPoints, setEditableSellingPoints] = useState<string[]>([''])
@@ -347,6 +349,34 @@ export function ProductAdWizardProvider({ children }: ProductAdWizardProviderPro
   // Step 5 멀티씬 상태 (Kling O1용)
   const [sceneVideoSegments, setSceneVideoSegments] = useState<SceneVideoSegment[]>([])
   const [finalVideoUrl, setFinalVideoUrl] = useState<string | null>(null)
+
+  // 온보딩에서 전달된 초기 제품 로드
+  useEffect(() => {
+    if (initialProductId) {
+      fetch(`/api/ad-products/${initialProductId}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.product) {
+            setSelectedProduct({
+              id: data.product.id,
+              name: data.product.name,
+              rembg_image_url: data.product.rembg_image_url,
+              image_url: data.product.image_url,
+              description: data.product.description,
+              selling_points: data.product.selling_points,
+            })
+            // 편집 가능한 필드도 함께 설정
+            if (data.product.description) {
+              setEditableDescription(data.product.description)
+            }
+            if (data.product.selling_points?.length) {
+              setEditableSellingPoints(data.product.selling_points)
+            }
+          }
+        })
+        .catch(err => console.error('초기 제품 로드 오류:', err))
+    }
+  }, [initialProductId])
 
   // Helper functions for video arrays
   const addVideoRequestId = useCallback((id: string) => {

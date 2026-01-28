@@ -8,7 +8,12 @@
     "subscription": "サブスクリプション",
     "comingSoon": "近日公開",
     "cancel": "キャンセル",
-    "save": "保存"
+    "save": "保存",
+    "error": "エラーが発生しました",
+    "errorDescription": "予期しないエラーが発生しました。もう一度お試しください。",
+    "retry": "再試行",
+    "goBack": "戻る",
+    "goHome": "ホームへ"
   },
   "landing": {
     "badge": "AI搭載広告作成",
@@ -45,7 +50,16 @@
     "creditsRemaining": "残りクレジット",
     "quickActions": "クイックアクション",
     "recentActivity": "最近のアクティビティ",
-    "noRecentActivity": "最近のアクティビティはありません"
+    "noRecentActivity": "最近のアクティビティはありません",
+    "showcase": {
+      "title": "こんな広告が作れます",
+      "cta": "自分だけの広告を作る"
+    },
+    "recentWork": {
+      "title": "最近の作業",
+      "processing": "生成中",
+      "viewAll": "すべて見る"
+    }
   },
   "avatar": {
     "title": "アバター生成",

@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // 배럴 파일 임포트 최적화 (lucide-react 등)
+  // 개별 아이콘만 번들에 포함되어 콜드 스타트 200-800ms 개선
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
+  },
   images: {
     remotePatterns: [
       {

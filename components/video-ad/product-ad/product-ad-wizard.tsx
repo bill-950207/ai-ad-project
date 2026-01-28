@@ -168,11 +168,13 @@ function WizardInner({ onBack, videoAdId }: WizardInnerProps) {
 interface ProductAdWizardProps {
   onBack?: () => void
   videoAdId?: string
+  initialProductId?: string | null
+  initialStep?: number
 }
 
-export function ProductAdWizard({ onBack, videoAdId }: ProductAdWizardProps) {
+export function ProductAdWizard({ onBack, videoAdId, initialProductId, initialStep = 1 }: ProductAdWizardProps) {
   return (
-    <ProductAdWizardProvider>
+    <ProductAdWizardProvider initialProductId={initialProductId} initialStep={initialStep}>
       <WizardInner onBack={onBack} videoAdId={videoAdId} />
     </ProductAdWizardProvider>
   )
