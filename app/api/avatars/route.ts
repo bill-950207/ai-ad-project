@@ -161,10 +161,12 @@ export async function POST(request: NextRequest) {
     const usageCheck = await checkUsageLimit(user.id, 'avatar')
     const needsCredits = !usageCheck.withinLimit
 
-    // 크레딧이 필요한 경우 (제한 초과) 크레딧 확인
+    // 크레딧이 필요한 경우 (제한 초과) 사전 확인 (빠른 실패를 위해)
+    // 실제 차감은 트랜잭션 내에서 재확인 후 수행
     if (needsCredits) {
       const profile = await prisma.profiles.findUnique({
         where: { id: user.id },
+        select: { credits: true },
       })
 
       if (!profile || (profile.credits ?? 0) < AVATAR_CREDIT_COST) {
@@ -199,10 +201,20 @@ export async function POST(request: NextRequest) {
       queueResponse = await submitToFalQueue(finalPrompt)
     }
 
-    // 트랜잭션으로 사용량/크레딧 처리 및 아바타 레코드 생성
+    // 트랜잭션으로 크레딧 확인/차감 및 아바타 레코드 생성 (원자적 처리로 Race Condition 방지)
     const avatar = await prisma.$transaction(async (tx) => {
       if (needsCredits) {
-        // 제한 초과: 크레딧 차감
+        // 트랜잭션 내에서 크레딧 재확인 (동시성 문제 해결)
+        const profile = await tx.profiles.findUnique({
+          where: { id: user.id },
+          select: { credits: true },
+        })
+
+        if (!profile || (profile.credits ?? 0) < AVATAR_CREDIT_COST) {
+          throw new Error('INSUFFICIENT_CREDITS')
+        }
+
+        // 크레딧 차감 (원자적)
         await tx.profiles.update({
           where: { id: user.id },
           data: { credits: { decrement: AVATAR_CREDIT_COST } },
@@ -224,6 +236,8 @@ export async function POST(request: NextRequest) {
           fal_cancel_url: queueResponse.cancel_url || null,
         },
       })
+    }, {
+      timeout: 10000,  // 트랜잭션 타임아웃 10초
     })
 
     // 무료 생성인 경우 사용량 증가 (트랜잭션 외부에서 처리)
@@ -233,6 +247,14 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ avatar }, { status: 201 })
   } catch (error) {
+    // 크레딧 부족 에러 처리 (트랜잭션 내에서 발생)
+    if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
+      return NextResponse.json(
+        { error: 'Insufficient credits (concurrent request detected)' },
+        { status: 402 }
+      )
+    }
+
     console.error('아바타 생성 오류:', error)
     return NextResponse.json(
       { error: 'Failed to create avatar' },
