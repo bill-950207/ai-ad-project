@@ -230,7 +230,8 @@ export function ShowcaseGallery() {
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
-  const [offset, setOffset] = useState(0)
+  const [imageOffset, setImageOffset] = useState(0)
+  const [videoOffset, setVideoOffset] = useState(0)
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
   // ad_type을 현재 언어에 맞게 번역
@@ -255,33 +256,70 @@ export function ShowcaseGallery() {
     return adType
   }, [t.imageAdTypes, language])
 
+  // 이미지와 영상을 번갈아 배치 (interleave)
+  const interleaveShowcases = (images: ShowcaseItem[], videos: ShowcaseItem[]): ShowcaseItem[] => {
+    const result: ShowcaseItem[] = []
+    const maxLen = Math.max(images.length, videos.length)
+
+    for (let i = 0; i < maxLen; i++) {
+      if (i < images.length) result.push(images[i])
+      if (i < videos.length) result.push(videos[i])
+    }
+
+    return result
+  }
+
   // 쇼케이스 데이터 로드
-  const fetchShowcases = useCallback(async (currentOffset: number, isInitial: boolean = false) => {
+  const fetchShowcases = useCallback(async (imgOffset: number, vidOffset: number, isInitial: boolean = false) => {
     if (isInitial) {
       setIsLoading(true)
     } else {
       setIsLoadingMore(true)
     }
 
+    const itemsPerType = Math.ceil(ITEMS_PER_PAGE / 2) // 각 타입별 로드 수
+
     try {
-      // type 파라미터 없이 호출하면 모든 타입 조회
-      const res = await fetch(`/api/showcases?limit=${ITEMS_PER_PAGE}&offset=${currentOffset}`)
+      // 이미지와 영상 각각 조회
+      const [imageRes, videoRes] = await Promise.all([
+        fetch(`/api/showcases?type=image&limit=${itemsPerType}&offset=${imgOffset}`),
+        fetch(`/api/showcases?type=video&limit=${itemsPerType}&offset=${vidOffset}`),
+      ])
 
-      if (res.ok) {
-        const data = await res.json()
-        const newShowcases = data.showcases || []
+      let newImages: ShowcaseItem[] = []
+      let newVideos: ShowcaseItem[] = []
+      let imageTotalCount = 0
+      let videoTotalCount = 0
 
-        if (isInitial) {
-          setShowcases(newShowcases)
-        } else {
-          setShowcases(prev => [...prev, ...newShowcases])
-        }
-
-        // 더 불러올 데이터가 있는지 확인
-        const newOffset = currentOffset + newShowcases.length
-        setOffset(newOffset)
-        setHasMore(newOffset < data.totalCount)
+      if (imageRes.ok) {
+        const data = await imageRes.json()
+        newImages = data.showcases || []
+        imageTotalCount = data.totalCount || 0
       }
+
+      if (videoRes.ok) {
+        const data = await videoRes.json()
+        newVideos = data.showcases || []
+        videoTotalCount = data.totalCount || 0
+      }
+
+      // 번갈아 배치
+      const interleaved = interleaveShowcases(newImages, newVideos)
+
+      if (isInitial) {
+        setShowcases(interleaved)
+      } else {
+        setShowcases(prev => [...prev, ...interleaved])
+      }
+
+      // 오프셋 업데이트
+      const newImageOffset = imgOffset + newImages.length
+      const newVideoOffset = vidOffset + newVideos.length
+      setImageOffset(newImageOffset)
+      setVideoOffset(newVideoOffset)
+
+      // 더 불러올 데이터가 있는지 확인
+      setHasMore(newImageOffset < imageTotalCount || newVideoOffset < videoTotalCount)
     } catch (error) {
       console.error('쇼케이스 로드 오류:', error)
     } finally {
@@ -292,7 +330,7 @@ export function ShowcaseGallery() {
 
   // 초기 로드
   useEffect(() => {
-    fetchShowcases(0, true)
+    fetchShowcases(0, 0, true)
   }, [fetchShowcases])
 
   // 무한 스크롤 - Intersection Observer
@@ -302,7 +340,7 @@ export function ShowcaseGallery() {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
-          fetchShowcases(offset)
+          fetchShowcases(imageOffset, videoOffset)
         }
       },
       { threshold: 0.1, rootMargin: '100px' }
@@ -311,7 +349,7 @@ export function ShowcaseGallery() {
     observer.observe(loadMoreRef.current)
 
     return () => observer.disconnect()
-  }, [hasMore, isLoadingMore, offset, fetchShowcases])
+  }, [hasMore, isLoadingMore, imageOffset, videoOffset, fetchShowcases])
 
   const handleShowcaseClick = (item: ShowcaseItem) => {
     // 쇼케이스 클릭 시 해당 타입의 광고 생성 온보딩 시작
