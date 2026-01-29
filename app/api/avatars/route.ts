@@ -245,7 +245,14 @@ export async function POST(request: NextRequest) {
     })
 
 
-    return NextResponse.json({ avatar }, { status: 201 })
+    return NextResponse.json({
+      avatar,
+      creditUsed: AVATAR_CREDIT_COST,
+      slotInfo: {
+        used: slotCheck.used + 1,
+        limit: slotCheck.limit,
+      },
+    }, { status: 201 })
   } catch (error) {
     // 크레딧 부족 에러 처리 (트랜잭션 내에서 발생)
     if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
