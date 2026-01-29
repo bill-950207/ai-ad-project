@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
  * - prompt: 직접 입력 프롬프트 (선택)
  * - options: 아바타 옵션 객체 (선택)
  *
- * prompt 또는 options 중 하나는 필수입니다.
+ * prompt와 options 모두 없으면 기본 옵션(DEFAULT_AVATAR_OPTIONS)이 적용됩니다.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -131,8 +131,12 @@ export async function POST(request: NextRequest) {
 
     // 프롬프트 생성: 직접 입력 또는 옵션 기반
     // 아무것도 입력하지 않은 경우 기본 옵션 사용
-    const effectiveOptions = options || (!directPrompt ? DEFAULT_AVATAR_OPTIONS : undefined)
-    const rawPrompt = directPrompt || buildPromptFromOptions(effectiveOptions || DEFAULT_AVATAR_OPTIONS)
+    // 주의: 빈 객체 {}도 truthy이므로 Object.keys로 확인 필요
+    // 주의: 공백만 입력한 경우도 빈 입력으로 처리
+    const trimmedPrompt = directPrompt?.trim()
+    const hasValidOptions = options && Object.keys(options).length > 0
+    const effectiveOptions = hasValidOptions ? options : (!trimmedPrompt ? DEFAULT_AVATAR_OPTIONS : undefined)
+    const rawPrompt = trimmedPrompt || buildPromptFromOptions(effectiveOptions || DEFAULT_AVATAR_OPTIONS)
     // AI 이미지 생성에 최적화된 프롬프트 (품질 향상 문구 추가)
     // 배경/포즈 옵션이 있으면 프롬프트 빌더가 처리하므로 기본 배경 문구 제외
     const hasBackground = effectiveOptions?.background
