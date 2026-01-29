@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
       .from('image_ads')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
-      .in('status', ['COMPLETED', 'IN_QUEUE', 'IN_PROGRESS', 'FAILED'])
+      .in('status', ['DRAFT', 'COMPLETED', 'IN_QUEUE', 'IN_PROGRESS', 'FAILED', 'IMAGES_READY'])
 
     if (productId) {
       countQuery = countQuery.eq('product_id', productId)
@@ -136,6 +136,7 @@ export async function GET(request: NextRequest) {
         avatar_id,
         ad_type,
         status,
+        wizard_step,
         fal_request_id,
         created_at,
         ad_products (
@@ -146,7 +147,7 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq('user_id', user.id)
-      .in('status', ['COMPLETED', 'IN_QUEUE', 'IN_PROGRESS', 'FAILED'])
+      .in('status', ['DRAFT', 'COMPLETED', 'IN_QUEUE', 'IN_PROGRESS', 'FAILED', 'IMAGES_READY'])
       .order('created_at', { ascending: false })
 
     if (productId) {

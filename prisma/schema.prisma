@@ -560,6 +560,8 @@ model image_ads {
   outfit_id          String?         @db.Uuid
   ad_type            String
   status             image_ad_status @default(PENDING)
+  wizard_step        Int?            // 마법사 진행 단계 (DRAFT 상태 전용)
+  wizard_state       Json?           // 마법사 전체 상태 저장 (DRAFT 상태 전용)
   fal_request_id     String?
   prompt             String?
   image_size         String?
@@ -827,6 +829,7 @@ enum user_role {
 }
 
 enum image_ad_status {
+  DRAFT
   PENDING
   IN_QUEUE
   IN_PROGRESS

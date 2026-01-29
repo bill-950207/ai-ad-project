@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
-import { Plus, Image as ImageIcon, Loader2, ChevronLeft, ChevronRight, RefreshCw, CreditCard } from 'lucide-react'
+import { Plus, Image as ImageIcon, Loader2, ChevronLeft, ChevronRight, RefreshCw, CreditCard, FileEdit, Trash2 } from 'lucide-react'
 import { uploadImageAdImage } from '@/lib/client/image-upload'
 
 interface AdProduct {
@@ -29,7 +29,8 @@ interface ImageAd {
   product_id: string | null
   avatar_id: string | null
   ad_type: string
-  status: 'COMPLETED' | 'IN_QUEUE' | 'IN_PROGRESS' | 'IMAGES_READY' | 'FAILED'
+  status: 'DRAFT' | 'COMPLETED' | 'IN_QUEUE' | 'IN_PROGRESS' | 'IMAGES_READY' | 'FAILED'
+  wizard_step: number | null  // DRAFT인 경우 현재 단계
   fal_request_id: string | null
   created_at: string
   ad_products: AdProduct | null
@@ -53,6 +54,7 @@ export function ImageAdPageContent() {
   const [currentPage, setCurrentPage] = useState(1)
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set())
+
 
   const fetchImageAds = useCallback(async (page: number = 1) => {
     setIsAdsLoading(true)
@@ -344,6 +346,45 @@ export function ImageAdPageContent() {
     }
   }
 
+  // 광고 유형 한글 변환
+  const getAdTypeName = (adType: string) => {
+    const names: Record<string, string> = {
+      productOnly: '제품 단독',
+      wearing: '착용/사용',
+      using: '제품 사용',
+      seasonal: '시즌/이벤트',
+    }
+    return names[adType] || adType
+  }
+
+  // 마법사 스텝 이름
+  const getStepName = (step: number | null) => {
+    const stepNames: Record<number, string> = {
+      1: '기본 정보',
+      2: '설정 방식',
+      3: '상세 옵션',
+      4: '생성',
+    }
+    return stepNames[step || 1] || '기본 정보'
+  }
+
+  // Draft 삭제
+  const handleDeleteDraft = async (adId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!confirm('임시 저장된 작업을 삭제하시겠습니까?')) return
+    try {
+      await fetch(`/api/image-ad/draft?id=${adId}`, { method: 'DELETE' })
+      setImageAds(prev => prev.filter(ad => ad.id !== adId))
+    } catch (error) {
+      console.error('Draft 삭제 오류:', error)
+    }
+  }
+
+  // Draft 이어하기
+  const handleContinueDraft = (ad: ImageAd) => {
+    router.push(`/image-ad-create?draftId=${ad.id}&adType=${ad.ad_type}`)
+  }
+
   return (
     <div className="space-y-8">
       {/* 헤더 */}
@@ -386,6 +427,7 @@ export function ImageAdPageContent() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {imageAds.map(ad => {
+              const isDraft = ad.status === 'DRAFT'
               const isGenerating = ['IN_QUEUE', 'IN_PROGRESS'].includes(ad.status)
               const isUploading = ad.status === 'IMAGES_READY'
               const isInProgress = isGenerating || isUploading
@@ -407,9 +449,15 @@ export function ImageAdPageContent() {
               return (
                 <div
                   key={ad.id}
-                  onClick={() => ad.status === 'COMPLETED' && router.push(`/dashboard/image-ad/${ad.id}`)}
+                  onClick={() => {
+                    if (ad.status === 'COMPLETED') {
+                      router.push(`/dashboard/image-ad/${ad.id}`)
+                    } else if (isDraft) {
+                      handleContinueDraft(ad)
+                    }
+                  }}
                   className={`relative group bg-card border border-border rounded-2xl overflow-hidden transition-all duration-300 ${
-                    ad.status === 'COMPLETED'
+                    ad.status === 'COMPLETED' || isDraft
                       ? 'cursor-pointer hover:border-primary/40 hover:shadow-glow-sm'
                       : ''
                   }`}
@@ -472,6 +520,34 @@ export function ImageAdPageContent() {
                         </button>
                       </div>
                     </div>
+                  ) : isDraft ? (
+                    <div className="w-full aspect-square flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5 gap-3 p-4">
+                      <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <FileEdit className="w-8 h-8 text-primary" />
+                      </div>
+                      <span className="text-sm text-muted-foreground font-medium">
+                        임시 저장 · {getStepName(ad.wizard_step)}
+                      </span>
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleContinueDraft(ad)
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-xs font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                        >
+                          <FileEdit className="w-3.5 h-3.5" />
+                          이어하기
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteDraft(ad.id, e)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-muted-foreground text-xs font-medium rounded-lg hover:bg-muted/80 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          삭제
+                        </button>
+                      </div>
+                    </div>
                   ) : (
                     <div className="w-full aspect-square flex items-center justify-center bg-secondary/30">
                       <ImageIcon className="w-12 h-12 text-muted-foreground" />
@@ -517,6 +593,15 @@ export function ImageAdPageContent() {
                     <div className="absolute top-3 right-3">
                       <span className="px-3 py-1.5 text-xs font-medium bg-destructive/90 text-white rounded-lg backdrop-blur-sm">
                         실패
+                      </span>
+                    </div>
+                  )}
+
+                  {/* 임시저장 상태 뱃지 */}
+                  {isDraft && (
+                    <div className="absolute top-3 right-3">
+                      <span className="px-3 py-1.5 text-xs font-medium bg-yellow-500/90 text-white rounded-lg backdrop-blur-sm">
+                        임시저장
                       </span>
                     </div>
                   )}

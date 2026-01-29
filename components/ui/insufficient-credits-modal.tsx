@@ -1,7 +1,8 @@
 'use client'
 
-import { X, AlertTriangle, ArrowUpRight, Coins } from 'lucide-react'
-import Link from 'next/link'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { X, AlertTriangle, ArrowUpRight, Coins, Loader2, Save } from 'lucide-react'
 
 interface InsufficientCreditsModalProps {
   isOpen: boolean
@@ -9,6 +10,7 @@ interface InsufficientCreditsModalProps {
   requiredCredits: number
   availableCredits: number
   featureName?: string // 예: "제품 설명 영상", "아바타 모션 영상"
+  onSaveDraft?: () => Promise<string | null>  // Draft 저장 함수 (옵션)
 }
 
 export function InsufficientCreditsModal({
@@ -17,10 +19,40 @@ export function InsufficientCreditsModal({
   requiredCredits,
   availableCredits,
   featureName = '이 기능',
+  onSaveDraft,
 }: InsufficientCreditsModalProps) {
+  const router = useRouter()
+  const [isSaving, setIsSaving] = useState(false)
+
   if (!isOpen) return null
 
   const shortfall = requiredCredits - availableCredits
+
+  const handleUpgrade = async () => {
+    if (onSaveDraft) {
+      setIsSaving(true)
+      try {
+        const draftId = await onSaveDraft()
+        if (draftId) {
+          // 저장 성공 - draftId를 URL에 포함하여 pricing 페이지로 이동
+          // 돌아올 때 복원할 수 있도록 returnUrl에 draftId 포함
+          const returnUrl = encodeURIComponent(`/image-ad-create?draftId=${draftId}`)
+          router.push(`/dashboard/pricing?returnUrl=${returnUrl}`)
+        } else {
+          // 저장 실패해도 이동
+          router.push('/dashboard/pricing')
+        }
+      } catch (error) {
+        console.error('Draft 저장 오류:', error)
+        router.push('/dashboard/pricing')
+      } finally {
+        setIsSaving(false)
+      }
+    } else {
+      router.push('/dashboard/pricing')
+    }
+    onClose()
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center animate-in fade-in duration-200">
@@ -81,22 +113,40 @@ export function InsufficientCreditsModal({
             플랜을 업그레이드하면 더 많은 크레딧을 받을 수 있습니다.
           </p>
 
+          {/* Save Notice */}
+          {onSaveDraft && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4 p-3 bg-primary/5 rounded-lg">
+              <Save className="w-4 h-4 text-primary" />
+              <span>현재 작업 내용이 자동 저장됩니다</span>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="space-y-3">
             {/* Upgrade Button */}
-            <Link
-              href="/dashboard/pricing"
-              className="w-full py-3 bg-gradient-to-r from-primary to-purple-500 text-white rounded-xl font-medium hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
-              onClick={onClose}
+            <button
+              onClick={handleUpgrade}
+              disabled={isSaving}
+              className="w-full py-3 bg-gradient-to-r from-primary to-purple-500 text-white rounded-xl font-medium hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20 disabled:opacity-70"
             >
-              <ArrowUpRight className="w-4 h-4" />
-              플랜 업그레이드
-            </Link>
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  저장 중...
+                </>
+              ) : (
+                <>
+                  <ArrowUpRight className="w-4 h-4" />
+                  플랜 업그레이드
+                </>
+              )}
+            </button>
 
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="w-full py-3 text-muted-foreground hover:text-foreground transition-colors font-medium"
+              disabled={isSaving}
+              className="w-full py-3 text-muted-foreground hover:text-foreground transition-colors font-medium disabled:opacity-50"
             >
               닫기
             </button>
