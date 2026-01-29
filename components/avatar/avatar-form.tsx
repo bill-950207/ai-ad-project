@@ -185,12 +185,15 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
   const [prompt, setPrompt] = useState('')
   const [options, setOptions] = useState<AvatarOptions>({})
   const [currentStep, setCurrentStep] = useState(0)
+  const [isTransitioning, setIsTransitioning] = useState(false)
 
   const stepLabels = ['기본 정보', '외모', '스타일']
   const totalSteps = 3
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    // 스텝 전환 중에는 제출 방지
+    if (isTransitioning) return
     if (inputMethod === 'prompt') {
       await onSubmit({ name, prompt })
     } else {
@@ -210,8 +213,11 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
   }
 
   const nextStep = () => {
-    if (currentStep < totalSteps - 1) {
+    if (currentStep < totalSteps - 1 && !isTransitioning) {
+      setIsTransitioning(true)
       setCurrentStep(currentStep + 1)
+      // 다음 렌더 사이클까지 전환 상태 유지하여 더블클릭 방지
+      setTimeout(() => setIsTransitioning(false), 300)
     }
   }
 
@@ -534,7 +540,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
               <button
                 type="button"
                 onClick={nextStep}
-                disabled={!canProceed()}
+                disabled={!canProceed() || isTransitioning}
                 className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 다음
@@ -543,7 +549,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
             ) : (
               <button
                 type="submit"
-                disabled={isLoading || !name.trim() || !options.gender || !options.age || !options.ethnicity}
+                disabled={isLoading || isTransitioning || !name.trim() || !options.gender || !options.age || !options.ethnicity}
                 className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {isLoading ? (
