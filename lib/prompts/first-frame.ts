@@ -207,7 +207,7 @@ export const VIDEO_TYPE_FIRST_FRAME_GUIDES: Record<VideoType, {
     handProductGuide: 'casual one-hand grip with fingers gently curved around product, palm visible, product angled slightly toward camera, fingertips resting naturally on surface',
   },
   podcast: {
-    environmentPrompt: 'intimate podcast studio atmosphere, clean organized desk setup, warm ambient lighting, comfortable professional space with minimal distractions',
+    environmentPrompt: 'intimate podcast setting atmosphere, clean organized desk setup, warm ambient lighting, comfortable professional space with minimal distractions, no visible equipment',
     posePrompt: 'seated comfortably at desk or couch, conversational leaning posture, engaged attentive expression, hands visible - one hand gesturing naturally, other hand may rest on product on table or hold product loosely',
     atmospherePrompt: 'intimate one-on-one conversation feel, warm inviting setting, like chatting with a trusted friend who happens to be knowledgeable',
     recommendedCompositions: ['webcam', 'medium-shot', 'closeup', 'three-quarter'],
@@ -216,7 +216,7 @@ export const VIDEO_TYPE_FIRST_FRAME_GUIDES: Record<VideoType, {
     handProductGuide: 'product placed on desk within easy reach, or held casually in one hand at table level, relaxed open hand posture with fingers naturally spread, occasional demonstrative touch',
   },
   expert: {
-    environmentPrompt: 'professional educational setting, modern office or studio, clean minimalist background, well-lit presentation area conveying credibility',
+    environmentPrompt: 'professional educational setting, modern office or clean minimalist space, seamless backdrop, well-lit presentation area conveying credibility, no visible equipment',
     posePrompt: 'confident presenter stance, authoritative yet approachable posture, product held in presenting position with clear visibility - fingers wrapped securely but not tightly, palm supporting from below',
     atmospherePrompt: 'educational authority atmosphere, TED-talk credibility, trustworthy expert sharing valuable knowledge',
     recommendedCompositions: ['tripod', 'presenter', 'medium-shot', 'fullbody'],
@@ -354,7 +354,7 @@ export const DEFAULT_LOCATION_OPTIONS = [
   { key: 'office', prompt: 'modern minimalist office space with clean desk and natural light', korean: '모던한 사무실' },
   { key: 'bedroom', prompt: 'cozy bedroom with soft morning light streaming through sheer curtains', korean: '아늑한 침실' },
   { key: 'kitchen', prompt: 'bright modern kitchen with natural materials and warm lighting', korean: '밝은 주방' },
-  { key: 'studio', prompt: 'professional photo studio with clean seamless background', korean: '전문 스튜디오' },
+  { key: 'studio', prompt: 'clean seamless solid color backdrop with professional lighting effect, no visible equipment or light stands', korean: '전문 스튜디오' },
 ]
 
 /** 제품 카테고리별 추천 장소 */

@@ -224,12 +224,12 @@ export const MOOD_LIGHTING: Record<string, string> = {
   bright: 'bright even lighting with minimal shadows',
   dramatic: 'dramatic side lighting with strong contrast',
   natural: 'soft natural daylight with gentle shadows',
-  studio: 'professional studio lighting with controlled highlights',
+  studio: 'professional controlled lighting with soft even illumination and subtle highlights, no visible equipment',
 }
 
 /** 장소별 배경 키워드 */
 export const LOCATION_BACKGROUNDS: Record<string, string> = {
-  studio: 'clean studio background with seamless backdrop',
+  studio: 'clean seamless solid color backdrop with professional lighting effect, no visible equipment or stands',
   home: 'cozy modern living room interior',
   cafe: 'stylish cafe interior with ambient lighting',
   outdoor: 'natural outdoor setting with greenery',

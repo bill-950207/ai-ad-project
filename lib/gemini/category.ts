@@ -578,10 +578,11 @@ Product: ${input.productName || ''} - ${input.productDescription || ''}`
   } else if (input.mode === 'OPTIONS' && input.options) {
     promptContext = `Generate background based on options:
 Style: ${input.options.style || 'modern'}
-Location: ${input.options.location || 'studio'}
+Location: ${input.options.location || 'seamless backdrop'}
 Mood: ${input.options.mood || 'professional'}
 Color: ${input.options.color || 'neutral'}
-Time: ${input.options.time || 'day'}`
+Time: ${input.options.time || 'day'}
+IMPORTANT: No visible lighting equipment, camera stands, or production equipment in the background.`
   } else if (input.mode === 'PROMPT' && input.userPrompt) {
     promptContext = `Enhance this user prompt into optimized z-image-turbo prompt:
 "${input.userPrompt}"`
@@ -621,8 +622,8 @@ Output JSON: { "optimizedPrompt": "English background prompt", "koreanDescriptio
     return JSON.parse(response.text || '') as BackgroundPromptResult
   } catch {
     return {
-      optimizedPrompt: 'Clean modern studio background with soft gradient lighting. Professional product photography setting.',
-      koreanDescription: '깔끔한 모던 스튜디오 배경',
+      optimizedPrompt: 'Clean seamless solid color backdrop with soft gradient lighting effect. Professional product photography setting with no visible equipment.',
+      koreanDescription: '깔끔한 모던 배경',
     }
   }
 }

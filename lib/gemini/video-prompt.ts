@@ -166,8 +166,8 @@ ${VIDEO_SELF_VERIFICATION}`
     return JSON.parse(response.text || '') as VideoPromptResult
   } catch {
     return {
-      prompt: `Professional product advertisement video. The product slowly rotates with soft studio lighting. Smooth camera movement reveals product details. High-quality commercial style. ${input.duration} seconds duration.`,
-      negativePrompt: 'text, letters, words, watermark, logo, blurry, low quality, distorted',
+      prompt: `Professional product advertisement video. The product slowly rotates with soft even lighting. Smooth camera movement reveals product details. High-quality commercial style. ${input.duration} seconds duration.`,
+      negativePrompt: 'text, letters, words, watermark, logo, blurry, low quality, distorted, visible lighting equipment, studio equipment',
     }
   }
 }
