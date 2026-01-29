@@ -12,6 +12,7 @@ import { prisma } from '@/lib/db'
 import { submitTalkingVideoToQueue } from '@/lib/kie/client'
 import { submitInfiniteTalkToQueue } from '@/lib/wavespeed/client'
 import { PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST } from '@/lib/credits'
+import { uploadExternalImageToR2 } from '@/lib/image/compress'
 
 /** 카메라 구도별 프롬프트 설명 */
 const CAMERA_COMPOSITION_PROMPTS: Record<string, string> = {
@@ -152,6 +153,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 })
     }
 
+    // 첫 프레임 이미지 R2 업로드 (WebP 압축)
+    let compressedFirstFrameUrl = firstFrameUrl
+    try {
+      const tempId = `pd-${user.id.slice(0, 8)}-${Date.now()}`
+      const uploadResult = await uploadExternalImageToR2(
+        firstFrameUrl,
+        'video-ads/product-description',
+        tempId,
+        { quality: 85 }
+      )
+      compressedFirstFrameUrl = uploadResult.compressedUrl
+      console.log('First frame compressed:', compressedFirstFrameUrl)
+    } catch (compressError) {
+      console.warn('First frame compression failed, using original:', compressError)
+      // 압축 실패 시 원본 URL 사용
+    }
+
     // video_ads 레코드 생성
     const videoAd = await prisma.video_ads.create({
       data: {
@@ -171,7 +189,7 @@ export async function POST(request: NextRequest) {
         voice_id: voiceId,
         voice_name: voiceName,
         audio_url: audioUrl,
-        first_scene_image_url: firstFrameUrl,
+        first_scene_image_url: compressedFirstFrameUrl,
       },
     })
 

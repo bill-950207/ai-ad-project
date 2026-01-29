@@ -64,6 +64,7 @@ export async function GET(
         camera_composition,
         location_prompt,
         first_scene_image_url,
+        first_frame_urls,
         first_frame_prompt,
         error_message,
         scenario_info,

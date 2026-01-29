@@ -152,6 +152,7 @@ interface VideoAdDetail {
   camera_composition: string | null
   location_prompt: string | null
   first_scene_image_url: string | null
+  first_frame_urls: string[] | null  // WebP 압축 이미지 배열
   first_frame_prompt: string | null
   outfit_id: string | null
   scenario_info: string | null
@@ -430,19 +431,29 @@ export default function VideoAdDetailPage() {
   const handleRegisterShowcase = async () => {
     if (!videoAd || !videoAd.video_url) return
 
-    // 썸네일 URL 확인 (여러 소스에서 fallback)
+    // 썸네일 URL 확인 (WebP 압축본 우선 사용)
     // 1. 썸네일 URL
-    // 2. 첫 번째 씬 이미지
-    // 3. 키프레임 이미지
-    // 4. 제품 이미지
+    // 2. WebP 압축 첫 프레임 이미지 (first_frame_urls 배열의 첫 번째)
+    // 3. 첫 번째 씬 이미지
+    // 4. 키프레임 이미지
+    // 5. 제품 이미지
     const getFirstKeyframeImage = () => {
       if (!videoAd.scene_keyframes || videoAd.scene_keyframes.length === 0) return null
       const firstKeyframe = videoAd.scene_keyframes.find(kf => kf.imageUrl)
       return firstKeyframe?.imageUrl || null
     }
 
+    // WebP 압축본 우선 사용
+    const getWebpThumbnail = () => {
+      if (videoAd.first_frame_urls && Array.isArray(videoAd.first_frame_urls) && videoAd.first_frame_urls.length > 0) {
+        return videoAd.first_frame_urls[0]
+      }
+      return null
+    }
+
     const thumbnailUrl =
       videoAd.thumbnail_url ||
+      getWebpThumbnail() ||
       videoAd.first_scene_image_url ||
       getFirstKeyframeImage() ||
       videoAd.ad_products?.rembg_image_url ||
