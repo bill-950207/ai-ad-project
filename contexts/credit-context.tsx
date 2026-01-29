@@ -14,10 +14,11 @@ const CreditContext = createContext<CreditContextType | undefined>(undefined)
 export function CreditProvider({ children }: { children: ReactNode }) {
   const [credits, setCredits] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClient()
 
   const refreshCredits = useCallback(async () => {
     try {
+      // 함수 내부에서 클라이언트 생성하여 의존성 문제 방지
+      const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         setCredits(null)
@@ -34,7 +35,7 @@ export function CreditProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false)
     }
-  }, [supabase])
+  }, [])
 
   // 초기 로드
   useEffect(() => {
