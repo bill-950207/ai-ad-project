@@ -1060,7 +1060,7 @@ function getOptionPrompt(adType: ImageAdType, groupKey: string, optionValue: str
       cozy_bedroom: 'Cozy inviting bedroom with warm atmosphere.',
       spa_retreat: 'Serene spa retreat setting for relaxation.',
       natural_outdoor: 'Beautiful natural outdoor setting.',
-      minimal_studio: 'Clean minimal studio environment.',
+      minimal_studio: 'Clean minimal seamless backdrop environment, no visible equipment.',
       // 언박싱용
       modern_desk: 'Modern stylish desk setup.',
       cozy_bed: 'Cozy comfortable bed setting.',
