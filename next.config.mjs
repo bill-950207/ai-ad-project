@@ -1,5 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // FFmpeg 관련 패키지를 서버 외부 패키지로 설정 (webpack 번들링 제외)
+  serverExternalPackages: [
+    '@ffmpeg-installer/ffmpeg',
+    '@ffmpeg-installer/darwin-arm64',
+    '@ffmpeg-installer/darwin-x64',
+    '@ffmpeg-installer/linux-x64',
+    '@ffmpeg-installer/win32-x64',
+    'fluent-ffmpeg',
+  ],
   // 배럴 파일 임포트 최적화 (lucide-react 등)
   // 개별 아이콘만 번들에 포함되어 콜드 스타트 200-800ms 개선
   experimental: {

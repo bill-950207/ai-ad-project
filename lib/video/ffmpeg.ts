@@ -12,9 +12,7 @@ import os from 'os'
 // @ffmpeg-installer/ffmpeg 패키지에서 경로 가져오기
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg')
-const ffmpegPath = ffmpegInstaller.path as string
-console.log('Using FFmpeg from @ffmpeg-installer:', ffmpegPath)
-ffmpeg.setFfmpegPath(ffmpegPath)
+ffmpeg.setFfmpegPath(ffmpegInstaller.path)
 
 /**
  * 여러 비디오 URL을 하나의 비디오로 합칩니다.
@@ -74,7 +72,7 @@ export async function concatenateVideos(videoUrls: string[]): Promise<Buffer> {
     console.log('Concatenating videos with FFmpeg...')
     console.log('Concat list content:', concatContent)
     console.log('Output path:', outputPath)
-    console.log('FFmpeg binary:', ffmpegPath)
+    console.log('FFmpeg binary:', ffmpegInstaller.path)
 
     await new Promise<void>((resolve, reject) => {
       ffmpeg()
