@@ -1245,15 +1245,18 @@ interface ViduResultResponse {
  * - 540p: 초당 5 크레딧
  * - 720p: 초당 8 크레딧
  * - 1080p: 초당 12 크레딧
+ *
+ * @deprecated API에서 직접 VIDU_CREDIT_COST_PER_SECOND 상수를 사용하세요 (lib/credits)
  */
 export function calculateViduCredits(
   duration: number,
   resolution: ViduResolution
 ): number {
+  // 중앙 상수와 동일한 값 유지 (lib/credits/constants.ts의 VIDU_CREDIT_COST_PER_SECOND)
   const creditsPerSecond: Record<ViduResolution, number> = {
-    '540p': 5,   // SD 화질
-    '720p': 8,   // HD 화질
-    '1080p': 12, // FHD 화질
+    '540p': 5,   // SD 화질 - VIDU_CREDIT_COST_PER_SECOND['540p']와 동일
+    '720p': 8,   // HD 화질 - VIDU_CREDIT_COST_PER_SECOND['720p']와 동일
+    '1080p': 12, // FHD 화질 - VIDU_CREDIT_COST_PER_SECOND['1080p']와 동일
   }
 
   return creditsPerSecond[resolution] * duration
