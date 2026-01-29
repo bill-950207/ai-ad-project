@@ -74,7 +74,7 @@ export const TRANSITION_CREDIT_COST = 12 // ~$0.50/전환
 // ============================================================
 
 /** 음악 생성 크레딧 (Kie.ai Suno V5: ~$0.10-0.15) */
-export const MUSIC_CREDIT_COST = 3
+export const MUSIC_CREDIT_COST = 1
 
 /** TTS 음성 생성 크레딧 (무료 - 영상 워크플로우 포함) */
 export const TTS_CREDIT_COST = 0
