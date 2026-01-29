@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, RefreshCw, ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -8,14 +9,12 @@ import { useLanguage } from '@/contexts/language-context'
 
 export default function VerifyEmailPage() {
   const { language } = useLanguage()
+  const searchParams = useSearchParams()
+  const email = searchParams.get('email')
+
   const [isResending, setIsResending] = useState(false)
   const [resendSuccess, setResendSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // URL에서 이메일 파라미터 가져오기 (회원가입 후 전달)
-  const email = typeof window !== 'undefined'
-    ? new URLSearchParams(window.location.search).get('email')
-    : null
 
   const handleResendEmail = async () => {
     if (!email) {
