@@ -349,6 +349,20 @@ export function WizardStep4() {
     setSceneKeyframes([])
 
     try {
+      // 0. 크레딧 사전 확인 (LLM 호출 전)
+      const requiredCredits = sceneCount * KEYFRAME_CREDIT_COST
+      const subscriptionRes = await fetch('/api/subscription')
+      if (subscriptionRes.ok) {
+        const subscriptionData = await subscriptionRes.json()
+        const availableCredits = subscriptionData.profile?.credits ?? 0
+        if (availableCredits < requiredCredits) {
+          setCreditsInfo({ required: requiredCredits, available: availableCredits })
+          setShowCreditsModal(true)
+          setIsGeneratingKeyframes(false)
+          return
+        }
+      }
+
       // 1. 멀티씬 시나리오 생성 (씬별 요소 전달)
       const multiSceneRes = await fetch('/api/product-ad/generate-multi-scene', {
         method: 'POST',
@@ -391,7 +405,20 @@ export function WizardStep4() {
         }),
       })
 
-      if (!keyframeRes.ok) throw new Error('키프레임 생성 요청 실패')
+      if (!keyframeRes.ok) {
+        const errorData = await keyframeRes.json()
+        // 크레딧 부족 에러 처리
+        if (errorData.code === 'INSUFFICIENT_CREDITS') {
+          setCreditsInfo({
+            required: errorData.required,
+            available: errorData.available,
+          })
+          setShowCreditsModal(true)
+          setIsGeneratingKeyframes(false)
+          return
+        }
+        throw new Error(errorData.error || '키프레임 생성 요청 실패')
+      }
 
       const keyframeData = await keyframeRes.json()
 
@@ -465,7 +492,23 @@ export function WizardStep4() {
         }),
       })
 
-      if (!keyframeRes.ok) throw new Error('키프레임 재생성 요청 실패')
+      if (!keyframeRes.ok) {
+        const errorData = await keyframeRes.json()
+        // 크레딧 부족 에러 처리
+        if (errorData.code === 'INSUFFICIENT_CREDITS') {
+          setCreditsInfo({
+            required: errorData.required,
+            available: errorData.available,
+          })
+          setShowCreditsModal(true)
+          updateSceneKeyframe(sceneIndex, { status: 'failed' })
+          setRegeneratingSceneIndex(null)
+          setIsMergingPrompt(false)
+          setModalSceneIndex(null)
+          return
+        }
+        throw new Error(errorData.error || '키프레임 재생성 요청 실패')
+      }
 
       const keyframeData = await keyframeRes.json()
       const request = keyframeData.requests[0]
@@ -891,6 +934,15 @@ export function WizardStep4() {
         sceneIndex={modalSceneIndex ?? 0}
         scenePrompt={modalSceneIndex !== null && scenarioInfo?.scenes?.[modalSceneIndex]?.scenePrompt || ''}
         isLoading={isMergingPrompt}
+      />
+
+      {/* 크레딧 부족 모달 */}
+      <InsufficientCreditsModal
+        isOpen={showCreditsModal}
+        onClose={() => setShowCreditsModal(false)}
+        requiredCredits={creditsInfo?.required ?? 0}
+        availableCredits={creditsInfo?.available ?? 0}
+        featureName="키프레임 이미지"
       />
     </div>
   )
