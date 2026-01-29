@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useLanguage } from '@/contexts/language-context'
 import { useCredits } from '@/contexts/credit-context'
 import { Plus, Image as ImageIcon, Loader2, Trash2, Download, Package, Sliders, Type, X } from 'lucide-react'
+import { InsufficientCreditsModal } from '@/components/ui/insufficient-credits-modal'
 
 interface AdBackground {
   id: string
@@ -105,6 +106,10 @@ export default function BackgroundPage() {
 
   // 크게 보기 모달
   const [selectedBackground, setSelectedBackground] = useState<AdBackground | null>(null)
+
+  // 크레딧 부족 모달 상태
+  const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false)
+  const [creditsInfo, setCreditsInfo] = useState<{ required: number; available: number } | null>(null)
 
   // 폼 상태
   const [mode, setMode] = useState<GenerationMode>('OPTIONS')
@@ -243,6 +248,17 @@ export default function BackgroundPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
+
+      // 크레딧 부족 (402)
+      if (res.status === 402) {
+        const errorData = await res.json()
+        setCreditsInfo({
+          required: errorData.required || 1,
+          available: errorData.available || 0,
+        })
+        setShowInsufficientCreditsModal(true)
+        return
+      }
 
       if (res.ok) {
         const data = await res.json()
@@ -775,6 +791,17 @@ export default function BackgroundPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 크레딧 부족 모달 */}
+      {creditsInfo && (
+        <InsufficientCreditsModal
+          isOpen={showInsufficientCreditsModal}
+          onClose={() => setShowInsufficientCreditsModal(false)}
+          requiredCredits={creditsInfo.required}
+          availableCredits={creditsInfo.available}
+          featureName="배경 생성"
+        />
       )}
     </div>
   )

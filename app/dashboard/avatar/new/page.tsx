@@ -42,12 +42,6 @@ export default function NewAvatarPage() {
         body: JSON.stringify(data),
       })
 
-      if (res.status === 402) {
-        setError(t.avatar.insufficientCredits)
-        setIsSubmitting(false)
-        return
-      }
-
       // 슬롯 제한 초과 (403)
       if (res.status === 403) {
         const errorData = await res.json()
@@ -129,6 +123,7 @@ export default function NewAvatarPage() {
           onManageItems={() => router.push('/dashboard/avatar')}
         />
       )}
+
     </div>
   )
 }
