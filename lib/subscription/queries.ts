@@ -41,8 +41,17 @@ const FREE_PLAN: UserPlan = {
 }
 
 /**
+ * 유효한 구독 상태인지 확인
+ * ACTIVE 또는 TRIALING 상태이고, canceled_at이 null인 경우에만 유효
+ */
+function isValidSubscription(subscription: { status: string; canceled_at: Date | null }): boolean {
+  const validStatuses = ['ACTIVE', 'TRIALING']
+  return validStatuses.includes(subscription.status) && subscription.canceled_at === null
+}
+
+/**
  * 사용자의 현재 플랜 정보 조회
- * 구독이 없으면 Free 플랜 반환
+ * 구독이 없거나 취소된 경우 Free 플랜 반환
  */
 export async function getUserPlan(userId: string): Promise<UserPlan> {
   const subscription = await prisma.subscriptions.findUnique({
@@ -50,7 +59,8 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
     include: { plan: true },
   })
 
-  if (!subscription || subscription.status !== 'ACTIVE') {
+  // 구독이 없거나, 유효하지 않은 상태(CANCELED, PAST_DUE 등)이면 Free 플랜
+  if (!subscription || !isValidSubscription(subscription)) {
     return FREE_PLAN
   }
 
@@ -69,6 +79,8 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
 
 /**
  * 사용자의 전체 구독 정보 조회
+ * 취소된 구독도 메타데이터는 반환 (UI에서 "취소됨" 표시용)
+ * 단, 플랜 기능은 Free 플랜으로 제한됨
  */
 export async function getUserSubscription(userId: string): Promise<UserSubscription> {
   const subscription = await prisma.subscriptions.findUnique({
@@ -76,6 +88,7 @@ export async function getUserSubscription(userId: string): Promise<UserSubscript
     include: { plan: true },
   })
 
+  // 구독이 없으면 Free 플랜
   if (!subscription) {
     return {
       ...FREE_PLAN,
@@ -89,6 +102,21 @@ export async function getUserSubscription(userId: string): Promise<UserSubscript
     }
   }
 
+  // 취소된 구독(CANCELED 또는 canceled_at 존재)이면 Free 플랜 기능 + 구독 메타데이터
+  if (!isValidSubscription(subscription)) {
+    return {
+      ...FREE_PLAN,
+      subscriptionId: subscription.id,
+      status: subscription.status,
+      currentPeriodStart: subscription.current_period_start,
+      currentPeriodEnd: subscription.current_period_end,
+      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      stripeCustomerId: subscription.stripe_customer_id,
+      stripeSubscriptionId: subscription.stripe_subscription_id,
+    }
+  }
+
+  // 유효한 구독
   return {
     planType: subscription.plan.name,
     displayName: subscription.plan.display_name,
