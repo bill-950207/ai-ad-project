@@ -28,12 +28,17 @@ export async function GET(request: NextRequest) {
     currentPeriod.setUTCDate(1)
     currentPeriod.setUTCHours(0, 0, 0, 0)
 
-    // 활성 구독자 조회 (ACTIVE 또는 TRIALING 상태)
+    // 활성 구독자 조회
+    // 조건:
+    // - 상태: ACTIVE 또는 TRIALING
+    // - Soft Delete 되지 않음: canceled_at이 null
+    // 참고: cancel_at_period_end=true인 경우에도 기간 내에는 크레딧 지급
     const activeSubscriptions = await prisma.subscriptions.findMany({
       where: {
         status: {
           in: [subscription_status.ACTIVE, subscription_status.TRIALING],
         },
+        canceled_at: null,  // Soft Delete 된 구독 제외
       },
       include: {
         plan: true,

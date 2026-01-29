@@ -6,7 +6,7 @@
  * 처리 이벤트:
  * - checkout.session.completed: 구독 시작
  * - customer.subscription.updated: 플랜 변경
- * - customer.subscription.deleted: 구독 취소
+ * - customer.subscription.deleted: 구독 취소 (Soft Delete)
  * - invoice.payment_succeeded: 결제 성공 (월 크레딧 지급)
  * - invoice.payment_failed: 결제 실패
  */
@@ -21,41 +21,59 @@ import Stripe from 'stripe'
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
 // =====================================================
-// 이벤트 중복 처리 방지 (멱등성)
+// 이벤트 중복 처리 방지 (DB 기반 멱등성)
 // =====================================================
-const processedEvents = new Map<string, number>()
-const MAX_CACHE_SIZE = 1000
-const EVENT_TTL = 60 * 60 * 1000 // 1시간
 
-function isEventProcessed(eventId: string): boolean {
-  const timestamp = processedEvents.get(eventId)
-  if (!timestamp) return false
-  if (Date.now() - timestamp > EVENT_TTL) {
-    processedEvents.delete(eventId)
+/**
+ * 이벤트가 이미 처리되었는지 확인 (DB 기반)
+ */
+async function isEventProcessed(eventId: string): Promise<boolean> {
+  try {
+    const existing = await prisma.webhook_events.findUnique({
+      where: { id: eventId },
+    })
+    return !!existing
+  } catch (error) {
+    console.error('Error checking event processed status:', error)
+    // 오류 발생 시 안전하게 false 반환 (중복 처리 허용)
     return false
   }
-  return true
 }
 
-function markEventProcessed(eventId: string): void {
-  // 캐시 크기 제한 - 가장 오래된 항목 제거
-  if (processedEvents.size >= MAX_CACHE_SIZE) {
-    const oldestKey = processedEvents.keys().next().value
-    if (oldestKey) processedEvents.delete(oldestKey)
+/**
+ * 이벤트를 처리됨으로 표시 (DB에 기록)
+ */
+async function markEventProcessed(eventId: string, eventType: string): Promise<void> {
+  try {
+    await prisma.webhook_events.create({
+      data: {
+        id: eventId,
+        event_type: eventType,
+      },
+    })
+  } catch (error) {
+    // 중복 삽입 시 무시 (이미 처리된 이벤트)
+    console.error('Error marking event as processed:', error)
   }
-  processedEvents.set(eventId, Date.now())
 }
 
-// 주기적 캐시 정리 (만료된 항목 제거)
-function cleanupExpiredEvents(): void {
-  const now = Date.now()
-  const keysToDelete: string[] = []
-  processedEvents.forEach((timestamp, eventId) => {
-    if (now - timestamp > EVENT_TTL) {
-      keysToDelete.push(eventId)
+/**
+ * 오래된 이벤트 정리 (7일 이상)
+ */
+async function cleanupOldEvents(): Promise<void> {
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const result = await prisma.webhook_events.deleteMany({
+      where: {
+        processed_at: { lt: sevenDaysAgo },
+      },
+    })
+    if (result.count > 0) {
+      console.log(`Cleaned up ${result.count} old webhook events`)
     }
-  })
-  keysToDelete.forEach((key) => processedEvents.delete(key))
+  } catch (error) {
+    console.error('Error cleaning up old events:', error)
+  }
 }
 // =====================================================
 
@@ -84,16 +102,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 중복 이벤트 검사 (멱등성)
-    if (isEventProcessed(event.id)) {
+    // 중복 이벤트 검사 (DB 기반 멱등성)
+    if (await isEventProcessed(event.id)) {
       console.log(`Event already processed: ${event.id}`)
       return NextResponse.json({ received: true, duplicate: true })
     }
-    markEventProcessed(event.id)
 
-    // 주기적으로 만료된 이벤트 정리 (10% 확률로 실행)
+    // 이벤트 처리됨으로 표시 (처리 전에 먼저 기록하여 중복 방지)
+    await markEventProcessed(event.id, event.type)
+
+    // 주기적으로 오래된 이벤트 정리 (10% 확률로 실행)
     if (Math.random() < 0.1) {
-      cleanupExpiredEvents()
+      // 비동기로 실행하여 응답 지연 방지
+      cleanupOldEvents().catch(console.error)
     }
 
     // 이벤트 타입별 처리
@@ -171,7 +192,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const periodStart = subData.current_period_start || subData.start_date || Math.floor(Date.now() / 1000)
   const periodEnd = subData.current_period_end || subData.ended_at || Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60
 
-  // 구독 생성 또는 업데이트
+  // 구독 생성 또는 업데이트 (재구독 시 canceled_at 초기화)
   await prisma.subscriptions.upsert({
     where: { user_id: userId },
     update: {
@@ -182,6 +203,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       current_period_start: new Date(periodStart * 1000),
       current_period_end: new Date(periodEnd * 1000),
       cancel_at_period_end: subData.cancel_at_period_end ?? false,
+      canceled_at: null,  // 재구독 시 초기화
     },
     create: {
       user_id: userId,
@@ -242,8 +264,11 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
   // 상태 매핑
   let status: subscription_status = 'ACTIVE'
+  let canceledAt: Date | null = null
+
   if (subData.status === 'canceled') {
     status = 'CANCELED'
+    canceledAt = new Date()  // 취소 시간 기록
   } else if (subData.status === 'past_due') {
     status = 'PAST_DUE'
   } else if (subData.status === 'trialing') {
@@ -263,6 +288,8 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       current_period_start: new Date(periodStart * 1000),
       current_period_end: new Date(periodEnd * 1000),
       cancel_at_period_end: subData.cancel_at_period_end ?? false,
+      // CANCELED 상태면 canceled_at 기록, 아니면 null로 초기화 (재활성화 시)
+      canceled_at: canceledAt,
     },
   })
 
@@ -270,7 +297,10 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 }
 
 /**
- * 구독 삭제 처리 - Free 플랜으로 다운그레이드
+ * 구독 삭제 처리 - Soft Delete (데이터 보존)
+ *
+ * 기존: 구독 레코드 완전 삭제
+ * 변경: 상태를 CANCELED로 변경하고 canceled_at 기록
  */
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -285,12 +315,17 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     return
   }
 
-  // 구독 레코드 삭제 (Free 플랜으로 자동 전환)
-  await prisma.subscriptions.delete({
+  // Soft Delete: 상태 변경 + 취소 시간 기록 + Stripe 연결 해제
+  await prisma.subscriptions.update({
     where: { id: existingSubscription.id },
+    data: {
+      status: 'CANCELED',
+      canceled_at: new Date(),
+      stripe_subscription_id: null,  // Stripe 연결 해제 (재구독 시 새 ID 사용)
+    },
   })
 
-  console.log(`Subscription deleted: ${subData.id}, user downgraded to FREE`)
+  console.log(`Subscription soft-deleted: ${subData.id}, user downgraded to FREE`)
 }
 
 /**

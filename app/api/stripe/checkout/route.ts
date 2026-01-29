@@ -8,6 +8,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { stripe, getStripePriceId, type PlanName, type BillingInterval } from '@/lib/stripe'
+import { applyRateLimit, rateLimitExceededResponse } from '@/lib/rate-limit'
+
+// Stripe API Rate Limit: 분당 5회
+const STRIPE_RATE_LIMIT = {
+  interval: 60 * 1000,
+  maxRequests: 5,
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,6 +24,12 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate Limit 체크
+    const rateLimitResult = applyRateLimit(`stripe:${user.id}`, STRIPE_RATE_LIMIT)
+    if (!rateLimitResult.success) {
+      return rateLimitExceededResponse(rateLimitResult.reset)
     }
 
     // 요청 본문 파싱
