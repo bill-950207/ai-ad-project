@@ -11,6 +11,7 @@
 'use client'
 
 import { useLanguage } from '@/contexts/language-context'
+import { useCredits } from '@/contexts/credit-context'
 import {
   ArrowLeft,
   ArrowRight,
@@ -531,6 +532,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { t, language } = useLanguage()
+  const { refreshCredits } = useCredits()
 
   // URL에서 videoAdId 파라미터 확인 (재개 시)
   const resumeVideoAdId = searchParams.get('videoAdId')
@@ -1143,6 +1145,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
 
       if (status.status === 'COMPLETED') {
         setGenerationStatus('완료!')
+        // 크레딧 갱신
+        refreshCredits()
         setTimeout(() => {
           router.push(`/dashboard/video-ad/${id}`)
         }, 1000)
@@ -1612,6 +1616,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
 
         if (status.status === 'COMPLETED') {
           setGenerationStatus('완료!')
+          // 크레딧 갱신
+          refreshCredits()
           setTimeout(() => {
             router.push(`/dashboard/video-ad/${videoData.videoAdId}`)
           }, 1000)
