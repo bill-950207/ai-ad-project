@@ -1,10 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+
+interface VideoShowcase {
+  id: string
+  media_url: string | null
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -14,6 +19,39 @@ export default function LoginPage() {
   const [checkingAuth, setCheckingAuth] = useState(true)
   const router = useRouter()
   const supabase = createClient()
+
+  // 쇼케이스 영상 상태
+  const [videoUrls, setVideoUrls] = useState<string[]>([])
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0)
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  // 다음 영상으로 전환
+  const playNextVideo = useCallback(() => {
+    if (videoUrls.length > 0) {
+      setCurrentVideoIndex((prev) => (prev + 1) % videoUrls.length)
+    }
+  }, [videoUrls.length])
+
+  // 쇼케이스 영상 로드
+  useEffect(() => {
+    const fetchVideoShowcases = async () => {
+      try {
+        const res = await fetch('/api/showcases?type=video&limit=5&random=true')
+        if (res.ok) {
+          const data = await res.json()
+          if (data.showcases && data.showcases.length > 0) {
+            const urls = data.showcases
+              .filter((s: VideoShowcase) => s.media_url)
+              .map((s: VideoShowcase) => s.media_url as string)
+            setVideoUrls(urls)
+          }
+        }
+      } catch (error) {
+        console.error('쇼케이스 영상 로드 실패:', error)
+      }
+    }
+    fetchVideoShowcases()
+  }, [])
 
   // 이미 로그인된 사용자는 대시보드로 리다이렉트
   useEffect(() => {
@@ -191,34 +229,54 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right Side - Video/Image */}
-      <div className="hidden lg:block lg:w-1/2 relative bg-gradient-to-br from-primary/20 to-purple-900/30">
-        {/* Mock Video Placeholder */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="relative w-full h-full overflow-hidden">
-            {/* Gradient overlay */}
+      {/* Right Side - Showcase Video */}
+      <div className="hidden lg:block lg:w-1/2 relative bg-gradient-to-br from-primary/20 to-purple-900/30 overflow-hidden">
+        {videoUrls.length > 0 ? (
+          <>
+            {/* 영상 플레이어 */}
+            <video
+              ref={videoRef}
+              key={videoUrls[currentVideoIndex]}
+              src={videoUrls[currentVideoIndex]}
+              autoPlay
+              muted
+              playsInline
+              onEnded={playNextVideo}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            {/* 그라데이션 오버레이 */}
             <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-background/40 z-10" />
-
-            {/* Mock video content - replace with actual video later */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center z-20">
-                <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-primary/20 flex items-center justify-center backdrop-blur-sm border border-primary/30">
-                  <svg className="w-12 h-12 text-primary" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                </div>
-                <h3 className="text-2xl font-bold text-foreground mb-2">AI-Powered Ad Creation</h3>
-                <p className="text-muted-foreground max-w-sm">
-                  Create stunning video ads in minutes with our AI technology
-                </p>
-              </div>
+            {/* 텍스트 오버레이 */}
+            <div className="absolute bottom-12 left-12 right-12 z-20">
+              <h3 className="text-2xl font-bold text-white mb-2">AI-Powered Ad Creation</h3>
+              <p className="text-white/70 max-w-sm">
+                Create stunning video ads in minutes with our AI technology
+              </p>
             </div>
-
-            {/* Animated background elements */}
-            <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+          </>
+        ) : (
+          /* 로딩 또는 폴백 UI */
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="relative w-full h-full overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-background/40 z-10" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center z-20">
+                  <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-primary/20 flex items-center justify-center backdrop-blur-sm border border-primary/30">
+                    <svg className="w-12 h-12 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground mb-2">AI-Powered Ad Creation</h3>
+                  <p className="text-muted-foreground max-w-sm">
+                    Create stunning video ads in minutes with our AI technology
+                  </p>
+                </div>
+              </div>
+              <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+              <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )
