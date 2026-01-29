@@ -803,9 +803,9 @@ function getOptionPrompt(adType: ImageAdType, groupKey: string, optionValue: str
     // 배경 (개선된 버전)
     background: {
       // 기존 옵션
-      studio: 'Clean studio background.',
-      studio_white: 'Pure white seamless studio background with soft shadows.',
-      studio_gradient: 'Elegant gradient studio background transitioning from light to dark.',
+      studio: 'Clean seamless backdrop with professional lighting effect, no visible equipment.',
+      studio_white: 'Pure white seamless backdrop with soft shadows, no visible equipment or stands.',
+      studio_gradient: 'Elegant gradient backdrop transitioning from light to dark, no visible equipment.',
       outdoor: 'Beautiful outdoor setting.',
       home: 'Cozy home interior.',
       office: 'Modern office environment.',
@@ -832,7 +832,7 @@ function getOptionPrompt(adType: ImageAdType, groupKey: string, optionValue: str
       floating_3d: '3D floating elements creating depth and futuristic visual appeal.',
       lifestyle_scene: 'Natural lifestyle environment showing product in context of daily life.',
       // 착용샷용
-      studio_clean: 'Clean professional studio setup with neutral background.',
+      studio_clean: 'Clean seamless neutral backdrop with professional lighting effect, no visible equipment.',
       urban_street: 'Trendy urban street setting with modern city elements.',
       nature_scenic: 'Beautiful scenic nature location with natural elements.',
       rooftop_city: 'Stylish rooftop with city skyline panorama view.',
@@ -841,7 +841,7 @@ function getOptionPrompt(adType: ImageAdType, groupKey: string, optionValue: str
       // 시즌용
       seasonal_props: 'Seasonal decorative props and elements matching the theme.',
       nature_setting: 'Natural seasonal outdoor setting.',
-      studio_themed: 'Studio setup with themed seasonal decorations.',
+      studio_themed: 'Clean backdrop with themed seasonal decorations, no visible equipment.',
       lifestyle_context: 'Lifestyle setting with seasonal context.',
       abstract_festive: 'Abstract festive background with themed colors.',
       // 비교용
@@ -856,7 +856,7 @@ function getOptionPrompt(adType: ImageAdType, groupKey: string, optionValue: str
       // 기존 옵션
       soft: 'Soft diffused lighting.',
       natural: 'Natural daylight.',
-      dramatic: 'Dramatic studio lighting.',
+      dramatic: 'Dramatic lighting with bold shadows, no visible equipment.',
       warm: 'Warm golden lighting.',
       cool: 'Cool toned lighting.',
       consistent: 'Consistent even lighting.',
@@ -865,16 +865,16 @@ function getOptionPrompt(adType: ImageAdType, groupKey: string, optionValue: str
       natural_window: 'Natural window light creating soft, authentic illumination with gentle shadows.',
       dramatic_contrast: 'High contrast dramatic lighting with bold shadows creating depth and dimension.',
       golden_hour: 'Warm golden hour sunlight with magical warm tones and long shadows.',
-      rim_light: 'Striking rim lighting outlining the subject with a glowing edge highlight.',
+      rim_light: 'Striking rim lighting effect outlining the subject with a glowing edge highlight.',
       neon_glow: 'Vibrant neon lighting creating colorful, modern, and edgy atmosphere.',
       high_key: 'Bright high-key lighting with minimal shadows for clean, airy feel.',
       low_key: 'Moody low-key lighting with dramatic shadows for sophisticated atmosphere.',
       warm_golden: 'Warm golden lighting creating inviting and cozy atmosphere.',
       // 비포애프터용
-      consistent_studio: 'Consistent studio lighting ensuring accurate comparison.',
+      consistent_studio: 'Consistent even lighting ensuring accurate comparison, no visible equipment.',
       natural_soft: 'Soft natural lighting for authentic look.',
       dramatic_highlight: 'Dramatic highlighting to emphasize transformation.',
-      ring_light: 'Ring light creating even, flattering illumination.',
+      ring_light: 'Even circular lighting effect creating flattering illumination on face.',
     },
     // 포즈 (개선된 버전)
     pose: {

@@ -62,7 +62,7 @@ const AD_TYPE_DESCRIPTIONS: Record<ImageAdType, string> = {
   • Detail: Close-up of accessory, texture, craftsmanship
 - Movement: Can be static (editorial) or dynamic (walking, turning)
 - Fit showcase: How product drapes, fits, moves with body
-- Context: Studio clean background OR lifestyle setting
+- Context: Clean seamless backdrop (no visible equipment) OR lifestyle setting
 - For accessories: Ensure item is hero, not lost in outfit
 - Camera: 35mm for full body, 85mm for detail shots`,
 
