@@ -21,6 +21,17 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}/login?error=no_user`)
     }
 
+    // 이메일 인증 상태 확인
+    // Google OAuth는 이미 이메일이 검증된 상태이므로 추가 인증 불필요
+    const isGoogleAuth = user.app_metadata?.provider === 'google'
+    const isEmailVerified = isGoogleAuth || user.email_confirmed_at != null
+
+    // 이메일 미확인 시 인증 페이지로 리다이렉트
+    if (!isEmailVerified) {
+      const email = user.email ? encodeURIComponent(user.email) : ''
+      return NextResponse.redirect(`${origin}/verify-email?email=${email}`)
+    }
+
     try {
       // 프로필 존재 여부 확인
       let profile = await prisma.profiles.findUnique({
