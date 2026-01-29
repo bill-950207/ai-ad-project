@@ -8,45 +8,12 @@ import ffmpeg from 'fluent-ffmpeg'
 import { promises as fs } from 'fs'
 import path from 'path'
 import os from 'os'
-import { execSync } from 'child_process'
 
-// FFmpeg 경로 설정 (시스템 또는 node_modules에서 찾기)
-function getFFmpegPath(): string {
-  // 1. 시스템에 설치된 ffmpeg 확인
-  try {
-    const systemPath = execSync('which ffmpeg', { encoding: 'utf-8' }).trim()
-    if (systemPath) {
-      console.log('Using system FFmpeg:', systemPath)
-      return systemPath
-    }
-  } catch {
-    // 시스템에 없음
-  }
-
-  // 2. node_modules에서 직접 경로 지정 (darwin-arm64 for M1/M2 Mac)
-  const possiblePaths = [
-    path.join(process.cwd(), 'node_modules/@ffmpeg-installer/darwin-arm64/ffmpeg'),
-    path.join(process.cwd(), 'node_modules/@ffmpeg-installer/darwin-x64/ffmpeg'),
-    path.join(process.cwd(), 'node_modules/@ffmpeg-installer/linux-x64/ffmpeg'),
-    path.join(process.cwd(), 'node_modules/@ffmpeg-installer/win32-x64/ffmpeg.exe'),
-  ]
-
-  for (const p of possiblePaths) {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const nodeFs = require('fs')
-      nodeFs.accessSync(p, nodeFs.constants.X_OK)
-      console.log('Using node_modules FFmpeg:', p)
-      return p
-    } catch {
-      // 이 경로에 없음
-    }
-  }
-
-  throw new Error('FFmpeg binary not found. Please install ffmpeg or @ffmpeg-installer/ffmpeg')
-}
-
-const ffmpegPath = getFFmpegPath()
+// @ffmpeg-installer/ffmpeg 패키지에서 경로 가져오기
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg')
+const ffmpegPath = ffmpegInstaller.path as string
+console.log('Using FFmpeg from @ffmpeg-installer:', ffmpegPath)
 ffmpeg.setFfmpegPath(ffmpegPath)
 
 /**
