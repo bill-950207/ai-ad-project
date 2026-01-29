@@ -94,8 +94,8 @@ function BackgroundSlider({ images, interval = 4000 }: BackgroundSliderProps) {
         />
       ))}
 
-      {/* 하단 텍스트 가독성을 위한 최소 그라데이션 */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+      {/* 하단 텍스트 가독성을 위한 그라데이션 (하얀 배경 대응) */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/10" />
 
       {/* 노이즈 텍스처 (미묘한 그레인) */}
       <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay" style={{
@@ -149,8 +149,8 @@ function AdCreationCard({
             playsInline
             className="absolute inset-0 w-full h-full object-cover"
           />
-          {/* 하단 텍스트 가독성을 위한 최소 그라데이션 */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          {/* 하단 텍스트 가독성을 위한 그라데이션 (하얀 배경 대응) */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/10" />
         </div>
       ) : images ? (
         <BackgroundSlider images={images} interval={5000} />
