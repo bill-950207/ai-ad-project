@@ -132,20 +132,20 @@ export function ImageAdPageContent() {
           if (data.status === 'IMAGES_READY') {
             console.log(`[polling] IMAGES_READY 수신: ${ad.id}, pendingImages:`, data.pendingImages?.length || 0)
 
+            // pendingImages가 없으면 다음 폴링에서 재시도 (API가 재조회하여 pendingImages 반환)
+            if (!data.pendingImages || data.pendingImages.length === 0) {
+              console.log(`[polling] pendingImages 없음, 다음 폴링에서 재시도: ${ad.id}`)
+              return
+            }
+
             // 이미 다른 폴링에서 처리 시작했으면 스킵 (동시 요청 중복 방지)
             if (completedPollingIdsRef.current.has(ad.id)) {
               console.log(`[polling] 이미 처리 중, 스킵: ${ad.id}`)
               return
             }
-            // 더 이상 폴링하지 않음 - 즉시 등록 (다른 동시 요청보다 먼저)
+            // pendingImages가 있을 때만 완료 표시 - 업로드 시작 직전에 등록
             completedPollingIdsRef.current.add(ad.id)
-            console.log(`[polling] completedPollingIdsRef에 추가: ${ad.id}`)
-
-            // pendingImages가 없으면 이미 DB에서 IMAGES_READY 상태 (다른 요청에서 처리 중)
-            if (!data.pendingImages) {
-              console.log(`[polling] pendingImages 없음, 스킵: ${ad.id}`)
-              return
-            }
+            console.log(`[polling] completedPollingIdsRef에 추가 (업로드 시작): ${ad.id}`)
 
             // 상태를 업로드 중으로 표시
             setImageAds(prev =>
