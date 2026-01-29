@@ -38,10 +38,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '20', 10)
 
-    // 음악 목록 조회 (필요한 컬럼만 선택)
+    // 음악 목록 조회
     const { data: musicList, error } = await supabase
       .from('ad_music')
-      .select('id, name, status, mood, genre, product_type, audio_url, duration, created_at')
+      .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(limit)
