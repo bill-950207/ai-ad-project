@@ -46,8 +46,11 @@ export default function LoginPage() {
             const urls = data.showcases
               .filter((s: VideoShowcase) => s.media_url)
               .map((s: VideoShowcase) => s.media_url as string)
-            setVideoUrls(urls)
-            setCurrentVideoIndex(0) // 새 영상 로드 시 인덱스 초기화
+            // urls가 비어있지 않을 때만 업데이트 (폴백 영상 유지)
+            if (urls.length > 0) {
+              setVideoUrls(urls)
+              setCurrentVideoIndex(0)
+            }
           }
         }
       } catch (error) {
