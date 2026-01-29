@@ -39,6 +39,18 @@ export interface AvatarOptions {
     | 'leaning' | 'armsCrossed' | 'handsInPocket' | 'holding'
 }
 
+/** 아바타 생성 기본 옵션 (아무것도 선택하지 않았을 때 사용) */
+export const DEFAULT_AVATAR_OPTIONS: AvatarOptions = {
+  gender: 'female',
+  age: 'late20s',
+  ethnicity: 'eastAsian',
+  bodyType: 'average',
+  hairStyle: 'medium',
+  hairColor: 'blackhair',
+  outfitStyle: 'casual',
+  background: 'studioWhite',
+}
+
 // ============================================================
 // 옵션-프롬프트 매핑
 // ============================================================
