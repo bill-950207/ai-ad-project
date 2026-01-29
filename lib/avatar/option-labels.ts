@@ -21,15 +21,15 @@ export const ageLabels: Record<string, string> = {
 
 // 인종 레이블
 export const ethnicityLabels: Record<string, string> = {
-  caucasian: 'Caucasian',
-  black: 'Black / African American',
-  eastAsian: 'East Asian',
-  southeastAsian: 'Southeast Asian',
-  southAsian: 'South Asian',
-  middleEastern: 'Middle Eastern',
-  hispanic: 'Hispanic / Latino',
-  nativeAmerican: 'Native American / Indigenous',
-  multiracial: 'Multiracial',
+  caucasian: '백인',
+  black: '흑인',
+  eastAsian: '동아시아인',
+  southeastAsian: '동남아시아인',
+  southAsian: '남아시아인',
+  middleEastern: '중동인',
+  hispanic: '히스패닉/라틴',
+  nativeAmerican: '원주민',
+  multiracial: '혼혈',
 }
 
 // 키 레이블
@@ -95,13 +95,13 @@ export const hairColorLabels: Record<string, string> = {
 
 // 의상 스타일 레이블 (직업 기반)
 export const outfitStyleLabels: Record<string, string> = {
-  casual: 'Casual',
-  formal: 'Formal',
-  sporty: 'Sporty',
-  doctor: 'Doctor',
-  nurse: 'Nurse',
-  chef: 'Chef',
-  worker: 'Worker',
+  casual: '캐주얼',
+  formal: '포멀',
+  sporty: '스포티',
+  doctor: '의사',
+  nurse: '간호사',
+  chef: '셰프',
+  worker: '작업복',
 }
 
 // 배경 레이블
