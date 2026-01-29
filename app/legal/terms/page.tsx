@@ -14,7 +14,7 @@ export default function TermsPage() {
   const content = {
     ko: {
       title: '이용약관',
-      lastUpdated: '최종 수정일: 2025년 1월 29일',
+      lastUpdated: '최종 수정일: 2026년 1월 29일',
       backToHome: '홈으로 돌아가기',
       sections: [
         {
@@ -89,7 +89,7 @@ export default function TermsPage() {
     },
     en: {
       title: 'Terms of Service',
-      lastUpdated: 'Last updated: January 29, 2025',
+      lastUpdated: 'Last updated: January 29, 2026',
       backToHome: 'Back to Home',
       sections: [
         {
@@ -164,7 +164,7 @@ export default function TermsPage() {
     },
     ja: {
       title: '利用規約',
-      lastUpdated: '最終更新日：2025年1月29日',
+      lastUpdated: '最終更新日：2026年1月29日',
       backToHome: 'ホームに戻る',
       sections: [
         {
@@ -239,7 +239,7 @@ export default function TermsPage() {
     },
     zh: {
       title: '服务条款',
-      lastUpdated: '最后更新：2025年1月29日',
+      lastUpdated: '最后更新：2026年1月29日',
       backToHome: '返回首页',
       sections: [
         {

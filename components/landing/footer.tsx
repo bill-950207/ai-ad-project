@@ -43,8 +43,8 @@ export function Footer() {
     legal: {
       title: language === 'ko' ? '법적 정보' : language === 'ja' ? '法的情報' : language === 'zh' ? '法律信息' : 'Legal',
       links: [
-        { label: language === 'ko' ? '이용약관' : language === 'ja' ? '利用規約' : language === 'zh' ? '服务条款' : 'Terms of Service', href: '#' },
-        { label: language === 'ko' ? '개인정보처리방침' : language === 'ja' ? 'プライバシーポリシー' : language === 'zh' ? '隐私政策' : 'Privacy Policy', href: '#' },
+        { label: language === 'ko' ? '이용약관' : language === 'ja' ? '利用規約' : language === 'zh' ? '服务条款' : 'Terms of Service', href: '/legal/terms' },
+        { label: language === 'ko' ? '개인정보처리방침' : language === 'ja' ? 'プライバシーポリシー' : language === 'zh' ? '隐私政策' : 'Privacy Policy', href: '/legal/privacy' },
         { label: language === 'ko' ? '쿠키 정책' : language === 'ja' ? 'Cookieポリシー' : language === 'zh' ? 'Cookie政策' : 'Cookie Policy', href: '#' },
       ],
     },
