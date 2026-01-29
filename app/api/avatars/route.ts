@@ -157,33 +157,39 @@ export async function POST(request: NextRequest) {
 
     const finalPrompt = `${styleAndAntiBlur}, ${rawPrompt}, ${gazeDirection}, ${qualityEnhancers}${defaultBackground}${defaultPose}, ${viewType}`
 
-    // 사용량 제한 확인 (플랜별 무료 생성 가능 횟수)
-    const usageCheck = await checkUsageLimit(user.id, 'avatar')
-    const needsCredits = !usageCheck.withinLimit
+    // 슬롯 제한 확인 (플랜별 최대 보유 가능 개수)
+    const slotCheck = await checkUsageLimit(user.id, 'avatar')
 
-    // 크레딧이 필요한 경우 (제한 초과) 사전 확인 (빠른 실패를 위해)
-    // 실제 차감은 트랜잭션 내에서 재확인 후 수행
-    if (needsCredits) {
-      const profile = await prisma.profiles.findUnique({
-        where: { id: user.id },
-        select: { credits: true },
-      })
-
-      if (!profile || (profile.credits ?? 0) < AVATAR_CREDIT_COST) {
-        return NextResponse.json(
-          {
-            error: 'Insufficient credits',
-            required: AVATAR_CREDIT_COST,
-            available: profile?.credits ?? 0,
-            usageInfo: {
-              used: usageCheck.used,
-              limit: usageCheck.limit,
-              message: `월간 무료 생성 ${usageCheck.limit}회를 모두 사용했습니다. 추가 생성은 ${AVATAR_CREDIT_COST} 크레딧이 필요합니다.`,
-            },
+    // 슬롯이 꽉 찬 경우 생성 불가
+    if (!slotCheck.withinLimit) {
+      return NextResponse.json(
+        {
+          error: 'Slot limit reached',
+          slotInfo: {
+            used: slotCheck.used,
+            limit: slotCheck.limit,
+            message: `아바타 슬롯이 가득 찼습니다. 현재 ${slotCheck.used}/${slotCheck.limit}개 보유 중. 새로 생성하려면 기존 아바타를 삭제해주세요.`,
           },
-          { status: 402 }  // 402 Payment Required
-        )
-      }
+        },
+        { status: 403 }
+      )
+    }
+
+    // 크레딧 사전 확인 (빠른 실패를 위해)
+    const profile = await prisma.profiles.findUnique({
+      where: { id: user.id },
+      select: { credits: true },
+    })
+
+    if (!profile || (profile.credits ?? 0) < AVATAR_CREDIT_COST) {
+      return NextResponse.json(
+        {
+          error: 'Insufficient credits',
+          required: AVATAR_CREDIT_COST,
+          available: profile?.credits ?? 0,
+        },
+        { status: 402 }
+      )
     }
 
     // AI 프로바이더에 따라 큐에 생성 요청 제출
@@ -203,23 +209,21 @@ export async function POST(request: NextRequest) {
 
     // 트랜잭션으로 크레딧 확인/차감 및 아바타 레코드 생성 (원자적 처리로 Race Condition 방지)
     const avatar = await prisma.$transaction(async (tx) => {
-      if (needsCredits) {
-        // 트랜잭션 내에서 크레딧 재확인 (동시성 문제 해결)
-        const profile = await tx.profiles.findUnique({
-          where: { id: user.id },
-          select: { credits: true },
-        })
+      // 트랜잭션 내에서 크레딧 재확인 (동시성 문제 해결)
+      const currentProfile = await tx.profiles.findUnique({
+        where: { id: user.id },
+        select: { credits: true },
+      })
 
-        if (!profile || (profile.credits ?? 0) < AVATAR_CREDIT_COST) {
-          throw new Error('INSUFFICIENT_CREDITS')
-        }
-
-        // 크레딧 차감 (원자적)
-        await tx.profiles.update({
-          where: { id: user.id },
-          data: { credits: { decrement: AVATAR_CREDIT_COST } },
-        })
+      if (!currentProfile || (currentProfile.credits ?? 0) < AVATAR_CREDIT_COST) {
+        throw new Error('INSUFFICIENT_CREDITS')
       }
+
+      // 크레딧 차감 (원자적)
+      await tx.profiles.update({
+        where: { id: user.id },
+        data: { credits: { decrement: AVATAR_CREDIT_COST } },
+      })
 
       // 아바타 레코드 생성
       return tx.avatars.create({

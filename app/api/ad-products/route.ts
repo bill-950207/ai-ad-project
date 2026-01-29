@@ -103,33 +103,39 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 사용량 제한 확인 (플랜별 무료 생성 가능 횟수)
-    const usageCheck = await checkUsageLimit(user.id, 'product')
-    const needsCredits = !usageCheck.withinLimit
+    // 슬롯 제한 확인 (플랜별 최대 보유 가능 개수)
+    const slotCheck = await checkUsageLimit(user.id, 'product')
 
-    // 크레딧이 필요한 경우 (제한 초과) 크레딧 사전 확인 (빠른 실패를 위해)
-    // 실제 차감은 트랜잭션 내에서 재확인 후 수행
-    if (needsCredits) {
-      const profile = await prisma.profiles.findUnique({
-        where: { id: user.id },
-        select: { credits: true },
-      })
-
-      if (!profile || (profile.credits ?? 0) < PRODUCT_CREDIT_COST) {
-        return NextResponse.json(
-          {
-            error: 'Insufficient credits',
-            required: PRODUCT_CREDIT_COST,
-            available: profile?.credits ?? 0,
-            usageInfo: {
-              used: usageCheck.used,
-              limit: usageCheck.limit,
-              message: `월간 무료 등록 ${usageCheck.limit}회를 모두 사용했습니다. 추가 등록은 ${PRODUCT_CREDIT_COST} 크레딧이 필요합니다.`,
-            },
+    // 슬롯이 꽉 찬 경우 생성 불가
+    if (!slotCheck.withinLimit) {
+      return NextResponse.json(
+        {
+          error: 'Slot limit reached',
+          slotInfo: {
+            used: slotCheck.used,
+            limit: slotCheck.limit,
+            message: `제품 슬롯이 가득 찼습니다. 현재 ${slotCheck.used}/${slotCheck.limit}개 보유 중. 새로 생성하려면 기존 제품을 삭제해주세요.`,
           },
-          { status: 402 }
-        )
-      }
+        },
+        { status: 403 }
+      )
+    }
+
+    // 크레딧 사전 확인 (빠른 실패를 위해)
+    const profile = await prisma.profiles.findUnique({
+      where: { id: user.id },
+      select: { credits: true },
+    })
+
+    if (!profile || (profile.credits ?? 0) < PRODUCT_CREDIT_COST) {
+      return NextResponse.json(
+        {
+          error: 'Insufficient credits',
+          required: PRODUCT_CREDIT_COST,
+          available: profile?.credits ?? 0,
+        },
+        { status: 402 }
+      )
     }
 
     // 1. 먼저 제품 레코드 생성 (PENDING 상태)
@@ -178,33 +184,30 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // 5. 제한 초과 시 크레딧 차감 (트랜잭션으로 재확인 후 원자적 차감), 아니면 사용량 증가
-      if (needsCredits) {
-        await prisma.$transaction(async (tx) => {
-          const currentProfile = await tx.profiles.findUnique({
-            where: { id: user.id },
-            select: { credits: true },
-          })
+      // 5. 크레딧 차감 (트랜잭션으로 재확인 후 원자적 차감)
+      await prisma.$transaction(async (tx) => {
+        const currentProfile = await tx.profiles.findUnique({
+          where: { id: user.id },
+          select: { credits: true },
+        })
 
-          if (!currentProfile || (currentProfile.credits ?? 0) < PRODUCT_CREDIT_COST) {
-            throw new Error('INSUFFICIENT_CREDITS')
-          }
+        if (!currentProfile || (currentProfile.credits ?? 0) < PRODUCT_CREDIT_COST) {
+          throw new Error('INSUFFICIENT_CREDITS')
+        }
 
-          await tx.profiles.update({
-            where: { id: user.id },
-            data: { credits: { decrement: PRODUCT_CREDIT_COST } },
-          })
-        }, { timeout: 10000 })
+        await tx.profiles.update({
+          where: { id: user.id },
+          data: { credits: { decrement: PRODUCT_CREDIT_COST } },
+        })
+      }, { timeout: 10000 })
 
-      }
       return NextResponse.json({
         product: updatedProduct,
         sourceImageUrl,
-        creditUsed: needsCredits ? PRODUCT_CREDIT_COST : 0,
-        usageInfo: {
-          used: usageCheck.used + (needsCredits ? 0 : 1),
-          limit: usageCheck.limit,
-          freeGeneration: !needsCredits,
+        creditUsed: PRODUCT_CREDIT_COST,
+        slotInfo: {
+          used: slotCheck.used + 1,
+          limit: slotCheck.limit,
         },
       }, { status: 201 })
     } catch (uploadError) {
