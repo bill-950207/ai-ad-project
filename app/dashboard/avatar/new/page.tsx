@@ -33,20 +33,22 @@ export default function NewAvatarPage() {
 
       if (res.status === 402) {
         setError(t.avatar.insufficientCredits)
+        setIsSubmitting(false)
         return
       }
 
       if (!res.ok) {
         const errorData = await res.json()
         setError(errorData.error || t.avatar.error)
+        setIsSubmitting(false)
         return
       }
 
+      // 성공 시 isSubmitting을 true로 유지하여 리다이렉트 전 중복 제출 방지
       router.push('/dashboard/avatar')
     } catch (err) {
       console.error('아바타 생성 오류:', err)
       setError(t.avatar.error)
-    } finally {
       setIsSubmitting(false)
     }
   }
