@@ -115,8 +115,8 @@ export function Navbar() {
     { href: '#gallery', label: t.landing?.galleryTitle || 'Gallery' },
   ]
 
-  // 대시보드에서는 Navbar 숨김
-  if (pathname?.startsWith('/dashboard')) {
+  // 대시보드 및 인증 페이지에서는 Navbar 숨김
+  if (pathname?.startsWith('/dashboard') || pathname === '/login' || pathname === '/signup') {
     return null
   }
 
