@@ -15,8 +15,11 @@ export {
   PRODUCT_AD_VIDEO_CREDIT_COST,
   KEYFRAME_CREDIT_COST,
   TRANSITION_CREDIT_COST,
+  // Vidu Q2 영상
+  VIDU_CREDIT_COST_PER_SECOND,
   type ImageQuality,
   type AvatarMotionDuration,
+  type ViduResolution,
 } from './constants'
 
 // 주의: 유틸리티 함수는 서버 컴포넌트/API에서만 import해서 사용하세요

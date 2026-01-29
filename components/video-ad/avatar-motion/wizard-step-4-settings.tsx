@@ -31,6 +31,7 @@ import {
   MovementAmplitude,
 } from './wizard-context'
 import { WizardNavigation } from './wizard-navigation-button'
+import { VIDU_CREDIT_COST_PER_SECOND } from '@/lib/credits'
 
 // 화면 비율 옵션
 const ASPECT_RATIO_OPTIONS: {
@@ -74,19 +75,19 @@ const RESOLUTION_OPTIONS: {
     value: '540p',
     label: '540p',
     description: '경제적, 테스트용',
-    creditPerSec: 5,
+    creditPerSec: VIDU_CREDIT_COST_PER_SECOND['540p'],
   },
   {
     value: '720p',
     label: '720p',
     description: '표준 화질',
-    creditPerSec: 8,
+    creditPerSec: VIDU_CREDIT_COST_PER_SECOND['720p'],
   },
   {
     value: '1080p',
     label: '1080p',
     description: '고화질',
-    creditPerSec: 12,
+    creditPerSec: VIDU_CREDIT_COST_PER_SECOND['1080p'],
   },
 ]
 

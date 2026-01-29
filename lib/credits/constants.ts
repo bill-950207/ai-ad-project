@@ -69,6 +69,13 @@ export const KEYFRAME_CREDIT_COST = 3 // ~$0.08/장
 /** 씬 전환 영상 생성 크레딧 (Kling O1, 전환당) */
 export const TRANSITION_CREDIT_COST = 12 // ~$0.50/전환
 
+/** Vidu Q2 영상 생성 해상도별 초당 크레딧 (WaveSpeed/fal.ai) */
+export const VIDU_CREDIT_COST_PER_SECOND = {
+  '540p': 5, // SD: ~$0.15/초
+  '720p': 8, // HD: ~$0.25/초
+  '1080p': 12, // FHD: ~$0.40/초
+} as const
+
 // ============================================================
 // 오디오 관련
 // ============================================================
@@ -102,3 +109,4 @@ export const DEFAULT_SIGNUP_CREDITS = 15
 
 export type ImageQuality = keyof typeof IMAGE_AD_CREDIT_COST
 export type AvatarMotionDuration = keyof typeof AVATAR_MOTION_CREDIT_COST
+export type ViduResolution = keyof typeof VIDU_CREDIT_COST_PER_SECOND
