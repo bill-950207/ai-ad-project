@@ -91,6 +91,18 @@ export function AdProductCard({ product, onDelete, onRetry }: AdProductCardProps
     }
   }
 
+  // 이미지 광고 만들기
+  const handleImageAdClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    router.push(`/image-ad-create?productId=${product.id}`)
+  }
+
+  // 영상 광고 만들기
+  const handleVideoAdClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    router.push(`/video-ad-create?productId=${product.id}`)
+  }
+
   return (
     <div
       onClick={handleCardClick}
@@ -165,14 +177,6 @@ export function AdProductCard({ product, onDelete, onRetry }: AdProductCardProps
           </div>
         )}
 
-        {/* 완료 상태 호버 오버레이 */}
-        {product.status === 'COMPLETED' && (
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
-            <span className="px-5 py-2.5 bg-white text-black rounded-xl text-sm font-semibold shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
-              상세보기
-            </span>
-          </div>
-        )}
 
         {/* 실패 상태 액션 버튼 오버레이 */}
         {product.status === 'FAILED' && showActions && (
@@ -207,6 +211,24 @@ export function AdProductCard({ product, onDelete, onRetry }: AdProductCardProps
 
       <div className="p-3">
         <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
+
+        {/* 액션 버튼 영역 (완료 상태일 때만) */}
+        {product.status === 'COMPLETED' && (
+          <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+            <button
+              onClick={handleImageAdClick}
+              className="flex-1 flex items-center justify-center px-2 py-1.5 text-xs font-medium text-foreground bg-muted/50 hover:bg-primary/10 hover:text-primary rounded-lg transition-all duration-200"
+            >
+              이미지 광고 생성
+            </button>
+            <button
+              onClick={handleVideoAdClick}
+              className="flex-1 flex items-center justify-center px-2 py-1.5 text-xs font-medium text-foreground bg-muted/50 hover:bg-primary/10 hover:text-primary rounded-lg transition-all duration-200"
+            >
+              영상 광고 생성
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
