@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { DEFAULT_SIGNUP_CREDITS } from '@/lib/credits/constants'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -52,7 +53,7 @@ export async function GET(request: Request) {
             id: user.id,
             email: user.email,
             is_onboarded: false,
-            credits: 5, // 기본 크레딧
+            credits: DEFAULT_SIGNUP_CREDITS,
           },
           select: {
             id: true,
