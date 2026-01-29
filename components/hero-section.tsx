@@ -54,7 +54,7 @@ function FloatingIcons() {
 // ============================================================
 
 export function HeroSection() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const supabase = createClient();
 
@@ -73,7 +73,7 @@ export function HeroSection() {
   }, [supabase.auth]);
 
   return (
-    <section className="relative overflow-hidden px-4 py-24 sm:py-32 lg:py-40">
+    <section className="relative overflow-hidden px-4 py-20 sm:py-28 lg:py-36">
       {/* 배경 그라데이션 효과 */}
       <div className="absolute inset-0 -z-10">
         {/* 메인 그라데이션 */}
@@ -90,81 +90,54 @@ export function HeroSection() {
 
       <div className="mx-auto max-w-5xl text-center relative z-10">
         {/* AI 배지 */}
-        <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-5 py-2 text-sm font-medium text-primary animate-fade-in-up">
+        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary animate-fade-in-up">
           <Sparkles className="h-4 w-4" />
-          <span>{t.landing?.badge || 'AI-Powered Ad Creation'}</span>
+          <span>{language === 'ko' ? '전문가 없이도 OK' : 'No expertise needed'}</span>
         </div>
 
-        {/* 메인 헤드라인 */}
-        <h1 className="mb-8 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl animate-fade-in-up animation-delay-100">
-          {t.landing?.headline || 'Create Stunning Ads with '}
-          <span className="relative">
-            <span className="bg-gradient-to-r from-primary via-purple-400 to-pink-400 bg-clip-text text-transparent">
-              {t.landing?.headlineHighlight || 'AI Magic'}
-            </span>
-            <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" fill="none">
-              <path d="M2 10C50 4 100 2 150 6C200 10 250 8 298 4" stroke="url(#underline-gradient)" strokeWidth="3" strokeLinecap="round" />
-              <defs>
-                <linearGradient id="underline-gradient" x1="0" y1="0" x2="300" y2="0">
-                  <stop stopColor="hsl(var(--primary))" />
-                  <stop offset="0.5" stopColor="#a855f7" />
-                  <stop offset="1" stopColor="#ec4899" />
-                </linearGradient>
-              </defs>
-            </svg>
+        {/* 메인 헤드라인 - 간결하게 */}
+        <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl animate-fade-in-up animation-delay-100">
+          <span className="bg-gradient-to-r from-primary via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            {language === 'ko' ? 'AI로 단 3분' : '3 Minutes with AI'}
           </span>
-          {t.landing?.headlineEnd || ''}
+          {language === 'ko' ? '만에' : ''}
+          <br />
+          {language === 'ko' ? '만드는 광고' : 'Create Your Ad'}
         </h1>
 
-        {/* 서브 헤드라인 */}
-        <p className="mx-auto mb-12 max-w-2xl text-lg text-muted-foreground sm:text-xl lg:text-2xl leading-relaxed animate-fade-in-up animation-delay-200">
-          {t.landing?.subheadline || 'Generate professional ad content in minutes. From images to videos, let AI transform your marketing campaigns.'}
+        {/* 서브 헤드라인 - 간결하게 */}
+        <p className="mx-auto mb-10 max-w-xl text-lg text-muted-foreground sm:text-xl leading-relaxed animate-fade-in-up animation-delay-200">
+          {language === 'ko'
+            ? '이미지, 영상, 아바타까지. 클릭 몇 번으로 전문가 수준의 광고를 만들어 보세요.'
+            : 'Images, videos, avatars. Create professional ads with just a few clicks.'}
         </p>
 
         {/* CTA 버튼 */}
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row animate-fade-in-up animation-delay-300">
           <Link
             href={user ? "/dashboard" : "/login"}
-            className="group inline-flex items-center justify-center gap-2 h-14 rounded-full px-8 text-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-105"
+            className="group inline-flex items-center justify-center gap-2 h-12 rounded-full px-6 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-105"
           >
-            {t.landing?.ctaStart || 'Get Started Free'}
-            <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            {language === 'ko' ? '무료로 시작하기' : 'Start Free'}
+            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
           </Link>
           <Link
             href="#gallery"
-            className="inline-flex items-center justify-center gap-2 h-14 rounded-full px-8 text-lg font-semibold border-2 border-border bg-background/50 backdrop-blur-sm hover:bg-secondary hover:border-primary/50 transition-all duration-300"
+            className="inline-flex items-center justify-center gap-2 h-12 rounded-full px-6 text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
-            <Play className="h-5 w-5 text-primary" />
-            {t.landing?.ctaDemo || 'Watch Demo'}
+            <Play className="h-4 w-4" />
+            {language === 'ko' ? '샘플 보기' : 'View Samples'}
           </Link>
         </div>
 
-        {/* 서비스 통계 */}
-        <div className="mt-20 grid grid-cols-3 gap-8 animate-fade-in-up animation-delay-400">
-          <div className="group">
-            <div className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300">
-              10K+
-            </div>
-            <div className="text-sm sm:text-base text-muted-foreground mt-1">
-              {t.landing?.statsAds || 'Ads Created'}
-            </div>
-          </div>
-          <div className="group">
-            <div className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300">
-              500+
-            </div>
-            <div className="text-sm sm:text-base text-muted-foreground mt-1">
-              {t.landing?.statsUsers || 'Happy Users'}
-            </div>
-          </div>
-          <div className="group">
-            <div className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300">
-              98%
-            </div>
-            <div className="text-sm sm:text-base text-muted-foreground mt-1">
-              {t.landing?.statsSatisfaction || 'Satisfaction'}
-            </div>
-          </div>
+        {/* 간단한 신뢰 지표 */}
+        <div className="mt-12 flex items-center justify-center gap-6 text-sm text-muted-foreground animate-fade-in-up animation-delay-400">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+            {language === 'ko' ? '신용카드 불필요' : 'No credit card'}
+          </span>
+          <span className="hidden sm:block w-px h-4 bg-border"></span>
+          <span>{language === 'ko' ? '무료 크레딧 제공' : 'Free credits included'}</span>
         </div>
       </div>
     </section>
