@@ -14,34 +14,26 @@ export interface AvatarOptions {
   // 기본 정보
   gender?: 'female' | 'male'  // 성별
   age?: 'teen' | 'early20s' | 'late20s' | '30s' | '40plus'  // 나이대
-  ethnicity?: 'asian' | 'caucasian' | 'black' | 'hispanic'  // 인종
+  ethnicity?: 'caucasian' | 'black' | 'eastAsian' | 'southeastAsian' | 'southAsian' | 'middleEastern' | 'hispanic' | 'nativeAmerican' | 'multiracial'  // 인종
 
   // 체형
   height?: 'short' | 'average' | 'tall'  // 키
-  bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'plussize'  // 체형
+  bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'muscular'  // 체형
 
   // 외모
-  // 여성 헤어스타일
-  hairStyle?:
-    | 'longStraight' | 'longLayered' | 'bob' | 'shortBob' | 'wavy' | 'curly'
-    | 'ponytail' | 'bun' | 'halfUp' | 'bangs' | 'pixie'
-    // 남성 헤어스타일
-    | 'maleShort' | 'buzz' | 'twoBlock' | 'undercut' | 'pompadour'
-    | 'slickedBack' | 'sidePart' | 'maleWavy' | 'maleMedium'
+  hairStyle?: 'short' | 'medium' | 'long'  // 헤어스타일 (간소화)
   hairColor?: 'blackhair' | 'brown' | 'blonde' | 'custom'  // 머리 색상
   customHairColor?: string  // 커스텀 머리 색상 (hairColor가 'custom'일 때)
 
-  // 의상
-  outfitStyle?:
-    | 'tshirtJeans' | 'shirtSlacks' | 'blouseSkirt' | 'dress' | 'suit'
-    | 'knitSweater' | 'athletic' | 'lounge' | 'jacket'
+  // 의상 (직업 기반)
+  outfitStyle?: 'casual' | 'formal' | 'sporty' | 'doctor' | 'nurse' | 'chef' | 'worker'
 
   // 배경
   background?:
     | 'studioWhite' | 'studioGray' | 'home' | 'office' | 'cafe'
     | 'restaurant' | 'street' | 'park' | 'beach' | 'gym'
 
-  // 포즈
+  // 포즈 (내부적으로만 사용, UI에서는 선택 불가)
   pose?:
     | 'standingFull' | 'standingHalf' | 'sitting' | 'walking'
     | 'leaning' | 'armsCrossed' | 'handsInPocket' | 'holding'
@@ -68,10 +60,15 @@ const ageMap: Record<string, string> = {
 
 /** 인종 매핑 */
 const ethnicityMap: Record<string, string> = {
-  asian: 'Asian',
   caucasian: 'Caucasian',
-  black: 'Black African',
+  black: 'Black African American',
+  eastAsian: 'East Asian',
+  southeastAsian: 'Southeast Asian',
+  southAsian: 'South Asian',
+  middleEastern: 'Middle Eastern',
   hispanic: 'Hispanic Latino',
+  nativeAmerican: 'Native American Indigenous',
+  multiracial: 'Multiracial mixed ethnicity',
 }
 
 /** 키 매핑 */
@@ -81,22 +78,20 @@ const heightMap: Record<string, string> = {
   tall: 'tall',
 }
 
-/** 여성 체형 매핑 (추상적이고 상대적인 표현 사용 - 구체적 신체 크기 표현 금지) */
+/** 여성 체형 매핑 */
 const femaleBodyTypeMap: Record<string, string> = {
   slim: 'slim slender feminine silhouette with delicate proportions',
   average: 'balanced feminine proportions with natural curves',
   athletic: 'toned athletic feminine build with defined musculature',
   curvy: 'feminine silhouette with natural soft curves',
-  plussize: 'full-figured feminine form with generous proportions',
 }
 
-/** 남성 체형 매핑 (추상적이고 상대적인 표현 사용) */
+/** 남성 체형 매핑 */
 const maleBodyTypeMap: Record<string, string> = {
   slim: 'lean masculine frame with slender proportions',
   average: 'balanced masculine build with standard proportions',
   athletic: 'toned athletic masculine physique with defined muscles',
-  curvy: 'solid masculine build with broader frame',
-  plussize: 'full masculine frame with generous build',
+  muscular: 'muscular masculine build with well-developed muscles',
 }
 
 /** 기본 체형 매핑 (성별 불명 시) */
@@ -105,7 +100,7 @@ const defaultBodyTypeMap: Record<string, string> = {
   average: 'balanced proportions with natural build',
   athletic: 'toned athletic build with defined physique',
   curvy: 'naturally curved silhouette with soft proportions',
-  plussize: 'full-figured build with generous proportions',
+  muscular: 'muscular build with well-developed muscles',
 }
 
 /** 성별에 따른 체형 설명 반환 */
@@ -118,30 +113,11 @@ function getBodyTypeDescription(bodyType: string, gender?: string): string {
   return defaultBodyTypeMap[bodyType] || bodyType
 }
 
-/** 헤어스타일 매핑 */
+/** 헤어스타일 매핑 (간소화) */
 const hairStyleMap: Record<string, string> = {
-  // 여성 헤어스타일
-  longStraight: 'long straight hair',
-  longLayered: 'long layered hair with face-framing layers',
-  bob: 'chin-length bob haircut',
-  shortBob: 'short bob haircut above the chin',
-  wavy: 'soft wavy hair',
-  curly: 'natural curly hair',
-  ponytail: 'high ponytail',
-  bun: 'elegant hair bun updo',
-  halfUp: 'half-up half-down hairstyle',
-  bangs: 'hair with bangs fringe',
-  pixie: 'short pixie cut',
-  // 남성 헤어스타일
-  maleShort: 'short cropped hair',
-  buzz: 'buzz cut very short hair',
-  twoBlock: 'two-block haircut with longer top and shaved sides',
-  undercut: 'undercut hairstyle with disconnected sides',
-  pompadour: 'pompadour hairstyle with volume on top',
-  slickedBack: 'slicked back hair',
-  sidePart: 'classic side part hairstyle',
-  maleWavy: 'textured wavy hair',
-  maleMedium: 'medium length hair',
+  short: 'short hair',
+  medium: 'medium length hair',
+  long: 'long hair',
 }
 
 /** 머리 색상 매핑 */
@@ -178,17 +154,15 @@ const poseMap: Record<string, string> = {
   holding: 'holding an object or product, looking at camera, eye contact, natural pose',
 }
 
-/** 의상 스타일 매핑 */
+/** 의상 스타일 매핑 (직업 기반) */
 const outfitStyleMap: Record<string, string> = {
-  tshirtJeans: 'wearing a fitted t-shirt and slim-fit jeans, casual everyday style',
-  shirtSlacks: 'wearing a crisp button-down shirt and tailored slacks, smart casual style',
-  blouseSkirt: 'wearing an elegant blouse and pencil skirt, feminine professional style',
-  dress: 'wearing a stylish fitted dress, elegant feminine style',
-  suit: 'wearing a well-tailored business suit, professional formal style',
-  knitSweater: 'wearing a cozy knit sweater, warm casual style',
-  athletic: 'wearing form-fitting athletic wear, sporty activewear style',
-  lounge: 'wearing comfortable loungewear, relaxed home style',
-  jacket: 'wearing a stylish jacket or coat over casual outfit, layered style',
+  casual: 'wearing casual everyday clothes, relaxed comfortable style',
+  formal: 'wearing formal business attire, professional elegant style',
+  sporty: 'wearing athletic sportswear, active fitness style',
+  doctor: 'wearing white doctor coat with stethoscope, medical professional attire',
+  nurse: 'wearing nurse uniform scrubs, healthcare professional attire',
+  chef: 'wearing chef uniform with white coat and hat, culinary professional attire',
+  worker: 'wearing work uniform or coveralls, industrial worker attire',
 }
 
 // ============================================================
@@ -230,7 +204,7 @@ export function buildPromptFromOptions(options: AvatarOptions): string {
 
   // 헤어스타일
   if (options.hairStyle) {
-    let hair = hairStyleMap[options.hairStyle]
+    let hair = hairStyleMap[options.hairStyle] || options.hairStyle
 
     // 머리 색상 적용
     if (options.hairColor === 'custom' && options.customHairColor) {
@@ -243,18 +217,17 @@ export function buildPromptFromOptions(options: AvatarOptions): string {
     parts.push(`with ${hair}`)
   }
 
-  // 의상 스타일 (체형이 보이는 핏한 의상)
+  // 의상 스타일
   if (options.outfitStyle) {
-    parts.push(outfitStyleMap[options.outfitStyle])
+    parts.push(outfitStyleMap[options.outfitStyle] || options.outfitStyle)
   } else {
-    // 기본 의상: 체형이 잘 보이는 핏한 의상
-    parts.push('wearing fitted clothing that shows body shape')
+    // 기본 의상: 캐주얼
+    parts.push(outfitStyleMap['casual'])
   }
 
-  // 포즈
-  if (options.pose) {
-    parts.push(poseMap[options.pose])
-  }
+  // 포즈 - 기본값: 정면을 바라보는 자연스러운 포즈
+  const pose = options.pose ? poseMap[options.pose] : 'standing naturally, looking directly at camera, eye contact, relaxed natural pose'
+  parts.push(pose)
 
   // 배경
   if (options.background) {
@@ -281,22 +254,12 @@ export function validateAvatarOptions(options: unknown): options is AvatarOption
   // 허용된 값 목록
   const validGenders = ['female', 'male']
   const validAges = ['teen', 'early20s', 'late20s', '30s', '40plus']
-  const validEthnicities = ['asian', 'caucasian', 'black', 'hispanic']
+  const validEthnicities = ['caucasian', 'black', 'eastAsian', 'southeastAsian', 'southAsian', 'middleEastern', 'hispanic', 'nativeAmerican', 'multiracial']
   const validHeights = ['short', 'average', 'tall']
-  const validBodyTypes = ['slim', 'average', 'athletic', 'curvy', 'plussize']
-  const validHairStyles = [
-    // 여성
-    'longStraight', 'longLayered', 'bob', 'shortBob', 'wavy', 'curly',
-    'ponytail', 'bun', 'halfUp', 'bangs', 'pixie',
-    // 남성
-    'maleShort', 'buzz', 'twoBlock', 'undercut', 'pompadour',
-    'slickedBack', 'sidePart', 'maleWavy', 'maleMedium',
-  ]
+  const validBodyTypes = ['slim', 'average', 'athletic', 'curvy', 'muscular']
+  const validHairStyles = ['short', 'medium', 'long']
   const validHairColors = ['blackhair', 'brown', 'blonde', 'custom']
-  const validOutfitStyles = [
-    'tshirtJeans', 'shirtSlacks', 'blouseSkirt', 'dress', 'suit',
-    'knitSweater', 'athletic', 'lounge', 'jacket',
-  ]
+  const validOutfitStyles = ['casual', 'formal', 'sporty', 'doctor', 'nurse', 'chef', 'worker']
   const validBackgrounds = [
     'studioWhite', 'studioGray', 'home', 'office', 'cafe',
     'restaurant', 'street', 'park', 'beach', 'gym',
@@ -356,8 +319,8 @@ export function convertAiAvatarOptionsToAvatarOptions(aiOptions: AiAvatarOptions
   // 인종 변환
   if (aiOptions.ethnicity && aiOptions.ethnicity !== 'any') {
     const ethnicityConvertMap: Record<string, AvatarOptions['ethnicity']> = {
-      korean: 'asian',
-      asian: 'asian',
+      korean: 'eastAsian',
+      asian: 'eastAsian',
       western: 'caucasian',
     }
     options.ethnicity = ethnicityConvertMap[aiOptions.ethnicity]
@@ -368,9 +331,8 @@ export function convertAiAvatarOptionsToAvatarOptions(aiOptions: AiAvatarOptions
     options.bodyType = aiOptions.bodyType as AvatarOptions['bodyType']
   }
 
-  // 기본값: 스튜디오 배경, 자연스러운 포즈
+  // 기본값: 스튜디오 배경
   options.background = 'studioWhite'
-  options.pose = 'standingHalf'
 
   return options
 }
@@ -389,14 +351,12 @@ export function buildAiAvatarPrompt(aiOptions: AiAvatarOptions): string {
 
   // 품질 향상 문구 추가 (아바타 생성 API와 동일)
   const hasBackground = avatarOptions.background
-  const hasPose = avatarOptions.pose
 
   const styleAndAntiBlur = 'documentary style environmental portrait, sharp background in focus, NO bokeh, NO blur, NO shallow depth of field, f/11 aperture'
   const gazeDirection = 'looking directly at camera, eye contact with viewer'
   const qualityEnhancers = 'high quality photo, realistic, professional photography, sharp focus, detailed skin texture'
   const defaultBackground = hasBackground ? '' : ', in a professional photo studio with even studio lighting and clean white backdrop, well-lit, sharp clear background'
-  const defaultPose = hasPose ? '' : ', in a relaxed natural pose, neutral calm expression'
   const viewType = 'upper body shot'
 
-  return `${styleAndAntiBlur}, ${rawPrompt}, ${gazeDirection}, ${qualityEnhancers}${defaultBackground}${defaultPose}, ${viewType}`
+  return `${styleAndAntiBlur}, ${rawPrompt}, ${gazeDirection}, ${qualityEnhancers}${defaultBackground}, ${viewType}`
 }

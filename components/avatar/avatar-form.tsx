@@ -4,7 +4,7 @@
  * 스텝 기반 UI로 아바타 생성 옵션을 선택합니다.
  * Step 1: 기본 정보 (성별, 나이, 인종)
  * Step 2: 외모 (체형, 헤어)
- * Step 3: 스타일 (의상, 배경, 포즈)
+ * Step 3: 스타일 (의상, 배경)
  */
 
 'use client'
@@ -17,17 +17,18 @@ import {
   ageOptions,
   ethnicityOptions,
   heightOptions,
-  bodyTypeOptions,
   hairColorOptions,
   outfitStyleOptions,
   backgroundOptions,
-  poseOptions,
   getHairStyleOptions,
+  getBodyTypeOptions,
   genderLabels,
   ageLabels,
   bodyTypeLabels,
   backgroundLabels,
   outfitStyleLabels,
+  ethnicityLabels,
+  hairStyleLabels,
 } from '@/lib/avatar/option-labels'
 import {
   User,
@@ -56,6 +57,16 @@ interface OptionButtonProps {
   onClick: () => void
   children: React.ReactNode
   className?: string
+}
+
+// ============================================================
+// 유틸리티 함수
+// ============================================================
+
+/** 기본 아바타 이름 생성 */
+function generateDefaultAvatarName(): string {
+  const randomNum = Math.floor(Math.random() * 900) + 100 // 100-999
+  return `Avatar_${randomNum}`
 }
 
 // ============================================================
@@ -137,16 +148,9 @@ function SelectedOptionsSummary({ options }: SelectedOptionsSummaryProps) {
 
     if (options.gender) items.push({ key: 'gender', label: '성별', value: genderLabels[options.gender] || options.gender })
     if (options.age) items.push({ key: 'age', label: '나이', value: ageLabels[options.age] || options.age })
-    if (options.ethnicity) {
-      const ethnicityLabelsMap: Record<string, string> = { asian: '아시아인', caucasian: '백인', black: '흑인', hispanic: '히스패닉' }
-      items.push({ key: 'ethnicity', label: '인종', value: ethnicityLabelsMap[options.ethnicity] || options.ethnicity })
-    }
+    if (options.ethnicity) items.push({ key: 'ethnicity', label: '인종', value: ethnicityLabels[options.ethnicity] || options.ethnicity })
     if (options.bodyType) items.push({ key: 'bodyType', label: '체형', value: bodyTypeLabels[options.bodyType] || options.bodyType })
-    if (options.hairStyle) {
-      const hairOptions = getHairStyleOptions(options.gender)
-      const hairLabel = hairOptions.find(h => h.value === options.hairStyle)?.label || options.hairStyle
-      items.push({ key: 'hairStyle', label: '헤어', value: hairLabel })
-    }
+    if (options.hairStyle) items.push({ key: 'hairStyle', label: '헤어', value: hairStyleLabels[options.hairStyle] || options.hairStyle })
     if (options.outfitStyle) items.push({ key: 'outfitStyle', label: '의상', value: outfitStyleLabels[options.outfitStyle] || options.outfitStyle })
     if (options.background) items.push({ key: 'background', label: '배경', value: backgroundLabels[options.background] || options.background })
 
@@ -194,10 +198,14 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
     e.preventDefault()
     // 스텝 전환 중에는 제출 방지
     if (isTransitioning) return
+
+    // 이름이 비어있으면 기본 이름 생성
+    const avatarName = name.trim() || generateDefaultAvatarName()
+
     if (inputMethod === 'prompt') {
-      await onSubmit({ name, prompt })
+      await onSubmit({ name: avatarName, prompt })
     } else {
-      await onSubmit({ name, options })
+      await onSubmit({ name: avatarName, options })
     }
   }
 
@@ -227,22 +235,24 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
     }
   }
 
-  // 성별에 따른 헤어스타일 옵션 (공유 상수에서 가져옴)
+  // 성별에 따른 헤어스타일 옵션
   const hairStyleOptions = useMemo(() => getHairStyleOptions(options.gender), [options.gender])
+
+  // 성별에 따른 체형 옵션
+  const bodyTypeOptionsForGender = useMemo(() => getBodyTypeOptions(options.gender), [options.gender])
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* 아바타 이름 입력 */}
+      {/* 아바타 이름 입력 (선택사항) */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
-          {t.avatar.name}
+          {t.avatar.name} <span className="text-muted-foreground font-normal">(선택)</span>
         </label>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder={t.avatar.namePlaceholder}
-          required
+          placeholder="입력하지 않으면 자동 생성됩니다"
           className="w-full px-4 py-3 bg-secondary/50 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-foreground placeholder:text-muted-foreground transition-all"
         />
       </div>
@@ -320,7 +330,11 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
                     <OptionButton
                       key={item.value}
                       selected={options.gender === item.value}
-                      onClick={() => updateOption('gender', item.value as 'female' | 'male')}
+                      onClick={() => {
+                        updateOption('gender', item.value as 'female' | 'male')
+                        // 성별 변경 시 체형 초기화 (성별에 따라 옵션이 다르므로)
+                        updateOption('bodyType', undefined)
+                      }}
                     >
                       {item.label}
                     </OptionButton>
@@ -369,13 +383,13 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
           {/* Step 2: 외모 */}
           {currentStep === 1 && (
             <div className="space-y-6">
-              {/* 체형 */}
+              {/* 체형 (성별에 따라 다른 옵션) */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
                   체형
                 </label>
                 <div className="flex gap-2 flex-wrap">
-                  {bodyTypeOptions.map((item) => (
+                  {bodyTypeOptionsForGender.map((item) => (
                     <OptionButton
                       key={item.value}
                       selected={options.bodyType === item.value}
@@ -405,7 +419,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
                 </div>
               </div>
 
-              {/* 헤어스타일 */}
+              {/* 헤어스타일 (간소화: 단발, 중간, 장발) */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
                   헤어스타일
@@ -467,7 +481,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
           {/* Step 3: 스타일 */}
           {currentStep === 2 && (
             <div className="space-y-6">
-              {/* 의상 스타일 */}
+              {/* 의상 스타일 (직업 기반) */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
                   <Shirt className="w-4 h-4 text-primary" />
@@ -503,24 +517,6 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
                   ))}
                 </div>
               </div>
-
-              {/* 포즈 */}
-              <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
-                  포즈
-                </label>
-                <div className="flex gap-2 flex-wrap">
-                  {poseOptions.map((item) => (
-                    <OptionButton
-                      key={item.value}
-                      selected={options.pose === item.value}
-                      onClick={() => updateOption('pose', item.value as AvatarOptions['pose'])}
-                    >
-                      {item.label}
-                    </OptionButton>
-                  ))}
-                </div>
-              </div>
             </div>
           )}
 
@@ -549,7 +545,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
             ) : (
               <button
                 type="submit"
-                disabled={isLoading || isTransitioning || !name.trim() || !options.gender || !options.age || !options.ethnicity}
+                disabled={isLoading || isTransitioning || !options.gender || !options.age || !options.ethnicity}
                 className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {isLoading ? (
@@ -573,7 +569,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
       {inputMethod === 'prompt' && (
         <button
           type="submit"
-          disabled={isLoading || !name.trim() || !prompt.trim()}
+          disabled={isLoading || !prompt.trim()}
           className="w-full flex items-center justify-center gap-2 py-3.5 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
