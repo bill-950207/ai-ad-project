@@ -73,7 +73,7 @@ export function HeroSection() {
   }, [supabase.auth]);
 
   return (
-    <section className="relative overflow-hidden px-4 pt-32 pb-24 sm:pt-40 sm:pb-32 lg:pt-48 lg:pb-40">
+    <section className="relative overflow-hidden px-4 py-20 sm:py-28 lg:py-36">
       {/* 배경 그라데이션 효과 */}
       <div className="absolute inset-0 -z-10">
         {/* 메인 그라데이션 */}

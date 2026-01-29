@@ -8,19 +8,10 @@ import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
 
 export function Navbar() {
-  const { t, language } = useLanguage()
-  const [isScrolled, setIsScrolled] = useState(false)
+  const { language } = useLanguage()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const supabase = createClient()
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
 
   useEffect(() => {
     const getUser = async () => {
@@ -43,13 +34,7 @@ export function Navbar() {
   ]
 
   return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? 'bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-sm'
-          : 'bg-transparent'
-      }`}
-    >
+    <header className="w-full bg-background/50 backdrop-blur-sm border-b border-border/30">
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
