@@ -68,11 +68,11 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
         const data = await res.json()
         setProduct(data.product)
       } else {
-        router.push('/dashboard/image-ad')
+        router.push('/dashboard/ad-products')
       }
     } catch (error) {
       console.error('제품 조회 오류:', error)
-      router.push('/dashboard/image-ad')
+      router.push('/dashboard/ad-products')
     } finally {
       setIsLoading(false)
     }
@@ -227,7 +227,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
       })
 
       if (res.ok) {
-        router.push('/dashboard/image-ad')
+        router.push('/dashboard/ad-products')
       }
     } catch (error) {
       console.error('삭제 오류:', error)
@@ -256,7 +256,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
     <div className="space-y-6">
       {/* 헤더 */}
       <AdCreationHeader
-        backHref="/dashboard/image-ad"
+        backHref="/dashboard/ad-products"
         title={product.name}
         selectedProduct={{
           name: product.name,

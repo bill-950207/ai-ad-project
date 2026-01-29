@@ -14,8 +14,8 @@
 // 이미지 생성 관련
 // ============================================================
 
-/** 아바타 생성 크레딧 (Kie.ai Z-Image: ~$0.02) */
-export const AVATAR_CREDIT_COST = 1
+/** 아바타 생성 크레딧 (무료 - 신규 사용자 유치) */
+export const AVATAR_CREDIT_COST = 0
 
 /** 의상 교체 크레딧 (Kie.ai Seedream 4.5: ~$0.05) */
 export const OUTFIT_CREDIT_COST = 2

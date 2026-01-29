@@ -9,9 +9,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useLanguage } from '@/contexts/language-context'
 import { useCredits } from '@/contexts/credit-context'
-import { Plus, Music, Loader2, Play, Pause, Trash2, Download, Sparkles, Package, ChevronDown, Info } from 'lucide-react'
+import { Plus, Music, Loader2, Play, Pause, Trash2, Download, Sparkles, Package, ChevronDown, Info, Coins } from 'lucide-react'
 import Image from 'next/image'
 import { SlotLimitModal } from '@/components/ui/slot-limit-modal'
+import { InsufficientCreditsModal } from '@/components/ui/insufficient-credits-modal'
+import { MUSIC_CREDIT_COST } from '@/lib/credits'
 
 interface SlotInfo {
   used: number
@@ -143,6 +145,10 @@ export default function MusicPage() {
   // 슬롯 제한 모달 상태
   const [showSlotLimitModal, setShowSlotLimitModal] = useState(false)
   const [slotInfo, setSlotInfo] = useState<SlotInfo | null>(null)
+
+  // 크레딧 부족 모달 상태
+  const [showCreditsModal, setShowCreditsModal] = useState(false)
+  const [creditsInfo, setCreditsInfo] = useState<{ required: number; available: number } | null>(null)
 
   // 번역 헬퍼
   const musicT = (t as Record<string, unknown>).adMusic as Record<string, unknown> | undefined
@@ -289,6 +295,19 @@ export default function MusicPage() {
 
     setIsCreating(true)
     try {
+      // 크레딧 사전 확인
+      const subscriptionRes = await fetch('/api/subscription')
+      if (subscriptionRes.ok) {
+        const subscriptionData = await subscriptionRes.json()
+        const availableCredits = subscriptionData.profile?.credits ?? 0
+        if (availableCredits < MUSIC_CREDIT_COST) {
+          setCreditsInfo({ required: MUSIC_CREDIT_COST, available: availableCredits })
+          setShowCreditsModal(true)
+          setIsCreating(false)
+          return
+        }
+      }
+
       const res = await fetch('/api/ad-music', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -316,7 +335,11 @@ export default function MusicPage() {
       // 크레딧 부족 (402)
       if (res.status === 402) {
         const errorData = await res.json()
-        alert(errorData.error || '크레딧이 부족합니다')
+        setCreditsInfo({
+          required: errorData.required ?? MUSIC_CREDIT_COST,
+          available: errorData.available ?? 0,
+        })
+        setShowCreditsModal(true)
         return
       }
 
@@ -885,7 +908,10 @@ export default function MusicPage() {
                     {(musicT?.generating as string) || '생성 중...'}
                   </>
                 ) : (
-                  (musicT?.generate as string) || '생성하기'
+                  <>
+                    <Coins className="w-4 h-4" />
+                    {(musicT?.generate as string) || '생성하기'} ({MUSIC_CREDIT_COST} 크레딧)
+                  </>
                 )}
               </button>
             </div>
@@ -902,6 +928,15 @@ export default function MusicPage() {
           slotInfo={slotInfo}
         />
       )}
+
+      {/* 크레딧 부족 모달 */}
+      <InsufficientCreditsModal
+        isOpen={showCreditsModal}
+        onClose={() => setShowCreditsModal(false)}
+        requiredCredits={creditsInfo?.required ?? 0}
+        availableCredits={creditsInfo?.available ?? 0}
+        featureName="음악 생성"
+      />
     </div>
   )
 }

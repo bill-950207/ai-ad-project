@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
+import { FullscreenProviders } from './providers'
 
 export default async function FullscreenLayout({
   children,
@@ -30,7 +31,9 @@ export default async function FullscreenLayout({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-background">
-      {children}
+      <FullscreenProviders>
+        {children}
+      </FullscreenProviders>
     </div>
   )
 }
