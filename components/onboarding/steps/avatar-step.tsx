@@ -608,7 +608,7 @@ export function AvatarStep() {
                           : 'bg-secondary/50 text-foreground hover:bg-secondary'
                       }`}
                     >
-                      {v === 'eastAsian' ? 'East Asian' : v === 'caucasian' ? 'Caucasian' : v === 'black' ? 'Black' : 'Hispanic'}
+                      {v === 'eastAsian' ? '동아시아인' : v === 'caucasian' ? '백인' : v === 'black' ? '흑인' : '히스패닉'}
                     </button>
                   ))}
                 </div>
