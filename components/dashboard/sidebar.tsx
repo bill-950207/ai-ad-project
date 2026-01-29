@@ -170,6 +170,12 @@ export function Sidebar() {
     return user.email?.split('@')[0] || 'User'
   }
 
+  // 사용자 이니셜 추출 (랜딩페이지와 동일)
+  const getUserInitials = () => {
+    if (!user?.email) return 'U'
+    return user.email.charAt(0).toUpperCase()
+  }
+
   const getNavLabel = (key: string) => {
     return t.nav[key as keyof typeof t.nav] || key
   }
@@ -524,15 +530,17 @@ export function Sidebar() {
               )}
             >
               {/* 아바타 + 플랜 뱃지 */}
-              <div className="relative">
+              <div className="relative flex flex-col items-center">
                 <div className={cn(
-                  "w-9 h-9 rounded-xl bg-gradient-to-br from-primary/30 to-purple-500/30",
-                  "flex items-center justify-center ring-2 ring-primary/20"
+                  "w-9 h-9 rounded-full bg-gradient-to-br from-primary via-purple-500 to-pink-500",
+                  "flex items-center justify-center ring-2 ring-background"
                 )}>
-                  <UserIcon className="w-5 h-5 text-primary" />
+                  <span className="text-white font-semibold text-sm">
+                    {getUserInitials()}
+                  </span>
                 </div>
                 <span className={cn(
-                  "absolute -bottom-1 -right-1 text-[8px] font-bold px-1.5 py-0.5 rounded-full",
+                  "mt-1 text-[8px] font-bold px-1.5 py-0.5 rounded-full",
                   planType === 'FREE' && "bg-gray-600 text-gray-100",
                   planType === 'STARTER' && "bg-blue-600 text-blue-100",
                   planType === 'PRO' && "bg-gradient-to-r from-purple-500 to-pink-500 text-white",
