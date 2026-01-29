@@ -33,7 +33,7 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
@@ -41,10 +41,22 @@ export default function LoginPage() {
     if (error) {
       setError(error.message)
       setLoading(false)
-    } else {
-      router.push('/dashboard')
-      router.refresh()
+      return
     }
+
+    // 이메일 인증 상태 확인 (Google OAuth는 이미 검증됨)
+    const user = data.user
+    const isGoogleAuth = user?.app_metadata?.provider === 'google'
+    const isEmailVerified = isGoogleAuth || user?.email_confirmed_at != null
+
+    if (!isEmailVerified) {
+      // 이메일 미인증 시 인증 페이지로 리다이렉트
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+      return
+    }
+
+    router.push('/dashboard')
+    router.refresh()
   }
 
   const handleGoogleLogin = async () => {

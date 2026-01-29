@@ -5,8 +5,10 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useLanguage } from '@/contexts/language-context'
 
 export default function SignupPage() {
+  const { language } = useLanguage()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -35,13 +37,13 @@ export default function SignupPage() {
     setError(null)
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
+      setError(language === 'ko' ? '비밀번호가 일치하지 않습니다.' : 'Passwords do not match')
       setLoading(false)
       return
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters')
+      setError(language === 'ko' ? '비밀번호는 최소 6자 이상이어야 합니다.' : 'Password must be at least 6 characters')
       setLoading(false)
       return
     }
