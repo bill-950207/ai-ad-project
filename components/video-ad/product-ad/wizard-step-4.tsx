@@ -16,6 +16,8 @@ import {
 import Image from 'next/image'
 import { useProductAdWizard, SceneKeyframe, SceneInfo } from './wizard-context'
 import { uploadSceneKeyframeImage } from '@/lib/client/image-upload'
+import { InsufficientCreditsModal } from '@/components/ui/insufficient-credits-modal'
+import { KEYFRAME_CREDIT_COST } from '@/lib/credits'
 import {
   DndContext,
   closestCenter,
@@ -288,6 +290,10 @@ export function WizardStep4() {
   const [modalSceneIndex, setModalSceneIndex] = useState<number | null>(null)
   const [isMergingPrompt, setIsMergingPrompt] = useState(false)
   const keyframePollingRef = useRef<NodeJS.Timeout | null>(null)
+
+  // 크레딧 부족 모달
+  const [showCreditsModal, setShowCreditsModal] = useState(false)
+  const [creditsInfo, setCreditsInfo] = useState<{ required: number; available: number } | null>(null)
 
   // 폴링 최적화를 위한 ref
   const pollingInProgressRef = useRef<Set<number>>(new Set())  // 현재 폴링 중인 씬 인덱스

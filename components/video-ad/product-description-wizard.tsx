@@ -43,6 +43,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AvatarSelectModal, SelectedAvatarInfo } from './avatar-select-modal'
 import { useAsyncDraftSave } from '@/lib/hooks/use-async-draft-save'
+import { InsufficientCreditsModal } from '@/components/ui/insufficient-credits-modal'
 
 // ============================================================
 // 타입 정의
@@ -637,6 +638,10 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
   const [generationStatus, setGenerationStatus] = useState('')
   const [generationStartTime, setGenerationStartTime] = useState<number | null>(null)
   const [generationProgress, setGenerationProgress] = useState(0)
+
+  // 크레딧 부족 모달
+  const [showCreditsModal, setShowCreditsModal] = useState(false)
+  const [creditsInfo, setCreditsInfo] = useState<{ required: number; available: number } | null>(null)
 
   // 초안 복원 중 플래그 (useEffect에서 editedScript 덮어쓰기 방지)
   const isRestoringDraft = useRef(false)
@@ -1590,8 +1595,19 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       })
 
       if (!videoRes.ok) {
-        const error = await videoRes.json()
-        throw new Error(error.error || '영상 생성 요청 실패')
+        const errorData = await videoRes.json()
+        // 크레딧 부족 에러 처리
+        if (errorData.code === 'INSUFFICIENT_CREDITS') {
+          setCreditsInfo({
+            required: errorData.required,
+            available: errorData.available,
+          })
+          setShowCreditsModal(true)
+          setIsGeneratingVideo(false)
+          setIsGeneratingAudio(false)
+          return
+        }
+        throw new Error(errorData.error || '영상 생성 요청 실패')
       }
 
       const videoData = await videoRes.json()
@@ -2937,6 +2953,15 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         </div>
       )}
       </div>
+
+      {/* 크레딧 부족 모달 */}
+      <InsufficientCreditsModal
+        isOpen={showCreditsModal}
+        onClose={() => setShowCreditsModal(false)}
+        requiredCredits={creditsInfo?.required ?? 0}
+        availableCredits={creditsInfo?.available ?? 0}
+        featureName="제품 설명 영상"
+      />
     </div>
   )
 }

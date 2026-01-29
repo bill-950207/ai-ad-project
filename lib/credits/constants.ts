@@ -64,7 +64,7 @@ export const PRODUCT_AD_VIDEO_CREDIT_COST = {
 } as const
 
 /** 키프레임 이미지 생성 크레딧 (Seedream 4.5, 이미지당) */
-export const KEYFRAME_CREDIT_COST = 3 // ~$0.08/장
+export const KEYFRAME_CREDIT_COST = 1 // ~$0.03/장
 
 /** 씬 전환 영상 생성 크레딧 (Kling O1, 전환당) */
 export const TRANSITION_CREDIT_COST = 12 // ~$0.50/전환

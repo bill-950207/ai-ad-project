@@ -150,7 +150,12 @@ export async function POST(request: NextRequest) {
     })
 
     if (!profile || (profile.credits ?? 0) < PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST) {
-      return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 })
+      return NextResponse.json({
+        error: 'Insufficient credits',
+        code: 'INSUFFICIENT_CREDITS',
+        required: PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST,
+        available: profile?.credits ?? 0,
+      }, { status: 402 })
     }
 
     // 첫 프레임 이미지 R2 업로드 (WebP 압축)

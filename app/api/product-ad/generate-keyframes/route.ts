@@ -70,10 +70,12 @@ export async function POST(request: NextRequest) {
     })
 
     if (!profile || (profile.credits ?? 0) < totalCreditCost) {
-      return NextResponse.json(
-        { error: 'Insufficient credits', required: totalCreditCost, available: profile?.credits ?? 0 },
-        { status: 402 }
-      )
+      return NextResponse.json({
+        error: 'Insufficient credits',
+        code: 'INSUFFICIENT_CREDITS',
+        required: totalCreditCost,
+        available: profile?.credits ?? 0,
+      }, { status: 402 })
     }
 
     // 각 씬에 대해 Seedream 4.5로 이미지 생성 요청
