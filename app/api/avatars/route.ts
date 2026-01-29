@@ -12,7 +12,7 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { submitToQueue as submitToFalQueue } from '@/lib/fal/client'
 import { submitZImageToQueue } from '@/lib/kie/client'
-import { buildPromptFromOptions, validateAvatarOptions, AvatarOptions } from '@/lib/avatar/prompt-builder'
+import { buildPromptFromOptions, validateAvatarOptions, AvatarOptions, DEFAULT_AVATAR_OPTIONS } from '@/lib/avatar/prompt-builder'
 import { AVATAR_CREDIT_COST } from '@/lib/credits'
 import { checkUsageLimit, incrementUsage } from '@/lib/subscription'
 import { applyRateLimit, RateLimits, rateLimitExceededResponse } from '@/lib/rate-limit'
@@ -130,18 +130,13 @@ export async function POST(request: NextRequest) {
     }
 
     // 프롬프트 생성: 직접 입력 또는 옵션 기반
-    const rawPrompt = directPrompt || (options ? buildPromptFromOptions(options) : '')
-
-    if (!rawPrompt || rawPrompt.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Prompt or options are required' },
-        { status: 400 }
-      )
-    }
+    // 아무것도 입력하지 않은 경우 기본 옵션 사용
+    const effectiveOptions = options || (!directPrompt ? DEFAULT_AVATAR_OPTIONS : undefined)
+    const rawPrompt = directPrompt || buildPromptFromOptions(effectiveOptions || DEFAULT_AVATAR_OPTIONS)
     // AI 이미지 생성에 최적화된 프롬프트 (품질 향상 문구 추가)
     // 배경/포즈 옵션이 있으면 프롬프트 빌더가 처리하므로 기본 배경 문구 제외
-    const hasBackground = options?.background
-    const hasPose = options?.pose
+    const hasBackground = effectiveOptions?.background
+    const hasPose = effectiveOptions?.pose
 
     // 배경 선명도 강제 문구 + 다큐멘터리 스타일 (배경이 중요한 스타일)
     const styleAndAntiBlur = 'documentary style environmental portrait, sharp background in focus, NO bokeh, NO blur, NO shallow depth of field, f/11 aperture'
@@ -228,7 +223,7 @@ export async function POST(request: NextRequest) {
           name: name.trim(),
           prompt: rawPrompt,                // 원본 프롬프트
           prompt_expanded: finalPrompt,     // 품질 향상 문구가 추가된 프롬프트
-          options: options ? JSON.parse(JSON.stringify(options)) : undefined,
+          options: effectiveOptions ? JSON.parse(JSON.stringify(effectiveOptions)) : undefined,
           status: 'IN_QUEUE',
           fal_request_id: queueResponse.request_id,
           fal_response_url: queueResponse.response_url || null,

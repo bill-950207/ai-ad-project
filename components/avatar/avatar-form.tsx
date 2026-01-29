@@ -308,9 +308,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
   }
 
   const canProceed = () => {
-    if (currentStep === 0) {
-      return options.gender && options.age && options.ethnicity
-    }
+    // 모든 옵션은 선택사항 - 항상 다음 단계로 진행 가능
     return true
   }
 
@@ -416,7 +414,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
                   <User className="w-4 h-4 text-primary" />
-                  {t.avatar.gender} <span className="text-destructive">*</span>
+                  {t.avatar.gender}
                 </label>
                 <div className="flex gap-2 flex-wrap">
                   {genderOptionKeys.map((item) => (
@@ -438,7 +436,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
               {/* 나이대 */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
-                  {t.avatar.age} <span className="text-destructive">*</span>
+                  {t.avatar.age}
                 </label>
                 <div className="flex gap-2 flex-wrap">
                   {ageOptionKeys.map((item) => (
@@ -456,7 +454,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
               {/* 인종/외모 */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
-                  {t.avatar.ethnicity} <span className="text-destructive">*</span>
+                  {t.avatar.ethnicity}
                 </label>
                 <div className="flex gap-2 flex-wrap">
                   {ethnicityOptionKeys.map((item) => (
@@ -638,7 +636,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
             ) : (
               <button
                 type="submit"
-                disabled={isLoading || isTransitioning || !options.gender || !options.age || !options.ethnicity}
+                disabled={isLoading || isTransitioning}
                 className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {isLoading ? (
@@ -662,7 +660,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
       {inputMethod === 'prompt' && (
         <button
           type="submit"
-          disabled={isLoading || !prompt.trim()}
+          disabled={isLoading}
           className="w-full flex items-center justify-center gap-2 py-3.5 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
