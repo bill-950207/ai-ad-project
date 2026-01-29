@@ -2,7 +2,7 @@
  * AI 카테고리 옵션 추천
  */
 
-import { GenerateContentConfig, MediaResolution, ThinkingLevel } from '@google/genai'
+import { GenerateContentConfig, MediaResolution, ThinkingLevel, Type } from '@google/genai'
 import { genAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
 import type {
   ImageAdType,
@@ -406,6 +406,73 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
     thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
     mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
+    responseSchema: {
+      type: Type.OBJECT,
+      required: ['scenarios'],
+      properties: {
+        scenarios: {
+          type: Type.ARRAY,
+          description: '추천 시나리오 배열',
+          items: {
+            type: Type.OBJECT,
+            required: ['title', 'description', 'recommendations', 'overallStrategy'],
+            properties: {
+              title: {
+                type: Type.STRING,
+                description: 'Scenario title (8-20 characters)',
+              },
+              description: {
+                type: Type.STRING,
+                description: 'Scenario description (30-50 characters)',
+              },
+              targetAudience: {
+                type: Type.STRING,
+                description: 'Target audience description',
+              },
+              conceptType: {
+                type: Type.STRING,
+                description: 'Concept type',
+              },
+              recommendations: {
+                type: Type.ARRAY,
+                description: 'Category recommendations',
+                items: {
+                  type: Type.OBJECT,
+                  required: ['key', 'value', 'reason'],
+                  properties: {
+                    key: { type: Type.STRING, description: 'Category key' },
+                    value: { type: Type.STRING, description: 'Option value' },
+                    customText: { type: Type.STRING, description: 'Custom text if value is __custom__' },
+                    reason: { type: Type.STRING, description: 'Reason for this recommendation' },
+                  },
+                },
+              },
+              overallStrategy: {
+                type: Type.STRING,
+                description: 'Overall strategy for this scenario',
+              },
+              suggestedPrompt: {
+                type: Type.STRING,
+                description: 'Optional suggested prompt',
+              },
+              recommendedAvatarStyle: {
+                type: Type.OBJECT,
+                description: 'Recommended avatar style for AI avatar mode',
+                properties: {
+                  avatarPrompt: { type: Type.STRING, description: 'English prompt for avatar generation (40-60 words)' },
+                  avatarDescription: { type: Type.STRING, description: 'Brief description in output language (15-25 chars)' },
+                  gender: { type: Type.STRING, description: 'male | female | any' },
+                  age: { type: Type.STRING, description: 'young | middle | mature | any' },
+                  style: { type: Type.STRING, description: 'natural | professional | casual | elegant | any' },
+                  ethnicity: { type: Type.STRING, description: 'korean | asian | western | any' },
+                  bodyType: { type: Type.STRING, description: 'slim | average | athletic | curvy | any' },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   }
 
   const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []
