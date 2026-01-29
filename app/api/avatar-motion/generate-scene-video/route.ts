@@ -14,6 +14,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/db'
 import {
   submitViduToQueue,
   type ViduResolution,
@@ -23,6 +24,7 @@ import {
 import {
   submitViduQ2ToQueue as submitFalViduQ2ToQueue,
 } from '@/lib/fal/client'
+import { VIDU_CREDIT_COST_PER_SECOND } from '@/lib/credits'
 
 interface GenerateSceneVideoRequest {
   sceneIndex: number
@@ -86,7 +88,34 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`Generating scene ${sceneIndex} video: ${duration}s @ ${resolution}`)
+    // 크레딧 계산 (해상도 × 시간)
+    const creditCostPerSecond = VIDU_CREDIT_COST_PER_SECOND[resolution] || VIDU_CREDIT_COST_PER_SECOND['720p']
+    const totalCreditCost = Math.ceil(duration * creditCostPerSecond)
+
+    // 크레딧 확인 및 차감 (트랜잭션)
+    const profile = await prisma.profiles.findUnique({
+      where: { id: user.id },
+      select: { credits: true },
+    })
+
+    if (!profile || (profile.credits ?? 0) < totalCreditCost) {
+      return NextResponse.json(
+        {
+          error: 'Insufficient credits',
+          required: totalCreditCost,
+          available: profile?.credits ?? 0,
+        },
+        { status: 402 }
+      )
+    }
+
+    // 크레딧 차감
+    await prisma.profiles.update({
+      where: { id: user.id },
+      data: { credits: { decrement: totalCreditCost } },
+    })
+
+    console.log(`Generating scene ${sceneIndex} video: ${duration}s @ ${resolution} (${totalCreditCost} credits)`)
 
     let requestId: string
     let provider: 'wavespeed' | 'fal' = 'wavespeed'
@@ -132,6 +161,7 @@ export async function POST(request: NextRequest) {
       prompt,
       duration,
       resolution,
+      creditUsed: totalCreditCost,
     })
   } catch (error) {
     console.error('씬 영상 생성 오류:', error)

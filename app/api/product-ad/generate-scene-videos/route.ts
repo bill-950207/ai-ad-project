@@ -18,6 +18,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/db'
 import { getUserPlan } from '@/lib/subscription/queries'
 import { plan_type } from '@/lib/generated/prisma/client'
 import {
@@ -28,6 +29,7 @@ import {
 import {
   submitViduQ2ToQueue as submitFalViduQ2ToQueue,
 } from '@/lib/fal/client'
+import { VIDU_CREDIT_COST_PER_SECOND } from '@/lib/credits'
 
 // FREE 사용자 제한
 const FREE_USER_LIMITS = {
@@ -116,6 +118,40 @@ export async function POST(request: NextRequest) {
     // 키프레임 인덱스 순으로 정렬
     const sortedKeyframes = [...effectiveKeyframes].sort((a, b) => a.sceneIndex - b.sceneIndex)
 
+    // 총 크레딧 계산 (각 씬의 해상도 × 시간)
+    const creditCostPerSecond = VIDU_CREDIT_COST_PER_SECOND[effectiveResolution] || VIDU_CREDIT_COST_PER_SECOND['720p']
+    let totalCreditCost = 0
+    for (const keyframe of sortedKeyframes) {
+      const sceneDuration = keyframe.duration ?? effectiveDuration
+      const adjustedDuration = isFreeUser ? Math.min(sceneDuration, FREE_USER_LIMITS.maxDuration) : sceneDuration
+      totalCreditCost += Math.ceil(adjustedDuration * creditCostPerSecond)
+    }
+
+    // 크레딧 확인
+    const profile = await prisma.profiles.findUnique({
+      where: { id: user.id },
+      select: { credits: true },
+    })
+
+    if (!profile || (profile.credits ?? 0) < totalCreditCost) {
+      return NextResponse.json(
+        {
+          error: 'Insufficient credits',
+          required: totalCreditCost,
+          available: profile?.credits ?? 0,
+        },
+        { status: 402 }
+      )
+    }
+
+    // 크레딧 차감
+    await prisma.profiles.update({
+      where: { id: user.id },
+      data: { credits: { decrement: totalCreditCost } },
+    })
+
+    console.log(`Generating ${sortedKeyframes.length} scene videos @ ${effectiveResolution} (${totalCreditCost} credits)`)
+
     // 각 씬에 대해 영상 생성 요청
     const sceneVideoRequests: SceneVideoRequest[] = []
 
@@ -181,6 +217,7 @@ export async function POST(request: NextRequest) {
       totalScenes: sceneVideoRequests.length,
       resolution: effectiveResolution,
       duration: effectiveDuration,
+      creditUsed: totalCreditCost,
       // FREE 사용자에게 제한 적용 여부 알림
       ...(isFreeUser && {
         appliedLimits: {

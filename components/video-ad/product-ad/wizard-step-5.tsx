@@ -27,6 +27,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import { useProductAdWizard, SceneVideoSegment, VideoResolution } from './wizard-context'
+import { VIDU_CREDIT_COST_PER_SECOND } from '@/lib/credits'
 
 // 사용자 플랜 타입
 interface UserPlan {
@@ -39,11 +40,11 @@ const FREE_USER_LIMITS = {
   maxResolution: '540p' as VideoResolution,
 }
 
-// Vidu Q2 해상도 옵션
+// Vidu Q2 해상도 옵션 (중앙 상수 사용)
 const RESOLUTION_OPTIONS: { value: VideoResolution; label: string; desc: string; creditsPerSecond: number }[] = [
-  { value: '540p', label: 'SD (540p)', desc: '빠른 생성', creditsPerSecond: 5 },
-  { value: '720p', label: 'HD (720p)', desc: '표준 화질', creditsPerSecond: 8 },
-  { value: '1080p', label: 'FHD (1080p)', desc: '고품질', creditsPerSecond: 12 },
+  { value: '540p', label: 'SD (540p)', desc: '빠른 생성', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['540p'] },
+  { value: '720p', label: 'HD (720p)', desc: '표준 화질', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['720p'] },
+  { value: '1080p', label: 'FHD (1080p)', desc: '고품질', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['1080p'] },
 ]
 import {
   DndContext,

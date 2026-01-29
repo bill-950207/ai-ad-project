@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useCallback, useRef, ReactNode } from 'react'
 import { useAsyncDraftSave } from '@/lib/hooks/use-async-draft-save'
 import { SelectedAvatarInfo } from '@/components/video-ad/avatar-select-modal'
+import { VIDU_CREDIT_COST_PER_SECOND } from '@/lib/credits'
 
 // ============================================================
 // 타입 정의
@@ -501,15 +502,11 @@ export function AvatarMotionWizardProvider({ children }: AvatarMotionWizardProvi
     return sceneDurations.slice(0, sceneCount).reduce((sum, d) => sum + d, 0)
   }, [sceneDurations, sceneCount])
 
-  // 예상 크레딧 계산 (Vidu Q2 기준)
+  // 예상 크레딧 계산 (Vidu Q2 기준 - 중앙 상수 사용)
   const getEstimatedCredits = useCallback(() => {
     const totalDuration = getTotalDuration()
-    const creditsPerSecond: Record<VideoResolution, number> = {
-      '540p': 5,
-      '720p': 8,
-      '1080p': 12,
-    }
-    return totalDuration * creditsPerSecond[resolution]
+    const creditsPerSecond = VIDU_CREDIT_COST_PER_SECOND[resolution] || VIDU_CREDIT_COST_PER_SECOND['720p']
+    return Math.ceil(totalDuration * creditsPerSecond)
   }, [getTotalDuration, resolution])
 
   // Draft 저장
