@@ -26,15 +26,21 @@ interface DashboardContentProps {
   userEmail?: string
 }
 
-// 예시 이미지/영상 URL (실제 서비스에서는 CDN이나 R2 URL 사용)
-const IMAGE_AD_EXAMPLES = [
+interface Showcase {
+  id: string
+  type: 'image' | 'video'
+  thumbnail_url: string
+  media_url: string | null
+}
+
+// 폴백용 예시 이미지/영상 URL
+const FALLBACK_IMAGE_EXAMPLES = [
   '/examples/image-ad-1.webp',
   '/examples/image-ad-2.webp',
   '/examples/image-ad-3.webp',
 ]
 
-// 영상 광고 예시 비디오
-const VIDEO_AD_EXAMPLE = '/examples/video-ad-example.mp4'
+const FALLBACK_VIDEO_EXAMPLE = '/examples/video-ad-example.mp4'
 
 // ============================================================
 // 배경 이미지 슬라이더 컴포넌트
@@ -200,6 +206,43 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
   const searchParams = useSearchParams()
   const router = useRouter()
 
+  // 쇼케이스 데이터 상태
+  const [imageShowcases, setImageShowcases] = useState<string[]>(FALLBACK_IMAGE_EXAMPLES)
+  const [videoShowcase, setVideoShowcase] = useState<string>(FALLBACK_VIDEO_EXAMPLE)
+
+  // 쇼케이스 데이터 로드
+  useEffect(() => {
+    const fetchShowcases = async () => {
+      try {
+        // 이미지와 영상 쇼케이스 병렬 조회
+        const [imageRes, videoRes] = await Promise.all([
+          fetch('/api/showcases?type=image&limit=5&random=true'),
+          fetch('/api/showcases?type=video&limit=1&random=true'),
+        ])
+
+        if (imageRes.ok) {
+          const imageData = await imageRes.json()
+          if (imageData.showcases && imageData.showcases.length > 0) {
+            const imageUrls = imageData.showcases.map((s: Showcase) => s.thumbnail_url)
+            setImageShowcases(imageUrls)
+          }
+        }
+
+        if (videoRes.ok) {
+          const videoData = await videoRes.json()
+          if (videoData.showcases && videoData.showcases.length > 0 && videoData.showcases[0].media_url) {
+            setVideoShowcase(videoData.showcases[0].media_url)
+          }
+        }
+      } catch (error) {
+        console.error('쇼케이스 데이터 로드 실패:', error)
+        // 실패 시 폴백 값 유지
+      }
+    }
+
+    fetchShowcases()
+  }, [])
+
   // URL 쿼리 파라미터로 온보딩 자동 시작
   useEffect(() => {
     const createType = searchParams.get('create')
@@ -242,7 +285,7 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
           type="image"
           title={t.nav.imageAd}
           description={t.imageAd.subtitle}
-          images={IMAGE_AD_EXAMPLES}
+          images={imageShowcases}
           gradientFrom="from-violet-600/40"
           icon={<ImageIcon className="w-5 h-5 text-white" />}
           onClick={() => startOnboarding('image')}
@@ -252,7 +295,7 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
           type="video"
           title={t.nav.videoAd}
           description={t.videoAd.subtitle}
-          videoUrl={VIDEO_AD_EXAMPLE}
+          videoUrl={videoShowcase}
           gradientFrom="from-rose-600/40"
           icon={<Video className="w-5 h-5 text-white" />}
           onClick={() => startOnboarding('video')}
