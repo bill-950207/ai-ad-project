@@ -10,6 +10,13 @@ import { useState, useEffect, useCallback } from 'react'
 import { useLanguage } from '@/contexts/language-context'
 import { Plus, Music, Loader2, Play, Pause, Trash2, Download, Sparkles, Package, ChevronDown, Info } from 'lucide-react'
 import Image from 'next/image'
+import { SlotLimitModal } from '@/components/ui/slot-limit-modal'
+
+interface SlotInfo {
+  used: number
+  limit: number
+  message?: string
+}
 
 interface AdProduct {
   id: string
@@ -130,6 +137,10 @@ export default function MusicPage() {
   const [recommendation, setRecommendation] = useState<MusicRecommendation | null>(null)
   const [showProductDropdown, setShowProductDropdown] = useState(false)
   const [useAiRecommendation, setUseAiRecommendation] = useState(false)
+
+  // 슬롯 제한 모달 상태
+  const [showSlotLimitModal, setShowSlotLimitModal] = useState(false)
+  const [slotInfo, setSlotInfo] = useState<SlotInfo | null>(null)
 
   // 번역 헬퍼
   const musicT = (t as Record<string, unknown>).adMusic as Record<string, unknown> | undefined
@@ -287,14 +298,34 @@ export default function MusicPage() {
         }),
       })
 
+      // 슬롯 제한 초과 (403)
+      if (res.status === 403) {
+        const errorData = await res.json()
+        if (errorData.slotInfo) {
+          setSlotInfo(errorData.slotInfo)
+          setShowSlotLimitModal(true)
+          setShowCreateModal(false)
+        } else {
+          alert(errorData.error || '슬롯이 가득 찼습니다')
+        }
+        return
+      }
+
+      // 크레딧 부족 (402)
+      if (res.status === 402) {
+        const errorData = await res.json()
+        alert(errorData.error || '크레딧이 부족합니다')
+        return
+      }
+
       if (res.ok) {
         const data = await res.json()
         setMusicList(prev => [data.music, ...prev])
         setShowCreateModal(false)
         setFormData({ name: '', mood: '', genre: '', productType: '' })
       } else {
-        const error = await res.json()
-        alert(error.error || '음악 생성에 실패했습니다.')
+        const errorData = await res.json()
+        alert(errorData.error || '음악 생성에 실패했습니다.')
       }
     } catch (error) {
       console.error('음악 생성 오류:', error)
@@ -856,6 +887,16 @@ export default function MusicPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 슬롯 제한 모달 */}
+      {slotInfo && (
+        <SlotLimitModal
+          isOpen={showSlotLimitModal}
+          onClose={() => setShowSlotLimitModal(false)}
+          slotType="music"
+          slotInfo={slotInfo}
+        />
       )}
     </div>
   )

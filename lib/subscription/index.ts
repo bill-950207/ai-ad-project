@@ -15,12 +15,16 @@ export {
   type UserSubscription,
 } from './queries'
 
-// 사용량 추적
+// 슬롯 사용량 (동시 보유 가능 개수 제한)
 export {
+  checkSlotLimit,
+  getSlotSummary,
+  // Backward compatibility
   checkUsageLimit,
-  incrementUsage,
   getUsageSummary,
-  resetUsage,
+  type SlotType,
+  type SlotCheckResult,
+  type SlotSummary,
   type UsageType,
   type UsageCheckResult,
   type UsageSummary,

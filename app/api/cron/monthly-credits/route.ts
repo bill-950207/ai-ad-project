@@ -3,7 +3,9 @@
  *
  * Vercel Cron으로 매월 1일 00:00 UTC에 실행
  * - 활성 구독자에게 플랜별 월 크레딧 지급
- * - 사용량(usage_tracking) 리셋
+ *
+ * 참고: avatar_limit/music_limit/product_limit은 슬롯 제한(동시 보유 가능 개수)이므로
+ * 월간 리셋 대상이 아님. 실제 보유 수량은 DB COUNT로 확인.
  *
  * 스케줄: "0 0 1 * *" (매월 1일 00:00 UTC)
  */
@@ -22,11 +24,6 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('Cron: Starting monthly credits distribution...')
-
-    // 현재 월의 시작일 계산
-    const currentPeriod = new Date()
-    currentPeriod.setUTCDate(1)
-    currentPeriod.setUTCHours(0, 0, 0, 0)
 
     // 활성 구독자 조회
     // 조건:
@@ -51,42 +48,18 @@ export async function GET(request: NextRequest) {
     let errorCount = 0
     const results: { userId: string; planName: string; credits: number; success: boolean }[] = []
 
-    // 각 구독자에게 크레딧 지급 및 사용량 리셋
+    // 각 구독자에게 크레딧 지급
     for (const subscription of activeSubscriptions) {
       try {
         const creditsToGrant = subscription.plan.monthly_credits
 
-        // 크레딧 지급 및 사용량 리셋 트랜잭션
-        await prisma.$transaction([
-          // 크레딧 지급
-          prisma.profiles.update({
-            where: { id: subscription.user_id },
-            data: {
-              credits: { increment: creditsToGrant },
-            },
-          }),
-          // 사용량 리셋 (새 기간의 레코드 생성 또는 업데이트)
-          prisma.usage_tracking.upsert({
-            where: {
-              user_id_period: {
-                user_id: subscription.user_id,
-                period: currentPeriod,
-              },
-            },
-            update: {
-              avatar_count: 0,
-              music_count: 0,
-              product_count: 0,
-            },
-            create: {
-              user_id: subscription.user_id,
-              period: currentPeriod,
-              avatar_count: 0,
-              music_count: 0,
-              product_count: 0,
-            },
-          }),
-        ])
+        // 크레딧 지급
+        await prisma.profiles.update({
+          where: { id: subscription.user_id },
+          data: {
+            credits: { increment: creditsToGrant },
+          },
+        })
 
         results.push({
           userId: subscription.user_id,
@@ -118,7 +91,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
-      period: currentPeriod.toISOString(),
       summary: {
         totalSubscriptions: activeSubscriptions.length,
         processed: processedCount,
