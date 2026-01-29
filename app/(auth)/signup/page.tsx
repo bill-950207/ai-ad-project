@@ -12,7 +12,6 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(true)
   const router = useRouter()
   const supabase = createClient()
@@ -59,8 +58,8 @@ export default function SignupPage() {
       setError(error.message)
       setLoading(false)
     } else {
-      setSuccess(true)
-      setLoading(false)
+      // 이메일 인증 페이지로 리다이렉트
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`)
     }
   }
 
@@ -86,27 +85,6 @@ export default function SignupPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
-
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4">
-        <div className="max-w-md w-full text-center">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-green-500/20 flex items-center justify-center">
-            <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">Check your email</h1>
-          <p className="text-muted-foreground mb-6">
-            We&apos;ve sent you a confirmation link to <strong className="text-foreground">{email}</strong>
-          </p>
-          <Link href="/login">
-            <Button variant="outline">Back to Login</Button>
-          </Link>
-        </div>
       </div>
     )
   }
