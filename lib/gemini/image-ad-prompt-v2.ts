@@ -263,6 +263,7 @@ interface FigureInfo {
 
 function buildFigureInfo(input: ImageAdPromptInput, avatarGender: string, productCategory: string): FigureInfo {
   const hasAvatar = input.avatarImageUrls && input.avatarImageUrls.length > 0
+  const hasAiAvatar = !!input.aiAvatarDescription  // AI 생성 아바타 여부
   const hasOutfit = !!input.outfitImageUrl
   const hasProduct = !!input.productImageUrl
   const hasStyle = !!input.referenceStyleImageUrl
@@ -277,11 +278,16 @@ function buildFigureInfo(input: ImageAdPromptInput, avatarGender: string, produc
   let productRef = 'the product'
 
   if (hasAvatar) {
+    // 실제 아바타 이미지 참조
     modelFigureNum = figNum
     descriptions.push(`- Figure ${figNum}: ${avatarGender} reference`)
     rules.push(`- Model = "the ${avatarGender} from Figure ${figNum}" (NO physical descriptions)`)
     modelRef = `the ${avatarGender} from Figure ${figNum}`
     figNum++
+  } else if (hasAiAvatar) {
+    // AI 생성 아바타 - Figure 참조 없이 텍스트 설명 사용
+    modelRef = `a photorealistic ${input.aiAvatarDescription}`
+    rules.push(`- Model = AI-generated (described in AI MODEL section)`)
   }
 
   if (hasOutfit) {
@@ -303,9 +309,9 @@ function buildFigureInfo(input: ImageAdPromptInput, avatarGender: string, produc
     figNum++
   }
 
-  const guide = descriptions.length > 0
+  const guide = descriptions.length > 0 || hasAiAvatar
     ? `=== ATTACHED IMAGES ===
-${descriptions.join('\n')}
+${descriptions.length > 0 ? descriptions.join('\n') : '(No avatar reference - AI will generate model)'}
 
 REFERENCE RULES:
 ${rules.join('\n')}`
@@ -344,8 +350,8 @@ function postProcessPrompt(prompt: string, hasLogo: boolean | undefined, adType:
   const lowerPrompt = prompt.toLowerCase()
   const wordCount = prompt.split(/\s+/).length
 
-  // 이미 충분히 길면 추가하지 않음
-  if (wordCount > 90) return prompt
+  // 이미 충분히 길면 추가하지 않음 (Seedream 4.5 권장: 60-80 words)
+  if (wordCount > 80) return prompt
 
   const additions: string[] = []
 
@@ -374,11 +380,16 @@ function postProcessPrompt(prompt: string, hasLogo: boolean | undefined, adType:
   }
 
   // 카메라 스펙 없으면 추가 (타입별 분기)
+  // - productOnly: f/8-f/11로 전체 선명도
+  // - holding/using: f/4-f/5.6으로 모델과 제품 모두 선명하게
+  // - 기타 (lifestyle, wearing 등): f/2.8로 약간의 배경 분리
   if (!lowerPrompt.includes('shot on') && !lowerPrompt.includes('lens') && !lowerPrompt.includes('f/')) {
     if (adType === 'productOnly') {
       additions.push('Shot on 50mm macro lens at f/8.')
+    } else if (adType === 'holding' || adType === 'using') {
+      additions.push('Shot on 85mm lens at f/4.5.')
     } else {
-      additions.push('Shot on 85mm lens at f/1.8.')
+      additions.push('Shot on 85mm lens at f/2.8.')
     }
   }
 
@@ -425,13 +436,16 @@ Generate photorealistic model: ${input.aiAvatarDescription}`
     : ''
 
   // 의상 지시 (모델이 있는 광고 유형이고, 의상 이미지가 없고, 의상 옵션이 선택된 경우)
+  // wearing 타입에서는 제품 자체가 착용 아이템이므로 outfit 옵션은 코디네이팅 의상을 의미
   const outfitText = getOutfitInstruction(input.selectedOptions)
   const outfitInstruction = (input.adType !== 'productOnly' && !input.outfitImageUrl && outfitText)
     ? `\n=== OUTFIT ===
 Model ${outfitText}.
 - Apply this outfit style naturally
 - Outfit should complement the product and scenario mood${input.adType === 'wearing' ? `
-- NOTE: This describes clothing OTHER than the product being worn. The advertised product must be worn as the main focus.` : ''}`
+- IMPORTANT for WEARING ad: The outfit option above describes COORDINATING clothing (pants, shoes, accessories, etc.) to pair with the advertised product.
+- The advertised product (from product reference image) must be the MAIN worn item and clearly visible as the hero piece.
+- Example: If product is a jacket, the outfit option describes what pants/shoes to wear WITH the jacket.` : ''}`
     : ''
 
   // 시스템 프롬프트 (핵심 보존, 중복 제거)
