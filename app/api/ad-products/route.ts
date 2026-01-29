@@ -18,10 +18,14 @@ import { checkUsageLimit } from '@/lib/subscription'
 /**
  * GET /api/ad-products
  *
- * 현재 로그인한 사용자의 모든 광고 제품을 조회합니다.
+ * 현재 로그인한 사용자의 광고 제품을 조회합니다.
  * 최신순으로 정렬하여 반환합니다.
+ *
+ * 쿼리 파라미터:
+ * - limit: 조회할 개수 (기본값: 50, 최대: 100)
+ * - offset: 건너뛸 개수 (기본값: 0)
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -30,12 +34,32 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const products = await prisma.ad_products.findMany({
-      where: { user_id: user.id },
-      orderBy: { created_at: 'desc' },
-    })
+    // 페이지네이션 파라미터
+    const { searchParams } = new URL(request.url)
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100)
+    const offset = parseInt(searchParams.get('offset') || '0', 10)
 
-    return NextResponse.json({ products })
+    const [products, totalCount] = await Promise.all([
+      prisma.ad_products.findMany({
+        where: { user_id: user.id },
+        orderBy: { created_at: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.ad_products.count({
+        where: { user_id: user.id },
+      }),
+    ])
+
+    return NextResponse.json({
+      products,
+      pagination: {
+        limit,
+        offset,
+        totalCount,
+        hasMore: offset + products.length < totalCount,
+      },
+    })
   } catch (error) {
     console.error('광고 제품 목록 조회 오류:', error)
     return NextResponse.json(
