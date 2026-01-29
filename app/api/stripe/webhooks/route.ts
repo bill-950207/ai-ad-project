@@ -329,7 +329,11 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 }
 
 /**
- * 결제 성공 처리 - 로깅만 (크레딧은 Cron에서 매월 1일 일괄 지급)
+ * 결제 성공 처리 - 구독 갱신 시 월간 크레딧 지급
+ *
+ * 각 구독자의 결제일(구독 시작일 기준)에 크레딧 지급
+ * - 5일 구독자 → 매월 5일 결제 → 5일에 크레딧
+ * - 15일 구독자 → 매월 15일 결제 → 15일에 크레딧
  */
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -340,12 +344,46 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     return
   }
 
-  // 구독 갱신 결제인 경우 로깅
+  // 구독 갱신 결제인 경우 크레딧 지급
   if (invoiceData.billing_reason === 'subscription_cycle') {
     const subscriptionId = invoiceData.subscription as string
-    console.log(
-      `Subscription renewed: ${subscriptionId}. Monthly credits will be distributed via Cron on the 1st.`
-    )
+
+    try {
+      // 구독 정보 조회 (플랜의 월간 크레딧 포함)
+      const subscription = await prisma.subscriptions.findFirst({
+        where: { stripe_subscription_id: subscriptionId },
+        select: {
+          user_id: true,
+          plan: {
+            select: {
+              monthly_credits: true,
+              display_name: true,
+            },
+          },
+        },
+      })
+
+      if (!subscription) {
+        console.error(`Subscription not found for Stripe ID: ${subscriptionId}`)
+        return
+      }
+
+      const creditsToGrant = subscription.plan.monthly_credits
+
+      // 크레딧 지급
+      await prisma.profiles.update({
+        where: { id: subscription.user_id },
+        data: { credits: { increment: creditsToGrant } },
+      })
+
+      console.log(
+        `Subscription renewed: ${subscriptionId}. Granted ${creditsToGrant} credits to user ${subscription.user_id} (${subscription.plan.display_name})`
+      )
+    } catch (error) {
+      console.error(`Failed to grant credits for subscription ${subscriptionId}:`, error)
+      // 에러가 발생해도 웹훅은 성공으로 처리 (Stripe 재시도 방지)
+      // 크론 작업이 백업으로 동작
+    }
   }
 }
 

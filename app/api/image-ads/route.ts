@@ -444,16 +444,26 @@ export async function POST(request: NextRequest) {
           imageUrls.push(outfitImage)
         }
       } else {
-        // 다중 아바타 이미지 추가
-        for (const avatarId of avatarIds) {
-          const { data: avatar, error: avatarError } = await supabase
-            .from('avatars')
-            .select('id, name, image_url, image_url_original, status, options')
-            .eq('id', avatarId)
-            .eq('user_id', user.id)
-            .single()
+        // 다중 아바타 이미지 추가 (N+1 쿼리 방지 - 한 번에 조회)
+        const { data: avatars, error: avatarsError } = await supabase
+          .from('avatars')
+          .select('id, name, image_url, image_url_original, status, options')
+          .in('id', avatarIds)
+          .eq('user_id', user.id)
 
-          if (avatarError || !avatar) {
+        if (avatarsError) {
+          return NextResponse.json(
+            { error: 'Failed to fetch avatars' },
+            { status: 500 }
+          )
+        }
+
+        // 요청한 아바타가 모두 있는지 확인
+        const avatarMap = new Map(avatars?.map(a => [a.id, a]) ?? [])
+        for (const avatarId of avatarIds) {
+          const avatar = avatarMap.get(avatarId)
+
+          if (!avatar) {
             return NextResponse.json(
               { error: `Avatar not found: ${avatarId}` },
               { status: 404 }

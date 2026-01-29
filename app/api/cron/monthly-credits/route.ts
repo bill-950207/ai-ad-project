@@ -1,13 +1,17 @@
 /**
- * 월간 크레딧 지급 Cron API
+ * 월간 크레딧 지급 백업 API (수동 실행용)
  *
- * Vercel Cron으로 매월 1일 00:00 UTC에 실행
- * - 활성 구독자에게 플랜별 월 크레딧 지급
+ * ⚠️ 주의: 일반적인 크레딧 지급은 Stripe 웹훅(invoice.payment_succeeded)에서 처리됩니다.
+ * 이 API는 웹훅 실패 시 수동 복구용으로만 사용하세요.
+ *
+ * 사용 사례:
+ * - Stripe 웹훅 장애로 크레딧이 누락된 경우
+ * - 데이터 마이그레이션 후 일괄 지급이 필요한 경우
  *
  * 참고: avatar_limit/music_limit/product_limit은 슬롯 제한(동시 보유 가능 개수)이므로
  * 월간 리셋 대상이 아님. 실제 보유 수량은 DB COUNT로 확인.
  *
- * 스케줄: "0 0 1 * *" (매월 1일 00:00 UTC)
+ * 스케줄: 없음 (수동 실행만)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -37,51 +41,62 @@ export async function GET(request: NextRequest) {
         },
         canceled_at: null,  // Soft Delete 된 구독 제외
       },
-      include: {
-        plan: true,
+      select: {
+        user_id: true,
+        plan: {
+          select: {
+            monthly_credits: true,
+            display_name: true,
+          },
+        },
       },
     })
 
     console.log(`Cron: Found ${activeSubscriptions.length} active subscriptions`)
 
+    // 배치 트랜잭션으로 모든 구독자에게 크레딧 지급 (N+1 쿼리 방지)
+    // 기존: N명 = N+1 쿼리 (1 SELECT + N UPDATE)
+    // 개선: N명 = 1 트랜잭션 (모든 UPDATE를 하나의 트랜잭션으로)
+    const results: { userId: string; planName: string; credits: number; success: boolean }[] =
+      activeSubscriptions.map((subscription) => ({
+        userId: subscription.user_id,
+        planName: subscription.plan.display_name,
+        credits: subscription.plan.monthly_credits,
+        success: true, // 트랜잭션 성공 시 모두 성공
+      }))
+
     let processedCount = 0
     let errorCount = 0
-    const results: { userId: string; planName: string; credits: number; success: boolean }[] = []
 
-    // 각 구독자에게 크레딧 지급
-    for (const subscription of activeSubscriptions) {
-      try {
-        const creditsToGrant = subscription.plan.monthly_credits
+    try {
+      // 모든 업데이트를 단일 트랜잭션으로 실행 (타임아웃 30초)
+      await prisma.$transaction(
+        async (tx) => {
+          for (const subscription of activeSubscriptions) {
+            await tx.profiles.update({
+              where: { id: subscription.user_id },
+              data: { credits: { increment: subscription.plan.monthly_credits } },
+            })
+          }
+        },
+        { timeout: 30000 }
+      )
+      processedCount = activeSubscriptions.length
 
-        // 크레딧 지급
-        await prisma.profiles.update({
-          where: { id: subscription.user_id },
-          data: {
-            credits: { increment: creditsToGrant },
-          },
-        })
-
-        results.push({
-          userId: subscription.user_id,
-          planName: subscription.plan.display_name,
-          credits: creditsToGrant,
-          success: true,
-        })
-
-        processedCount++
+      // 로그 출력
+      for (const result of results) {
         console.log(
-          `Cron: Granted ${creditsToGrant} credits to user ${subscription.user_id} (${subscription.plan.display_name})`
+          `Cron: Granted ${result.credits} credits to user ${result.userId} (${result.planName})`
         )
-      } catch (error) {
-        errorCount++
-        results.push({
-          userId: subscription.user_id,
-          planName: subscription.plan.display_name,
-          credits: 0,
-          success: false,
-        })
-        console.error(`Cron: Error processing user ${subscription.user_id}:`, error)
       }
+    } catch (error) {
+      // 트랜잭션 실패 시 모든 결과를 실패로 표시
+      errorCount = activeSubscriptions.length
+      for (const result of results) {
+        result.success = false
+        result.credits = 0
+      }
+      console.error('Cron: Batch transaction failed:', error)
     }
 
     console.log(
