@@ -386,7 +386,7 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
             </div>
           ) : (
             <img
-              src={item.media_url || item.thumbnail_url}
+              src={item.thumbnail_url}
               alt={item.title}
               className="w-full h-full object-contain max-h-[50vh] md:max-h-[85vh]"
             />
