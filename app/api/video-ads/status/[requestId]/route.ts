@@ -461,6 +461,7 @@ async function handleInfinitalkPhase(
     status: status.status,
     phase: 'infinitalk',
     provider,
+    requestId,  // AI 서비스 실제 요청 ID (prefix 제외)
     firstSceneImageUrl: videoAd.first_scene_image_url,
     queuePosition: status.queue_position,
   })

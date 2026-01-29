@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCredits } from '@/contexts/credit-context'
+import { InsufficientCreditsModal } from '@/components/ui/insufficient-credits-modal'
 import {
   ArrowLeft,
   Loader2,
@@ -470,7 +471,7 @@ function SortableVideoCard({
 
 export function WizardStep5() {
   const router = useRouter()
-  const { refreshCredits } = useCredits()
+  const { credits, refreshCredits } = useCredits()
   const {
     draftId,
     selectedProduct,
@@ -512,6 +513,7 @@ export function WizardStep5() {
   const isFreeUser = userPlan?.planType === 'FREE'
 
   const [error, setError] = useState<string | null>(null)
+  const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false)
   const [statusMessage, setStatusMessage] = useState<string>('')
   const [videoStatuses, setVideoStatuses] = useState<VideoStatus[]>([])
   const [sceneVideoStatuses, setSceneVideoStatuses] = useState<SceneVideoStatus[]>([])
@@ -747,6 +749,12 @@ export function WizardStep5() {
   const startMultiSceneVideoGeneration = async () => {
     if (!scenarioInfo?.scenes || sceneKeyframes.length === 0) return
 
+    // 크레딧 체크
+    if (credits !== null && credits < estimatedCredits) {
+      setShowInsufficientCreditsModal(true)
+      return
+    }
+
     // 완료된 키프레임만 필터링
     const completedKeyframes = sceneKeyframes
       .filter(kf => kf.status === 'completed' && kf.imageUrl)
@@ -847,6 +855,14 @@ export function WizardStep5() {
 
     // 전달된 duration 또는 context의 sceneDurations 사용
     const useDuration = sceneDuration ?? sceneDurations[sceneIndex] ?? 3
+
+    // 단일 씬 재생성 크레딧 계산 및 체크
+    const option = RESOLUTION_OPTIONS.find(o => o.value === videoResolution)
+    const singleSceneCredits = option ? option.creditsPerSecond * useDuration : 0
+    if (credits !== null && credits < singleSceneCredits) {
+      setShowInsufficientCreditsModal(true)
+      return
+    }
 
     setIsMergingPrompt(true)
     setError(null)
@@ -1109,6 +1125,12 @@ export function WizardStep5() {
   // 영상 생성 시작
   const startVideoGeneration = async () => {
     if (!selectedScene?.imageUrl || !scenarioInfo || !selectedProduct) return
+
+    // 크레딧 체크
+    if (credits !== null && credits < estimatedCredits) {
+      setShowInsufficientCreditsModal(true)
+      return
+    }
 
     setError(null)
     setIsGeneratingVideo(true)
@@ -2120,6 +2142,15 @@ export function WizardStep5() {
         isLoading={isMergingPrompt}
         resolution={videoResolution}
         aspectRatio={aspectRatio}
+      />
+
+      {/* 크레딧 부족 모달 */}
+      <InsufficientCreditsModal
+        isOpen={showInsufficientCreditsModal}
+        onClose={() => setShowInsufficientCreditsModal(false)}
+        requiredCredits={estimatedCredits}
+        availableCredits={credits ?? 0}
+        featureName="제품 광고 영상 생성"
       />
     </div>
   )
