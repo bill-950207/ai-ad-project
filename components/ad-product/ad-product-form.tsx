@@ -11,6 +11,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
+import { useCredits } from '@/contexts/credit-context'
 import { Upload, X, Loader2, Plus, Minus, Link as LinkIcon, Edit3, ImagePlus } from 'lucide-react'
 import { AdProductScanner } from './ad-product-scanner'
 import { AdCreationHeader } from '@/components/ui/ad-creation-header'
@@ -26,6 +27,7 @@ interface SlotInfo {
 
 export function AdProductForm() {
   const { t } = useLanguage()
+  const { refreshCredits } = useCredits()
   const router = useRouter()
   const searchParams = useSearchParams()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -314,6 +316,9 @@ export function AdProductForm() {
       }
 
       const { product, sourceImageUrl: uploadedSourceUrl } = await createRes.json()
+
+      // 크레딧 갱신
+      refreshCredits()
 
       // 스캐너 모드로 전환
       setProductId(product.id)
