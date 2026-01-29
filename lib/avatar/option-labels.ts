@@ -21,10 +21,15 @@ export const ageLabels: Record<string, string> = {
 
 // 인종 레이블
 export const ethnicityLabels: Record<string, string> = {
-  asian: '아시아인',
-  caucasian: '백인',
-  black: '흑인',
-  hispanic: '히스패닉',
+  caucasian: 'Caucasian',
+  black: 'Black / African American',
+  eastAsian: 'East Asian',
+  southeastAsian: 'Southeast Asian',
+  southAsian: 'South Asian',
+  middleEastern: 'Middle Eastern',
+  hispanic: 'Hispanic / Latino',
+  nativeAmerican: 'Native American / Indigenous',
+  multiracial: 'Multiracial',
 }
 
 // 키 레이블
@@ -34,47 +39,50 @@ export const heightLabels: Record<string, string> = {
   tall: '큰 편',
 }
 
-// 체형 레이블
+// 체형 레이블 (공통)
 export const bodyTypeLabels: Record<string, string> = {
   slim: '슬림',
   average: '보통',
   athletic: '운동형',
   curvy: '글래머',
-  plussize: '플러스',
+  muscular: '근육형',
 }
 
-// 여성 헤어스타일 레이블
-export const femaleHairStyleLabels: Record<string, string> = {
-  longStraight: '롱스트레이트',
-  longLayered: '레이어드컷',
-  bob: '단발',
-  shortBob: '숏단발',
-  wavy: '웨이브',
-  curly: '곱슬머리',
-  ponytail: '포니테일',
-  bun: '올림머리',
-  halfUp: '반묶음',
-  bangs: '앞머리 있는',
-  pixie: '픽시컷',
+// 여성 체형 레이블
+export const femaleBodyTypeLabels: Record<string, string> = {
+  slim: '슬림',
+  average: '보통',
+  athletic: '운동형',
+  curvy: '글래머',
 }
 
-// 남성 헤어스타일 레이블
-export const maleHairStyleLabels: Record<string, string> = {
-  maleShort: '숏컷',
-  buzz: '버즈컷',
-  twoBlock: '투블럭',
-  undercut: '언더컷',
-  pompadour: '포마드',
-  slickedBack: '올백',
-  sidePart: '사이드파트',
-  maleWavy: '웨이브',
-  maleMedium: '중간길이',
+// 남성 체형 레이블
+export const maleBodyTypeLabels: Record<string, string> = {
+  slim: '슬림',
+  average: '보통',
+  athletic: '운동형',
+  muscular: '근육형',
 }
 
-// 모든 헤어스타일 레이블 (통합)
+// 헤어스타일 레이블 (간소화)
 export const hairStyleLabels: Record<string, string> = {
-  ...femaleHairStyleLabels,
-  ...maleHairStyleLabels,
+  short: '단발',
+  medium: '중간',
+  long: '장발',
+}
+
+// 여성 헤어스타일 레이블 (하위호환용)
+export const femaleHairStyleLabels: Record<string, string> = {
+  short: '단발',
+  medium: '중간',
+  long: '장발',
+}
+
+// 남성 헤어스타일 레이블 (하위호환용)
+export const maleHairStyleLabels: Record<string, string> = {
+  short: '단발',
+  medium: '중간',
+  long: '장발',
 }
 
 // 머리색 레이블
@@ -85,17 +93,15 @@ export const hairColorLabels: Record<string, string> = {
   custom: '커스텀',
 }
 
-// 의상 스타일 레이블
+// 의상 스타일 레이블 (직업 기반)
 export const outfitStyleLabels: Record<string, string> = {
-  tshirtJeans: '티셔츠 + 청바지',
-  shirtSlacks: '셔츠 + 슬랙스',
-  blouseSkirt: '블라우스 + 스커트',
-  dress: '원피스',
-  suit: '정장/수트',
-  knitSweater: '니트/스웨터',
-  athletic: '운동복/애슬레저',
-  lounge: '홈웨어/라운지',
-  jacket: '자켓/코트',
+  casual: 'Casual',
+  formal: 'Formal',
+  sporty: 'Sporty',
+  doctor: 'Doctor',
+  nurse: 'Nurse',
+  chef: 'Chef',
+  worker: 'Worker',
 }
 
 // 배경 레이블
@@ -112,7 +118,7 @@ export const backgroundLabels: Record<string, string> = {
   gym: '헬스장',
 }
 
-// 포즈 레이블
+// 포즈 레이블 (하위호환용)
 export const poseLabels: Record<string, string> = {
   standingFull: '서있는 전신',
   standingHalf: '서있는 상반신',
@@ -152,15 +158,23 @@ export function getOptionLabel(category: string, value: string): string {
   }
 }
 
-// 헤어스타일 옵션 배열 (성별에 따라)
-export const getHairStyleOptions = (gender: 'male' | 'female' | undefined) => {
+// 헤어스타일 옵션 배열 (간소화 - 성별 무관)
+export const getHairStyleOptions = (_gender: 'male' | 'female' | undefined) => {
+  return Object.entries(hairStyleLabels).map(([value, label]) => ({
+    value,
+    label,
+  }))
+}
+
+// 체형 옵션 배열 (성별에 따라)
+export const getBodyTypeOptions = (gender: 'male' | 'female' | undefined) => {
   if (gender === 'male') {
-    return Object.entries(maleHairStyleLabels).map(([value, label]) => ({
+    return Object.entries(maleBodyTypeLabels).map(([value, label]) => ({
       value,
       label,
     }))
   }
-  return Object.entries(femaleHairStyleLabels).map(([value, label]) => ({
+  return Object.entries(femaleBodyTypeLabels).map(([value, label]) => ({
     value,
     label,
   }))

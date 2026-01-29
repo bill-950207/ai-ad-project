@@ -4,7 +4,7 @@
  * 스텝 기반 UI로 아바타 생성 옵션을 선택합니다.
  * Step 1: 기본 정보 (성별, 나이, 인종)
  * Step 2: 외모 (체형, 헤어)
- * Step 3: 스타일 (의상, 배경, 포즈)
+ * Step 3: 스타일 (의상, 배경)
  */
 
 'use client'
@@ -12,23 +12,6 @@
 import { useState, useMemo } from 'react'
 import { useLanguage } from '@/contexts/language-context'
 import { AvatarOptions } from '@/lib/avatar/prompt-builder'
-import {
-  genderOptions,
-  ageOptions,
-  ethnicityOptions,
-  heightOptions,
-  bodyTypeOptions,
-  hairColorOptions,
-  outfitStyleOptions,
-  backgroundOptions,
-  poseOptions,
-  getHairStyleOptions,
-  genderLabels,
-  ageLabels,
-  bodyTypeLabels,
-  backgroundLabels,
-  outfitStyleLabels,
-} from '@/lib/avatar/option-labels'
 import {
   User,
   Palette,
@@ -56,6 +39,106 @@ interface OptionButtonProps {
   onClick: () => void
   children: React.ReactNode
   className?: string
+}
+
+interface OptionItem {
+  value: string
+  labelKey: string
+}
+
+// ============================================================
+// 옵션 정의 (값과 번역 키 매핑)
+// ============================================================
+
+const genderOptionKeys: OptionItem[] = [
+  { value: 'female', labelKey: 'female' },
+  { value: 'male', labelKey: 'male' },
+]
+
+const ageOptionKeys: OptionItem[] = [
+  { value: 'teen', labelKey: 'teen' },
+  { value: 'early20s', labelKey: 'early20s' },
+  { value: 'late20s', labelKey: 'late20s' },
+  { value: '30s', labelKey: '30s' },
+  { value: '40plus', labelKey: '40plus' },
+]
+
+const ethnicityOptionKeys: OptionItem[] = [
+  { value: 'caucasian', labelKey: 'caucasian' },
+  { value: 'black', labelKey: 'black' },
+  { value: 'eastAsian', labelKey: 'eastAsian' },
+  { value: 'southeastAsian', labelKey: 'southeastAsian' },
+  { value: 'southAsian', labelKey: 'southAsian' },
+  { value: 'middleEastern', labelKey: 'middleEastern' },
+  { value: 'hispanic', labelKey: 'hispanic' },
+  { value: 'nativeAmerican', labelKey: 'nativeAmerican' },
+  { value: 'multiracial', labelKey: 'multiracial' },
+]
+
+const heightOptionKeys: OptionItem[] = [
+  { value: 'short', labelKey: 'heightShort' },
+  { value: 'average', labelKey: 'heightAverage' },
+  { value: 'tall', labelKey: 'heightTall' },
+]
+
+const femaleBodyTypeOptionKeys: OptionItem[] = [
+  { value: 'slim', labelKey: 'bodySlim' },
+  { value: 'average', labelKey: 'bodyAverage' },
+  { value: 'athletic', labelKey: 'bodyAthletic' },
+  { value: 'curvy', labelKey: 'bodyCurvy' },
+]
+
+const maleBodyTypeOptionKeys: OptionItem[] = [
+  { value: 'slim', labelKey: 'bodySlim' },
+  { value: 'average', labelKey: 'bodyAverage' },
+  { value: 'athletic', labelKey: 'bodyAthletic' },
+  { value: 'muscular', labelKey: 'bodyMuscular' },
+]
+
+const hairStyleOptionKeys: OptionItem[] = [
+  { value: 'short', labelKey: 'hairShort' },
+  { value: 'medium', labelKey: 'hairMedium' },
+  { value: 'long', labelKey: 'hairLong' },
+]
+
+const hairColorOptionKeys: OptionItem[] = [
+  { value: 'blackhair', labelKey: 'blackhair' },
+  { value: 'brown', labelKey: 'brown' },
+  { value: 'blonde', labelKey: 'blonde' },
+  { value: 'custom', labelKey: 'custom' },
+]
+
+const outfitStyleOptionKeys: OptionItem[] = [
+  { value: 'casual', labelKey: 'outfitCasual' },
+  { value: 'formal', labelKey: 'outfitFormal' },
+  { value: 'sporty', labelKey: 'outfitSporty' },
+  { value: 'doctor', labelKey: 'outfitDoctor' },
+  { value: 'nurse', labelKey: 'outfitNurse' },
+  { value: 'chef', labelKey: 'outfitChef' },
+  { value: 'worker', labelKey: 'outfitWorker' },
+]
+
+const backgroundOptionKeys: OptionItem[] = [
+  { value: 'studioWhite', labelKey: 'bgStudioWhite' },
+  { value: 'studioGray', labelKey: 'bgStudioGray' },
+  { value: 'home', labelKey: 'bgHome' },
+  { value: 'office', labelKey: 'bgOffice' },
+  { value: 'cafe', labelKey: 'bgCafe' },
+  { value: 'restaurant', labelKey: 'bgRestaurant' },
+  { value: 'street', labelKey: 'bgStreet' },
+  { value: 'park', labelKey: 'bgPark' },
+  { value: 'beach', labelKey: 'bgBeach' },
+  { value: 'gym', labelKey: 'bgGym' },
+]
+
+// ============================================================
+// 유틸리티 함수
+// ============================================================
+
+/** 기본 아바타 이름 생성 */
+function generateDefaultAvatarName(): string {
+  const randomNum = Math.floor(Math.random() * 900) + 100 // 100-999
+  return `Avatar_${randomNum}`
 }
 
 // ============================================================
@@ -129,29 +212,43 @@ function StepIndicator({ currentStep, totalSteps, stepLabels }: StepIndicatorPro
 
 interface SelectedOptionsSummaryProps {
   options: AvatarOptions
+  t: Record<string, unknown>
 }
 
-function SelectedOptionsSummary({ options }: SelectedOptionsSummaryProps) {
+function SelectedOptionsSummary({ options, t }: SelectedOptionsSummaryProps) {
+  const avatarOptions = (t.avatar as Record<string, unknown>).options as Record<string, string>
+
   const selectedItems = useMemo(() => {
     const items: { key: string; label: string; value: string }[] = []
 
-    if (options.gender) items.push({ key: 'gender', label: '성별', value: genderLabels[options.gender] || options.gender })
-    if (options.age) items.push({ key: 'age', label: '나이', value: ageLabels[options.age] || options.age })
-    if (options.ethnicity) {
-      const ethnicityLabelsMap: Record<string, string> = { asian: '아시아인', caucasian: '백인', black: '흑인', hispanic: '히스패닉' }
-      items.push({ key: 'ethnicity', label: '인종', value: ethnicityLabelsMap[options.ethnicity] || options.ethnicity })
+    if (options.gender) items.push({ key: 'gender', label: '성별', value: avatarOptions[options.gender] || options.gender })
+    if (options.age) items.push({ key: 'age', label: '나이', value: avatarOptions[options.age] || options.age })
+    if (options.ethnicity) items.push({ key: 'ethnicity', label: '인종', value: avatarOptions[options.ethnicity] || options.ethnicity })
+    if (options.bodyType) {
+      const bodyKey = options.bodyType === 'muscular' ? 'bodyMuscular' :
+                      options.bodyType === 'curvy' ? 'bodyCurvy' :
+                      options.bodyType === 'athletic' ? 'bodyAthletic' :
+                      options.bodyType === 'average' ? 'bodyAverage' : 'bodySlim'
+      items.push({ key: 'bodyType', label: '체형', value: avatarOptions[bodyKey] || options.bodyType })
     }
-    if (options.bodyType) items.push({ key: 'bodyType', label: '체형', value: bodyTypeLabels[options.bodyType] || options.bodyType })
     if (options.hairStyle) {
-      const hairOptions = getHairStyleOptions(options.gender)
-      const hairLabel = hairOptions.find(h => h.value === options.hairStyle)?.label || options.hairStyle
-      items.push({ key: 'hairStyle', label: '헤어', value: hairLabel })
+      const hairKey = options.hairStyle === 'short' ? 'hairShort' :
+                      options.hairStyle === 'medium' ? 'hairMedium' : 'hairLong'
+      items.push({ key: 'hairStyle', label: '헤어', value: avatarOptions[hairKey] || options.hairStyle })
     }
-    if (options.outfitStyle) items.push({ key: 'outfitStyle', label: '의상', value: outfitStyleLabels[options.outfitStyle] || options.outfitStyle })
-    if (options.background) items.push({ key: 'background', label: '배경', value: backgroundLabels[options.background] || options.background })
+    if (options.outfitStyle) {
+      const outfitKey = `outfit${options.outfitStyle.charAt(0).toUpperCase() + options.outfitStyle.slice(1)}`
+      items.push({ key: 'outfitStyle', label: '의상', value: avatarOptions[outfitKey] || options.outfitStyle })
+    }
+    if (options.background) {
+      const bgKey = options.background === 'studioWhite' ? 'bgStudioWhite' :
+                    options.background === 'studioGray' ? 'bgStudioGray' :
+                    `bg${options.background.charAt(0).toUpperCase() + options.background.slice(1)}`
+      items.push({ key: 'background', label: '배경', value: avatarOptions[bgKey] || options.background })
+    }
 
     return items
-  }, [options])
+  }, [options, avatarOptions])
 
   if (selectedItems.length === 0) return null
 
@@ -179,6 +276,7 @@ function SelectedOptionsSummary({ options }: SelectedOptionsSummaryProps) {
 
 export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
   const { t } = useLanguage()
+  const avatarOptions = (t.avatar as Record<string, unknown>).options as Record<string, string>
 
   const [name, setName] = useState('')
   const [inputMethod, setInputMethod] = useState<InputMethod>('options')
@@ -194,10 +292,14 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
     e.preventDefault()
     // 스텝 전환 중에는 제출 방지
     if (isTransitioning) return
+
+    // 이름이 비어있으면 기본 이름 생성
+    const avatarName = name.trim() || generateDefaultAvatarName()
+
     if (inputMethod === 'prompt') {
-      await onSubmit({ name, prompt })
+      await onSubmit({ name: avatarName, prompt })
     } else {
-      await onSubmit({ name, options })
+      await onSubmit({ name: avatarName, options })
     }
   }
 
@@ -227,22 +329,23 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
     }
   }
 
-  // 성별에 따른 헤어스타일 옵션 (공유 상수에서 가져옴)
-  const hairStyleOptions = useMemo(() => getHairStyleOptions(options.gender), [options.gender])
+  // 성별에 따른 체형 옵션
+  const bodyTypeOptions = useMemo(() => {
+    return options.gender === 'male' ? maleBodyTypeOptionKeys : femaleBodyTypeOptionKeys
+  }, [options.gender])
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* 아바타 이름 입력 */}
+      {/* 아바타 이름 입력 (선택사항) */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
-          {t.avatar.name}
+          {t.avatar.name} <span className="text-muted-foreground font-normal">(선택)</span>
         </label>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder={t.avatar.namePlaceholder}
-          required
+          placeholder="입력하지 않으면 자동 생성됩니다"
           className="w-full px-4 py-3 bg-secondary/50 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-foreground placeholder:text-muted-foreground transition-all"
         />
       </div>
@@ -304,7 +407,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
           <StepIndicator currentStep={currentStep} totalSteps={totalSteps} stepLabels={stepLabels} />
 
           {/* 선택된 옵션 요약 */}
-          <SelectedOptionsSummary options={options} />
+          <SelectedOptionsSummary options={options} t={t as Record<string, unknown>} />
 
           {/* Step 1: 기본 정보 */}
           {currentStep === 0 && (
@@ -313,16 +416,20 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
                   <User className="w-4 h-4 text-primary" />
-                  성별 <span className="text-destructive">*</span>
+                  {t.avatar.gender} <span className="text-destructive">*</span>
                 </label>
                 <div className="flex gap-2 flex-wrap">
-                  {genderOptions.map((item) => (
+                  {genderOptionKeys.map((item) => (
                     <OptionButton
                       key={item.value}
                       selected={options.gender === item.value}
-                      onClick={() => updateOption('gender', item.value as 'female' | 'male')}
+                      onClick={() => {
+                        updateOption('gender', item.value as 'female' | 'male')
+                        // 성별 변경 시 체형 초기화 (성별에 따라 옵션이 다르므로)
+                        updateOption('bodyType', undefined)
+                      }}
                     >
-                      {item.label}
+                      {avatarOptions[item.labelKey] || item.value}
                     </OptionButton>
                   ))}
                 </div>
@@ -331,16 +438,16 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
               {/* 나이대 */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
-                  나이대 <span className="text-destructive">*</span>
+                  {t.avatar.age} <span className="text-destructive">*</span>
                 </label>
                 <div className="flex gap-2 flex-wrap">
-                  {ageOptions.map((item) => (
+                  {ageOptionKeys.map((item) => (
                     <OptionButton
                       key={item.value}
                       selected={options.age === item.value}
                       onClick={() => updateOption('age', item.value as AvatarOptions['age'])}
                     >
-                      {item.label}
+                      {avatarOptions[item.labelKey] || item.value}
                     </OptionButton>
                   ))}
                 </div>
@@ -349,16 +456,16 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
               {/* 인종/외모 */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
-                  인종/외모 <span className="text-destructive">*</span>
+                  {t.avatar.ethnicity} <span className="text-destructive">*</span>
                 </label>
                 <div className="flex gap-2 flex-wrap">
-                  {ethnicityOptions.map((item) => (
+                  {ethnicityOptionKeys.map((item) => (
                     <OptionButton
                       key={item.value}
                       selected={options.ethnicity === item.value}
                       onClick={() => updateOption('ethnicity', item.value as AvatarOptions['ethnicity'])}
                     >
-                      {item.label}
+                      {avatarOptions[item.labelKey] || item.value}
                     </OptionButton>
                   ))}
                 </div>
@@ -369,10 +476,10 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
           {/* Step 2: 외모 */}
           {currentStep === 1 && (
             <div className="space-y-6">
-              {/* 체형 */}
+              {/* 체형 (성별에 따라 다른 옵션) */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
-                  체형
+                  {t.avatar.bodyType}
                 </label>
                 <div className="flex gap-2 flex-wrap">
                   {bodyTypeOptions.map((item) => (
@@ -381,7 +488,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
                       selected={options.bodyType === item.value}
                       onClick={() => updateOption('bodyType', item.value as AvatarOptions['bodyType'])}
                     >
-                      {item.label}
+                      {avatarOptions[item.labelKey] || item.value}
                     </OptionButton>
                   ))}
                 </div>
@@ -390,34 +497,34 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
               {/* 키 */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
-                  키
+                  {t.avatar.height}
                 </label>
                 <div className="flex gap-2 flex-wrap">
-                  {heightOptions.map((item) => (
+                  {heightOptionKeys.map((item) => (
                     <OptionButton
                       key={item.value}
                       selected={options.height === item.value}
                       onClick={() => updateOption('height', item.value as AvatarOptions['height'])}
                     >
-                      {item.label}
+                      {avatarOptions[item.labelKey] || item.value}
                     </OptionButton>
                   ))}
                 </div>
               </div>
 
-              {/* 헤어스타일 */}
+              {/* 헤어스타일 (간소화: 단발, 중간, 장발) */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
-                  헤어스타일
+                  {t.avatar.hairStyle}
                 </label>
                 <div className="flex gap-2 flex-wrap">
-                  {hairStyleOptions.map((item) => (
+                  {hairStyleOptionKeys.map((item) => (
                     <OptionButton
                       key={item.value}
                       selected={options.hairStyle === item.value}
                       onClick={() => updateOption('hairStyle', item.value as AvatarOptions['hairStyle'])}
                     >
-                      {item.label}
+                      {avatarOptions[item.labelKey] || item.value}
                     </OptionButton>
                   ))}
                 </div>
@@ -426,16 +533,16 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
               {/* 머리 색상 */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
-                  머리 색상
+                  {t.avatar.hairColor}
                 </label>
                 <div className="flex gap-2 flex-wrap items-center">
-                  {hairColorOptions.map((item) => (
+                  {hairColorOptionKeys.map((item) => (
                     <OptionButton
                       key={item.value}
                       selected={options.hairColor === item.value}
                       onClick={() => updateOption('hairColor', item.value as AvatarOptions['hairColor'])}
                     >
-                      {item.label}
+                      {avatarOptions[item.labelKey] || item.value}
                     </OptionButton>
                   ))}
                 </div>
@@ -467,20 +574,20 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
           {/* Step 3: 스타일 */}
           {currentStep === 2 && (
             <div className="space-y-6">
-              {/* 의상 스타일 */}
+              {/* 의상 스타일 (직업 기반) */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
                   <Shirt className="w-4 h-4 text-primary" />
-                  의상 스타일
+                  {t.avatar.outfitStyle}
                 </label>
                 <div className="flex gap-2 flex-wrap">
-                  {outfitStyleOptions.map((item) => (
+                  {outfitStyleOptionKeys.map((item) => (
                     <OptionButton
                       key={item.value}
                       selected={options.outfitStyle === item.value}
                       onClick={() => updateOption('outfitStyle', item.value as AvatarOptions['outfitStyle'])}
                     >
-                      {item.label}
+                      {avatarOptions[item.labelKey] || item.value}
                     </OptionButton>
                   ))}
                 </div>
@@ -489,34 +596,16 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
               {/* 배경 */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
-                  배경
+                  {t.avatar.background}
                 </label>
                 <div className="flex gap-2 flex-wrap">
-                  {backgroundOptions.map((item) => (
+                  {backgroundOptionKeys.map((item) => (
                     <OptionButton
                       key={item.value}
                       selected={options.background === item.value}
                       onClick={() => updateOption('background', item.value as AvatarOptions['background'])}
                     >
-                      {item.label}
-                    </OptionButton>
-                  ))}
-                </div>
-              </div>
-
-              {/* 포즈 */}
-              <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
-                  포즈
-                </label>
-                <div className="flex gap-2 flex-wrap">
-                  {poseOptions.map((item) => (
-                    <OptionButton
-                      key={item.value}
-                      selected={options.pose === item.value}
-                      onClick={() => updateOption('pose', item.value as AvatarOptions['pose'])}
-                    >
-                      {item.label}
+                      {avatarOptions[item.labelKey] || item.value}
                     </OptionButton>
                   ))}
                 </div>
@@ -549,18 +638,18 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
             ) : (
               <button
                 type="submit"
-                disabled={isLoading || isTransitioning || !name.trim() || !options.gender || !options.age || !options.ethnicity}
+                disabled={isLoading || isTransitioning || !options.gender || !options.age || !options.ethnicity}
                 className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    생성 중...
+                    {t.avatar.generating}
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    아바타 생성
+                    {t.avatar.generate}
                   </>
                 )}
               </button>
@@ -573,7 +662,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
       {inputMethod === 'prompt' && (
         <button
           type="submit"
-          disabled={isLoading || !name.trim() || !prompt.trim()}
+          disabled={isLoading || !prompt.trim()}
           className="w-full flex items-center justify-center gap-2 py-3.5 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
