@@ -36,8 +36,11 @@ export const BACKGROUND_CREDIT_COST = 1
 // 영상 생성 관련
 // ============================================================
 
-/** 제품 설명 영상 크레딧 (Wan/Kling + TTS: ~$0.30-0.50) */
-export const PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST = 10
+/** 제품 설명 영상 해상도별 크레딧 (Hailuo + TTS) */
+export const PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST = {
+  '480p': 5, // ~$0.15/5초
+  '720p': 10, // ~$0.30/5초
+} as const
 
 /** 아바타 모션 영상 길이별 크레딧 (Kie.ai Kling 2.6) */
 export const AVATAR_MOTION_CREDIT_COST = {
@@ -110,3 +113,4 @@ export const DEFAULT_SIGNUP_CREDITS = 15
 export type ImageQuality = keyof typeof IMAGE_AD_CREDIT_COST
 export type AvatarMotionDuration = keyof typeof AVATAR_MOTION_CREDIT_COST
 export type ViduResolution = keyof typeof VIDU_CREDIT_COST_PER_SECOND
+export type ProductDescriptionResolution = keyof typeof PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST

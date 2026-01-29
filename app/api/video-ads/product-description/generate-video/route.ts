@@ -149,8 +149,13 @@ export async function POST(request: NextRequest) {
       where: { id: user.id },
     })
 
-    if (!profile || (profile.credits ?? 0) < PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST) {
-      return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 })
+    const creditCost = PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST[resolution as keyof typeof PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST] || PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST['480p']
+    if (!profile || (profile.credits ?? 0) < creditCost) {
+      return NextResponse.json({
+        error: 'Insufficient credits',
+        required: creditCost,
+        available: profile?.credits ?? 0,
+      }, { status: 402 })
     }
 
     // 첫 프레임 이미지 R2 업로드 (WebP 압축)
@@ -246,7 +251,7 @@ export async function POST(request: NextRequest) {
       prisma.profiles.update({
         where: { id: user.id },
         data: {
-          credits: { decrement: PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST },
+          credits: { decrement: creditCost },
         },
       }),
     ])

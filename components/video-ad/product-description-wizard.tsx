@@ -1552,7 +1552,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     if (!selectedVoice || !editedScript.trim() || !selectedAvatarInfo) return
 
     // 크레딧 체크
-    if (credits !== null && credits < PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST) {
+    const requiredCredits = PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST[resolution]
+    if (credits !== null && credits < requiredCredits) {
       setShowInsufficientCreditsModal(true)
       return
     }
@@ -2882,7 +2883,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                     </>
                   ) : (
                     <>
-                      영상 생성하기 ({PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST} 크레딧)
+                      영상 생성하기 ({PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST[resolution]} 크레딧)
                       <Play className="w-4 h-4" />
                     </>
                   )}
@@ -2972,7 +2973,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       <InsufficientCreditsModal
         isOpen={showInsufficientCreditsModal}
         onClose={() => setShowInsufficientCreditsModal(false)}
-        requiredCredits={PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST}
+        requiredCredits={PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST[resolution]}
         availableCredits={credits ?? 0}
         featureName="제품 설명 영상 생성"
       />
