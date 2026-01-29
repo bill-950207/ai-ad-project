@@ -113,6 +113,7 @@ export function Navbar() {
     { href: '#features', label: t.landing?.featuresTitle || 'Features' },
     { href: '#workflow', label: t.landing?.workflowTitle || 'How it works' },
     { href: '#gallery', label: t.landing?.galleryTitle || 'Gallery' },
+    { href: '/pricing', label: t.landing?.pricing || 'Pricing' },
   ]
 
   // 대시보드 및 인증 페이지에서는 Navbar 숨김
