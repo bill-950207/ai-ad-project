@@ -276,7 +276,7 @@ export default function SignupPage() {
         <div className="absolute bottom-12 left-12 right-12 z-20">
           <h3 className="text-2xl font-bold text-white mb-2">Start Creating Today</h3>
           <p className="text-white/70 max-w-sm">
-            {language === 'ko' ? '가입 시 15 크레딧 무료 제공' : 'Get 15 free credits when you sign up'}
+            Get 15 free credits when you sign up
           </p>
         </div>
       </div>
