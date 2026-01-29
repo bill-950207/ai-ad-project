@@ -195,14 +195,6 @@ export function AvatarCard({ avatar, onDelete, onStatusUpdate }: AvatarCardProps
     router.push(`/dashboard/video-ad?avatar=${avatar.id}`)
   }
 
-  /**
-   * 의상 교체 클릭 핸들러
-   */
-  const handleOutfitClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    router.push(`/dashboard/avatar/${avatar.id}/outfit`)
-  }
-
   // 처리 중 상태 판단 (상태 기반으로 변경, isPolling 제거됨)
   const isProcessing = ['PENDING', 'IN_QUEUE', 'IN_PROGRESS', 'UPLOADING'].includes(avatar.status) || isUploading
 
@@ -306,13 +298,6 @@ export function AvatarCard({ avatar, onDelete, onStatusUpdate }: AvatarCardProps
               title={t.avatar.createVideoAd}
             >
               {t.avatar.createVideoAd}
-            </button>
-            <button
-              onClick={handleOutfitClick}
-              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium text-foreground bg-muted/50 hover:bg-accent/10 hover:text-accent rounded-lg transition-all duration-200"
-              title={t.avatar.changeOutfit}
-            >
-              {t.avatar.changeOutfit}
             </button>
           </div>
         )}
