@@ -20,11 +20,12 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 // ============================================================
 
 function getR2Config() {
-  const accountId = process.env.R2_ACCOUNT_ID
-  const accessKeyId = process.env.R2_ACCESS_KEY_ID
-  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY
-  const bucketName = process.env.R2_BUCKET_NAME
-  const publicUrl = process.env.R2_PUBLIC_URL
+  // 환경 변수 읽기 및 공백 제거
+  const accountId = process.env.R2_ACCOUNT_ID?.trim()
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID?.trim()
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY?.trim()
+  const bucketName = process.env.R2_BUCKET_NAME?.trim()
+  const publicUrl = process.env.R2_PUBLIC_URL?.trim()
 
   if (!accountId || !accessKeyId || !secretAccessKey || !bucketName || !publicUrl) {
     throw new Error(
@@ -37,24 +38,19 @@ function getR2Config() {
 }
 
 // ============================================================
-// S3 클라이언트 설정 (지연 초기화)
+// S3 클라이언트 생성 (매 요청마다 새로 생성 - 서버리스 환경 호환)
 // ============================================================
 
-let _r2Client: S3Client | null = null
-
-function getR2Client(): S3Client {
-  if (!_r2Client) {
-    const config = getR2Config()
-    _r2Client = new S3Client({
-      region: 'auto',  // R2는 자동 리전 사용
-      endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`,
-      credentials: {
-        accessKeyId: config.accessKeyId,
-        secretAccessKey: config.secretAccessKey,
-      },
-    })
-  }
-  return _r2Client
+function createR2Client(): S3Client {
+  const config = getR2Config()
+  return new S3Client({
+    region: 'auto',  // R2는 자동 리전 사용
+    endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: config.accessKeyId,
+      secretAccessKey: config.secretAccessKey,
+    },
+  })
 }
 
 // ============================================================
@@ -120,7 +116,7 @@ export async function generatePresignedUrl({
   })
 
   // Presigned URL 생성
-  const uploadUrl = await getSignedUrl(getR2Client(), command, {
+  const uploadUrl = await getSignedUrl(createR2Client(), command, {
     expiresIn: PRESIGNED_URL_EXPIRES_IN,
   })
 
@@ -373,7 +369,7 @@ export async function uploadDataUrlToR2(
     ContentType: contentType,
   })
 
-  await getR2Client().send(command)
+  await createR2Client().send(command)
 
   return `${config.publicUrl}/${key}`
 }
@@ -447,7 +443,7 @@ export async function uploadBufferToR2(
     ContentType: contentType,
   })
 
-  await getR2Client().send(command)
+  await createR2Client().send(command)
 
   return `${config.publicUrl}/${key}`
 }
