@@ -29,7 +29,7 @@ interface ShowcaseItem {
 }
 
 // 페이지당 아이템 수
-const ITEMS_PER_PAGE = 15
+const ITEMS_PER_PAGE = 16 // 인터리브 시 균등 분배를 위해 짝수
 
 // ad_type 번역 키 매핑
 const AD_TYPE_TRANSLATION_KEY: Record<string, string> = {
@@ -256,20 +256,7 @@ export function ShowcaseGallery() {
     return adType
   }, [t.imageAdTypes, language])
 
-  // 이미지와 영상을 번갈아 배치 (interleave)
-  const interleaveShowcases = (images: ShowcaseItem[], videos: ShowcaseItem[]): ShowcaseItem[] => {
-    const result: ShowcaseItem[] = []
-    const maxLen = Math.max(images.length, videos.length)
-
-    for (let i = 0; i < maxLen; i++) {
-      if (i < images.length) result.push(images[i])
-      if (i < videos.length) result.push(videos[i])
-    }
-
-    return result
-  }
-
-  // 쇼케이스 데이터 로드
+  // 쇼케이스 데이터 로드 (인터리브 모드 - 단일 API 호출)
   const fetchShowcases = useCallback(async (imgOffset: number, vidOffset: number, isInitial: boolean = false) => {
     if (isInitial) {
       setIsLoading(true)
@@ -277,49 +264,30 @@ export function ShowcaseGallery() {
       setIsLoadingMore(true)
     }
 
-    const itemsPerType = Math.ceil(ITEMS_PER_PAGE / 2) // 각 타입별 로드 수
-
     try {
-      // 이미지와 영상 각각 조회
-      const [imageRes, videoRes] = await Promise.all([
-        fetch(`/api/showcases?type=image&limit=${itemsPerType}&offset=${imgOffset}`),
-        fetch(`/api/showcases?type=video&limit=${itemsPerType}&offset=${vidOffset}`),
-      ])
+      // 인터리브 모드로 한 번에 조회 (이미지/영상 오프셋 별도 전달)
+      const res = await fetch(
+        `/api/showcases?interleave=true&limit=${ITEMS_PER_PAGE}&imageOffset=${imgOffset}&videoOffset=${vidOffset}`
+      )
 
-      let newImages: ShowcaseItem[] = []
-      let newVideos: ShowcaseItem[] = []
-      let imageTotalCount = 0
-      let videoTotalCount = 0
+      if (res.ok) {
+        const data = await res.json()
+        const newShowcases: ShowcaseItem[] = data.showcases || []
+        const { imageCount, videoCount, nextImageOffset, nextVideoOffset } = data
 
-      if (imageRes.ok) {
-        const data = await imageRes.json()
-        newImages = data.showcases || []
-        imageTotalCount = data.totalCount || 0
+        if (isInitial) {
+          setShowcases(newShowcases)
+        } else {
+          setShowcases(prev => [...prev, ...newShowcases])
+        }
+
+        // 오프셋 업데이트
+        setImageOffset(nextImageOffset)
+        setVideoOffset(nextVideoOffset)
+
+        // 더 불러올 데이터가 있는지 확인
+        setHasMore(nextImageOffset < imageCount || nextVideoOffset < videoCount)
       }
-
-      if (videoRes.ok) {
-        const data = await videoRes.json()
-        newVideos = data.showcases || []
-        videoTotalCount = data.totalCount || 0
-      }
-
-      // 번갈아 배치
-      const interleaved = interleaveShowcases(newImages, newVideos)
-
-      if (isInitial) {
-        setShowcases(interleaved)
-      } else {
-        setShowcases(prev => [...prev, ...interleaved])
-      }
-
-      // 오프셋 업데이트
-      const newImageOffset = imgOffset + newImages.length
-      const newVideoOffset = vidOffset + newVideos.length
-      setImageOffset(newImageOffset)
-      setVideoOffset(newVideoOffset)
-
-      // 더 불러올 데이터가 있는지 확인
-      setHasMore(newImageOffset < imageTotalCount || newVideoOffset < videoTotalCount)
     } catch (error) {
       console.error('쇼케이스 로드 오류:', error)
     } finally {
