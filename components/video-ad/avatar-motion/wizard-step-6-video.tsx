@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useCredits } from '@/contexts/credit-context'
 import {
   ArrowLeft,
   Loader2,
@@ -60,6 +61,7 @@ export function WizardStep6Video() {
   } = useAvatarMotionWizard()
 
   const router = useRouter()
+  const { refreshCredits } = useCredits()
 
   const [status, setStatus] = useState<VideoGenerationStatus>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -272,6 +274,9 @@ export function WizardStep6Video() {
           status: 'COMPLETED',
           videoUrl: data.mergedVideoUrl,
         })
+
+        // 크레딧 갱신
+        refreshCredits()
       } else {
         throw new Error('병합된 영상 URL이 없습니다')
       }
@@ -394,6 +399,9 @@ export function WizardStep6Video() {
           status: 'COMPLETED',
           videoUrl: data.mergedVideoUrl,
         })
+
+        // 크레딧 갱신
+        refreshCredits()
 
         // 상세 페이지로 이동
         if (draftId) {

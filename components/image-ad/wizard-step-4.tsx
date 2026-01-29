@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
+import { useCredits } from '@/contexts/credit-context'
 import {
   ChevronLeft,
   Sparkles,
@@ -50,6 +51,7 @@ const getImageSize = (ratio: AspectRatio): '1024x1024' | '1536x1024' | '1024x153
 export function WizardStep4() {
   const router = useRouter()
   const { t: _t } = useLanguage()
+  const { refreshCredits } = useCredits()
   const {
     adType,
     selectedProduct,
@@ -382,6 +384,8 @@ export function WizardStep4() {
 
       setResultImages(imageUrls)
       setGenerationProgress(100)
+      // 크레딧 갱신
+      refreshCredits()
     } catch (error) {
       console.error('생성 오류:', error)
       alert(error instanceof Error ? error.message : '생성 중 오류가 발생했습니다')

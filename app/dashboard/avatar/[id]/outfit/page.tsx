@@ -8,6 +8,7 @@
 'use client'
 
 import { useLanguage } from '@/contexts/language-context'
+import { useCredits } from '@/contexts/credit-context'
 import {
   ArrowLeft,
   Loader2,
@@ -137,6 +138,7 @@ export default function OutfitChangePage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const { t } = useLanguage()
+  const { refreshCredits } = useCredits()
 
   // 상태
   const [avatar, setAvatar] = useState<Avatar | null>(null)
@@ -258,6 +260,8 @@ export default function OutfitChangePage() {
       })
 
       if (res.ok) {
+        // 크레딧 갱신
+        refreshCredits()
         // 생성된 의상 상세 페이지로 이동
         router.push(`/dashboard/avatar/${id}`)
       } else {

@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useLanguage } from '@/contexts/language-context'
+import { useCredits } from '@/contexts/credit-context'
 import { Plus, Image as ImageIcon, Loader2, Trash2, Download, Package, Sliders, Type, X } from 'lucide-react'
 
 interface AdBackground {
@@ -95,6 +96,7 @@ const ASPECT_RATIO_OPTIONS = [
 
 export default function BackgroundPage() {
   const { t } = useLanguage()
+  const { refreshCredits } = useCredits()
   const [backgroundList, setBackgroundList] = useState<AdBackground[]>([])
   const [productList, setProductList] = useState<AdProduct[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -247,6 +249,7 @@ export default function BackgroundPage() {
         setBackgroundList(prev => [data.background, ...prev])
         setShowCreateModal(false)
         resetForm()
+        refreshCredits()
       } else {
         const error = await res.json()
         alert(error.error || '배경 생성에 실패했습니다.')
