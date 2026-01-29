@@ -12,8 +12,15 @@ import { fileURLToPath } from 'url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // 환경변수에서 직접 연결 URL 사용 (pooler가 아닌 direct connection)
-const connectionString = process.env.DIRECT_URL ||
-  'postgresql://postgres.ilwhkpoxzxokfmzvpkof:jocoding123!@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres'
+// ⚠️ DIRECT_URL 환경변수 필수 - 하드코딩 금지
+const connectionString = process.env.DIRECT_URL
+
+if (!connectionString) {
+  console.error('❌ 오류: DIRECT_URL 환경변수가 설정되지 않았습니다.')
+  console.error('   .env 파일에 DIRECT_URL을 설정하거나 환경변수로 전달해주세요.')
+  console.error('   예: DIRECT_URL="postgresql://..." node scripts/run-migration.mjs')
+  process.exit(1)
+}
 
 async function runMigration() {
   const client = new pg.Client({ connectionString })
