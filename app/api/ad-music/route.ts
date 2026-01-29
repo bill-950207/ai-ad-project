@@ -157,21 +157,35 @@ export async function POST(request: NextRequest) {
     }
 
     // 크레딧 차감 (트랜잭션으로 재확인 후 원자적 차감)
-    await prisma.$transaction(async (tx) => {
-      const currentProfile = await tx.profiles.findUnique({
-        where: { id: user.id },
-        select: { credits: true },
-      })
+    try {
+      await prisma.$transaction(async (tx) => {
+        const currentProfile = await tx.profiles.findUnique({
+          where: { id: user.id },
+          select: { credits: true },
+        })
 
-      if (!currentProfile || (currentProfile.credits ?? 0) < MUSIC_CREDIT_COST) {
-        throw new Error('INSUFFICIENT_CREDITS')
+        if (!currentProfile || (currentProfile.credits ?? 0) < MUSIC_CREDIT_COST) {
+          throw new Error('INSUFFICIENT_CREDITS')
+        }
+
+        await tx.profiles.update({
+          where: { id: user.id },
+          data: { credits: { decrement: MUSIC_CREDIT_COST } },
+        })
+      }, { timeout: 10000 })
+    } catch (txError) {
+      // 크레딧 차감 실패 시 생성된 음악 레코드 정리
+      if (txError instanceof Error && txError.message === 'INSUFFICIENT_CREDITS') {
+        await supabase.from('ad_music').delete().eq('id', music.id)
+        return NextResponse.json(
+          { error: 'Insufficient credits (concurrent request detected)' },
+          { status: 402 }
+        )
       }
-
-      await tx.profiles.update({
-        where: { id: user.id },
-        data: { credits: { decrement: MUSIC_CREDIT_COST } },
-      })
-    }, { timeout: 10000 })
+      // 기타 트랜잭션 에러 시에도 레코드 정리
+      await supabase.from('ad_music').update({ status: 'FAILED' }).eq('id', music.id)
+      throw txError
+    }
 
     return NextResponse.json({
       music,
@@ -182,14 +196,6 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    // 크레딧 부족 에러 처리 (트랜잭션 내에서 발생)
-    if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
-      return NextResponse.json(
-        { error: 'Insufficient credits (concurrent request detected)' },
-        { status: 402 }
-      )
-    }
-
     console.error('광고 음악 생성 오류:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
