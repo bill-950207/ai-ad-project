@@ -19,18 +19,17 @@ const globalForPrisma = globalThis as unknown as {
  * Prisma 클라이언트 생성 함수
  *
  * pg.Pool을 사용하여 직접 데이터베이스 연결을 설정합니다.
- * Supabase pooler URL은 pg.Pool과 호환되지 않으므로 DIRECT_URL 사용을 권장합니다.
  */
 function createPrismaClient() {
   // DIRECT_URL 우선 사용 (pooler URL은 직접 연결에서 작동하지 않음)
   const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL
 
-  // PostgreSQL 연결 풀 생성 (최적화된 설정)
+  // PostgreSQL 연결 풀 생성
   const pool = new pg.Pool({
     connectionString,
-    max: 10,                       // 최대 연결 수
-    idleTimeoutMillis: 30000,      // 유휴 연결 타임아웃 (30초)
-    connectionTimeoutMillis: 5000, // 연결 타임아웃 (5초)
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
   })
 
   // Prisma용 pg 어댑터 생성
