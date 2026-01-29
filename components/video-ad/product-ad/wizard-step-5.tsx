@@ -532,6 +532,7 @@ export function WizardStep5() {
   const progressTotalDurationRef = useRef<number>(0)
   const isPollingActiveRef = useRef(false)
   const isTransitionPollingActiveRef = useRef(false)
+  const hasAttemptedMultiSceneResumeRef = useRef(false)  // 멀티씬 폴링 재개 시도 여부
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([])
 
   // DnD 센서 설정
@@ -1290,10 +1291,11 @@ export function WizardStep5() {
     }
   }, [videoRequestIds, resultVideoUrls.length, isGeneratingVideo, setIsGeneratingVideo, startPolling])
 
-  // 멀티씬 모드: context에서 sceneVideoSegments 복원하여 폴링 재개 (최초 마운트 시에만)
+  // 멀티씬 모드: context에서 sceneVideoSegments 복원하여 폴링 재개
+  // sceneVideoSegments가 비동기로 로드되므로 의존성 배열에 포함
   useEffect(() => {
-    // 이미 폴링 중이면 무시
-    if (isTransitionPollingActiveRef.current) {
+    // 이미 폴링 중이거나 재개 시도한 경우 무시
+    if (isTransitionPollingActiveRef.current || hasAttemptedMultiSceneResumeRef.current) {
       return
     }
 
@@ -1303,6 +1305,9 @@ export function WizardStep5() {
       const hasAnyData = sceneVideoSegments.some(s => s.requestId)
 
       if (hasAnyData) {
+        // 재개 시도 표시 (중복 방지)
+        hasAttemptedMultiSceneResumeRef.current = true
+
         // sceneVideoSegments를 sceneVideoStatuses로 변환
         const restoredStatuses: SceneVideoStatus[] = sceneVideoSegments.map(seg => ({
           sceneIndex: seg.fromSceneIndex,
@@ -1322,7 +1327,7 @@ export function WizardStep5() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // 마운트 시에만 실행
+  }, [sceneVideoSegments, isMultiSceneMode]) // sceneVideoSegments 로드 시 재개 시도
 
   // sceneVideoStatuses가 변경될 때 context의 sceneVideoSegments에 동기화
   useEffect(() => {
