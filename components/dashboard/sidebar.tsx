@@ -14,6 +14,7 @@ import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
 import { useLanguage } from '@/contexts/language-context'
 import { useSidebar } from '@/contexts/sidebar-context'
+import { useCredits } from '@/contexts/credit-context'
 import { languages, Language } from '@/lib/i18n'
 import {
   Sparkles,
@@ -84,13 +85,13 @@ export function Sidebar() {
   const [user, setUser] = useState<User | null>(null)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
-  const [credits, setCredits] = useState<number | null>(null)
   const [planType, setPlanType] = useState<string>('FREE')
   const [isAdmin, setIsAdmin] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
+  const { credits } = useCredits()
 
-  // 사용자 정보, 크레딧, 플랜, 역할 조회 (N+1 최적화)
+  // 사용자 정보, 플랜, 역할 조회
   useEffect(() => {
     const fetchUserData = async () => {
       // 1. 인증 정보 조회 (필수)
@@ -110,12 +111,11 @@ export function Sidebar() {
         setIsAdmin(profile.role === 'ADMIN')
       }
 
-      // 3. 구독 API에서 크레딧 + 플랜 한 번에 조회
+      // 3. 구독 API에서 플랜 정보 조회 (크레딧은 CreditContext에서 관리)
       try {
         const res = await fetch('/api/subscription')
         if (res.ok) {
           const data = await res.json()
-          setCredits(data.profile?.credits ?? 0)
           setPlanType(data.subscription?.planType || 'FREE')
         }
       } catch {

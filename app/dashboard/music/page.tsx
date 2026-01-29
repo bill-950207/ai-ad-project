@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useLanguage } from '@/contexts/language-context'
+import { useCredits } from '@/contexts/credit-context'
 import { Plus, Music, Loader2, Play, Pause, Trash2, Download, Sparkles, Package, ChevronDown, Info } from 'lucide-react'
 import Image from 'next/image'
 import { SlotLimitModal } from '@/components/ui/slot-limit-modal'
@@ -113,6 +114,7 @@ const PRODUCT_TYPE_OPTIONS = [
 
 export default function MusicPage() {
   const { t } = useLanguage()
+  const { refreshCredits } = useCredits()
   const [musicList, setMusicList] = useState<AdMusic[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -323,6 +325,8 @@ export default function MusicPage() {
         setMusicList(prev => [data.music, ...prev])
         setShowCreateModal(false)
         setFormData({ name: '', mood: '', genre: '', productType: '' })
+        // 크레딧 갱신
+        refreshCredits()
       } else {
         const errorData = await res.json()
         alert(errorData.error || '음악 생성에 실패했습니다.')

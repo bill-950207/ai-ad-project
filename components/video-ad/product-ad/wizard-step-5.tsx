@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useCredits } from '@/contexts/credit-context'
 import {
   ArrowLeft,
   Loader2,
@@ -468,6 +469,7 @@ function SortableVideoCard({
 
 export function WizardStep5() {
   const router = useRouter()
+  const { refreshCredits } = useCredits()
   const {
     draftId,
     selectedProduct,
@@ -1073,6 +1075,8 @@ export function WizardStep5() {
             videoUrl: collectedUrls[0],
             status: 'COMPLETED',
           })
+          // 크레딧 갱신
+          refreshCredits()
         }
       }
     }
@@ -1247,6 +1251,8 @@ export function WizardStep5() {
             videoUrl: collectedUrls[0],
             status: 'COMPLETED',
           })
+          // 크레딧 갱신
+          refreshCredits()
         }
       }
     }
@@ -1412,6 +1418,9 @@ export function WizardStep5() {
           videoUrl: data.mergedVideoUrl,
           status: 'COMPLETED',
         })
+
+        // 크레딧 갱신
+        refreshCredits()
 
         // 상세 페이지로 이동
         router.push(`/dashboard/video-ad/${draftId}`)

@@ -9,6 +9,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
+import { useCredits } from '@/contexts/credit-context'
 import { AvatarForm } from '@/components/avatar/avatar-form'
 import { ArrowLeft, Sparkles, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
@@ -23,6 +24,7 @@ interface SlotInfo {
 
 export default function NewAvatarPage() {
   const { t } = useLanguage()
+  const { refreshCredits } = useCredits()
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -65,6 +67,9 @@ export default function NewAvatarPage() {
         setIsSubmitting(false)
         return
       }
+
+      // 크레딧 갱신
+      refreshCredits()
 
       // 성공 시 isSubmitting을 true로 유지하여 리다이렉트 전 중복 제출 방지
       router.push('/dashboard/avatar')

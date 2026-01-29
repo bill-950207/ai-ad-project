@@ -18,6 +18,7 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { IMAGE_EDIT_CREDIT_COST } from '@/lib/credits'
+import { useCredits } from '@/contexts/credit-context'
 
 interface ImageEditModalProps {
   isOpen: boolean
@@ -38,6 +39,7 @@ export function ImageEditModal({
   quality = 'medium',
   onEditComplete,
 }: ImageEditModalProps) {
+  const { refreshCredits } = useCredits()
   const [editPrompt, setEditPrompt] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isPolling, setIsPolling] = useState(false)
@@ -184,6 +186,9 @@ export function ImageEditModal({
         if (newImageIndex !== null && onEditComplete) {
           onEditComplete(newImageIndex, pollResult.imageUrl)
         }
+
+        // 크레딧 갱신
+        refreshCredits()
       }
 
       setIsPolling(false)
