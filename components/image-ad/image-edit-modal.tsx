@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { IMAGE_EDIT_CREDIT_COST } from '@/lib/credits'
 import { useCredits } from '@/contexts/credit-context'
+import { InsufficientCreditsModal } from '@/components/ui/insufficient-credits-modal'
 
 interface ImageEditModalProps {
   isOpen: boolean
@@ -45,6 +46,8 @@ export function ImageEditModal({
   const [isPolling, setIsPolling] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false)
+  const [creditsInfo, setCreditsInfo] = useState<{ required: number; available: number } | null>(null)
   const [editSummary, setEditSummary] = useState<string | null>(null)
   const [resultImageUrl, setResultImageUrl] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
@@ -160,7 +163,13 @@ export function ImageEditModal({
       if (!res.ok) {
         const data = await res.json()
         if (res.status === 402) {
-          throw new Error(`크레딧이 부족합니다. (필요: ${data.required}, 보유: ${data.available})`)
+          setCreditsInfo({
+            required: data.required || creditCost,
+            available: data.available || 0,
+          })
+          setShowInsufficientCreditsModal(true)
+          setIsSubmitting(false)
+          return
         }
         throw new Error(data.error || '편집 요청 실패')
       }
@@ -410,6 +419,17 @@ export function ImageEditModal({
           </div>
         </div>
       </div>
+
+      {/* 크레딧 부족 모달 */}
+      {creditsInfo && (
+        <InsufficientCreditsModal
+          isOpen={showInsufficientCreditsModal}
+          onClose={() => setShowInsufficientCreditsModal(false)}
+          requiredCredits={creditsInfo.required}
+          availableCredits={creditsInfo.available}
+          featureName="이미지 편집"
+        />
+      )}
     </div>
   )
 }

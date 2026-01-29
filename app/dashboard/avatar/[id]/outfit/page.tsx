@@ -20,6 +20,7 @@ import {
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import { InsufficientCreditsModal } from '@/components/ui/insufficient-credits-modal'
 
 // ============================================================
 // 타입 정의
@@ -147,6 +148,10 @@ export default function OutfitChangePage() {
   const [name, setName] = useState('')
   const [inputType, setInputType] = useState<InputType>('combined')
 
+  // 크레딧 부족 모달 상태
+  const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false)
+  const [creditsInfo, setCreditsInfo] = useState<{ required: number; available: number } | null>(null)
+
   // 이미지 업로드 상태
   const [outfitImage, setOutfitImage] = useState<ImageUploadState>({
     file: null,
@@ -258,6 +263,17 @@ export default function OutfitChangePage() {
         method: 'POST',
         body: formData,
       })
+
+      // 크레딧 부족 (402)
+      if (res.status === 402) {
+        const errorData = await res.json()
+        setCreditsInfo({
+          required: errorData.required || 2,
+          available: errorData.available || 0,
+        })
+        setShowInsufficientCreditsModal(true)
+        return
+      }
 
       if (res.ok) {
         // 크레딧 갱신
@@ -453,6 +469,17 @@ export default function OutfitChangePage() {
           </form>
         </div>
       </div>
+
+      {/* 크레딧 부족 모달 */}
+      {creditsInfo && (
+        <InsufficientCreditsModal
+          isOpen={showInsufficientCreditsModal}
+          onClose={() => setShowInsufficientCreditsModal(false)}
+          requiredCredits={creditsInfo.required}
+          availableCredits={creditsInfo.available}
+          featureName="의상 교체"
+        />
+      )}
     </div>
   )
 }

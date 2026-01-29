@@ -303,13 +303,6 @@ export function AdProductForm() {
         return
       }
 
-      // 크레딧 부족 (402)
-      if (createRes.status === 402) {
-        const errorData = await createRes.json()
-        setError(errorData.error || '크레딧이 부족합니다')
-        return
-      }
-
       if (!createRes.ok) {
         const errorData = await createRes.json()
         throw new Error(errorData.error || 'Failed to create product')
