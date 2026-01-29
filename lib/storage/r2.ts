@@ -16,28 +16,46 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 // ============================================================
-// 환경 변수 설정
+// 환경 변수 접근 함수 (런타임에 읽기)
 // ============================================================
 
-const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID!          // Cloudflare 계정 ID
-const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID!    // R2 액세스 키 ID
-const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY!  // R2 시크릿 액세스 키
-const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME!        // R2 버킷 이름
-const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL!          // 공개 접근 URL (CDN)
+function getR2Config() {
+  const accountId = process.env.R2_ACCOUNT_ID
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY
+  const bucketName = process.env.R2_BUCKET_NAME
+  const publicUrl = process.env.R2_PUBLIC_URL
+
+  if (!accountId || !accessKeyId || !secretAccessKey || !bucketName || !publicUrl) {
+    throw new Error(
+      `Missing R2 configuration. Required: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, R2_PUBLIC_URL. ` +
+      `Got: accountId=${!!accountId}, accessKeyId=${!!accessKeyId}, secretAccessKey=${!!secretAccessKey}, bucketName=${!!bucketName}, publicUrl=${!!publicUrl}`
+    )
+  }
+
+  return { accountId, accessKeyId, secretAccessKey, bucketName, publicUrl }
+}
 
 // ============================================================
-// S3 클라이언트 설정
+// S3 클라이언트 설정 (지연 초기화)
 // ============================================================
 
-// R2용 S3 호환 클라이언트 생성
-const r2Client = new S3Client({
-  region: 'auto',  // R2는 자동 리전 사용
-  endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: R2_ACCESS_KEY_ID,
-    secretAccessKey: R2_SECRET_ACCESS_KEY,
-  },
-})
+let _r2Client: S3Client | null = null
+
+function getR2Client(): S3Client {
+  if (!_r2Client) {
+    const config = getR2Config()
+    _r2Client = new S3Client({
+      region: 'auto',  // R2는 자동 리전 사용
+      endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: config.accessKeyId,
+        secretAccessKey: config.secretAccessKey,
+      },
+    })
+  }
+  return _r2Client
+}
 
 // ============================================================
 // 상수 정의
@@ -89,23 +107,25 @@ export async function generatePresignedUrl({
   folder = 'avatars',
   type,
 }: PresignedUrlOptions): Promise<PresignedUrlResult> {
+  const config = getR2Config()
+
   // R2 저장 키 생성
   const key = `${folder}/${type}/${fileName}`
 
   // PutObject 명령 생성
   const command = new PutObjectCommand({
-    Bucket: R2_BUCKET_NAME,
+    Bucket: config.bucketName,
     Key: key,
     ContentType: contentType,
   })
 
   // Presigned URL 생성
-  const uploadUrl = await getSignedUrl(r2Client, command, {
+  const uploadUrl = await getSignedUrl(getR2Client(), command, {
     expiresIn: PRESIGNED_URL_EXPIRES_IN,
   })
 
   // 공개 URL 생성
-  const publicUrl = `${R2_PUBLIC_URL}/${key}`
+  const publicUrl = `${config.publicUrl}/${key}`
 
   return {
     uploadUrl,
@@ -175,7 +195,8 @@ export function generateAvatarFileName(avatarId: string): string {
  * @returns 공개 URL
  */
 export function getPublicUrl(key: string): string {
-  return `${R2_PUBLIC_URL}/${key}`
+  const config = getR2Config()
+  return `${config.publicUrl}/${key}`
 }
 
 // ============================================================
@@ -332,6 +353,8 @@ export async function uploadDataUrlToR2(
   dataUrl: string,
   key: string
 ): Promise<string> {
+  const config = getR2Config()
+
   // Data URL 파싱
   const matches = dataUrl.match(/^data:([^;]+);base64,(.+)$/)
   if (!matches) {
@@ -344,15 +367,15 @@ export async function uploadDataUrlToR2(
 
   // R2에 업로드
   const command = new PutObjectCommand({
-    Bucket: R2_BUCKET_NAME,
+    Bucket: config.bucketName,
     Key: key,
     Body: buffer,
     ContentType: contentType,
   })
 
-  await r2Client.send(command)
+  await getR2Client().send(command)
 
-  return `${R2_PUBLIC_URL}/${key}`
+  return `${config.publicUrl}/${key}`
 }
 
 /**
@@ -415,16 +438,18 @@ export async function uploadBufferToR2(
   key: string,
   contentType: string
 ): Promise<string> {
+  const config = getR2Config()
+
   const command = new PutObjectCommand({
-    Bucket: R2_BUCKET_NAME,
+    Bucket: config.bucketName,
     Key: key,
     Body: buffer,
     ContentType: contentType,
   })
 
-  await r2Client.send(command)
+  await getR2Client().send(command)
 
-  return `${R2_PUBLIC_URL}/${key}`
+  return `${config.publicUrl}/${key}`
 }
 
 // ============================================================
