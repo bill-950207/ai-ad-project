@@ -12,6 +12,8 @@
 
 import { useLanguage } from '@/contexts/language-context'
 import { useCredits } from '@/contexts/credit-context'
+import { PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST } from '@/lib/credits'
+import { InsufficientCreditsModal } from '@/components/ui/insufficient-credits-modal'
 import {
   ArrowLeft,
   ArrowRight,
@@ -532,7 +534,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { t, language } = useLanguage()
-  const { refreshCredits } = useCredits()
+  const { credits, refreshCredits } = useCredits()
 
   // URL에서 videoAdId 파라미터 확인 (재개 시)
   const resumeVideoAdId = searchParams.get('videoAdId')
@@ -635,10 +637,13 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
 
   // Step 5: 영상 생성
   const [videoAdId, setVideoAdId] = useState<string | null>(null)
+  const [videoRequestId, setVideoRequestId] = useState<string | null>(null)
+  const [videoProvider, setVideoProvider] = useState<'wavespeed' | 'kie' | null>(null)
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false)
   const [generationStatus, setGenerationStatus] = useState('')
   const [generationStartTime, setGenerationStartTime] = useState<number | null>(null)
   const [generationProgress, setGenerationProgress] = useState(0)
+  const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false)
 
   // 초안 복원 중 플래그 (useEffect에서 editedScript 덮어쓰기 방지)
   const isRestoringDraft = useRef(false)
@@ -970,8 +975,12 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
             setGenerationProgress(0)
             setIsLoadingDraft(false)
 
-            // 상태 폴링 시작
-            pollVideoStatus(resumeVideoAdId)
+            // requestId와 provider가 있으면 직접 AI 서비스 폴링
+            if (statusData.requestId && statusData.provider) {
+              setVideoRequestId(statusData.requestId)
+              setVideoProvider(statusData.provider)
+              pollVideoStatus(statusData.requestId, statusData.provider, resumeVideoAdId)
+            }
             return
           }
         }
@@ -1135,10 +1144,16 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     }
   }
 
-  // 영상 상태 폴링
-  const pollVideoStatus = async (id: string): Promise<void> => {
+  // 영상 상태 폴링 (AI 서비스 직접 조회)
+  const pollVideoStatus = async (
+    reqId: string,
+    provider: 'wavespeed' | 'kie',
+    adId: string
+  ): Promise<void> => {
     try {
-      const statusRes = await fetch(`/api/video-ads/status/${id}`)
+      const statusRes = await fetch(
+        `/api/video-ads/product-description/video-status?requestId=${reqId}&provider=${provider}&videoAdId=${adId}`
+      )
       if (!statusRes.ok) throw new Error('상태 확인 실패')
 
       const status = await statusRes.json()
@@ -1148,7 +1163,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         // 크레딧 갱신
         refreshCredits()
         setTimeout(() => {
-          router.push(`/dashboard/video-ad/${id}`)
+          router.push(`/dashboard/video-ad/${adId}`)
         }, 1000)
         return
       }
@@ -1164,7 +1179,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       }
 
       await new Promise(resolve => setTimeout(resolve, 3000))
-      return pollVideoStatus(id)
+      return pollVideoStatus(reqId, provider, adId)
     } catch (error) {
       console.error('상태 폴링 오류:', error)
       setGenerationStatus('오류가 발생했습니다')
@@ -1536,6 +1551,12 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
   const generateVideo = async () => {
     if (!selectedVoice || !editedScript.trim() || !selectedAvatarInfo) return
 
+    // 크레딧 체크
+    if (credits !== null && credits < PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST) {
+      setShowInsufficientCreditsModal(true)
+      return
+    }
+
     // 버튼 클릭 즉시 Step 4로 이동
     setStep(4)
     setIsGeneratingAudio(true)
@@ -1600,6 +1621,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
 
       const videoData = await videoRes.json()
       setVideoAdId(videoData.videoAdId)
+      setVideoRequestId(videoData.requestId)
+      setVideoProvider(videoData.provider)
 
       // 영상 생성이 시작되면 초안 삭제 (영상 광고 레코드가 생성됨)
       if (draftId) {
@@ -1607,9 +1630,11 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         setDraftId(null)
       }
 
-      // 상태 폴링
+      // AI 서비스 직접 상태 폴링 (video_ads 테이블 조회 없이)
       const pollStatus = async (): Promise<void> => {
-        const statusRes = await fetch(`/api/video-ads/status/${videoData.videoAdId}`)
+        const statusRes = await fetch(
+          `/api/video-ads/product-description/video-status?requestId=${videoData.requestId}&provider=${videoData.provider}&videoAdId=${videoData.videoAdId}`
+        )
         if (!statusRes.ok) throw new Error('상태 확인 실패')
 
         const status = await statusRes.json()
@@ -2857,7 +2882,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                     </>
                   ) : (
                     <>
-                      영상 생성하기
+                      영상 생성하기 ({PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST} 크레딧)
                       <Play className="w-4 h-4" />
                     </>
                   )}
@@ -2942,6 +2967,15 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           </div>
         </div>
       )}
+
+      {/* 크레딧 부족 모달 */}
+      <InsufficientCreditsModal
+        isOpen={showInsufficientCreditsModal}
+        onClose={() => setShowInsufficientCreditsModal(false)}
+        requiredCredits={PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST}
+        availableCredits={credits ?? 0}
+        featureName="제품 설명 영상 생성"
+      />
       </div>
     </div>
   )
