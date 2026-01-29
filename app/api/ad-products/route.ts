@@ -13,7 +13,7 @@ import { uploadAdProductSourceFromDataUrl } from '@/lib/storage/r2'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { PRODUCT_CREDIT_COST } from '@/lib/credits'
-import { checkUsageLimit, incrementUsage } from '@/lib/subscription'
+import { checkUsageLimit } from '@/lib/subscription'
 
 /**
  * GET /api/ad-products
@@ -195,10 +195,8 @@ export async function POST(request: NextRequest) {
             data: { credits: { decrement: PRODUCT_CREDIT_COST } },
           })
         }, { timeout: 10000 })
-      } else {
-        await incrementUsage(user.id, 'product')
-      }
 
+      }
       return NextResponse.json({
         product: updatedProduct,
         sourceImageUrl,

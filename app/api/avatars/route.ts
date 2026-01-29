@@ -14,7 +14,7 @@ import { submitToQueue as submitToFalQueue } from '@/lib/fal/client'
 import { submitZImageToQueue } from '@/lib/kie/client'
 import { buildPromptFromOptions, validateAvatarOptions, AvatarOptions } from '@/lib/avatar/prompt-builder'
 import { AVATAR_CREDIT_COST } from '@/lib/credits'
-import { checkUsageLimit, incrementUsage } from '@/lib/subscription'
+import { checkUsageLimit } from '@/lib/subscription'
 import { applyRateLimit, RateLimits, rateLimitExceededResponse } from '@/lib/rate-limit'
 
 // AI 프로바이더 설정 (기본값: kie, fallback: fal)
@@ -240,10 +240,6 @@ export async function POST(request: NextRequest) {
       timeout: 10000,  // 트랜잭션 타임아웃 10초
     })
 
-    // 무료 생성인 경우 사용량 증가 (트랜잭션 외부에서 처리)
-    if (!needsCredits) {
-      await incrementUsage(user.id, 'avatar')
-    }
 
     return NextResponse.json({ avatar }, { status: 201 })
   } catch (error) {

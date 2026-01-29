@@ -1,105 +1,77 @@
 /**
- * 사용량 추적 유틸리티
+ * 슬롯 사용량 유틸리티
+ *
+ * avatar_limit/music_limit/product_limit은 슬롯 제한(동시 보유 가능 개수)
+ * 월간 생성 횟수 제한이 아님 - 크레딧이 있으면 무제한 생성 가능
+ * 실제 보유 수량은 DB COUNT로 확인
  */
 
 import { prisma } from '@/lib/db'
 import { getUserPlan } from './queries'
-import {
-  AVATAR_CREDIT_COST,
-  MUSIC_CREDIT_COST,
-} from '@/lib/credits'
 
-export type UsageType = 'avatar' | 'music' | 'product'
+export type SlotType = 'avatar' | 'music' | 'product'
 
-export interface UsageCheckResult {
+export interface SlotCheckResult {
   withinLimit: boolean
   used: number
   limit: number  // -1 = 무제한
   remaining: number  // -1 = 무제한
-  creditCost?: number  // 제한 초과 시 필요한 크레딧
 }
 
-export interface UsageSummary {
+export interface SlotSummary {
   avatars: { used: number; limit: number }
   music: { used: number; limit: number }
   products: { used: number; limit: number }
-  credits: { used: number; limit: number }
-  period: string
 }
 
 /**
- * 현재 월의 시작일 계산
+ * 사용자의 실제 보유 수량 조회 (DB COUNT)
  */
-function getCurrentPeriodStart(): Date {
-  const now = new Date()
-  return new Date(now.getFullYear(), now.getMonth(), 1)
-}
+async function getActualCounts(userId: string) {
+  const [avatarCount, musicCount, productCount] = await Promise.all([
+    prisma.avatars.count({ where: { user_id: userId } }),
+    prisma.ad_music.count({ where: { user_id: userId } }),
+    prisma.ad_products.count({ where: { user_id: userId } }),
+  ])
 
-/**
- * 사용자의 현재 월 사용량 조회 또는 생성
- */
-async function getOrCreateUsageTracking(userId: string) {
-  const period = getCurrentPeriodStart()
-
-  let usage = await prisma.usage_tracking.findUnique({
-    where: {
-      user_id_period: {
-        user_id: userId,
-        period,
-      },
-    },
-  })
-
-  if (!usage) {
-    usage = await prisma.usage_tracking.create({
-      data: {
-        user_id: userId,
-        period,
-        avatar_count: 0,
-        music_count: 0,
-        product_count: 0,
-      },
-    })
+  return {
+    avatar_count: avatarCount,
+    music_count: musicCount,
+    product_count: productCount,
   }
-
-  return usage
 }
 
 /**
- * 사용량 제한 확인
- * @returns withinLimit이 true면 무료 생성 가능, false면 크레딧 필요
+ * 슬롯 제한 확인
+ * @returns withinLimit이 true면 슬롯 여유 있음, false면 슬롯 부족
  */
-export async function checkUsageLimit(
+export async function checkSlotLimit(
   userId: string,
-  type: UsageType
-): Promise<UsageCheckResult> {
-  const [plan, usage] = await Promise.all([
+  type: SlotType
+): Promise<SlotCheckResult> {
+  const [plan, counts] = await Promise.all([
     getUserPlan(userId),
-    getOrCreateUsageTracking(userId),
+    getActualCounts(userId),
   ])
 
   let used: number
   let limit: number
-  let creditCost: number
 
   switch (type) {
     case 'avatar':
-      used = usage.avatar_count
+      used = counts.avatar_count
       limit = plan.avatarLimit
-      creditCost = AVATAR_CREDIT_COST
       break
     case 'music':
-      used = usage.music_count
+      used = counts.music_count
       limit = plan.musicLimit
-      creditCost = MUSIC_CREDIT_COST
       break
     case 'product':
-      used = usage.product_count
+      used = counts.product_count
       limit = plan.productLimit
-      creditCost = 0  // 제품 등록은 초과 시 불가 (크레딧으로 추가 불가)
       break
     default:
-      throw new Error(`Unknown usage type: ${type}`)
+      throw new Error(`Unknown slot type: ${type}`)
   }
 
   // -1은 무제한
@@ -120,114 +92,57 @@ export async function checkUsageLimit(
     used,
     limit,
     remaining,
-    creditCost: withinLimit ? undefined : creditCost,
   }
 }
 
 /**
- * 사용량 증가
+ * 전체 슬롯 사용량 요약
  */
-export async function incrementUsage(
-  userId: string,
-  type: UsageType
-): Promise<void> {
-  const period = getCurrentPeriodStart()
-
-  // upsert로 레코드가 없으면 생성하면서 증가
-  const updateField = {
-    avatar: { avatar_count: { increment: 1 } },
-    music: { music_count: { increment: 1 } },
-    product: { product_count: { increment: 1 } },
-  }[type]
-
-  await prisma.usage_tracking.upsert({
-    where: {
-      user_id_period: {
-        user_id: userId,
-        period,
-      },
-    },
-    update: updateField,
-    create: {
-      user_id: userId,
-      period,
-      avatar_count: type === 'avatar' ? 1 : 0,
-      music_count: type === 'music' ? 1 : 0,
-      product_count: type === 'product' ? 1 : 0,
-    },
-  })
-}
-
-/**
- * 현재 월 전체 사용량 요약
- */
-export async function getUsageSummary(userId: string): Promise<UsageSummary> {
-  const [plan, usage] = await Promise.all([
+export async function getSlotSummary(userId: string): Promise<SlotSummary> {
+  const [plan, counts] = await Promise.all([
     getUserPlan(userId),
-    getOrCreateUsageTracking(userId),
+    getActualCounts(userId),
   ])
-
-  // 기간 문자열 포맷
-  const periodStart = getCurrentPeriodStart()
-  const periodString = periodStart.toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-  })
-
-  // 크레딧 사용량 계산 (무료 한도 초과분)
-  // 아바타: 무료 한도 초과 시 각 2크레딧
-  // 음악: 무료 한도 초과 시 각 3크레딧
-  const avatarOverage = plan.avatarLimit === -1 ? 0 : Math.max(0, usage.avatar_count - plan.avatarLimit)
-  const musicOverage = plan.musicLimit === -1 ? 0 : Math.max(0, usage.music_count - plan.musicLimit)
-  const creditsUsed = (avatarOverage * AVATAR_CREDIT_COST) + (musicOverage * MUSIC_CREDIT_COST)
 
   return {
     avatars: {
-      used: usage.avatar_count,
+      used: counts.avatar_count,
       limit: plan.avatarLimit,
     },
     music: {
-      used: usage.music_count,
+      used: counts.music_count,
       limit: plan.musicLimit,
     },
     products: {
-      used: usage.product_count,
+      used: counts.product_count,
       limit: plan.productLimit,
     },
-    credits: {
-      used: creditsUsed,
-      limit: plan.monthlyCredits,
-    },
-    period: periodString,
   }
 }
 
-/**
- * 월간 사용량 리셋 (cron 또는 webhook에서 호출)
- * 새 월이 시작되면 자동으로 새 레코드가 생성되므로 특별한 처리 불필요
- * 이 함수는 필요시 수동 리셋용
- */
-export async function resetUsage(userId: string): Promise<void> {
-  const period = getCurrentPeriodStart()
+// Backward compatibility aliases
+export type UsageType = SlotType
+export type UsageCheckResult = SlotCheckResult
+export type UsageSummary = SlotSummary & { credits: { used: number; limit: number }; period: string }
+export const checkUsageLimit = checkSlotLimit
+export async function getUsageSummary(userId: string): Promise<UsageSummary> {
+  const [plan, summary] = await Promise.all([
+    getUserPlan(userId),
+    getSlotSummary(userId),
+  ])
 
-  await prisma.usage_tracking.upsert({
-    where: {
-      user_id_period: {
-        user_id: userId,
-        period,
-      },
+  return {
+    ...summary,
+    credits: {
+      used: 0, // 크레딧 사용량은 별도 추적 필요시 구현
+      limit: plan.monthlyCredits,
     },
-    update: {
-      avatar_count: 0,
-      music_count: 0,
-      product_count: 0,
-    },
-    create: {
-      user_id: userId,
-      period,
-      avatar_count: 0,
-      music_count: 0,
-      product_count: 0,
-    },
-  })
+    period: new Date().toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+    }),
+  }
 }
+
+// incrementUsage는 더 이상 필요 없음 - 실제 아이템 생성/삭제가 DB COUNT에 반영됨
+// resetUsage도 더 이상 필요 없음 - 슬롯 제한은 리셋 개념이 없음

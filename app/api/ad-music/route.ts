@@ -10,7 +10,7 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { submitAdMusicToQueue } from '@/lib/kie/client'
 import { MUSIC_CREDIT_COST } from '@/lib/credits'
-import { checkUsageLimit, incrementUsage } from '@/lib/subscription'
+import { checkUsageLimit } from '@/lib/subscription'
 
 // 요청 바디 타입
 interface AdMusicRequestBody {
@@ -154,9 +154,6 @@ export async function POST(request: NextRequest) {
         where: { id: user.id },
         data: { credits: { decrement: MUSIC_CREDIT_COST } },
       })
-    } else {
-      // 무료 생성인 경우 사용량 증가
-      await incrementUsage(user.id, 'music')
     }
 
     return NextResponse.json({
