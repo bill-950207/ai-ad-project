@@ -90,6 +90,12 @@ export interface ImageAdWizardState {
 }
 
 export interface ImageAdWizardActions {
+  // Draft actions
+  draftId: string | null
+  isSaving: boolean
+  isLoadingDraft: boolean
+  saveDraft: () => Promise<string | null>
+
   // Step navigation
   goToStep: (step: WizardStep) => void
   goToNextStep: () => void
@@ -166,6 +172,7 @@ interface ImageAdWizardProviderProps {
   initialAvatarId?: string | null
   initialOutfitId?: string | null
   initialAiAvatarOptions?: AiAvatarOptions | null
+  initialDraftId?: string | null
 }
 
 export function ImageAdWizardProvider({
@@ -177,6 +184,7 @@ export function ImageAdWizardProvider({
   initialAvatarId,
   initialOutfitId,
   initialAiAvatarOptions,
+  initialDraftId,
 }: ImageAdWizardProviderProps) {
   // Step 1 상태
   const [step, setStep] = useState<WizardStep>((initialStep >= 1 && initialStep <= 4 ? initialStep : 1) as WizardStep)
@@ -218,6 +226,11 @@ export function ImageAdWizardProvider({
   const [generationProgress, setGenerationProgress] = useState(0)
   const [resultImages, setResultImages] = useState<string[]>([])
   const [resultAdIds, setResultAdIds] = useState<string[]>([])
+
+  // Draft 상태
+  const [draftId, setDraftId] = useState<string | null>(initialDraftId || null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isLoadingDraft, setIsLoadingDraft] = useState(!!initialDraftId)  // draftId가 있으면 로딩 시작
 
   // ============================================================
   // 초기 데이터 로드 (쿼리 파라미터에서 전달된 경우)
@@ -437,10 +450,172 @@ export function ImageAdWizardProvider({
   }, [])
 
   // ============================================================
+  // Draft 저장
+  // ============================================================
+
+  const saveDraft = useCallback(async (): Promise<string | null> => {
+    setIsSaving(true)
+    try {
+      // File 객체는 저장할 수 없으므로 URL만 저장
+      const wizardState = {
+        // Step 1
+        adType,
+        selectedProduct,
+        localImageUrl,  // File은 제외, URL만 저장
+        selectedAvatarInfo,
+        productUsageMethod,
+        // Step 2
+        settingMethod,
+        referenceUrl,  // File은 제외, URL만 저장
+        analysisResult,
+        // Step 3
+        categoryOptions,
+        customOptions,
+        customInputActive,
+        additionalPrompt,
+        aiStrategy,
+        aiReasons,
+        generatedScenarios,
+        selectedScenarioIndex,
+        // Step 4
+        aspectRatio,
+        quality,
+        numImages,
+      }
+
+      const payload = {
+        id: draftId,
+        wizardStep: step,
+        wizardState,
+        adType,
+        productId: selectedProduct?.id,
+        avatarId: selectedAvatarInfo?.avatarId,
+        outfitId: selectedAvatarInfo?.outfitId,
+        imageSize: aspectRatio === '1:1' ? '1024x1024' : aspectRatio === '16:9' ? '1536x1024' : '1024x1536',
+        quality,
+        numImages,
+      }
+
+      const res = await fetch('/api/image-ad/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to save draft')
+      }
+
+      const data = await res.json()
+      if (data.draft?.id) {
+        setDraftId(data.draft.id)
+
+        // URL에 draftId 추가 (replaceState로 리마운트 방지)
+        if (typeof window !== 'undefined') {
+          const currentUrl = new URL(window.location.href)
+          currentUrl.searchParams.set('draftId', data.draft.id)
+          window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search)
+        }
+
+        return data.draft.id
+      }
+      return null
+    } catch (error) {
+      console.error('Draft 저장 오류:', error)
+      return null
+    } finally {
+      setIsSaving(false)
+    }
+  }, [
+    draftId, step, adType, selectedProduct, localImageUrl, selectedAvatarInfo,
+    productUsageMethod, settingMethod, referenceUrl, analysisResult,
+    categoryOptions, customOptions, customInputActive, additionalPrompt,
+    aiStrategy, aiReasons, generatedScenarios, selectedScenarioIndex,
+    aspectRatio, quality, numImages,
+  ])
+
+  // ============================================================
+  // Draft 로드 (마운트 시)
+  // ============================================================
+
+  useEffect(() => {
+    const loadDraft = async () => {
+      // draftId가 있을 때만 로딩 표시
+      if (initialDraftId) {
+        setIsLoadingDraft(true)
+      }
+
+      try {
+        let res: Response
+
+        if (initialDraftId) {
+          // 특정 draftId가 있으면 해당 draft 로드
+          res = await fetch(`/api/image-ad/draft?id=${initialDraftId}`)
+        } else {
+          // draftId가 없으면 같은 adType의 최근 draft 확인
+          res = await fetch(`/api/image-ad/draft?adType=${initialAdType}`)
+        }
+
+        if (!res.ok) return
+
+        const data = await res.json()
+        if (!data.draft?.wizard_state) return
+
+        const state = data.draft.wizard_state
+
+        // 상태 복원
+        setDraftId(data.draft.id)
+        setStep(data.draft.wizard_step || 1)
+        if (state.adType) setAdTypeState(state.adType)
+        if (state.selectedProduct) setSelectedProduct(state.selectedProduct)
+        if (state.localImageUrl) setLocalImageUrl(state.localImageUrl)
+        if (state.selectedAvatarInfo) setSelectedAvatarInfo(state.selectedAvatarInfo)
+        if (state.productUsageMethod) setProductUsageMethod(state.productUsageMethod)
+        if (state.settingMethod) setSettingMethod(state.settingMethod)
+        if (state.referenceUrl) setReferenceUrl(state.referenceUrl)
+        if (state.analysisResult) setAnalysisResult(state.analysisResult)
+        if (state.categoryOptions) setCategoryOptions(state.categoryOptions)
+        if (state.customOptions) setCustomOptions(state.customOptions)
+        if (state.customInputActive) setCustomInputActive(state.customInputActive)
+        if (state.additionalPrompt) setAdditionalPrompt(state.additionalPrompt)
+        if (state.aiStrategy) setAiStrategy(state.aiStrategy)
+        if (state.aiReasons) setAiReasons(state.aiReasons)
+        if (state.generatedScenarios) setGeneratedScenarios(state.generatedScenarios)
+        if (state.selectedScenarioIndex !== undefined) setSelectedScenarioIndex(state.selectedScenarioIndex)
+        if (state.aspectRatio) setAspectRatio(state.aspectRatio)
+        if (state.quality) setQuality(state.quality)
+        if (state.numImages) setNumImages(state.numImages)
+
+        // URL에 draftId가 없으면 추가
+        if (!initialDraftId && typeof window !== 'undefined') {
+          const currentUrl = new URL(window.location.href)
+          currentUrl.searchParams.set('draftId', data.draft.id)
+          window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search)
+        }
+      } catch (error) {
+        console.error('Draft 로드 오류:', error)
+      } finally {
+        setIsLoadingDraft(false)
+      }
+    }
+
+    loadDraft()
+  }, [initialDraftId, initialAdType])
+
+  // ============================================================
   // Reset
   // ============================================================
 
   const resetWizard = useCallback(() => {
+    // Draft 초기화
+    setDraftId(null)
+    // URL에서 draftId 제거
+    if (typeof window !== 'undefined') {
+      const currentUrl = new URL(window.location.href)
+      currentUrl.searchParams.delete('draftId')
+      window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search)
+    }
+
     setStep(1)
     setAdTypeState(initialAdType)
     setSelectedProduct(null)
@@ -507,6 +682,12 @@ export function ImageAdWizardProvider({
     generationProgress,
     resultImages,
     resultAdIds,
+
+    // Draft
+    draftId,
+    isSaving,
+    isLoadingDraft,
+    saveDraft,
 
     // Actions
     goToStep,

@@ -19,6 +19,9 @@ function ImageAdCreateContent() {
   const outfitId = searchParams.get('outfitId')
   const aiAvatarOptions = searchParams.get('aiAvatarOptions')
 
+  // Draft ID (임시 저장된 작업 복원용)
+  const draftId = searchParams.get('draftId')
+
   return (
     <ImageAdWizard
       initialAdType={initialAdType}
@@ -28,6 +31,7 @@ function ImageAdCreateContent() {
       initialAvatarId={avatarId}
       initialOutfitId={outfitId}
       initialAiAvatarOptions={aiAvatarOptions}
+      initialDraftId={draftId}
     />
   )
 }

@@ -21,6 +21,7 @@ import {
   Crown,
 } from 'lucide-react'
 import { ImageEditModal } from './image-edit-modal'
+import { InsufficientCreditsModal } from '@/components/ui/insufficient-credits-modal'
 import { buildPromptFromOptions } from '@/lib/image-ad/category-options'
 import { useImageAdWizard, AspectRatio, Quality } from './wizard-context'
 import { compressImage } from '@/lib/image/compress-client'
@@ -52,7 +53,7 @@ const getImageSize = (ratio: AspectRatio): '1024x1024' | '1536x1024' | '1024x153
 export function WizardStep4() {
   const router = useRouter()
   const { t: _t } = useLanguage()
-  const { refreshCredits } = useCredits()
+  const { credits, refreshCredits } = useCredits()
   const {
     adType,
     selectedProduct,
@@ -79,6 +80,7 @@ export function WizardStep4() {
     setResultAdIds,
     goToPrevStep,
     resetWizard,
+    saveDraft,
   } = useImageAdWizard()
 
   const [generationStartTime, setGenerationStartTime] = useState<number | null>(null)
@@ -92,6 +94,8 @@ export function WizardStep4() {
   const [editImageIndex, setEditImageIndex] = useState(0)
   // 이미지 로딩 상태 추적 (스켈레톤 UI용)
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set())
+  // 크레딧 부족 모달 상태
+  const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false)
 
   // 사용자 플랜 정보
   const [userPlan, setUserPlan] = useState<UserPlan | null>(null)
@@ -189,6 +193,15 @@ export function WizardStep4() {
 
   // 광고 생성
   const handleGenerate = async () => {
+    // 크레딧 검사
+    const requiredCredits = calculateCredits(quality, numImages)
+    const availableCredits = credits ?? 0
+
+    if (availableCredits < requiredCredits) {
+      setShowInsufficientCreditsModal(true)
+      return
+    }
+
     setIsGenerating(true)
     setResultImages([])
     setGenerationStartTime(Date.now())
@@ -750,7 +763,7 @@ export function WizardStep4() {
               <Coins className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">예상 크레딧</p>
+              <p className="text-sm text-muted-foreground">사용 크레딧</p>
               <p className="text-2xl font-bold text-primary">
                 {calculateCredits(quality, numImages)} 크레딧
               </p>
@@ -776,6 +789,16 @@ export function WizardStep4() {
           이전 단계
         </button>
       </div>
+
+      {/* 크레딧 부족 모달 */}
+      <InsufficientCreditsModal
+        isOpen={showInsufficientCreditsModal}
+        onClose={() => setShowInsufficientCreditsModal(false)}
+        requiredCredits={calculateCredits(quality, numImages)}
+        availableCredits={credits ?? 0}
+        featureName="이미지 광고 생성"
+        onSaveDraft={saveDraft}
+      />
     </div>
   )
 }

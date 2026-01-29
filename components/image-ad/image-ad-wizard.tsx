@@ -187,7 +187,25 @@ function WizardHeader() {
 // ============================================================
 
 function WizardContent() {
-  const { step } = useImageAdWizard()
+  const { step, isLoadingDraft } = useImageAdWizard()
+
+  // Draft 로딩 중
+  if (isLoadingDraft) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-primary/20 rounded-full" />
+            <div className="absolute inset-0 w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-medium text-foreground">저장된 작업을 불러오는 중...</p>
+            <p className="text-sm text-muted-foreground mt-1">잠시만 기다려주세요</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -211,6 +229,7 @@ interface ImageAdWizardProps {
   initialAvatarId?: string | null
   initialOutfitId?: string | null
   initialAiAvatarOptions?: string | null  // JSON string
+  initialDraftId?: string | null
 }
 
 export function ImageAdWizard({
@@ -221,6 +240,7 @@ export function ImageAdWizard({
   initialAvatarId,
   initialOutfitId,
   initialAiAvatarOptions,
+  initialDraftId,
 }: ImageAdWizardProps) {
   // Parse AI avatar options if provided as JSON string
   const parsedAiAvatarOptions = initialAiAvatarOptions
@@ -242,6 +262,7 @@ export function ImageAdWizard({
       initialAvatarId={initialAvatarId}
       initialOutfitId={initialOutfitId}
       initialAiAvatarOptions={parsedAiAvatarOptions}
+      initialDraftId={initialDraftId}
     >
       <div className="min-h-full flex flex-col bg-background">
         <WizardHeader />
