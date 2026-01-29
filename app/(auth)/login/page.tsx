@@ -11,6 +11,9 @@ interface VideoShowcase {
   media_url: string | null
 }
 
+// 폴백 영상 URL (API 로딩 중에도 바로 표시)
+const FALLBACK_VIDEO_URL = '/examples/video-ad-example.mp4'
+
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -20,8 +23,8 @@ export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  // 쇼케이스 영상 상태
-  const [videoUrls, setVideoUrls] = useState<string[]>([])
+  // 쇼케이스 영상 상태 (폴백 영상으로 초기화하여 바로 표시)
+  const [videoUrls, setVideoUrls] = useState<string[]>([FALLBACK_VIDEO_URL])
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0)
   const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -44,10 +47,12 @@ export default function LoginPage() {
               .filter((s: VideoShowcase) => s.media_url)
               .map((s: VideoShowcase) => s.media_url as string)
             setVideoUrls(urls)
+            setCurrentVideoIndex(0) // 새 영상 로드 시 인덱스 초기화
           }
         }
       } catch (error) {
         console.error('쇼케이스 영상 로드 실패:', error)
+        // 실패 시 폴백 영상 유지
       }
     }
     fetchVideoShowcases()
