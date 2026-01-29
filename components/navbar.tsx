@@ -20,7 +20,7 @@ import { User } from '@supabase/supabase-js'
 import { Button } from './ui/button'
 import { useLanguage } from '@/contexts/language-context'
 import { Language } from '@/lib/i18n'
-import { LayoutDashboard, LogOut, ChevronDown, Menu, X, Globe, Sparkles, Image, Video } from 'lucide-react'
+import { LayoutDashboard, LogOut, ChevronDown, Menu, X, Globe, Sparkles, Image, Video, CreditCard } from 'lucide-react'
 
 // ============================================================
 // 언어 옵션
@@ -146,13 +146,23 @@ export function Navbar() {
             {/* 데스크톱 네비게이션 */}
             <div className="hidden md:flex items-center gap-1">
               {navLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-secondary/50"
-                >
-                  {link.label}
-                </a>
+                link.href.startsWith('#') ? (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-secondary/50"
+                  >
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-secondary/50"
+                  >
+                    {link.label}
+                  </Link>
+                )
               ))}
             </div>
 
@@ -291,21 +301,33 @@ export function Navbar() {
         }`}>
           <div className="p-4 space-y-3">
             {/* 네비게이션 링크 */}
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 text-foreground rounded-xl hover:bg-secondary/50 transition-colors"
-              >
-                {link.href === '#features' ? (
-                  <Image className="w-5 h-5 text-muted-foreground" />
-                ) : (
-                  <Video className="w-5 h-5 text-muted-foreground" />
-                )}
-                <span className="font-medium">{link.label}</span>
-              </a>
-            ))}
+            {navLinks.map((link) => {
+              const IconComponent = link.href === '#features' ? Image
+                : link.href === '/pricing' ? CreditCard
+                : Video
+
+              return link.href.startsWith('#') ? (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 text-foreground rounded-xl hover:bg-secondary/50 transition-colors"
+                >
+                  <IconComponent className="w-5 h-5 text-muted-foreground" />
+                  <span className="font-medium">{link.label}</span>
+                </a>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 text-foreground rounded-xl hover:bg-secondary/50 transition-colors"
+                >
+                  <IconComponent className="w-5 h-5 text-muted-foreground" />
+                  <span className="font-medium">{link.label}</span>
+                </Link>
+              )
+            })}
 
             {/* 구분선 */}
             <div className="border-t border-border my-3" />
