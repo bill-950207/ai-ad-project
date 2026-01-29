@@ -2,15 +2,14 @@
  * 쇼케이스 갤러리 컴포넌트
  *
  * 데이터베이스에서 예시 광고를 불러와 표시합니다.
- * - 이미지 광고 예시 섹션 (3행 x 5열)
- * - 영상 광고 예시 섹션 (3행 x 5열)
- * - 각 섹션 15개 초과 시 더보기 버튼 표시
+ * - 이미지와 영상 광고를 혼합하여 표시
+ * - 무한 스크롤 지원
  */
 
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { Play, Sparkles, ArrowRight, Loader2, Volume2, VolumeX } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { Play, Loader2, Volume2, VolumeX } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 import { useOnboarding } from '@/components/onboarding/onboarding-context'
 
@@ -29,10 +28,8 @@ interface ShowcaseItem {
   category: string | null
 }
 
-// 표시 설정
-const ITEMS_PER_ROW = 5
-const MAX_ROWS = 3
-const MAX_VISIBLE_ITEMS = ITEMS_PER_ROW * MAX_ROWS // 15개
+// 페이지당 아이템 수
+const ITEMS_PER_PAGE = 16 // 인터리브 시 균등 분배를 위해 짝수
 
 // ad_type 번역 키 매핑
 const AD_TYPE_TRANSLATION_KEY: Record<string, string> = {
@@ -121,21 +118,12 @@ function ShowcaseCard({ item, onClick, getAdTypeLabel }: ShowcaseCardProps) {
     }
   }
 
-  // 데스크탑: 호버 시 재생/정지
-  const handleMouseEnter = () => {
-    setIsHovered(true)
-  }
-
-  const handleMouseLeave = () => {
-    setIsHovered(false)
-  }
-
   return (
     <button
       ref={cardRef}
       onClick={onClick}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className="group relative aspect-[3/4] rounded-xl overflow-hidden bg-secondary/30 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-transform duration-300 hover:scale-[1.02]"
     >
       {/* 썸네일 이미지 (비디오 재생 중이면 숨김) */}
@@ -232,81 +220,22 @@ function ShowcaseCard({ item, onClick, getAdTypeLabel }: ShowcaseCardProps) {
 }
 
 // ============================================================
-// 쇼케이스 섹션 컴포넌트
-// ============================================================
-
-interface ShowcaseSectionProps {
-  title: string
-  items: ShowcaseItem[]
-  totalCount: number
-  onItemClick: (item: ShowcaseItem) => void
-  onViewMore?: () => void
-  getAdTypeLabel: (adType: string | null) => string
-  viewMoreLabel: string
-}
-
-function ShowcaseSection({ title, items, totalCount, onItemClick, onViewMore, getAdTypeLabel, viewMoreLabel }: ShowcaseSectionProps) {
-  const showViewMore = totalCount > MAX_VISIBLE_ITEMS
-
-  if (items.length === 0) return null
-
-  return (
-    <div className="space-y-3">
-      {/* 섹션 헤더 */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-1 h-4 bg-primary/60 rounded-full" />
-          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-          <span className="text-xs text-muted-foreground">({totalCount})</span>
-        </div>
-        {showViewMore && onViewMore && (
-          <button
-            onClick={onViewMore}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <span>{viewMoreLabel}</span>
-            <ArrowRight className="w-3 h-3" />
-          </button>
-        )}
-      </div>
-
-      {/* 그리드 */}
-      <div className="relative">
-        <div className="grid grid-cols-5 gap-3">
-          {items.slice(0, MAX_VISIBLE_ITEMS).map((item) => (
-            <ShowcaseCard
-              key={item.id}
-              item={item}
-              onClick={() => onItemClick(item)}
-              getAdTypeLabel={getAdTypeLabel}
-            />
-          ))}
-        </div>
-
-        {/* 15개 초과 시 하단 그라데이션 */}
-        {showViewMore && (
-          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background via-background/60 to-transparent pointer-events-none" />
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ============================================================
 // 메인 컴포넌트
 // ============================================================
 
 export function ShowcaseGallery() {
   const { t, language } = useLanguage()
   const { startOnboarding } = useOnboarding()
-  const [imageShowcases, setImageShowcases] = useState<ShowcaseItem[]>([])
-  const [videoShowcases, setVideoShowcases] = useState<ShowcaseItem[]>([])
-  const [imageTotalCount, setImageTotalCount] = useState(0)
-  const [videoTotalCount, setVideoTotalCount] = useState(0)
+  const [showcases, setShowcases] = useState<ShowcaseItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [imageOffset, setImageOffset] = useState(0)
+  const [videoOffset, setVideoOffset] = useState(0)
+  const loadMoreRef = useRef<HTMLDivElement>(null)
 
   // ad_type을 현재 언어에 맞게 번역
-  const getAdTypeLabel = (adType: string | null): string => {
+  const getAdTypeLabel = useCallback((adType: string | null): string => {
     if (!adType) return ''
 
     const translationKey = AD_TYPE_TRANSLATION_KEY[adType]
@@ -325,37 +254,70 @@ export function ShowcaseGallery() {
     }
 
     return adType
-  }
+  }, [t.imageAdTypes, language])
 
-  // 쇼케이스 데이터 로드
-  useEffect(() => {
-    const fetchShowcases = async () => {
-      try {
-        const [imageRes, videoRes] = await Promise.all([
-          fetch(`/api/showcases?type=image&limit=${MAX_VISIBLE_ITEMS + 1}`),
-          fetch(`/api/showcases?type=video&limit=${MAX_VISIBLE_ITEMS + 1}`),
-        ])
-
-        if (imageRes.ok) {
-          const data = await imageRes.json()
-          setImageShowcases(data.showcases || [])
-          setImageTotalCount(data.totalCount || 0)
-        }
-
-        if (videoRes.ok) {
-          const data = await videoRes.json()
-          setVideoShowcases(data.showcases || [])
-          setVideoTotalCount(data.totalCount || 0)
-        }
-      } catch (error) {
-        console.error('쇼케이스 로드 오류:', error)
-      } finally {
-        setIsLoading(false)
-      }
+  // 쇼케이스 데이터 로드 (인터리브 모드 - 단일 API 호출)
+  const fetchShowcases = useCallback(async (imgOffset: number, vidOffset: number, isInitial: boolean = false) => {
+    if (isInitial) {
+      setIsLoading(true)
+    } else {
+      setIsLoadingMore(true)
     }
 
-    fetchShowcases()
+    try {
+      // 인터리브 모드로 한 번에 조회 (이미지/영상 오프셋 별도 전달)
+      const res = await fetch(
+        `/api/showcases?interleave=true&limit=${ITEMS_PER_PAGE}&imageOffset=${imgOffset}&videoOffset=${vidOffset}`
+      )
+
+      if (res.ok) {
+        const data = await res.json()
+        const newShowcases: ShowcaseItem[] = data.showcases || []
+        const { imageCount, videoCount, nextImageOffset, nextVideoOffset } = data
+
+        if (isInitial) {
+          setShowcases(newShowcases)
+        } else {
+          setShowcases(prev => [...prev, ...newShowcases])
+        }
+
+        // 오프셋 업데이트
+        setImageOffset(nextImageOffset)
+        setVideoOffset(nextVideoOffset)
+
+        // 더 불러올 데이터가 있는지 확인
+        setHasMore(nextImageOffset < imageCount || nextVideoOffset < videoCount)
+      }
+    } catch (error) {
+      console.error('쇼케이스 로드 오류:', error)
+    } finally {
+      setIsLoading(false)
+      setIsLoadingMore(false)
+    }
   }, [])
+
+  // 초기 로드
+  useEffect(() => {
+    fetchShowcases(0, 0, true)
+  }, [fetchShowcases])
+
+  // 무한 스크롤 - Intersection Observer
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasMore || isLoadingMore) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
+          fetchShowcases(imageOffset, videoOffset)
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    )
+
+    observer.observe(loadMoreRef.current)
+
+    return () => observer.disconnect()
+  }, [hasMore, isLoadingMore, imageOffset, videoOffset, fetchShowcases])
 
   const handleShowcaseClick = (item: ShowcaseItem) => {
     // 쇼케이스 클릭 시 해당 타입의 광고 생성 온보딩 시작
@@ -366,14 +328,14 @@ export function ShowcaseGallery() {
     }
   }
 
-  // 로딩 중
+  // 초기 로딩 중
   if (isLoading) {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <div className="w-1 h-4 bg-primary rounded-full" />
           <h2 className="text-sm font-semibold text-foreground">
-            {t.dashboard?.showcase?.title || '이런 광고를 만들 수 있어요'}
+            {t.dashboard?.showcase?.browse || '광고 둘러보기'}
           </h2>
         </div>
         <div className="flex items-center justify-center py-12">
@@ -384,56 +346,40 @@ export function ShowcaseGallery() {
   }
 
   // 쇼케이스가 없으면 렌더링하지 않음
-  if (imageShowcases.length === 0 && videoShowcases.length === 0) {
+  if (showcases.length === 0) {
     return null
   }
 
   return (
-    <div className="space-y-8">
-      {/* 메인 섹션 헤더 */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-1 h-5 bg-primary rounded-full" />
-          <h2 className="text-sm font-semibold text-foreground">
-            {t.dashboard?.showcase?.title || '이런 광고를 만들 수 있어요'}
-          </h2>
-        </div>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <Sparkles className="w-3 h-3 text-primary" />
-          <span>AI Generated</span>
-        </div>
+    <div className="space-y-4">
+      {/* 섹션 헤더 */}
+      <div className="flex items-center gap-2">
+        <div className="w-1 h-4 bg-primary rounded-full" />
+        <h2 className="text-sm font-semibold text-foreground">
+          {t.dashboard?.showcase?.browse || '광고 둘러보기'}
+        </h2>
       </div>
 
-      {/* 이미지 광고 쇼케이스 */}
-      <ShowcaseSection
-        title={t.nav?.imageAd || '이미지 광고'}
-        items={imageShowcases}
-        totalCount={imageTotalCount}
-        onItemClick={handleShowcaseClick}
-        getAdTypeLabel={getAdTypeLabel}
-        viewMoreLabel={t.dashboard?.recentWork?.viewAll || '더보기'}
-      />
-
-      {/* 영상 광고 쇼케이스 */}
-      <ShowcaseSection
-        title={t.nav?.videoAd || '영상 광고'}
-        items={videoShowcases}
-        totalCount={videoTotalCount}
-        onItemClick={handleShowcaseClick}
-        getAdTypeLabel={getAdTypeLabel}
-        viewMoreLabel={t.dashboard?.recentWork?.viewAll || '더보기'}
-      />
-
-      {/* CTA */}
-      <div className="flex justify-center pt-2">
-        <button
-          onClick={() => startOnboarding('image')}
-          className="group flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-        >
-          <span>{t.dashboard?.showcase?.cta || '나만의 광고 만들기'}</span>
-          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-        </button>
+      {/* 그리드 - 이미지와 영상 혼합 */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        {showcases.map((item) => (
+          <ShowcaseCard
+            key={item.id}
+            item={item}
+            onClick={() => handleShowcaseClick(item)}
+            getAdTypeLabel={getAdTypeLabel}
+          />
+        ))}
       </div>
+
+      {/* 무한 스크롤 트리거 */}
+      {hasMore && (
+        <div ref={loadMoreRef} className="flex items-center justify-center py-8">
+          {isLoadingMore && (
+            <Loader2 className="w-6 h-6 text-primary animate-spin" />
+          )}
+        </div>
+      )}
     </div>
   )
 }
