@@ -25,6 +25,7 @@ import { buildPromptFromOptions } from '@/lib/image-ad/category-options'
 import { useImageAdWizard, AspectRatio, Quality } from './wizard-context'
 import { compressImage } from '@/lib/image/compress-client'
 import { uploadImageAdImage } from '@/lib/client/image-upload'
+import { IMAGE_AD_CREDIT_COST } from '@/lib/credits/constants'
 
 // 사용자 플랜 타입
 interface UserPlan {
@@ -33,9 +34,9 @@ interface UserPlan {
   hdUpscale: boolean
 }
 
-// 가격 계산
+// 가격 계산 (중앙 상수 사용)
 const calculateCredits = (quality: Quality, numImages: number): number => {
-  const baseCredits = quality === 'high' ? 30 : 20
+  const baseCredits = IMAGE_AD_CREDIT_COST[quality]
   return baseCredits * numImages
 }
 
