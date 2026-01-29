@@ -231,9 +231,11 @@ export async function POST(request: NextRequest) {
     const creditCostPerImage = IMAGE_AD_CREDIT_COST[effectiveQuality] || IMAGE_AD_CREDIT_COST.medium
     const totalCreditCost = creditCostPerImage * validNumImages
 
-    // 크레딧 확인
+    // 크레딧 사전 확인 (빠른 실패를 위해)
+    // 실제 차감은 트랜잭션 내에서 재확인 후 수행
     const profile = await prisma.profiles.findUnique({
       where: { id: user.id },
+      select: { credits: true },
     })
 
     if (!profile || (profile.credits ?? 0) < totalCreditCost) {
@@ -674,13 +676,39 @@ export async function POST(request: NextRequest) {
       imageAdRecords.push(imageAd.id)
     }
 
-    // 크레딧 차감
-    await prisma.profiles.update({
-      where: { id: user.id },
-      data: {
-        credits: { decrement: totalCreditCost },
-      },
-    })
+    // 크레딧 차감 (트랜잭션으로 재확인 후 원자적 차감 - Race Condition 방지)
+    try {
+      await prisma.$transaction(async (tx) => {
+        const currentProfile = await tx.profiles.findUnique({
+          where: { id: user.id },
+          select: { credits: true },
+        })
+
+        if (!currentProfile || (currentProfile.credits ?? 0) < totalCreditCost) {
+          throw new Error('INSUFFICIENT_CREDITS')
+        }
+
+        await tx.profiles.update({
+          where: { id: user.id },
+          data: { credits: { decrement: totalCreditCost } },
+        })
+      }, { timeout: 10000 })
+    } catch (creditError) {
+      // 크레딧 부족 시 생성된 레코드 실패 처리
+      if (creditError instanceof Error && creditError.message === 'INSUFFICIENT_CREDITS') {
+        if (imageAdRecords.length > 0) {
+          await supabase
+            .from('image_ads')
+            .update({ status: 'FAILED', error_message: 'Insufficient credits' })
+            .in('id', imageAdRecords)
+        }
+        return NextResponse.json(
+          { error: 'Insufficient credits (concurrent request detected)' },
+          { status: 402 }
+        )
+      }
+      throw creditError
+    }
 
     console.log('이미지 광고 크레딧 차감:', { userId: user.id, cost: totalCreditCost, numImages: validNumImages })
 

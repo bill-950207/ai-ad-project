@@ -107,10 +107,12 @@ export async function POST(request: NextRequest) {
     const usageCheck = await checkUsageLimit(user.id, 'product')
     const needsCredits = !usageCheck.withinLimit
 
-    // 크레딧이 필요한 경우 (제한 초과) 크레딧 확인
+    // 크레딧이 필요한 경우 (제한 초과) 크레딧 사전 확인 (빠른 실패를 위해)
+    // 실제 차감은 트랜잭션 내에서 재확인 후 수행
     if (needsCredits) {
       const profile = await prisma.profiles.findUnique({
         where: { id: user.id },
+        select: { credits: true },
       })
 
       if (!profile || (profile.credits ?? 0) < PRODUCT_CREDIT_COST) {
@@ -176,12 +178,23 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // 5. 제한 초과 시 크레딧 차감, 아니면 사용량 증가
+      // 5. 제한 초과 시 크레딧 차감 (트랜잭션으로 재확인 후 원자적 차감), 아니면 사용량 증가
       if (needsCredits) {
-        await prisma.profiles.update({
-          where: { id: user.id },
-          data: { credits: { decrement: PRODUCT_CREDIT_COST } },
-        })
+        await prisma.$transaction(async (tx) => {
+          const currentProfile = await tx.profiles.findUnique({
+            where: { id: user.id },
+            select: { credits: true },
+          })
+
+          if (!currentProfile || (currentProfile.credits ?? 0) < PRODUCT_CREDIT_COST) {
+            throw new Error('INSUFFICIENT_CREDITS')
+          }
+
+          await tx.profiles.update({
+            where: { id: user.id },
+            data: { credits: { decrement: PRODUCT_CREDIT_COST } },
+          })
+        }, { timeout: 10000 })
       } else {
         await incrementUsage(user.id, 'product')
       }
@@ -197,6 +210,21 @@ export async function POST(request: NextRequest) {
         },
       }, { status: 201 })
     } catch (uploadError) {
+      // 크레딧 부족 에러 처리 (트랜잭션 내에서 발생)
+      if (uploadError instanceof Error && uploadError.message === 'INSUFFICIENT_CREDITS') {
+        await prisma.ad_products.update({
+          where: { id: product.id },
+          data: {
+            status: 'FAILED',
+            error_message: 'Insufficient credits',
+          },
+        })
+        return NextResponse.json(
+          { error: 'Insufficient credits (concurrent request detected)' },
+          { status: 402 }
+        )
+      }
+
       // 업로드 또는 Kie.ai 요청 실패 시 제품 상태를 FAILED로 업데이트
       await prisma.ad_products.update({
         where: { id: product.id },
@@ -208,6 +236,14 @@ export async function POST(request: NextRequest) {
       throw uploadError
     }
   } catch (error) {
+    // 크레딧 부족 에러가 외부로 전파된 경우
+    if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
+      return NextResponse.json(
+        { error: 'Insufficient credits (concurrent request detected)' },
+        { status: 402 }
+      )
+    }
+
     console.error('광고 제품 생성 오류:', error)
     return NextResponse.json(
       { error: 'Failed to create ad product' },
