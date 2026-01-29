@@ -13,12 +13,21 @@ import { AvatarForm } from '@/components/avatar/avatar-form'
 import { ArrowLeft, Sparkles, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { AvatarOptions } from '@/lib/avatar/prompt-builder'
+import { SlotLimitModal } from '@/components/ui/slot-limit-modal'
+
+interface SlotInfo {
+  used: number
+  limit: number
+  message?: string
+}
 
 export default function NewAvatarPage() {
   const { t } = useLanguage()
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showSlotLimitModal, setShowSlotLimitModal] = useState(false)
+  const [slotInfo, setSlotInfo] = useState<SlotInfo | null>(null)
 
   const handleSubmit = async (data: { name: string; prompt?: string; options?: AvatarOptions }) => {
     setIsSubmitting(true)
@@ -33,6 +42,19 @@ export default function NewAvatarPage() {
 
       if (res.status === 402) {
         setError(t.avatar.insufficientCredits)
+        setIsSubmitting(false)
+        return
+      }
+
+      // 슬롯 제한 초과 (403)
+      if (res.status === 403) {
+        const errorData = await res.json()
+        if (errorData.slotInfo) {
+          setSlotInfo(errorData.slotInfo)
+          setShowSlotLimitModal(true)
+        } else {
+          setError(errorData.error || '슬롯이 가득 찼습니다')
+        }
         setIsSubmitting(false)
         return
       }
@@ -91,6 +113,17 @@ export default function NewAvatarPage() {
       <div className="bg-card border border-border rounded-2xl p-6 md:p-8">
         <AvatarForm onSubmit={handleSubmit} isLoading={isSubmitting} />
       </div>
+
+      {/* 슬롯 제한 모달 */}
+      {slotInfo && (
+        <SlotLimitModal
+          isOpen={showSlotLimitModal}
+          onClose={() => setShowSlotLimitModal(false)}
+          slotType="avatar"
+          slotInfo={slotInfo}
+          onManageItems={() => router.push('/dashboard/avatar')}
+        />
+      )}
     </div>
   )
 }

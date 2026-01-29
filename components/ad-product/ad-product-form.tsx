@@ -14,8 +14,15 @@ import { useLanguage } from '@/contexts/language-context'
 import { Upload, X, Loader2, Plus, Minus, Link as LinkIcon, Edit3, ImagePlus } from 'lucide-react'
 import { AdProductScanner } from './ad-product-scanner'
 import { AdCreationHeader } from '@/components/ui/ad-creation-header'
+import { SlotLimitModal } from '@/components/ui/slot-limit-modal'
 
 type InputMode = 'url' | 'manual'
+
+interface SlotInfo {
+  used: number
+  limit: number
+  message?: string
+}
 
 export function AdProductForm() {
   const { t } = useLanguage()
@@ -53,6 +60,10 @@ export function AdProductForm() {
   const [scannerMode, setScannerMode] = useState(false)
   const [productId, setProductId] = useState<string | null>(null)
   const [sourceImageUrl, setSourceImageUrl] = useState<string | null>(null)
+
+  // 슬롯 제한 모달 상태
+  const [showSlotLimitModal, setShowSlotLimitModal] = useState(false)
+  const [slotInfo, setSlotInfo] = useState<SlotInfo | null>(null)
 
   // 이미지 유효성 검사 상수
   const SUPPORTED_FORMATS = ['image/png', 'image/jpeg', 'image/webp']
@@ -278,9 +289,28 @@ export function AdProductForm() {
         }),
       })
 
+      // 슬롯 제한 초과 (403)
+      if (createRes.status === 403) {
+        const errorData = await createRes.json()
+        if (errorData.slotInfo) {
+          setSlotInfo(errorData.slotInfo)
+          setShowSlotLimitModal(true)
+        } else {
+          setError(errorData.error || '슬롯이 가득 찼습니다')
+        }
+        return
+      }
+
+      // 크레딧 부족 (402)
+      if (createRes.status === 402) {
+        const errorData = await createRes.json()
+        setError(errorData.error || '크레딧이 부족합니다')
+        return
+      }
+
       if (!createRes.ok) {
-        const error = await createRes.json()
-        throw new Error(error.error || 'Failed to create product')
+        const errorData = await createRes.json()
+        throw new Error(errorData.error || 'Failed to create product')
       }
 
       const { product, sourceImageUrl: uploadedSourceUrl } = await createRes.json()
@@ -562,6 +592,17 @@ export function AdProductForm() {
           )}
         </button>
       </div>
+
+      {/* 슬롯 제한 모달 */}
+      {slotInfo && (
+        <SlotLimitModal
+          isOpen={showSlotLimitModal}
+          onClose={() => setShowSlotLimitModal(false)}
+          slotType="product"
+          slotInfo={slotInfo}
+          onManageItems={() => router.push('/dashboard/ad-products')}
+        />
+      )}
     </div>
   )
 }
