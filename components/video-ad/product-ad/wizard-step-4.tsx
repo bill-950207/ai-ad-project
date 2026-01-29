@@ -12,10 +12,14 @@ import {
   X,
   MessageSquarePlus,
   GripVertical,
+  Coins,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useProductAdWizard, SceneKeyframe, SceneInfo } from './wizard-context'
 import { uploadSceneKeyframeImage } from '@/lib/client/image-upload'
+import { useCredits } from '@/contexts/credit-context'
+import { KEYFRAME_CREDIT_COST } from '@/lib/credits'
+import { InsufficientCreditsModal } from '@/components/ui/insufficient-credits-modal'
 import {
   DndContext,
   closestCenter,
@@ -283,11 +287,17 @@ export function WizardStep4() {
     unlockVideoSettings,
   } = useProductAdWizard()
 
+  const { refreshCredits } = useCredits()
+
   const [error, setError] = useState<string | null>(null)
   const [regeneratingSceneIndex, setRegeneratingSceneIndex] = useState<number | null>(null)
   const [modalSceneIndex, setModalSceneIndex] = useState<number | null>(null)
   const [isMergingPrompt, setIsMergingPrompt] = useState(false)
   const keyframePollingRef = useRef<NodeJS.Timeout | null>(null)
+
+  // 크레딧 부족 모달 상태
+  const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false)
+  const [creditsInfo, setCreditsInfo] = useState<{ required: number; available: number } | null>(null)
 
   // 폴링 최적화를 위한 ref
   const pollingInProgressRef = useRef<Set<number>>(new Set())  // 현재 폴링 중인 씬 인덱스
@@ -385,9 +395,24 @@ export function WizardStep4() {
         }),
       })
 
+      // 크레딧 부족 (402)
+      if (keyframeRes.status === 402) {
+        const errorData = await keyframeRes.json()
+        setCreditsInfo({
+          required: errorData.required || sceneCount * KEYFRAME_CREDIT_COST,
+          available: errorData.available || 0,
+        })
+        setShowInsufficientCreditsModal(true)
+        setIsGeneratingKeyframes(false)
+        return
+      }
+
       if (!keyframeRes.ok) throw new Error('키프레임 생성 요청 실패')
 
       const keyframeData = await keyframeRes.json()
+
+      // 크레딧 갱신
+      refreshCredits()
 
       // 초기 키프레임 상태 설정
       const initialKeyframes: SceneKeyframe[] = keyframeData.requests.map((req: { sceneIndex: number; requestId: string }) => ({
@@ -744,6 +769,10 @@ export function WizardStep4() {
               <p className="text-sm text-muted-foreground mt-1">
                 AI가 {sceneCount}개 씬의 키프레임 이미지를 생성합니다
               </p>
+              <div className="flex items-center justify-center gap-1.5 mt-2 text-sm text-primary">
+                <Coins className="w-4 h-4" />
+                <span className="font-medium">{sceneCount * KEYFRAME_CREDIT_COST} 크레딧</span>
+              </div>
             </div>
           </div>
         </button>
@@ -886,6 +915,17 @@ export function WizardStep4() {
         scenePrompt={modalSceneIndex !== null && scenarioInfo?.scenes?.[modalSceneIndex]?.scenePrompt || ''}
         isLoading={isMergingPrompt}
       />
+
+      {/* 크레딧 부족 모달 */}
+      {creditsInfo && (
+        <InsufficientCreditsModal
+          isOpen={showInsufficientCreditsModal}
+          onClose={() => setShowInsufficientCreditsModal(false)}
+          requiredCredits={creditsInfo.required}
+          availableCredits={creditsInfo.available}
+          featureName="씬 키프레임 생성"
+        />
+      )}
     </div>
   )
 }
