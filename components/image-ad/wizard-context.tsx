@@ -535,6 +535,13 @@ export function ImageAdWizardProvider({
   ])
 
   // ============================================================
+  // Auto-save / Draft 복원용 Refs
+  // ============================================================
+  const prevStepRef = useRef(step)
+  const isInitialMountRef = useRef(true)
+  const isRestoringDraftRef = useRef(false)  // Draft 복원 중 플래그
+
+  // ============================================================
   // Draft 로드 (마운트 시)
   // ============================================================
 
@@ -623,11 +630,6 @@ export function ImageAdWizardProvider({
   // ============================================================
   // Auto-save (단계 진행 시)
   // ============================================================
-
-  // step 변경 시 자동 저장을 위한 ref
-  const prevStepRef = useRef(step)
-  const isInitialMountRef = useRef(true)
-  const isRestoringDraftRef = useRef(false)  // Draft 복원 중 플래그
 
   useEffect(() => {
     // 최초 마운트 시에는 저장 안함
