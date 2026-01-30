@@ -78,6 +78,7 @@ Check your prompts:
 ✓ No product names or brand names?
 ✓ No "big smile", "wide grin", "teeth showing"?
 ✓ No lighting EQUIPMENT words (softbox, ring light, LED)?
+✓ No "studio" word? (use "plain solid color background" or specific location instead)
 ✓ Has camera specs (lens, f/stop)?
 ✓ Word count appropriate (50-80 for image, max 800 for video)?
 ✓ HAND CHECK (if product present):
@@ -166,8 +167,8 @@ ${VIDEO_SELF_VERIFICATION}`
     return JSON.parse(response.text || '') as VideoPromptResult
   } catch {
     return {
-      prompt: `Professional product advertisement video. The product slowly rotates with soft studio lighting. Smooth camera movement reveals product details. High-quality commercial style. ${input.duration} seconds duration.`,
-      negativePrompt: 'text, letters, words, watermark, logo, blurry, low quality, distorted',
+      prompt: `Professional product advertisement video. The product slowly rotates with soft even lighting. Smooth camera movement reveals product details. High-quality commercial style. ${input.duration} seconds duration.`,
+      negativePrompt: 'text, letters, words, watermark, logo, blurry, low quality, distorted, visible lighting equipment, studio equipment',
     }
   }
 }
@@ -772,10 +773,11 @@ ${handProductGuideSection}
 CRITICAL RULES:
 1. For AVATAR: ONLY use "the model from Figure 1". Do NOT describe facial features, hair, skin tone, or ethnicity.
 2. For PRODUCT: ONLY use "the product from Figure 2" or "the product". NEVER include product name or brand name.
-3. The image should reflect the "${VIDEO_TYPE_SCRIPT_STYLES[videoType]?.korean || 'UGC'}" video style atmosphere.
-${bodyTypeDescription ? `4. Maintain ${bodyTypeDescription} body type consistently.` : ''}
+3. NEVER use the word "studio" in your output. For plain backgrounds, use "plain solid color background" or "clean white/gray background". This prevents AI from generating visible studio equipment.
+4. The image should reflect the "${VIDEO_TYPE_SCRIPT_STYLES[videoType]?.korean || 'UGC'}" video style atmosphere.
+${bodyTypeDescription ? `5. Maintain ${bodyTypeDescription} body type consistently.` : ''}
 ${input.productImageUrl
-    ? `5. HAND REALISM: Describe hand grip with specific finger positions, contact points, and consistent lighting between avatar and product.
+    ? `6. HAND REALISM: Describe hand grip with specific finger positions, contact points, and consistent lighting between avatar and product.
 Create photorealistic prompt using "the model from Figure 1" for avatar, "the product from Figure 2" for product.`
     : 'Create photorealistic prompt using "the model from Figure 1" for avatar. ⚠️ NO PRODUCT should appear - avatar only with empty hands.'}
 

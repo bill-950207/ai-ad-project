@@ -187,16 +187,16 @@ Create ultra-realistic, visually striking 3D commercial-style product shots with
    - Deep, vibrant colors that evoke premium quality
    - Subtle reflections beneath product for depth
 
-4. **Lighting (Cinematic Studio-Style)**:
+4. **Lighting (Cinematic Commercial-Style)**:
    - Bright highlights reflecting off product surface
    - Crisp shadows with high contrast
-   - Studio-style lighting creating luxurious, polished look
+   - Professional controlled lighting creating luxurious, polished look
    - Dramatic lighting for visual impact
 
 5. **Quality Keywords to Include**:
    - "ultra-realistic 3D commercial-style"
    - "frozen in high-speed motion"
-   - "cinematic studio lighting"
+   - "cinematic professional lighting"
    - "premium quality, luxurious aesthetic"
    - "Ultra-HD, photorealistic"
 
@@ -205,12 +205,12 @@ Start with: "Create an ultra-realistic 3D commercial-style product shot of [prod
 Include: Dynamic elements, frozen motion, lighting description, background, quality keywords
 
 === EXAMPLE PROMPT ===
-"Create an ultra-realistic 3D commercial-style product shot of a premium [product] bottle, suspended mid-air with intricate condensation droplets. Surround with dynamic splashing droplets and floating [related ingredients] frozen in high-speed motion. Rich [color] gradient background. Cinematic studio lighting with bright highlights, crisp shadows, high contrast. Product slightly tilted conveying movement. Luxurious, polished look. Ultra-HD, photorealistic."
+"Create an ultra-realistic 3D commercial-style product shot of a premium [product] bottle, suspended mid-air with intricate condensation droplets. Surround with dynamic splashing droplets and floating [related ingredients] frozen in high-speed motion. Rich [color] gradient background. Cinematic professional lighting with bright highlights, crisp shadows, high contrast. Product slightly tilted conveying movement. Luxurious, polished look. Ultra-HD, photorealistic."
 
 === ⭐ VISUAL CONSISTENCY (매우 중요!) ===
 ALL ${count} variations MUST share the SAME visual DNA to ensure cohesive look:
 - **SAME Color Palette**: Identical color tones based on scenario (e.g., all warm golden, all cool blue)
-- **SAME Lighting Setup**: Consistent lighting style (e.g., all "cinematic studio lighting with bright highlights")
+- **SAME Lighting Setup**: Consistent lighting style (e.g., all "cinematic professional lighting with bright highlights")
 - **SAME Background Style**: Same background family (e.g., all gradient backgrounds, all marble surfaces)
 - **SAME Quality Keywords**: Include identical ending keywords: "Ultra-HD, photorealistic, premium commercial, cinematic"
 

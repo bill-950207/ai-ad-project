@@ -78,6 +78,7 @@ Check your prompt:
 ✓ No product names or brand names?
 ✓ No "big smile", "wide grin", "teeth showing"?
 ✓ No lighting EQUIPMENT words (ring light, softbox, LED)?
+✓ No "studio" word? (use "plain solid color background" or specific location instead)
 ✓ Body type matches input specification?
 ✓ Has camera specs (lens, f/stop)?
 ✓ 50-100 words?

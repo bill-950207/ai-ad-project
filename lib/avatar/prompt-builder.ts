@@ -142,8 +142,8 @@ const hairColorMap: Record<string, string> = {
 
 /** 배경 환경 매핑 */
 const backgroundMap: Record<string, string> = {
-  studioWhite: 'in a professional photo studio with clean white backdrop, soft even lighting, sharp in-focus background',
-  studioGray: 'in a professional photo studio with neutral gray backdrop, soft even lighting, sharp in-focus background',
+  studioWhite: 'against clean white seamless backdrop, soft even lighting effect, sharp in-focus background, no visible equipment',
+  studioGray: 'against neutral gray seamless backdrop, soft even lighting effect, sharp in-focus background, no visible equipment',
   home: 'in a cozy modern home interior living room with warm natural light from window, sharp clear background',
   office: 'in a bright modern office space with large windows and natural daylight, sharp clear background',
   cafe: 'in a stylish cafe interior with warm ambient light, coffee shop atmosphere, sharp clear background',
@@ -367,7 +367,7 @@ export function buildAiAvatarPrompt(aiOptions: AiAvatarOptions): string {
   const styleAndAntiBlur = 'documentary style environmental portrait, sharp background in focus, NO bokeh, NO blur, NO shallow depth of field, f/11 aperture'
   const gazeDirection = 'looking directly at camera, eye contact with viewer'
   const qualityEnhancers = 'high quality photo, realistic, professional photography, sharp focus, detailed skin texture'
-  const defaultBackground = hasBackground ? '' : ', in a professional photo studio with even studio lighting and clean white backdrop, well-lit, sharp clear background'
+  const defaultBackground = hasBackground ? '' : ', against clean white seamless backdrop with soft even lighting effect, well-lit, sharp clear background, no visible equipment'
   const viewType = 'upper body shot'
 
   return `${styleAndAntiBlur}, ${rawPrompt}, ${gazeDirection}, ${qualityEnhancers}${defaultBackground}, ${viewType}`

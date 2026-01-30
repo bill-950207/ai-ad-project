@@ -62,7 +62,7 @@ const AD_TYPE_DESCRIPTIONS: Record<ImageAdType, string> = {
   • Detail: Close-up of accessory, texture, craftsmanship
 - Movement: Can be static (editorial) or dynamic (walking, turning)
 - Fit showcase: How product drapes, fits, moves with body
-- Context: Studio clean background OR lifestyle setting
+- Context: Clean seamless backdrop (no visible equipment) OR lifestyle setting
 - For accessories: Ensure item is hero, not lost in outfit
 - Camera: 35mm for full body, 85mm for detail shots`,
 
@@ -477,6 +477,7 @@ ${NO_OVERLAYS}
 - Magazine-worthy composition
 - High-end brand advertisement quality
 - Clean, polished final photograph look
+- NEVER use "studio" word - use "plain solid color background" for clean backdrops
 
 === SEEDREAM 4.5 QUALITY REQUIREMENTS ===
 ${input.adType === 'productOnly' ? `For PRODUCT ONLY shots:
@@ -499,6 +500,7 @@ ${input.adType === 'productOnly' ? `For PRODUCT ONLY shots:
 === SELF-VERIFICATION (before responding) ===
 Check your optimizedPrompt:
 ✓ No lighting EQUIPMENT words (softbox, ring light, LED, reflector)?
+✓ No "studio" word? (use "plain solid color background" or "clean white/gray background" instead)
 ✓ No "big smile", "wide grin", "teeth showing"?
 ✓ Has camera specs (lens, f/stop)?
 ✓ 60-80 words?
