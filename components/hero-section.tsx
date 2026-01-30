@@ -55,7 +55,7 @@ export function HeroSection() {
       <div className="mx-auto max-w-4xl text-center relative z-10">
         {/* 배지 - AI 대신 기능 강조 */}
         <div className="mb-6 inline-flex items-center gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-1.5 text-sm text-muted-foreground animate-fade-in-up">
-          <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+          <CheckCircle className="h-3.5 w-3.5 text-green-500" aria-hidden="true" />
           <span>{language === 'ko' ? '전문가 없이 직접 만드세요' : 'Create it yourself, no experts needed'}</span>
         </div>
 
@@ -84,13 +84,13 @@ export function HeroSection() {
             className="group inline-flex items-center justify-center gap-2 h-12 rounded-xl px-6 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             {language === 'ko' ? '무료로 시작하기' : 'Start Free'}
-            <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+            <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
           </Link>
           <Link
             href="#gallery"
             className="inline-flex items-center justify-center gap-2 h-12 rounded-xl px-6 text-base font-medium text-muted-foreground hover:text-foreground border border-border hover:border-foreground/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            <Play className="h-4 w-4" />
+            <Play className="h-4 w-4" aria-hidden="true" />
             {language === 'ko' ? '샘플 보기' : 'View Samples'}
           </Link>
         </div>

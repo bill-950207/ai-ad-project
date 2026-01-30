@@ -177,8 +177,7 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
           className={`w-full h-auto block object-top ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
-          style={{ transition: 'opacity 300ms' }}
-          style={{ objectPosition: 'top' }}
+          style={{ transition: 'opacity 300ms', objectPosition: 'top' }}
           onLoad={() => setImageLoaded(true)}
         />
 
