@@ -185,7 +185,7 @@ export function ShowcaseRain() {
           transformOrigin: 'center center',
         }}
       >
-          {/* 스켈레톤 레인 - 로딩 중 표시, 로드 후 페이드아웃 */}
+        {/* 스켈레톤 레인 - 로딩 중 표시, 로드 후 페이드아웃 */}
         <div
           className="absolute inset-0 flex gap-4 justify-center"
           style={{
