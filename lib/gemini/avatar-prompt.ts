@@ -27,48 +27,58 @@ import { VIDEO_TYPE_FIRST_FRAME_GUIDES } from '@/lib/prompts/first-frame'
 // Few-Shot 예시 및 검증 규칙
 // ============================================================
 
-/** 아바타 외모 묘사 예시 (Few-Shot) */
+/** 아바타 외모 묘사 가이드라인 */
 const AVATAR_APPEARANCE_EXAMPLES = `
-AVATAR DESCRIPTION EXAMPLES:
+=== AVATAR DESCRIPTION GUIDELINES ===
 
-GOOD (specific, natural):
-✓ "Korean woman in her late 20s with soft natural makeup, shoulder-length dark brown hair"
-✓ "Athletic East Asian man, early 30s, clean-shaven with natural skin texture"
-✓ "Japanese woman with warm skin tone, gentle features, hair in loose waves"
+필수 포함 요소:
+- 연령대: 구체적으로 (in her late 20s, early 30s 등)
+- 피부톤/질감: natural skin texture, warm skin tone 등
+- 헤어 스타일: 길이, 색상, 스타일 구체적으로
+- 메이크업 (해당 시): soft natural makeup, minimal makeup 등
 
-BAD (vague, stereotypical):
-✗ "Beautiful Asian woman" (too generic)
-✗ "Perfect skin, flawless features" (unrealistic)
-✗ "Model-like appearance" (vague)
+원칙:
+- 구체적이고 자연스러운 묘사
+- 현실적인 특징 (완벽하지 않은)
+- 포토리얼리즘 느낌
+
+AVOID (반드시 피할 것):
+✗ "Beautiful Asian woman" (너무 일반적)
+✗ "Perfect skin, flawless features" (비현실적)
+✗ "Model-like appearance" (모호함)
+✗ 스테레오타입적 묘사
 `.trim()
 
-/** 표정 예시 (Few-Shot) */
+/** 표정 가이드라인 */
 const AVATAR_EXPRESSION_EXAMPLES = `
-EXPRESSION EXAMPLES:
+=== EXPRESSION GUIDELINES ===
 
-GOOD (natural, relatable):
-✓ "gentle closed-lip smile with relaxed eye contact"
-✓ "soft confident gaze, natural resting expression"
-✓ "approachable expression with subtle warmth"
+원칙: 자연스럽고 절제된 표정
+- 미소: 입 다문 미소, 자연스러운 눈가 주름
+- 시선: 편안한 eye contact 또는 자연스러운 방향
+- 느낌: approachable, relaxed, genuine
 
-BAD (exaggerated, artificial):
-✗ "big smile", "wide grin", "teeth showing"
-✗ "excited expression", "overly enthusiastic"
-✗ "perfect smile", "beaming at camera"
+권장 형용사: gentle, soft, subtle, relaxed, natural, confident
+
+AVOID (반드시 피할 것):
+✗ "big smile", "wide grin", "teeth showing" (과장된 미소)
+✗ "excited expression", "overly enthusiastic" (억지 흥분)
+✗ "perfect smile", "beaming at camera" (인위적)
 `.trim()
 
-/** 조명 예시 (Few-Shot) */
+/** 조명 가이드라인 */
 const AVATAR_LIGHTING_EXAMPLES = `
-LIGHTING EXAMPLES:
+=== LIGHTING GUIDELINES ===
 
-GOOD (describe effect):
-✓ "soft natural daylight from window"
-✓ "warm golden hour glow with gentle shadows"
-✓ "even ambient light, natural skin tones"
+원칙: 조명 "효과"만 묘사, 장비 언급 금지
+- 빛의 방향: from window, from left, from above 등
+- 빛의 질감: soft, warm, natural, diffused, golden
+- 결과: gentle shadows, natural skin tones, even illumination
 
-BAD (equipment visible):
-✗ "ring light", "softbox", "studio lighting"
-✗ "LED panel", "reflector", "lighting rig"
+AVOID (반드시 피할 것):
+✗ "ring light", "softbox", "studio lighting" (장비명)
+✗ "LED panel", "reflector", "lighting rig" (장비 구성)
+✗ 장비 존재가 느껴지는 모든 표현
 `.trim()
 
 /** Self-Verification 체크리스트 */

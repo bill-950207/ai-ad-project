@@ -531,124 +531,123 @@ CRITICAL - PRODUCT NAME PROHIBITION:
 // 손+제품 자연스러움 가이드 (Few-Shot)
 // ============================================================
 
-/** 손 묘사 가이드 (Few-Shot) */
+/** 손 묘사 가이드 */
 export const HAND_DESCRIPTION_GUIDE = `
 === ANATOMICALLY CORRECT HANDS GUIDE ===
 
-CRITICAL RULES FOR NATURAL HANDS:
-1. FIVE FINGERS ONLY - exactly 5 fingers per hand, no extra or missing
-2. NATURAL FINGER SPACING - fingers slightly apart, not merged or spread too wide
-3. RELAXED GRIP - fingers gently curved, not stiff or clenched
-4. VISIBLE KNUCKLES - natural bends at joints
-5. PROPER THUMB POSITION - thumb opposing fingers naturally
+필수 규칙:
+1. FIVE FINGERS ONLY - 손당 정확히 5개 손가락
+2. NATURAL FINGER SPACING - 손가락 간격 자연스럽게
+3. RELAXED GRIP - 편안하게 굽힌 손가락, 뻣뻣하거나 꽉 쥔 모양 X
+4. VISIBLE KNUCKLES - 관절 부분 자연스러운 굽힘
+5. PROPER THUMB POSITION - 엄지가 다른 손가락과 자연스럽게 마주보는 위치
 
-GOOD HAND DESCRIPTIONS:
-✓ "relaxed hand with fingers gently curved around product, thumb naturally supporting from opposite side"
-✓ "natural grip with all five fingers visible, palm facing slightly toward camera"
-✓ "casual hold with index finger and thumb pinching product edge, other fingers relaxed"
-✓ "both hands cradling product with fingers interlaced naturally underneath"
+필수 포함 요소:
+- 손가락 개수 명시: "all five fingers visible"
+- 그립 유형: curved, pinch, cradle, wrapped 등
+- 엄지 위치: "thumb on [위치]" 또는 "thumb supporting from [방향]"
+- 손바닥 방향: "palm facing [방향]"
 
-BAD HAND DESCRIPTIONS:
-✗ "holding product" (too vague - AI may generate distorted hands)
-✗ "gripping tightly" (causes unnatural tension)
-✗ "hand on product" (ambiguous positioning)
-✗ Any description missing finger count or grip type
+AVOID (반드시 피할 것):
+✗ "holding product" (너무 모호 - AI가 손을 왜곡할 수 있음)
+✗ "gripping tightly" (부자연스러운 긴장감)
+✗ "hand on product" (위치 관계 모호)
+✗ 손가락 개수나 그립 유형 없이 모호한 표현
 `.trim()
 
 /** 제품 유형별 그립 가이드 */
 export const PRODUCT_GRIP_GUIDE = `
 === PRODUCT-SPECIFIC GRIP GUIDE ===
 
-SMALL PRODUCTS (cosmetics, skincare bottles, phones):
-- "delicate pinch grip between thumb and first two fingers"
-- "cradled in palm with fingers gently curved over top"
-- "held at base with thumb and fingers forming C-shape"
+제품 크기에 맞는 그립 유형 선택:
 
-MEDIUM PRODUCTS (boxes, jars, devices):
-- "wrapped grip with all fingers around product body"
-- "supported from bottom with one hand, other hand presenting top"
-- "natural two-hand hold at product sides"
+SMALL PRODUCTS (화장품, 스킨케어, 폰):
+- 그립: pinch, cradle, C-shape hold
+- 손가락: 엄지 + 검지/중지, 또는 손바닥에 올려놓기
+- 위치: 제품 하단/중간 부분
 
-LARGE PRODUCTS (bags, equipment):
-- "handle grip with relaxed wrist angle"
-- "supporting weight from bottom with arm slightly bent"
-- "casual carry position at hip level"
+MEDIUM PRODUCTS (박스, 용기, 기기):
+- 그립: wrapped, two-hand hold, support + present
+- 손가락: 전체 손가락으로 감싸기
+- 위치: 제품 양옆 또는 아래에서 받치기
+
+LARGE PRODUCTS (가방, 장비):
+- 그립: handle grip, bottom support, carry position
+- 손가락: 손잡이 부분 또는 아래에서 무게 지탱
+- 위치: 허리 높이, 팔꿈치 살짝 굽힘
 
 BOTTLES/TUBES:
-- "wrapped around body with thumb on front label area"
-- "held at neck/cap area with fingertips"
-- "pump bottle: one hand on body, finger on pump"
+- 그립: body wrap, neck hold, pump ready
+- 손가락: 몸통 감싸기 또는 캡/펌프 부분
+- 위치: 엄지가 앞면에 오도록
 `.trim()
 
 /** 손-제품 접촉면 묘사 */
 export const HAND_PRODUCT_CONTACT_GUIDE = `
 === HAND-PRODUCT CONTACT REALISM ===
 
-CONTACT POINTS - Always specify:
-1. Which fingers touch the product
-2. Where on the product they touch
-3. Pressure level (light touch, gentle grip, secure hold)
+필수 명시 사항:
+1. 어느 손가락이 제품에 닿는지 (which fingers)
+2. 제품의 어느 부분에 닿는지 (where on product)
+3. 압력 수준 (light touch / gentle grip / secure hold)
 
-GOOD CONTACT DESCRIPTIONS:
-✓ "fingertips resting lightly on product surface, thumb supporting from behind"
-✓ "palm pressed gently against product back, fingers wrapped around sides"
-✓ "product nestled in curved palm, fingers naturally draped over edge"
+그림자 일관성:
+- 손과 제품 접촉 부분에 자연스러운 그림자
+- 손가락이 제품 표면에 작은 그림자 생성
 
-SHADOW CONSISTENCY:
-✓ "consistent shadow under hand where it contacts product"
-✓ "fingers casting small natural shadows on product surface"
-
-AVOID:
-✗ Product appearing to float near hand
-✗ Fingers merging into or through product
-✗ Unnatural gap between palm and product
+AVOID (반드시 피할 것):
+✗ 제품이 손 근처에서 떠있는 것처럼 보임
+✗ 손가락이 제품과 합쳐지거나 통과하는 것처럼 보임
+✗ 손바닥과 제품 사이에 부자연스러운 빈 공간
+✗ 접촉점 없이 모호하게 "holding" 같은 표현
 `.trim()
 
 /** 조명 일관성 가이드 */
 export const LIGHTING_CONSISTENCY_GUIDE = `
 === AVATAR-PRODUCT LIGHTING CONSISTENCY ===
 
-CRITICAL: Avatar and product must appear in SAME lighting environment.
+핵심: 아바타와 제품이 동일한 조명 환경에 있어야 함
 
-UNIFIED LIGHTING RULES:
-1. SAME LIGHT SOURCE - both avatar and product lit from same direction
-2. MATCHING SHADOWS - shadow direction identical for face and product
-3. CONSISTENT HIGHLIGHTS - specular highlights on same side for skin and product surface
-4. COLOR TEMPERATURE - same warm/cool tone on skin and product
+필수 규칙:
+1. SAME LIGHT SOURCE - 아바타와 제품 모두 같은 방향에서 빛이 와야 함
+2. MATCHING SHADOWS - 얼굴과 제품의 그림자 방향 일치
+3. CONSISTENT HIGHLIGHTS - 피부와 제품 표면에 같은 쪽에서 하이라이트
+4. COLOR TEMPERATURE - 피부와 제품에 같은 색온도 (warm/cool)
 
-GOOD:
-✓ "soft window light from left illuminating both face and product with matching shadows falling to right"
-✓ "warm overhead light creating consistent highlights on forehead, nose, and product surface"
+필수 명시 사항:
+- 빛의 방향 (from left, from window, from above 등)
+- 그림자가 떨어지는 방향 (shadows falling to [방향])
+- 아바타와 제품 모두에 적용된다는 점 명시
 
-BAD:
-✗ Face lit from left, but product appears lit from right
-✗ Sharp shadows on product but diffused shadows on face
-✗ Different color temperatures on skin vs product
+AVOID (반드시 피할 것):
+✗ 얼굴은 왼쪽에서 빛, 제품은 오른쪽에서 빛 (방향 불일치)
+✗ 제품에는 날카로운 그림자, 얼굴에는 부드러운 그림자 (질감 불일치)
+✗ 피부와 제품에 다른 색온도 (warm/cool 불일치)
 `.trim()
 
 /** 시선-표정 매트릭스 */
 export const GAZE_EXPRESSION_MATRIX = `
 === GAZE + EXPRESSION COMBINATIONS ===
 
-LOOKING AT CAMERA:
-- "direct eye contact with gentle closed-lip smile, confident and approachable"
-- "eyes meeting camera with soft curious expression, slightly raised eyebrow"
-- "warm friendly gaze into camera, relaxed natural expression"
+시선과 표정이 맥락상 일치해야 함:
 
-LOOKING AT PRODUCT:
-- "eyes focused on product with genuine curiosity, slight head tilt"
-- "examining product closely with thoughtful engaged expression"
-- "admiring product with soft appreciative look, subtle smile forming"
+LOOKING AT CAMERA (카메라 응시):
+- 적합한 표정: 자신감 있는, 친근한, 호기심 어린
+- 느낌: direct eye contact, confident, approachable, warm
 
-LOOKING AWAY (CANDID):
-- "gazing to side with relaxed contemplative expression"
-- "looking past camera with natural unfocused gaze, genuine moment"
-- "eyes directed downward at product in hand, absorbed in inspection"
+LOOKING AT PRODUCT (제품 응시):
+- 적합한 표정: 호기심, 관심, 감탄, 집중
+- 느낌: focused, curious, examining, thoughtful
 
-AVOID COMBINATIONS:
-✗ Looking at camera + examining product expression (conflicting focus)
-✗ Looking at product + direct eye contact (impossible)
-✗ Any gaze + exaggerated smile (unnatural)
+LOOKING AWAY / CANDID (자연스러운 시선):
+- 적합한 표정: 편안한, 생각에 잠긴, 자연스러운 순간
+- 느낌: relaxed, contemplative, genuine moment
+
+AVOID (반드시 피할 것):
+✗ 카메라 응시 + 제품 살펴보는 표정 (시선과 표정 충돌)
+✗ 제품 응시 + 카메라와 눈 마주침 (물리적으로 불가능)
+✗ 어떤 시선이든 + 과장된 미소 (부자연스러움)
+✗ 시선 방향과 맞지 않는 표정
 `.trim()
 
 /** 손+제품 가이드라인 */

@@ -99,37 +99,38 @@ const AD_TYPE_DESCRIPTIONS: Record<ImageAdType, string> = {
 - Camera: Varies by scene, prioritize atmosphere`,
 }
 
-/** 조명 규칙 (포지티브 지시 중심 + Few-Shot 예시) */
+/** 조명 규칙 */
 const LIGHTING_RULES = `
 LIGHTING (CRITICAL - describe EFFECT, not equipment):
 
-GOOD examples:
-✓ "soft warm light from upper left creating gentle shadows"
-✓ "natural window light streaming from the right"
-✓ "golden hour glow with rim lighting from behind"
+원칙: 조명 "효과/결과"만 묘사, 장비 언급 절대 금지
+- 빛의 방향: from [방향] (left, right, above, window, behind)
+- 빛의 질감: soft, warm, natural, diffused, golden
+- 그림자 효과: gentle shadows, even illumination
 
-BAD examples (NEVER use):
-✗ "softbox on the left", "ring light illuminating"
-✗ "studio lights around the model", "LED panel setup"
-✗ "lighting rig", "reflector panel", "studio equipment"
+AVOID (반드시 피할 것):
+✗ "softbox", "ring light", "LED panel" (장비명)
+✗ "studio lights", "lighting rig", "reflector" (장비 구성)
+✗ "lighting setup", "studio equipment" (장비 존재 암시)
 
-Scene = FINAL PHOTOGRAPH, not behind-the-scenes.
+결과물 = 완성된 사진, NOT 촬영 현장
 `.trim()
 
-/** 표정 가이드 (구체적 묘사 + Few-Shot 예시) */
+/** 표정 가이드 */
 const EXPRESSION_GUIDE = `
 EXPRESSION (CRITICAL - avoid artificial "AI smile"):
 
-GOOD examples:
-✓ "gentle closed-lip smile with relaxed eye contact"
-✓ "soft confident gaze, lips slightly parted"
-✓ "looking at product with genuine curiosity, candid moment"
+원칙: 자연스럽고 절제된 표정, 인위적 "AI 미소" 금지
+- 미소: 입 다문 미소, 눈가 주름 자연스럽게
+- 시선: 맥락에 맞게 (카메라/제품/자연스러운 방향)
+- 느낌: 진정성 있고 편안한 분위기
 
-BAD examples (NEVER use):
-✗ "big smile", "wide grin", "teeth showing", "beaming"
-✗ "excited expression", "overly cheerful", "enthusiastic smile"
+권장 형용사: relaxed, gentle, soft, subtle, candid, natural
 
-Use: "relaxed", "gentle", "soft", "subtle", "candid", "natural"
+AVOID (반드시 피할 것):
+✗ "big smile", "wide grin", "teeth showing", "beaming" (과장된 미소)
+✗ "excited expression", "overly cheerful", "enthusiastic smile" (억지 흥분)
+✗ 광고 모델처럼 뻣뻣하거나 과하게 밝은 표정
 `.trim()
 
 /** 제품 보존 규칙 */
@@ -498,12 +499,17 @@ ${input.adType === 'productOnly' ? `For PRODUCT ONLY shots:
 }
 
 === ANATOMICAL RULES (CRITICAL) ===
-⚠️ Complex hand descriptions cause AI to generate extra limbs!
-- NEVER describe more than 2 simultaneous hand actions
-- BAD: "rests chin on one hand while holding product, tucking hair with the other" (3 actions = 3 hands)
-- GOOD: "naturally holding the product with both hands" or "one hand holds product, relaxed pose"
-- If model holds product, that is the ONLY hand action needed
-- Keep pose simple: ONE clear body position, not multiple simultaneous gestures
+⚠️ 복잡한 손 묘사는 AI가 팔/손을 추가 생성하게 만듦!
+
+원칙:
+- 동시 손 동작 최대 2개까지만 (한 손당 1개 동작)
+- 제품을 들고 있으면 그것이 유일한 손 동작
+- 포즈는 단순하게: 하나의 명확한 자세, 여러 제스처 동시 금지
+
+AVOID (반드시 피할 것):
+✗ "rests chin on one hand while holding product, tucking hair with the other" (3개 동작 = 3개 손)
+✗ 여러 손 동작을 동시에 묘사하는 복잡한 포즈
+✗ 손 동작 + 머리 만지기 + 제품 들기 등 복합 동작
 
 === SELF-VERIFICATION (before responding) ===
 Check your optimizedPrompt:

@@ -18,34 +18,43 @@ const MODEL_NAME = 'gemini-3-flash-preview'
 // Few-Shot 예시 및 검증 규칙
 // ============================================================
 
-/** 씬 설명 예시 (Few-Shot - 한국어) */
+/** 씬 설명 가이드라인 (한국어) */
 const SCENE_DESCRIPTION_EXAMPLES = `
-=== SCENE DESCRIPTION EXAMPLES (한국어) ===
+=== SCENE DESCRIPTION GUIDELINES (한국어) ===
 
-GOOD (구체적, 액션 중심):
-✓ title: "첫 만남" / description: "제품 상자를 천천히 열며 기대감 표현"
-✓ title: "발견" / description: "제품 텍스처를 손끝으로 느끼며 놀라는 표정"
-✓ title: "사용" / description: "제품을 피부에 부드럽게 바르는 모습"
+title 작성 원칙:
+- 감정/상태를 담은 짧은 제목 (2-4자)
+- 각 시나리오 내에서 고유해야 함
+- 예: 발견, 설렘, 만족, 확신 등
 
-BAD (모호, 일반적):
-✗ title: "시작" / description: "제품을 보여준다"
-✗ title: "소개" / description: "제품 설명"
-✗ title: "끝" / description: "마무리"
+description 작성 원칙:
+- 구체적인 동작 + 표정/감정 변화 포함
+- 제품과의 인터랙션 명시
+- 시각적으로 상상 가능한 묘사
+
+AVOID (반드시 피할 것):
+✗ title: "시작", "소개", "끝" (너무 일반적)
+✗ description: "제품을 보여준다", "제품 설명" (모호함)
+✗ 구체적 동작 없이 추상적 설명만
 `.trim()
 
-/** 모션 프롬프트 예시 (Few-Shot - 영어) */
+/** 모션 프롬프트 가이드라인 (영어) */
 const MOTION_PROMPT_EXAMPLES = `
-=== MOTION PROMPT EXAMPLES (English) ===
+=== MOTION PROMPT GUIDELINES (English) ===
 
-GOOD (specific, cinematic):
-✓ "Camera slowly dollies in as model gently picks up the product, soft smile forming"
-✓ "Model turns product in hands examining texture, subtle eyebrow raise shows interest"
-✓ "Slow push-in on face as model applies product, expression shifts to satisfaction"
+필수 포함 요소:
+1. Camera movement: dolly in/out, push-in, tracking, static 등
+2. Model action: 구체적 동작 (picks up, turns, applies, examines 등)
+3. Expression change: 표정 변화 (smile forming, eyebrow raise, shifts to 등)
+4. Timing adverbs: slowly, gently, gradually 등
 
-BAD (vague, static):
-✗ "Model holds product"
-✗ "Shows the product to camera"
-✗ "Product appears in frame"
+구조: [Camera movement] + [Model action with timing] + [Expression/reaction]
+
+AVOID (반드시 피할 것):
+✗ "Model holds product" (동작 없이 정적)
+✗ "Shows the product to camera" (너무 모호)
+✗ "Product appears in frame" (주체 불명확)
+✗ 카메라 움직임이나 표정 변화 없는 정적 묘사
 `.trim()
 
 /** Self-Verification 체크리스트 */
