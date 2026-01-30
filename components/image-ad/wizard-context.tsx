@@ -555,7 +555,10 @@ export function ImageAdWizardProvider({
     draftLoadAttemptedRef.current = true
 
     const loadOrCreateDraft = async () => {
-      setIsLoadingDraft(true)
+      // 기존 draft 로드 시에만 로딩 UI 표시 (새 draft 생성은 백그라운드에서)
+      if (initialDraftId) {
+        setIsLoadingDraft(true)
+      }
 
       try {
         if (initialDraftId) {
