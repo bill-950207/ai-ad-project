@@ -76,8 +76,8 @@ function RainCard({ item }: { item: ShowcaseItem }) {
         <img
           src={item.thumbnail_url}
           alt=""
-          width={180}
-          height={240}
+          width={120}
+          height={160}
           className="w-full h-full object-cover object-top"
           loading="lazy"
           decoding="async"
