@@ -51,8 +51,11 @@ async function getShowcases(): Promise<{
     const images = shuffled.filter(s => s.type === 'image');
     const videos = shuffled.filter(s => s.type === 'video');
 
-    // Rain용: 이미지 8개만 (메모리 절약, 영상은 썸네일로 표시됨)
-    const rainShowcases = images.slice(0, 8).sort(() => Math.random() - 0.5) as ShowcaseData[];
+    // Rain용: 이미지 10개 + 영상 2개 = 12개 (4열 × 3개)
+    // 영상은 썸네일로만 표시되므로 메모리 부담 없음
+    const rainImages = images.slice(0, 10) as ShowcaseData[];
+    const rainVideos = videos.slice(0, 2) as ShowcaseData[];
+    const rainShowcases = [...rainImages, ...rainVideos].sort(() => Math.random() - 0.5);
 
     // Gallery용: 전체 데이터 사용 (Rain과 중복 허용)
     // 인터리브 배치 (영상 먼저, 많이 표시)
