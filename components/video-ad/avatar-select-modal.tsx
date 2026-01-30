@@ -8,6 +8,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { X, Loader2, Check, Shirt, Sparkles, ChevronDown } from 'lucide-react'
 
 /** 아바타 스타일 옵션 */
@@ -396,9 +397,16 @@ export function AvatarSelectModal({
           ) : avatarsWithOutfits.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">생성된 아바타가 없습니다</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                먼저 아바타를 생성해주세요
+              <p className="text-sm text-muted-foreground mt-1 mb-4">
+                위의 &apos;AI 자동 생성&apos; 옵션을 사용하거나 새 아바타를 생성해주세요
               </p>
+              <Link
+                href="/dashboard/avatar/new"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-lg text-sm hover:bg-secondary/80 transition-colors"
+              >
+                <Sparkles className="w-4 h-4" />
+                새 아바타 생성하기
+              </Link>
             </div>
           ) : (
             <div className="space-y-4">

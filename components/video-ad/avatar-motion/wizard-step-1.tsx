@@ -13,6 +13,7 @@ import {
   Plus,
 } from 'lucide-react'
 import { AvatarSelectModal } from '@/components/video-ad/avatar-select-modal'
+import { ProductCreateModal } from '@/components/video-ad/product-create-modal'
 import { useAvatarMotionWizard, AdProduct } from './wizard-context'
 import { WizardNavigation } from './wizard-navigation-button'
 
@@ -33,6 +34,7 @@ export function WizardStep1() {
   const [isLoading, setIsLoading] = useState(true)
   const [showProductDropdown, setShowProductDropdown] = useState(false)
   const [showAvatarModal, setShowAvatarModal] = useState(false)
+  const [showProductCreateModal, setShowProductCreateModal] = useState(false)
 
   // 제품 정보 편집 상태
   const [editableDescription, setEditableDescription] = useState('')
@@ -92,6 +94,14 @@ export function WizardStep1() {
     const updated = [...editableSellingPoints]
     updated[index] = value
     setEditableSellingPoints(updated)
+  }
+
+  // 새 제품 생성 완료 시 처리
+  const handleProductCreated = (newProduct: AdProduct) => {
+    // 목록에 새 제품 추가 및 자동 선택
+    setProducts(prev => [newProduct, ...prev])
+    setSelectedProduct(newProduct)
+    setShowProductCreateModal(false)
   }
 
   // 다음 단계로 이동 (DB 저장 포함)
@@ -209,11 +219,35 @@ export function WizardStep1() {
           {showProductDropdown && (
             <div className="absolute z-50 w-full mt-2 bg-card border border-border rounded-xl shadow-lg max-h-64 overflow-y-auto">
               {products.length === 0 ? (
-                <div className="p-4 text-center text-muted-foreground text-sm">
-                  등록된 제품이 없습니다
+                <div className="p-4 text-center">
+                  <p className="text-muted-foreground text-sm mb-3">등록된 제품이 없습니다</p>
+                  <button
+                    onClick={() => {
+                      setShowProductDropdown(false)
+                      setShowProductCreateModal(true)
+                    }}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
+                  >
+                    <Plus className="w-3 h-3" />
+                    제품 등록하기
+                  </button>
                 </div>
               ) : (
-                products.map((product) => (
+                <>
+                  {/* 새 제품 추가 버튼 */}
+                  <button
+                    onClick={() => {
+                      setShowProductDropdown(false)
+                      setShowProductCreateModal(true)
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors border-b border-border text-primary"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Plus className="w-5 h-5" />
+                    </div>
+                    <span className="font-medium">새 제품 등록</span>
+                  </button>
+                  {products.map((product) => (
                   <button
                     key={product.id}
                     onClick={() => {
@@ -236,7 +270,8 @@ export function WizardStep1() {
                       <Check className="w-4 h-4 text-primary ml-auto" />
                     )}
                   </button>
-                ))
+                  ))}
+                </>
               )}
             </div>
           )}
@@ -331,6 +366,13 @@ export function WizardStep1() {
         selectedAvatarId={selectedAvatarInfo?.avatarId}
         selectedOutfitId={selectedAvatarInfo?.outfitId}
         selectedType={selectedAvatarInfo?.type}
+      />
+
+      {/* 제품 등록 모달 */}
+      <ProductCreateModal
+        isOpen={showProductCreateModal}
+        onClose={() => setShowProductCreateModal(false)}
+        onProductCreated={handleProductCreated}
       />
     </div>
   )
