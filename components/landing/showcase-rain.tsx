@@ -48,10 +48,9 @@ function SkeletonCard() {
   )
 }
 
-// 개별 카드 컴포넌트 - 이미지 또는 영상 (페이드인 효과)
+// 개별 카드 컴포넌트 - 이미지만 (영상은 썸네일로 표시하여 메모리 절약)
 function RainCard({ item }: { item: ShowcaseItem }) {
   const [isLoaded, setIsLoaded] = useState(false)
-  const isVideo = item.type === 'video' && item.media_url
 
   return (
     <div
@@ -62,43 +61,26 @@ function RainCard({ item }: { item: ShowcaseItem }) {
         transform: 'translate3d(0,0,0)',
       }}
     >
-      {isVideo ? (
-        <video
-          src={item.media_url!}
-          poster={item.thumbnail_url}
-          className="w-full h-full object-cover object-top"
-          style={{
-            opacity: isLoaded ? 1 : 0,
-            transition: 'opacity 0.6s ease-out',
-          }}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          onLoadedData={() => setIsLoaded(true)}
-        />
-      ) : (
-        <img
-          src={item.thumbnail_url}
-          alt=""
-          width={120}
-          height={160}
-          className="w-full h-full object-cover object-top"
-          style={{
-            opacity: isLoaded ? 1 : 0,
-            transition: 'opacity 0.6s ease-out',
-          }}
-          loading="eager"
-          decoding="async"
-          onLoad={() => setIsLoaded(true)}
-        />
-      )}
+      {/* 모든 항목을 썸네일 이미지로 표시 (메모리 절약) */}
+      <img
+        src={item.thumbnail_url}
+        alt=""
+        width={120}
+        height={160}
+        className="w-full h-full object-cover object-top"
+        style={{
+          opacity: isLoaded ? 1 : 0,
+          transition: 'opacity 0.5s ease-out',
+        }}
+        loading="lazy"
+        decoding="async"
+        onLoad={() => setIsLoaded(true)}
+      />
       <div
         className="absolute inset-0 bg-background/40"
         style={{
           opacity: isLoaded ? 1 : 0,
-          transition: 'opacity 0.6s ease-out',
+          transition: 'opacity 0.5s ease-out',
         }}
       />
     </div>
@@ -108,7 +90,7 @@ function RainCard({ item }: { item: ShowcaseItem }) {
 export function ShowcaseRain({ showcases = [] }: ShowcaseRainProps) {
   const isLoaded = showcases.length > 0
 
-  // 열별로 쇼케이스 분배 (4열, 2배 복제)
+  // 열별로 쇼케이스 분배 (4열, 복제 없음 - 메모리 절약)
   const columns = useMemo(() => {
     if (showcases.length === 0) return []
 
@@ -117,7 +99,7 @@ export function ShowcaseRain({ showcases = [] }: ShowcaseRainProps) {
       cols[index % 4].push(item)
     })
 
-    return cols.map(col => [...col, ...col])
+    return cols
   }, [showcases])
 
   // 스켈레톤 열 (2배 복제)
