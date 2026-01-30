@@ -16,6 +16,9 @@ interface ImageOptimizeOptions {
 /**
  * Cloudflare Image Resizing URL 생성
  *
+ * 주의: Cloudflare Image Resizing은 Pro 플랜 이상에서만 사용 가능합니다.
+ * NEXT_PUBLIC_ENABLE_IMAGE_OPTIMIZATION=true 환경 변수로 활성화합니다.
+ *
  * @param url - 원본 이미지 URL
  * @param options - 리사이징 옵션
  * @returns 최적화된 이미지 URL
@@ -26,6 +29,11 @@ interface ImageOptimizeOptions {
  */
 export function optimizeImageUrl(url: string, options: ImageOptimizeOptions = {}): string {
   if (!url) return url
+
+  // 이미지 최적화가 비활성화되면 원본 URL 반환
+  // Cloudflare Image Resizing은 Pro 플랜 이상에서만 사용 가능
+  const enableOptimization = process.env.NEXT_PUBLIC_ENABLE_IMAGE_OPTIMIZATION === 'true'
+  if (!enableOptimization) return url
 
   // 이미 최적화된 URL이면 그대로 반환
   if (url.includes('/cdn-cgi/image/')) return url
