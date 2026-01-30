@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { X, Loader2, ImageIcon, Plus, Minus, Check, AlertCircle } from 'lucide-react'
+import { SlotLimitModal } from '@/components/ui/slot-limit-modal'
 
 // 제품 정보 인터페이스 (wizard-context와 동일)
 export interface AdProduct {
@@ -34,6 +35,8 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isPolling, setIsPolling] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showSlotLimitModal, setShowSlotLimitModal] = useState(false)
+  const [slotInfo, setSlotInfo] = useState<{ used: number; limit: number } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -48,6 +51,8 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
       setError(null)
       setIsSubmitting(false)
       setIsPolling(false)
+      setShowSlotLimitModal(false)
+      setSlotInfo(null)
       if (pollingRef.current) {
         clearInterval(pollingRef.current)
         pollingRef.current = null
@@ -251,7 +256,13 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
         if (res.status === 402) {
           setError('크레딧이 부족합니다')
         } else if (res.status === 403) {
-          setError('제품 등록 한도에 도달했습니다')
+          // 제품 슬롯 한도 도달 - 모달 표시
+          if (data.slotInfo) {
+            setSlotInfo(data.slotInfo)
+            setShowSlotLimitModal(true)
+          } else {
+            setError('제품 등록 한도에 도달했습니다')
+          }
         } else {
           setError(data.error || '제품 등록에 실패했습니다')
         }
@@ -500,6 +511,19 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
           </div>
         )}
       </div>
+
+      {/* 슬롯 한도 도달 모달 */}
+      {slotInfo && (
+        <SlotLimitModal
+          isOpen={showSlotLimitModal}
+          onClose={() => {
+            setShowSlotLimitModal(false)
+            onClose()
+          }}
+          slotType="product"
+          slotInfo={slotInfo}
+        />
+      )}
     </div>
   )
 }
