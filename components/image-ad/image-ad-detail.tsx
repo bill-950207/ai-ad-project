@@ -701,9 +701,9 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                   <button
                     key={idx}
                     onClick={() => setSelectedImageIndex(idx)}
-                    className={`relative flex-shrink-0 w-18 h-18 rounded-xl overflow-hidden ring-2 transition-all duration-200 group/thumb ${
+                    className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden ring-2 transition-all duration-200 group/thumb ${
                       idx === selectedImageIndex
-                        ? 'ring-primary shadow-lg shadow-primary/25 scale-110'
+                        ? 'ring-primary shadow-lg shadow-primary/25 scale-105'
                         : 'ring-transparent hover:ring-white/30 bg-[#0a0a12]'
                     }`}
                   >
