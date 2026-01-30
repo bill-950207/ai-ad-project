@@ -470,41 +470,40 @@ export const BODY_NEGATIVE_PROMPT =
 // Few-Shot 예시 (공용)
 // ============================================================
 
-/** 표정 예시 (Few-Shot) - 공용 */
+/** 표정 가이드라인 - 공용 */
 export const EXPRESSION_EXAMPLES = `
-EXPRESSION EXAMPLES (use these patterns):
+=== EXPRESSION GUIDELINES ===
 
-GOOD (natural, relatable):
-✓ "gentle closed-lip smile with relaxed eye contact"
-✓ "soft confident gaze, natural resting expression"
-✓ "looking at product with genuine curiosity"
-✓ "candid moment, caught mid-thought"
+원칙: 자연스럽고 편안한 표정, 진정성 있는 느낌
+- 미소는 절제되고 자연스럽게 (입을 다문 미소, 눈가 주름)
+- 시선은 맥락에 맞게 (카메라 응시, 제품 응시, 자연스러운 시선)
+- 과장되거나 연출된 느낌 배제
+- 권장 형용사: gentle, soft, subtle, relaxed, natural, candid
 
-BAD (exaggerated, artificial):
-✗ "big smile", "wide grin", "teeth showing", "beaming"
-✗ "excited expression", "enthusiastic smile", "overly cheerful"
-✗ "perfect smile", "dramatic reaction"
-
-Use words: gentle, soft, subtle, relaxed, natural, candid
+AVOID (반드시 피할 것):
+✗ "big smile", "wide grin", "teeth showing", "beaming" (과장된 미소)
+✗ "excited expression", "enthusiastic smile", "overly cheerful" (억지 흥분)
+✗ "perfect smile", "dramatic reaction" (인위적 반응)
+✗ 광고 모델처럼 뻣뻣하거나 과하게 밝은 표정
 `.trim()
 
-/** 조명 예시 (Few-Shot) - 공용 */
+/** 조명 가이드라인 - 공용 */
 export const LIGHTING_EXAMPLES = `
-LIGHTING EXAMPLES (describe EFFECT, not equipment):
+=== LIGHTING GUIDELINES ===
 
-GOOD:
-✓ "soft natural daylight from left window"
-✓ "warm golden hour glow creating gentle shadows"
-✓ "diffused ambient light, even illumination"
-✓ "backlight from behind creating rim light"
+원칙: 조명 "효과/결과"만 묘사, 장비는 절대 언급 금지
+- 빛의 방향 묘사: from left, from window, from above
+- 빛의 질감 묘사: soft, diffused, warm, natural
+- 그림자 효과 묘사: gentle shadows, even illumination
+- 장면은 최종 결과물 (촬영 현장이 아님)
 
-BAD (equipment visible):
-✗ "ring light illuminating face"
-✗ "softbox on the left", "LED panel"
-✗ "studio lighting rig", "reflector panel"
-✗ "lighting equipment", "photography setup"
+AVOID (반드시 피할 것):
+✗ "ring light", "softbox", "LED panel" (장비명)
+✗ "studio lighting rig", "reflector panel" (장비 구성)
+✗ "lighting equipment", "photography setup" (장비 존재 암시)
+✗ 장비가 보이거나 존재가 느껴지는 모든 표현
 
-Scene = FINAL PHOTOGRAPH, not behind-the-scenes.
+결과물 = 완성된 사진/영상, NOT 촬영 현장
 `.trim()
 
 /** 공용 Self-Verification 체크리스트 */
@@ -652,28 +651,32 @@ AVOID COMBINATIONS:
 ✗ Any gaze + exaggerated smile (unnatural)
 `.trim()
 
-/** 손+제품 Few-Shot 종합 예시 */
+/** 손+제품 가이드라인 */
 export const HAND_PRODUCT_EXAMPLES = `
-=== HAND + PRODUCT NATURAL EXAMPLES (Few-Shot) ===
+=== HAND + PRODUCT GUIDELINES ===
 
-GOOD EXAMPLES (photorealistic, natural):
-✓ "Woman holding skincare bottle with relaxed right hand, all five fingers visible - thumb on front, four fingers wrapped around back, product at chest level, eyes looking at camera with gentle smile, soft window light from left illuminating both face and product consistently"
+필수 포함 요소 (반드시 명시할 것):
+1. 손가락 개수/위치: "all five fingers visible", "thumb on [위치], fingers on [위치]"
+2. 그립 유형: wrapped, pinch, cradle, palm support 등 제품 크기에 맞게
+3. 접촉점: 어느 손가락이 제품 어디에 닿는지 구체적으로
+4. 조명 일관성: 아바타와 제품에 같은 방향에서 빛이 와야 함
+5. 제품 각도: 카메라 쪽으로 살짝 기울임 (15-30도)
 
-✓ "Man presenting smartphone in open palm, fingers slightly curved supporting device from below, thumb resting naturally on side edge, product angled 15 degrees toward camera, matching warm ambient light on both skin and device surface"
+구조 템플릿:
+"[손 설명: 손가락 위치 + 그립 유형] + [제품 위치: 높이/각도] + [조명: 방향 + 일관성] + [표정: 시선과 맞는 자연스러운 표정]"
 
-✓ "Close-up of hands cradling cosmetic jar, thumbs on lid, fingers interlaced underneath supporting base, natural skin texture with visible pores, consistent soft overhead lighting creating matching shadows under chin and under jar"
+AVOID (반드시 피할 것):
+✗ "Person holding product happily" (너무 모호, 손 디테일 없음)
+✗ "Hand gripping bottle tightly" (긴장된 그립)
+✗ "Model with product" (공간 관계 없음)
+✗ "Showing product to camera with big smile" (과장된 표정)
+✗ "Professional photo of person with item" (구체적 디테일 없음)
+✗ 손가락 개수나 위치 없이 "holding" 같은 모호한 표현
 
-BAD EXAMPLES (avoid these patterns):
-✗ "Person holding product happily" (too vague, no hand details, no lighting)
-✗ "Hand gripping bottle tightly" (tense, unnatural)
-✗ "Model with product" (no grip description, no spatial relationship)
-✗ "Showing product to camera with big smile" (exaggerated expression)
-✗ "Professional photo of person with item" (no specific details)
-
-SELF-CHECK BEFORE OUTPUT:
-□ Hand description includes finger count/position?
-□ Grip type matches product size/shape?
-□ Contact points specified?
-□ Lighting direction consistent for avatar and product?
-□ Expression natural and matching gaze direction?
+SELF-CHECK:
+□ 손가락 개수/위치 명시됨?
+□ 그립 유형이 제품 크기에 적합?
+□ 접촉점 구체적으로 명시됨?
+□ 아바타와 제품 조명 방향 일치?
+□ 표정이 시선 방향과 맞음?
 `.trim()

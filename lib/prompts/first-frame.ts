@@ -21,20 +21,30 @@ import { VideoType } from './scripts'
 // Few-Shot 예시 및 검증 규칙
 // ============================================================
 
-/** 첫 프레임 프롬프트 Few-Shot 예시 */
+/** 첫 프레임 프롬프트 가이드라인 */
 const FIRST_FRAME_EXAMPLES = `
-=== FIRST FRAME PROMPT EXAMPLES ===
+=== FIRST FRAME PROMPT GUIDELINES ===
 
-GOOD (specific, UGC-authentic):
-✓ "Young woman in casual cream sweater, sitting comfortably on grey sofa, holding skincare product at chest level, looking at camera with gentle smile, cozy modern living room with soft morning light from window, shot on 35mm f/11, natural skin texture, 8K quality"
+프롬프트 구조 (순서대로 구성):
+1. Subject: 인물 기본 정보 (성별, 연령대, 의상)
+2. Pose/Action: 자세와 제품 인터랙션
+3. Environment: 배경/장소 (UGC 스타일에 맞게)
+4. Lighting: 조명 효과 (장비명 금지)
+5. Camera: 카메라 스펙 (렌즈, 조리개)
+6. Quality: 품질 태그 (8K, natural skin texture 등)
 
-✓ "Man in his 30s, relaxed expression, presenting fitness supplement naturally, standing in bright home gym with natural daylight, POV selfie perspective, shot on 28mm f/11, authentic UGC style"
+핵심 원칙:
+- 실제 인플루언서가 찍은 듯한 자연스러움
+- 배경은 선명하게 (f/11 이상, 보케 금지)
+- 표정은 자연스럽고 편안하게
+- 제품과의 인터랙션은 자연스러운 그립으로
 
-BAD (equipment visible, unnatural):
-✗ "Model with ring light illuminating her face" (equipment visible)
-✗ "Big smile showing teeth, excited expression" (unnatural)
-✗ "Perfect studio setup with softbox" (behind-the-scenes)
-✗ "Blurred background with bokeh" (not UGC-style)
+AVOID (반드시 피할 것):
+✗ "ring light", "softbox" 등 장비명
+✗ "big smile", "teeth showing" 등 과장된 표정
+✗ "studio setup", "professional lighting" 등 스튜디오 암시
+✗ "bokeh", "blurred background" 등 얕은 피사계 심도
+✗ 제품명/브랜드명 직접 언급
 `.trim()
 
 /** 카메라 선택 Chain-of-Thought */

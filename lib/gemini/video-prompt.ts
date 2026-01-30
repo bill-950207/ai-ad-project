@@ -40,35 +40,37 @@ import { VIDEO_TYPE_FIRST_FRAME_GUIDES } from '@/lib/prompts/first-frame'
 // Few-Shot 예시 및 검증 규칙
 // ============================================================
 
-/** 영상 프롬프트 표정/분위기 예시 (Few-Shot) */
+/** 영상 프롬프트 표정/분위기 가이드라인 */
 const VIDEO_EXPRESSION_EXAMPLES = `
-EXPRESSION/MOOD EXAMPLES:
+=== EXPRESSION/MOOD GUIDELINES ===
 
-GOOD (natural, subtle):
-✓ "gentle smile with relaxed eye contact"
-✓ "soft confident gaze, natural expression"
-✓ "looking at product with genuine curiosity"
-✓ "candid moment, caught mid-thought"
+원칙: 자연스럽고 절제된 표현, 실제 사람처럼 편안한 분위기
+- 표정은 미묘하고 자연스럽게 (subtle, natural)
+- 시선은 편안하되 의도가 느껴지게
+- 제품을 바라볼 때는 진심 어린 관심 표현
+- 과장되거나 연출된 느낌 배제
 
-BAD (exaggerated, artificial):
-✗ "big smile", "wide grin", "teeth showing"
-✗ "excited expression", "enthusiastic pose"
-✗ "overly cheerful", "dramatic reaction"
+AVOID (반드시 피할 것):
+✗ "big smile", "wide grin", "teeth showing" (과장된 미소)
+✗ "excited expression", "enthusiastic pose" (억지 흥분)
+✗ "overly cheerful", "dramatic reaction" (과한 반응)
+✗ 광고 모델처럼 뻣뻣한 포즈
 `.trim()
 
-/** 영상 조명 예시 (Few-Shot) */
+/** 영상 조명 가이드라인 */
 const VIDEO_LIGHTING_EXAMPLES = `
-LIGHTING EXAMPLES:
+=== LIGHTING GUIDELINES ===
 
-GOOD (describe effect, not equipment):
-✓ "soft natural daylight from left window"
-✓ "warm golden hour glow creating gentle shadows"
-✓ "diffused ambient light, even illumination"
+원칙: 조명 "효과"를 묘사, 장비는 절대 언급 금지
+- 빛의 방향, 질감, 색온도를 묘사 (from window, warm glow, soft diffused)
+- 그림자의 특성 묘사 (gentle shadows, even illumination)
+- 자연광 또는 자연광처럼 보이는 조명 선호
 
-BAD (equipment visible):
-✗ "ring light illuminating face"
-✗ "softbox setup", "LED panel"
-✗ "studio lighting rig"
+AVOID (반드시 피할 것):
+✗ "ring light", "softbox", "LED panel" (장비명 직접 언급)
+✗ "studio lighting rig", "light stand" (스튜디오 장비)
+✗ "professional lighting setup" (장비 존재 암시)
+✗ 장비가 보이거나 느껴지는 모든 표현
 `.trim()
 
 /** Self-Verification 체크리스트 */
