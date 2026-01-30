@@ -729,13 +729,15 @@ export function WizardStep5Frames() {
 
       {/* 하단 버튼 */}
       <div className="flex gap-3">
-        <button
-          onClick={goToPrevStep}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          이전
-        </button>
+        {!isRegenerating && (
+          <button
+            onClick={goToPrevStep}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            이전
+          </button>
+        )}
         <button
           onClick={handleGoToVideoGeneration}
           disabled={!canProceedToStep6() || isRegenerating}

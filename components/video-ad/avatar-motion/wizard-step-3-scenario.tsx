@@ -522,7 +522,7 @@ export function WizardStep3Scenario() {
         canProceed={canProceedToStep4()}
         loading={false}
         showNext={canProceedToStep4()}
-        showPrev={!isGeneratingScenarios && !isAnalyzingReference}
+        showPrev={!isGeneratingScenarios && !isAnalyzingReference && !isModifyingScenario}
       />
 
       {/* 시나리오 수정 모달 */}
