@@ -497,6 +497,14 @@ ${input.adType === 'productOnly' ? `For PRODUCT ONLY shots:
   "koreanDescription": "한국어 요약 (15-20자)"
 }
 
+=== ANATOMICAL RULES (CRITICAL) ===
+⚠️ Complex hand descriptions cause AI to generate extra limbs!
+- NEVER describe more than 2 simultaneous hand actions
+- BAD: "rests chin on one hand while holding product, tucking hair with the other" (3 actions = 3 hands)
+- GOOD: "naturally holding the product with both hands" or "one hand holds product, relaxed pose"
+- If model holds product, that is the ONLY hand action needed
+- Keep pose simple: ONE clear body position, not multiple simultaneous gestures
+
 === SELF-VERIFICATION (before responding) ===
 Check your optimizedPrompt:
 ✓ No lighting EQUIPMENT words (softbox, ring light, LED, reflector)?
@@ -504,6 +512,7 @@ Check your optimizedPrompt:
 ✓ No "big smile", "wide grin", "teeth showing"?
 ✓ Has camera specs (lens, f/stop)?
 ✓ 60-80 words?
+✓ Hand actions are SIMPLE? (max 1 action per hand, no complex multi-gesture poses)?
 If any check fails, revise before responding.`
 
   const config: GenerateContentConfig = {

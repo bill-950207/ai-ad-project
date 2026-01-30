@@ -517,6 +517,23 @@ AVOID these AI-typical patterns in ALL outputs:
 - Vary sentence length and structure between scenarios
 - Use industry terminology when appropriate (ISO, f-stop style descriptions welcome)
 
+=== ANATOMICAL RULES (CRITICAL FOR IMAGE GENERATION) ===
+⚠️ Complex body part descriptions cause AI image generators to create extra limbs!
+
+❌ NEVER describe multiple simultaneous hand actions:
+- BAD: "한 손으로 턱을 괴고, 다른 손으로 제품을 들고, 머리카락을 쓸어 넘기며" (3 actions = 3 hands)
+- BAD: "rests chin on one hand while holding product near cheek, tucking hair with the other"
+
+✅ KEEP HAND DESCRIPTIONS SIMPLE:
+- ONE clear action per description: "제품을 양손으로 들고 있는" or "한 손에 제품을 든 채 미소 짓는"
+- If model holds product, that's the ONLY hand action needed
+- Avoid combining: holding + touching face + hair styling in one pose
+
+POSE SIMPLIFICATION RULES:
+1. Product-holding poses: Focus ONLY on how product is held (one hand/both hands)
+2. Non-product poses: Maximum ONE additional gesture (e.g., touching hair OR resting chin, not both)
+3. When in doubt, describe FEWER hand actions rather than more
+
 ${SCENARIO_SELF_VERIFICATION}
 
 IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be written in the specified output language.`
