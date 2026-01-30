@@ -326,11 +326,15 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
 
   // 옵션 그룹 라벨 - i18n 지원
   const getOptionGroupLabel = (key: string): string => {
+    // 소문자로 정규화
+    const normalizedKey = key.toLowerCase()
+
     // i18n에서 먼저 찾기
     const i18nLabels = (t as Record<string, unknown>).imageAdOptions as Record<string, Record<string, string>> | undefined
     if (i18nLabels?.groupLabels?.[key]) return i18nLabels.groupLabels[key]
+    if (i18nLabels?.groupLabels?.[normalizedKey]) return i18nLabels.groupLabels[normalizedKey]
 
-    // 폴백 라벨
+    // 폴백 라벨 (소문자 키로 통일)
     const fallbackLabels: Record<string, string> = {
       pose: '포즈',
       gaze: '시선',
@@ -351,7 +355,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
       season: '계절',
       theme: '테마',
       atmosphere: '분위기',
-      productPlacement: '제품 배치',
+      productplacement: '제품 배치',
       // 추가 키들
       color: '컬러',
       effect: '효과',
@@ -368,10 +372,8 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
       // AI 생성 옵션 키들
       outfit: '의상',
       colortone: '컬러톤',
-      colorTone: '컬러톤',
-      color_tone: '컬러톤',
     }
-    return fallbackLabels[key] || key
+    return fallbackLabels[normalizedKey] || key
   }
 
   // 옵션 값 라벨 - i18n 지원
