@@ -446,7 +446,7 @@ Model ${outfitText}.
 - Outfit should complement the product and scenario mood${input.adType === 'wearing' ? `
 - IMPORTANT for WEARING ad: The outfit option above describes COORDINATING clothing (pants, shoes, accessories, etc.) to pair with the advertised product.
 - The advertised product (from product reference image) must be the MAIN worn item and clearly visible as the hero piece.
-- Example: If product is a jacket, the outfit option describes what pants/shoes to wear WITH the jacket.` : ''}`
+- outfit 옵션 = 광고 제품과 함께 입을 코디 아이템 (예: 재킷 광고 시 → 바지/신발 코디)` : ''}`
     : ''
 
   // 시스템 프롬프트 (핵심 보존, 중복 제거)

@@ -396,27 +396,27 @@ DO NOT describe person's physical appearance (age, ethnicity, facial features, h
 ONLY describe pose, action, expression, clothing, and environment.
 
 1. POSE & ACTION (10-15 words):
-   "[Action verb], [body position], [expression/emotion]"
-   Example: "leaning against window frame, gazing outside thoughtfully, serene expression"
+   형식: "[Action verb], [body position], [expression/emotion]"
+   포함: 구체적 자세, 몸 위치, 자연스러운 표정
 
 2. PRODUCT INTERACTION (10-15 words):
-   "[How model interacts with product], [product from reference image 2]"
-   Example: "holding the product from reference image 2 at chest level, examining it closely"
+   형식: "[How model interacts with product], [product from reference image 2]"
+   포함: 제품과의 인터랙션 방식, 제품 위치
 
 3. ENVIRONMENT (10-15 words):
-   "[Specific location] with [lived-in details]"
-   Example: "in a cozy cafe with warm wooden interior and morning sunlight"
+   형식: "[Specific location] with [lived-in details]"
+   포함: 구체적 장소, 생활감 있는 디테일
 
 4. LIGHTING - CRITICAL (10-15 words):
-   "[Temperature] light from [specific direction] creating [effect]"
-   Example: "warm golden light from large window on left, creating soft shadows"
+   형식: "[Temperature] light from [specific direction] creating [effect]"
+   포함: 색온도 (warm/cool), 방향, 그림자 효과
 
 5. CAMERA SPECS (10-15 words):
-   "shot on [lens]mm lens at f/[aperture]"
-   Example: "shot on 35mm lens at f/2.8, cinematic composition"
+   형식: "shot on [lens]mm lens at f/[aperture]"
+   포함: 렌즈 초점거리, 조리개 값
 
 6. QUALITY TAGS (5-10 words):
-   "natural skin texture with visible pores, cinematic atmosphere, 8K RAW quality"
+   포함: natural skin texture, cinematic atmosphere, 8K RAW quality 등
 
 ❌ FORBIDDEN (will cause different person):
 - Age descriptions ("in her 20s", "young", "middle-aged")
@@ -434,23 +434,27 @@ VIDU Q2 OPTIMIZED MOTION PROMPT (50-70 words):
 
 STRUCTURE:
 1. STARTING STATE (10 words):
-   "She sits peacefully, [initial pose and expression]"
+   형식: "[Subject] [initial pose], [initial expression]"
+   포함: 시작 자세, 초기 표정 상태
 
 2. CAMERA (optional, 5-10 words):
-   "Camera slowly dollies in" or "Static shot"
+   옵션: dolly in/out, push-in, tracking, static shot
+   포함: 카메라 움직임 방향과 속도
 
 3. PRIMARY MOVEMENT (15-20 words):
-   Use timing adverbs: slowly, gently, gracefully, softly
-   "Gently raises the product toward her face, movement unhurried and deliberate"
+   형식: "[Timing adverb] [action verb] [object], [movement quality]"
+   권장 부사: slowly, gently, gracefully, softly, unhurried
 
 4. EXPRESSION TRANSITION (10 words):
-   "Expression shifts naturally as she examines the product" (can be curious, thoughtful, engaged - NOT forced smile)
+   형식: "[Expression change] as [action context]"
+   포함: 표정 변화 (curious, thoughtful, engaged - NOT forced smile)
 
 5. MICRO-EXPRESSION (5-10 words):
-   "Natural blink, eyes showing genuine interest"
+   포함: natural blink, subtle eye movement, breathing rhythm
 
 6. END STATE (10 words):
-   "She brings it closer, settling into natural contemplation"
+   형식: "[Final position], [settling expression/mood]"
+   포함: 최종 자세, 마무리 분위기
 
 IMPORTANT:
 - Do NOT describe motion intensity (use API's movement_amplitude)

@@ -10,27 +10,27 @@ import type { MergeEditPromptInput, MergeEditPromptResult } from './types'
 // Few-Shot 예시 및 검증 규칙
 // ============================================================
 
-/** 이미지 편집 Few-Shot 예시 */
+/** 이미지 편집 가이드라인 */
 const IMAGE_EDIT_EXAMPLES = `
-=== IMAGE EDITING EXAMPLES (Few-Shot) ===
+=== IMAGE EDITING GUIDELINES ===
 
-GOOD (specific, actionable):
-User: "배경을 해변으로 바꿔줘"
-✓ Enhanced: "Change the background to a tropical beach with clear blue sky, soft sand, and gentle ocean waves."
+Enhanced 프롬프트 작성 원칙:
+- 사용자 요청을 구체적이고 실행 가능한 영어 프롬프트로 변환
+- 변경 대상 명확히 지정 (background, expression, clothing color 등)
+- 변경 결과 구체적으로 묘사 (색상, 질감, 스타일 등)
+- 요청하지 않은 변경은 추가하지 않음
 
-User: "더 밝게"
-✓ Enhanced: "Increase brightness and make the overall image brighter and more luminous."
+변환 패턴:
+- 배경 변경: "Change the background to [specific scene with details]"
+- 밝기 조정: "Increase/Decrease brightness and make [specific effect]"
+- 표정 변경: "Change the facial expression to [specific expression]"
+- 색상 변경: "Change the [item] color to [color] while maintaining [preserved aspects]"
 
-User: "표정을 웃는 얼굴로"
-✓ Enhanced: "Change the facial expression to a warm, natural smile with relaxed eyes."
-
-User: "옷을 빨간색으로"
-✓ Enhanced: "Change the clothing color to a vibrant red while maintaining the same style and texture."
-
-BAD (vague or overreaching):
-✗ "Make it better" (too vague)
-✗ "Change everything to look perfect" (unclear scope)
-✗ Adding unrequested changes like pose or lighting
+AVOID (반드시 피할 것):
+✗ "Make it better" (너무 모호)
+✗ "Change everything to look perfect" (범위 불명확)
+✗ 요청하지 않은 포즈, 조명 등 추가 변경
+✗ 구체적 결과 묘사 없이 모호한 지시
 `.trim()
 
 /** 이미지 편집 Self-Verification */

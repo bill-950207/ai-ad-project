@@ -12,19 +12,30 @@ import type { ProductInfoInput, ProductSummary, UrlExtractResult } from './types
 // Few-Shot 예시 및 검증 규칙
 // ============================================================
 
-/** 제품 요약 예시 (Few-Shot) */
+/** 제품 요약 가이드라인 */
 const PRODUCT_SUMMARY_EXAMPLES = `
-=== PRODUCT SUMMARY EXAMPLES ===
+=== PRODUCT SUMMARY GUIDELINES ===
 
-GOOD (specific, benefit-focused):
-✓ summary: "천연 성분 기반의 수분 크림으로, 건조한 피부에 즉각적인 보습과 진정 효과를 제공합니다."
-✓ keyPoints: ["히알루론산 고함량", "무향료 저자극", "48시간 지속 보습"]
-✓ suggestedTone: "신뢰감 있는 전문적"
+summary 작성 원칙:
+- 제품 카테고리와 핵심 성분/기술 언급
+- 타겟 고객의 니즈/문제와 연결
+- 구체적 효과/혜택 명시
+- 2-3문장으로 간결하게
 
-BAD (vague, exaggerated):
-✗ summary: "정말 좋은 크림입니다" (구체성 부족)
+keyPoints 작성 원칙:
+- 구체적이고 사실에 기반한 특징
+- 검증 가능한 정보 (성분, 기능, 특허 등)
+- 과장이나 주관적 평가 배제
+- 3-5개 항목
+
+suggestedTone 작성 원칙:
+- 제품 카테고리와 타겟에 맞는 톤
+- 구체적 분위기 설명 (신뢰감 있는, 친근한, 전문적인 등)
+
+AVOID (반드시 피할 것):
+✗ summary: "정말 좋은 제품입니다" (구체성 부족)
 ✗ keyPoints: ["최고의 품질", "완벽한 제품"] (과장)
-✗ suggestedTone: "최고급" (모호)
+✗ suggestedTone: "최고급" (모호하고 과장)
 `.trim()
 
 /** 제품 분석 Self-Verification */
