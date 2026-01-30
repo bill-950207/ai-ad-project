@@ -95,7 +95,7 @@ Each scenario MUST differ in at least 3 of these dimensions:
 1. Target Age: (20대 vs 30대 vs 40대+)
 2. Target Lifestyle: (직장인 vs 학생 vs 전업주부 vs 인플루언서)
 3. Emotional Tone: (활기찬 vs 차분한 vs 단정한 vs 친근한)
-4. Visual Mood: (밝고 화사 vs 따뜻하고 포근 vs 모던하고 깔끔)
+4. Visual Mood: (밝고 화사 vs 차분하고 편안 vs 모던하고 깔끔)
 5. Setting: (집 vs 사무실 vs 카페 vs 야외 vs 스튜디오)
 6. Time: (아침 vs 낮 vs 저녁 vs 밤)
 `.trim()
