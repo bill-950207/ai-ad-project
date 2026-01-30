@@ -522,14 +522,14 @@ export function WizardStep4() {
           </button>
           {resultAdIds.length > 0 && (
             <button
-              onClick={() => router.push(`/dashboard/image-ad/${resultAdIds[0]}`)}
+              onClick={() => router.replace(`/dashboard/image-ad/${resultAdIds[0]}`)}
               className="px-6 py-3 rounded-xl font-medium border border-primary text-primary hover:bg-primary/10 transition-colors"
             >
               광고 상세 보기
             </button>
           )}
           <button
-            onClick={() => router.push('/dashboard/image-ad')}
+            onClick={() => router.replace('/dashboard/image-ad')}
             className="px-6 py-3 rounded-xl font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
           >
             광고 목록으로

@@ -145,6 +145,11 @@ export async function GET(request: NextRequest) {
           name,
           image_url,
           rembg_image_url
+        ),
+        avatars (
+          id,
+          name,
+          image_url
         )
       `)
       .eq('user_id', user.id)
