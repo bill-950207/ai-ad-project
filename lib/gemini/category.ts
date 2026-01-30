@@ -53,42 +53,38 @@ Options focus: Theme-appropriate props, seasonal color palette, festive mood.`,
 // Few-Shot 예시 및 검증 규칙
 // ============================================================
 
-/** 시나리오 추천 Few-Shot 예시 */
+/** 시나리오 추천 규칙 (BAD 예시만 제공 - 창의성은 LLM에게 맡김) */
 const SCENARIO_RECOMMENDATION_EXAMPLES = `
-=== SCENARIO EXAMPLES (Few-Shot) ===
+=== WHAT TO AVOID (BAD EXAMPLES) ===
 
-GOOD (specific, diverse, product-appropriate):
+These patterns are FORBIDDEN - do NOT produce anything similar:
 
-Example 1 - Skincare Serum:
-✓ Scenario 1: "모닝 글로우" (Morning Glow)
-  - Target: 20-30대 직장인 여성
-  - Mood: Fresh, energetic
-  - Background: bright bathroom with morning sunlight
-  - Concept: 아침 루틴에서 빛나는 피부 표현
+❌ GENERIC TITLES:
+- "프리미엄 시나리오", "기본 시나리오", "스탠다드" - No creative concept
+- "시나리오 1", "시나리오 2", "시나리오 3" - Just numbers
+- Any title using banned words from the list above
 
-✓ Scenario 2: "잇템 리뷰어" (It-Item Reviewer)
-  - Target: 뷰티 관심 MZ세대
-  - Mood: Authentic, relatable
-  - Background: cozy bedroom desk setup
-  - Concept: 인플루언서 스타일 솔직한 사용기
+❌ LACK OF DIVERSITY:
+- All 3 scenarios targeting the same age group
+- All 3 scenarios with similar mood/tone
+- All 3 scenarios in similar settings
 
-✓ Scenario 3: "나만의 밤 루틴" (My Night Routine)
-  - Target: 30-40대 자기관리 중시층
-  - Mood: Calm, indulgent
-  - Background: marble vanity with soft lighting
-  - Concept: 하루 마무리 스킨케어 시간
+❌ PRODUCT MISMATCH:
+- Budget snack product with luxury positioning
+- Youth product with mature audience targeting
+- Premium product with budget-friendly casual style
 
-BAD (generic, repetitive, product-inappropriate, AI-sounding):
+❌ AI WRITING PATTERNS:
+- "따뜻하고 부드럽고 자연스러운" - 3+ stacked adjectives
+- "특별한 경험을 선사하는" - Empty marketing phrase
+- Starting all backgrounds with "따뜻한" or "부드러운"
+- Using same sentence structure for all customText
+- Repetitive vocabulary across scenarios
 
-✗ "프리미엄 시나리오" - Too generic, no creative concept
-✗ "기본 시나리오" - No differentiation
-✗ "시나리오 1", "시나리오 2" - Just numbers, no concept
-✗ All 3 scenarios targeting same audience - No diversity
-✗ Budget snack product → "럭셔리 프리미엄" - Price tier mismatch
-✗ "따뜻하고 부드럽고 자연스러운" - Too many stacked adjectives (AI pattern)
-✗ "특별한 경험을 선사하는" - Empty marketing phrase
-✗ Starting all backgrounds with "따뜻한" or "부드러운" - Repetitive AI habit
-✗ Using same sentence structure for all customText descriptions
+❌ VAGUE DESCRIPTIONS:
+- "아늑한 분위기" instead of specific setting details
+- "은은한 조명" instead of technical lighting description
+- "자연스러운 느낌" without concrete visual elements
 `.trim()
 
 /** 시나리오 다양성 검증 */
