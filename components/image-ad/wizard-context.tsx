@@ -566,12 +566,26 @@ export function ImageAdWizardProvider({
           const res = await fetch(`/api/image-ad/draft?id=${initialDraftId}`)
 
           if (!res.ok) {
+            // Draft 로드 실패 (생성 중이거나 삭제됨) - draftId 초기화 및 URL에서 제거
+            setDraftId(null)
+            if (typeof window !== 'undefined') {
+              const currentUrl = new URL(window.location.href)
+              currentUrl.searchParams.delete('draftId')
+              window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search)
+            }
             setIsLoadingDraft(false)
             return
           }
 
           const data = await res.json()
           if (!data.draft?.wizard_state) {
+            // wizard_state가 없으면 새로 시작
+            setDraftId(null)
+            if (typeof window !== 'undefined') {
+              const currentUrl = new URL(window.location.href)
+              currentUrl.searchParams.delete('draftId')
+              window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search)
+            }
             setIsLoadingDraft(false)
             return
           }
