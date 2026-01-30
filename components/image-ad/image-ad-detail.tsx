@@ -300,13 +300,6 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
     }
   }
 
-  // 이미지 개수에 따른 썸네일 그리드 클래스
-  const getThumbnailGridClass = (count: number) => {
-    if (count <= 3) return 'grid-cols-3'
-    if (count === 4) return 'grid-cols-4'
-    return 'grid-cols-5'
-  }
-
   const getAdTypeTitle = (adType: string): string => {
     const types = t.imageAdTypes as Record<string, { title?: string }>
     return types?.[adType]?.title || adType
@@ -553,78 +546,93 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* 헤더 */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-8">
+      {/* 헤더 - Refined Editorial Style */}
+      <div className="flex items-center justify-between pb-6 border-b border-white/[0.06]">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push('/dashboard/image-ad')}
-            className="p-2 hover:bg-secondary/50 rounded-lg transition-colors"
+            className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all duration-200 group"
           >
-            <ArrowLeft className="w-5 h-5 text-muted-foreground" />
+            <ArrowLeft className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-foreground">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               {t.imageAdDetail?.title || '이미지 광고 상세'}
             </h1>
-            <p className="text-sm text-muted-foreground">
-              {getAdTypeTitle(imageAd.ad_type)}
-            </p>
+            <div className="flex items-center gap-3 mt-1.5">
+              <span className="px-2.5 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-medium">
+                {getAdTypeTitle(imageAd.ad_type)}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                {new Date(imageAd.created_at).toLocaleDateString()}
+              </span>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* 전체 다운로드 (배치인 경우만) */}
-          {hasMultipleImages && (
-            <button
-              onClick={handleDownloadAll}
-              disabled={isDownloadingAll}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50"
-            >
-              {isDownloadingAll ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4" />
-              )}
-              전체 다운로드 ({imageUrls.length})
-            </button>
-          )}
+          {/* 다운로드 버튼 - Primary */}
+          <button
+            onClick={() => hasMultipleImages ? handleDownloadAll() : handleDownload()}
+            disabled={isDownloadingAll}
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-medium shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200 disabled:opacity-50"
+          >
+            {isDownloadingAll ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            {hasMultipleImages ? `다운로드 (${imageUrls.length})` : '다운로드'}
+          </button>
+          {/* 편집 버튼 */}
+          <button
+            onClick={() => setEditModalOpen(true)}
+            className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-muted-foreground hover:text-foreground transition-all duration-200"
+            title="편집"
+          >
+            <Wand2 className="w-4 h-4" />
+          </button>
           {/* 쇼케이스 등록 (어드민 전용) */}
           {isAdmin && imageAd.status === 'COMPLETED' && (
             <button
               onClick={handleRegisterShowcase}
               disabled={isRegisteringShowcase}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors disabled:opacity-50"
+              className="p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-500 transition-all duration-200 disabled:opacity-50"
+              title="쇼케이스 등록"
             >
               {isRegisteringShowcase ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Star className="w-4 h-4" />
               )}
-              쇼케이스 등록
             </button>
           )}
+          {/* 삭제 버튼 */}
           <button
             onClick={handleDelete}
             disabled={isDeleting}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm text-red-500 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
+            className="p-2.5 rounded-xl bg-white/5 hover:bg-red-500/10 border border-white/10 hover:border-red-500/20 text-muted-foreground hover:text-red-500 transition-all duration-200 disabled:opacity-50"
+            title={t.adProduct?.delete || '삭제'}
           >
             {isDeleting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <Trash2 className="w-4 h-4" />
             )}
-            {t.adProduct?.delete || '삭제'}
           </button>
         </div>
       </div>
 
-      {/* 콘텐츠 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 생성된 이미지 */}
-        <div className="space-y-4">
-          {/* 메인 이미지 */}
-          <div className="bg-card border border-border rounded-xl overflow-hidden group">
-            <div className="aspect-square relative bg-[#1a1a2e]">
+      {/* 콘텐츠 - Flex 기반 갤러리 레이아웃 */}
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* 이미지 갤러리 섹션 - 더 큰 비중 */}
+        <div className="flex-1 lg:max-w-[60%] space-y-4">
+          {/* 메인 이미지 - Glassmorphism 스타일 */}
+          <div className="relative group rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-900/50 to-zinc-950/80 ring-1 ring-white/5 shadow-2xl">
+            {/* 배경 그라데이션 효과 */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 via-transparent to-transparent pointer-events-none" />
+
+            <div className="relative aspect-[4/3] bg-[#0a0a12]">
               {selectedImageUrl ? (
                 <>
                   <img
@@ -632,37 +640,39 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                     alt={`Generated ad ${selectedImageIndex + 1}`}
                     className="absolute inset-0 w-full h-full object-contain"
                   />
-                  {/* 이미지 액션 버튼 오버레이 */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors">
-                    <div className="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <a
-                        href={selectedOriginalUrl || selectedImageUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 bg-white/90 hover:bg-white text-gray-700 rounded-lg transition-colors shadow-lg"
-                        title="원본 보기"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                      <button
-                        onClick={() => handleDownload()}
-                        className="p-2 bg-white/90 hover:bg-white text-gray-700 rounded-lg transition-colors shadow-lg"
-                        title="다운로드"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setEditModalOpen(true)}
-                        className="p-2 bg-primary/90 hover:bg-primary text-white rounded-lg transition-colors shadow-lg"
-                        title="편집"
-                      >
-                        <Wand2 className="w-4 h-4" />
-                      </button>
+                  {/* 호버 시 하단 그라데이션 오버레이 */}
+                  <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={selectedOriginalUrl || selectedImageUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-xl transition-all duration-200"
+                          title="원본 보기"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                        <button
+                          onClick={() => handleDownload()}
+                          className="p-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-xl transition-all duration-200"
+                          title="다운로드"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setEditModalOpen(true)}
+                          className="p-2.5 bg-primary/80 hover:bg-primary backdrop-blur-sm text-white rounded-xl transition-all duration-200"
+                          title="편집"
+                        >
+                          <Wand2 className="w-4 h-4" />
+                        </button>
+                      </div>
                       {imageUrls.length > 1 && (
                         <button
                           onClick={() => handleDeleteSingleImage(selectedImageIndex)}
                           disabled={isDeletingSingle}
-                          className="p-2 bg-red-500/90 hover:bg-red-500 text-white rounded-lg transition-colors shadow-lg disabled:opacity-50"
+                          className="p-2.5 bg-red-500/80 hover:bg-red-500 backdrop-blur-sm text-white rounded-xl transition-all duration-200 disabled:opacity-50"
                           title="이미지 삭제"
                         >
                           {isDeletingSingle ? (
@@ -677,109 +687,76 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                 </>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <ImageIcon className="w-12 h-12 text-muted-foreground" />
+                  <ImageIcon className="w-16 h-16 text-muted-foreground/30" />
                 </div>
               )}
             </div>
           </div>
 
-          {/* 썸네일 그리드 (배치인 경우) */}
+          {/* 썸네일 스트립 - Horizontal scroll */}
           {hasMultipleImages && (
-            <div className={`grid ${getThumbnailGridClass(imageUrls.length)} gap-2`}>
-              {imageUrls.map((url, idx) => (
-                <div
-                  key={idx}
-                  className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all group/thumb ${
-                    idx === selectedImageIndex
-                      ? 'border-primary ring-2 ring-primary/30'
-                      : 'border-transparent hover:border-primary/50'
-                  }`}
-                >
+            <div className="space-y-3">
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+                {imageUrls.map((url, idx) => (
                   <button
+                    key={idx}
                     onClick={() => setSelectedImageIndex(idx)}
-                    className="w-full h-full bg-[#1a1a2e]"
+                    className={`relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden ring-2 transition-all duration-200 group/thumb ${
+                      idx === selectedImageIndex
+                        ? 'ring-primary shadow-lg shadow-primary/25 scale-105'
+                        : 'ring-transparent hover:ring-white/30 bg-[#0a0a12]'
+                    }`}
                   >
                     <img
                       src={url}
                       alt={`Thumbnail ${idx + 1}`}
                       className="w-full h-full object-contain"
                     />
-                  </button>
-                  {/* 썸네일 호버 액션 */}
-                  <div className="absolute inset-0 bg-black/0 group-hover/thumb:bg-black/40 transition-colors pointer-events-none">
-                    <div className="absolute bottom-1 right-1 flex items-center gap-1 opacity-0 group-hover/thumb:opacity-100 transition-opacity pointer-events-auto">
-                      <a
-                        href={originalUrls[idx] || url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-1 bg-white/90 hover:bg-white text-gray-700 rounded transition-colors"
-                        title="원본 보기"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDownload(idx)
-                        }}
-                        className="p-1 bg-white/90 hover:bg-white text-gray-700 rounded transition-colors"
-                        title="다운로드"
-                      >
-                        <Download className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setSelectedImageIndex(idx)
-                          setEditModalOpen(true)
-                        }}
-                        className="p-1 bg-primary/90 hover:bg-primary text-white rounded transition-colors"
-                        title="편집"
-                      >
-                        <Wand2 className="w-3 h-3" />
-                      </button>
-                      {imageUrls.length > 1 && (
-                        <button
+                    {/* 썸네일 호버 오버레이 */}
+                    <div className="absolute inset-0 bg-black/0 group-hover/thumb:bg-black/40 transition-colors flex items-center justify-center">
+                      <div className="opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center gap-1">
+                        <span
+                          className="p-1 bg-white/90 hover:bg-white text-gray-700 rounded transition-colors"
                           onClick={(e) => {
                             e.stopPropagation()
-                            handleDeleteSingleImage(idx)
+                            handleDownload(idx)
                           }}
-                          disabled={isDeletingSingle}
-                          className="p-1 bg-red-500/90 hover:bg-red-500 text-white rounded transition-colors disabled:opacity-50"
-                          title="이미지 삭제"
                         >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
+                          <Download className="w-3 h-3" />
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  </button>
+                ))}
+              </div>
+              {/* 이미지 카운터 */}
+              <p className="text-center text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">{selectedImageIndex + 1}</span>
+                <span className="mx-1">/</span>
+                <span>{imageUrls.length}</span>
+              </p>
             </div>
-          )}
-
-          {/* 이미지 정보 (배치인 경우) */}
-          {hasMultipleImages && (
-            <p className="text-center text-sm text-muted-foreground">
-              {selectedImageIndex + 1} / {imageUrls.length}
-            </p>
           )}
         </div>
 
-        {/* 상세 정보 */}
-        <div className="space-y-4">
+        {/* 상세 정보 사이드바 - Glassmorphism */}
+        <div className="lg:w-[380px] lg:sticky lg:top-6 lg:self-start space-y-4">
           {/* 관련 제품 */}
           {imageAd.ad_products && (
-            <div className="bg-card border border-border rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Package className="w-4 h-4 text-primary" />
+            <div className="relative backdrop-blur-xl rounded-2xl p-5 bg-white/[0.02] border border-white/[0.06] shadow-lg shadow-black/5 group/card hover:bg-white/[0.04] transition-colors duration-300">
+              {/* 그라데이션 악센트 */}
+              <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                  <Package className="w-4 h-4" />
+                </div>
                 <h3 className="font-medium text-foreground">
                   {t.imageAdDetail?.product || '광고 제품'}
                 </h3>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-16 h-16 rounded-lg bg-secondary/30 overflow-hidden flex-shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-xl bg-black/20 ring-1 ring-white/10 overflow-hidden flex-shrink-0">
                   {(imageAd.ad_products.rembg_image_url || imageAd.ad_products.image_url) ? (
                     <img
                       src={imageAd.ad_products.rembg_image_url || imageAd.ad_products.image_url || ''}
@@ -788,17 +765,17 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Package className="w-6 h-6 text-muted-foreground" />
+                      <Package className="w-6 h-6 text-muted-foreground/50" />
                     </div>
                   )}
                 </div>
-                <div>
-                  <p className="font-medium text-foreground">{imageAd.ad_products.name}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground truncate">{imageAd.ad_products.name}</p>
                   <button
                     onClick={() => router.push(`/dashboard/image-ad/product/${imageAd.product_id}`)}
-                    className="text-sm text-primary hover:underline"
+                    className="text-sm text-primary hover:text-primary/80 transition-colors"
                   >
-                    {t.imageAdDetail?.viewProduct || '제품 상세보기'}
+                    {t.imageAdDetail?.viewProduct || '제품 상세보기'} →
                   </button>
                 </div>
               </div>
@@ -807,15 +784,20 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
 
           {/* 관련 아바타 */}
           {imageAd.avatars && (
-            <div className="bg-card border border-border rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <User className="w-4 h-4 text-primary" />
+            <div className="relative backdrop-blur-xl rounded-2xl p-5 bg-white/[0.02] border border-white/[0.06] shadow-lg shadow-black/5 group/card hover:bg-white/[0.04] transition-colors duration-300">
+              {/* 그라데이션 악센트 */}
+              <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                  <User className="w-4 h-4" />
+                </div>
                 <h3 className="font-medium text-foreground">
                   {t.imageAdDetail?.avatar || '아바타'}
                 </h3>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-16 h-16 rounded-full bg-secondary/30 overflow-hidden flex-shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-black/20 ring-1 ring-white/10 overflow-hidden flex-shrink-0">
                   {imageAd.avatars.image_url ? (
                     <img
                       src={imageAd.avatars.image_url}
@@ -824,17 +806,17 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-muted-foreground" />
+                      <User className="w-6 h-6 text-muted-foreground/50" />
                     </div>
                   )}
                 </div>
-                <div>
-                  <p className="font-medium text-foreground">{imageAd.avatars.name}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground truncate">{imageAd.avatars.name}</p>
                   <button
                     onClick={() => router.push(`/dashboard/avatar/${imageAd.avatar_id}`)}
-                    className="text-sm text-primary hover:underline"
+                    className="text-sm text-primary hover:text-primary/80 transition-colors"
                   >
-                    {t.imageAdDetail?.viewAvatar || '아바타 상세보기'}
+                    {t.imageAdDetail?.viewAvatar || '아바타 상세보기'} →
                   </button>
                 </div>
               </div>
@@ -843,15 +825,20 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
 
           {/* 관련 의상 (착용샷인 경우) */}
           {imageAd.avatar_outfits && (
-            <div className="bg-card border border-border rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Shirt className="w-4 h-4 text-primary" />
+            <div className="relative backdrop-blur-xl rounded-2xl p-5 bg-white/[0.02] border border-white/[0.06] shadow-lg shadow-black/5 group/card hover:bg-white/[0.04] transition-colors duration-300">
+              {/* 그라데이션 악센트 */}
+              <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                  <Shirt className="w-4 h-4" />
+                </div>
                 <h3 className="font-medium text-foreground">
                   {t.imageAdDetail?.outfit || '의상'}
                 </h3>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-16 h-16 rounded-lg bg-secondary/30 overflow-hidden flex-shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-xl bg-black/20 ring-1 ring-white/10 overflow-hidden flex-shrink-0">
                   {imageAd.avatar_outfits.image_url ? (
                     <img
                       src={imageAd.avatar_outfits.image_url}
@@ -860,58 +847,60 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Shirt className="w-6 h-6 text-muted-foreground" />
+                      <Shirt className="w-6 h-6 text-muted-foreground/50" />
                     </div>
                   )}
                 </div>
-                <p className="font-medium text-foreground">{imageAd.avatar_outfits.name}</p>
+                <p className="font-medium text-foreground truncate">{imageAd.avatar_outfits.name}</p>
               </div>
             </div>
           )}
 
           {/* 생성 옵션 */}
-          <div className="bg-card border border-border rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Settings2 className="w-4 h-4 text-primary" />
+          <div className="relative backdrop-blur-xl rounded-2xl p-5 bg-white/[0.02] border border-white/[0.06] shadow-lg shadow-black/5">
+            {/* 그라데이션 악센트 */}
+            <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                <Settings2 className="w-4 h-4" />
+              </div>
               <h3 className="font-medium text-foreground">
                 {t.imageAdDetail?.options || '생성 옵션'}
               </h3>
             </div>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between items-center py-2 border-b border-white/[0.04]">
                 <span className="text-muted-foreground">
                   {t.imageAdDetail?.adType || '광고 유형'}
                 </span>
-                <span className="text-foreground">{getAdTypeTitle(imageAd.ad_type)}</span>
+                <span className="text-foreground font-medium">{getAdTypeTitle(imageAd.ad_type)}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center py-2 border-b border-white/[0.04]">
                 <span className="text-muted-foreground">
                   {t.imageAdDetail?.aspectRatio || '이미지 비율'}
                 </span>
-                <span className="text-foreground">{getAspectRatioLabel(imageAd.image_size)}</span>
+                <span className="text-foreground font-medium">{getAspectRatioLabel(imageAd.image_size)}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center py-2">
                 <span className="text-muted-foreground">
                   {t.imageAdDetail?.quality || '퀄리티'}
                 </span>
-                <span className="text-foreground">{getQualityLabel(imageAd.quality)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  {t.imageAdDetail?.createdAt || '생성일'}
-                </span>
-                <span className="text-foreground">
-                  {new Date(imageAd.created_at).toLocaleDateString()}
-                </span>
+                <span className="text-foreground font-medium">{getQualityLabel(imageAd.quality)}</span>
               </div>
             </div>
           </div>
 
           {/* 상세 설정 */}
           {imageAd.selected_options && Object.keys(imageAd.selected_options).length > 0 && (
-            <div className="bg-card border border-border rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Settings2 className="w-4 h-4 text-primary" />
+            <div className="relative backdrop-blur-xl rounded-2xl p-5 bg-white/[0.02] border border-white/[0.06] shadow-lg shadow-black/5">
+              {/* 그라데이션 악센트 */}
+              <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                  <Settings2 className="w-4 h-4" />
+                </div>
                 <h3 className="font-medium text-foreground">
                   {t.imageAdDetail?.detailSettings || '상세 설정'}
                 </h3>
@@ -925,7 +914,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                   return (
                     <div
                       key={key}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-secondary/50 rounded-lg text-sm"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.04] border border-white/[0.06] rounded-lg text-sm"
                     >
                       <span className="text-muted-foreground">
                         {optionGroupLabels[key] || key}:
