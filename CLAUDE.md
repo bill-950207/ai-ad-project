@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for AIAD
 
-AIAD는 AI 서비스를 활용한 광고 콘텐츠(이미지, 영상, 아바타, 배경, 음악) 생성 SaaS 플랫폼입니다.
+AIAD는 AI 서비스를 활용한 광고 콘텐츠(이미지, 영상, 아바타, 음악) 생성 SaaS 플랫폼입니다.
 
 **Primary Language:** Korean | **Package:** `aiad`
 
@@ -26,7 +26,7 @@ app/
 │   ├── video-ad/        # 영상 광고 생성/관리
 │   ├── ad-products/     # 제품 관리
 │   ├── music/           # 음악 생성
-│   ├── background/      # 배경 생성
+│   ├── background/      # [미사용] 배경 생성
 │   ├── profile/         # 사용자 프로필
 │   ├── settings/        # 설정
 │   ├── subscription/    # 구독 관리
@@ -39,7 +39,7 @@ components/
 ├── dashboard/           # 대시보드 (사이드바, 갤러리)
 ├── avatar/              # 아바타 생성/관리
 ├── image-ad/            # 이미지 광고 위저드
-├── video-ad/            # 영상 광고 위저드 (avatar-motion, product-ad)
+├── video-ad/            # 영상 광고 위저드 (product-ad)
 ├── ad-product/          # 제품 관리
 ├── landing/             # 랜딩 페이지
 ├── onboarding/          # 온보딩 위저드
@@ -238,11 +238,8 @@ AI 서비스 비용 × 2.5배 마진 기준 (~$0.07/크레딧, 100원)
 | 의상 변경 | 2 | Seedream 4.5 |
 | 이미지 광고 (중화질) | 2 | |
 | 이미지 광고 (고화질) | 3 | |
-| 배경 이미지 | 1 | Z-Image |
 | 제품설명 영상 (480p) | 5 | Hailuo + TTS |
 | 제품설명 영상 (720p) | 10 | |
-| 아바타 모션 (5초) | 40 | Kling 2.6 |
-| 아바타 모션 (10초) | 60 | |
 | 제품 광고 (seedance, 4초) | 8 | 해상도/길이별 |
 | 제품 광고 (wan2.6, 5초) | 10 | |
 | 키프레임 이미지 | 1 | Seedream 4.5 |
@@ -337,9 +334,8 @@ const audio = await unifiedTTS.generateSpeech(text, {
 - **아바타:** `/api/avatars/*` (8 라우트)
 - **제품:** `/api/ad-products/*` (9 라우트)
 - **이미지 광고:** `/api/image-ads/*`, `/api/image-ad/*` (10+ 라우트)
-- **영상 광고:** `/api/avatar-motion/*`, `/api/product-ad/*`, `/api/video-ads/*` (40+ 라우트)
+- **영상 광고:** `/api/product-ad/*`, `/api/video-ads/*` (30+ 라우트)
 - **음악:** `/api/ad-music/*` (6 라우트)
-- **배경:** `/api/ad-backgrounds/*` (3 라우트)
 - **음성:** `/api/voices`, `/api/minimax-voices/*`
 - **구독 & 결제:** `/api/subscription`, `/api/stripe/*`
 - **관리자:** `/api/admin/*`
