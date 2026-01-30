@@ -136,13 +136,12 @@ export function ShowcaseRain() {
       className="absolute inset-0 overflow-hidden pointer-events-none"
       style={{ contain: 'strict' }}
     >
-      {/* 기울어진 컨테이너 */}
+      {/* 기울어진 컨테이너 (정적 transform - willChange 불필요) */}
       <div
         className="absolute inset-0 flex gap-4 justify-center"
         style={{
           transform: 'rotate(-12deg) scale(1.3)',
           transformOrigin: 'center center',
-          willChange: 'transform',
         }}
       >
         {/* 스켈레톤 레인 - 로딩 중 표시, 로드 후 페이드아웃 */}
