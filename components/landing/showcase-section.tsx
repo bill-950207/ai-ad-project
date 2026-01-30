@@ -160,7 +160,7 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
             muted
             loop
             playsInline
-            preload="none"
+            preload="auto"
           />
         )}
 
