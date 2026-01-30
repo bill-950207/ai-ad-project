@@ -67,7 +67,35 @@ interface ShowcaseCardProps {
 function ShowcaseCard({ item }: ShowcaseCardProps) {
   const { t } = useLanguage()
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
   const { onShowcaseClick } = useContext(VideoContext)
+
+  const isVideo = item.type === 'video' && item.media_url
+
+  // 화면에 보일 때만 비디오 표시 (메모리 최적화)
+  useEffect(() => {
+    if (!isVideo) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { threshold: 0.3 }
+    )
+
+    if (cardRef.current) observer.observe(cardRef.current)
+    return () => observer.disconnect()
+  }, [isVideo])
+
+  // 비디오 재생/정지
+  useEffect(() => {
+    if (!videoRef.current) return
+    if (isVisible) {
+      videoRef.current.play().catch(() => {})
+    } else {
+      videoRef.current.pause()
+    }
+  }, [isVisible])
 
   // 광고 서브타입 레이블 가져오기
   const getAdTypeLabel = (): string | null => {
@@ -94,14 +122,16 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
 
   return (
     <div
+      ref={cardRef}
       role="button"
       tabIndex={0}
       onClick={() => onShowcaseClick(item)}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onShowcaseClick(item); } }}
       className="group relative rounded-2xl overflow-hidden bg-gray-200 dark:bg-gray-800 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
-      {/* 미디어 컨테이너 - 썸네일만 표시 (메모리 최적화) */}
+      {/* 미디어 컨테이너 */}
       <div className="relative w-full">
+        {/* 썸네일 이미지 */}
         <img
           src={item.thumbnail_url}
           alt={item.title}
@@ -118,13 +148,27 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
           onLoad={() => setImageLoaded(true)}
         />
 
+        {/* 비디오 - 보일 때만 렌더링 (메모리 최적화) */}
+        {isVideo && isVisible && (
+          <video
+            ref={videoRef}
+            src={item.media_url!}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ objectPosition: 'top' }}
+            muted
+            loop
+            playsInline
+            preload="none"
+          />
+        )}
+
         {/* 로딩 스켈레톤 */}
         {!imageLoaded && (
           <div className="w-full aspect-[4/5] bg-gray-300 dark:bg-gray-700 animate-pulse" />
         )}
 
-        {/* 비디오 재생 아이콘 */}
-        {item.type === 'video' && (
+        {/* 비디오 재생 아이콘 - 재생 중이 아닐 때만 */}
+        {isVideo && !isVisible && (
           <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center" aria-hidden="true">
             <Play className="w-4 h-4 text-white fill-white" />
           </div>
