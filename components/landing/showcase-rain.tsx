@@ -3,11 +3,11 @@
  *
  * 히어로 섹션 배경에 쇼케이스 썸네일이 대각선으로 흐르는 효과
  *
- * 성능 최적화 v4:
- * - 4열 구성 (시각적 밀도 향상)
+ * 성능 최적화 v5:
+ * - 카드 크기 증가 (140px → 180px) - 화면에 보이는 개수 감소
+ * - 카드 개수 감소 (4개 → 3개/열)
  * - 애니메이션 속도 느리게 (GPU 부하 감소)
  * - transform: translate3d로 강제 GPU 레이어
- * - backface-visibility: hidden으로 렌더링 최적화
  */
 
 'use client'
@@ -31,8 +31,8 @@ const COLUMN_CONFIG = [
   { speed: 32, direction: -1 },  // 느림, 위로
 ]
 
-// 각 열의 스켈레톤 카드 개수
-const SKELETON_CARDS_PER_COLUMN = 4
+// 각 열의 스켈레톤 카드 개수 (큰 카드로 감소)
+const SKELETON_CARDS_PER_COLUMN = 3
 
 // 스켈레톤 카드 컴포넌트
 function SkeletonCard() {
@@ -111,7 +111,7 @@ export function ShowcaseRain({ showcases = [] }: ShowcaseRainProps) {
             {skeletonColumns.map((column, colIndex) => (
               <div
                 key={`skeleton-${colIndex}`}
-                className="flex flex-col gap-4 w-[120px] sm:w-[140px] flex-shrink-0"
+                className="flex flex-col gap-5 w-[150px] sm:w-[180px] flex-shrink-0"
                 style={{
                   animation: `showcase-flow-${COLUMN_CONFIG[colIndex].direction > 0 ? 'down' : 'up'} ${COLUMN_CONFIG[colIndex].speed}s linear infinite`,
                   willChange: 'transform',
