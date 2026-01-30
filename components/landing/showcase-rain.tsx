@@ -11,7 +11,7 @@
 
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 
 interface ShowcaseItem {
   id: string
@@ -48,13 +48,14 @@ function SkeletonCard() {
   )
 }
 
-// 개별 카드 컴포넌트 - 이미지 또는 영상
+// 개별 카드 컴포넌트 - 이미지 또는 영상 (페이드인 효과)
 function RainCard({ item }: { item: ShowcaseItem }) {
+  const [isLoaded, setIsLoaded] = useState(false)
   const isVideo = item.type === 'video' && item.media_url
 
   return (
     <div
-      className="relative rounded-xl overflow-hidden flex-shrink-0"
+      className="relative rounded-xl overflow-hidden flex-shrink-0 bg-secondary/20"
       style={{
         aspectRatio: '3/4',
         backfaceVisibility: 'hidden',
@@ -65,12 +66,13 @@ function RainCard({ item }: { item: ShowcaseItem }) {
         <video
           src={item.media_url!}
           poster={item.thumbnail_url}
-          className="w-full h-full object-cover object-top"
+          className={`w-full h-full object-cover object-top transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
           autoPlay
           muted
           loop
           playsInline
           preload="metadata"
+          onLoadedData={() => setIsLoaded(true)}
         />
       ) : (
         <img
@@ -78,12 +80,13 @@ function RainCard({ item }: { item: ShowcaseItem }) {
           alt=""
           width={120}
           height={160}
-          className="w-full h-full object-cover object-top"
+          className={`w-full h-full object-cover object-top transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
           loading="lazy"
           decoding="async"
+          onLoad={() => setIsLoaded(true)}
         />
       )}
-      <div className="absolute inset-0 bg-background/40" />
+      <div className={`absolute inset-0 bg-background/40 transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`} />
     </div>
   )
 }
@@ -144,13 +147,13 @@ export function ShowcaseRain({ showcases = [] }: ShowcaseRainProps) {
           </>
         )}
 
-        {/* 실제 쇼케이스 */}
+        {/* 실제 쇼케이스 - 열별 스태거드 페이드인 */}
         {isLoaded && columns.map((column, colIndex) => (
           <div
             key={colIndex}
-            className="flex flex-col gap-5 w-[150px] sm:w-[180px] flex-shrink-0"
+            className="flex flex-col gap-5 w-[150px] sm:w-[180px] flex-shrink-0 animate-fade-in"
             style={{
-              animation: `showcase-flow-${COLUMN_CONFIG[colIndex].direction > 0 ? 'down' : 'up'} ${COLUMN_CONFIG[colIndex].speed}s linear infinite`,
+              animation: `showcase-flow-${COLUMN_CONFIG[colIndex].direction > 0 ? 'down' : 'up'} ${COLUMN_CONFIG[colIndex].speed}s linear infinite, fade-in 0.6s ease-out ${colIndex * 0.1}s both`,
               willChange: 'transform',
               backfaceVisibility: 'hidden',
             }}
