@@ -56,10 +56,20 @@ async function getShowcases(): Promise<{
       ...videos.slice(0, 4),
     ].sort(() => Math.random() - 0.5) as ShowcaseData[];
 
-    // Gallery용: Rain에 사용되지 않은 나머지
+    // Gallery용: Rain에 사용되지 않은 나머지 (이미지 + 영상 균형있게)
     const usedIds = new Set(rainShowcases.map(s => s.id));
-    const remaining = shuffled.filter(s => !usedIds.has(s.id));
-    const galleryShowcases = remaining.slice(0, 20) as ShowcaseData[];
+    const remainingImages = images.filter(s => !usedIds.has(s.id));
+    const remainingVideos = videos.filter(s => !usedIds.has(s.id));
+
+    // 이미지 10개 + 영상 10개 (인터리브 배치)
+    const galleryImages = remainingImages.slice(0, 10);
+    const galleryVideos = remainingVideos.slice(0, 10);
+    const galleryShowcases: ShowcaseData[] = [];
+    const maxLen = Math.max(galleryImages.length, galleryVideos.length);
+    for (let i = 0; i < maxLen; i++) {
+      if (galleryVideos[i]) galleryShowcases.push(galleryVideos[i] as ShowcaseData);
+      if (galleryImages[i]) galleryShowcases.push(galleryImages[i] as ShowcaseData);
+    }
 
     return { rainShowcases, galleryShowcases };
   } catch (error) {
