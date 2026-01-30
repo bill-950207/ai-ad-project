@@ -625,8 +625,8 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
 
       {/* 콘텐츠 - Flex 기반 갤러리 레이아웃 */}
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* 이미지 갤러리 섹션 - 더 큰 비중 */}
-        <div className="flex-1 lg:max-w-[60%] space-y-4">
+        {/* 이미지 갤러리 섹션 */}
+        <div className="flex-1 lg:max-w-[55%] space-y-4">
           {/* 메인 이미지 - Glassmorphism 스타일 */}
           <div className="relative group rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-900/50 to-zinc-950/80 ring-1 ring-white/5 shadow-2xl">
             {/* 배경 그라데이션 효과 */}
@@ -696,14 +696,14 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
           {/* 썸네일 스트립 - Horizontal scroll */}
           {hasMultipleImages && (
             <div className="space-y-3">
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+              <div className="flex gap-3 overflow-x-auto py-2 px-1 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
                 {imageUrls.map((url, idx) => (
                   <button
                     key={idx}
                     onClick={() => setSelectedImageIndex(idx)}
-                    className={`relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden ring-2 transition-all duration-200 group/thumb ${
+                    className={`relative flex-shrink-0 w-18 h-18 rounded-xl overflow-hidden ring-2 transition-all duration-200 group/thumb ${
                       idx === selectedImageIndex
-                        ? 'ring-primary shadow-lg shadow-primary/25 scale-105'
+                        ? 'ring-primary shadow-lg shadow-primary/25 scale-110'
                         : 'ring-transparent hover:ring-white/30 bg-[#0a0a12]'
                     }`}
                   >
@@ -740,7 +740,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
         </div>
 
         {/* 상세 정보 사이드바 - Glassmorphism */}
-        <div className="lg:w-[380px] lg:sticky lg:top-6 lg:self-start space-y-4">
+        <div className="lg:w-[420px] lg:sticky lg:top-6 lg:self-start space-y-4">
           {/* 관련 제품 */}
           {imageAd.ad_products && (
             <div className="relative backdrop-blur-xl rounded-2xl p-5 bg-white/[0.02] border border-white/[0.06] shadow-lg shadow-black/5 group/card hover:bg-white/[0.04] transition-colors duration-300">
@@ -905,7 +905,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                   {t.imageAdDetail?.detailSettings || '상세 설정'}
                 </h3>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="space-y-3">
                 {Object.entries(imageAd.selected_options).map(([key, value]) => {
                   if (!value || value === 'none') return null
                   const label = getOptionLabel(key, value)
@@ -914,14 +914,14 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                   return (
                     <div
                       key={key}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.04] border border-white/[0.06] rounded-lg text-sm"
+                      className="py-2.5 border-b border-white/[0.04] last:border-b-0"
                     >
-                      <span className="text-muted-foreground">
-                        {optionGroupLabels[key] || key}:
+                      <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                        {optionGroupLabels[key] || key}
                       </span>
-                      <span className="text-foreground font-medium">
+                      <p className="mt-1 text-sm text-foreground leading-relaxed">
                         {label}
-                      </span>
+                      </p>
                     </div>
                   )
                 })}
