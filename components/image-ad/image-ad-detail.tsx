@@ -378,11 +378,15 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
 
   // 옵션 값 라벨 - i18n 지원
   const getOptionValueLabel = (key: string, value: string): string => {
+    // 소문자로 정규화
+    const normalizedKey = key.toLowerCase()
+
     // i18n에서 먼저 찾기
     const i18nLabels = (t as Record<string, unknown>).imageAdOptions as Record<string, Record<string, Record<string, string>>> | undefined
     if (i18nLabels?.valueLabels?.[key]?.[value]) return i18nLabels.valueLabels[key][value]
+    if (i18nLabels?.valueLabels?.[normalizedKey]?.[value]) return i18nLabels.valueLabels[normalizedKey][value]
 
-    // 폴백 라벨
+    // 폴백 라벨 (소문자 키로 통일)
     const fallbackLabels: Record<string, Record<string, string>> = {
       pose: {
         natural_hold: '자연스럽게 들기',
@@ -818,8 +822,8 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
         trendy_fashion: '트렌디 패션',
         minimal_simple: '미니멀 심플',
       },
-      // 컬러톤 옵션
-      colorTone: {
+      // 컬러톤 옵션 (소문자 키로 통일)
+      colortone: {
         bright_vivid: '브라이트 비비드',
         warm_golden: '따뜻한 골든',
         cool_blue: '쿨 블루',
@@ -839,7 +843,8 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
         negative_space: '네거티브 스페이스',
       },
     }
-    return fallbackLabels[key]?.[value] || value
+    // 정규화된 키로 먼저 찾고, 없으면 원본 키로 찾기
+    return fallbackLabels[normalizedKey]?.[value] || fallbackLabels[key]?.[value] || value
   }
 
   const getOptionLabel = (key: string, value: unknown): string | null => {
@@ -1225,7 +1230,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                   {t.imageAdDetail?.detailSettings || '상세 설정'}
                 </h3>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-1.5">
                 {Object.entries(imageAd.selected_options).map(([key, value]) => {
                   if (!value || value === 'none') return null
                   const label = getOptionLabel(key, value)
@@ -1234,12 +1239,12 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                   return (
                     <div
                       key={key}
-                      className="py-2.5 border-b border-white/[0.04] last:border-b-0"
+                      className="py-1.5 border-b border-white/[0.04] last:border-b-0"
                     >
                       <span className="text-xs text-muted-foreground uppercase tracking-wider">
                         {getOptionGroupLabel(key)}
                       </span>
-                      <p className="mt-1 text-sm text-foreground leading-relaxed">
+                      <p className="mt-0.5 text-sm text-foreground">
                         {label}
                       </p>
                     </div>
