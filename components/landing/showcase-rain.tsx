@@ -39,7 +39,7 @@ const SKELETON_CARDS_PER_COLUMN = 3
 function SkeletonCard() {
   return (
     <div
-      className="rounded-xl bg-secondary/20 flex-shrink-0"
+      className="rounded-xl bg-gray-300 dark:bg-gray-700 flex-shrink-0"
       style={{
         aspectRatio: '3/4',
         backfaceVisibility: 'hidden',
@@ -55,7 +55,7 @@ function RainCard({ item }: { item: ShowcaseItem }) {
 
   return (
     <div
-      className="relative rounded-xl overflow-hidden flex-shrink-0 bg-secondary/20"
+      className="relative rounded-xl overflow-hidden flex-shrink-0 bg-gray-300 dark:bg-gray-700"
       style={{
         aspectRatio: '3/4',
         backfaceVisibility: 'hidden',
@@ -66,7 +66,11 @@ function RainCard({ item }: { item: ShowcaseItem }) {
         <video
           src={item.media_url!}
           poster={item.thumbnail_url}
-          className={`w-full h-full object-cover object-top transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+          className="w-full h-full object-cover object-top"
+          style={{
+            opacity: isLoaded ? 1 : 0,
+            transition: 'opacity 0.6s ease-out',
+          }}
           autoPlay
           muted
           loop
@@ -80,13 +84,23 @@ function RainCard({ item }: { item: ShowcaseItem }) {
           alt=""
           width={120}
           height={160}
-          className={`w-full h-full object-cover object-top transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-          loading="lazy"
+          className="w-full h-full object-cover object-top"
+          style={{
+            opacity: isLoaded ? 1 : 0,
+            transition: 'opacity 0.6s ease-out',
+          }}
+          loading="eager"
           decoding="async"
           onLoad={() => setIsLoaded(true)}
         />
       )}
-      <div className={`absolute inset-0 bg-background/40 transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`} />
+      <div
+        className="absolute inset-0 bg-background/40"
+        style={{
+          opacity: isLoaded ? 1 : 0,
+          transition: 'opacity 0.6s ease-out',
+        }}
+      />
     </div>
   )
 }
