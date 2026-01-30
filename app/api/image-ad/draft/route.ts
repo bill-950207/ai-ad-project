@@ -39,10 +39,11 @@ export async function POST(request: NextRequest) {
       imageSize,
       quality,
       numImages,
+      forceNew,  // true면 항상 새 draft 생성
     } = body
 
-    // 기존 초안 업데이트
-    if (id) {
+    // 기존 초안 업데이트 (id가 있고 forceNew가 아닐 때)
+    if (id && !forceNew) {
       const existing = await prisma.image_ads.findFirst({
         where: {
           id,
@@ -74,37 +75,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ draft: updated })
     }
 
-    // 기존 DRAFT 확인 (같은 adType)
-    const existingDraft = await prisma.image_ads.findFirst({
-      where: {
-        user_id: user.id,
-        status: 'DRAFT',
-        ad_type: adType,
-      },
-      orderBy: { updated_at: 'desc' },
-    })
-
-    if (existingDraft) {
-      // 기존 초안 업데이트
-      const updated = await prisma.image_ads.update({
-        where: { id: existingDraft.id },
-        data: {
-          wizard_step: wizardStep,
-          wizard_state: wizardState,
-          product_id: productId || null,
-          avatar_id: avatarId || null,
-          outfit_id: outfitId || null,
-          image_size: imageSize || null,
-          quality: quality || null,
-          num_images: numImages || null,
-          updated_at: new Date(),
+    // forceNew가 아닌 경우에만 기존 DRAFT 확인 (같은 adType)
+    if (!forceNew) {
+      const existingDraft = await prisma.image_ads.findFirst({
+        where: {
+          user_id: user.id,
+          status: 'DRAFT',
+          ad_type: adType,
         },
+        orderBy: { updated_at: 'desc' },
       })
 
-      return NextResponse.json({ draft: updated })
+      if (existingDraft) {
+        // 기존 초안 업데이트
+        const updated = await prisma.image_ads.update({
+          where: { id: existingDraft.id },
+          data: {
+            wizard_step: wizardStep,
+            wizard_state: wizardState,
+            product_id: productId || null,
+            avatar_id: avatarId || null,
+            outfit_id: outfitId || null,
+            image_size: imageSize || null,
+            quality: quality || null,
+            num_images: numImages || null,
+            updated_at: new Date(),
+          },
+        })
+
+        return NextResponse.json({ draft: updated })
+      }
     }
 
-    // 새 초안 생성
+    // 새 초안 생성 (forceNew이거나 기존 draft가 없을 때)
     const draft = await prisma.image_ads.create({
       data: {
         user_id: user.id,

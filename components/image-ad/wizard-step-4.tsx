@@ -81,6 +81,7 @@ export function WizardStep4() {
     goToPrevStep,
     resetWizard,
     saveDraft,
+    draftId,
   } = useImageAdWizard()
 
   const [generationStartTime, setGenerationStartTime] = useState<number | null>(null)
@@ -398,6 +399,18 @@ export function WizardStep4() {
 
       setResultImages(imageUrls)
       setGenerationProgress(100)
+
+      // Draft 상태를 COMPLETED로 변경
+      if (draftId) {
+        try {
+          await fetch(`/api/image-ad/draft/${draftId}/complete`, {
+            method: 'POST',
+          })
+        } catch (err) {
+          console.error('Draft 완료 처리 오류:', err)
+        }
+      }
+
       // 크레딧 갱신
       refreshCredits()
     } catch (error) {

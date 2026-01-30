@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react'
 import { ImageAdType } from '@/components/ad-product/image-ad-type-modal'
 import { SelectedAvatarInfo, AiAvatarOptions } from '@/components/video-ad/avatar-select-modal'
 import { getDefaultOptions } from '@/lib/image-ad/category-options'
@@ -539,68 +539,114 @@ export function ImageAdWizardProvider({
   // ============================================================
 
   useEffect(() => {
-    const loadDraft = async () => {
-      // draftId가 있을 때만 로딩 표시
-      if (initialDraftId) {
-        setIsLoadingDraft(true)
-      }
+    const loadOrCreateDraft = async () => {
+      setIsLoadingDraft(true)
 
       try {
-        let res: Response
-
         if (initialDraftId) {
-          // 특정 draftId가 있으면 해당 draft 로드
-          res = await fetch(`/api/image-ad/draft?id=${initialDraftId}`)
+          // draftId가 있으면 해당 draft 로드 (이어하기)
+          const res = await fetch(`/api/image-ad/draft?id=${initialDraftId}`)
+
+          if (!res.ok) {
+            setIsLoadingDraft(false)
+            return
+          }
+
+          const data = await res.json()
+          if (!data.draft?.wizard_state) {
+            setIsLoadingDraft(false)
+            return
+          }
+
+          const state = data.draft.wizard_state
+
+          // 상태 복원
+          setDraftId(data.draft.id)
+          setStep(data.draft.wizard_step || 1)
+          if (state.adType) setAdTypeState(state.adType)
+          if (state.selectedProduct) setSelectedProduct(state.selectedProduct)
+          if (state.localImageUrl) setLocalImageUrl(state.localImageUrl)
+          if (state.selectedAvatarInfo) setSelectedAvatarInfo(state.selectedAvatarInfo)
+          if (state.productUsageMethod) setProductUsageMethod(state.productUsageMethod)
+          if (state.settingMethod) setSettingMethod(state.settingMethod)
+          if (state.referenceUrl) setReferenceUrl(state.referenceUrl)
+          if (state.analysisResult) setAnalysisResult(state.analysisResult)
+          if (state.categoryOptions) setCategoryOptions(state.categoryOptions)
+          if (state.customOptions) setCustomOptions(state.customOptions)
+          if (state.customInputActive) setCustomInputActive(state.customInputActive)
+          if (state.additionalPrompt) setAdditionalPrompt(state.additionalPrompt)
+          if (state.aiStrategy) setAiStrategy(state.aiStrategy)
+          if (state.aiReasons) setAiReasons(state.aiReasons)
+          if (state.generatedScenarios) setGeneratedScenarios(state.generatedScenarios)
+          if (state.selectedScenarioIndex !== undefined) setSelectedScenarioIndex(state.selectedScenarioIndex)
+          if (state.aspectRatio) setAspectRatio(state.aspectRatio)
+          if (state.quality) setQuality(state.quality)
+          if (state.numImages) setNumImages(state.numImages)
         } else {
-          // draftId가 없으면 같은 adType의 최근 draft 확인
-          res = await fetch(`/api/image-ad/draft?adType=${initialAdType}`)
-        }
+          // draftId가 없으면 새 draft 생성 (항상 새로 시작)
+          const res = await fetch('/api/image-ad/draft', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              adType: initialAdType,
+              wizardStep: 1,
+              wizardState: {},
+              forceNew: true,  // 항상 새로 생성
+            }),
+          })
 
-        if (!res.ok) return
+          if (res.ok) {
+            const data = await res.json()
+            if (data.draft?.id) {
+              setDraftId(data.draft.id)
 
-        const data = await res.json()
-        if (!data.draft?.wizard_state) return
-
-        const state = data.draft.wizard_state
-
-        // 상태 복원
-        setDraftId(data.draft.id)
-        setStep(data.draft.wizard_step || 1)
-        if (state.adType) setAdTypeState(state.adType)
-        if (state.selectedProduct) setSelectedProduct(state.selectedProduct)
-        if (state.localImageUrl) setLocalImageUrl(state.localImageUrl)
-        if (state.selectedAvatarInfo) setSelectedAvatarInfo(state.selectedAvatarInfo)
-        if (state.productUsageMethod) setProductUsageMethod(state.productUsageMethod)
-        if (state.settingMethod) setSettingMethod(state.settingMethod)
-        if (state.referenceUrl) setReferenceUrl(state.referenceUrl)
-        if (state.analysisResult) setAnalysisResult(state.analysisResult)
-        if (state.categoryOptions) setCategoryOptions(state.categoryOptions)
-        if (state.customOptions) setCustomOptions(state.customOptions)
-        if (state.customInputActive) setCustomInputActive(state.customInputActive)
-        if (state.additionalPrompt) setAdditionalPrompt(state.additionalPrompt)
-        if (state.aiStrategy) setAiStrategy(state.aiStrategy)
-        if (state.aiReasons) setAiReasons(state.aiReasons)
-        if (state.generatedScenarios) setGeneratedScenarios(state.generatedScenarios)
-        if (state.selectedScenarioIndex !== undefined) setSelectedScenarioIndex(state.selectedScenarioIndex)
-        if (state.aspectRatio) setAspectRatio(state.aspectRatio)
-        if (state.quality) setQuality(state.quality)
-        if (state.numImages) setNumImages(state.numImages)
-
-        // URL에 draftId가 없으면 추가
-        if (!initialDraftId && typeof window !== 'undefined') {
-          const currentUrl = new URL(window.location.href)
-          currentUrl.searchParams.set('draftId', data.draft.id)
-          window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search)
+              // URL에 draftId 추가 (새로고침 시 복원용)
+              if (typeof window !== 'undefined') {
+                const currentUrl = new URL(window.location.href)
+                currentUrl.searchParams.set('draftId', data.draft.id)
+                window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search)
+              }
+            }
+          }
         }
       } catch (error) {
-        console.error('Draft 로드 오류:', error)
+        console.error('Draft 로드/생성 오류:', error)
       } finally {
         setIsLoadingDraft(false)
       }
     }
 
-    loadDraft()
+    loadOrCreateDraft()
   }, [initialDraftId, initialAdType])
+
+  // ============================================================
+  // Auto-save (단계 진행 시)
+  // ============================================================
+
+  // step 변경 시 자동 저장을 위한 ref
+  const prevStepRef = useRef(step)
+  const isInitialMountRef = useRef(true)
+
+  useEffect(() => {
+    // 최초 마운트 시에는 저장 안함
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false
+      prevStepRef.current = step
+      return
+    }
+
+    // 이전 step과 같으면 저장 안함
+    if (prevStepRef.current === step) {
+      return
+    }
+
+    prevStepRef.current = step
+
+    // draftId가 있을 때만 auto-save
+    if (draftId) {
+      saveDraft()
+    }
+  }, [step, draftId, saveDraft])
 
   // ============================================================
   // Reset
