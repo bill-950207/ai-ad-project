@@ -156,6 +156,7 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
             src={item.media_url!}
             className="absolute inset-0 w-full h-full object-cover"
             style={{ objectPosition: 'top' }}
+            autoPlay
             muted
             loop
             playsInline
