@@ -882,13 +882,15 @@ export function WizardStep4() {
 
       {/* 네비게이션 버튼 */}
       <div className="flex gap-3 pt-4">
-        <button
-          onClick={goToPrevStep}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          이전
-        </button>
+        {!isGeneratingKeyframes && (
+          <button
+            onClick={goToPrevStep}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            이전
+          </button>
+        )}
         <button
           onClick={handleNext}
           disabled={!canProceedToStep5()}

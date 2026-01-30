@@ -539,17 +539,18 @@ export function WizardStep5Frames() {
           </div>
         </div>
 
-        {/* 이전 버튼 */}
-        <div className="flex gap-3 mt-6">
-          <button
-            onClick={goToPrevStep}
-            disabled={isGeneratingAvatars || isGeneratingFrames}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            이전
-          </button>
-        </div>
+        {/* 이전 버튼 - 생성 중에는 숨김 */}
+        {!isGeneratingAvatars && !isGeneratingFrames && (
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={goToPrevStep}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              이전
+            </button>
+          </div>
+        )}
       </div>
     )
   }
