@@ -3,11 +3,10 @@
  *
  * 히어로 섹션 배경에 쇼케이스 썸네일이 대각선으로 흐르는 효과
  *
- * 성능 최적화 v5:
- * - 카드 크기 증가 (140px → 180px) - 화면에 보이는 개수 감소
- * - 카드 개수 감소 (4개 → 3개/열)
- * - 애니메이션 속도 느리게 (GPU 부하 감소)
- * - transform: translate3d로 강제 GPU 레이어
+ * 성능 최적화 v6:
+ * - 영상 자동 재생 (muted, loop, playsInline)
+ * - 이미지 작은 크기로 렌더링 (width/height 명시)
+ * - 카드 크기 증가로 DOM 요소 감소
  */
 
 'use client'
@@ -16,7 +15,9 @@ import { useMemo } from 'react'
 
 interface ShowcaseItem {
   id: string
+  type: 'image' | 'video'
   thumbnail_url: string
+  media_url: string | null
 }
 
 interface ShowcaseRainProps {
@@ -25,13 +26,13 @@ interface ShowcaseRainProps {
 
 // 열 설정 (4개) - 속도 느리게 조정
 const COLUMN_CONFIG = [
-  { speed: 35, direction: 1 },   // 아주 느림, 아래로
-  { speed: 28, direction: -1 },  // 느림, 위로
-  { speed: 40, direction: 1 },   // 가장 느림, 아래로
-  { speed: 32, direction: -1 },  // 느림, 위로
+  { speed: 35, direction: 1 },
+  { speed: 28, direction: -1 },
+  { speed: 40, direction: 1 },
+  { speed: 32, direction: -1 },
 ]
 
-// 각 열의 스켈레톤 카드 개수 (큰 카드로 감소)
+// 각 열의 스켈레톤 카드 개수
 const SKELETON_CARDS_PER_COLUMN = 3
 
 // 스켈레톤 카드 컴포넌트
@@ -47,24 +48,41 @@ function SkeletonCard() {
   )
 }
 
-// 개별 카드 컴포넌트 - GPU 최적화 강화
-function RainCard({ url }: { url: string }) {
+// 개별 카드 컴포넌트 - 이미지 또는 영상
+function RainCard({ item }: { item: ShowcaseItem }) {
+  const isVideo = item.type === 'video' && item.media_url
+
   return (
     <div
       className="relative rounded-xl overflow-hidden flex-shrink-0"
       style={{
         aspectRatio: '3/4',
         backfaceVisibility: 'hidden',
-        transform: 'translate3d(0,0,0)', // 강제 GPU 레이어
+        transform: 'translate3d(0,0,0)',
       }}
     >
-      <img
-        src={url}
-        alt=""
-        className="w-full h-full object-cover object-top"
-        loading="lazy"
-        decoding="async"
-      />
+      {isVideo ? (
+        <video
+          src={item.media_url!}
+          poster={item.thumbnail_url}
+          className="w-full h-full object-cover object-top"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+        />
+      ) : (
+        <img
+          src={item.thumbnail_url}
+          alt=""
+          width={180}
+          height={240}
+          className="w-full h-full object-cover object-top"
+          loading="lazy"
+          decoding="async"
+        />
+      )}
       <div className="absolute inset-0 bg-background/40" />
     </div>
   )
@@ -77,9 +95,9 @@ export function ShowcaseRain({ showcases = [] }: ShowcaseRainProps) {
   const columns = useMemo(() => {
     if (showcases.length === 0) return []
 
-    const cols: string[][] = [[], [], [], []]
+    const cols: ShowcaseItem[][] = [[], [], [], []]
     showcases.forEach((item, index) => {
-      cols[index % 4].push(item.thumbnail_url)
+      cols[index % 4].push(item)
     })
 
     return cols.map(col => [...col, ...col])
@@ -130,15 +148,15 @@ export function ShowcaseRain({ showcases = [] }: ShowcaseRainProps) {
         {isLoaded && columns.map((column, colIndex) => (
           <div
             key={colIndex}
-            className="flex flex-col gap-4 w-[120px] sm:w-[140px] flex-shrink-0"
+            className="flex flex-col gap-5 w-[150px] sm:w-[180px] flex-shrink-0"
             style={{
               animation: `showcase-flow-${COLUMN_CONFIG[colIndex].direction > 0 ? 'down' : 'up'} ${COLUMN_CONFIG[colIndex].speed}s linear infinite`,
               willChange: 'transform',
               backfaceVisibility: 'hidden',
             }}
           >
-            {column.map((url, itemIndex) => (
-              <RainCard key={itemIndex} url={url} />
+            {column.map((item, itemIndex) => (
+              <RainCard key={`${item.id}-${itemIndex}`} item={item} />
             ))}
           </div>
         ))}
