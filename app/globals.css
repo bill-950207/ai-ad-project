@@ -246,3 +246,22 @@
     columns: 4 !important;
   }
 }
+
+/* ===== 쇼케이스 레인 애니메이션 ===== */
+@keyframes showcase-flow-down {
+  0% {
+    transform: translateY(-50%);
+  }
+  100% {
+    transform: translateY(0%);
+  }
+}
+
+@keyframes showcase-flow-up {
+  0% {
+    transform: translateY(0%);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}

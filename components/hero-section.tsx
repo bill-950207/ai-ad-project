@@ -2,7 +2,7 @@
  * 히어로 섹션 컴포넌트
  *
  * 랜딩 페이지의 메인 히어로 섹션을 담당합니다.
- * - 절제된 배경 효과
+ * - 쇼케이스 레인 배경 효과 (대각선 흐름)
  * - 메인 헤드라인 및 서브 헤드라인
  * - CTA 버튼 (시작하기, 샘플 보기)
  * - 신뢰 지표
@@ -16,6 +16,7 @@ import { ArrowRight, Play, CheckCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { ShowcaseRain } from "./landing/showcase-rain";
 
 // ============================================================
 // 메인 컴포넌트
@@ -42,12 +43,13 @@ export function HeroSection() {
 
   return (
     <section className="relative overflow-hidden px-4 py-20 sm:py-28 lg:py-32">
-      {/* 배경 효과 - 단순화 */}
+      {/* 쇼케이스 레인 배경 */}
+      <ShowcaseRain />
+
+      {/* 배경 오버레이 - 텍스트 가독성 */}
       <div className="absolute inset-0 -z-10">
-        {/* 메인 그라데이션 - 절제된 버전 */}
-        <div className="absolute left-1/2 top-0 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-primary/10 blur-[100px]" />
-        {/* 그리드 패턴 */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8881_1px,transparent_1px),linear-gradient(to_bottom,#8881_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
+        {/* 메인 그라데이션 */}
+        <div className="absolute left-1/2 top-0 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-primary/5 blur-[100px]" />
       </div>
 
       <div className="mx-auto max-w-4xl text-center relative z-10">
