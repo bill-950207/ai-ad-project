@@ -227,15 +227,16 @@ export async function generateMultipleRecommendedOptions(
   const language = input.language || 'ko'
 
   const outputLanguageInstructions: Record<string, string> = {
-    ko: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt) in Korean.',
-    en: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt) in English.',
-    ja: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt) in Japanese.',
+    ko: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt, customText) in Korean.',
+    en: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt, customText) in English.',
+    ja: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt, customText) in Japanese.',
   }
 
+  // 옵션 그룹 목록 (참고용 예시로만 제공 - LLM은 자유롭게 창작)
   const groupsDescription = input.categoryGroups.map(group => {
-    const optionsText = group.options.map(opt => `    - ${opt.key}: ${opt.description}`).join('\n')
-    return `[${group.key}]\n${optionsText}`
-  }).join('\n\n')
+    const examplesText = group.options.slice(0, 3).map(opt => opt.description).join(', ')
+    return `- ${group.key}: (예: ${examplesText} 등)`
+  }).join('\n')
 
   // 아바타 정보 컨텍스트 생성
   const isAiGeneratedAvatar = input.avatarInfo?.type === 'ai-generated'
@@ -332,8 +333,10 @@ ${input.productSellingPoints?.length ? `Selling Points: ${input.productSellingPo
 === AD TYPE ===
 ${input.adType}: ${adTypeDescriptions[input.adType]}
 
-=== AVAILABLE OPTIONS ===
+=== OPTION CATEGORIES (Reference Only) ===
 ${groupsDescription}
+
+⚠️ IMPORTANT: Do NOT select from preset options above. Instead, write CREATIVE CUSTOM DESCRIPTIONS for each category.
 
 === STEP 2: DYNAMIC SCENARIO GENERATION ===
 
@@ -390,13 +393,26 @@ ${SCENARIO_DIVERSITY_CHECK}
       "description": "Target & concept explanation (30-50 chars)",
       "targetAudience": "Specific target description",
       "recommendations": [
-        { "key": "category_key", "value": "option_key", "reason": "Why this option" }
+        { "key": "category_key", "value": "__custom__", "customText": "Product-specific creative description for this category", "reason": "Why this setting" }
       ],
       "overallStrategy": "Strategy for this scenario",
       "recommendedAvatarStyle": { ... }  // If AI avatar mode
     }
   ]
 }
+
+=== CUSTOM TEXT WRITING GUIDELINES ===
+For each category in recommendations, write CUSTOM descriptions (customText) that are:
+1. **Product-specific**: Tailored to THIS product's characteristics, not generic
+2. **Visually descriptive**: Describe the exact visual effect you want (e.g., "soft morning sunlight filtering through sheer curtains, casting gentle highlights on the product's glass surface")
+3. **Coherent**: All customText descriptions should work together to create a unified visual concept
+4. **Detailed but concise**: 15-40 words per customText, enough detail for image generation
+5. **In output language**: customText MUST be written in the specified output language
+
+Example customText for a premium skincare serum:
+- lighting: "창가에서 들어오는 부드러운 아침 햇살, 세럼 병의 유리 표면에 맑은 하이라이트 생성"
+- background: "미니멀한 화이트 마블 욕실, 고급스러운 골드 악세서리와 신선한 유칼립투스 가지"
+- mood: "차분하고 럭셔리한 자기관리 시간, 여유로운 아침 루틴의 평화로움"
 
 ${SCENARIO_SELF_VERIFICATION}
 
@@ -435,15 +451,15 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
               },
               recommendations: {
                 type: Type.ARRAY,
-                description: 'Category recommendations',
+                description: 'Category recommendations with custom creative descriptions',
                 items: {
                   type: Type.OBJECT,
-                  required: ['key', 'value', 'reason'],
+                  required: ['key', 'value', 'customText', 'reason'],
                   properties: {
-                    key: { type: Type.STRING, description: 'Category key' },
-                    value: { type: Type.STRING, description: 'Option value' },
-                    customText: { type: Type.STRING, description: 'Custom text if value is __custom__' },
-                    reason: { type: Type.STRING, description: 'Reason for this recommendation' },
+                    key: { type: Type.STRING, description: 'Category key (e.g., lighting, background, mood)' },
+                    value: { type: Type.STRING, description: 'Always "__custom__" for creative descriptions' },
+                    customText: { type: Type.STRING, description: 'Creative product-specific description for this category (15-40 words)' },
+                    reason: { type: Type.STRING, description: 'Brief reason for this creative choice' },
                   },
                 },
               },
