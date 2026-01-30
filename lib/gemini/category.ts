@@ -53,38 +53,38 @@ Options focus: Theme-appropriate props, seasonal color palette, festive mood.`,
 // Few-Shot 예시 및 검증 규칙
 // ============================================================
 
-/** 시나리오 추천 Few-Shot 예시 */
+/** 시나리오 추천 규칙 (BAD 예시만 제공 - 창의성은 LLM에게 맡김) */
 const SCENARIO_RECOMMENDATION_EXAMPLES = `
-=== SCENARIO EXAMPLES (Few-Shot) ===
+=== WHAT TO AVOID (BAD EXAMPLES) ===
 
-GOOD (specific, diverse, product-appropriate):
+These patterns are FORBIDDEN - do NOT produce anything similar:
 
-Example 1 - Skincare Serum:
-✓ Scenario 1: "모닝 글로우" (Morning Glow)
-  - Target: 20-30대 직장인 여성
-  - Mood: Fresh, energetic
-  - Background: bright bathroom with morning sunlight
-  - Concept: 아침 루틴에서 빛나는 피부 표현
+❌ GENERIC TITLES:
+- "프리미엄 시나리오", "기본 시나리오", "스탠다드" - No creative concept
+- "시나리오 1", "시나리오 2", "시나리오 3" - Just numbers
+- Any title using banned words from the list above
 
-✓ Scenario 2: "잇템 리뷰어" (It-Item Reviewer)
-  - Target: 뷰티 관심 MZ세대
-  - Mood: Authentic, relatable
-  - Background: cozy bedroom desk setup
-  - Concept: 인플루언서 스타일 솔직한 사용기
+❌ LACK OF DIVERSITY:
+- All 3 scenarios targeting the same age group
+- All 3 scenarios with similar mood/tone
+- All 3 scenarios in similar settings
 
-✓ Scenario 3: "럭셔리 케어" (Luxury Care)
-  - Target: 30-40대 프리미엄 소비층
-  - Mood: Sophisticated, premium
-  - Background: marble vanity with soft lighting
-  - Concept: 고급스러운 자기관리 시간
+❌ PRODUCT MISMATCH:
+- Budget snack product with luxury positioning
+- Youth product with mature audience targeting
+- Premium product with budget-friendly casual style
 
-BAD (generic, repetitive, product-inappropriate):
+❌ AI WRITING PATTERNS:
+- "따뜻하고 부드럽고 자연스러운" - 3+ stacked adjectives
+- "특별한 경험을 선사하는" - Empty marketing phrase
+- Starting all backgrounds with "따뜻한" or "부드러운"
+- Using same sentence structure for all customText
+- Repetitive vocabulary across scenarios
 
-✗ "프리미엄 시나리오" - Too generic, no creative concept
-✗ "기본 시나리오" - No differentiation
-✗ "시나리오 1", "시나리오 2" - Just numbers, no concept
-✗ All 3 scenarios targeting same audience - No diversity
-✗ Budget snack product → "럭셔리 프리미엄" - Price tier mismatch
+❌ VAGUE DESCRIPTIONS:
+- "아늑한 분위기" instead of specific setting details
+- "은은한 조명" instead of technical lighting description
+- "자연스러운 느낌" without concrete visual elements
 `.trim()
 
 /** 시나리오 다양성 검증 */
@@ -94,8 +94,8 @@ const SCENARIO_DIVERSITY_CHECK = `
 Each scenario MUST differ in at least 3 of these dimensions:
 1. Target Age: (20대 vs 30대 vs 40대+)
 2. Target Lifestyle: (직장인 vs 학생 vs 전업주부 vs 인플루언서)
-3. Emotional Tone: (활기찬 vs 차분한 vs 고급스러운 vs 친근한)
-4. Visual Mood: (밝고 화사 vs 따뜻하고 포근 vs 세련되고 모던)
+3. Emotional Tone: (활기찬 vs 차분한 vs 단정한 vs 친근한)
+4. Visual Mood: (밝고 화사 vs 차분하고 편안 vs 모던하고 깔끔)
 5. Setting: (집 vs 사무실 vs 카페 vs 야외 vs 스튜디오)
 6. Time: (아침 vs 낮 vs 저녁 vs 밤)
 `.trim()
@@ -110,6 +110,11 @@ Check your scenarios:
 ✓ Options within each scenario are COHERENT (mood + lighting + background align)?
 ✓ Titles are 8-15 characters in output language?
 ✓ Descriptions explain the concept clearly (30-50 characters)?
+✓ NO banned words used in any text (check BANNED lists above)?
+✓ NO repetitive adjective patterns ("~하고 ~하고 ~한")?
+✓ customText reads like a real photographer's notes, NOT like marketing copy?
+✓ Each scenario uses DIFFERENT sentence structures and vocabulary?
+✓ Pose/action customText has SIMPLE hand actions? (max 1 action per hand, no 3+ gestures)?
 If any check fails, revise before responding.
 `.trim()
 
@@ -227,15 +232,95 @@ export async function generateMultipleRecommendedOptions(
   const language = input.language || 'ko'
 
   const outputLanguageInstructions: Record<string, string> = {
-    ko: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt) in Korean.',
-    en: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt) in English.',
-    ja: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt) in Japanese.',
+    ko: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt, customText) in Korean.',
+    en: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt, customText) in English.',
+    ja: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt, customText) in Japanese.',
   }
 
+  // 옵션 그룹 목록 (모든 카테고리에 대해 customText 필수 출력)
+  const categoryKeys = input.categoryGroups.map(group => group.key)
+
+  // 카테고리별 역할 설명 (언어별)
+  const categoryRoleDescriptions: Record<string, Record<string, string>> = {
+    ko: {
+      background: '제품 뒤의 배경 환경/표면 설명',
+      lighting: '광원의 방향, 강도, 색온도, 그림자 효과',
+      angle: '카메라/촬영 각도와 제품이 보이는 시점',
+      style: '전체적인 비주얼 스타일과 미학적 방향',
+      colorTone: '이미지의 전체 색감, 채도, 색온도 톤',
+      composition: '프레임 내 제품 배치와 구도',
+      mood: '이미지가 전달하는 감정과 분위기',
+      outfit: '모델/아바타의 의상 스타일',
+      pose: '모델/아바타의 자세와 동작',
+      gaze: '모델/아바타의 시선 방향',
+      expression: '모델/아바타의 표정',
+      framing: '샷의 범위 (클로즈업, 상반신, 전신 등)',
+      action: '모델이 제품으로 하는 동작/행위',
+      setting: '촬영 장소/공간 환경',
+      focus: '초점이 맞는 대상 (제품 vs 모델)',
+      scene: '상황/씬 설정',
+      location: '구체적인 장소',
+      time: '시간대 (아침, 저녁, 골든아워 등)',
+      productPlacement: '제품 배치 방식',
+      season: '계절감',
+      theme: '테마/이벤트',
+      atmosphere: '전체적인 공기감/분위기',
+    },
+    en: {
+      background: 'Background environment/surface behind the product',
+      lighting: 'Light source direction, intensity, color temperature, shadow effects',
+      angle: 'Camera angle and viewing perspective of the product',
+      style: 'Overall visual style and aesthetic direction',
+      colorTone: 'Overall color grading, saturation, color temperature',
+      composition: 'Product placement and framing within the image',
+      mood: 'Emotional atmosphere the image conveys',
+      outfit: 'Model/avatar clothing style',
+      pose: 'Model/avatar posture and movement',
+      gaze: 'Model/avatar eye direction',
+      expression: 'Model/avatar facial expression',
+      framing: 'Shot range (close-up, upper body, full body, etc.)',
+      action: 'Action/activity model performs with product',
+      setting: 'Shooting location/space environment',
+      focus: 'Focus subject (product vs model)',
+      scene: 'Situation/scene setting',
+      location: 'Specific location',
+      time: 'Time of day (morning, evening, golden hour, etc.)',
+      productPlacement: 'How product is placed/positioned',
+      season: 'Seasonal feeling',
+      theme: 'Theme/event',
+      atmosphere: 'Overall ambiance/atmosphere',
+    },
+    ja: {
+      background: '製品背後の背景環境/表面',
+      lighting: '光源の方向、強度、色温度、影の効果',
+      angle: 'カメラアングルと製品の見え方',
+      style: '全体的なビジュアルスタイルと美学的方向性',
+      colorTone: '画像全体の色調、彩度、色温度',
+      composition: 'フレーム内の製品配置と構図',
+      mood: '画像が伝える感情と雰囲気',
+      outfit: 'モデル/アバターの服装スタイル',
+      pose: 'モデル/アバターの姿勢と動き',
+      gaze: 'モデル/アバターの視線方向',
+      expression: 'モデル/アバターの表情',
+      framing: 'ショットの範囲（クローズアップ、上半身、全身など）',
+      action: 'モデルが製品で行う動作/行為',
+      setting: '撮影場所/空間環境',
+      focus: 'フォーカス対象（製品 vs モデル）',
+      scene: '状況/シーン設定',
+      location: '具体的な場所',
+      time: '時間帯（朝、夕方、ゴールデンアワーなど）',
+      productPlacement: '製品の配置方法',
+      season: '季節感',
+      theme: 'テーマ/イベント',
+      atmosphere: '全体的な空気感/雰囲気',
+    },
+  }
+
+  const roleDescs = categoryRoleDescriptions[language] || categoryRoleDescriptions.ko
   const groupsDescription = input.categoryGroups.map(group => {
-    const optionsText = group.options.map(opt => `    - ${opt.key}: ${opt.description}`).join('\n')
-    return `[${group.key}]\n${optionsText}`
-  }).join('\n\n')
+    const roleDesc = roleDescs[group.key] || group.key
+    return `- ${group.key}: ${roleDesc}`
+  }).join('\n')
 
   // 아바타 정보 컨텍스트 생성
   const isAiGeneratedAvatar = input.avatarInfo?.type === 'ai-generated'
@@ -252,7 +337,7 @@ export async function generateMultipleRecommendedOptions(
       avatarContext = `\n\n=== AVATAR STYLE INFO ===
 The user has selected a real avatar with the following characteristics:
 ${styleParts.join(', ')}
-Consider these avatar traits when recommending options (especially outfit, pose, expression) to create harmonious visuals.`
+Consider these avatar traits when recommending options (especially outfit, pose, expression) to create cohesive visuals.`
     }
   } else if (isAiGeneratedAvatar) {
     // 사용자 초기 AI 아바타 옵션 텍스트 생성
@@ -328,12 +413,17 @@ Examine the product image and information carefully. Identify:
 Name: ${input.productName || 'Not provided'}
 Description: ${input.productDescription || 'Not provided'}
 ${input.productSellingPoints?.length ? `Selling Points: ${input.productSellingPoints.join(', ')}` : ''}
+${input.productUsageMethod ? `Usage Method: ${input.productUsageMethod}` : ''}
 
 === AD TYPE ===
 ${input.adType}: ${adTypeDescriptions[input.adType]}
 
-=== AVAILABLE OPTIONS ===
+=== OPTION CATEGORIES (MUST provide customText for ALL) ===
+Required categories: ${categoryKeys.join(', ')}
+
 ${groupsDescription}
+
+⚠️ CRITICAL: You MUST provide customText for ALL ${categoryKeys.length} categories listed above. Do NOT skip any category. Each scenario's recommendations array must have exactly ${categoryKeys.length} items.
 
 === STEP 2: DYNAMIC SCENARIO GENERATION ===
 
@@ -342,10 +432,12 @@ Based on your product analysis, create 3 DISTINCT advertising scenarios.
 **NAMING REQUIREMENT (CRITICAL):**
 - Title must clearly show WHAT PRODUCT BENEFIT/FEATURE this scenario emphasizes
 - User should INSTANTLY understand the selling point from the title alone
-- Format: "[강조 포인트] + [표현 방식]" (10-20 characters)
+- Format: "[강조 포인트] + [표현 방식]" (8-15 characters)
 - Focus on: efficacy, texture, lasting power, ingredients, target concern, usage benefit
-- BANNED: Abstract words like "감성", "무드", "순간", "프리미엄", "럭셔리", "스페셜"
+- BANNED ABSTRACT WORDS: "감성", "무드", "순간", "프리미엄", "럭셔리", "스페셜", "특별한", "완벽한"
+- BANNED AI-SOUNDING WORDS: "아름다운", "황홀한", "찬란한", "눈부신", "매력적인", "트렌디한", "세련된", "고급스러운", "조화로운", "감각적인"
 - BANNED: Poetic/vague expressions that don't communicate product benefits
+- BANNED PATTERNS: Marketing clichés like "~를 경험하세요", "~의 완벽한 조화", "~를 선사합니다"
 - Each scenario = DIFFERENT product benefit angle (not just different mood/style)
 
 **TARGETING REQUIREMENT:**
@@ -363,7 +455,7 @@ Each scenario's visual style should SUPPORT its emphasized benefit
 
 **QUALITY REQUIREMENT:**
 - Concept authenticity: Scenario should feel natural for the product
-- Option coherence: All options (mood, lighting, background, etc.) should work together harmoniously
+- Option coherence: All options (mood, lighting, background, etc.) should work together as a unified concept
 - Target alignment: Options should match target audience expectations
 
 === PRODUCT-APPROPRIATE CONSTRAINTS ===
@@ -373,7 +465,7 @@ Each scenario's visual style should SUPPORT its emphasized benefit
 - Gender-specific products: Maintain gender appropriateness
 
 === OUTPUT REQUIREMENTS FOR EACH SCENARIO ===
-- Title: 10-20 characters (clearly states the product benefit this scenario emphasizes)
+- Title: 8-15 characters (clearly states the product benefit this scenario emphasizes)
 - Description: 30-50 characters (explain target & concept clearly)
 - Provide CLEAR REASONING for each option based on product analysis
 ${avatarContext}
@@ -390,13 +482,58 @@ ${SCENARIO_DIVERSITY_CHECK}
       "description": "Target & concept explanation (30-50 chars)",
       "targetAudience": "Specific target description",
       "recommendations": [
-        { "key": "category_key", "value": "option_key", "reason": "Why this option" }
+        { "key": "category_key", "value": "__custom__", "customText": "Product-specific creative description for this category", "reason": "Why this setting" }
       ],
       "overallStrategy": "Strategy for this scenario",
       "recommendedAvatarStyle": { ... }  // If AI avatar mode
     }
   ]
 }
+
+=== CUSTOM TEXT WRITING GUIDELINES ===
+For each category in recommendations, write CUSTOM descriptions (customText) that are:
+1. **Product-specific**: Tailored to THIS product's unique characteristics, materials, colors, and brand identity
+2. **Visually descriptive**: Describe the exact visual effect - be specific about colors, textures, positions, light directions
+3. **Coherent**: All customText descriptions should work together to create a unified visual concept
+4. **Detailed but concise**: 20-50 words per customText, enough detail for image generation
+5. **In output language**: customText MUST be written in the specified output language
+6. **UNIQUE**: Do NOT use generic descriptions. Each customText must be uniquely crafted for THIS specific product
+
+=== NATURAL WRITING RULES (ANTI-AI) ===
+AVOID these AI-typical patterns in ALL outputs:
+
+❌ BANNED WRITING PATTERNS:
+- Stacking 3+ adjectives: "따뜻하고 부드럽고 포근한" → Use max 2 adjectives
+- Rhyming or parallel endings: "~는 느낌, ~는 분위기, ~는 감성"
+- Excessive superlatives: "가장 완벽한", "최고의", "비교할 수 없는"
+- Empty marketing phrases: "새로운 경험", "당신만의", "특별함을 선사"
+- Repetitive sentence structures across scenarios (vary your phrasing)
+- Starting every description with "부드러운" or "따뜻한"
+- Using "자연스럽게", "은은하게" as filler words
+
+✅ WRITE LIKE A REAL PHOTOGRAPHER/ART DIRECTOR:
+- Use concrete visual terms: "오후 3시 창가 자연광" instead of "따뜻하고 자연스러운 조명"
+- Be technically specific: "45도 측면광, 반사판 없음" instead of "은은한 조명"
+- Reference real-world scenarios: "카페 창가 자리" instead of "아늑한 공간"
+- Vary sentence length and structure between scenarios
+- Use industry terminology when appropriate (ISO, f-stop style descriptions welcome)
+
+=== ANATOMICAL RULES (CRITICAL FOR IMAGE GENERATION) ===
+⚠️ Complex body part descriptions cause AI image generators to create extra limbs!
+
+❌ NEVER describe multiple simultaneous hand actions:
+- BAD: "한 손으로 턱을 괴고, 다른 손으로 제품을 들고, 머리카락을 쓸어 넘기며" (3 actions = 3 hands)
+- BAD: "rests chin on one hand while holding product near cheek, tucking hair with the other"
+
+✅ KEEP HAND DESCRIPTIONS SIMPLE:
+- ONE clear action per description: "제품을 양손으로 들고 있는" or "한 손에 제품을 든 채 미소 짓는"
+- If model holds product, that's the ONLY hand action needed
+- Avoid combining: holding + touching face + hair styling in one pose
+
+POSE SIMPLIFICATION RULES:
+1. Product-holding poses: Focus ONLY on how product is held (one hand/both hands)
+2. Non-product poses: Maximum ONE additional gesture (e.g., touching hair OR resting chin, not both)
+3. When in doubt, describe FEWER hand actions rather than more
 
 ${SCENARIO_SELF_VERIFICATION}
 
@@ -419,7 +556,7 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
             properties: {
               title: {
                 type: Type.STRING,
-                description: 'Scenario title (8-20 characters)',
+                description: 'Scenario title (8-15 characters)',
               },
               description: {
                 type: Type.STRING,
@@ -435,15 +572,15 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
               },
               recommendations: {
                 type: Type.ARRAY,
-                description: 'Category recommendations',
+                description: 'Category recommendations with custom creative descriptions',
                 items: {
                   type: Type.OBJECT,
-                  required: ['key', 'value', 'reason'],
+                  required: ['key', 'value', 'customText', 'reason'],
                   properties: {
-                    key: { type: Type.STRING, description: 'Category key' },
-                    value: { type: Type.STRING, description: 'Option value' },
-                    customText: { type: Type.STRING, description: 'Custom text if value is __custom__' },
-                    reason: { type: Type.STRING, description: 'Reason for this recommendation' },
+                    key: { type: Type.STRING, description: 'Category key (e.g., lighting, background, mood)' },
+                    value: { type: Type.STRING, description: 'Always "__custom__" for creative descriptions' },
+                    customText: { type: Type.STRING, description: 'Creative product-specific description for this category (20-50 words)' },
+                    reason: { type: Type.STRING, description: 'Brief reason for this creative choice' },
                   },
                 },
               },
