@@ -407,6 +407,11 @@ export function WizardStep4() {
       // 크레딧 갱신
       refreshCredits()
     } catch (error) {
+      // 폴링 취소는 사용자가 의도적으로 이탈한 것이므로 에러 표시 안함
+      if (error instanceof Error && error.message === '폴링이 취소되었습니다') {
+        console.log('사용자가 생성 중 이탈함')
+        return
+      }
       console.error('생성 오류:', error)
       alert(error instanceof Error ? error.message : '생성 중 오류가 발생했습니다')
     } finally {

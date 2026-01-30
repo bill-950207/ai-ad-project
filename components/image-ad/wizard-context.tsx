@@ -495,6 +495,7 @@ export function ImageAdWizardProvider({
         imageSize: aspectRatio === '1:1' ? '1024x1024' : aspectRatio === '16:9' ? '1536x1024' : '1024x1536',
         quality,
         numImages,
+        forceNew: !draftId,  // draftId가 없으면 항상 새로 생성
       }
 
       const res = await fetch('/api/image-ad/draft', {
@@ -617,31 +618,8 @@ export function ImageAdWizardProvider({
           if (state.quality) setQuality(state.quality)
           if (state.numImages) setNumImages(state.numImages)
         } else {
-          // draftId가 없으면 새 draft 생성 (항상 새로 시작)
-          const res = await fetch('/api/image-ad/draft', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              adType: initialAdType,
-              wizardStep: 1,
-              wizardState: {},
-              forceNew: true,  // 항상 새로 생성
-            }),
-          })
-
-          if (res.ok) {
-            const data = await res.json()
-            if (data.draft?.id) {
-              setDraftId(data.draft.id)
-
-              // URL에 draftId 추가 (새로고침 시 복원용)
-              if (typeof window !== 'undefined') {
-                const currentUrl = new URL(window.location.href)
-                currentUrl.searchParams.set('draftId', data.draft.id)
-                window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search)
-              }
-            }
-          }
+          // draftId가 없으면 step 3까지는 draft 생성 안함
+          // step 3 이상에서 auto-save 시 생성됨
         }
       } catch (error) {
         console.error('Draft 로드/생성 오류:', error)
@@ -680,10 +658,11 @@ export function ImageAdWizardProvider({
     prevStepRef.current = step
 
     // Step 3 이상에서만 auto-save (기본정보 단계는 저장 안함)
-    if (draftId && step >= 3) {
+    if (step >= 3) {
+      // draftId가 없으면 새로 생성, 있으면 저장
       saveDraft()
     }
-  }, [step, draftId, saveDraft])
+  }, [step, saveDraft])
 
   // ============================================================
   // Reset
