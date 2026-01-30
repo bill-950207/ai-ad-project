@@ -51,23 +51,19 @@ async function getShowcases(): Promise<{
     const images = shuffled.filter(s => s.type === 'image');
     const videos = shuffled.filter(s => s.type === 'video');
 
-    // Rain용: 이미지 10개 + 영상 2개 (영상은 갤러리에도 필요하므로 적게)
+    // Rain용: 이미지 10개 + 영상 2개
     const rainShowcases = [
       ...images.slice(0, 10),
       ...videos.slice(0, 2),
     ].sort(() => Math.random() - 0.5) as ShowcaseData[];
 
-    // Gallery용: 영상은 전체 사용 (Rain과 중복 허용), 이미지는 Rain에서 안 쓴 것
-    const usedImageIds = new Set(rainShowcases.filter(s => s.type === 'image').map(s => s.id));
-    const galleryImages = images.filter(s => !usedImageIds.has(s.id)).slice(0, 10);
-    const galleryVideos = videos.slice(0, 10); // 영상은 Rain과 중복 허용
-
-    // 인터리브 배치 (영상 먼저)
+    // Gallery용: 전체 데이터 사용 (Rain과 중복 허용)
+    // 인터리브 배치 (영상 먼저, 많이 표시)
     const galleryShowcases: ShowcaseData[] = [];
-    const maxLen = Math.max(galleryImages.length, galleryVideos.length);
+    const maxLen = Math.max(images.length, videos.length);
     for (let i = 0; i < maxLen; i++) {
-      if (galleryVideos[i]) galleryShowcases.push(galleryVideos[i] as ShowcaseData);
-      if (galleryImages[i]) galleryShowcases.push(galleryImages[i] as ShowcaseData);
+      if (videos[i]) galleryShowcases.push(videos[i] as ShowcaseData);
+      if (images[i]) galleryShowcases.push(images[i] as ShowcaseData);
     }
 
     return { rainShowcases, galleryShowcases };
