@@ -19,6 +19,12 @@ interface AdProduct {
   rembg_image_url: string | null
 }
 
+interface Avatar {
+  id: string
+  name: string
+  image_url: string | null
+}
+
 interface ImageAd {
   id: string
   image_url: string | null
@@ -34,6 +40,7 @@ interface ImageAd {
   fal_request_id: string | null
   created_at: string
   ad_products: AdProduct | null
+  avatars: Avatar | null
 }
 
 interface PaginationInfo {
@@ -606,16 +613,30 @@ export function ImageAdPageContent() {
                     </div>
                   )}
 
-                  {/* 제품 이미지 (좌측 하단) */}
-                  {ad.ad_products && (ad.ad_products.rembg_image_url || ad.ad_products.image_url) && (
-                    <div className="absolute bottom-3 left-3">
-                      <div className="w-14 h-14 rounded-xl bg-white/90 backdrop-blur-sm border border-white/50 shadow-md overflow-hidden flex items-center justify-center">
-                        <img
-                          src={ad.ad_products.rembg_image_url || ad.ad_products.image_url || ''}
-                          alt={ad.ad_products.name}
-                          className="w-11 h-11 object-contain"
-                        />
-                      </div>
+                  {/* 제품/아바타 이미지 (좌측 하단) */}
+                  {((ad.ad_products && (ad.ad_products.rembg_image_url || ad.ad_products.image_url)) ||
+                    (ad.avatars && ad.avatars.image_url)) && (
+                    <div className="absolute bottom-3 left-3 flex gap-1.5">
+                      {/* 제품 이미지 */}
+                      {ad.ad_products && (ad.ad_products.rembg_image_url || ad.ad_products.image_url) && (
+                        <div className="w-12 h-12 rounded-lg bg-white/90 backdrop-blur-sm border border-white/50 shadow-md overflow-hidden flex items-center justify-center">
+                          <img
+                            src={ad.ad_products.rembg_image_url || ad.ad_products.image_url || ''}
+                            alt={ad.ad_products.name}
+                            className="w-9 h-9 object-contain"
+                          />
+                        </div>
+                      )}
+                      {/* 아바타 이미지 */}
+                      {ad.avatars && ad.avatars.image_url && (
+                        <div className="w-12 h-12 rounded-lg bg-white/90 backdrop-blur-sm border border-white/50 shadow-md overflow-hidden">
+                          <img
+                            src={ad.avatars.image_url}
+                            alt={ad.avatars.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
