@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Package, ArrowRight, Loader2, Plus, Check, ChevronDown, Minus } from 'lucide-react'
 import { useProductAdWizard, AdProduct } from './wizard-context'
+import { ProductCreateModal } from '../product-create-modal'
 
 export function WizardStep1() {
   const {
@@ -24,6 +25,7 @@ export function WizardStep1() {
   const [products, setProducts] = useState<AdProduct[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showProductDropdown, setShowProductDropdown] = useState(false)
+  const [showProductCreateModal, setShowProductCreateModal] = useState(false)
 
   // 제품 목록 불러오기
   useEffect(() => {
@@ -66,6 +68,14 @@ export function WizardStep1() {
   const handleSelectProduct = (product: AdProduct | null) => {
     setSelectedProduct(product)
     setShowProductDropdown(false)
+  }
+
+  // 새 제품 생성 완료 시 처리
+  const handleProductCreated = (newProduct: AdProduct) => {
+    // 목록에 새 제품 추가 및 자동 선택
+    setProducts(prev => [newProduct, ...prev])
+    setSelectedProduct(newProduct)
+    setShowProductCreateModal(false)
   }
 
   // 다음 단계로
@@ -129,16 +139,33 @@ export function WizardStep1() {
                 {products.length === 0 ? (
                   <div className="p-4 text-center">
                     <p className="text-muted-foreground text-sm mb-3">등록된 제품이 없습니다</p>
-                    <a
-                      href="/dashboard/products"
+                    <button
+                      onClick={() => {
+                        setShowProductDropdown(false)
+                        setShowProductCreateModal(true)
+                      }}
                       className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
                     >
                       <Plus className="w-3 h-3" />
                       제품 등록하기
-                    </a>
+                    </button>
                   </div>
                 ) : (
-                  products.map((product) => (
+                  <>
+                    {/* 새 제품 추가 버튼 */}
+                    <button
+                      onClick={() => {
+                        setShowProductDropdown(false)
+                        setShowProductCreateModal(true)
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors border-b border-border text-primary"
+                    >
+                      <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center">
+                        <Plus className="w-5 h-5" />
+                      </div>
+                      <span className="font-medium">새 제품 등록</span>
+                    </button>
+                    {products.map((product) => (
                     <button
                       key={product.id}
                       onClick={() => handleSelectProduct(product)}
@@ -156,7 +183,8 @@ export function WizardStep1() {
                         <Check className="w-4 h-4 text-primary" />
                       )}
                     </button>
-                  ))
+                    ))}
+                  </>
                 )}
               </div>
             )}
@@ -250,6 +278,13 @@ export function WizardStep1() {
           제품을 선택해주세요
         </p>
       )}
+
+      {/* 제품 등록 모달 */}
+      <ProductCreateModal
+        isOpen={showProductCreateModal}
+        onClose={() => setShowProductCreateModal(false)}
+        onProductCreated={handleProductCreated}
+      />
     </div>
   )
 }
