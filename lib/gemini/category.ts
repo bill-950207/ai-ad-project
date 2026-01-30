@@ -234,9 +234,87 @@ export async function generateMultipleRecommendedOptions(
 
   // 옵션 그룹 목록 (모든 카테고리에 대해 customText 필수 출력)
   const categoryKeys = input.categoryGroups.map(group => group.key)
+
+  // 카테고리별 역할 설명 (언어별)
+  const categoryRoleDescriptions: Record<string, Record<string, string>> = {
+    ko: {
+      background: '제품 뒤의 배경 환경/표면 설명',
+      lighting: '광원의 방향, 강도, 색온도, 그림자 효과',
+      angle: '카메라/촬영 각도와 제품이 보이는 시점',
+      style: '전체적인 비주얼 스타일과 미학적 방향',
+      colorTone: '이미지의 전체 색감, 채도, 색온도 톤',
+      composition: '프레임 내 제품 배치와 구도',
+      mood: '이미지가 전달하는 감정과 분위기',
+      outfit: '모델/아바타의 의상 스타일',
+      pose: '모델/아바타의 자세와 동작',
+      gaze: '모델/아바타의 시선 방향',
+      expression: '모델/아바타의 표정',
+      framing: '샷의 범위 (클로즈업, 상반신, 전신 등)',
+      action: '모델이 제품으로 하는 동작/행위',
+      setting: '촬영 장소/공간 환경',
+      focus: '초점이 맞는 대상 (제품 vs 모델)',
+      scene: '상황/씬 설정',
+      location: '구체적인 장소',
+      time: '시간대 (아침, 저녁, 골든아워 등)',
+      productPlacement: '제품 배치 방식',
+      season: '계절감',
+      theme: '테마/이벤트',
+      atmosphere: '전체적인 공기감/분위기',
+    },
+    en: {
+      background: 'Background environment/surface behind the product',
+      lighting: 'Light source direction, intensity, color temperature, shadow effects',
+      angle: 'Camera angle and viewing perspective of the product',
+      style: 'Overall visual style and aesthetic direction',
+      colorTone: 'Overall color grading, saturation, color temperature',
+      composition: 'Product placement and framing within the image',
+      mood: 'Emotional atmosphere the image conveys',
+      outfit: 'Model/avatar clothing style',
+      pose: 'Model/avatar posture and movement',
+      gaze: 'Model/avatar eye direction',
+      expression: 'Model/avatar facial expression',
+      framing: 'Shot range (close-up, upper body, full body, etc.)',
+      action: 'Action/activity model performs with product',
+      setting: 'Shooting location/space environment',
+      focus: 'Focus subject (product vs model)',
+      scene: 'Situation/scene setting',
+      location: 'Specific location',
+      time: 'Time of day (morning, evening, golden hour, etc.)',
+      productPlacement: 'How product is placed/positioned',
+      season: 'Seasonal feeling',
+      theme: 'Theme/event',
+      atmosphere: 'Overall ambiance/atmosphere',
+    },
+    ja: {
+      background: '製品背後の背景環境/表面',
+      lighting: '光源の方向、強度、色温度、影の効果',
+      angle: 'カメラアングルと製品の見え方',
+      style: '全体的なビジュアルスタイルと美学的方向性',
+      colorTone: '画像全体の色調、彩度、色温度',
+      composition: 'フレーム内の製品配置と構図',
+      mood: '画像が伝える感情と雰囲気',
+      outfit: 'モデル/アバターの服装スタイル',
+      pose: 'モデル/アバターの姿勢と動き',
+      gaze: 'モデル/アバターの視線方向',
+      expression: 'モデル/アバターの表情',
+      framing: 'ショットの範囲（クローズアップ、上半身、全身など）',
+      action: 'モデルが製品で行う動作/行為',
+      setting: '撮影場所/空間環境',
+      focus: 'フォーカス対象（製品 vs モデル）',
+      scene: '状況/シーン設定',
+      location: '具体的な場所',
+      time: '時間帯（朝、夕方、ゴールデンアワーなど）',
+      productPlacement: '製品の配置方法',
+      season: '季節感',
+      theme: 'テーマ/イベント',
+      atmosphere: '全体的な空気感/雰囲気',
+    },
+  }
+
+  const roleDescs = categoryRoleDescriptions[language] || categoryRoleDescriptions.ko
   const groupsDescription = input.categoryGroups.map(group => {
-    const examplesText = group.options.slice(0, 3).map(opt => opt.description).join(', ')
-    return `- ${group.key}: (예: ${examplesText} 등)`
+    const roleDesc = roleDescs[group.key] || group.key
+    return `- ${group.key}: ${roleDesc}`
   }).join('\n')
 
   // 아바타 정보 컨텍스트 생성
