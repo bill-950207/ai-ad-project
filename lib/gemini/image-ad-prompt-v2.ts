@@ -477,6 +477,7 @@ ${NO_OVERLAYS}
 - Magazine-worthy composition
 - High-end brand advertisement quality
 - Clean, polished final photograph look
+- NEVER use "studio" word - use "plain solid color background" for clean backdrops
 
 === SEEDREAM 4.5 QUALITY REQUIREMENTS ===
 ${input.adType === 'productOnly' ? `For PRODUCT ONLY shots:
@@ -499,6 +500,7 @@ ${input.adType === 'productOnly' ? `For PRODUCT ONLY shots:
 === SELF-VERIFICATION (before responding) ===
 Check your optimizedPrompt:
 ✓ No lighting EQUIPMENT words (softbox, ring light, LED, reflector)?
+✓ No "studio" word? (use "plain solid color background" or "clean white/gray background" instead)
 ✓ No "big smile", "wide grin", "teeth showing"?
 ✓ Has camera specs (lens, f/stop)?
 ✓ 60-80 words?
