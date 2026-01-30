@@ -62,6 +62,7 @@ const FIRST_FRAME_VERIFICATION = `
 === SELF-VERIFICATION (before responding) ===
 Check your prompt:
 ✓ No lighting EQUIPMENT words (softbox, ring light)?
+✓ No "studio" word? (use "plain solid color background" or specific location instead)
 ✓ No "big smile", "wide grin", "teeth showing"?
 ✓ Background is SHARP (f/11+), no bokeh?
 ✓ Has camera specs (lens, f/stop)?

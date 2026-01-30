@@ -514,6 +514,7 @@ Check your output:
 ✓ No product names or brand names?
 ✓ No "big smile", "wide grin", "teeth showing"?
 ✓ No lighting EQUIPMENT words (softbox, ring light, LED, reflector)?
+✓ No "studio" word? (use "plain solid color background" or specific location instead)
 ✓ Has camera specs (lens, f/stop)?
 If any check fails, revise before responding.
 `.trim()
