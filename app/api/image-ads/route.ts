@@ -666,7 +666,7 @@ export async function POST(request: NextRequest) {
     let dbError: Error | null = null
 
     if (draftId) {
-      // 기존 DRAFT 레코드를 IN_QUEUE로 업데이트
+      // 기존 DRAFT 레코드를 IN_QUEUE로 업데이트 (status가 DRAFT인 경우만)
       const { data: updatedAd, error: updateError } = await supabase
         .from('image_ads')
         .update({
@@ -688,12 +688,39 @@ export async function POST(request: NextRequest) {
         })
         .eq('id', draftId)
         .eq('user_id', user.id)
+        .eq('status', 'DRAFT')  // DRAFT 상태인 경우만 업데이트
         .select('id')
         .single()
 
       if (updateError) {
-        console.error('이미지 광고 DRAFT 업데이트 오류:', updateError)
-        dbError = updateError
+        // DRAFT가 아닌 경우 (이미 생성 중이거나 완료됨) - 새 레코드 생성으로 폴백
+        console.log('DRAFT 업데이트 실패, 새 레코드 생성:', updateError.message)
+        const { data: newAd, error: insertError } = await supabase
+          .from('image_ads')
+          .insert({
+            user_id: user.id,
+            product_id: productId || null,
+            avatar_id: primaryAvatarId,
+            outfit_id: outfitId || null,
+            ad_type: adType,
+            status: 'IN_QUEUE',
+            fal_request_id: null,
+            batch_request_ids: batchRequestIds,
+            num_images: validNumImages,
+            prompt: promptToSave,
+            image_size: imageSize,
+            quality: effectiveQuality,
+            selected_options: selectedOptionsToSave,
+          })
+          .select('id')
+          .single()
+
+        if (insertError) {
+          console.error('이미지 광고 DB 저장 오류:', insertError)
+          dbError = insertError
+        } else if (newAd) {
+          imageAdId = newAd.id
+        }
       } else if (updatedAd) {
         imageAdId = updatedAd.id
       }
