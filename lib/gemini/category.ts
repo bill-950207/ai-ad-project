@@ -457,7 +457,7 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
                   properties: {
                     key: { type: Type.STRING, description: 'Category key (e.g., lighting, background, mood)' },
                     value: { type: Type.STRING, description: 'Always "__custom__" for creative descriptions' },
-                    customText: { type: Type.STRING, description: 'Creative product-specific description for this category (15-40 words)' },
+                    customText: { type: Type.STRING, description: 'Creative product-specific description for this category (20-50 words)' },
                     reason: { type: Type.STRING, description: 'Brief reason for this creative choice' },
                   },
                 },
