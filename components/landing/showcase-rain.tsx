@@ -6,11 +6,16 @@
  * - 여러 열로 구성, 각 열 다른 속도로 흐름
  * - 대각선(기울어진) 방향으로 애니메이션
  * - 영상은 화면에 보일 때 자동 재생
+ *
+ * 성능 최적화:
+ * - DOM 요소 수 최소화 (2배 복제)
+ * - 비디오는 이미지만 표시 (배경용이므로 비디오 재생 비활성화)
+ * - CSS will-change로 GPU 가속 힌트
  */
 
 'use client'
 
-import { useEffect, useState, useMemo, useRef } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 
 interface ShowcaseItem {
   id: string
@@ -28,87 +33,39 @@ const COLUMN_CONFIG = [
   { speed: 15, direction: 1 },   // 빠름, 아래로
 ]
 
-// 각 열의 스켈레톤 카드 개수
-const SKELETON_CARDS_PER_COLUMN = 6
+// 각 열의 스켈레톤 카드 개수 (2배 복제용)
+const SKELETON_CARDS_PER_COLUMN = 5
 
 // 스켈레톤 카드 컴포넌트
 function SkeletonCard() {
   return (
     <div
-      className="relative rounded-xl overflow-hidden bg-secondary/30 flex-shrink-0 animate-pulse"
-      style={{ aspectRatio: '3/4' }}
+      className="relative rounded-xl overflow-hidden bg-secondary/30 flex-shrink-0"
+      style={{ aspectRatio: '3/4', contain: 'layout style paint' }}
     >
-      {/* 그라데이션 shimmer 효과 */}
-      <div className="absolute inset-0 bg-gradient-to-br from-secondary/20 via-secondary/40 to-secondary/20" />
+      {/* 단순화된 배경 */}
+      <div className="absolute inset-0 bg-secondary/20" />
       {/* 어두운 오버레이 */}
       <div className="absolute inset-0 bg-background/40" />
     </div>
   )
 }
 
-// 개별 카드 컴포넌트 (영상 자동 재생 지원)
+// 개별 카드 컴포넌트 (성능 최적화 - 이미지만 표시)
 function RainCard({ item }: { item: ShowcaseItem }) {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const cardRef = useRef<HTMLDivElement>(null)
-  const [isVisible, setIsVisible] = useState(false)
-
-  // IntersectionObserver로 가시성 감지
-  useEffect(() => {
-    if (item.type !== 'video' || !item.media_url) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          setIsVisible(entry.isIntersecting)
-        })
-      },
-      { threshold: 0.2 }
-    )
-
-    if (cardRef.current) {
-      observer.observe(cardRef.current)
-    }
-
-    return () => observer.disconnect()
-  }, [item.type, item.media_url])
-
-  // 재생 상태 관리
-  useEffect(() => {
-    if (!videoRef.current || item.type !== 'video') return
-
-    if (isVisible) {
-      videoRef.current.play().catch(() => {})
-    } else {
-      videoRef.current.pause()
-    }
-  }, [isVisible, item.type])
-
   return (
     <div
-      ref={cardRef}
       className="relative rounded-xl overflow-hidden bg-secondary/30 flex-shrink-0"
-      style={{ aspectRatio: '3/4' }}
+      style={{ aspectRatio: '3/4', contain: 'layout style paint' }}
     >
-      {/* 썸네일 이미지 (영상일 때는 폴백) */}
+      {/* 썸네일 이미지만 표시 (배경용이므로 비디오 비활성화) */}
       <img
         src={item.thumbnail_url}
         alt=""
         className="w-full h-full object-cover object-top"
         loading="lazy"
+        decoding="async"
       />
-
-      {/* 영상 오버레이 */}
-      {item.type === 'video' && item.media_url && (
-        <video
-          ref={videoRef}
-          src={item.media_url}
-          className="absolute inset-0 w-full h-full object-cover object-top"
-          muted
-          loop
-          playsInline
-          preload="metadata"
-        />
-      )}
 
       {/* 어두운 오버레이 */}
       <div className="absolute inset-0 bg-background/40" />
@@ -149,7 +106,7 @@ export function ShowcaseRain() {
     fetchShowcases()
   }, [])
 
-  // 열별로 쇼케이스 분배
+  // 열별로 쇼케이스 분배 (2배 복제로 메모리 절약)
   const columns = useMemo(() => {
     if (showcases.length === 0) return []
 
@@ -161,28 +118,31 @@ export function ShowcaseRain() {
       cols[colIndex].push(item)
     })
 
-    // 각 열의 아이템을 3배로 복제 (끊김 없는 무한 스크롤)
-    return cols.map(col => [...col, ...col, ...col])
+    // 각 열의 아이템을 2배로 복제 (메모리 절약)
+    return cols.map(col => [...col, ...col])
   }, [showcases])
 
-  // 스켈레톤 열 생성 (로딩 중 표시)
+  // 스켈레톤 열 생성 (로딩 중 표시) - 2배 복제
   const skeletonColumns = useMemo(() => {
     return COLUMN_CONFIG.map(() =>
-      // 3배 복제하여 무한 스크롤 효과
-      Array.from({ length: SKELETON_CARDS_PER_COLUMN * 3 }, (_, i) => i)
+      Array.from({ length: SKELETON_CARDS_PER_COLUMN * 2 }, (_, i) => i)
     )
   }, [])
 
   const showSkeleton = !isLoaded || showcases.length === 0
 
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div
+      className="absolute inset-0 overflow-hidden pointer-events-none"
+      style={{ contain: 'strict' }}
+    >
       {/* 기울어진 컨테이너 */}
       <div
         className="absolute inset-0 flex gap-4 justify-center"
         style={{
           transform: 'rotate(-12deg) scale(1.3)',
           transformOrigin: 'center center',
+          willChange: 'transform',
         }}
       >
         {/* 스켈레톤 레인 - 로딩 중 표시, 로드 후 페이드아웃 */}
@@ -190,7 +150,7 @@ export function ShowcaseRain() {
           className="absolute inset-0 flex gap-4 justify-center"
           style={{
             opacity: showSkeleton ? 1 : 0,
-            transition: 'opacity 500ms ease-out',
+            transition: 'opacity 300ms ease-out',
             pointerEvents: showSkeleton ? 'auto' : 'none',
           }}
         >
@@ -200,6 +160,7 @@ export function ShowcaseRain() {
               className="flex flex-col gap-4 w-[140px] sm:w-[160px] flex-shrink-0"
               style={{
                 animation: `showcase-flow-${COLUMN_CONFIG[colIndex].direction > 0 ? 'down' : 'up'} ${COLUMN_CONFIG[colIndex].speed}s linear infinite`,
+                willChange: 'transform',
               }}
             >
               {column.map((_, cardIndex) => (
@@ -214,7 +175,7 @@ export function ShowcaseRain() {
           className="absolute inset-0 flex gap-4 justify-center"
           style={{
             opacity: showSkeleton ? 0 : 1,
-            transition: 'opacity 500ms ease-in',
+            transition: 'opacity 300ms ease-in',
           }}
         >
           {columns.map((column, colIndex) => (
@@ -223,6 +184,7 @@ export function ShowcaseRain() {
               className="flex flex-col gap-4 w-[140px] sm:w-[160px] flex-shrink-0"
               style={{
                 animation: `showcase-flow-${COLUMN_CONFIG[colIndex].direction > 0 ? 'down' : 'up'} ${COLUMN_CONFIG[colIndex].speed}s linear infinite`,
+                willChange: 'transform',
               }}
             >
               {column.map((item, itemIndex) => (
