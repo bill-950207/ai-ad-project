@@ -2,59 +2,28 @@
  * 히어로 섹션 컴포넌트
  *
  * 랜딩 페이지의 메인 히어로 섹션을 담당합니다.
- * - 애니메이션 배경 효과
+ * - 쇼케이스 레인 배경 효과 (대각선 흐름)
  * - 메인 헤드라인 및 서브 헤드라인
- * - CTA 버튼 (시작하기, 데모 보기)
- * - 서비스 통계 표시
+ * - CTA 버튼 (시작하기, 샘플 보기)
+ * - 신뢰 지표
  */
 
 'use client'
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Sparkles, ArrowRight, Play, Image as ImageIcon, Video, Music } from "lucide-react";
+import { ArrowRight, Play, CheckCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
-
-// ============================================================
-// 플로팅 아이콘 컴포넌트
-// ============================================================
-
-function FloatingIcons() {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* 플로팅 아이콘들 */}
-      <div className="absolute top-1/4 left-[10%] animate-float-slow opacity-20">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
-          <ImageIcon className="w-8 h-8 text-white" />
-        </div>
-      </div>
-      <div className="absolute top-1/3 right-[15%] animate-float-medium opacity-20">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center">
-          <Video className="w-7 h-7 text-white" />
-        </div>
-      </div>
-      <div className="absolute bottom-1/3 left-[15%] animate-float-fast opacity-20">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
-          <Music className="w-6 h-6 text-white" />
-        </div>
-      </div>
-      <div className="absolute bottom-1/4 right-[10%] animate-float-slow opacity-20">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-          <Play className="w-5 h-5 text-white fill-white" />
-        </div>
-      </div>
-    </div>
-  );
-}
+import { ShowcaseRain } from "./landing/showcase-rain";
 
 // ============================================================
 // 메인 컴포넌트
 // ============================================================
 
 export function HeroSection() {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const supabase = createClient();
 
@@ -73,70 +42,66 @@ export function HeroSection() {
   }, [supabase.auth]);
 
   return (
-    <section className="relative overflow-hidden px-4 py-20 sm:py-28 lg:py-36">
-      {/* 배경 그라데이션 효과 */}
+    <section className="relative overflow-hidden px-4 py-20 sm:py-28 lg:py-32">
+      {/* 쇼케이스 레인 배경 */}
+      <ShowcaseRain />
+
+      {/* 배경 오버레이 - 텍스트 가독성 */}
       <div className="absolute inset-0 -z-10">
         {/* 메인 그라데이션 */}
-        <div className="absolute left-1/2 top-0 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-primary/20 blur-[150px] animate-pulse-slow" />
-        {/* 보조 그라데이션 */}
-        <div className="absolute left-1/4 top-1/4 h-[300px] w-[400px] rounded-full bg-purple-500/10 blur-[100px]" />
-        <div className="absolute right-1/4 top-1/3 h-[250px] w-[350px] rounded-full bg-rose-500/10 blur-[100px]" />
-        {/* 그리드 패턴 */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8882_1px,transparent_1px),linear-gradient(to_bottom,#8882_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
+        <div className="absolute left-1/2 top-0 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-primary/5 blur-[100px]" />
       </div>
 
-      {/* 플로팅 아이콘 */}
-      <FloatingIcons />
-
-      <div className="mx-auto max-w-5xl text-center relative z-10">
-        {/* AI 배지 */}
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary animate-fade-in-up">
-          <Sparkles className="h-4 w-4" />
-          <span>{language === 'ko' ? '전문가 없이도 OK' : 'No expertise needed'}</span>
+      <div className="mx-auto max-w-4xl text-center relative z-10">
+        {/* 배지 - AI 대신 기능 강조 */}
+        <div className="mb-6 inline-flex items-center gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-1.5 text-sm text-muted-foreground animate-fade-in-up">
+          <CheckCircle className="h-3.5 w-3.5 text-green-500" aria-hidden="true" />
+          <span>{language === 'ko' ? '전문가 없이 직접 만드세요' : 'Create it yourself, no experts needed'}</span>
         </div>
 
-        {/* 메인 헤드라인 - 간결하게 */}
+        {/* 메인 헤드라인 - 단순한 그라데이션 */}
         <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl animate-fade-in-up animation-delay-100">
-          <span className="bg-gradient-to-r from-primary via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            {language === 'ko' ? 'AI로 단 3분' : '3 Minutes with AI'}
+          <span className="text-foreground">
+            {language === 'ko' ? '광고,' : 'Create ads'}
           </span>
-          {language === 'ko' ? '만에' : ''}
           <br />
-          {language === 'ko' ? '만드는 광고' : 'Create Your Ad'}
+          <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            {language === 'ko' ? '3분이면 완성' : 'in 3 minutes'}
+          </span>
         </h1>
 
-        {/* 서브 헤드라인 - 간결하게 */}
-        <p className="mx-auto mb-10 max-w-xl text-lg text-muted-foreground sm:text-xl leading-relaxed animate-fade-in-up animation-delay-200">
+        {/* 서브 헤드라인 */}
+        <p className="mx-auto mb-10 max-w-lg text-lg text-muted-foreground sm:text-xl leading-relaxed animate-fade-in-up animation-delay-200">
           {language === 'ko'
             ? '이미지, 영상, 아바타까지. 클릭 몇 번으로 전문가 수준의 광고를 만들어 보세요.'
             : 'Images, videos, avatars. Create professional ads with just a few clicks.'}
         </p>
 
-        {/* CTA 버튼 */}
+        {/* CTA 버튼 - rounded-xl로 변경 */}
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row animate-fade-in-up animation-delay-300">
           <Link
             href={user ? "/dashboard" : "/login"}
-            className="group inline-flex items-center justify-center gap-2 h-12 rounded-full px-6 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-105"
+            className="group inline-flex items-center justify-center gap-2 h-12 rounded-xl px-6 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             {language === 'ko' ? '무료로 시작하기' : 'Start Free'}
-            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
           </Link>
           <Link
             href="#gallery"
-            className="inline-flex items-center justify-center gap-2 h-12 rounded-full px-6 text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center justify-center gap-2 h-12 rounded-xl px-6 text-base font-medium text-muted-foreground hover:text-foreground border border-border hover:border-foreground/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            <Play className="h-4 w-4" />
+            <Play className="h-4 w-4" aria-hidden="true" />
             {language === 'ko' ? '샘플 보기' : 'View Samples'}
           </Link>
         </div>
 
-        {/* 간단한 신뢰 지표 */}
+        {/* 신뢰 지표 */}
         <div className="mt-12 flex items-center justify-center gap-6 text-sm text-muted-foreground animate-fade-in-up animation-delay-400">
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
             {language === 'ko' ? '신용카드 불필요' : 'No credit card'}
           </span>
-          <span className="hidden sm:block w-px h-4 bg-border"></span>
+          <span className="hidden sm:block w-px h-4 bg-border" />
           <span>{language === 'ko' ? '무료 크레딧 제공' : 'Free credits included'}</span>
         </div>
       </div>

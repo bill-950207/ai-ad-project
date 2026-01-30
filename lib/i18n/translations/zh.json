@@ -500,6 +500,16 @@
       "examples": "圣诞节、夏季、情人节、万圣节"
     }
   },
+  "videoAdTypes": {
+    "productDescription": {
+      "title": "产品说明",
+      "description": "介绍产品特点和优势的视频"
+    },
+    "productAd": {
+      "title": "产品广告",
+      "description": "模特推广产品的视频"
+    }
+  },
   "imageAdDetail": {
     "title": "图片广告详情",
     "viewDetail": "查看详情",

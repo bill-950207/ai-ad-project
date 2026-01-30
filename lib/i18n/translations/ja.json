@@ -500,6 +500,16 @@
       "examples": "クリスマス、夏、バレンタイン、ハロウィン"
     }
   },
+  "videoAdTypes": {
+    "productDescription": {
+      "title": "製品説明",
+      "description": "製品の特徴とメリットを説明する動画"
+    },
+    "productAd": {
+      "title": "製品広告",
+      "description": "モデルが製品を宣伝する動画"
+    }
+  },
   "imageAdDetail": {
     "title": "画像広告詳細",
     "viewDetail": "詳細を見る",

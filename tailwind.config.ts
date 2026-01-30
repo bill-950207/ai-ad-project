@@ -58,19 +58,15 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       backgroundImage: {
-        // 브랜드 그라데이션
-        "gradient-brand": "linear-gradient(135deg, hsl(var(--gradient-from)), hsl(var(--gradient-via)), hsl(var(--gradient-to)))",
-        "gradient-brand-horizontal": "linear-gradient(90deg, hsl(var(--gradient-from)), hsl(var(--gradient-to)))",
-        "gradient-brand-vertical": "linear-gradient(180deg, hsl(var(--gradient-from)), hsl(var(--gradient-to)))",
+        // 브랜드 그라데이션 (단순화)
+        "gradient-brand": "linear-gradient(135deg, hsl(var(--gradient-from)), hsl(var(--gradient-to)))",
         // 표면 그라데이션
         "gradient-surface": "linear-gradient(145deg, hsl(var(--card)) 0%, hsl(240 10% 8%) 100%)",
-        // 글로우 효과용
-        "gradient-glow": "radial-gradient(ellipse at center, hsl(var(--primary) / 0.15), transparent 70%)",
       },
       boxShadow: {
-        "glow-sm": "0 0 10px hsl(var(--primary) / 0.2), 0 0 20px hsl(var(--accent) / 0.1)",
-        "glow": "0 0 20px hsl(var(--primary) / 0.3), 0 0 40px hsl(var(--accent) / 0.2)",
-        "glow-lg": "0 0 30px hsl(var(--primary) / 0.4), 0 0 60px hsl(var(--accent) / 0.3)",
+        // 절제된 글로우 효과
+        "glow-sm": "0 0 12px hsl(var(--primary) / 0.1)",
+        "glow": "0 0 20px hsl(var(--primary) / 0.15)",
       },
       animation: {
         "shimmer": "shimmer 1.5s infinite",

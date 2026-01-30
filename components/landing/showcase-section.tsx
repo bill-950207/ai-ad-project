@@ -11,7 +11,7 @@
 'use client'
 
 import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react'
-import { Play, Image as ImageIcon, Video, Sparkles, ArrowRight, Volume2, VolumeX, X, Wand2 } from 'lucide-react'
+import { Play, Image as ImageIcon, Video, ArrowRight, Volume2, VolumeX, X, Plus } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -34,25 +34,24 @@ interface ShowcaseItem {
   avatar_image_url: string | null
 }
 
+// 이미지 광고 타입 키
+const IMAGE_AD_TYPE_KEYS = [
+  'productOnly', 'holding', 'using', 'wearing', 'lifestyle',
+  'unboxing', 'seasonal', 'comparison', 'beforeAfter'
+] as const
+
+// 영상 광고 타입 키
+const VIDEO_AD_TYPE_KEYS = ['productDescription', 'productAd'] as const
+
 // ============================================================
-// 비디오 재생 컨텍스트
+// 쇼케이스 컨텍스트 (클릭 핸들러만 전달)
 // ============================================================
 
-interface VideoContextType {
-  activeVideoId: string | null
-  hoveredVideoId: string | null
-  setHoveredVideoId: (id: string | null) => void
-  registerVisibleVideo: (id: string) => void
-  unregisterVisibleVideo: (id: string) => void
+interface ShowcaseContextType {
   onShowcaseClick: (item: ShowcaseItem) => void
 }
 
-const VideoContext = createContext<VideoContextType>({
-  activeVideoId: null,
-  hoveredVideoId: null,
-  setHoveredVideoId: () => {},
-  registerVisibleVideo: () => {},
-  unregisterVisibleVideo: () => {},
+const VideoContext = createContext<ShowcaseContextType>({
   onShowcaseClick: () => {},
 })
 
@@ -65,35 +64,56 @@ interface ShowcaseCardProps {
 }
 
 function ShowcaseCard({ item }: ShowcaseCardProps) {
+  const { t } = useLanguage()
   const [isHovered, setIsHovered] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [isMuted, setIsMuted] = useState(true)
+  const [isVisible, setIsVisible] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
 
-  const { activeVideoId, hoveredVideoId, setHoveredVideoId, registerVisibleVideo, unregisterVisibleVideo, onShowcaseClick } = useContext(VideoContext)
+  // 광고 서브타입 레이블 가져오기
+  const getAdTypeLabel = (): string | null => {
+    if (!item.ad_type) return null
 
-  // 이 비디오가 재생되어야 하는지 확인
-  const shouldPlay = item.type === 'video' && (
-    hoveredVideoId === item.id ||
-    (hoveredVideoId === null && activeVideoId === item.id)
-  )
+    // 이미지 광고 타입 확인
+    if (IMAGE_AD_TYPE_KEYS.includes(item.ad_type as typeof IMAGE_AD_TYPE_KEYS[number])) {
+      const adTypeKey = item.ad_type as typeof IMAGE_AD_TYPE_KEYS[number]
+      const typeData = t.imageAdTypes[adTypeKey]
+      if (typeData && typeof typeData === 'object' && 'title' in typeData) {
+        return typeData.title
+      }
+    }
 
-  // Intersection Observer로 화면에 보이는지 감지
+    // 영상 광고 타입 확인
+    if (VIDEO_AD_TYPE_KEYS.includes(item.ad_type as typeof VIDEO_AD_TYPE_KEYS[number])) {
+      const adTypeKey = item.ad_type as typeof VIDEO_AD_TYPE_KEYS[number]
+      const typeData = t.videoAdTypes[adTypeKey]
+      if (typeData && typeof typeData === 'object' && 'title' in typeData) {
+        return typeData.title
+      }
+    }
+
+    // 매핑에 없으면 원본 값 반환
+    return item.ad_type
+  }
+
+  const { onShowcaseClick } = useContext(VideoContext)
+
+  // 화면에 보이면 재생
+  const shouldPlay = item.type === 'video' && isVisible
+
+  // Intersection Observer로 화면에 보이는지 감지 - 보이면 바로 재생
   useEffect(() => {
     if (item.type !== 'video' || !item.media_url) return
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            registerVisibleVideo(item.id)
-          } else {
-            unregisterVisibleVideo(item.id)
-          }
+          setIsVisible(entry.isIntersecting)
         })
       },
-      { threshold: 0.5 }
+      { threshold: 0.3 }
     )
 
     if (cardRef.current) {
@@ -102,9 +122,8 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
 
     return () => {
       observer.disconnect()
-      unregisterVisibleVideo(item.id)
     }
-  }, [item.type, item.media_url, item.id, registerVisibleVideo, unregisterVisibleVideo])
+  }, [item.type, item.media_url])
 
   // 재생 상태 관리
   useEffect(() => {
@@ -114,24 +133,15 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
       videoRef.current.play().catch(() => {})
     } else {
       videoRef.current.pause()
-      videoRef.current.currentTime = 0
-      setIsMuted(true)
-      videoRef.current.muted = true
     }
   }, [shouldPlay, item.type])
 
   const handleMouseEnter = () => {
     setIsHovered(true)
-    if (item.type === 'video') {
-      setHoveredVideoId(item.id)
-    }
   }
 
   const handleMouseLeave = () => {
     setIsHovered(false)
-    if (item.type === 'video') {
-      setHoveredVideoId(null)
-    }
   }
 
   const handleToggleMute = (e: React.MouseEvent) => {
@@ -150,10 +160,13 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
   return (
     <div
       ref={cardRef}
+      role="button"
+      tabIndex={0}
       onClick={handleCardClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(); } }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="group relative rounded-2xl overflow-hidden bg-secondary/30 cursor-pointer"
+      className="group relative rounded-2xl overflow-hidden bg-secondary/30 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       {/* 미디어 컨테이너 */}
       <div className="relative w-full">
@@ -161,10 +174,10 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
         <img
           src={item.thumbnail_url}
           alt={item.title}
-          className={`w-full h-auto block transition-opacity duration-300 object-top ${
+          className={`w-full h-auto block object-top ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
-          style={{ objectPosition: 'top' }}
+          style={{ transition: 'opacity 300ms', objectPosition: 'top' }}
           onLoad={() => setImageLoaded(true)}
         />
 
@@ -195,13 +208,14 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
             {/* 재생 아이콘 - 재생 중이 아닐 때 */}
             <div className={`absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity duration-300 ${
               shouldPlay ? 'opacity-0 pointer-events-none' : 'opacity-100'
-            }`}>
+            }`} aria-hidden="true">
               <Play className="w-4 h-4 text-white fill-white" />
             </div>
             {/* 음소거 버튼 - 재생 중일 때 */}
             <button
               onClick={handleToggleMute}
-              className={`absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center transition-all duration-300 hover:bg-black/70 ${
+              aria-label={isMuted ? 'Unmute' : 'Mute'}
+              className={`absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center transition-[opacity,background-color] duration-300 hover:bg-black/70 ${
                 shouldPlay ? 'opacity-100' : 'opacity-0 pointer-events-none'
               }`}
             >
@@ -222,14 +236,23 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
         {/* 하단 어두운 그라데이션 */}
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none" />
 
-        {/* 하단 좌측: 타입 배지 */}
-        <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-medium text-white pointer-events-none">
-          {item.type === 'video' ? (
-            <Video className="w-3 h-3" />
-          ) : (
-            <ImageIcon className="w-3 h-3" />
+        {/* 하단 좌측: 타입 배지 (메인 타입 + 서브타입) */}
+        <div className="absolute bottom-3 left-3 flex flex-col gap-1 pointer-events-none">
+          {/* 메인 타입 배지 */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-medium text-white">
+            {item.type === 'video' ? (
+              <Video className="w-3 h-3" aria-hidden="true" />
+            ) : (
+              <ImageIcon className="w-3 h-3" aria-hidden="true" />
+            )}
+            <span>{item.type === 'video' ? 'Video' : 'Image'}</span>
+          </div>
+          {/* 서브타입 배지 */}
+          {getAdTypeLabel() && (
+            <div className="px-2 py-0.5 rounded-full bg-primary/30 backdrop-blur-sm text-[10px] text-white/90 w-fit">
+              {getAdTypeLabel()}
+            </div>
           )}
-          <span>{item.type === 'video' ? 'Video' : 'Image'}</span>
         </div>
 
         {/* 하단 우측: 제품 & 아바타 썸네일 */}
@@ -257,7 +280,7 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
         )}
 
         {/* 테두리 */}
-        <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10 group-hover:ring-white/30 transition-all duration-300 pointer-events-none" />
+        <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10 group-hover:ring-white/30 transition-[box-shadow] duration-300 pointer-events-none" />
       </div>
     </div>
   )
@@ -352,7 +375,8 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
         {/* 닫기 버튼 */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+          aria-label="Close"
+          className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-black/50 hover:bg-black/70 text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
           <X className="w-5 h-5" />
         </button>
@@ -379,7 +403,8 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
                     setIsMuted(!isMuted)
                   }
                 }}
-                className="absolute bottom-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+                aria-label={isMuted ? 'Unmute video' : 'Mute video'}
+                className="absolute bottom-4 right-4 p-2 rounded-lg bg-black/50 hover:bg-black/70 text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
               </button>
@@ -399,9 +424,9 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
             <div className="flex items-center gap-2 mb-3">
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
                 {item.type === 'video' ? (
-                  <Video className="w-3.5 h-3.5" />
+                  <Video className="w-3.5 h-3.5" aria-hidden="true" />
                 ) : (
-                  <ImageIcon className="w-3.5 h-3.5" />
+                  <ImageIcon className="w-3.5 h-3.5" aria-hidden="true" />
                 )}
                 <span>{getAdTypeLabel()}</span>
               </div>
@@ -463,13 +488,13 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
             <button
               onClick={handleCreateClick}
               disabled={isCheckingAuth}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all duration-300 shadow-lg shadow-primary/25 disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               {isCheckingAuth ? (
                 <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  <Wand2 className="w-4 h-4" />
+                  <Plus className="w-4 h-4" aria-hidden="true" />
                   <span className="text-sm">
                     {language === 'ko' ? '이런 광고 만들기' : 'Create This Ad'}
                   </span>
@@ -479,8 +504,8 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
 
             <p className="text-[10px] text-muted-foreground text-center mt-2">
               {language === 'ko'
-                ? 'AI가 비슷한 스타일의 광고를 생성합니다'
-                : 'AI will generate a similar style ad'}
+                ? '비슷한 스타일의 광고를 만들어 보세요'
+                : 'Create a similar style ad'}
             </p>
           </div>
       </div>
@@ -508,37 +533,6 @@ export function ShowcaseSection() {
 
   // 라이트박스 상태
   const [selectedShowcase, setSelectedShowcase] = useState<ShowcaseItem | null>(null)
-
-  // 비디오 재생 상태 관리
-  const [hoveredVideoId, setHoveredVideoId] = useState<string | null>(null)
-  const [activeVideoId, setActiveVideoId] = useState<string | null>(null)
-  const visibleVideosRef = useRef<Set<string>>(new Set())
-
-  const registerVisibleVideo = (id: string) => {
-    visibleVideosRef.current.add(id)
-    // 호버 중인 비디오가 없으면 첫 번째 보이는 비디오를 활성화
-    if (hoveredVideoId === null && activeVideoId === null) {
-      setActiveVideoId(id)
-    }
-  }
-
-  const unregisterVisibleVideo = (id: string) => {
-    visibleVideosRef.current.delete(id)
-    // 현재 활성 비디오가 화면에서 벗어나면 다음 보이는 비디오로 전환
-    if (activeVideoId === id) {
-      const nextVisible = Array.from(visibleVideosRef.current)[0] || null
-      setActiveVideoId(nextVisible)
-    }
-  }
-
-  // 호버 상태 변경 시 활성 비디오 업데이트
-  useEffect(() => {
-    if (hoveredVideoId === null) {
-      // 호버 해제 시 보이는 비디오 중 첫 번째로 전환
-      const firstVisible = Array.from(visibleVideosRef.current)[0] || null
-      setActiveVideoId(firstVisible)
-    }
-  }, [hoveredVideoId])
 
   // 쇼케이스 클릭 핸들러
   const handleShowcaseClick = useCallback((item: ShowcaseItem) => {
@@ -651,45 +645,40 @@ export function ShowcaseSection() {
 
   return (
     <VideoContext.Provider value={{
-      activeVideoId,
-      hoveredVideoId,
-      setHoveredVideoId,
-      registerVisibleVideo,
-      unregisterVisibleVideo,
       onShowcaseClick: handleShowcaseClick,
     }}>
-      <section id="gallery" className="px-4 py-20 sm:py-28 bg-gradient-to-b from-background via-secondary/20 to-background">
-        <div className="mx-auto max-w-7xl">
+      <section id="gallery" className="px-4 py-20 sm:py-24">
+        <div className="mx-auto max-w-6xl">
           {/* 섹션 헤더 */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-              <Sparkles className="w-4 h-4" />
-              <span>AI Generated</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4">
-              {t.landing?.galleryTitle || 'See What AI Can Create'}
+          <div className="text-center mb-10">
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4 text-foreground">
+              {language === 'ko' ? '제작 사례' : 'Gallery'}
             </h2>
-            <p className="mx-auto max-w-2xl text-muted-foreground text-lg">
-              {t.landing?.gallerySubtitle || 'Professional ad content generated by our AI in minutes'}
+            <p className="mx-auto max-w-xl text-muted-foreground text-lg">
+              {language === 'ko'
+                ? '실제 제작된 광고 콘텐츠를 확인해 보세요'
+                : 'Check out real ad content created with our platform'}
             </p>
           </div>
 
           {/* 탭 필터 */}
-          <div className="flex justify-center gap-2 mb-10">
-            {(['all', 'image', 'video'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => handleTabChange(tab)}
-                disabled={isTransitioning}
-                className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
-                  activeTab === tab
-                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
-                    : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground'
-                } ${isTransitioning ? 'cursor-not-allowed' : ''}`}
-              >
-                {tab === 'all' ? 'All' : tab === 'image' ? 'Images' : 'Videos'}
-              </button>
-            ))}
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex p-1 rounded-lg bg-secondary/50 border border-border">
+              {(['all', 'image', 'video'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => handleTabChange(tab)}
+                  disabled={isTransitioning}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                    activeTab === tab
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  } ${isTransitioning ? 'cursor-not-allowed' : ''}`}
+                >
+                  {tab === 'all' ? (language === 'ko' ? '전체' : 'All') : tab === 'image' ? (language === 'ko' ? '이미지' : 'Images') : (language === 'ko' ? '영상' : 'Videos')}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* 로딩 */}
@@ -707,7 +696,7 @@ export function ShowcaseSection() {
             <>
               {/* 메이슨리 그리드 - 항상 4열 유지 */}
               <div
-                className={`showcase-masonry transition-all duration-200 ${
+                className={`showcase-masonry transition-[opacity,transform] duration-200 ${
                   isTransitioning ? 'opacity-0 scale-[0.98]' : 'opacity-100 scale-100'
                 }`}
               >
@@ -732,10 +721,10 @@ export function ShowcaseSection() {
           <div className="flex justify-center mt-10">
             <Link
               href="/login"
-              className="group inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all duration-300 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30"
+              className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              <span>{t.landing?.ctaStart || 'Start Creating'}</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <span>{language === 'ko' ? '시작하기' : 'Get Started'}</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
             </Link>
           </div>
         </div>

@@ -500,6 +500,16 @@
       "examples": "크리스마스, 여름, 발렌타인, 할로윈"
     }
   },
+  "videoAdTypes": {
+    "productDescription": {
+      "title": "제품 설명",
+      "description": "제품의 특징과 장점을 설명하는 영상"
+    },
+    "productAd": {
+      "title": "제품 광고",
+      "description": "모델이 제품을 홍보하는 영상"
+    }
+  },
   "imageAdDetail": {
     "title": "이미지 광고 상세",
     "viewDetail": "상세보기",
