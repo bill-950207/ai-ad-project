@@ -228,7 +228,7 @@ export function WizardStep4() {
         }
       }
 
-      // API 요청
+      // API 요청 (draftId 포함 - 기존 draft 업데이트용)
       const requestBody = {
         adType,
         productId: selectedProduct?.id,
@@ -242,6 +242,7 @@ export function WizardStep4() {
         referenceStyleImageUrl: referenceUrl,
         aiAvatarOptions: selectedAvatarInfo?.type === 'ai-generated' ? selectedAvatarInfo.aiOptions : undefined,
         options: resolvedOptions,  // __custom__ 값을 실제 텍스트로 대체하여 저장
+        draftId,  // 기존 draft 업데이트용
       }
 
       const createRes = await fetch('/api/image-ads', {
@@ -400,16 +401,8 @@ export function WizardStep4() {
       setResultImages(imageUrls)
       setGenerationProgress(100)
 
-      // 생성 완료 후 draft 삭제 (실제 image_ad 레코드는 별도로 생성됨)
-      if (draftId) {
-        try {
-          await fetch(`/api/image-ad/draft?id=${draftId}`, {
-            method: 'DELETE',
-          })
-        } catch (err) {
-          console.error('Draft 삭제 오류:', err)
-        }
-      }
+      // 생성 완료 시 draft는 이미 IN_QUEUE → COMPLETED로 업데이트됨
+      // (별도 삭제 불필요 - draft 레코드가 실제 image_ad 레코드로 변환됨)
 
       // 크레딧 갱신
       refreshCredits()
