@@ -174,10 +174,14 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
         <img
           src={item.thumbnail_url}
           alt={item.title}
+          width={320}
+          height={400}
           className={`w-full h-auto block object-top ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           style={{ transition: 'opacity 300ms', objectPosition: 'top' }}
+          loading="lazy"
+          decoding="async"
           onLoad={() => setImageLoaded(true)}
         />
 
