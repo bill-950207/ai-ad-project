@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { ImageAdType, PRODUCT_ONLY_TYPES } from '@/components/ad-product/image-ad-type-modal'
 import { AvatarSelectModal } from '@/components/video-ad/avatar-select-modal'
+import { ProductCreateModal } from '@/components/video-ad/product-create-modal'
 import { useImageAdWizard, AdProduct } from './wizard-context'
 
 // 카테고리 목록 (아이콘 포함)
@@ -53,6 +54,7 @@ export function WizardStep1() {
   const [isLoading, setIsLoading] = useState(true)
   const [showProductDropdown, setShowProductDropdown] = useState(false)
   const [showAvatarModal, setShowAvatarModal] = useState(false)
+  const [showProductCreateModal, setShowProductCreateModal] = useState(false)
 
   // 제품 정보 편집 상태
   const [editableDescription, setEditableDescription] = useState('')
@@ -121,6 +123,13 @@ export function WizardStep1() {
     const updated = [...editableSellingPoints]
     updated[index] = value
     setEditableSellingPoints(updated)
+  }
+
+  // 새 제품 생성 완료 시 처리
+  const handleProductCreated = (newProduct: AdProduct) => {
+    setProducts(prev => [newProduct, ...prev])
+    setSelectedProduct(newProduct)
+    setShowProductCreateModal(false)
   }
 
   // 광고 유형 변경
@@ -312,34 +321,59 @@ export function WizardStep1() {
             {showProductDropdown && (
               <div className="absolute z-50 w-full mt-2 bg-card border border-border rounded-xl shadow-lg max-h-64 overflow-y-auto">
                 {products.length === 0 ? (
-                  <div className="p-4 text-center text-muted-foreground text-sm">
-                    등록된 제품이 없습니다
+                  <div className="p-4 text-center">
+                    <p className="text-muted-foreground text-sm mb-3">등록된 제품이 없습니다</p>
+                    <button
+                      onClick={() => {
+                        setShowProductDropdown(false)
+                        setShowProductCreateModal(true)
+                      }}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
+                    >
+                      <Plus className="w-3 h-3" />
+                      제품 등록하기
+                    </button>
                   </div>
                 ) : (
-                  products.map((product) => (
+                  <>
+                    {/* 새 제품 추가 버튼 */}
                     <button
-                      key={product.id}
                       onClick={() => {
-                        setSelectedProduct(product)
                         setShowProductDropdown(false)
+                        setShowProductCreateModal(true)
                       }}
-                      className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors ${
-                        selectedProduct?.id === product.id ? 'bg-primary/5' : ''
-                      }`}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors border-b border-border text-primary"
                     >
-                      <div className="w-10 h-10 bg-secondary rounded-lg overflow-hidden flex-shrink-0">
-                        <img
-                          src={product.rembg_image_url || product.image_url || ''}
-                          alt={product.name}
-                          className="w-full h-full object-contain"
-                        />
+                      <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center">
+                        <Plus className="w-5 h-5" />
                       </div>
-                      <span className="text-foreground">{product.name}</span>
-                      {selectedProduct?.id === product.id && (
-                        <Check className="w-4 h-4 text-primary ml-auto" />
-                      )}
+                      <span className="font-medium">새 제품 등록</span>
                     </button>
-                  ))
+                    {products.map((product) => (
+                      <button
+                        key={product.id}
+                        onClick={() => {
+                          setSelectedProduct(product)
+                          setShowProductDropdown(false)
+                        }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors ${
+                          selectedProduct?.id === product.id ? 'bg-primary/5' : ''
+                        }`}
+                      >
+                        <div className="w-10 h-10 bg-secondary rounded-lg overflow-hidden flex-shrink-0">
+                          <img
+                            src={product.rembg_image_url || product.image_url || ''}
+                            alt={product.name}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                        <span className="text-foreground">{product.name}</span>
+                        {selectedProduct?.id === product.id && (
+                          <Check className="w-4 h-4 text-primary ml-auto" />
+                        )}
+                      </button>
+                    ))}
+                  </>
                 )}
               </div>
             )}
@@ -465,6 +499,13 @@ export function WizardStep1() {
         selectedAvatarId={selectedAvatarInfo?.avatarId}
         selectedOutfitId={selectedAvatarInfo?.outfitId}
         selectedType={selectedAvatarInfo?.type}
+      />
+
+      {/* 제품 등록 모달 */}
+      <ProductCreateModal
+        isOpen={showProductCreateModal}
+        onClose={() => setShowProductCreateModal(false)}
+        onProductCreated={handleProductCreated}
       />
     </div>
   )
