@@ -11,7 +11,7 @@
 
 import Link from 'next/link'
 import { useLanguage } from '@/contexts/language-context'
-import { Sparkles, Github, Twitter, Linkedin, Mail, ArrowUpRight } from 'lucide-react'
+import { Github, Twitter, Linkedin, Mail, ArrowUpRight } from 'lucide-react'
 
 // ============================================================
 // 메인 컴포넌트
@@ -19,33 +19,34 @@ import { Sparkles, Github, Twitter, Linkedin, Mail, ArrowUpRight } from 'lucide-
 
 export function Footer() {
   const { t, language } = useLanguage()
+  const isKo = language === 'ko'
 
   // 푸터 링크 데이터
   const footerLinks = {
     product: {
-      title: language === 'ko' ? '제품' : language === 'ja' ? '製品' : language === 'zh' ? '产品' : 'Product',
+      title: isKo ? '제품' : 'Product',
       links: [
-        { label: t.nav?.imageAd || 'Image Ads', href: '/login' },
-        { label: t.nav?.videoAd || 'Video Ads', href: '/login' },
-        { label: t.nav?.avatarGeneration || 'AI Avatars', href: '/login' },
-        { label: language === 'ko' ? '가격' : language === 'ja' ? '料金' : language === 'zh' ? '价格' : 'Pricing', href: '#' },
+        { label: isKo ? '이미지 광고' : 'Image Ads', href: '/login' },
+        { label: isKo ? '영상 광고' : 'Video Ads', href: '/login' },
+        { label: isKo ? '아바타' : 'Avatars', href: '/login' },
+        { label: isKo ? '가격' : 'Pricing', href: '#' },
       ],
     },
     company: {
-      title: language === 'ko' ? '회사' : language === 'ja' ? '会社' : language === 'zh' ? '公司' : 'Company',
+      title: isKo ? '회사' : 'Company',
       links: [
-        { label: language === 'ko' ? '소개' : language === 'ja' ? '紹介' : language === 'zh' ? '介绍' : 'About', href: '#' },
-        { label: language === 'ko' ? '블로그' : language === 'ja' ? 'ブログ' : language === 'zh' ? '博客' : 'Blog', href: '#' },
-        { label: language === 'ko' ? '채용' : language === 'ja' ? '採用' : language === 'zh' ? '招聘' : 'Careers', href: '#' },
-        { label: language === 'ko' ? '문의' : language === 'ja' ? 'お問い合わせ' : language === 'zh' ? '联系' : 'Contact', href: '#' },
+        { label: isKo ? '소개' : 'About', href: '#' },
+        { label: isKo ? '블로그' : 'Blog', href: '#' },
+        { label: isKo ? '채용' : 'Careers', href: '#' },
+        { label: isKo ? '문의' : 'Contact', href: '#' },
       ],
     },
     legal: {
-      title: language === 'ko' ? '법적 정보' : language === 'ja' ? '法的情報' : language === 'zh' ? '法律信息' : 'Legal',
+      title: isKo ? '법적 정보' : 'Legal',
       links: [
-        { label: language === 'ko' ? '이용약관' : language === 'ja' ? '利用規約' : language === 'zh' ? '服务条款' : 'Terms of Service', href: '/legal/terms' },
-        { label: language === 'ko' ? '개인정보처리방침' : language === 'ja' ? 'プライバシーポリシー' : language === 'zh' ? '隐私政策' : 'Privacy Policy', href: '/legal/privacy' },
-        { label: language === 'ko' ? '쿠키 정책' : language === 'ja' ? 'Cookieポリシー' : language === 'zh' ? 'Cookie政策' : 'Cookie Policy', href: '#' },
+        { label: isKo ? '이용약관' : 'Terms of Service', href: '/legal/terms' },
+        { label: isKo ? '개인정보처리방침' : 'Privacy Policy', href: '/legal/privacy' },
+        { label: isKo ? '쿠키 정책' : 'Cookie Policy', href: '#' },
       ],
     },
   }
@@ -59,48 +60,41 @@ export function Footer() {
   ]
 
   return (
-    <footer className="relative bg-secondary/30 border-t border-border">
-      {/* 상단 그라데이션 */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
+    <footer className="bg-secondary/20 border-t border-border">
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12">
           {/* 브랜드 섹션 */}
           <div className="lg:col-span-4">
-            {/* 로고 */}
-            <Link href="/" className="inline-flex items-center gap-2.5 group">
-              <div className="relative w-10 h-10">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary via-purple-500 to-pink-500 rounded-xl rotate-3 group-hover:rotate-6 transition-transform duration-300" />
-                <div className="absolute inset-0 bg-gradient-to-br from-primary to-purple-500 rounded-xl flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
+            {/* 로고 - 단순화 */}
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg"
+            >
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-sm">A</span>
               </div>
-              <span className="text-2xl font-bold text-foreground">AIAD</span>
+              <span className="text-xl font-bold text-foreground">AIAD</span>
             </Link>
 
             {/* 설명 */}
-            <p className="mt-4 text-muted-foreground max-w-xs leading-relaxed">
-              {language === 'ko'
-                ? 'AI 기술로 전문적인 광고 콘텐츠를 몇 분 만에 생성하세요. 이미지, 영상, 아바타까지 모두 지원합니다.'
-                : language === 'ja'
-                ? 'AI技術でプロフェッショナルな広告コンテンツを数分で作成。画像、動画、アバターまで全てサポート。'
-                : language === 'zh'
-                ? '使用AI技术在几分钟内创建专业的广告内容。支持图片、视频和虚拟形象。'
-                : 'Create professional ad content in minutes with AI technology. Support for images, videos, and avatars.'}
+            <p className="mt-4 text-sm text-muted-foreground max-w-xs leading-relaxed">
+              {isKo
+                ? '전문적인 광고 콘텐츠를 몇 분 만에 제작하세요. 이미지, 영상, 아바타까지 모두 지원합니다.'
+                : 'Create professional ad content in minutes. Support for images, videos, and avatars.'}
             </p>
 
             {/* 소셜 링크 */}
-            <div className="mt-6 flex gap-3">
+            <div className="mt-5 flex gap-2">
               {socialLinks.map((social) => (
                 <a
                   key={social.label}
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-xl bg-secondary/50 hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                  className="w-9 h-9 rounded-lg bg-secondary/50 hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   aria-label={social.label}
                 >
-                  <social.icon className="w-5 h-5" />
+                  <social.icon className="w-4 h-4" />
                 </a>
               ))}
             </div>
@@ -110,18 +104,18 @@ export function Footer() {
           <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-8">
             {Object.entries(footerLinks).map(([key, section]) => (
               <div key={key}>
-                <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
+                <h3 className="text-sm font-semibold text-foreground">
                   {section.title}
                 </h3>
-                <ul className="mt-4 space-y-3">
+                <ul className="mt-3 space-y-2">
                   {section.links.map((link) => (
                     <li key={link.label}>
                       <Link
                         href={link.href}
-                        className="group inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                        className="group inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
                       >
                         <span>{link.label}</span>
-                        <ArrowUpRight className="w-3 h-3 opacity-0 -translate-y-1 translate-x-1 group-hover:opacity-100 group-hover:translate-y-0 group-hover:translate-x-0 transition-all" />
+                        <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </Link>
                     </li>
                   ))}
@@ -132,31 +126,16 @@ export function Footer() {
         </div>
 
         {/* 하단 영역 */}
-        <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3">
           {/* 저작권 */}
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} AIAD.{' '}
-            {language === 'ko'
-              ? '모든 권리 보유.'
-              : language === 'ja'
-              ? '全著作権所有。'
-              : language === 'zh'
-              ? '保留所有权利。'
-              : 'All rights reserved.'}
+            © {new Date().getFullYear()} AIAD. {isKo ? '모든 권리 보유.' : 'All rights reserved.'}
           </p>
 
-          {/* 추가 정보 */}
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              {language === 'ko'
-                ? '모든 시스템 정상'
-                : language === 'ja'
-                ? '全システム正常'
-                : language === 'zh'
-                ? '所有系统正常'
-                : 'All systems operational'}
-            </span>
+          {/* 상태 표시 */}
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            <span>{isKo ? '모든 시스템 정상' : 'All systems operational'}</span>
           </div>
         </div>
       </div>

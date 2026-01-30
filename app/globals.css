@@ -12,13 +12,13 @@
     --popover: 240 10% 6%;
     --popover-foreground: 0 0% 98%;
 
-    /* ===== Primary: Violet (창의성, AI) ===== */
-    --primary: 270 76% 62%;          /* #a855f7 - 선명한 보라 */
+    /* ===== Primary: Indigo (세련된 블루-바이올렛) ===== */
+    --primary: 238 55% 58%;          /* #6366f1 - 차분한 인디고 */
     --primary-foreground: 0 0% 100%;
 
-    /* ===== Accent: Cyan (기술, 미래) ===== */
-    --accent: 186 100% 50%;          /* #00d4ff - 선명한 청록 */
-    --accent-foreground: 240 10% 4%;
+    /* ===== Accent: Slate Blue (보조 색상) ===== */
+    --accent: 217 33% 60%;           /* #7c8db5 - 부드러운 슬레이트 */
+    --accent-foreground: 0 0% 100%;
 
     /* ===== Secondary: 뉴트럴 ===== */
     --secondary: 240 5% 12%;         /* #1c1c20 */
@@ -39,15 +39,14 @@
     /* ===== 테두리 & 포커스 ===== */
     --border: 240 5% 14%;            /* #222226 */
     --input: 240 5% 14%;
-    --ring: 270 76% 62%;             /* primary와 동일 */
+    --ring: 238 55% 58%;             /* primary와 동일 */
 
     /* ===== 기타 ===== */
     --radius: 0.75rem;
 
-    /* ===== 그라데이션 색상 (보라 → 청록) ===== */
-    --gradient-from: 270 76% 62%;    /* 보라 */
-    --gradient-via: 220 90% 60%;     /* 파랑 (중간) */
-    --gradient-to: 186 100% 50%;     /* 청록 */
+    /* ===== 그라데이션 색상 (단순화) ===== */
+    --gradient-from: 238 55% 58%;    /* 인디고 */
+    --gradient-to: 250 45% 50%;      /* 슬레이트 퍼플 */
   }
 }
 
@@ -70,9 +69,9 @@
     display: none;
   }
 
-  /* ===== 브랜드 그라데이션 ===== */
+  /* ===== 브랜드 그라데이션 (단순화) ===== */
   .gradient-brand {
-    background: linear-gradient(135deg, hsl(var(--gradient-from)), hsl(var(--gradient-via)), hsl(var(--gradient-to)));
+    background: linear-gradient(135deg, hsl(var(--gradient-from)), hsl(var(--gradient-to)));
   }
 
   .gradient-brand-text {
@@ -86,17 +85,13 @@
     border-image: linear-gradient(135deg, hsl(var(--gradient-from)), hsl(var(--gradient-to))) 1;
   }
 
-  /* 그라데이션 글로우 효과 */
+  /* 그라데이션 글로우 효과 (절제) */
   .gradient-glow {
-    box-shadow:
-      0 0 20px hsla(var(--gradient-from), 0.3),
-      0 0 40px hsla(var(--gradient-to), 0.2);
+    box-shadow: 0 0 24px hsla(var(--gradient-from), 0.15);
   }
 
   .gradient-glow-sm {
-    box-shadow:
-      0 0 10px hsla(var(--gradient-from), 0.2),
-      0 0 20px hsla(var(--gradient-to), 0.1);
+    box-shadow: 0 0 12px hsla(var(--gradient-from), 0.1);
   }
 
   /* ===== 표면 효과 ===== */
@@ -182,38 +177,11 @@
   }
 }
 
-/* ===== 랜딩 페이지 애니메이션 ===== */
-@keyframes float-slow {
-  0%, 100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-20px) rotate(5deg);
-  }
-}
-
-@keyframes float-medium {
-  0%, 100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-15px) rotate(-5deg);
-  }
-}
-
-@keyframes float-fast {
-  0%, 100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-10px) rotate(3deg);
-  }
-}
-
+/* ===== 랜딩 페이지 애니메이션 (절제된 버전) ===== */
 @keyframes fade-in-up {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -221,49 +189,44 @@
   }
 }
 
-@keyframes pulse-slow {
-  0%, 100% {
-    opacity: 0.2;
-  }
-  50% {
-    opacity: 0.3;
-  }
-}
-
-.animate-float-slow {
-  animation: float-slow 6s ease-in-out infinite;
-}
-
-.animate-float-medium {
-  animation: float-medium 5s ease-in-out infinite;
-}
-
-.animate-float-fast {
-  animation: float-fast 4s ease-in-out infinite;
-}
-
 .animate-fade-in-up {
-  animation: fade-in-up 0.6s ease-out forwards;
-}
-
-.animate-pulse-slow {
-  animation: pulse-slow 4s ease-in-out infinite;
+  animation: fade-in-up 0.4s ease-out forwards;
 }
 
 .animation-delay-100 {
-  animation-delay: 100ms;
+  animation-delay: 50ms;
 }
 
 .animation-delay-200 {
-  animation-delay: 200ms;
+  animation-delay: 100ms;
 }
 
 .animation-delay-300 {
-  animation-delay: 300ms;
+  animation-delay: 150ms;
 }
 
 .animation-delay-400 {
-  animation-delay: 400ms;
+  animation-delay: 200ms;
+}
+
+/* ===== 접근성: prefers-reduced-motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .animate-shimmer,
+  .animate-pulse-glow,
+  .animate-gradient {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ===== 쇼케이스 메이슨리 그리드 ===== */

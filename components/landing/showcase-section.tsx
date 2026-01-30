@@ -11,7 +11,7 @@
 'use client'
 
 import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react'
-import { Play, Image as ImageIcon, Video, Sparkles, ArrowRight, Volume2, VolumeX, X, Wand2 } from 'lucide-react'
+import { Play, Image as ImageIcon, Video, ArrowRight, Volume2, VolumeX, X, Plus } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -201,6 +201,7 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
             {/* 음소거 버튼 - 재생 중일 때 */}
             <button
               onClick={handleToggleMute}
+              aria-label={isMuted ? 'Unmute' : 'Mute'}
               className={`absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center transition-all duration-300 hover:bg-black/70 ${
                 shouldPlay ? 'opacity-100' : 'opacity-0 pointer-events-none'
               }`}
@@ -352,7 +353,8 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
         {/* 닫기 버튼 */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+          aria-label="Close"
+          className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-black/50 hover:bg-black/70 text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
           <X className="w-5 h-5" />
         </button>
@@ -379,7 +381,8 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
                     setIsMuted(!isMuted)
                   }
                 }}
-                className="absolute bottom-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+                aria-label={isMuted ? 'Unmute video' : 'Mute video'}
+                className="absolute bottom-4 right-4 p-2 rounded-lg bg-black/50 hover:bg-black/70 text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
               </button>
@@ -463,13 +466,13 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
             <button
               onClick={handleCreateClick}
               disabled={isCheckingAuth}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all duration-300 shadow-lg shadow-primary/25 disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               {isCheckingAuth ? (
                 <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  <Wand2 className="w-4 h-4" />
+                  <Plus className="w-4 h-4" />
                   <span className="text-sm">
                     {language === 'ko' ? '이런 광고 만들기' : 'Create This Ad'}
                   </span>
@@ -479,8 +482,8 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
 
             <p className="text-[10px] text-muted-foreground text-center mt-2">
               {language === 'ko'
-                ? 'AI가 비슷한 스타일의 광고를 생성합니다'
-                : 'AI will generate a similar style ad'}
+                ? '비슷한 스타일의 광고를 만들어 보세요'
+                : 'Create a similar style ad'}
             </p>
           </div>
       </div>
@@ -658,38 +661,38 @@ export function ShowcaseSection() {
       unregisterVisibleVideo,
       onShowcaseClick: handleShowcaseClick,
     }}>
-      <section id="gallery" className="px-4 py-20 sm:py-28 bg-gradient-to-b from-background via-secondary/20 to-background">
-        <div className="mx-auto max-w-7xl">
+      <section id="gallery" className="px-4 py-20 sm:py-24">
+        <div className="mx-auto max-w-6xl">
           {/* 섹션 헤더 */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-              <Sparkles className="w-4 h-4" />
-              <span>AI Generated</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4">
-              {t.landing?.galleryTitle || 'See What AI Can Create'}
+          <div className="text-center mb-10">
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4 text-foreground">
+              {language === 'ko' ? '제작 사례' : 'Gallery'}
             </h2>
-            <p className="mx-auto max-w-2xl text-muted-foreground text-lg">
-              {t.landing?.gallerySubtitle || 'Professional ad content generated by our AI in minutes'}
+            <p className="mx-auto max-w-xl text-muted-foreground text-lg">
+              {language === 'ko'
+                ? '실제 제작된 광고 콘텐츠를 확인해 보세요'
+                : 'Check out real ad content created with our platform'}
             </p>
           </div>
 
           {/* 탭 필터 */}
-          <div className="flex justify-center gap-2 mb-10">
-            {(['all', 'image', 'video'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => handleTabChange(tab)}
-                disabled={isTransitioning}
-                className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
-                  activeTab === tab
-                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
-                    : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground'
-                } ${isTransitioning ? 'cursor-not-allowed' : ''}`}
-              >
-                {tab === 'all' ? 'All' : tab === 'image' ? 'Images' : 'Videos'}
-              </button>
-            ))}
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex p-1 rounded-lg bg-secondary/50 border border-border">
+              {(['all', 'image', 'video'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => handleTabChange(tab)}
+                  disabled={isTransitioning}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                    activeTab === tab
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  } ${isTransitioning ? 'cursor-not-allowed' : ''}`}
+                >
+                  {tab === 'all' ? (language === 'ko' ? '전체' : 'All') : tab === 'image' ? (language === 'ko' ? '이미지' : 'Images') : (language === 'ko' ? '영상' : 'Videos')}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* 로딩 */}
@@ -732,10 +735,10 @@ export function ShowcaseSection() {
           <div className="flex justify-center mt-10">
             <Link
               href="/login"
-              className="group inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all duration-300 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30"
+              className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              <span>{t.landing?.ctaStart || 'Start Creating'}</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <span>{language === 'ko' ? '시작하기' : 'Get Started'}</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
         </div>
