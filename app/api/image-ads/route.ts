@@ -445,9 +445,10 @@ export async function POST(request: NextRequest) {
         outfitImageUrl = outfit.image_url_original || outfit.image_url || undefined
 
         // 의상 이미지 사용 (아바타 + 의상이 합성된 이미지, 원본 우선)
+        // unshift로 첫 번째에 추가해서 Figure 1이 아바타(의상)가 되도록 함
         const outfitImage = outfit.image_url_original || outfit.image_url
         if (outfitImage) {
-          imageUrls.push(outfitImage)
+          imageUrls.unshift(outfitImage)
         }
       } else {
         // 다중 아바타 이미지 추가 (N+1 쿼리 방지 - 한 번에 조회)
@@ -493,9 +494,10 @@ export async function POST(request: NextRequest) {
           }
 
           // 일반 아바타 이미지 추가 (원본 우선)
+          // unshift로 첫 번째에 추가해서 Figure 1이 아바타가 되도록 함
           const avatarImage = avatar.image_url_original || avatar.image_url
           if (avatarImage) {
-            imageUrls.push(avatarImage)
+            imageUrls.unshift(avatarImage)
             // Gemini용 아바타 이미지 URL 저장
             avatarImageUrls.push(avatarImage)
           }
