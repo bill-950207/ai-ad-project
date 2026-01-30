@@ -382,7 +382,7 @@ Use this exact format:
 "Shot 1: [description]. Shot 2: [description]. Shot 3: [description]."
 
 === REFERENCE EXAMPLES ===
-Example 1 (Product Focus): "Shot 1: Close-up on the product, soft studio lighting highlights its sleek surface. Shot 2: Camera slowly pulls back revealing the premium packaging. Shot 3: Product rotates elegantly, catching light reflections as camera dollies around."
+Example 1 (Product Focus): "Shot 1: Close-up on the product, soft professional lighting highlights its sleek surface. Shot 2: Camera slowly pulls back revealing the premium packaging. Shot 3: Product rotates elegantly, catching light reflections as camera dollies around."
 
 Example 2 (Cinematic): "Shot 1: Wide establishing shot of minimalist setting with product centered. Shot 2: Dynamic dolly-in to hero shot, dramatic lighting builds. Shot 3: Extreme close-up on product details, lens flare accents the premium finish."
 

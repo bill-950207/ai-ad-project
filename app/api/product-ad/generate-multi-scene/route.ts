@@ -244,11 +244,11 @@ function buildMultiScenePrompt(
   // 씬별 요소 설명 생성
   const sceneElementsDescription = sceneElements.map((elem, idx) => `
 === SCENE ${idx + 1} SPECIFIC ELEMENTS ===
-- Background: ${elem.background || 'Default studio'}
+- Background: ${elem.background || 'Clean seamless backdrop'}
 - Mood: ${elem.mood || overallMood || 'Premium commercial'}
 - Camera Angle: ${elem.cameraAngle || 'Cinematic'}
 - Product Placement: ${elem.productPlacement || 'Center hero'}
-- Lighting: ${elem.lighting || 'Studio lighting'}
+- Lighting: ${elem.lighting || 'Professional even lighting'}
 - Color Tone: ${elem.colorTone || 'Natural'}
 `).join('\n')
 
