@@ -28,6 +28,24 @@ const COLUMN_CONFIG = [
   { speed: 15, direction: 1 },   // 빠름, 아래로
 ]
 
+// 각 열의 스켈레톤 카드 개수
+const SKELETON_CARDS_PER_COLUMN = 6
+
+// 스켈레톤 카드 컴포넌트
+function SkeletonCard() {
+  return (
+    <div
+      className="relative rounded-xl overflow-hidden bg-secondary/30 flex-shrink-0 animate-pulse"
+      style={{ aspectRatio: '3/4' }}
+    >
+      {/* 그라데이션 shimmer 효과 */}
+      <div className="absolute inset-0 bg-gradient-to-br from-secondary/20 via-secondary/40 to-secondary/20" />
+      {/* 어두운 오버레이 */}
+      <div className="absolute inset-0 bg-background/40" />
+    </div>
+  )
+}
+
 // 개별 카드 컴포넌트 (영상 자동 재생 지원)
 function RainCard({ item }: { item: ShowcaseItem }) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -147,9 +165,15 @@ export function ShowcaseRain() {
     return cols.map(col => [...col, ...col, ...col])
   }, [showcases])
 
-  if (!isLoaded || showcases.length === 0) {
-    return null
-  }
+  // 스켈레톤 열 생성 (로딩 중 표시)
+  const skeletonColumns = useMemo(() => {
+    return COLUMN_CONFIG.map(() =>
+      // 3배 복제하여 무한 스크롤 효과
+      Array.from({ length: SKELETON_CARDS_PER_COLUMN * 3 }, (_, i) => i)
+    )
+  }, [])
+
+  const showSkeleton = !isLoaded || showcases.length === 0
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -161,19 +185,52 @@ export function ShowcaseRain() {
           transformOrigin: 'center center',
         }}
       >
-        {columns.map((column, colIndex) => (
-          <div
-            key={colIndex}
-            className="flex flex-col gap-4 w-[140px] sm:w-[160px] flex-shrink-0"
-            style={{
-              animation: `showcase-flow-${COLUMN_CONFIG[colIndex].direction > 0 ? 'down' : 'up'} ${COLUMN_CONFIG[colIndex].speed}s linear infinite`,
-            }}
-          >
-            {column.map((item, itemIndex) => (
-              <RainCard key={`${item.id}-${itemIndex}`} item={item} />
-            ))}
-          </div>
-        ))}
+          {/* 스켈레톤 레인 - 로딩 중 표시, 로드 후 페이드아웃 */}
+        <div
+          className="absolute inset-0 flex gap-4 justify-center"
+          style={{
+            opacity: showSkeleton ? 1 : 0,
+            transition: 'opacity 500ms ease-out',
+            pointerEvents: showSkeleton ? 'auto' : 'none',
+          }}
+        >
+          {skeletonColumns.map((column, colIndex) => (
+            <div
+              key={`skeleton-${colIndex}`}
+              className="flex flex-col gap-4 w-[140px] sm:w-[160px] flex-shrink-0"
+              style={{
+                animation: `showcase-flow-${COLUMN_CONFIG[colIndex].direction > 0 ? 'down' : 'up'} ${COLUMN_CONFIG[colIndex].speed}s linear infinite`,
+              }}
+            >
+              {column.map((_, cardIndex) => (
+                <SkeletonCard key={`skeleton-${colIndex}-${cardIndex}`} />
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* 실제 쇼케이스 레인 - 로드 후 페이드인 */}
+        <div
+          className="absolute inset-0 flex gap-4 justify-center"
+          style={{
+            opacity: showSkeleton ? 0 : 1,
+            transition: 'opacity 500ms ease-in',
+          }}
+        >
+          {columns.map((column, colIndex) => (
+            <div
+              key={colIndex}
+              className="flex flex-col gap-4 w-[140px] sm:w-[160px] flex-shrink-0"
+              style={{
+                animation: `showcase-flow-${COLUMN_CONFIG[colIndex].direction > 0 ? 'down' : 'up'} ${COLUMN_CONFIG[colIndex].speed}s linear infinite`,
+              }}
+            >
+              {column.map((item, itemIndex) => (
+                <RainCard key={`${item.id}-${itemIndex}`} item={item} />
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* 상단 페이드 */}
