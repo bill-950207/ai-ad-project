@@ -72,19 +72,23 @@ Example 1 - Skincare Serum:
   - Background: cozy bedroom desk setup
   - Concept: 인플루언서 스타일 솔직한 사용기
 
-✓ Scenario 3: "럭셔리 케어" (Luxury Care)
-  - Target: 30-40대 프리미엄 소비층
-  - Mood: Sophisticated, premium
+✓ Scenario 3: "나만의 밤 루틴" (My Night Routine)
+  - Target: 30-40대 자기관리 중시층
+  - Mood: Calm, indulgent
   - Background: marble vanity with soft lighting
-  - Concept: 고급스러운 자기관리 시간
+  - Concept: 하루 마무리 스킨케어 시간
 
-BAD (generic, repetitive, product-inappropriate):
+BAD (generic, repetitive, product-inappropriate, AI-sounding):
 
 ✗ "프리미엄 시나리오" - Too generic, no creative concept
 ✗ "기본 시나리오" - No differentiation
 ✗ "시나리오 1", "시나리오 2" - Just numbers, no concept
 ✗ All 3 scenarios targeting same audience - No diversity
 ✗ Budget snack product → "럭셔리 프리미엄" - Price tier mismatch
+✗ "따뜻하고 부드럽고 자연스러운" - Too many stacked adjectives (AI pattern)
+✗ "특별한 경험을 선사하는" - Empty marketing phrase
+✗ Starting all backgrounds with "따뜻한" or "부드러운" - Repetitive AI habit
+✗ Using same sentence structure for all customText descriptions
 `.trim()
 
 /** 시나리오 다양성 검증 */
@@ -110,6 +114,10 @@ Check your scenarios:
 ✓ Options within each scenario are COHERENT (mood + lighting + background align)?
 ✓ Titles are 8-15 characters in output language?
 ✓ Descriptions explain the concept clearly (30-50 characters)?
+✓ NO banned words used in any text (check BANNED lists above)?
+✓ NO repetitive adjective patterns ("~하고 ~하고 ~한")?
+✓ customText reads like a real photographer's notes, NOT like marketing copy?
+✓ Each scenario uses DIFFERENT sentence structures and vocabulary?
 If any check fails, revise before responding.
 `.trim()
 
@@ -428,8 +436,10 @@ Based on your product analysis, create 3 DISTINCT advertising scenarios.
 - User should INSTANTLY understand the selling point from the title alone
 - Format: "[강조 포인트] + [표현 방식]" (10-20 characters)
 - Focus on: efficacy, texture, lasting power, ingredients, target concern, usage benefit
-- BANNED: Abstract words like "감성", "무드", "순간", "프리미엄", "럭셔리", "스페셜"
+- BANNED ABSTRACT WORDS: "감성", "무드", "순간", "프리미엄", "럭셔리", "스페셜", "특별한", "완벽한"
+- BANNED AI-SOUNDING WORDS: "아름다운", "황홀한", "찬란한", "눈부신", "매력적인", "트렌디한", "세련된", "고급스러운", "조화로운", "감각적인"
 - BANNED: Poetic/vague expressions that don't communicate product benefits
+- BANNED PATTERNS: Marketing clichés like "~를 경험하세요", "~의 완벽한 조화", "~를 선사합니다"
 - Each scenario = DIFFERENT product benefit angle (not just different mood/style)
 
 **TARGETING REQUIREMENT:**
@@ -490,6 +500,25 @@ For each category in recommendations, write CUSTOM descriptions (customText) tha
 4. **Detailed but concise**: 20-50 words per customText, enough detail for image generation
 5. **In output language**: customText MUST be written in the specified output language
 6. **UNIQUE**: Do NOT use generic descriptions. Each customText must be uniquely crafted for THIS specific product
+
+=== NATURAL WRITING RULES (ANTI-AI) ===
+AVOID these AI-typical patterns in ALL outputs:
+
+❌ BANNED WRITING PATTERNS:
+- Stacking 3+ adjectives: "따뜻하고 부드럽고 포근한" → Use max 2 adjectives
+- Rhyming or parallel endings: "~는 느낌, ~는 분위기, ~는 감성"
+- Excessive superlatives: "가장 완벽한", "최고의", "비교할 수 없는"
+- Empty marketing phrases: "새로운 경험", "당신만의", "특별함을 선사"
+- Repetitive sentence structures across scenarios (vary your phrasing)
+- Starting every description with "부드러운" or "따뜻한"
+- Using "자연스럽게", "은은하게" as filler words
+
+✅ WRITE LIKE A REAL PHOTOGRAPHER/ART DIRECTOR:
+- Use concrete visual terms: "오후 3시 창가 자연광" instead of "따뜻하고 자연스러운 조명"
+- Be technically specific: "45도 측면광, 반사판 없음" instead of "은은한 조명"
+- Reference real-world scenarios: "카페 창가 자리" instead of "아늑한 공간"
+- Vary sentence length and structure between scenarios
+- Use industry terminology when appropriate (ISO, f-stop style descriptions welcome)
 
 ${SCENARIO_SELF_VERIFICATION}
 
