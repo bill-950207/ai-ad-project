@@ -98,8 +98,8 @@ const SCENARIO_DIVERSITY_CHECK = `
 Each scenario MUST differ in at least 3 of these dimensions:
 1. Target Age: (20대 vs 30대 vs 40대+)
 2. Target Lifestyle: (직장인 vs 학생 vs 전업주부 vs 인플루언서)
-3. Emotional Tone: (활기찬 vs 차분한 vs 고급스러운 vs 친근한)
-4. Visual Mood: (밝고 화사 vs 따뜻하고 포근 vs 세련되고 모던)
+3. Emotional Tone: (활기찬 vs 차분한 vs 단정한 vs 친근한)
+4. Visual Mood: (밝고 화사 vs 따뜻하고 포근 vs 모던하고 깔끔)
 5. Setting: (집 vs 사무실 vs 카페 vs 야외 vs 스튜디오)
 6. Time: (아침 vs 낮 vs 저녁 vs 밤)
 `.trim()
@@ -416,6 +416,7 @@ Examine the product image and information carefully. Identify:
 Name: ${input.productName || 'Not provided'}
 Description: ${input.productDescription || 'Not provided'}
 ${input.productSellingPoints?.length ? `Selling Points: ${input.productSellingPoints.join(', ')}` : ''}
+${input.productUsageMethod ? `Usage Method: ${input.productUsageMethod}` : ''}
 
 === AD TYPE ===
 ${input.adType}: ${adTypeDescriptions[input.adType]}
@@ -434,7 +435,7 @@ Based on your product analysis, create 3 DISTINCT advertising scenarios.
 **NAMING REQUIREMENT (CRITICAL):**
 - Title must clearly show WHAT PRODUCT BENEFIT/FEATURE this scenario emphasizes
 - User should INSTANTLY understand the selling point from the title alone
-- Format: "[강조 포인트] + [표현 방식]" (10-20 characters)
+- Format: "[강조 포인트] + [표현 방식]" (8-15 characters)
 - Focus on: efficacy, texture, lasting power, ingredients, target concern, usage benefit
 - BANNED ABSTRACT WORDS: "감성", "무드", "순간", "프리미엄", "럭셔리", "스페셜", "특별한", "완벽한"
 - BANNED AI-SOUNDING WORDS: "아름다운", "황홀한", "찬란한", "눈부신", "매력적인", "트렌디한", "세련된", "고급스러운", "조화로운", "감각적인"
@@ -467,7 +468,7 @@ Each scenario's visual style should SUPPORT its emphasized benefit
 - Gender-specific products: Maintain gender appropriateness
 
 === OUTPUT REQUIREMENTS FOR EACH SCENARIO ===
-- Title: 10-20 characters (clearly states the product benefit this scenario emphasizes)
+- Title: 8-15 characters (clearly states the product benefit this scenario emphasizes)
 - Description: 30-50 characters (explain target & concept clearly)
 - Provide CLEAR REASONING for each option based on product analysis
 ${avatarContext}
@@ -541,7 +542,7 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
             properties: {
               title: {
                 type: Type.STRING,
-                description: 'Scenario title (8-20 characters)',
+                description: 'Scenario title (8-15 characters)',
               },
               description: {
                 type: Type.STRING,
