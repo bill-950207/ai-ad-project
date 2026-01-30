@@ -396,8 +396,8 @@ Description: ${videoTypeStyle.description}
 Script Guidelines:
 ${videoTypeStyle.scriptGuidelines.map(g => `- ${g}`).join('\n')}
 
-Example Openings (for reference):
-${videoTypeStyle.openingExamples.map(e => `- "${e}"`).join('\n')}
+Opening Guidelines:
+${videoTypeStyle.openingGuidelines.map(g => `- ${g}`).join('\n')}
 
 IMPORTANT: All 3 scripts should follow the "${videoTypeStyle.korean}" video style guidelines above.
 `

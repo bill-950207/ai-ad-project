@@ -59,7 +59,7 @@ export const VIDEO_TYPE_SCRIPT_STYLES: Record<VideoType, {
   korean: string
   description: string
   scriptGuidelines: string[]
-  openingExamples: string[]
+  openingGuidelines: string[]
 }> = {
   UGC: {
     korean: 'UGC 스타일',
@@ -69,9 +69,10 @@ export const VIDEO_TYPE_SCRIPT_STYLES: Record<VideoType, {
       '캐주얼한 언어와 진정성 있는 반응',
       '일상적인 상황에서의 제품 발견 스토리',
     ],
-    openingExamples: [
-      '요즘 진짜 핫한 거 발견했는데요!',
-      '이거 써보고 진짜 깜놀했어요!',
+    openingGuidelines: [
+      '개인적 발견이나 경험으로 시작',
+      '호기심을 자극하는 질문 또는 선언',
+      '친근하고 즉흥적인 느낌의 톤',
     ],
   },
   podcast: {
@@ -83,10 +84,10 @@ export const VIDEO_TYPE_SCRIPT_STYLES: Record<VideoType, {
       '시청자 참여를 위한 수사적 질문',
       '친구에게 말하듯 친밀한 톤',
     ],
-    openingExamples: [
-      '오늘 얘기하고 싶은 게 있는데요...',
-      '혹시 이런 경험 있으세요?',
-      '제가 최근에 정말 재밌는 걸 발견했거든요.',
+    openingGuidelines: [
+      '이야기를 꺼내듯 자연스러운 도입',
+      '청취자의 공감을 이끄는 질문형 시작',
+      '편안하고 대화체적인 분위기 조성',
     ],
   },
   expert: {
@@ -98,9 +99,10 @@ export const VIDEO_TYPE_SCRIPT_STYLES: Record<VideoType, {
       '적절한 전문 용어 사용',
       '핵심 포인트가 있는 교육적 톤',
     ],
-    openingExamples: [
-      '오늘은 이 제품의 핵심 기술에 대해 설명드리겠습니다.',
-      '많은 분들이 궁금해하시는 부분을 자세히 알아보겠습니다.',
+    openingGuidelines: [
+      '전문성을 보여주는 명확한 주제 제시',
+      '시청자의 궁금증이나 문제점 언급',
+      '신뢰감을 주는 차분한 톤으로 시작',
     ],
   },
 }
