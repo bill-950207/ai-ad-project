@@ -3,24 +3,27 @@
  *
  * 히어로 섹션 배경에 쇼케이스 썸네일이 대각선으로 흐르는 효과
  *
- * 성능 최적화 v2:
- * - 열 수 감소: 5개 → 3개 (애니메이션 60% 감소)
- * - 아이템 수 감소: 25개 → 12개 (이미지 8 + 영상 4)
- * - 스켈레톤 로드 후 완전 언마운트 (GPU 메모리 해제)
+ * 성능 최적화 v3:
+ * - 서버에서 데이터 로드 (props로 전달받음)
+ * - API 호출 제거 (클라이언트 fetch 0회)
+ * - 열 수 감소: 5개 → 3개
  * - content-visibility: auto로 오프스크린 렌더링 최적화
- * - 그라데이션 오버레이 통합 (5개 → 1개)
  */
 
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useMemo } from 'react'
 
 interface ShowcaseItem {
   id: string
   thumbnail_url: string
 }
 
-// 열 설정 (3개로 감소)
+interface ShowcaseRainProps {
+  showcases?: ShowcaseItem[]
+}
+
+// 열 설정 (3개)
 const COLUMN_CONFIG = [
   { speed: 25, direction: 1 },   // 느림, 아래로
   { speed: 18, direction: -1 },  // 중간, 위로
@@ -30,7 +33,7 @@ const COLUMN_CONFIG = [
 // 각 열의 스켈레톤 카드 개수
 const SKELETON_CARDS_PER_COLUMN = 4
 
-// 스켈레톤 카드 컴포넌트 (단순화)
+// 스켈레톤 카드 컴포넌트
 function SkeletonCard() {
   return (
     <div
@@ -40,7 +43,7 @@ function SkeletonCard() {
   )
 }
 
-// 개별 카드 컴포넌트 (최소화)
+// 개별 카드 컴포넌트
 function RainCard({ url }: { url: string }) {
   return (
     <div
@@ -63,37 +66,8 @@ function RainCard({ url }: { url: string }) {
   )
 }
 
-export function ShowcaseRain() {
-  const [showcases, setShowcases] = useState<ShowcaseItem[]>([])
-  const [isLoaded, setIsLoaded] = useState(false)
-
-  // 쇼케이스 데이터 로드 (이미지 + 영상)
-  useEffect(() => {
-    const fetchShowcases = async () => {
-      try {
-        const [imageRes, videoRes] = await Promise.all([
-          fetch('/api/showcases?type=image&limit=8&random=true'),
-          fetch('/api/showcases?type=video&limit=4&random=true'),
-        ])
-
-        const imageData = imageRes.ok ? await imageRes.json() : { showcases: [] }
-        const videoData = videoRes.ok ? await videoRes.json() : { showcases: [] }
-
-        const combined = [
-          ...(imageData.showcases || []),
-          ...(videoData.showcases || []),
-        ]
-
-        if (combined.length > 0) {
-          setShowcases(combined)
-          setIsLoaded(true)
-        }
-      } catch (error) {
-        console.error('쇼케이스 로드 오류:', error)
-      }
-    }
-    fetchShowcases()
-  }, [])
+export function ShowcaseRain({ showcases = [] }: ShowcaseRainProps) {
+  const isLoaded = showcases.length > 0
 
   // 열별로 쇼케이스 분배 (3열, 2배 복제)
   const columns = useMemo(() => {
@@ -127,7 +101,7 @@ export function ShowcaseRain() {
           transformOrigin: 'center center',
         }}
       >
-        {/* 스켈레톤 - 로드 후 완전 언마운트 */}
+        {/* 스켈레톤 - 데이터 없을 때만 표시 */}
         {!isLoaded && (
           <>
             {skeletonColumns.map((column, colIndex) => (
@@ -164,7 +138,7 @@ export function ShowcaseRain() {
         ))}
       </div>
 
-      {/* 통합 오버레이 (기존 5개 → 1개) */}
+      {/* 통합 오버레이 */}
       <div
         className="absolute inset-0 z-10 pointer-events-none"
         style={{

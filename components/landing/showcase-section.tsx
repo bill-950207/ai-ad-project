@@ -517,14 +517,18 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
 // 메인 컴포넌트
 // ============================================================
 
-export function ShowcaseSection() {
+interface ShowcaseSectionProps {
+  initialShowcases?: ShowcaseItem[]
+}
+
+export function ShowcaseSection({ initialShowcases = [] }: ShowcaseSectionProps) {
   const { language, t } = useLanguage()
-  const [showcases, setShowcases] = useState<ShowcaseItem[]>([])
+  const [showcases, setShowcases] = useState<ShowcaseItem[]>(initialShowcases)
   const [activeTab, setActiveTab] = useState<'all' | 'image' | 'video'>('all')
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(initialShowcases.length === 0)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
-  const [page, setPage] = useState(1)
+  const [page, setPage] = useState(initialShowcases.length > 0 ? 2 : 1) // 초기 데이터 있으면 2페이지부터
   const [isTransitioning, setIsTransitioning] = useState(false)
   const ITEMS_PER_PAGE = 20
 
@@ -593,10 +597,12 @@ export function ShowcaseSection() {
     }
   }
 
-  // 초기 로드
+  // 초기 로드 (initialShowcases가 없을 때만)
   useEffect(() => {
-    fetchShowcases(1, false)
-  }, [])
+    if (initialShowcases.length === 0) {
+      fetchShowcases(1, false)
+    }
+  }, [initialShowcases.length])
 
   // 무한 스크롤 - IntersectionObserver
   useEffect(() => {

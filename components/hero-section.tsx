@@ -17,12 +17,17 @@ import { useLanguage } from "@/contexts/language-context";
 import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { ShowcaseRain } from "./landing/showcase-rain";
+import type { ShowcaseData } from "@/app/page";
 
 // ============================================================
 // 메인 컴포넌트
 // ============================================================
 
-export function HeroSection() {
+interface HeroSectionProps {
+  rainShowcases?: ShowcaseData[];
+}
+
+export function HeroSection({ rainShowcases }: HeroSectionProps) {
   const { language } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const supabase = createClient();
@@ -44,7 +49,7 @@ export function HeroSection() {
   return (
     <section className="relative overflow-hidden px-4 py-20 sm:py-28 lg:py-32">
       {/* 쇼케이스 레인 배경 */}
-      <ShowcaseRain />
+      <ShowcaseRain showcases={rainShowcases} />
 
       {/* 배경 오버레이 - 텍스트 가독성 */}
       <div className="absolute inset-0 -z-10">
