@@ -306,14 +306,18 @@ Create a unique and creative narrative arc that best suits this specific product
 
 5. imagePrompt (영어, 50-80 words): Seedream 이미지 생성용
    - Start with: "The ${productName} shown in the attached image"
-   - End with: "cinematic lighting, photorealistic, 4K, commercial quality"
+   - End with: "soft professional lighting, photorealistic, 4K, commercial quality"
    - NO PEOPLE
+   - NO visible studio equipment, cameras, tripods, lighting rigs, softboxes, reflectors, or any production equipment
+   - Describe lighting as EFFECT only (e.g., "soft warm light from above"), NOT as visible equipment
 
 6. videoPrompt (영어, 50-80 words): Vidu 영상 생성용
    - Start with: "The ${productName} shown in the attached image"
    - Include motion with "slowly"
-   - End with: "cinematic lighting, photorealistic, 4K"
+   - End with: "soft natural lighting, photorealistic, 4K"
    - NO PEOPLE
+   - NO visible studio equipment, cameras, tripods, lighting rigs, softboxes, reflectors, or any production equipment
+   - Describe lighting as EFFECT only, NOT as visible equipment
 
 === VIDEO SETTINGS ===
 - aspectRatio: "16:9" (landscape), "9:16" (portrait/vertical), or "1:1" (square)
@@ -380,14 +384,18 @@ Choose what best tells this product's story while adapting the reference style.
 
 5. imagePrompt (영어, 50-80 words): Seedream 이미지 생성용
    - Start with: "The ${productName} shown in the attached image"
-   - End with: "cinematic lighting, photorealistic, 4K, commercial quality"
+   - End with: "soft professional lighting, photorealistic, 4K, commercial quality"
    - NO PEOPLE
+   - NO visible studio equipment, cameras, tripods, lighting rigs, softboxes, reflectors, or any production equipment
+   - Describe lighting as EFFECT only (e.g., "soft warm light from above"), NOT as visible equipment
 
 6. videoPrompt (영어, 50-80 words): Vidu 영상 생성용
    - Start with: "The ${productName} shown in the attached image"
    - Include motion with "slowly"
-   - End with: "cinematic lighting, photorealistic, 4K"
+   - End with: "soft natural lighting, photorealistic, 4K"
    - NO PEOPLE
+   - NO visible studio equipment, cameras, tripods, lighting rigs, softboxes, reflectors, or any production equipment
+   - Describe lighting as EFFECT only, NOT as visible equipment
 
 === VIDEO SETTINGS ===
 - aspectRatio: "16:9" (landscape), "9:16" (portrait/vertical), or "1:1" (square)

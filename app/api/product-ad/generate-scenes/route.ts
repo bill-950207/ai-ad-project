@@ -153,6 +153,12 @@ Create ${count} different image generation prompts for a PREMIUM 3D COMMERCIAL-S
 - ONLY the product, objects, environment, and natural elements
 - If interaction is needed, use artistic props like wooden hand sculptures or elegant product stands
 
+⚠️ ABSOLUTELY NO VISIBLE PRODUCTION EQUIPMENT:
+- NO cameras, tripods, lighting rigs, softboxes, ring lights, reflectors, or any studio equipment
+- NO behind-the-scenes elements, production setups, or filming equipment
+- Describe lighting as EFFECT only (e.g., "bright highlights", "soft shadows"), NOT as visible equipment
+- The image should look like a FINAL ADVERTISEMENT, not a behind-the-scenes photo
+
 OUTPUT LANGUAGE: English (prompts must be in English for AI image generation)
 
 === PRODUCT INFORMATION ===
@@ -187,25 +193,27 @@ Create ultra-realistic, visually striking 3D commercial-style product shots with
    - Deep, vibrant colors that evoke premium quality
    - Subtle reflections beneath product for depth
 
-4. **Lighting (Cinematic Commercial-Style)**:
+4. **Lighting (Cinematic Commercial-Style) - EFFECT ONLY, NO VISIBLE EQUIPMENT**:
    - Bright highlights reflecting off product surface
    - Crisp shadows with high contrast
-   - Professional controlled lighting creating luxurious, polished look
+   - Professional lighting EFFECT creating luxurious, polished look (NOT visible lighting equipment)
    - Dramatic lighting for visual impact
+   - NEVER mention softbox, ring light, studio light, or any visible equipment
 
 5. **Quality Keywords to Include**:
    - "ultra-realistic 3D commercial-style"
    - "frozen in high-speed motion"
-   - "cinematic professional lighting"
+   - "cinematic professional lighting effect" (NOT visible equipment)
    - "premium quality, luxurious aesthetic"
    - "Ultra-HD, photorealistic"
+   - "no visible studio equipment, pure advertisement"
 
 === PROMPT STRUCTURE (60-100 words) ===
 Start with: "Create an ultra-realistic 3D commercial-style product shot of [product]..."
 Include: Dynamic elements, frozen motion, lighting description, background, quality keywords
 
 === EXAMPLE PROMPT ===
-"Create an ultra-realistic 3D commercial-style product shot of a premium [product] bottle, suspended mid-air with intricate condensation droplets. Surround with dynamic splashing droplets and floating [related ingredients] frozen in high-speed motion. Rich [color] gradient background. Cinematic professional lighting with bright highlights, crisp shadows, high contrast. Product slightly tilted conveying movement. Luxurious, polished look. Ultra-HD, photorealistic."
+"Create an ultra-realistic 3D commercial-style product shot of a premium [product] bottle, suspended mid-air with intricate condensation droplets. Surround with dynamic splashing droplets and floating [related ingredients] frozen in high-speed motion. Rich [color] gradient background. Cinematic lighting effect with bright highlights, crisp shadows, high contrast. Product slightly tilted conveying movement. Luxurious, polished look. Ultra-HD, photorealistic. No visible studio equipment or production setup."
 
 === ⭐ VISUAL CONSISTENCY (매우 중요!) ===
 ALL ${count} variations MUST share the SAME visual DNA to ensure cohesive look:
@@ -234,7 +242,9 @@ All variations must look like they belong to the SAME AD CAMPAIGN:
   * Camera: 30-degree overhead angle revealing product top
   * Unique perspective, subtle motion effects, emphasis on atmosphere
 
-Generate ${count} prompts optimized for PREMIUM 3D COMMERCIAL-STYLE product advertisement. NO PEOPLE.
+Generate ${count} prompts optimized for PREMIUM 3D COMMERCIAL-STYLE product advertisement.
+- NO PEOPLE
+- NO visible studio equipment, cameras, tripods, lighting rigs, softboxes, or production setup
 All prompts must share the SAME tone, color palette, and quality keywords for visual consistency.`
 
   const config: GenerateContentConfig = {

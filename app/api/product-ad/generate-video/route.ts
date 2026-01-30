@@ -265,6 +265,11 @@ ${modelSpecificGuidelines}
 5. Avoid sudden changes or jarring transitions
 6. The video should feel premium and polished
 
+=== CRITICAL: NO VISIBLE EQUIPMENT ===
+- NO cameras, tripods, lighting rigs, softboxes, ring lights, reflectors, or any studio equipment visible
+- Describe lighting as EFFECT only (e.g., "soft highlights", "dramatic shadows"), NOT as visible equipment
+- The video should look like a FINAL ADVERTISEMENT, not a behind-the-scenes production
+
 Create a single, optimized video prompt.`
 
   const config: GenerateContentConfig = {
@@ -396,6 +401,11 @@ ${modelSpecificGuidelines}
 4. End with a memorable final shot showcasing the product
 5. Keep each shot description concise (15-25 words)
 6. Total prompt should be 60-120 words
+
+=== CRITICAL: NO VISIBLE EQUIPMENT ===
+- NO cameras, tripods, lighting rigs, softboxes, ring lights, reflectors, or any studio equipment visible
+- Describe lighting as EFFECT only (e.g., "soft highlights", "dramatic shadows"), NOT as visible equipment
+- The video should look like a FINAL ADVERTISEMENT, not a behind-the-scenes production
 
 Create a multi-shot prompt that tells a compelling visual story about the product.`
 

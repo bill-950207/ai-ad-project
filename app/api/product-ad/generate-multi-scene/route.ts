@@ -265,6 +265,12 @@ IMPORTANT: Each scene has DIFFERENT settings - USE the specific elements for EAC
 - NO humans, faces, hands, body parts, silhouettes
 - ONLY the product, objects, environment, and natural elements
 
+❌ ABSOLUTELY NO VISIBLE PRODUCTION EQUIPMENT:
+- NO cameras, tripods, lighting rigs, softboxes, ring lights, reflectors, or any studio equipment
+- NO behind-the-scenes elements, production setups, or filming equipment
+- Describe lighting as EFFECT only (e.g., "soft highlights", "dramatic shadows"), NOT as visible equipment
+- The video should look like a FINAL ADVERTISEMENT, not a behind-the-scenes photo
+
 ✅ OUTPUT LANGUAGE:
 - scenePrompt: English only (for AI video generation)
 - visualStyle: English (shared style description)
@@ -331,6 +337,7 @@ Create a unique and creative narrative flow that best highlights this specific p
 2. Scene 1 uses Scene 1 elements, Scene 2 uses Scene 2 elements, etc.
 3. Scenes should flow together as one story while having VISUAL VARIETY
 4. NO REAL PEOPLE - only product and environment
-5. Each prompt ends with that scene's color tone + "cinematic lighting, photorealistic, 4K"
-6. End visualStyle with: "Overall mood: ${primaryColorTone}, premium commercial quality"`
+5. NO VISIBLE STUDIO EQUIPMENT - no cameras, tripods, lighting rigs, softboxes
+6. Each prompt ends with that scene's color tone + "soft professional lighting, photorealistic, 4K"
+7. End visualStyle with: "Overall mood: ${primaryColorTone}, premium commercial quality, no visible production equipment"`
 }
