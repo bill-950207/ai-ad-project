@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useLanguage } from '@/contexts/language-context'
 import {
   Package,
   User,
@@ -18,7 +17,6 @@ import { useAvatarMotionWizard, AdProduct } from './wizard-context'
 import { WizardNavigation } from './wizard-navigation-button'
 
 export function WizardStep1() {
-  const { t } = useLanguage()
   const {
     selectedProduct,
     setSelectedProduct,

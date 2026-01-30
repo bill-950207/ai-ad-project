@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { X, Upload, Loader2, ImageIcon, Plus, Minus, Check, AlertCircle } from 'lucide-react'
+import { X, Loader2, ImageIcon, Plus, Minus, Check, AlertCircle } from 'lucide-react'
 
 // 제품 정보 인터페이스 (wizard-context와 동일)
 export interface AdProduct {
@@ -33,7 +33,6 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
   const [isDragging, setIsDragging] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isPolling, setIsPolling] = useState(false)
-  const [pollingProductId, setPollingProductId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
@@ -49,7 +48,6 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
       setError(null)
       setIsSubmitting(false)
       setIsPolling(false)
-      setPollingProductId(null)
       if (pollingRef.current) {
         clearInterval(pollingRef.current)
         pollingRef.current = null
@@ -274,7 +272,6 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
       // 폴링 시작
       setIsSubmitting(false)
       setIsPolling(true)
-      setPollingProductId(productId)
 
       pollingRef.current = setInterval(() => {
         pollProductStatus(productId)
