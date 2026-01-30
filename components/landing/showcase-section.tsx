@@ -34,6 +34,15 @@ interface ShowcaseItem {
   avatar_image_url: string | null
 }
 
+// 이미지 광고 타입 키
+const IMAGE_AD_TYPE_KEYS = [
+  'productOnly', 'holding', 'using', 'wearing', 'lifestyle',
+  'unboxing', 'seasonal', 'comparison', 'beforeAfter'
+] as const
+
+// 영상 광고 타입 키
+const VIDEO_AD_TYPE_KEYS = ['productDescription', 'productAd'] as const
+
 // ============================================================
 // 쇼케이스 컨텍스트 (클릭 핸들러만 전달)
 // ============================================================
@@ -55,12 +64,39 @@ interface ShowcaseCardProps {
 }
 
 function ShowcaseCard({ item }: ShowcaseCardProps) {
+  const { t } = useLanguage()
   const [isHovered, setIsHovered] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [isMuted, setIsMuted] = useState(true)
   const [isVisible, setIsVisible] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
+
+  // 광고 서브타입 레이블 가져오기
+  const getAdTypeLabel = (): string | null => {
+    if (!item.ad_type) return null
+
+    // 이미지 광고 타입 확인
+    if (IMAGE_AD_TYPE_KEYS.includes(item.ad_type as typeof IMAGE_AD_TYPE_KEYS[number])) {
+      const adTypeKey = item.ad_type as typeof IMAGE_AD_TYPE_KEYS[number]
+      const typeData = t.imageAdTypes[adTypeKey]
+      if (typeData && typeof typeData === 'object' && 'title' in typeData) {
+        return typeData.title
+      }
+    }
+
+    // 영상 광고 타입 확인
+    if (VIDEO_AD_TYPE_KEYS.includes(item.ad_type as typeof VIDEO_AD_TYPE_KEYS[number])) {
+      const adTypeKey = item.ad_type as typeof VIDEO_AD_TYPE_KEYS[number]
+      const typeData = t.videoAdTypes[adTypeKey]
+      if (typeData && typeof typeData === 'object' && 'title' in typeData) {
+        return typeData.title
+      }
+    }
+
+    // 매핑에 없으면 원본 값 반환
+    return item.ad_type
+  }
 
   const { onShowcaseClick } = useContext(VideoContext)
 
@@ -197,14 +233,23 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
         {/* 하단 어두운 그라데이션 */}
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none" />
 
-        {/* 하단 좌측: 타입 배지 */}
-        <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-medium text-white pointer-events-none">
-          {item.type === 'video' ? (
-            <Video className="w-3 h-3" />
-          ) : (
-            <ImageIcon className="w-3 h-3" />
+        {/* 하단 좌측: 타입 배지 (메인 타입 + 서브타입) */}
+        <div className="absolute bottom-3 left-3 flex flex-col gap-1 pointer-events-none">
+          {/* 메인 타입 배지 */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-medium text-white">
+            {item.type === 'video' ? (
+              <Video className="w-3 h-3" />
+            ) : (
+              <ImageIcon className="w-3 h-3" />
+            )}
+            <span>{item.type === 'video' ? 'Video' : 'Image'}</span>
+          </div>
+          {/* 서브타입 배지 */}
+          {getAdTypeLabel() && (
+            <div className="px-2 py-0.5 rounded-full bg-primary/30 backdrop-blur-sm text-[10px] text-white/90 w-fit">
+              {getAdTypeLabel()}
+            </div>
           )}
-          <span>{item.type === 'video' ? 'Video' : 'Image'}</span>
         </div>
 
         {/* 하단 우측: 제품 & 아바타 썸네일 */}

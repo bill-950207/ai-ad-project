@@ -1,19 +1,21 @@
 /**
  * 쇼케이스 레인 컴포넌트
  *
- * 히어로 섹션 배경에 쇼케이스 이미지들이 대각선으로 흐르는 효과
+ * 히어로 섹션 배경에 쇼케이스 이미지/영상이 대각선으로 흐르는 효과
  * - API에서 쇼케이스 데이터 로드
  * - 여러 열로 구성, 각 열 다른 속도로 흐름
  * - 대각선(기울어진) 방향으로 애니메이션
+ * - 영상은 화면에 보일 때 자동 재생
  */
 
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 
 interface ShowcaseItem {
   id: string
   thumbnail_url: string
+  media_url: string | null
   type: 'image' | 'video'
 }
 
@@ -25,6 +27,76 @@ const COLUMN_CONFIG = [
   { speed: 22, direction: -1 },  // 중간, 위로
   { speed: 15, direction: 1 },   // 빠름, 아래로
 ]
+
+// 개별 카드 컴포넌트 (영상 자동 재생 지원)
+function RainCard({ item, itemIndex }: { item: ShowcaseItem; itemIndex: number }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [isVisible, setIsVisible] = useState(false)
+
+  // IntersectionObserver로 가시성 감지
+  useEffect(() => {
+    if (item.type !== 'video' || !item.media_url) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          setIsVisible(entry.isIntersecting)
+        })
+      },
+      { threshold: 0.2 }
+    )
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [item.type, item.media_url])
+
+  // 재생 상태 관리
+  useEffect(() => {
+    if (!videoRef.current || item.type !== 'video') return
+
+    if (isVisible) {
+      videoRef.current.play().catch(() => {})
+    } else {
+      videoRef.current.pause()
+    }
+  }, [isVisible, item.type])
+
+  return (
+    <div
+      ref={cardRef}
+      className="relative rounded-xl overflow-hidden bg-secondary/30 flex-shrink-0"
+      style={{ aspectRatio: '3/4' }}
+    >
+      {/* 썸네일 이미지 (영상일 때는 폴백) */}
+      <img
+        src={item.thumbnail_url}
+        alt=""
+        className="w-full h-full object-cover object-top"
+        loading="lazy"
+      />
+
+      {/* 영상 오버레이 */}
+      {item.type === 'video' && item.media_url && (
+        <video
+          ref={videoRef}
+          src={item.media_url}
+          className="absolute inset-0 w-full h-full object-cover object-top"
+          muted
+          loop
+          playsInline
+          preload="metadata"
+        />
+      )}
+
+      {/* 어두운 오버레이 */}
+      <div className="absolute inset-0 bg-background/40" />
+    </div>
+  )
+}
 
 export function ShowcaseRain() {
   const [showcases, setShowcases] = useState<ShowcaseItem[]>([])
@@ -71,8 +143,8 @@ export function ShowcaseRain() {
       cols[colIndex].push(item)
     })
 
-    // 각 열의 아이템을 2배로 복제 (무한 스크롤 효과)
-    return cols.map(col => [...col, ...col])
+    // 각 열의 아이템을 3배로 복제 (끊김 없는 무한 스크롤)
+    return cols.map(col => [...col, ...col, ...col])
   }, [showcases])
 
   if (!isLoaded || showcases.length === 0) {
@@ -98,20 +170,7 @@ export function ShowcaseRain() {
             }}
           >
             {column.map((item, itemIndex) => (
-              <div
-                key={`${item.id}-${itemIndex}`}
-                className="relative rounded-xl overflow-hidden bg-secondary/30 flex-shrink-0"
-                style={{ aspectRatio: '3/4' }}
-              >
-                <img
-                  src={item.thumbnail_url}
-                  alt=""
-                  className="w-full h-full object-cover object-top"
-                  loading="lazy"
-                />
-                {/* 오버레이 */}
-                <div className="absolute inset-0 bg-background/40" />
-              </div>
+              <RainCard key={`${item.id}-${itemIndex}`} item={item} itemIndex={itemIndex} />
             ))}
           </div>
         ))}
@@ -129,16 +188,13 @@ export function ShowcaseRain() {
       {/* 우측 페이드 */}
       <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-background to-transparent z-10" />
 
-      {/* 중앙 콘텐츠 영역 마스크 - 텍스트 가독성 */}
-      <div className="absolute inset-0 flex items-center justify-center z-10">
-        <div
-          className="w-full max-w-3xl h-[70%] bg-background/60 backdrop-blur-sm"
-          style={{
-            maskImage: 'radial-gradient(ellipse 100% 100% at center, black 30%, transparent 70%)',
-            WebkitMaskImage: 'radial-gradient(ellipse 100% 100% at center, black 30%, transparent 70%)',
-          }}
-        />
-      </div>
+      {/* 중앙 콘텐츠 영역 - 부드러운 원형 그라데이션 */}
+      <div
+        className="absolute inset-0 z-10"
+        style={{
+          background: 'radial-gradient(ellipse 80% 70% at 50% 50%, hsl(var(--background) / 0.85) 0%, hsl(var(--background) / 0.5) 40%, transparent 70%)',
+        }}
+      />
     </div>
   )
 }
