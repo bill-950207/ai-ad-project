@@ -456,6 +456,7 @@ AVATAR_AI_PROVIDER=kie  # 'kie' | 'fal'
 
 다음 기능들은 현재 서비스에서 **사용하지 않음**:
 - **아바타 모션:** `/api/avatar-motion/*`, `components/video-ad/avatar-motion/`
+- **아바타 의상 변경:** `/api/avatars/*/outfits/*`, `avatar_outfits` 테이블
 - **배경 생성:** `/api/ad-backgrounds/*`, `dashboard/background/`
 
 해당 코드는 레거시로 유지되며, 신규 개발이나 버그 수정 대상이 아님.
