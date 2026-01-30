@@ -337,7 +337,7 @@ export async function generateMultipleRecommendedOptions(
       avatarContext = `\n\n=== AVATAR STYLE INFO ===
 The user has selected a real avatar with the following characteristics:
 ${styleParts.join(', ')}
-Consider these avatar traits when recommending options (especially outfit, pose, expression) to create harmonious visuals.`
+Consider these avatar traits when recommending options (especially outfit, pose, expression) to create cohesive visuals.`
     }
   } else if (isAiGeneratedAvatar) {
     // 사용자 초기 AI 아바타 옵션 텍스트 생성
@@ -455,7 +455,7 @@ Each scenario's visual style should SUPPORT its emphasized benefit
 
 **QUALITY REQUIREMENT:**
 - Concept authenticity: Scenario should feel natural for the product
-- Option coherence: All options (mood, lighting, background, etc.) should work together harmoniously
+- Option coherence: All options (mood, lighting, background, etc.) should work together as a unified concept
 - Target alignment: Options should match target audience expectations
 
 === PRODUCT-APPROPRIATE CONSTRAINTS ===
