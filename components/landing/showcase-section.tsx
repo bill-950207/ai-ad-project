@@ -15,6 +15,7 @@ import { Play, Image as ImageIcon, Video, Volume2, VolumeX, X, Plus } from 'luci
 
 // 메모리 최적화: 비디오 요소 제거, 썸네일만 표시
 import { useLanguage } from '@/contexts/language-context'
+import { optimizeGalleryUrl, optimizeThumbnailUrl, optimizeLightboxUrl } from '@/lib/image/optimize'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -133,7 +134,7 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
       <div className="relative w-full">
         {/* 썸네일 이미지 */}
         <img
-          src={item.thumbnail_url}
+          src={optimizeGalleryUrl(item.thumbnail_url)}
           alt={item.title}
           width={320}
           height={400}
@@ -205,7 +206,7 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
             {item.avatar_image_url && (
               <div className="w-9 h-9 rounded-full overflow-hidden shadow-lg flex-shrink-0 ring-2 ring-white/30">
                 <img
-                  src={item.avatar_image_url}
+                  src={optimizeThumbnailUrl(item.avatar_image_url)}
                   alt="Avatar"
                   className="w-full h-full object-cover object-top"
                 />
@@ -214,7 +215,7 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
             {item.product_image_url && (
               <div className="w-9 h-9 rounded-lg bg-white/95 p-0.5 shadow-lg flex-shrink-0">
                 <img
-                  src={item.product_image_url}
+                  src={optimizeThumbnailUrl(item.product_image_url)}
                   alt="Product"
                   className="w-full h-full object-contain"
                 />
@@ -355,7 +356,7 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
             </div>
           ) : (
             <img
-              src={item.thumbnail_url}
+              src={optimizeLightboxUrl(item.thumbnail_url)}
               alt={item.title}
               className="w-full h-full object-contain max-h-[50vh] md:max-h-[85vh]"
             />
@@ -387,7 +388,7 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
                     <div className="flex flex-col items-center gap-0.5">
                       <div className="w-12 h-12 rounded-lg bg-secondary/50 p-0.5 border border-border">
                         <img
-                          src={item.product_image_url}
+                          src={optimizeThumbnailUrl(item.product_image_url)}
                           alt="Product"
                           className="w-full h-full object-contain"
                         />
@@ -404,7 +405,7 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
                     <div className="flex flex-col items-center gap-0.5">
                       <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-border">
                         <img
-                          src={item.avatar_image_url}
+                          src={optimizeThumbnailUrl(item.avatar_image_url)}
                           alt="Avatar"
                           className="w-full h-full object-cover object-top"
                         />

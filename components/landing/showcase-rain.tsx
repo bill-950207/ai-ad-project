@@ -12,6 +12,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { optimizeRainUrl } from '@/lib/image/optimize'
 
 interface ShowcaseItem {
   id: string
@@ -63,7 +64,7 @@ function RainCard({ item }: { item: ShowcaseItem }) {
     >
       {/* 모든 항목을 썸네일 이미지로 표시 (메모리 절약) */}
       <img
-        src={item.thumbnail_url}
+        src={optimizeRainUrl(item.thumbnail_url)}
         alt=""
         width={120}
         height={160}
@@ -90,7 +91,7 @@ function RainCard({ item }: { item: ShowcaseItem }) {
 export function ShowcaseRain({ showcases = [] }: ShowcaseRainProps) {
   const isLoaded = showcases.length > 0
 
-  // 열별로 쇼케이스 분배 (4열, 복제 없음 - 메모리 절약)
+  // 열별로 쇼케이스 분배 (4열, 2배 복제로 무한 스크롤 효과)
   const columns = useMemo(() => {
     if (showcases.length === 0) return []
 
@@ -99,7 +100,8 @@ export function ShowcaseRain({ showcases = [] }: ShowcaseRainProps) {
       cols[index % 4].push(item)
     })
 
-    return cols
+    // 2배 복제로 끊김 없는 애니메이션
+    return cols.map(col => [...col, ...col])
   }, [showcases])
 
   // 스켈레톤 열 (2배 복제)
