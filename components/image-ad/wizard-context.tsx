@@ -560,7 +560,8 @@ export function ImageAdWizardProvider({
 
           const state = data.draft.wizard_state
 
-          // 상태 복원
+          // 상태 복원 (auto-save 방지를 위해 플래그 설정)
+          isRestoringDraftRef.current = true
           setDraftId(data.draft.id)
           setStep(data.draft.wizard_step || 1)
           if (state.adType) setAdTypeState(state.adType)
@@ -626,11 +627,19 @@ export function ImageAdWizardProvider({
   // step 변경 시 자동 저장을 위한 ref
   const prevStepRef = useRef(step)
   const isInitialMountRef = useRef(true)
+  const isRestoringDraftRef = useRef(false)  // Draft 복원 중 플래그
 
   useEffect(() => {
     // 최초 마운트 시에는 저장 안함
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false
+      prevStepRef.current = step
+      return
+    }
+
+    // Draft 복원 중에는 저장 안함
+    if (isRestoringDraftRef.current) {
+      isRestoringDraftRef.current = false
       prevStepRef.current = step
       return
     }

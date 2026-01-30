@@ -400,14 +400,14 @@ export function WizardStep4() {
       setResultImages(imageUrls)
       setGenerationProgress(100)
 
-      // Draft 상태를 COMPLETED로 변경
+      // 생성 완료 후 draft 삭제 (실제 image_ad 레코드는 별도로 생성됨)
       if (draftId) {
         try {
-          await fetch(`/api/image-ad/draft/${draftId}/complete`, {
-            method: 'POST',
+          await fetch(`/api/image-ad/draft?id=${draftId}`, {
+            method: 'DELETE',
           })
         } catch (err) {
-          console.error('Draft 완료 처리 오류:', err)
+          console.error('Draft 삭제 오류:', err)
         }
       }
 
