@@ -49,9 +49,10 @@ function SkeletonCard() {
   )
 }
 
-// 개별 카드 컴포넌트 - 이미지만 (영상은 썸네일로 표시하여 메모리 절약)
+// 개별 카드 컴포넌트 - 이미지 또는 영상
 function RainCard({ item }: { item: ShowcaseItem }) {
   const [isLoaded, setIsLoaded] = useState(false)
+  const isVideo = item.type === 'video' && item.media_url
 
   return (
     <div
@@ -62,7 +63,7 @@ function RainCard({ item }: { item: ShowcaseItem }) {
         transform: 'translate3d(0,0,0)',
       }}
     >
-      {/* 모든 항목을 썸네일 이미지로 표시 (메모리 절약) */}
+      {/* 썸네일 이미지 (기본 배경) */}
       <img
         src={optimizeRainUrl(item.thumbnail_url)}
         alt=""
@@ -77,6 +78,18 @@ function RainCard({ item }: { item: ShowcaseItem }) {
         decoding="async"
         onLoad={() => setIsLoaded(true)}
       />
+      {/* 영상인 경우 비디오 오버레이 */}
+      {isVideo && (
+        <video
+          src={item.media_url!}
+          className="absolute inset-0 w-full h-full object-cover object-top"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+        />
+      )}
       <div
         className="absolute inset-0 bg-background/40"
         style={{
