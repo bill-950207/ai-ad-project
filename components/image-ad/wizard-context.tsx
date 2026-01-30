@@ -541,12 +541,19 @@ export function ImageAdWizardProvider({
   const prevStepRef = useRef(step)
   const isInitialMountRef = useRef(true)
   const isRestoringDraftRef = useRef(false)  // Draft 복원 중 플래그
+  const draftLoadAttemptedRef = useRef(false)  // Draft 로드/생성 시도 여부 (중복 방지)
 
   // ============================================================
   // Draft 로드 (마운트 시)
   // ============================================================
 
   useEffect(() => {
+    // 이미 로드/생성 시도했으면 중복 실행 방지 (React Strict Mode 대응)
+    if (draftLoadAttemptedRef.current) {
+      return
+    }
+    draftLoadAttemptedRef.current = true
+
     const loadOrCreateDraft = async () => {
       setIsLoadingDraft(true)
 
