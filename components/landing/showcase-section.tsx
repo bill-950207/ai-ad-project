@@ -35,24 +35,14 @@ interface ShowcaseItem {
 }
 
 // ============================================================
-// 비디오 재생 컨텍스트
+// 쇼케이스 컨텍스트 (클릭 핸들러만 전달)
 // ============================================================
 
-interface VideoContextType {
-  activeVideoId: string | null
-  hoveredVideoId: string | null
-  setHoveredVideoId: (id: string | null) => void
-  registerVisibleVideo: (id: string) => void
-  unregisterVisibleVideo: (id: string) => void
+interface ShowcaseContextType {
   onShowcaseClick: (item: ShowcaseItem) => void
 }
 
-const VideoContext = createContext<VideoContextType>({
-  activeVideoId: null,
-  hoveredVideoId: null,
-  setHoveredVideoId: () => {},
-  registerVisibleVideo: () => {},
-  unregisterVisibleVideo: () => {},
+const VideoContext = createContext<ShowcaseContextType>({
   onShowcaseClick: () => {},
 })
 
@@ -68,32 +58,26 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [isMuted, setIsMuted] = useState(true)
+  const [isVisible, setIsVisible] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
 
-  const { activeVideoId, hoveredVideoId, setHoveredVideoId, registerVisibleVideo, unregisterVisibleVideo, onShowcaseClick } = useContext(VideoContext)
+  const { onShowcaseClick } = useContext(VideoContext)
 
-  // 이 비디오가 재생되어야 하는지 확인
-  const shouldPlay = item.type === 'video' && (
-    hoveredVideoId === item.id ||
-    (hoveredVideoId === null && activeVideoId === item.id)
-  )
+  // 화면에 보이면 재생
+  const shouldPlay = item.type === 'video' && isVisible
 
-  // Intersection Observer로 화면에 보이는지 감지
+  // Intersection Observer로 화면에 보이는지 감지 - 보이면 바로 재생
   useEffect(() => {
     if (item.type !== 'video' || !item.media_url) return
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            registerVisibleVideo(item.id)
-          } else {
-            unregisterVisibleVideo(item.id)
-          }
+          setIsVisible(entry.isIntersecting)
         })
       },
-      { threshold: 0.5 }
+      { threshold: 0.3 }
     )
 
     if (cardRef.current) {
@@ -102,9 +86,8 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
 
     return () => {
       observer.disconnect()
-      unregisterVisibleVideo(item.id)
     }
-  }, [item.type, item.media_url, item.id, registerVisibleVideo, unregisterVisibleVideo])
+  }, [item.type, item.media_url])
 
   // 재생 상태 관리
   useEffect(() => {
@@ -114,24 +97,15 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
       videoRef.current.play().catch(() => {})
     } else {
       videoRef.current.pause()
-      videoRef.current.currentTime = 0
-      setIsMuted(true)
-      videoRef.current.muted = true
     }
   }, [shouldPlay, item.type])
 
   const handleMouseEnter = () => {
     setIsHovered(true)
-    if (item.type === 'video') {
-      setHoveredVideoId(item.id)
-    }
   }
 
   const handleMouseLeave = () => {
     setIsHovered(false)
-    if (item.type === 'video') {
-      setHoveredVideoId(null)
-    }
   }
 
   const handleToggleMute = (e: React.MouseEvent) => {
@@ -512,37 +486,6 @@ export function ShowcaseSection() {
   // 라이트박스 상태
   const [selectedShowcase, setSelectedShowcase] = useState<ShowcaseItem | null>(null)
 
-  // 비디오 재생 상태 관리
-  const [hoveredVideoId, setHoveredVideoId] = useState<string | null>(null)
-  const [activeVideoId, setActiveVideoId] = useState<string | null>(null)
-  const visibleVideosRef = useRef<Set<string>>(new Set())
-
-  const registerVisibleVideo = (id: string) => {
-    visibleVideosRef.current.add(id)
-    // 호버 중인 비디오가 없으면 첫 번째 보이는 비디오를 활성화
-    if (hoveredVideoId === null && activeVideoId === null) {
-      setActiveVideoId(id)
-    }
-  }
-
-  const unregisterVisibleVideo = (id: string) => {
-    visibleVideosRef.current.delete(id)
-    // 현재 활성 비디오가 화면에서 벗어나면 다음 보이는 비디오로 전환
-    if (activeVideoId === id) {
-      const nextVisible = Array.from(visibleVideosRef.current)[0] || null
-      setActiveVideoId(nextVisible)
-    }
-  }
-
-  // 호버 상태 변경 시 활성 비디오 업데이트
-  useEffect(() => {
-    if (hoveredVideoId === null) {
-      // 호버 해제 시 보이는 비디오 중 첫 번째로 전환
-      const firstVisible = Array.from(visibleVideosRef.current)[0] || null
-      setActiveVideoId(firstVisible)
-    }
-  }, [hoveredVideoId])
-
   // 쇼케이스 클릭 핸들러
   const handleShowcaseClick = useCallback((item: ShowcaseItem) => {
     setSelectedShowcase(item)
@@ -654,11 +597,6 @@ export function ShowcaseSection() {
 
   return (
     <VideoContext.Provider value={{
-      activeVideoId,
-      hoveredVideoId,
-      setHoveredVideoId,
-      registerVisibleVideo,
-      unregisterVisibleVideo,
       onShowcaseClick: handleShowcaseClick,
     }}>
       <section id="gallery" className="px-4 py-20 sm:py-24">
