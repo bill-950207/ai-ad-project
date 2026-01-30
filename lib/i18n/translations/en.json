@@ -536,8 +536,8 @@
     "noAvatarSelected": "Please select an avatar",
     "creditsRequired": "Credits Required",
     "promptPlaceholders": {
-      "productOnly": "Product placed on a luxurious marble table with soft lighting in a minimal studio setting",
-      "holding": "Model naturally holding the product, smiling at the camera, bright studio background",
+      "productOnly": "Product placed on a luxurious marble table with soft lighting against clean seamless backdrop",
+      "holding": "Model naturally holding the product, smiling at the camera, clean bright background",
       "using": "Model using the product in front of a mirror, vanity area with bright lighting",
       "wearing": "Model wearing the product with a stylish pose, clean background",
       "beforeAfter": "Before: Showing skin concerns / After: Transformed with clear, healthy skin",

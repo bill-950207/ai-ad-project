@@ -23,7 +23,7 @@ CORRECT LIGHTING DESCRIPTIONS (use these):
 - "bright even illumination with minimal shadows"
 - "dramatic side lighting with strong contrast"
 - "natural window light creating soft highlights"
-- "professional studio-quality lighting effect with controlled highlights"
+- "professional commercial-quality lighting effect with controlled highlights"
 
 WRONG LIGHTING DESCRIPTIONS (NEVER use these):
 - "softbox on the left" (describes equipment)

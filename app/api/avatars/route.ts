@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
     // 품질 향상 문구
     const qualityEnhancers = 'high quality photo, realistic, professional photography, sharp focus, detailed skin texture'
     // 기본 배경: 선명한 배경을 위해 soft 대신 even lighting 사용
-    const defaultBackground = hasBackground ? '' : ', in a professional photo studio with even studio lighting and clean white backdrop, well-lit, sharp clear background'
+    const defaultBackground = hasBackground ? '' : ', against clean white seamless backdrop with soft even lighting effect, well-lit, sharp clear background, no visible equipment'
     // 기본 포즈: 자연스러운 포즈와 중립적 표정 + 카메라 응시
     const defaultPose = hasPose ? '' : ', in a relaxed natural pose, neutral calm expression'
     const viewType = 'upper body shot'

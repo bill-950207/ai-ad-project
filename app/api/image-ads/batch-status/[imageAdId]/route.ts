@@ -86,10 +86,33 @@ export async function GET(
       })
     }
 
-    // 이미 IMAGES_READY 상태인 경우 (클라이언트가 R2 업로드 중)
-    // 외부 API 재호출 방지
+    // 이미 IMAGES_READY 상태인 경우 - 외부 API 재조회하여 pendingImages 반환
+    // (페이지 새로고침 등으로 클라이언트가 업로드 재시작해야 할 수 있음)
     if (imageAd.status === 'IMAGES_READY') {
-      console.log(`[batch-status] 이미 IMAGES_READY 상태, 조기 반환: ${imageAdId}`)
+      console.log(`[batch-status] IMAGES_READY 상태, 외부 API 재조회: ${imageAdId}`)
+      // batch_request_ids가 있으면 재조회
+      if (imageAd.batch_request_ids && Array.isArray(imageAd.batch_request_ids)) {
+        return await processBatchStatus(
+          supabase,
+          user.id,
+          imageAd.id,
+          imageAd.batch_request_ids as BatchRequestId[],
+          true // skipStatusUpdate: 이미 IMAGES_READY 상태이므로 DB 업데이트 스킵
+        )
+      }
+      // fal_request_id만 있는 경우
+      if (imageAd.fal_request_id) {
+        const batchRequestIds: BatchRequestId[] = []
+        if (imageAd.fal_request_id.startsWith('kie:')) {
+          batchRequestIds.push({ provider: 'kie', requestId: imageAd.fal_request_id.substring(4) })
+        } else if (imageAd.fal_request_id.startsWith('fal:')) {
+          batchRequestIds.push({ provider: 'fal', requestId: imageAd.fal_request_id.substring(4) })
+        } else {
+          batchRequestIds.push({ provider: 'fal', requestId: imageAd.fal_request_id })
+        }
+        return await processBatchStatus(supabase, user.id, imageAd.id, batchRequestIds, true)
+      }
+      // request ID가 없으면 메시지만 반환
       return NextResponse.json({
         status: 'IMAGES_READY',
         message: 'Images are ready for client upload. Please complete the upload.',
@@ -141,7 +164,8 @@ async function processBatchStatus(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   imageAdId: string,
-  batchRequestIds: BatchRequestId[]
+  batchRequestIds: BatchRequestId[],
+  skipStatusUpdate = false // IMAGES_READY 상태에서 재조회 시 DB 업데이트 스킵
 ) {
   // 각 요청의 상태 확인
   const results: ImageResult[] = await Promise.all(
@@ -222,16 +246,21 @@ async function processBatchStatus(
         }))
 
       // 상태만 IMAGES_READY로 업데이트 (클라이언트가 업로드 후 COMPLETED로 변경)
-      const { error: updateError, count } = await supabase
-        .from('image_ads')
-        .update({ status: 'IMAGES_READY' })
-        .eq('id', imageAdId)
-        .eq('user_id', userId)
+      // skipStatusUpdate가 true면 이미 IMAGES_READY 상태이므로 업데이트 스킵
+      if (!skipStatusUpdate) {
+        const { error: updateError, count } = await supabase
+          .from('image_ads')
+          .update({ status: 'IMAGES_READY' })
+          .eq('id', imageAdId)
+          .eq('user_id', userId)
 
-      if (updateError) {
-        console.error('[batch-status] IMAGES_READY 상태 업데이트 실패:', updateError)
+        if (updateError) {
+          console.error('[batch-status] IMAGES_READY 상태 업데이트 실패:', updateError)
+        } else {
+          console.log(`[batch-status] IMAGES_READY 상태 업데이트 완료: ${imageAdId}, count: ${count}`)
+        }
       } else {
-        console.log(`[batch-status] IMAGES_READY 상태 업데이트 완료: ${imageAdId}, count: ${count}`)
+        console.log(`[batch-status] IMAGES_READY 재조회, DB 업데이트 스킵: ${imageAdId}`)
       }
 
       return NextResponse.json({
