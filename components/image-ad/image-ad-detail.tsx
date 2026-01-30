@@ -365,6 +365,11 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
       product_size: '제품 크기',
       camera_distance: '카메라 거리',
       custom_prompt: '커스텀 프롬프트',
+      // AI 생성 옵션 키들
+      outfit: '의상',
+      colortone: '컬러톤',
+      colorTone: '컬러톤',
+      color_tone: '컬러톤',
     }
     return fallbackLabels[key] || key
   }
