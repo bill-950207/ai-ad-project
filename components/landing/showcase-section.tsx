@@ -11,10 +11,9 @@
 'use client'
 
 import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react'
-import { Play, Image as ImageIcon, Video, ArrowRight, Volume2, VolumeX, X, Plus } from 'lucide-react'
+import { Play, Image as ImageIcon, Video, Volume2, VolumeX, X, Plus } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 // ============================================================
@@ -727,16 +726,6 @@ export function ShowcaseSection({ initialShowcases = [] }: ShowcaseSectionProps)
             </>
           )}
 
-          {/* CTA */}
-          <div className="flex justify-center mt-10">
-            <Link
-              href="/login"
-              className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              <span>{language === 'ko' ? '시작하기' : 'Get Started'}</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
-            </Link>
-          </div>
         </div>
       </section>
 
