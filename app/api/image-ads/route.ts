@@ -467,6 +467,10 @@ export async function POST(request: NextRequest) {
 
         // 요청한 아바타가 모두 있는지 확인
         const avatarMap = new Map(avatars?.map(a => [a.id, a]) ?? [])
+
+        // 아바타 이미지들을 순서대로 수집 (루프 내 unshift는 순서 역전 발생)
+        const collectedAvatarImages: string[] = []
+
         for (const avatarId of avatarIds) {
           const avatar = avatarMap.get(avatarId)
 
@@ -493,15 +497,18 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // 일반 아바타 이미지 추가 (원본 우선)
-          // unshift로 첫 번째에 추가해서 Figure 1이 아바타가 되도록 함
+          // 일반 아바타 이미지 수집 (원본 우선)
           const avatarImage = avatar.image_url_original || avatar.image_url
           if (avatarImage) {
-            imageUrls.unshift(avatarImage)
+            collectedAvatarImages.push(avatarImage)
             // Gemini용 아바타 이미지 URL 저장
             avatarImageUrls.push(avatarImage)
           }
         }
+
+        // 수집된 아바타 이미지들을 한 번에 앞에 추가 (순서 유지)
+        // [product] → [avatar1, avatar2, ..., product]
+        imageUrls.unshift(...collectedAvatarImages)
       }
     }
 
