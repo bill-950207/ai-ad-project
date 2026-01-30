@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { X, Loader2, ImageIcon, Plus, Minus, Check, AlertCircle } from 'lucide-react'
+import { X, Loader2, ImageIcon, Plus, Minus, Check, AlertCircle, Link as LinkIcon, Edit3 } from 'lucide-react'
 import { SlotLimitModal } from '@/components/ui/slot-limit-modal'
+
+type InputMode = 'url' | 'manual'
 
 // 제품 정보 인터페이스 (wizard-context와 동일)
 export interface AdProduct {
@@ -26,6 +28,16 @@ const MAX_DIMENSION = 4096
 const MAX_PIXELS = 16 * 1024 * 1024 // 16MP
 
 export function ProductCreateModal({ isOpen, onClose, onProductCreated }: ProductCreateModalProps) {
+  // 입력 모드 (URL / 직접 입력)
+  const [inputMode, setInputMode] = useState<InputMode>('manual')
+
+  // URL 입력 관련
+  const [productUrl, setProductUrl] = useState('')
+  const [isExtractingUrl, setIsExtractingUrl] = useState(false)
+  const [urlExtracted, setUrlExtracted] = useState(false)
+  // URL에서 가져온 이미지 URL (파일 업로드가 아닌 경우)
+  const [sourceImageUrl, setSourceImageUrl] = useState<string | null>(null)
+
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [sellingPoints, setSellingPoints] = useState<string[]>([''])
@@ -43,6 +55,11 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
   // 모달이 닫힐 때 폼 초기화
   useEffect(() => {
     if (!isOpen) {
+      setInputMode('manual')
+      setProductUrl('')
+      setIsExtractingUrl(false)
+      setUrlExtracted(false)
+      setSourceImageUrl(null)
       setName('')
       setDescription('')
       setSellingPoints([''])
@@ -138,6 +155,8 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
       const dataUrl = await fileToDataUrl(file)
       setImageDataUrl(dataUrl)
       setImagePreview(dataUrl)
+      // 파일 업로드 시 URL에서 가져온 이미지 초기화
+      setSourceImageUrl(null)
     } catch {
       setError('이미지 처리 중 오류가 발생했습니다')
     }
@@ -185,6 +204,53 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
     setSellingPoints(updated)
   }
 
+  // URL에서 제품 정보 추출
+  const handleExtractUrl = async () => {
+    if (!productUrl.trim()) {
+      setError('URL을 입력해주세요')
+      return
+    }
+
+    setIsExtractingUrl(true)
+    setError(null)
+
+    try {
+      const res = await fetch('/api/ad-products/extract-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: productUrl.trim() }),
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || '정보를 가져올 수 없습니다')
+      }
+
+      const data = await res.json()
+      const info = data.productInfo
+
+      // 추출된 정보로 필드 채우기
+      if (info.title) setName(info.title)
+      if (info.description) setDescription(info.description)
+      if (info.features && info.features.length > 0) {
+        setSellingPoints(info.features)
+      }
+      if (info.imageUrl) {
+        setSourceImageUrl(info.imageUrl)
+        setImagePreview(info.imageUrl)
+        // URL에서 가져온 이미지는 imageDataUrl이 아닌 sourceImageUrl 사용
+        setImageDataUrl(null)
+      }
+
+      setUrlExtracted(true)
+    } catch (err) {
+      console.error('URL 추출 오류:', err)
+      setError(err instanceof Error ? err.message : '정보를 가져올 수 없습니다')
+    } finally {
+      setIsExtractingUrl(false)
+    }
+  }
+
   // 제품 상태 폴링
   const pollProductStatus = async (productId: string) => {
     try {
@@ -192,7 +258,8 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
       if (!res.ok) return
 
       const data = await res.json()
-      const status = data.status
+      // API는 { product: { status: ... } } 형식으로 반환
+      const status = data.product?.status
 
       if (status === 'COMPLETED') {
         // 폴링 중지 및 완료 처리
@@ -202,20 +269,16 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
         }
         setIsPolling(false)
 
-        // 전체 제품 정보 가져오기
-        const productRes = await fetch(`/api/ad-products/${productId}`)
-        if (productRes.ok) {
-          const productData = await productRes.json()
-          onProductCreated(productData.product)
-          onClose()
-        }
+        // status API에서 이미 전체 product 정보를 반환하므로 바로 사용
+        onProductCreated(data.product)
+        onClose()
       } else if (status === 'FAILED') {
         if (pollingRef.current) {
           clearInterval(pollingRef.current)
           pollingRef.current = null
         }
         setIsPolling(false)
-        setError('제품 처리 중 오류가 발생했습니다. 다시 시도해주세요.')
+        setError(data.product?.error_message || '제품 처리 중 오류가 발생했습니다. 다시 시도해주세요.')
       }
     } catch (err) {
       console.error('제품 상태 조회 실패:', err)
@@ -229,7 +292,8 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
       return
     }
 
-    if (!imageDataUrl) {
+    // 이미지 필수 체크 (파일 업로드 또는 URL에서 가져온 이미지)
+    if (!imageDataUrl && !sourceImageUrl) {
       setError('제품 이미지를 업로드해주세요')
       return
     }
@@ -240,14 +304,23 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
     try {
       const filteredSellingPoints = sellingPoints.filter(sp => sp.trim())
 
+      // 이미지 데이터 (파일 업로드 vs URL에서 가져온 이미지)
+      const imageData: { imageDataUrl?: string; sourceImageUrl?: string } = {}
+      if (imageDataUrl) {
+        imageData.imageDataUrl = imageDataUrl
+      } else if (sourceImageUrl) {
+        imageData.sourceImageUrl = sourceImageUrl
+      }
+
       const res = await fetch('/api/ad-products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
-          imageDataUrl,
+          ...imageData,
           description: description.trim() || undefined,
           sellingPoints: filteredSellingPoints.length > 0 ? filteredSellingPoints : undefined,
+          sourceUrl: inputMode === 'url' ? productUrl.trim() : undefined,
         }),
       })
 
@@ -338,11 +411,75 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
               </div>
               <p className="text-foreground font-medium mb-2">배경 제거 중...</p>
               <p className="text-sm text-muted-foreground">
-                잠시만 기다려주세요. 완료되면 자동으로 선택됩니다.
+                잠시만 기다려주세요
               </p>
             </div>
           ) : (
             <>
+              {/* 입력 모드 선택 */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setInputMode('url')}
+                  disabled={isSubmitting}
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                    inputMode === 'url'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                  }`}
+                >
+                  <LinkIcon className="w-4 h-4" />
+                  URL로 가져오기
+                </button>
+                <button
+                  onClick={() => setInputMode('manual')}
+                  disabled={isSubmitting}
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                    inputMode === 'manual'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                  }`}
+                >
+                  <Edit3 className="w-4 h-4" />
+                  직접 입력
+                </button>
+              </div>
+
+              {/* URL 입력 영역 */}
+              {inputMode === 'url' && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-foreground">
+                    제품 URL
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={productUrl}
+                      onChange={(e) => setProductUrl(e.target.value)}
+                      placeholder="https://example.com/product/..."
+                      className="flex-1 px-3 py-2 bg-secondary/50 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                      disabled={isSubmitting || isExtractingUrl}
+                    />
+                    <button
+                      onClick={handleExtractUrl}
+                      disabled={isExtractingUrl || !productUrl.trim() || isSubmitting}
+                      className="px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                    >
+                      {isExtractingUrl ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          분석 중
+                        </>
+                      ) : (
+                        '정보 가져오기'
+                      )}
+                    </button>
+                  </div>
+                  {urlExtracted && (
+                    <p className="text-xs text-green-500">정보를 가져왔습니다. 아래에서 확인 및 수정하세요.</p>
+                  )}
+                </div>
+              )}
+
               {/* 에러 메시지 */}
               {error && (
                 <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm">
@@ -403,6 +540,7 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
                           e.stopPropagation()
                           setImagePreview(null)
                           setImageDataUrl(null)
+                          setSourceImageUrl(null)
                         }}
                         className="absolute top-1 right-1 p-1 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
                       >
@@ -493,7 +631,7 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
             </button>
             <button
               onClick={handleSubmit}
-              disabled={isSubmitting || !name.trim() || !imageDataUrl}
+              disabled={isSubmitting || !name.trim() || (!imageDataUrl && !sourceImageUrl)}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (

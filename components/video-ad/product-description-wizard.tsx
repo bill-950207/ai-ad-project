@@ -45,6 +45,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AvatarSelectModal, SelectedAvatarInfo } from './avatar-select-modal'
+import { ProductCreateModal, AdProduct as ModalAdProduct } from './product-create-modal'
 import { useAsyncDraftSave } from '@/lib/hooks/use-async-draft-save'
 
 // ============================================================
@@ -564,6 +565,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
   const [selectedAvatarInfo, setSelectedAvatarInfo] = useState<SelectedAvatarInfo | null>(null)
   const [showProductDropdown, setShowProductDropdown] = useState(false)
   const [showAvatarModal, setShowAvatarModal] = useState(false)
+  const [showProductCreateModal, setShowProductCreateModal] = useState(false)
 
   // Step 1: 제품 정보 편집 (선택된 제품의 정보를 편집할 수 있도록)
   const [editableDescription, setEditableDescription] = useState('')
@@ -1243,6 +1245,22 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     const updated = [...editableSellingPoints]
     updated[index] = value
     setEditableSellingPoints(updated)
+  }
+
+  // 새 제품 생성 완료 시 처리
+  const handleProductCreated = (newProduct: ModalAdProduct) => {
+    // 목록에 새 제품 추가 및 자동 선택
+    const productWithFields: AdProduct = {
+      ...newProduct,
+      description: newProduct.description || null,
+      selling_points: newProduct.selling_points || null,
+      brand: null,
+      price: null,
+      source_url: null,
+    }
+    setProducts(prev => [productWithFields, ...prev])
+    setSelectedProduct(productWithFields)
+    setShowProductCreateModal(false)
   }
 
   // 대본 예상 시간 계산 (언어별 다른 계산 방식 적용)
@@ -2040,6 +2058,13 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
             selectedType={selectedAvatarInfo?.type}
           />
 
+          {/* 제품 등록 모달 */}
+          <ProductCreateModal
+            isOpen={showProductCreateModal}
+            onClose={() => setShowProductCreateModal(false)}
+            onProductCreated={handleProductCreated}
+          />
+
           {/* 제품 선택 (필수) */}
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-2">
@@ -2071,32 +2096,57 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               {showProductDropdown && (
                 <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                   {products.length === 0 ? (
-                    <div className="p-4 text-center text-muted-foreground text-sm">
-                      등록된 제품이 없습니다
+                    <div className="p-4 text-center">
+                      <p className="text-muted-foreground text-sm mb-3">등록된 제품이 없습니다</p>
+                      <button
+                        onClick={() => {
+                          setShowProductDropdown(false)
+                          setShowProductCreateModal(true)
+                        }}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
+                      >
+                        <Plus className="w-3 h-3" />
+                        제품 등록하기
+                      </button>
                     </div>
                   ) : (
-                    products.map((product) => (
+                    <>
+                      {/* 새 제품 추가 버튼 */}
                       <button
-                        key={product.id}
                         onClick={() => {
-                          setSelectedProduct(product)
                           setShowProductDropdown(false)
+                          setShowProductCreateModal(true)
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors"
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors border-b border-border text-primary"
                       >
-                        {(product.rembg_image_url || product.image_url) && (
-                          <img
-                            src={product.rembg_image_url || product.image_url || ''}
-                            alt={product.name}
-                            className="w-10 h-10 object-contain rounded bg-secondary/30"
-                          />
-                        )}
-                        <span className="text-foreground">{product.name}</span>
-                        {selectedProduct?.id === product.id && (
-                          <Check className="w-4 h-4 text-primary ml-auto" />
-                        )}
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Plus className="w-5 h-5" />
+                        </div>
+                        <span className="font-medium">새 제품 등록</span>
                       </button>
-                    ))
+                      {products.map((product) => (
+                        <button
+                          key={product.id}
+                          onClick={() => {
+                            setSelectedProduct(product)
+                            setShowProductDropdown(false)
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors"
+                        >
+                          {(product.rembg_image_url || product.image_url) && (
+                            <img
+                              src={product.rembg_image_url || product.image_url || ''}
+                              alt={product.name}
+                              className="w-10 h-10 object-contain rounded bg-secondary/30"
+                            />
+                          )}
+                          <span className="text-foreground">{product.name}</span>
+                          {selectedProduct?.id === product.id && (
+                            <Check className="w-4 h-4 text-primary ml-auto" />
+                          )}
+                        </button>
+                      ))}
+                    </>
                   )}
                 </div>
               )}
