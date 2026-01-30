@@ -1938,7 +1938,7 @@ export function WizardStep5() {
               )}
 
               {/* 이전 단계 + 영상 생성 버튼 */}
-              {!isGeneratingVideo && (
+              {!isGeneratingVideo && !isMergingVideos && regeneratingSceneIndex === null && (
                 <div className="flex gap-3">
                   <button
                     onClick={goToPrevStep}
@@ -2117,7 +2117,7 @@ export function WizardStep5() {
               )}
 
               {/* 이전 버튼 */}
-              {!isGeneratingVideo && (
+              {!isGeneratingVideo && !isMergingVideos && regeneratingSceneIndex === null && (
                 <button
                   onClick={goToPrevStep}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"

@@ -735,14 +735,15 @@ export function WizardStep6Video() {
 
         {/* 하단 버튼 */}
         <div className="flex gap-3">
-          <button
-            onClick={goToPrevStep}
-            disabled={isCompletingMerge}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            이전
-          </button>
+          {!isCompletingMerge && !isRegenerating && (
+            <button
+              onClick={goToPrevStep}
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              이전
+            </button>
+          )}
           <button
             onClick={handleComplete}
             disabled={isRegenerating || isCompletingMerge || completedSceneVideos < sceneCount}
