@@ -81,6 +81,7 @@ export function WizardStep4() {
     goToPrevStep,
     resetWizard,
     saveDraft,
+    draftId,
   } = useImageAdWizard()
 
   const [generationStartTime, setGenerationStartTime] = useState<number | null>(null)
@@ -227,7 +228,7 @@ export function WizardStep4() {
         }
       }
 
-      // API 요청
+      // API 요청 (draftId 포함 - 기존 draft 업데이트용)
       const requestBody = {
         adType,
         productId: selectedProduct?.id,
@@ -241,6 +242,7 @@ export function WizardStep4() {
         referenceStyleImageUrl: referenceUrl,
         aiAvatarOptions: selectedAvatarInfo?.type === 'ai-generated' ? selectedAvatarInfo.aiOptions : undefined,
         options: resolvedOptions,  // __custom__ 값을 실제 텍스트로 대체하여 저장
+        draftId,  // 기존 draft 업데이트용
       }
 
       const createRes = await fetch('/api/image-ads', {
@@ -398,9 +400,18 @@ export function WizardStep4() {
 
       setResultImages(imageUrls)
       setGenerationProgress(100)
+
+      // 생성 완료 시 draft는 이미 IN_QUEUE → COMPLETED로 업데이트됨
+      // (별도 삭제 불필요 - draft 레코드가 실제 image_ad 레코드로 변환됨)
+
       // 크레딧 갱신
       refreshCredits()
     } catch (error) {
+      // 폴링 취소는 사용자가 의도적으로 이탈한 것이므로 에러 표시 안함
+      if (error instanceof Error && error.message === '폴링이 취소되었습니다') {
+        console.log('사용자가 생성 중 이탈함')
+        return
+      }
       console.error('생성 오류:', error)
       alert(error instanceof Error ? error.message : '생성 중 오류가 발생했습니다')
     } finally {

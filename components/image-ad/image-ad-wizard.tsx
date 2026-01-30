@@ -28,13 +28,13 @@ const STEPS: { step: WizardStep; title: string; description: string }[] = [
 
 function WizardHeader() {
   const { t } = useLanguage()
-  const { step, adType, selectedProduct, selectedAvatarInfo, resultImages } = useImageAdWizard()
+  const { step, adType, selectedProduct, selectedAvatarInfo, resultImages, isGenerating } = useImageAdWizard()
 
   const types = t.imageAdTypes as unknown as Record<string, { title: string }>
   const adTypeTitle = types[adType]?.title || adType
 
-  // 결과 화면에서는 헤더 숨김
-  if (resultImages.length > 0) {
+  // 결과 화면 또는 생성 중에는 헤더 숨김
+  if (resultImages.length > 0 || isGenerating) {
     return null
   }
 

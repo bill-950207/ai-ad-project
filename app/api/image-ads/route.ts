@@ -74,6 +74,7 @@ interface ImageAdRequestBody {
     style?: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
     ethnicity?: 'korean' | 'asian' | 'western' | 'any'
   }
+  draftId?: string  // 기존 DRAFT 업데이트용
 }
 
 // GET: 이미지 광고 목록 조회 (페이징 지원)
@@ -215,7 +216,7 @@ export async function POST(request: NextRequest) {
 
     // 요청 바디 파싱
     const body: ImageAdRequestBody = await request.json()
-    const { adType, productId, avatarIds = [], outfitId, prompt, imageSize, quality = 'medium', numImages = 2, referenceStyleImageUrl, options, aiAvatarOptions } = body
+    const { adType, productId, avatarIds = [], outfitId, prompt, imageSize, quality = 'medium', numImages = 2, referenceStyleImageUrl, options, aiAvatarOptions, draftId } = body
 
     // 구독 플랜 확인
     const userPlan = await getUserPlan(user.id)
@@ -660,31 +661,104 @@ export async function POST(request: NextRequest) {
       ...(isAiGeneratedAvatar && aiAvatarOptions ? { _aiAvatarOptions: aiAvatarOptions } : {}),
     }
 
-    const { data: imageAd, error: insertError } = await supabase
-      .from('image_ads')
-      .insert({
-        user_id: user.id,
-        product_id: productId || null,
-        avatar_id: primaryAvatarId,  // AI 아바타일 경우 null
-        outfit_id: outfitId || null,
-        ad_type: adType,
-        status: 'IN_QUEUE',
-        fal_request_id: null,  // 배치에서는 사용 안 함
-        batch_request_ids: batchRequestIds,  // 배치 요청 ID 배열
-        num_images: validNumImages,  // 요청된 이미지 개수
-        prompt: promptToSave,  // AI 아바타인 경우 아바타 설명 포함된 프롬프트
-        image_size: imageSize,
-        quality: effectiveQuality,
-        selected_options: selectedOptionsToSave,  // 사용자 선택 옵션 + AI 아바타 옵션
-      })
-      .select('id')
-      .single()
+    // draftId가 있으면 기존 DRAFT 업데이트, 없으면 새 레코드 생성
+    let imageAdId: string | null = null
+    let dbError: Error | null = null
+
+    if (draftId) {
+      // 기존 DRAFT 레코드를 IN_QUEUE로 업데이트 (status가 DRAFT인 경우만)
+      const { data: updatedAd, error: updateError } = await supabase
+        .from('image_ads')
+        .update({
+          product_id: productId || null,
+          avatar_id: primaryAvatarId,
+          outfit_id: outfitId || null,
+          ad_type: adType,
+          status: 'IN_QUEUE',
+          fal_request_id: null,
+          batch_request_ids: batchRequestIds,
+          num_images: validNumImages,
+          prompt: promptToSave,
+          image_size: imageSize,
+          quality: effectiveQuality,
+          selected_options: selectedOptionsToSave,
+          wizard_step: null,  // 생성 시작 시 wizard 상태 초기화
+          wizard_state: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', draftId)
+        .eq('user_id', user.id)
+        .eq('status', 'DRAFT')  // DRAFT 상태인 경우만 업데이트
+        .select('id')
+        .single()
+
+      if (updateError) {
+        // DRAFT가 아닌 경우 (이미 생성 중이거나 완료됨) - 새 레코드 생성으로 폴백
+        console.log('DRAFT 업데이트 실패, 새 레코드 생성:', updateError.message)
+        const { data: newAd, error: insertError } = await supabase
+          .from('image_ads')
+          .insert({
+            user_id: user.id,
+            product_id: productId || null,
+            avatar_id: primaryAvatarId,
+            outfit_id: outfitId || null,
+            ad_type: adType,
+            status: 'IN_QUEUE',
+            fal_request_id: null,
+            batch_request_ids: batchRequestIds,
+            num_images: validNumImages,
+            prompt: promptToSave,
+            image_size: imageSize,
+            quality: effectiveQuality,
+            selected_options: selectedOptionsToSave,
+          })
+          .select('id')
+          .single()
+
+        if (insertError) {
+          console.error('이미지 광고 DB 저장 오류:', insertError)
+          dbError = insertError
+        } else if (newAd) {
+          imageAdId = newAd.id
+        }
+      } else if (updatedAd) {
+        imageAdId = updatedAd.id
+      }
+    } else {
+      // 새 레코드 생성 (draftId 없는 경우 - 호환성 유지)
+      const { data: imageAd, error: insertError } = await supabase
+        .from('image_ads')
+        .insert({
+          user_id: user.id,
+          product_id: productId || null,
+          avatar_id: primaryAvatarId,
+          outfit_id: outfitId || null,
+          ad_type: adType,
+          status: 'IN_QUEUE',
+          fal_request_id: null,
+          batch_request_ids: batchRequestIds,
+          num_images: validNumImages,
+          prompt: promptToSave,
+          image_size: imageSize,
+          quality: effectiveQuality,
+          selected_options: selectedOptionsToSave,
+        })
+        .select('id')
+        .single()
+
+      if (insertError) {
+        console.error('이미지 광고 DB 저장 오류:', insertError)
+        dbError = insertError
+      } else if (imageAd) {
+        imageAdId = imageAd.id
+      }
+    }
 
     const imageAdRecords: string[] = []
-    if (insertError) {
-      console.error('이미지 광고 DB 저장 오류:', insertError)
-    } else if (imageAd) {
-      imageAdRecords.push(imageAd.id)
+    if (dbError) {
+      console.error('이미지 광고 DB 오류:', dbError)
+    } else if (imageAdId) {
+      imageAdRecords.push(imageAdId)
     }
 
     // 크레딧 차감 (트랜잭션으로 재확인 후 원자적 차감 - Race Condition 방지)
