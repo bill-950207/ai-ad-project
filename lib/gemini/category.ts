@@ -232,7 +232,8 @@ export async function generateMultipleRecommendedOptions(
     ja: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt, customText) in Japanese.',
   }
 
-  // 옵션 그룹 목록 (참고용 예시로만 제공 - LLM은 자유롭게 창작)
+  // 옵션 그룹 목록 (모든 카테고리에 대해 customText 필수 출력)
+  const categoryKeys = input.categoryGroups.map(group => group.key)
   const groupsDescription = input.categoryGroups.map(group => {
     const examplesText = group.options.slice(0, 3).map(opt => opt.description).join(', ')
     return `- ${group.key}: (예: ${examplesText} 등)`
@@ -333,10 +334,12 @@ ${input.productSellingPoints?.length ? `Selling Points: ${input.productSellingPo
 === AD TYPE ===
 ${input.adType}: ${adTypeDescriptions[input.adType]}
 
-=== OPTION CATEGORIES (Reference Only) ===
+=== OPTION CATEGORIES (MUST provide customText for ALL) ===
+Required categories: ${categoryKeys.join(', ')}
+
 ${groupsDescription}
 
-⚠️ IMPORTANT: Do NOT select from preset options above. Instead, write CREATIVE CUSTOM DESCRIPTIONS for each category.
+⚠️ CRITICAL: You MUST provide customText for ALL ${categoryKeys.length} categories listed above. Do NOT skip any category. Each scenario's recommendations array must have exactly ${categoryKeys.length} items.
 
 === STEP 2: DYNAMIC SCENARIO GENERATION ===
 
@@ -403,16 +406,12 @@ ${SCENARIO_DIVERSITY_CHECK}
 
 === CUSTOM TEXT WRITING GUIDELINES ===
 For each category in recommendations, write CUSTOM descriptions (customText) that are:
-1. **Product-specific**: Tailored to THIS product's characteristics, not generic
-2. **Visually descriptive**: Describe the exact visual effect you want (e.g., "soft morning sunlight filtering through sheer curtains, casting gentle highlights on the product's glass surface")
+1. **Product-specific**: Tailored to THIS product's unique characteristics, materials, colors, and brand identity
+2. **Visually descriptive**: Describe the exact visual effect - be specific about colors, textures, positions, light directions
 3. **Coherent**: All customText descriptions should work together to create a unified visual concept
-4. **Detailed but concise**: 15-40 words per customText, enough detail for image generation
+4. **Detailed but concise**: 20-50 words per customText, enough detail for image generation
 5. **In output language**: customText MUST be written in the specified output language
-
-Example customText for a premium skincare serum:
-- lighting: "창가에서 들어오는 부드러운 아침 햇살, 세럼 병의 유리 표면에 맑은 하이라이트 생성"
-- background: "미니멀한 화이트 마블 욕실, 고급스러운 골드 악세서리와 신선한 유칼립투스 가지"
-- mood: "차분하고 럭셔리한 자기관리 시간, 여유로운 아침 루틴의 평화로움"
+6. **UNIQUE**: Do NOT use generic descriptions. Each customText must be uniquely crafted for THIS specific product
 
 ${SCENARIO_SELF_VERIFICATION}
 
