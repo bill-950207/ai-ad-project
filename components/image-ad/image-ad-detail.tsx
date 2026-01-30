@@ -300,13 +300,6 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
     }
   }
 
-  // 이미지 개수에 따른 썸네일 그리드 클래스
-  const getThumbnailGridClass = (count: number) => {
-    if (count <= 3) return 'grid-cols-3'
-    if (count === 4) return 'grid-cols-4'
-    return 'grid-cols-5'
-  }
-
   const getAdTypeTitle = (adType: string): string => {
     const types = t.imageAdTypes as Record<string, { title?: string }>
     return types?.[adType]?.title || adType
@@ -331,203 +324,545 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
     return ratios?.[ratio] || ratio
   }
 
-  // 옵션 그룹 라벨
-  const optionGroupLabels: Record<string, string> = {
-    pose: '포즈',
-    gaze: '시선',
-    background: '배경',
-    expression: '표정',
-    framing: '프레이밍',
-    lighting: '조명',
-    angle: '앵글',
-    style: '스타일',
-    action: '액션',
-    setting: '장소',
-    focus: '포커스',
-    scene: '씬',
-    location: '장소',
-    time: '시간대',
-    mood: '분위기',
-    layout: '레이아웃',
-    season: '계절',
-    theme: '테마',
-    atmosphere: '분위기',
-    productPlacement: '제품 배치',
+  // 옵션 그룹 라벨 - i18n 지원
+  const getOptionGroupLabel = (key: string): string => {
+    // 소문자로 정규화
+    const normalizedKey = key.toLowerCase()
+
+    // i18n에서 먼저 찾기
+    const i18nLabels = (t as Record<string, unknown>).imageAdOptions as Record<string, Record<string, string>> | undefined
+    if (i18nLabels?.groupLabels?.[key]) return i18nLabels.groupLabels[key]
+    if (i18nLabels?.groupLabels?.[normalizedKey]) return i18nLabels.groupLabels[normalizedKey]
+
+    // 폴백 라벨 (소문자 키로 통일)
+    const fallbackLabels: Record<string, string> = {
+      pose: '포즈',
+      gaze: '시선',
+      background: '배경',
+      expression: '표정',
+      framing: '프레이밍',
+      lighting: '조명',
+      angle: '앵글',
+      style: '스타일',
+      action: '액션',
+      setting: '장소',
+      focus: '포커스',
+      scene: '씬',
+      location: '장소',
+      time: '시간대',
+      mood: '분위기',
+      layout: '레이아웃',
+      season: '계절',
+      theme: '테마',
+      atmosphere: '분위기',
+      productplacement: '제품 배치',
+      // 추가 키들
+      color: '컬러',
+      effect: '효과',
+      composition: '구도',
+      props: '소품',
+      weather: '날씨',
+      emotion: '감정',
+      intensity: '강도',
+      direction: '방향',
+      model_type: '모델 타입',
+      product_size: '제품 크기',
+      camera_distance: '카메라 거리',
+      custom_prompt: '커스텀 프롬프트',
+      // AI 생성 옵션 키들
+      outfit: '의상',
+      colortone: '컬러톤',
+    }
+    return fallbackLabels[normalizedKey] || key
   }
 
-  // 옵션 값 라벨
-  const optionValueLabels: Record<string, Record<string, string>> = {
-    pose: {
-      natural_hold: '자연스럽게 들기',
-      showing_camera: '카메라에 보여주기',
-      near_face: '얼굴 근처',
-      both_hands: '양손으로 들기',
-      casual_hold: '캐주얼하게 들기',
-      standing: '서 있는 포즈',
-      walking: '걷는 포즈',
-      sitting: '앉은 포즈',
-      dynamic: '다이나믹 포즈',
-    },
-    gaze: {
-      camera: '카메라 응시',
-      product: '제품 응시',
-      away: '다른 곳 응시',
-      down: '아래 응시',
-      up: '위 응시',
-    },
-    background: {
-      studio: '스튜디오',
-      studio_white: '화이트 스튜디오',
-      studio_gradient: '그라데이션 스튜디오',
-      outdoor: '야외',
-      home: '집',
-      office: '오피스',
-      cafe: '카페',
-      nature: '자연',
-      marble: '대리석',
-      wood: '나무',
-      fabric: '패브릭',
-      minimal: '미니멀',
-      white: '화이트',
-      gradient: '그라데이션',
-      neutral: '중성색',
-    },
-    expression: {
-      smile: '미소',
-      natural: '자연스러움',
-      confident: '자신감',
-      friendly: '친근함',
-    },
-    framing: {
-      closeup: '클로즈업',
-      medium: '미디엄샷',
-      full_body: '전신샷',
-      three_quarter: '3/4 샷',
-      upper_body: '상반신',
-    },
-    lighting: {
-      soft: '소프트',
-      natural: '자연광',
-      dramatic: '드라마틱',
-      warm: '따뜻한 조명',
-      cool: '차가운 조명',
-      consistent: '일관된 조명',
-    },
-    angle: {
-      front: '정면',
-      three_quarter: '3/4 앵글',
-      side: '측면',
-      top_down: '탑다운',
-      low_angle: '로우 앵글',
-    },
-    style: {
-      minimalist: '미니멀리스트',
-      luxury: '럭셔리',
-      lifestyle: '라이프스타일',
-      editorial: '에디토리얼',
-      commercial: '커머셜',
-      streetwear: '스트릿웨어',
-      elegant: '엘레강스',
-      influencer: '인플루언서',
-      professional: '프로페셔널',
-      casual: '캐주얼',
-      clean: '클린',
-      detailed: '디테일',
-      infographic: '인포그래픽',
-    },
-    action: {
-      applying: '바르는 중',
-      demonstrating: '시연',
-      enjoying: '즐기는 중',
-      testing: '테스트',
-      opening: '오픈',
-      revealing: '공개',
-      presenting: '프레젠팅',
-      excited: '설레는',
-    },
-    setting: {
-      bathroom: '욕실',
-      vanity: '화장대',
-      bedroom: '침실',
-      desk: '책상',
-      bed: '침대',
-      couch: '소파',
-      table: '테이블',
-      street: '거리',
-      indoor: '실내',
-    },
-    focus: {
-      product_focus: '제품 중심',
-      model_focus: '모델 중심',
-      balanced: '균형',
-      skin: '피부',
-      hair: '헤어',
-      overall: '전체',
-    },
-    scene: {
-      morning_routine: '모닝 루틴',
-      relaxing: '휴식',
-      working: '업무',
-      socializing: '소셜',
-      exercising: '운동',
-    },
-    location: {
-      living_room: '거실',
-      kitchen: '주방',
-      bedroom: '침실',
-      outdoor_terrace: '야외 테라스',
-      coffee_shop: '커피숍',
-    },
-    time: {
-      morning: '아침',
-      afternoon: '오후',
-      evening: '저녁',
-      golden_hour: '골든아워',
-    },
-    mood: {
-      luxury: '럭셔리',
-      casual: '캐주얼',
-      professional: '프로페셔널',
-      friendly: '친근',
-      energetic: '활기찬',
-      cozy: '아늑한',
-      vibrant: '생동감',
-      peaceful: '평화로운',
-      sophisticated: '세련된',
-      warm: '따뜻한',
-      fresh: '상쾌한',
-    },
-    layout: {
-      side_by_side: '좌우 배치',
-      split_screen: '분할 화면',
-      stacked: '상하 배치',
-    },
-    season: {
-      spring: '봄',
-      summer: '여름',
-      fall: '가을',
-      winter: '겨울',
-    },
-    theme: {
-      holiday: '홀리데이',
-      valentines: '발렌타인',
-      new_year: '새해',
-      festive: '축제',
-      none: '없음',
-    },
-    atmosphere: {
-      warm: '따뜻한',
-      fresh: '상쾌한',
-      cozy: '아늑한',
-      bright: '밝은',
-    },
-    productPlacement: {
-      none: '제품 없음',
-      holding: '손에 들고',
-      bag: '가방에',
-      accessory: '액세서리로',
-      nearby: '근처에 배치',
-    },
+  // 옵션 값 라벨 - i18n 지원
+  const getOptionValueLabel = (key: string, value: string): string => {
+    // 소문자로 정규화
+    const normalizedKey = key.toLowerCase()
+
+    // i18n에서 먼저 찾기
+    const i18nLabels = (t as Record<string, unknown>).imageAdOptions as Record<string, Record<string, Record<string, string>>> | undefined
+    if (i18nLabels?.valueLabels?.[key]?.[value]) return i18nLabels.valueLabels[key][value]
+    if (i18nLabels?.valueLabels?.[normalizedKey]?.[value]) return i18nLabels.valueLabels[normalizedKey][value]
+
+    // 폴백 라벨 (소문자 키로 통일)
+    const fallbackLabels: Record<string, Record<string, string>> = {
+      pose: {
+        natural_hold: '자연스럽게 들기',
+        showing_camera: '카메라에 보여주기',
+        near_face: '얼굴 근처',
+        both_hands: '양손으로 들기',
+        casual_hold: '캐주얼하게 들기',
+        standing: '서 있는 포즈',
+        walking: '걷는 포즈',
+        sitting: '앉은 포즈',
+        dynamic: '다이나믹 포즈',
+        leaning: '기대는 포즈',
+        crossed_arms: '팔짱 포즈',
+        hands_on_hips: '손을 허리에',
+        relaxed: '편안한 포즈',
+        // 새 옵션들
+        natural_elegant: '자연스럽고 우아한',
+        showing_proudly: '자신있게 보여주기',
+        near_face_beauty: '얼굴 근처 뷰티',
+        both_hands_precious: '양손으로 소중히',
+        casual_relaxed: '캐주얼하고 편안한',
+        dramatic_showcase: '드라마틱 쇼케이스',
+        unboxing_reveal: '언박싱 공개',
+        standing_elegant: '우아하게 서기',
+        walking_motion: '걷는 모션',
+        sitting_relaxed: '편안하게 앉기',
+        dynamic_action: '다이나믹 액션',
+        leaning_casual: '캐주얼하게 기대기',
+        power_pose: '파워 포즈',
+        candid_moment: '캔디드 순간',
+      },
+      gaze: {
+        camera: '카메라 응시',
+        product: '제품 응시',
+        away: '다른 곳 응시',
+        down: '아래 응시',
+        up: '위 응시',
+        side: '측면 응시',
+        distant: '먼 곳 응시',
+        // 새 옵션들
+        camera_direct: '카메라 직접 응시',
+        camera_soft: '부드러운 카메라 응시',
+        product_focus: '제품에 집중',
+        away_candid: '자연스럽게 다른 곳',
+        down_thoughtful: '생각하듯 아래로',
+        up_dreamy: '꿈꾸듯 위로',
+      },
+      background: {
+        studio: '스튜디오',
+        studio_white: '화이트 스튜디오',
+        studio_gradient: '그라데이션 스튜디오',
+        outdoor: '야외',
+        home: '집',
+        office: '오피스',
+        cafe: '카페',
+        nature: '자연',
+        marble: '대리석',
+        wood: '나무',
+        fabric: '패브릭',
+        minimal: '미니멀',
+        white: '화이트',
+        gradient: '그라데이션',
+        neutral: '중성색',
+        urban: '도시',
+        beach: '해변',
+        park: '공원',
+        restaurant: '레스토랑',
+        gym: '헬스장',
+        custom: '커스텀',
+        // 새 옵션들
+        luxury_interior: '럭셔리 인테리어',
+        modern_minimal: '모던 미니멀',
+        nature_blur: '자연 블러',
+        urban_city: '도시 풍경',
+        abstract_art: '추상 아트',
+        bokeh_lights: '보케 라이트',
+        marble_luxury: '럭셔리 대리석',
+        wood_natural: '내추럴 우드',
+        fabric_texture: '패브릭 텍스처',
+        abstract_shapes: '추상 도형',
+        floating_3d: '플로팅 3D',
+        lifestyle_scene: '라이프스타일 씬',
+        studio_clean: '클린 스튜디오',
+        urban_street: '도시 거리',
+        nature_scenic: '자연 경치',
+        rooftop_city: '루프탑 시티',
+        cafe_lifestyle: '카페 라이프스타일',
+        beach_resort: '비치 리조트',
+        seasonal_props: '시즌 소품',
+        nature_setting: '자연 세팅',
+        studio_themed: '테마 스튜디오',
+        abstract_festive: '축제 추상',
+      },
+      expression: {
+        smile: '미소',
+        natural: '자연스러움',
+        confident: '자신감',
+        friendly: '친근함',
+        serious: '진지함',
+        happy: '행복',
+        neutral: '무표정',
+        playful: '장난스러움',
+        elegant: '우아함',
+        // 새 옵션들
+        warm_smile: '따뜻한 미소',
+        natural_glow: '내추럴 글로우',
+        confident_bold: '볼드한 자신감',
+        friendly_approachable: '친근하고 다가가기 쉬운',
+        mysterious_allure: '미스터리어스 얼루어',
+        excited_joyful: '설레는 기쁨',
+      },
+      framing: {
+        closeup: '클로즈업',
+        medium: '미디엄샷',
+        full_body: '전신샷',
+        three_quarter: '3/4 샷',
+        upper_body: '상반신',
+        face_closeup: '얼굴 클로즈업',
+        waist_up: '허리 위',
+        knee_up: '무릎 위',
+        // 새 옵션들
+        extreme_closeup: '익스트림 클로즈업',
+        closeup_portrait: '클로즈업 포트레이트',
+        medium_waist: '미디엄 웨이스트',
+        three_quarter_body: '3/4 바디',
+        full_body_wide: '풀바디 와이드',
+        detail_focus: '디테일 포커스',
+      },
+      lighting: {
+        soft: '소프트',
+        natural: '자연광',
+        dramatic: '드라마틱',
+        warm: '따뜻한 조명',
+        cool: '차가운 조명',
+        consistent: '일관된 조명',
+        studio: '스튜디오 조명',
+        rim: '림 라이트',
+        backlit: '역광',
+        side: '측면 조명',
+        // 새 옵션들
+        soft_diffused: '소프트 디퓨즈드',
+        natural_window: '창가 자연광',
+        dramatic_contrast: '드라마틱 콘트라스트',
+        golden_hour: '골든아워',
+        rim_light: '림 라이트',
+        neon_glow: '네온 글로우',
+        high_key: '하이키',
+        low_key: '로우키',
+        warm_golden: '따뜻한 골든',
+      },
+      angle: {
+        front: '정면',
+        three_quarter: '3/4 앵글',
+        side: '측면',
+        top_down: '탑다운',
+        low_angle: '로우 앵글',
+        high_angle: '하이 앵글',
+        eye_level: '눈높이',
+        dutch: '더치 앵글',
+        // 새 옵션들
+        front_hero: '히어로 정면',
+        side_profile: '사이드 프로필',
+        top_down_flat: '탑다운 플랫',
+        low_angle_dramatic: '드라마틱 로우 앵글',
+        macro_detail: '매크로 디테일',
+        dynamic_tilt: '다이나믹 틸트',
+      },
+      style: {
+        minimalist: '미니멀리스트',
+        luxury: '럭셔리',
+        lifestyle: '라이프스타일',
+        editorial: '에디토리얼',
+        commercial: '커머셜',
+        streetwear: '스트릿웨어',
+        elegant: '엘레강스',
+        influencer: '인플루언서',
+        professional: '프로페셔널',
+        casual: '캐주얼',
+        clean: '클린',
+        detailed: '디테일',
+        infographic: '인포그래픽',
+        vintage: '빈티지',
+        modern: '모던',
+        artistic: '아티스틱',
+        natural: '내추럴',
+        // 새 옵션들
+        minimalist_clean: '미니멀 클린',
+        luxury_premium: '럭셔리 프리미엄',
+        lifestyle_context: '라이프스타일 컨텍스트',
+        editorial_artistic: '에디토리얼 아티스틱',
+        tech_futuristic: '테크 퓨처리스틱',
+        vintage_retro: '빈티지 레트로',
+        editorial_high: '하이 에디토리얼',
+        commercial_clean: '클린 커머셜',
+        streetwear_urban: '어반 스트릿웨어',
+        elegant_luxury: '엘레강스 럭셔리',
+        sporty_active: '스포티 액티브',
+        bohemian_free: '보헤미안 프리',
+        influencer_trendy: '트렌디 인플루언서',
+        professional_clean: '클린 프로페셔널',
+        casual_authentic: '오센틱 캐주얼',
+        asmr_satisfying: 'ASMR 새티스파잉',
+      },
+      action: {
+        applying: '바르는 중',
+        demonstrating: '시연',
+        enjoying: '즐기는 중',
+        testing: '테스트',
+        opening: '오픈',
+        revealing: '공개',
+        presenting: '프레젠팅',
+        excited: '설레는',
+        using: '사용 중',
+        holding: '들고 있는',
+        showing: '보여주는',
+        comparing: '비교하는',
+        // 새 옵션들
+        applying_skincare: '스킨케어 적용',
+        demonstrating_how: '사용법 시연',
+        enjoying_moment: '순간을 즐기는',
+        before_application: '적용 전',
+        mid_application: '적용 중',
+        result_showcase: '결과 쇼케이스',
+        routine_step: '루틴 단계',
+        opening_anticipation: '기대감 있는 오픈',
+        revealing_surprise: '서프라이즈 공개',
+        presenting_proudly: '자랑스럽게 프레젠팅',
+        excited_reaction: '설레는 리액션',
+        examining_detail: '디테일 살피기',
+        first_touch: '첫 터치',
+        comparing_items: '아이템 비교',
+      },
+      setting: {
+        bathroom: '욕실',
+        vanity: '화장대',
+        bedroom: '침실',
+        desk: '책상',
+        bed: '침대',
+        couch: '소파',
+        table: '테이블',
+        street: '거리',
+        indoor: '실내',
+        outdoor: '야외',
+        studio: '스튜디오',
+        kitchen: '주방',
+        living_room: '거실',
+        // 새 옵션들
+        luxury_bathroom: '럭셔리 욕실',
+        modern_vanity: '모던 화장대',
+        cozy_bedroom: '아늑한 침실',
+        spa_retreat: '스파 리트릿',
+        natural_outdoor: '내추럴 야외',
+        minimal_studio: '미니멀 스튜디오',
+        modern_desk: '모던 데스크',
+        cozy_bed: '아늑한 침대',
+        stylish_couch: '스타일리시 소파',
+        marble_table: '마블 테이블',
+        floor_flatlay: '플로어 플랫레이',
+        vanity_setup: '화장대 셋업',
+        // 추가 장소 옵션
+        urban_street: '도시 거리',
+        cafe: '카페',
+        office: '오피스',
+        gym: '헬스장',
+        park: '공원',
+        rooftop: '루프탑',
+        beach: '해변',
+        nature: '자연',
+      },
+      focus: {
+        product_focus: '제품 중심',
+        model_focus: '모델 중심',
+        balanced: '균형',
+        skin: '피부',
+        hair: '헤어',
+        overall: '전체',
+        detail: '디테일',
+        texture: '텍스처',
+        // 새 옵션들
+        product_hero: '제품 히어로',
+        model_emotion: '모델 감정',
+        balanced_harmony: '균형 조화',
+        detail_texture: '디테일 텍스처',
+        environment_context: '환경 컨텍스트',
+      },
+      scene: {
+        morning_routine: '모닝 루틴',
+        relaxing: '휴식',
+        working: '업무',
+        socializing: '소셜',
+        exercising: '운동',
+        shopping: '쇼핑',
+        traveling: '여행',
+        dining: '식사',
+        // 새 옵션들
+        morning_ritual: '모닝 리추얼',
+        relaxing_moment: '휴식의 순간',
+        work_from_home: '재택근무',
+        social_gathering: '소셜 모임',
+        fitness_wellness: '피트니스 웰니스',
+        travel_adventure: '여행 어드벤처',
+        self_care_spa: '셀프케어 스파',
+        date_night: '데이트 나이트',
+      },
+      location: {
+        living_room: '거실',
+        kitchen: '주방',
+        bedroom: '침실',
+        outdoor_terrace: '야외 테라스',
+        coffee_shop: '커피숍',
+        office: '오피스',
+        gym: '헬스장',
+        park: '공원',
+        beach: '해변',
+        city: '도시',
+        // 새 옵션들
+        modern_living: '모던 거실',
+        designer_kitchen: '디자이너 주방',
+        luxe_bedroom: '럭스 침실',
+        rooftop_terrace: '루프탑 테라스',
+        trendy_cafe: '트렌디 카페',
+        beach_poolside: '비치 풀사이드',
+        mountain_retreat: '마운틴 리트릿',
+        urban_loft: '어반 로프트',
+        // 추가 장소 옵션
+        urban_street: '도시 거리',
+        street: '거리',
+        cafe: '카페',
+        studio: '스튜디오',
+        rooftop: '루프탑',
+        nature: '자연',
+        indoor: '실내',
+        outdoor: '야외',
+      },
+      time: {
+        morning: '아침',
+        afternoon: '오후',
+        evening: '저녁',
+        golden_hour: '골든아워',
+        night: '밤',
+        dawn: '새벽',
+        dusk: '황혼',
+        // 새 옵션들
+        sunrise_fresh: '상쾌한 일출',
+        bright_midday: '밝은 정오',
+        blue_hour: '블루아워',
+        cozy_evening: '아늑한 저녁',
+        night_ambiance: '밤 분위기',
+      },
+      mood: {
+        luxury: '럭셔리',
+        casual: '캐주얼',
+        professional: '프로페셔널',
+        friendly: '친근',
+        energetic: '활기찬',
+        cozy: '아늑한',
+        vibrant: '생동감',
+        peaceful: '평화로운',
+        sophisticated: '세련된',
+        warm: '따뜻한',
+        fresh: '상쾌한',
+        romantic: '로맨틱',
+        playful: '장난스러운',
+        serene: '고요한',
+        // 새 옵션들
+        luxury_premium: '럭셔리 프리미엄',
+        warm_friendly: '따뜻하고 친근한',
+        modern_sleek: '모던 슬릭',
+        vibrant_energetic: '생동감 있는',
+        calm_serene: '차분하고 고요한',
+        trendy_bold: '트렌디 볼드',
+        elegant_timeless: '우아한 타임리스',
+        playful_fun: '즐거운',
+      },
+      layout: {
+        side_by_side: '좌우 배치',
+        split_screen: '분할 화면',
+        stacked: '상하 배치',
+        centered: '중앙 배치',
+        diagonal: '대각선 배치',
+        asymmetric: '비대칭 배치',
+      },
+      season: {
+        spring: '봄',
+        summer: '여름',
+        fall: '가을',
+        winter: '겨울',
+        autumn: '가을',
+        // 새 옵션들
+        spring_bloom: '봄 블룸',
+        summer_vibrant: '생동감 있는 여름',
+        fall_warm: '따뜻한 가을',
+        winter_cozy: '아늑한 겨울',
+      },
+      theme: {
+        holiday: '홀리데이',
+        valentines: '발렌타인',
+        new_year: '새해',
+        festive: '축제',
+        none: '없음',
+        christmas: '크리스마스',
+        halloween: '할로윈',
+        summer_vacation: '여름 휴가',
+        // 새 옵션들
+        holiday_festive: '홀리데이 페스티브',
+        valentines_romantic: '발렌타인 로맨틱',
+        new_year_celebration: '새해 셀러브레이션',
+        halloween_spooky: '할로윈 스푸키',
+        chuseok_traditional: '추석 전통',
+        christmas_magical: '크리스마스 매지컬',
+      },
+      atmosphere: {
+        warm: '따뜻한',
+        fresh: '상쾌한',
+        cozy: '아늑한',
+        bright: '밝은',
+        dark: '어두운',
+        dreamy: '몽환적인',
+        crisp: '선명한',
+        // 새 옵션들
+        magical_dreamy: '마법 같은 몽환',
+        warm_cozy: '따뜻하고 아늑한',
+        fresh_energetic: '상쾌하고 활기찬',
+        elegant_sophisticated: '우아하고 세련된',
+        playful_fun: '재미있는',
+        romantic_soft: '로맨틱 소프트',
+      },
+      productPlacement: {
+        none: '제품 없음',
+        holding: '손에 들고',
+        bag: '가방에',
+        accessory: '액세서리로',
+        nearby: '근처에 배치',
+        prominent: '눈에 띄게',
+        subtle: '자연스럽게',
+        in_use: '사용 중',
+        // 새 옵션들
+        holding_showcase: '들고 쇼케이스',
+        bag_styled: '스타일드 백',
+        accessory_complement: '액세서리 코디',
+        nearby_artful: '아트풀 근처 배치',
+      },
+      // 의상 옵션
+      outfit: {
+        keep_original: '원본 유지',
+        casual_everyday: '캐주얼 일상',
+        formal_elegant: '포멀 엘레강스',
+        professional_business: '프로페셔널 비즈니스',
+        sporty_athletic: '스포티 애슬레틱',
+        cozy_comfortable: '코지 컴포터블',
+        trendy_fashion: '트렌디 패션',
+        minimal_simple: '미니멀 심플',
+      },
+      // 컬러톤 옵션 (소문자 키로 통일)
+      colortone: {
+        bright_vivid: '브라이트 비비드',
+        warm_golden: '따뜻한 골든',
+        cool_blue: '쿨 블루',
+        muted_pastel: '뮤트 파스텔',
+        high_contrast: '하이 콘트라스트',
+        cinematic: '시네마틱',
+        vintage_film: '빈티지 필름',
+        monochrome: '모노크롬',
+      },
+      // 구도 옵션
+      composition: {
+        centered: '중앙 배치',
+        rule_of_thirds: '삼분할 구도',
+        asymmetric: '비대칭',
+        diagonal: '대각선',
+        framed: '프레임드',
+        negative_space: '네거티브 스페이스',
+      },
+    }
+    // 정규화된 키로 먼저 찾고, 없으면 원본 키로 찾기
+    return fallbackLabels[normalizedKey]?.[value] || fallbackLabels[key]?.[value] || value
   }
 
   const getOptionLabel = (key: string, value: unknown): string | null => {
@@ -536,8 +871,9 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
     // 문자열이 아닌 경우 문자열로 변환
     const strValue = String(value)
     // 커스텀 옵션인 경우 그대로 표시
-    if (strValue === '__custom__') return '커스텀'
-    return optionValueLabels[key]?.[strValue] || strValue
+    if (strValue === '__custom__') return ((t as Record<string, unknown>).imageAdOptions as Record<string, string> | undefined)?.custom || '커스텀'
+    // 번역된 라벨 반환
+    return getOptionValueLabel(key, strValue)
   }
 
   if (isLoading) {
@@ -553,78 +889,93 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* 헤더 */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-8">
+      {/* 헤더 - Refined Editorial Style */}
+      <div className="flex items-center justify-between pb-6 border-b border-white/[0.06]">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push('/dashboard/image-ad')}
-            className="p-2 hover:bg-secondary/50 rounded-lg transition-colors"
+            className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all duration-200 group"
           >
-            <ArrowLeft className="w-5 h-5 text-muted-foreground" />
+            <ArrowLeft className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-foreground">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               {t.imageAdDetail?.title || '이미지 광고 상세'}
             </h1>
-            <p className="text-sm text-muted-foreground">
-              {getAdTypeTitle(imageAd.ad_type)}
-            </p>
+            <div className="flex items-center gap-3 mt-1.5">
+              <span className="px-2.5 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-medium">
+                {getAdTypeTitle(imageAd.ad_type)}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                {new Date(imageAd.created_at).toLocaleDateString()}
+              </span>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* 전체 다운로드 (배치인 경우만) */}
-          {hasMultipleImages && (
-            <button
-              onClick={handleDownloadAll}
-              disabled={isDownloadingAll}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50"
-            >
-              {isDownloadingAll ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4" />
-              )}
-              전체 다운로드 ({imageUrls.length})
-            </button>
-          )}
+          {/* 다운로드 버튼 - Primary */}
+          <button
+            onClick={() => hasMultipleImages ? handleDownloadAll() : handleDownload()}
+            disabled={isDownloadingAll}
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-medium shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200 disabled:opacity-50"
+          >
+            {isDownloadingAll ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            {hasMultipleImages ? `다운로드 (${imageUrls.length})` : '다운로드'}
+          </button>
+          {/* 편집 버튼 */}
+          <button
+            onClick={() => setEditModalOpen(true)}
+            className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-muted-foreground hover:text-foreground transition-all duration-200"
+            title="편집"
+          >
+            <Wand2 className="w-4 h-4" />
+          </button>
           {/* 쇼케이스 등록 (어드민 전용) */}
           {isAdmin && imageAd.status === 'COMPLETED' && (
             <button
               onClick={handleRegisterShowcase}
               disabled={isRegisteringShowcase}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors disabled:opacity-50"
+              className="p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-500 transition-all duration-200 disabled:opacity-50"
+              title="쇼케이스 등록"
             >
               {isRegisteringShowcase ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Star className="w-4 h-4" />
               )}
-              쇼케이스 등록
             </button>
           )}
+          {/* 삭제 버튼 */}
           <button
             onClick={handleDelete}
             disabled={isDeleting}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm text-red-500 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
+            className="p-2.5 rounded-xl bg-white/5 hover:bg-red-500/10 border border-white/10 hover:border-red-500/20 text-muted-foreground hover:text-red-500 transition-all duration-200 disabled:opacity-50"
+            title={t.adProduct?.delete || '삭제'}
           >
             {isDeleting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <Trash2 className="w-4 h-4" />
             )}
-            {t.adProduct?.delete || '삭제'}
           </button>
         </div>
       </div>
 
-      {/* 콘텐츠 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 생성된 이미지 */}
-        <div className="space-y-4">
-          {/* 메인 이미지 */}
-          <div className="bg-card border border-border rounded-xl overflow-hidden group">
-            <div className="aspect-square relative bg-[#1a1a2e]">
+      {/* 콘텐츠 - Flex 기반 갤러리 레이아웃 */}
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* 이미지 갤러리 섹션 */}
+        <div className="flex-1 lg:max-w-[55%] space-y-4">
+          {/* 메인 이미지 - Glassmorphism 스타일 */}
+          <div className="relative group rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-900/50 to-zinc-950/80 ring-1 ring-white/5 shadow-2xl">
+            {/* 배경 그라데이션 효과 */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 via-transparent to-transparent pointer-events-none" />
+
+            <div className="relative aspect-[4/3] bg-[#0a0a12]">
               {selectedImageUrl ? (
                 <>
                   <img
@@ -632,37 +983,39 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                     alt={`Generated ad ${selectedImageIndex + 1}`}
                     className="absolute inset-0 w-full h-full object-contain"
                   />
-                  {/* 이미지 액션 버튼 오버레이 */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors">
-                    <div className="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <a
-                        href={selectedOriginalUrl || selectedImageUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 bg-white/90 hover:bg-white text-gray-700 rounded-lg transition-colors shadow-lg"
-                        title="원본 보기"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                      <button
-                        onClick={() => handleDownload()}
-                        className="p-2 bg-white/90 hover:bg-white text-gray-700 rounded-lg transition-colors shadow-lg"
-                        title="다운로드"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setEditModalOpen(true)}
-                        className="p-2 bg-primary/90 hover:bg-primary text-white rounded-lg transition-colors shadow-lg"
-                        title="편집"
-                      >
-                        <Wand2 className="w-4 h-4" />
-                      </button>
+                  {/* 호버 시 하단 그라데이션 오버레이 */}
+                  <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={selectedOriginalUrl || selectedImageUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-xl transition-all duration-200"
+                          title="원본 보기"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                        <button
+                          onClick={() => handleDownload()}
+                          className="p-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-xl transition-all duration-200"
+                          title="다운로드"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setEditModalOpen(true)}
+                          className="p-2.5 bg-primary/80 hover:bg-primary backdrop-blur-sm text-white rounded-xl transition-all duration-200"
+                          title="편집"
+                        >
+                          <Wand2 className="w-4 h-4" />
+                        </button>
+                      </div>
                       {imageUrls.length > 1 && (
                         <button
                           onClick={() => handleDeleteSingleImage(selectedImageIndex)}
                           disabled={isDeletingSingle}
-                          className="p-2 bg-red-500/90 hover:bg-red-500 text-white rounded-lg transition-colors shadow-lg disabled:opacity-50"
+                          className="p-2.5 bg-red-500/80 hover:bg-red-500 backdrop-blur-sm text-white rounded-xl transition-all duration-200 disabled:opacity-50"
                           title="이미지 삭제"
                         >
                           {isDeletingSingle ? (
@@ -677,109 +1030,76 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                 </>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <ImageIcon className="w-12 h-12 text-muted-foreground" />
+                  <ImageIcon className="w-16 h-16 text-muted-foreground/30" />
                 </div>
               )}
             </div>
           </div>
 
-          {/* 썸네일 그리드 (배치인 경우) */}
+          {/* 썸네일 스트립 - Horizontal scroll */}
           {hasMultipleImages && (
-            <div className={`grid ${getThumbnailGridClass(imageUrls.length)} gap-2`}>
-              {imageUrls.map((url, idx) => (
-                <div
-                  key={idx}
-                  className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all group/thumb ${
-                    idx === selectedImageIndex
-                      ? 'border-primary ring-2 ring-primary/30'
-                      : 'border-transparent hover:border-primary/50'
-                  }`}
-                >
+            <div className="space-y-3">
+              <div className="flex gap-3 overflow-x-auto py-2 px-1 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+                {imageUrls.map((url, idx) => (
                   <button
+                    key={idx}
                     onClick={() => setSelectedImageIndex(idx)}
-                    className="w-full h-full bg-[#1a1a2e]"
+                    className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden ring-2 transition-all duration-200 group/thumb ${
+                      idx === selectedImageIndex
+                        ? 'ring-primary shadow-lg shadow-primary/25 scale-105'
+                        : 'ring-transparent hover:ring-white/30 bg-[#0a0a12]'
+                    }`}
                   >
                     <img
                       src={url}
                       alt={`Thumbnail ${idx + 1}`}
                       className="w-full h-full object-contain"
                     />
-                  </button>
-                  {/* 썸네일 호버 액션 */}
-                  <div className="absolute inset-0 bg-black/0 group-hover/thumb:bg-black/40 transition-colors pointer-events-none">
-                    <div className="absolute bottom-1 right-1 flex items-center gap-1 opacity-0 group-hover/thumb:opacity-100 transition-opacity pointer-events-auto">
-                      <a
-                        href={originalUrls[idx] || url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-1 bg-white/90 hover:bg-white text-gray-700 rounded transition-colors"
-                        title="원본 보기"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDownload(idx)
-                        }}
-                        className="p-1 bg-white/90 hover:bg-white text-gray-700 rounded transition-colors"
-                        title="다운로드"
-                      >
-                        <Download className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setSelectedImageIndex(idx)
-                          setEditModalOpen(true)
-                        }}
-                        className="p-1 bg-primary/90 hover:bg-primary text-white rounded transition-colors"
-                        title="편집"
-                      >
-                        <Wand2 className="w-3 h-3" />
-                      </button>
-                      {imageUrls.length > 1 && (
-                        <button
+                    {/* 썸네일 호버 오버레이 */}
+                    <div className="absolute inset-0 bg-black/0 group-hover/thumb:bg-black/40 transition-colors flex items-center justify-center">
+                      <div className="opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center gap-1">
+                        <span
+                          className="p-1 bg-white/90 hover:bg-white text-gray-700 rounded transition-colors"
                           onClick={(e) => {
                             e.stopPropagation()
-                            handleDeleteSingleImage(idx)
+                            handleDownload(idx)
                           }}
-                          disabled={isDeletingSingle}
-                          className="p-1 bg-red-500/90 hover:bg-red-500 text-white rounded transition-colors disabled:opacity-50"
-                          title="이미지 삭제"
                         >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
+                          <Download className="w-3 h-3" />
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  </button>
+                ))}
+              </div>
+              {/* 이미지 카운터 */}
+              <p className="text-center text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">{selectedImageIndex + 1}</span>
+                <span className="mx-1">/</span>
+                <span>{imageUrls.length}</span>
+              </p>
             </div>
-          )}
-
-          {/* 이미지 정보 (배치인 경우) */}
-          {hasMultipleImages && (
-            <p className="text-center text-sm text-muted-foreground">
-              {selectedImageIndex + 1} / {imageUrls.length}
-            </p>
           )}
         </div>
 
-        {/* 상세 정보 */}
-        <div className="space-y-4">
+        {/* 상세 정보 사이드바 - Glassmorphism */}
+        <div className="lg:w-[420px] lg:sticky lg:top-6 lg:self-start space-y-4">
           {/* 관련 제품 */}
           {imageAd.ad_products && (
-            <div className="bg-card border border-border rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Package className="w-4 h-4 text-primary" />
+            <div className="relative backdrop-blur-xl rounded-2xl p-5 bg-white/[0.02] border border-white/[0.06] shadow-lg shadow-black/5 group/card hover:bg-white/[0.04] transition-colors duration-300">
+              {/* 그라데이션 악센트 */}
+              <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                  <Package className="w-4 h-4" />
+                </div>
                 <h3 className="font-medium text-foreground">
                   {t.imageAdDetail?.product || '광고 제품'}
                 </h3>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-16 h-16 rounded-lg bg-secondary/30 overflow-hidden flex-shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-xl bg-black/20 ring-1 ring-white/10 overflow-hidden flex-shrink-0">
                   {(imageAd.ad_products.rembg_image_url || imageAd.ad_products.image_url) ? (
                     <img
                       src={imageAd.ad_products.rembg_image_url || imageAd.ad_products.image_url || ''}
@@ -788,17 +1108,17 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Package className="w-6 h-6 text-muted-foreground" />
+                      <Package className="w-6 h-6 text-muted-foreground/50" />
                     </div>
                   )}
                 </div>
-                <div>
-                  <p className="font-medium text-foreground">{imageAd.ad_products.name}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground truncate">{imageAd.ad_products.name}</p>
                   <button
                     onClick={() => router.push(`/dashboard/image-ad/product/${imageAd.product_id}`)}
-                    className="text-sm text-primary hover:underline"
+                    className="text-sm text-primary hover:text-primary/80 transition-colors"
                   >
-                    {t.imageAdDetail?.viewProduct || '제품 상세보기'}
+                    {t.imageAdDetail?.viewProduct || '제품 상세보기'} →
                   </button>
                 </div>
               </div>
@@ -807,15 +1127,20 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
 
           {/* 관련 아바타 */}
           {imageAd.avatars && (
-            <div className="bg-card border border-border rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <User className="w-4 h-4 text-primary" />
+            <div className="relative backdrop-blur-xl rounded-2xl p-5 bg-white/[0.02] border border-white/[0.06] shadow-lg shadow-black/5 group/card hover:bg-white/[0.04] transition-colors duration-300">
+              {/* 그라데이션 악센트 */}
+              <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                  <User className="w-4 h-4" />
+                </div>
                 <h3 className="font-medium text-foreground">
                   {t.imageAdDetail?.avatar || '아바타'}
                 </h3>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-16 h-16 rounded-full bg-secondary/30 overflow-hidden flex-shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-black/20 ring-1 ring-white/10 overflow-hidden flex-shrink-0">
                   {imageAd.avatars.image_url ? (
                     <img
                       src={imageAd.avatars.image_url}
@@ -824,17 +1149,17 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-muted-foreground" />
+                      <User className="w-6 h-6 text-muted-foreground/50" />
                     </div>
                   )}
                 </div>
-                <div>
-                  <p className="font-medium text-foreground">{imageAd.avatars.name}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground truncate">{imageAd.avatars.name}</p>
                   <button
                     onClick={() => router.push(`/dashboard/avatar/${imageAd.avatar_id}`)}
-                    className="text-sm text-primary hover:underline"
+                    className="text-sm text-primary hover:text-primary/80 transition-colors"
                   >
-                    {t.imageAdDetail?.viewAvatar || '아바타 상세보기'}
+                    {t.imageAdDetail?.viewAvatar || '아바타 상세보기'} →
                   </button>
                 </div>
               </div>
@@ -843,15 +1168,20 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
 
           {/* 관련 의상 (착용샷인 경우) */}
           {imageAd.avatar_outfits && (
-            <div className="bg-card border border-border rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Shirt className="w-4 h-4 text-primary" />
+            <div className="relative backdrop-blur-xl rounded-2xl p-5 bg-white/[0.02] border border-white/[0.06] shadow-lg shadow-black/5 group/card hover:bg-white/[0.04] transition-colors duration-300">
+              {/* 그라데이션 악센트 */}
+              <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                  <Shirt className="w-4 h-4" />
+                </div>
                 <h3 className="font-medium text-foreground">
                   {t.imageAdDetail?.outfit || '의상'}
                 </h3>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-16 h-16 rounded-lg bg-secondary/30 overflow-hidden flex-shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-xl bg-black/20 ring-1 ring-white/10 overflow-hidden flex-shrink-0">
                   {imageAd.avatar_outfits.image_url ? (
                     <img
                       src={imageAd.avatar_outfits.image_url}
@@ -860,63 +1190,65 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Shirt className="w-6 h-6 text-muted-foreground" />
+                      <Shirt className="w-6 h-6 text-muted-foreground/50" />
                     </div>
                   )}
                 </div>
-                <p className="font-medium text-foreground">{imageAd.avatar_outfits.name}</p>
+                <p className="font-medium text-foreground truncate">{imageAd.avatar_outfits.name}</p>
               </div>
             </div>
           )}
 
           {/* 생성 옵션 */}
-          <div className="bg-card border border-border rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Settings2 className="w-4 h-4 text-primary" />
+          <div className="relative backdrop-blur-xl rounded-2xl p-5 bg-white/[0.02] border border-white/[0.06] shadow-lg shadow-black/5">
+            {/* 그라데이션 악센트 */}
+            <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                <Settings2 className="w-4 h-4" />
+              </div>
               <h3 className="font-medium text-foreground">
                 {t.imageAdDetail?.options || '생성 옵션'}
               </h3>
             </div>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between items-center py-2 border-b border-white/[0.04]">
                 <span className="text-muted-foreground">
                   {t.imageAdDetail?.adType || '광고 유형'}
                 </span>
-                <span className="text-foreground">{getAdTypeTitle(imageAd.ad_type)}</span>
+                <span className="text-foreground font-medium">{getAdTypeTitle(imageAd.ad_type)}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center py-2 border-b border-white/[0.04]">
                 <span className="text-muted-foreground">
                   {t.imageAdDetail?.aspectRatio || '이미지 비율'}
                 </span>
-                <span className="text-foreground">{getAspectRatioLabel(imageAd.image_size)}</span>
+                <span className="text-foreground font-medium">{getAspectRatioLabel(imageAd.image_size)}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center py-2">
                 <span className="text-muted-foreground">
                   {t.imageAdDetail?.quality || '퀄리티'}
                 </span>
-                <span className="text-foreground">{getQualityLabel(imageAd.quality)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  {t.imageAdDetail?.createdAt || '생성일'}
-                </span>
-                <span className="text-foreground">
-                  {new Date(imageAd.created_at).toLocaleDateString()}
-                </span>
+                <span className="text-foreground font-medium">{getQualityLabel(imageAd.quality)}</span>
               </div>
             </div>
           </div>
 
           {/* 상세 설정 */}
           {imageAd.selected_options && Object.keys(imageAd.selected_options).length > 0 && (
-            <div className="bg-card border border-border rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Settings2 className="w-4 h-4 text-primary" />
+            <div className="relative backdrop-blur-xl rounded-2xl p-5 bg-white/[0.02] border border-white/[0.06] shadow-lg shadow-black/5">
+              {/* 그라데이션 악센트 */}
+              <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                  <Settings2 className="w-4 h-4" />
+                </div>
                 <h3 className="font-medium text-foreground">
                   {t.imageAdDetail?.detailSettings || '상세 설정'}
                 </h3>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="space-y-1.5">
                 {Object.entries(imageAd.selected_options).map(([key, value]) => {
                   if (!value || value === 'none') return null
                   const label = getOptionLabel(key, value)
@@ -925,14 +1257,14 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                   return (
                     <div
                       key={key}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-secondary/50 rounded-lg text-sm"
+                      className="py-1.5 border-b border-white/[0.04] last:border-b-0"
                     >
-                      <span className="text-muted-foreground">
-                        {optionGroupLabels[key] || key}:
+                      <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                        {getOptionGroupLabel(key)}
                       </span>
-                      <span className="text-foreground font-medium">
+                      <p className="mt-0.5 text-sm text-foreground">
                         {label}
-                      </span>
+                      </p>
                     </div>
                   )
                 })}
