@@ -458,3 +458,11 @@ OUTFIT_AI_PROVIDER=kie
 - **쇼케이스 갤러리:** 관리자 큐레이션 예시 광고
 - **DB 최적화:** 쿼리 성능 개선
 - **R2 지연 초기화:** 스토리지 성능 개선
+
+## Deprecated Features (사용 안 함)
+
+다음 기능들은 현재 서비스에서 **사용하지 않음**:
+- **아바타 모션:** `/api/avatar-motion/*`, `components/video-ad/avatar-motion/`
+- **배경 생성:** `/api/ad-backgrounds/*`, `dashboard/background/`
+
+해당 코드는 레거시로 유지되며, 신규 개발이나 버그 수정 대상이 아님.
