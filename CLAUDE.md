@@ -185,7 +185,7 @@ export async function GET(request: NextRequest) {
 **아바타 시스템:**
 - `avatars` - 아바타 생성 데이터
 - `default_avatars` - 서비스 제공 기본 아바타
-- `avatar_outfits` - 의상 변환
+- `avatar_outfits` - [미사용] 의상 변환
 
 **광고 자산:**
 - `ad_products` - 제품 이미지 (배경 제거)
@@ -235,7 +235,6 @@ AI 서비스 비용 × 2.5배 마진 기준 (~$0.07/크레딧, 100원)
 | 기능 | 크레딧 | 비고 |
 |------|--------|------|
 | 아바타 생성 | 0 | 무료 (사용자 유치) |
-| 의상 변경 | 2 | Seedream 4.5 |
 | 이미지 광고 (중화질) | 2 | |
 | 이미지 광고 (고화질) | 3 | |
 | 제품설명 영상 (480p) | 5 | Hailuo + TTS |
@@ -291,7 +290,6 @@ await UsageTracker.incrementAvatarCount(userId)
 | 기능 | 주 공급자 | 대체 공급자 |
 |------|----------|------------|
 | 아바타 생성 | Kie.ai (Z-Image) | FAL.ai |
-| 의상 교체 | Kie.ai (Seedream 4.5) | FAL.ai (Qwen Edit) |
 | 이미지 광고 | Kie.ai (Seedream 4.5) | FAL.ai (GPT-Image 1.5) |
 | 배경 제거 | Kie.ai (Recraft) | FAL.ai (Rembg) |
 | 영상 생성 | Kie.ai (Kling 2.6, Wan 2.6) | FAL.ai (Vidu Q2, Kling O1) |
@@ -434,7 +432,6 @@ STRIPE_*_PRICE_ID=     # 요금제별 가격 ID
 
 # AI Provider 선택
 AVATAR_AI_PROVIDER=kie  # 'kie' | 'fal'
-OUTFIT_AI_PROVIDER=kie
 ```
 
 ## Security
