@@ -114,6 +114,7 @@ Check your scenarios:
 ✓ NO repetitive adjective patterns ("~하고 ~하고 ~한")?
 ✓ customText reads like a real photographer's notes, NOT like marketing copy?
 ✓ Each scenario uses DIFFERENT sentence structures and vocabulary?
+✓ Pose/action customText has SIMPLE hand actions? (max 1 action per hand, no 3+ gestures)?
 If any check fails, revise before responding.
 `.trim()
 
