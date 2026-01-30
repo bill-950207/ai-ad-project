@@ -5,7 +5,7 @@
  *
  * 성능 최적화 v2:
  * - 열 수 감소: 5개 → 3개 (애니메이션 60% 감소)
- * - 아이템 수 감소: 25개 → 12개 (DOM 50% 감소)
+ * - 아이템 수 감소: 25개 → 12개 (이미지 8 + 영상 4)
  * - 스켈레톤 로드 후 완전 언마운트 (GPU 메모리 해제)
  * - content-visibility: auto로 오프스크린 렌더링 최적화
  * - 그라데이션 오버레이 통합 (5개 → 1개)
@@ -67,17 +67,26 @@ export function ShowcaseRain() {
   const [showcases, setShowcases] = useState<ShowcaseItem[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
 
-  // 쇼케이스 데이터 로드 (수량 감소)
+  // 쇼케이스 데이터 로드 (이미지 + 영상)
   useEffect(() => {
     const fetchShowcases = async () => {
       try {
-        const res = await fetch('/api/showcases?type=image&limit=12&random=true')
-        if (res.ok) {
-          const data = await res.json()
-          if (data.showcases?.length > 0) {
-            setShowcases(data.showcases)
-            setIsLoaded(true)
-          }
+        const [imageRes, videoRes] = await Promise.all([
+          fetch('/api/showcases?type=image&limit=8&random=true'),
+          fetch('/api/showcases?type=video&limit=4&random=true'),
+        ])
+
+        const imageData = imageRes.ok ? await imageRes.json() : { showcases: [] }
+        const videoData = videoRes.ok ? await videoRes.json() : { showcases: [] }
+
+        const combined = [
+          ...(imageData.showcases || []),
+          ...(videoData.showcases || []),
+        ]
+
+        if (combined.length > 0) {
+          setShowcases(combined)
+          setIsLoaded(true)
         }
       } catch (error) {
         console.error('쇼케이스 로드 오류:', error)
