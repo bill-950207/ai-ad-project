@@ -477,6 +477,7 @@ export function ImageAdWizardProvider({
         aiReasons,
         generatedScenarios,
         selectedScenarioIndex,
+        hasLoadedAiRecommendation,  // AI 추천 로드 여부
         // Step 4
         aspectRatio,
         quality,
@@ -531,7 +532,7 @@ export function ImageAdWizardProvider({
     productUsageMethod, settingMethod, referenceUrl, analysisResult,
     categoryOptions, customOptions, customInputActive, additionalPrompt,
     aiStrategy, aiReasons, generatedScenarios, selectedScenarioIndex,
-    aspectRatio, quality, numImages,
+    hasLoadedAiRecommendation, aspectRatio, quality, numImages,
   ])
 
   // ============================================================
@@ -587,6 +588,7 @@ export function ImageAdWizardProvider({
           if (state.aiReasons) setAiReasons(state.aiReasons)
           if (state.generatedScenarios) setGeneratedScenarios(state.generatedScenarios)
           if (state.selectedScenarioIndex !== undefined) setSelectedScenarioIndex(state.selectedScenarioIndex)
+          if (state.hasLoadedAiRecommendation) setHasLoadedAiRecommendation(state.hasLoadedAiRecommendation)
           if (state.aspectRatio) setAspectRatio(state.aspectRatio)
           if (state.quality) setQuality(state.quality)
           if (state.numImages) setNumImages(state.numImages)
@@ -653,8 +655,8 @@ export function ImageAdWizardProvider({
 
     prevStepRef.current = step
 
-    // draftId가 있을 때만 auto-save
-    if (draftId) {
+    // Step 3 이상에서만 auto-save (기본정보 단계는 저장 안함)
+    if (draftId && step >= 3) {
       saveDraft()
     }
   }, [step, draftId, saveDraft])
