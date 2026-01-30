@@ -646,6 +646,15 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
         marble_table: '마블 테이블',
         floor_flatlay: '플로어 플랫레이',
         vanity_setup: '화장대 셋업',
+        // 추가 장소 옵션
+        urban_street: '도시 거리',
+        cafe: '카페',
+        office: '오피스',
+        gym: '헬스장',
+        park: '공원',
+        rooftop: '루프탑',
+        beach: '해변',
+        nature: '자연',
       },
       focus: {
         product_focus: '제품 중심',
@@ -702,6 +711,15 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
         beach_poolside: '비치 풀사이드',
         mountain_retreat: '마운틴 리트릿',
         urban_loft: '어반 로프트',
+        // 추가 장소 옵션
+        urban_street: '도시 거리',
+        street: '거리',
+        cafe: '카페',
+        studio: '스튜디오',
+        rooftop: '루프탑',
+        nature: '자연',
+        indoor: '실내',
+        outdoor: '야외',
       },
       time: {
         morning: '아침',
