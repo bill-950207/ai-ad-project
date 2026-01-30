@@ -160,10 +160,13 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
   return (
     <div
       ref={cardRef}
+      role="button"
+      tabIndex={0}
       onClick={handleCardClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(); } }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="group relative rounded-2xl overflow-hidden bg-secondary/30 cursor-pointer"
+      className="group relative rounded-2xl overflow-hidden bg-secondary/30 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       {/* 미디어 컨테이너 */}
       <div className="relative w-full">
@@ -171,9 +174,10 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
         <img
           src={item.thumbnail_url}
           alt={item.title}
-          className={`w-full h-auto block transition-opacity duration-300 object-top ${
+          className={`w-full h-auto block object-top ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
+          style={{ transition: 'opacity 300ms' }}
           style={{ objectPosition: 'top' }}
           onLoad={() => setImageLoaded(true)}
         />
@@ -205,14 +209,14 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
             {/* 재생 아이콘 - 재생 중이 아닐 때 */}
             <div className={`absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity duration-300 ${
               shouldPlay ? 'opacity-0 pointer-events-none' : 'opacity-100'
-            }`}>
+            }`} aria-hidden="true">
               <Play className="w-4 h-4 text-white fill-white" />
             </div>
             {/* 음소거 버튼 - 재생 중일 때 */}
             <button
               onClick={handleToggleMute}
               aria-label={isMuted ? 'Unmute' : 'Mute'}
-              className={`absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center transition-all duration-300 hover:bg-black/70 ${
+              className={`absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center transition-[opacity,background-color] duration-300 hover:bg-black/70 ${
                 shouldPlay ? 'opacity-100' : 'opacity-0 pointer-events-none'
               }`}
             >
@@ -238,9 +242,9 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
           {/* 메인 타입 배지 */}
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-medium text-white">
             {item.type === 'video' ? (
-              <Video className="w-3 h-3" />
+              <Video className="w-3 h-3" aria-hidden="true" />
             ) : (
-              <ImageIcon className="w-3 h-3" />
+              <ImageIcon className="w-3 h-3" aria-hidden="true" />
             )}
             <span>{item.type === 'video' ? 'Video' : 'Image'}</span>
           </div>
@@ -277,7 +281,7 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
         )}
 
         {/* 테두리 */}
-        <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10 group-hover:ring-white/30 transition-all duration-300 pointer-events-none" />
+        <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10 group-hover:ring-white/30 transition-[box-shadow] duration-300 pointer-events-none" />
       </div>
     </div>
   )
@@ -421,9 +425,9 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
             <div className="flex items-center gap-2 mb-3">
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
                 {item.type === 'video' ? (
-                  <Video className="w-3.5 h-3.5" />
+                  <Video className="w-3.5 h-3.5" aria-hidden="true" />
                 ) : (
-                  <ImageIcon className="w-3.5 h-3.5" />
+                  <ImageIcon className="w-3.5 h-3.5" aria-hidden="true" />
                 )}
                 <span>{getAdTypeLabel()}</span>
               </div>
@@ -491,7 +495,7 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
                 <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-4 h-4" aria-hidden="true" />
                   <span className="text-sm">
                     {language === 'ko' ? '이런 광고 만들기' : 'Create This Ad'}
                   </span>
@@ -693,7 +697,7 @@ export function ShowcaseSection() {
             <>
               {/* 메이슨리 그리드 - 항상 4열 유지 */}
               <div
-                className={`showcase-masonry transition-all duration-200 ${
+                className={`showcase-masonry transition-[opacity,transform] duration-200 ${
                   isTransitioning ? 'opacity-0 scale-[0.98]' : 'opacity-100 scale-100'
                 }`}
               >
@@ -721,7 +725,7 @@ export function ShowcaseSection() {
               className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <span>{language === 'ko' ? '시작하기' : 'Get Started'}</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
             </Link>
           </div>
         </div>

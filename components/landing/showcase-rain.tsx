@@ -29,7 +29,7 @@ const COLUMN_CONFIG = [
 ]
 
 // 개별 카드 컴포넌트 (영상 자동 재생 지원)
-function RainCard({ item, itemIndex }: { item: ShowcaseItem; itemIndex: number }) {
+function RainCard({ item }: { item: ShowcaseItem }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const [isVisible, setIsVisible] = useState(false)
@@ -170,7 +170,7 @@ export function ShowcaseRain() {
             }}
           >
             {column.map((item, itemIndex) => (
-              <RainCard key={`${item.id}-${itemIndex}`} item={item} itemIndex={itemIndex} />
+              <RainCard key={`${item.id}-${itemIndex}`} item={item} />
             ))}
           </div>
         ))}
