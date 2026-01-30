@@ -12,6 +12,8 @@
 
 import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react'
 import { Play, Image as ImageIcon, Video, Volume2, VolumeX, X, Plus } from 'lucide-react'
+
+// 메모리 최적화: 비디오 요소 제거, 썸네일만 표시
 import { useLanguage } from '@/contexts/language-context'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -64,18 +66,13 @@ interface ShowcaseCardProps {
 
 function ShowcaseCard({ item }: ShowcaseCardProps) {
   const { t } = useLanguage()
-  const [isHovered, setIsHovered] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
-  const [isMuted, setIsMuted] = useState(true)
-  const [isVisible, setIsVisible] = useState(false)
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const cardRef = useRef<HTMLDivElement>(null)
+  const { onShowcaseClick } = useContext(VideoContext)
 
   // 광고 서브타입 레이블 가져오기
   const getAdTypeLabel = (): string | null => {
     if (!item.ad_type) return null
 
-    // 이미지 광고 타입 확인
     if (IMAGE_AD_TYPE_KEYS.includes(item.ad_type as typeof IMAGE_AD_TYPE_KEYS[number])) {
       const adTypeKey = item.ad_type as typeof IMAGE_AD_TYPE_KEYS[number]
       const typeData = t.imageAdTypes[adTypeKey]
@@ -84,7 +81,6 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
       }
     }
 
-    // 영상 광고 타입 확인
     if (VIDEO_AD_TYPE_KEYS.includes(item.ad_type as typeof VIDEO_AD_TYPE_KEYS[number])) {
       const adTypeKey = item.ad_type as typeof VIDEO_AD_TYPE_KEYS[number]
       const typeData = t.videoAdTypes[adTypeKey]
@@ -93,148 +89,49 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
       }
     }
 
-    // 매핑에 없으면 원본 값 반환
     return item.ad_type
-  }
-
-  const { onShowcaseClick } = useContext(VideoContext)
-
-  // 화면에 보이면 재생
-  const shouldPlay = item.type === 'video' && isVisible
-
-  // Intersection Observer로 화면에 보이는지 감지 - 보이면 바로 재생
-  useEffect(() => {
-    if (item.type !== 'video' || !item.media_url) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          setIsVisible(entry.isIntersecting)
-        })
-      },
-      { threshold: 0.3 }
-    )
-
-    if (cardRef.current) {
-      observer.observe(cardRef.current)
-    }
-
-    return () => {
-      observer.disconnect()
-    }
-  }, [item.type, item.media_url])
-
-  // 재생 상태 관리
-  useEffect(() => {
-    if (!videoRef.current || item.type !== 'video') return
-
-    if (shouldPlay) {
-      videoRef.current.play().catch(() => {})
-    } else {
-      videoRef.current.pause()
-    }
-  }, [shouldPlay, item.type])
-
-  const handleMouseEnter = () => {
-    setIsHovered(true)
-  }
-
-  const handleMouseLeave = () => {
-    setIsHovered(false)
-  }
-
-  const handleToggleMute = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (videoRef.current) {
-      const newMuted = !isMuted
-      videoRef.current.muted = newMuted
-      setIsMuted(newMuted)
-    }
-  }
-
-  const handleCardClick = () => {
-    onShowcaseClick(item)
   }
 
   return (
     <div
-      ref={cardRef}
       role="button"
       tabIndex={0}
-      onClick={handleCardClick}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(); } }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      className="group relative rounded-2xl overflow-hidden bg-secondary/30 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      onClick={() => onShowcaseClick(item)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onShowcaseClick(item); } }}
+      className="group relative rounded-2xl overflow-hidden bg-gray-200 dark:bg-gray-800 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
-      {/* 미디어 컨테이너 */}
+      {/* 미디어 컨테이너 - 썸네일만 표시 (메모리 최적화) */}
       <div className="relative w-full">
-        {/* 썸네일 이미지 - 항상 표시하여 레이아웃 유지, 크롭 시 상단 표시 */}
         <img
           src={item.thumbnail_url}
           alt={item.title}
           width={320}
           height={400}
-          className={`w-full h-auto block object-top ${
-            imageLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-          style={{ transition: 'opacity 300ms', objectPosition: 'top' }}
+          className="w-full h-auto block object-top"
+          style={{
+            opacity: imageLoaded ? 1 : 0,
+            transition: 'opacity 0.3s ease-out',
+            objectPosition: 'top'
+          }}
           loading="lazy"
           decoding="async"
           onLoad={() => setImageLoaded(true)}
         />
 
-        {/* 비디오 - 썸네일 위에 오버레이, 크롭 시 상단 표시 */}
-        {item.type === 'video' && item.media_url && (
-          <video
-            ref={videoRef}
-            src={item.media_url}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
-              shouldPlay ? 'opacity-100' : 'opacity-0'
-            }`}
-            style={{ objectPosition: 'top' }}
-            muted={isMuted}
-            loop
-            playsInline
-            preload="metadata"
-          />
-        )}
-
         {/* 로딩 스켈레톤 */}
         {!imageLoaded && (
-          <div className="w-full aspect-[4/5] bg-secondary/50 animate-pulse" />
+          <div className="w-full aspect-[4/5] bg-gray-300 dark:bg-gray-700 animate-pulse" />
         )}
 
-        {/* 비디오 컨트롤 */}
+        {/* 비디오 재생 아이콘 */}
         {item.type === 'video' && (
-          <>
-            {/* 재생 아이콘 - 재생 중이 아닐 때 */}
-            <div className={`absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity duration-300 ${
-              shouldPlay ? 'opacity-0 pointer-events-none' : 'opacity-100'
-            }`} aria-hidden="true">
-              <Play className="w-4 h-4 text-white fill-white" />
-            </div>
-            {/* 음소거 버튼 - 재생 중일 때 */}
-            <button
-              onClick={handleToggleMute}
-              aria-label={isMuted ? 'Unmute' : 'Mute'}
-              className={`absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center transition-[opacity,background-color] duration-300 hover:bg-black/70 ${
-                shouldPlay ? 'opacity-100' : 'opacity-0 pointer-events-none'
-              }`}
-            >
-              {isMuted ? (
-                <VolumeX className="w-4 h-4 text-white" />
-              ) : (
-                <Volume2 className="w-4 h-4 text-white" />
-              )}
-            </button>
-          </>
+          <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center" aria-hidden="true">
+            <Play className="w-4 h-4 text-white fill-white" />
+          </div>
         )}
 
-        {/* 호버 시 오버레이 */}
-        <div className={`absolute inset-0 bg-primary/20 transition-opacity duration-300 pointer-events-none ${
-          isHovered ? 'opacity-100' : 'opacity-0'
-        }`} />
+        {/* 호버 시 오버레이 (CSS만 사용) */}
+        <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
         {/* 하단 어두운 그라데이션 */}
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none" />
