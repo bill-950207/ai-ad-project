@@ -798,7 +798,7 @@ export function WizardStep5() {
           imageUrl: kf.imageUrl!,
           scenePrompt: sceneInfo?.scenePrompt,
           duration: sceneDurations[kf.sceneIndex] ?? 3,  // 각 씬별 duration
-          movementAmplitude: sceneInfo?.movementAmplitude ?? 'auto',  // 카메라/모션 강도
+          movementAmplitude: sceneInfo?.movementAmplitude ?? 'small',  // 카메라/모션 강도 (기본 small - 안정적)
         }
       })
 

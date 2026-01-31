@@ -1805,7 +1805,7 @@ export interface KieSeedanceInput {
   aspect_ratio?: SeedanceAspectRatio  // 화면 비율 (기본값: 9:16)
   resolution?: SeedanceResolution     // 해상도 (기본값: 720p)
   duration?: SeedanceDuration         // 영상 길이 (기본값: 8)
-  fixed_lens?: boolean                // 카메라 고정 (기본값: false)
+  fixed_lens?: boolean                // 카메라 고정 (기본값: true - 안정적)
   generate_audio?: boolean            // 오디오 생성 (기본값: false)
 }
 
@@ -1902,7 +1902,7 @@ export async function submitSeedanceToQueue(
     aspect_ratio: options?.aspectRatio || '9:16',
     resolution: options?.resolution || '720p',
     duration: options?.duration || '8',
-    fixed_lens: options?.fixedLens ?? false,
+    fixed_lens: options?.fixedLens ?? true,  // 기본값 true - 안정적인 카메라 워크
     generate_audio: options?.generateAudio ?? false,
   })
 

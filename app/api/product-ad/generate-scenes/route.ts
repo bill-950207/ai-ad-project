@@ -233,7 +233,7 @@ ALL ${count} variations MUST share the SAME visual DNA to ensure cohesive look:
 - **SAME Quality Keywords**: Include identical ending keywords: "Ultra-HD, photorealistic, premium commercial, cinematic"
 
 The variations should differ ONLY in:
-- Camera angle / composition
+- Composition angle
 - Amount of dynamic elements
 - Product tilt/rotation
 
@@ -241,15 +241,15 @@ The variations should differ ONLY in:
 All variations must look like they belong to the SAME AD CAMPAIGN:
 
 - Version 1: Hero shot with maximum dynamic elements (splashes, floating ingredients)
-  * Camera: Front-facing hero angle, product centered
+  * Angle: Front-facing hero view, product centered
   * Most dramatic splash/motion effects
 
 - Version 2: Elegant profile with dramatic lighting and reflections
-  * Camera: 45-degree side angle showcasing product depth
+  * Angle: 45-degree side view showcasing product depth
   * Emphasis on lighting and reflections, moderate motion effects
 
 - Version 3: Top-down creative composition with atmospheric effects
-  * Camera: 30-degree overhead angle revealing product top
+  * Angle: 30-degree overhead view revealing product top
   * Unique perspective, subtle motion effects, emphasis on atmosphere
 
 Generate ${count} prompts optimized for PREMIUM 3D COMMERCIAL-STYLE product advertisement.

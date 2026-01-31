@@ -1200,7 +1200,7 @@ export interface ViduImageToVideoInput {
   duration?: ViduDuration  // 영상 길이 (1-8초, 기본 5)
   resolution?: ViduResolution  // 해상도 (기본 720p)
   bgm?: boolean            // 배경 음악 (기본 false)
-  movement_amplitude?: ViduMovementAmplitude  // 움직임 강도 (기본 auto)
+  movement_amplitude?: ViduMovementAmplitude  // 움직임 강도 (기본 small - 안정적)
   seed?: number            // 시드 값 (-1 = 랜덤)
 }
 
@@ -1281,7 +1281,7 @@ export async function submitViduImageToVideoTask(input: ViduImageToVideoInput): 
       duration: input.duration ?? 5,
       resolution: input.resolution ?? '720p',
       bgm: input.bgm ?? false,
-      movement_amplitude: input.movement_amplitude ?? 'auto',
+      movement_amplitude: input.movement_amplitude ?? 'small',  // 기본값 'small' - 안정적인 카메라 워크
       seed: input.seed ?? -1,
     }),
   })

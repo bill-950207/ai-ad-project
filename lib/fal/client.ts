@@ -1178,7 +1178,7 @@ export interface ViduQ2Input {
   end_image_url?: string                      // 끝 프레임 이미지 URL (선택)
   duration?: ViduQ2Duration                   // 영상 길이 2-8초 (기본값: 4)
   resolution?: ViduQ2Resolution               // 해상도 (기본값: '720p')
-  movement_amplitude?: ViduQ2MovementAmplitude  // 움직임 강도 (기본값: 'auto')
+  movement_amplitude?: ViduQ2MovementAmplitude  // 움직임 강도 (기본값: 'small' - 안정적)
   bgm?: boolean                               // 배경음악 추가 (4초 영상만)
   seed?: number                               // 시드값 (재현성)
 }
@@ -1211,7 +1211,7 @@ export async function submitViduQ2ToQueue(input: ViduQ2Input): Promise<FalQueueS
     image_url: input.image_url,
     duration: input.duration || 4,
     resolution: input.resolution || '720p',
-    movement_amplitude: input.movement_amplitude || 'auto',
+    movement_amplitude: input.movement_amplitude || 'small',  // 기본값 'small' - 안정적인 카메라 워크
     bgm: input.bgm || false,
     seed: input.seed,
     end_image_url: input.end_image_url,
