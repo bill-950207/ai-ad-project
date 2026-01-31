@@ -124,21 +124,64 @@
   },
   "features": {
     "title": "Everything You Need",
-    "subtitle": "Just prepare a product photo. AI creates professional-grade ads for you.",
+    "subtitle": "All the tools you need to create professional advertising content",
+    "items": {
+      "imageAd": {
+        "title": "Image Ads",
+        "description": "Create stunning product photos and lifestyle images in seconds"
+      },
+      "videoAd": {
+        "title": "Video Ads",
+        "description": "Generate professional video ads with avatars and dynamic scenes"
+      },
+      "avatar": {
+        "title": "Digital Avatars",
+        "description": "Create realistic digital avatars that represent your brand"
+      },
+      "bgMusic": {
+        "title": "Background Music",
+        "description": "Generate custom background music that matches your ad mood"
+      }
+    },
     "benefits": {
-      "noExperience": {
-        "title": "No Experience Needed",
-        "description": "Create expert-level ads without design experience"
+      "fast": {
+        "title": "Fast Creation",
+        "description": "Generate ads in minutes"
       },
-      "quick": {
-        "title": "Quick Creation",
-        "description": "Agency takes days, AI takes minutes"
+      "customizable": {
+        "title": "Customizable",
+        "description": "Fine-tune every aspect"
       },
-      "cost": {
-        "title": "Cost Savings",
-        "description": "Save over 90% on ad production costs"
+      "saveTime": {
+        "title": "Save Time",
+        "description": "Automate repetitive tasks"
+      },
+      "multiLanguage": {
+        "title": "Multi-Language",
+        "description": "Create ads in any language"
       }
     }
+  },
+  "pricingPage": {
+    "badge": "Simple Pricing",
+    "title": "Choose the Right Plan for You",
+    "subtitle": "Upgrade or cancel anytime. Transparent pricing with no hidden fees.",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "popular": "Popular",
+    "free": "Free",
+    "perMonth": "mo",
+    "yearlySavings": "Save ${{amount}}/year",
+    "avatars": "Avatars",
+    "music": "Music",
+    "products": "Products",
+    "credits": "Credits",
+    "getStarted": "Get Started",
+    "cancelAnytime": "Cancel Anytime",
+    "keepContent": "Keep Your Content Forever",
+    "creditsRollOver": "Credits Roll Over",
+    "ctaText": "Start free on any plan. Create your first ad today!",
+    "startFree": "Start Free"
   },
   "showcase": {
     "title": "Gallery",
@@ -1158,8 +1201,19 @@
     "confirmPassword": "Confirm Password",
     "confirmPasswordPlaceholder": "Re-enter your password",
     "passwordMismatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 6 characters",
     "haveAccount": "Already have an account?",
     "aiPoweredAdCreation": "AI-Powered Ad Creation",
-    "createStunningAds": "Create stunning video ads in minutes with our AI technology"
+    "createStunningAds": "Create stunning video ads in minutes with our AI technology",
+    "emailNotFound": "Email information not found.",
+    "emailSendFailed": "Failed to send email.",
+    "verifyEmailTitle": "Email Verification Required",
+    "verifyEmailSent": "Verification email sent.",
+    "verifyEmailCheck": "Please check your inbox.",
+    "verifyEmailNotReceived": "Didn't receive the email?",
+    "sending": "Sending...",
+    "resendEmail": "Resend Verification Email",
+    "signupWithDifferentEmail": "Sign up with different email",
+    "verifyEmailNote": "Please check your spam folder too. The link is valid for 24 hours."
   }
 }

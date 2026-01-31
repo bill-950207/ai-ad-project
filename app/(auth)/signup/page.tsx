@@ -16,7 +16,11 @@ interface VideoShowcase {
 const FALLBACK_VIDEO_URL = '/examples/video-ad-example.mp4'
 
 export default function SignupPage() {
-  const { language } = useLanguage()
+  const { t } = useLanguage()
+  const authT = t.auth as {
+    passwordMismatch: string
+    passwordTooShort: string
+  }
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -83,13 +87,13 @@ export default function SignupPage() {
     setError(null)
 
     if (password !== confirmPassword) {
-      setError(language === 'ko' ? '비밀번호가 일치하지 않습니다.' : 'Passwords do not match')
+      setError(authT.passwordMismatch)
       setLoading(false)
       return
     }
 
     if (password.length < 6) {
-      setError(language === 'ko' ? '비밀번호는 최소 6자 이상이어야 합니다.' : 'Password must be at least 6 characters')
+      setError(authT.passwordTooShort)
       setLoading(false)
       return
     }

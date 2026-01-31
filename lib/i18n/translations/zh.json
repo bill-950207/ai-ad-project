@@ -124,21 +124,64 @@
   },
   "features": {
     "title": "您需要的一切",
-    "subtitle": "只需准备产品照片，AI为您制作专业级广告。",
+    "subtitle": "提供制作专业广告内容所需的所有工具",
+    "items": {
+      "imageAd": {
+        "title": "图片广告",
+        "description": "快速制作产品照片和生活方式图片"
+      },
+      "videoAd": {
+        "title": "视频广告",
+        "description": "用虚拟形象和动态场景制作视频广告"
+      },
+      "avatar": {
+        "title": "数字虚拟形象",
+        "description": "创建代表您品牌的逼真数字虚拟形象"
+      },
+      "bgMusic": {
+        "title": "背景音乐",
+        "description": "生成与广告氛围匹配的背景音乐"
+      }
+    },
     "benefits": {
-      "noExperience": {
-        "title": "无需经验",
-        "description": "无设计经验也能制作专家级广告"
-      },
-      "quick": {
+      "fast": {
         "title": "快速制作",
-        "description": "代理商需要几天，AI只需几分钟"
+        "description": "几分钟完成广告"
       },
-      "cost": {
-        "title": "节省成本",
-        "description": "广告制作成本节省90%以上"
+      "customizable": {
+        "title": "可定制",
+        "description": "可按需调整"
+      },
+      "saveTime": {
+        "title": "节省时间",
+        "description": "自动化重复任务"
+      },
+      "multiLanguage": {
+        "title": "多语言",
+        "description": "多语言制作广告"
       }
     }
+  },
+  "pricingPage": {
+    "badge": "简单定价",
+    "title": "选择适合您的方案",
+    "subtitle": "随时升级或取消。透明定价，无隐藏费用。",
+    "monthly": "月付",
+    "yearly": "年付",
+    "popular": "热门",
+    "free": "免费",
+    "perMonth": "月",
+    "yearlySavings": "年省${{amount}}！",
+    "avatars": "虚拟形象",
+    "music": "音乐",
+    "products": "产品",
+    "credits": "积分",
+    "getStarted": "开始使用",
+    "cancelAnytime": "随时取消",
+    "keepContent": "内容永久保存",
+    "creditsRollOver": "积分可累积",
+    "ctaText": "所有方案免费开始。立即创建您的第一个广告！",
+    "startFree": "免费开始"
   },
   "showcase": {
     "title": "作品展示",
@@ -1158,8 +1201,19 @@
     "confirmPassword": "确认密码",
     "confirmPasswordPlaceholder": "重新输入密码",
     "passwordMismatch": "密码不匹配",
+    "passwordTooShort": "密码必须至少6个字符",
     "haveAccount": "已有账户？",
     "aiPoweredAdCreation": "AI驱动广告创作",
-    "createStunningAds": "用我们的AI技术几分钟内创建惊艳的视频广告"
+    "createStunningAds": "用我们的AI技术几分钟内创建惊艳的视频广告",
+    "emailNotFound": "未找到邮箱信息。",
+    "emailSendFailed": "邮件发送失败。",
+    "verifyEmailTitle": "需要邮箱验证",
+    "verifyEmailSent": "验证邮件已发送。",
+    "verifyEmailCheck": "请检查您的收件箱。",
+    "verifyEmailNotReceived": "没收到邮件？",
+    "sending": "发送中...",
+    "resendEmail": "重新发送验证邮件",
+    "signupWithDifferentEmail": "使用其他邮箱注册",
+    "verifyEmailNote": "请同时检查垃圾邮件文件夹。链接24小时内有效。"
   }
 }

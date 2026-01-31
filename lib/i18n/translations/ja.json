@@ -124,21 +124,64 @@
   },
   "features": {
     "title": "必要なものすべて",
-    "subtitle": "製品写真だけご用意ください。AIがプロ級の広告を作成します。",
+    "subtitle": "プロフェッショナルな広告コンテンツ制作に必要なツールを提供します",
+    "items": {
+      "imageAd": {
+        "title": "画像広告",
+        "description": "製品写真とライフスタイル画像を素早く制作"
+      },
+      "videoAd": {
+        "title": "動画広告",
+        "description": "アバターとダイナミックなシーンで動画広告を作成"
+      },
+      "avatar": {
+        "title": "デジタルアバター",
+        "description": "ブランドを代表するリアルなデジタルアバターを作成"
+      },
+      "bgMusic": {
+        "title": "BGM",
+        "description": "広告の雰囲気に合ったBGMを生成"
+      }
+    },
     "benefits": {
-      "noExperience": {
-        "title": "経験不要",
-        "description": "デザイン経験なしでプロレベルの広告作成"
-      },
-      "quick": {
+      "fast": {
         "title": "高速作成",
-        "description": "代理店は数日、AIは数分"
+        "description": "数分で広告完成"
       },
-      "cost": {
-        "title": "コスト削減",
-        "description": "広告制作費を90%以上節約"
+      "customizable": {
+        "title": "カスタマイズ",
+        "description": "思い通りに調整可能"
+      },
+      "saveTime": {
+        "title": "時間節約",
+        "description": "繰り返し作業を自動化"
+      },
+      "multiLanguage": {
+        "title": "多言語対応",
+        "description": "多言語で広告制作"
       }
     }
+  },
+  "pricingPage": {
+    "badge": "シンプルな料金",
+    "title": "最適なプランを選択",
+    "subtitle": "いつでもアップグレードまたはキャンセル可能。隠れた費用なしで透明に。",
+    "monthly": "月払い",
+    "yearly": "年払い",
+    "popular": "人気",
+    "free": "無料",
+    "perMonth": "月",
+    "yearlySavings": "年${{amount}}節約！",
+    "avatars": "アバター",
+    "music": "音楽",
+    "products": "製品",
+    "credits": "クレジット",
+    "getStarted": "始める",
+    "cancelAnytime": "いつでもキャンセル可能",
+    "keepContent": "コンテンツ永久保存",
+    "creditsRollOver": "クレジット繰越",
+    "ctaText": "すべてのプランで無料スタート。今すぐ最初の広告を作成！",
+    "startFree": "無料で始める"
   },
   "showcase": {
     "title": "制作事例",
@@ -1158,8 +1201,19 @@
     "confirmPassword": "パスワード確認",
     "confirmPasswordPlaceholder": "パスワードを再入力",
     "passwordMismatch": "パスワードが一致しません",
+    "passwordTooShort": "パスワードは6文字以上必要です",
     "haveAccount": "すでにアカウントをお持ちですか？",
     "aiPoweredAdCreation": "AI搭載広告作成",
-    "createStunningAds": "AI技術で数分で素晴らしい動画広告を作成"
+    "createStunningAds": "AI技術で数分で素晴らしい動画広告を作成",
+    "emailNotFound": "メール情報がありません。",
+    "emailSendFailed": "メール送信に失敗しました。",
+    "verifyEmailTitle": "メール認証が必要です",
+    "verifyEmailSent": "認証メールを送信しました。",
+    "verifyEmailCheck": "受信トレイをご確認ください。",
+    "verifyEmailNotReceived": "メールが届きませんか？",
+    "sending": "送信中...",
+    "resendEmail": "認証メール再送",
+    "signupWithDifferentEmail": "別のメールで登録",
+    "verifyEmailNote": "迷惑メールフォルダもご確認ください。リンクは24時間有効です。"
   }
 }
