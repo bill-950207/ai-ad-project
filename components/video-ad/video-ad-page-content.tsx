@@ -654,10 +654,10 @@ export function VideoAdPageContent() {
                   {isDeleting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      {t.videoAd?.deleteModal?.deleting || '삭제 중...'}
+                      {t.videoAd?.deleteModal?.deleting || 'Deleting...'}
                     </>
                   ) : (
-                    t.videoAd?.delete || '삭제'
+                    t.videoAd?.delete || 'Delete'
                   )}
                 </button>
               </div>

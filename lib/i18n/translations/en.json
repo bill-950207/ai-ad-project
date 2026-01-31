@@ -1040,6 +1040,14 @@
       "complete": "Complete"
     }
   },
+  "saveIndicator": {
+    "saving": "Saving...",
+    "pending": "Save pending",
+    "saved": "Saved",
+    "failed": "Save failed",
+    "retry": "Retry",
+    "dismiss": "Dismiss"
+  },
   "slotLimit": {
     "title": "Slots are full",
     "slot": "Slot",

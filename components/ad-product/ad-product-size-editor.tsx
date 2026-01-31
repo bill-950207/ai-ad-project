@@ -284,7 +284,7 @@ export function AdProductSizeEditor({ productId, rembgImageUrl, onComplete }: Ad
             ) : (
               <>
                 <Check className="w-4 h-4" />
-                <span>{t.adProduct?.complete || '완료'}</span>
+                <span>{t.adProduct?.complete || 'Complete'}</span>
               </>
             )}
           </button>

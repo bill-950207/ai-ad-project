@@ -285,9 +285,9 @@ export function WizardStep3() {
               <Loader2 className="w-8 h-8 text-primary animate-spin" />
             </div>
             <div className="text-center">
-              <h3 className="font-medium text-foreground mb-1">AI가 최적의 설정을 분석 중입니다</h3>
+              <h3 className="font-medium text-foreground mb-1">AI is analyzing optimal settings</h3>
               <p className="text-sm text-muted-foreground">
-                {selectedProduct ? `"${selectedProduct.name}"` : '제품'}에 맞는 광고 설정을 추천하고 있습니다...
+                Recommending ad settings for {selectedProduct ? `"${selectedProduct.name}"` : 'your product'}...
               </p>
             </div>
           </div>

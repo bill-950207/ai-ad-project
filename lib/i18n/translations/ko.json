@@ -1040,6 +1040,14 @@
       "complete": "완료"
     }
   },
+  "saveIndicator": {
+    "saving": "저장 중...",
+    "pending": "저장 대기 중",
+    "saved": "저장됨",
+    "failed": "저장 실패",
+    "retry": "재시도",
+    "dismiss": "닫기"
+  },
   "slotLimit": {
     "title": "슬롯이 가득 찼습니다",
     "slot": "슬롯",

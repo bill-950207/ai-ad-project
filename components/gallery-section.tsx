@@ -81,19 +81,19 @@ export function GallerySection() {
             active={filter === 'all'}
             onClick={() => setFilter('all')}
             icon={null}
-            label={t.landing.filterAll || '전체'}
+            label={t.landing.filterAll || 'All'}
           />
           <FilterTab
             active={filter === 'video'}
             onClick={() => setFilter('video')}
             icon={<Film className="h-4 w-4" />}
-            label={t.landing.filterVideo || '영상'}
+            label={t.landing.filterVideo || 'Video'}
           />
           <FilterTab
             active={filter === 'image'}
             onClick={() => setFilter('image')}
             icon={<ImageIcon className="h-4 w-4" />}
-            label={t.landing.filterImage || '이미지'}
+            label={t.landing.filterImage || 'Image'}
           />
         </div>
 

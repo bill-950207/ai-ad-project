@@ -367,18 +367,18 @@ export function ImageAdPageContent() {
   // 마법사 스텝 이름
   const getStepName = (step: number | null) => {
     const stepNames: Record<number, string> = {
-      1: '기본 정보',
-      2: '설정 방식',
-      3: '상세 옵션',
-      4: '생성',
+      1: 'Basic Info',
+      2: 'Settings',
+      3: 'Options',
+      4: 'Generate',
     }
-    return stepNames[step || 1] || '기본 정보'
+    return stepNames[step || 1] || 'Basic Info'
   }
 
   // Draft 삭제
   const handleDeleteDraft = async (adId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!confirm('임시 저장된 작업을 삭제하시겠습니까?')) return
+    if (!confirm('Delete this draft?')) return
     try {
       await fetch(`/api/image-ad/draft?id=${adId}`, { method: 'DELETE' })
       setImageAds(prev => prev.filter(ad => ad.id !== adId))
@@ -565,7 +565,7 @@ export function ImageAdPageContent() {
                   {ad.status === 'COMPLETED' && (
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
                       <span className="px-6 py-2.5 bg-white text-black rounded-xl text-sm font-semibold shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
-                        {t.imageAdDetail?.viewDetail || '상세보기'}
+                        {t.imageAdDetail?.viewDetail || 'View Details'}
                       </span>
                     </div>
                   )}

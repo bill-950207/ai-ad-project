@@ -1040,6 +1040,14 @@
       "complete": "完了"
     }
   },
+  "saveIndicator": {
+    "saving": "保存中...",
+    "pending": "保存待ち",
+    "saved": "保存しました",
+    "failed": "保存失敗",
+    "retry": "再試行",
+    "dismiss": "閉じる"
+  },
   "slotLimit": {
     "title": "スロットが満杯です",
     "slot": "スロット",

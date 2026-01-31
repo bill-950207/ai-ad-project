@@ -16,10 +16,10 @@ import { WizardStep4 } from './wizard-step-4'
 // ============================================================
 
 const STEPS: { step: WizardStep; title: string; description: string }[] = [
-  { step: 1, title: '기본 정보', description: '유형, 제품, 아바타' },
-  { step: 2, title: '설정 방식', description: '직접/AI/참조' },
-  { step: 3, title: '상세 옵션', description: '포즈, 배경, 조명' },
-  { step: 4, title: '생성', description: '비율, 퀄리티, 가격' },
+  { step: 1, title: 'Basic Info', description: 'Type, Product, Avatar' },
+  { step: 2, title: 'Settings', description: 'Direct/AI/Reference' },
+  { step: 3, title: 'Options', description: 'Pose, Background, Lighting' },
+  { step: 4, title: 'Generate', description: 'Ratio, Quality, Price' },
 ]
 
 // ============================================================

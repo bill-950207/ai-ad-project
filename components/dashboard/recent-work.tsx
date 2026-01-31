@@ -71,8 +71,8 @@ function WorkCard({ item, onClick }: WorkCardProps) {
 
   const getStatusLabel = () => {
     if (item.status === 'COMPLETED') return null
-    if (item.status === 'FAILED') return t.videoAd?.status?.failed || '실패'
-    return t.videoAd?.status?.inProgress || '생성 중'
+    if (item.status === 'FAILED') return t.videoAd?.status?.failed || 'Failed'
+    return t.videoAd?.status?.inProgress || 'Generating'
   }
 
   const statusLabel = getStatusLabel()

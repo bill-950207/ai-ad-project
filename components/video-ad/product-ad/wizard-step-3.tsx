@@ -37,9 +37,9 @@ const FREE_USER_LIMITS = {
 
 // 비율 옵션
 const ASPECT_RATIO_OPTIONS: { value: AspectRatio; label: string; icon: string; desc: string }[] = [
-  { value: '16:9', label: '가로형', icon: '▬', desc: '유튜브, 웹사이트' },
-  { value: '9:16', label: '세로형', icon: '▮', desc: '릴스, 숏츠, 틱톡' },
-  { value: '1:1', label: '정방형', icon: '■', desc: '인스타그램 피드' },
+  { value: '16:9', label: 'Landscape', icon: '▬', desc: 'YouTube, Websites' },
+  { value: '9:16', label: 'Portrait', icon: '▮', desc: 'Reels, Shorts, TikTok' },
+  { value: '1:1', label: 'Square', icon: '■', desc: 'Instagram Feed' },
 ]
 
 // 전체 분위기 옵션
@@ -214,7 +214,7 @@ function CompactElementSelector({
       >
         <div className="flex items-center justify-between">
           <span className={value ? 'text-foreground' : 'text-muted-foreground'}>
-            {value || '선택'}
+            {value || 'Select'}
           </span>
           {isExpanded ? (
             <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />

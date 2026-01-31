@@ -41,9 +41,9 @@ const FREE_USER_LIMITS = {
 
 // Vidu Q3 해상도 옵션 (중앙 상수 사용)
 const RESOLUTION_OPTIONS: { value: VideoResolution; label: string; desc: string; creditsPerSecond: number }[] = [
-  { value: '540p', label: 'SD (540p)', desc: '빠른 생성', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['540p'] },
-  { value: '720p', label: 'HD (720p)', desc: '표준 화질', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['720p'] },
-  { value: '1080p', label: 'FHD (1080p)', desc: '고품질', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['1080p'] },
+  { value: '540p', label: 'SD (540p)', desc: 'Fast generation', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['540p'] },
+  { value: '720p', label: 'HD (720p)', desc: 'Standard quality', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['720p'] },
+  { value: '1080p', label: 'FHD (1080p)', desc: 'High quality', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['1080p'] },
 ]
 import {
   DndContext,

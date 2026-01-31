@@ -323,7 +323,7 @@ export function Sidebar() {
 
               {/* 라벨 */}
               {!isCollapsed && (
-                <span className="relative z-10">{'홈'}</span>
+                <span className="relative z-10">{t.sidebar?.home || 'Home'}</span>
               )}
             </Link>
 
@@ -335,7 +335,7 @@ export function Sidebar() {
                 "opacity-0 group-hover:opacity-100 transition-opacity duration-200",
                 "pointer-events-none whitespace-nowrap z-50 shadow-lg"
               )}>
-                {'홈'}
+                {t.sidebar?.home || 'Home'}
               </div>
             )}
           </div>
@@ -377,7 +377,7 @@ export function Sidebar() {
 
                 {/* 라벨 */}
                 {!isCollapsed && (
-                  <span className="relative z-10">{'관리자'}</span>
+                  <span className="relative z-10">{t.sidebar?.admin || 'Admin'}</span>
                 )}
               </Link>
 
@@ -389,7 +389,7 @@ export function Sidebar() {
                   "opacity-0 group-hover:opacity-100 transition-opacity duration-200",
                   "pointer-events-none whitespace-nowrap z-50 shadow-lg"
                 )}>
-                  {'관리자'}
+                  {t.sidebar?.admin || 'Admin'}
                 </div>
               )}
             </div>
@@ -494,7 +494,7 @@ export function Sidebar() {
                   onClick={handleNavClick}
                   className="text-xs text-primary hover:underline"
                 >
-                  {t.common.subscription || '구독'}
+                  {t.common.subscription || 'Subscription'}
                 </Link>
               </div>
             </div>
@@ -601,7 +601,7 @@ export function Sidebar() {
                     onClick={() => { setShowProfileMenu(false); handleNavClick() }}
                   >
                     <CreditCard className="w-4 h-4" aria-hidden="true" />
-                    <span>{t.common.subscription || '구독 관리'}</span>
+                    <span>{t.common.subscription || 'Subscription'}</span>
                   </Link>
 
                   {/* 언어 서브메뉴 */}

@@ -315,7 +315,7 @@ export function AdminContent() {
                       ) : (
                         <Video className="w-3 h-3" />
                       )}
-                      {showcase.type === 'image' ? '이미지' : '영상'}
+                      {showcase.type === 'image' ? 'Image' : 'Video'}
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -567,7 +567,7 @@ export function AdminContent() {
                 )}
               >
                 {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                {editingShowcase ? '저장' : '추가'}
+                {editingShowcase ? 'Save' : 'Add'}
               </button>
             </div>
           </div>

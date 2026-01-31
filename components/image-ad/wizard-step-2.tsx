@@ -26,21 +26,21 @@ const METHOD_OPTIONS: {
   {
     method: 'direct',
     icon: Edit3,
-    title: '직접 입력',
-    description: '포즈, 배경, 조명 등 모든 옵션을 직접 선택합니다',
+    title: 'Direct Input',
+    description: 'Manually select all options like pose, background, and lighting',
   },
   {
     method: 'ai-auto',
     icon: Bot,
-    title: 'AI 자동 설정',
-    description: '제품과 아바타 정보를 분석하여 최적의 설정을 AI가 추천합니다',
-    badge: '추천',
+    title: 'AI Auto Settings',
+    description: 'AI analyzes product and avatar to recommend optimal settings',
+    badge: 'Recommended',
   },
   {
     method: 'reference',
     icon: ImageIcon,
-    title: '참조 이미지 분석',
-    description: '기존 광고 이미지를 업로드하면 AI가 스타일을 분석하여 설정합니다',
+    title: 'Reference Image',
+    description: 'Upload an existing ad image and AI will analyze its style',
   },
 ]
 
