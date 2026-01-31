@@ -9,6 +9,8 @@
     "comingSoon": "Coming soon",
     "cancel": "Cancel",
     "save": "Save",
+    "close": "Close",
+    "type": "Type",
     "error": "Something went wrong",
     "errorDescription": "An unexpected error occurred. Please try again.",
     "retry": "Try again",
@@ -995,6 +997,72 @@
     "deleteAccountDesc": "Permanently delete your account and all data",
     "delete": "Delete",
     "moreSettingsComingSoon": "More settings coming soon"
+  },
+  "onboarding": {
+    "completion": {
+      "title": "Ready!",
+      "videoReady": "Ready to create {{type}}",
+      "imageReady": "Ready to create {{type}} image",
+      "startButton": "Start Creating Ad",
+      "navigating": "Navigating..."
+    },
+    "productEditor": {
+      "loadError": "Image load failed",
+      "instruction": "Adjust product size while comparing with avatar",
+      "loading": "Loading image...",
+      "saveError": "Save error",
+      "processingFailed": "Image processing failed",
+      "fetchError": "Cannot fetch product info",
+      "genericError": "An error occurred",
+      "saving": "Saving...",
+      "complete": "Complete"
+    },
+    "modal": {
+      "videoTypeTitle": "Select Video Ad Type",
+      "videoSetupTitle": "Video Ad Creation Setup",
+      "imageTypeTitle": "Select Image Ad Type",
+      "imageSetupTitle": "Image Ad Creation Setup",
+      "subtitles": {
+        "videoType": "Choose the type of video ad you want to create",
+        "imageType": "Choose the type of image ad you want to create",
+        "product": "Select or register a product for your ad",
+        "productProcessing": "Analyzing product image",
+        "productEditing": "Adjust product size",
+        "avatar": "Select an avatar for your ad",
+        "avatarProcessing": "Generating avatar",
+        "complete": "All preparations are complete"
+      },
+      "nextStep": "Next Step"
+    },
+    "steps": {
+      "product": "Product",
+      "avatar": "Avatar",
+      "complete": "Complete"
+    }
+  },
+  "slotLimit": {
+    "title": "Slots are full",
+    "slot": "Slot",
+    "message": "{{type}} slots are currently full. To create a new one, delete existing items or upgrade your plan.",
+    "upgrade": "Upgrade Plan",
+    "deleteExisting": "Delete existing {{type}}",
+    "close": "Close"
+  },
+  "sidebar": {
+    "home": "Home",
+    "createAd": "Create Ad",
+    "imageAd": "Image Ad",
+    "videoAd": "Video Ad",
+    "assets": "Assets",
+    "avatars": "Avatars",
+    "products": "Products",
+    "music": "Music",
+    "settings": "Settings",
+    "profile": "Profile",
+    "subscription": "Subscription",
+    "pricing": "Pricing",
+    "logout": "Logout",
+    "credits": "Credits"
   },
   "auth": {
     "welcomeBack": "Welcome back",

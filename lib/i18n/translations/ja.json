@@ -9,6 +9,8 @@
     "comingSoon": "近日公開",
     "cancel": "キャンセル",
     "save": "保存",
+    "close": "閉じる",
+    "type": "タイプ",
     "error": "エラーが発生しました",
     "errorDescription": "予期しないエラーが発生しました。もう一度お試しください。",
     "retry": "再試行",
@@ -995,6 +997,72 @@
     "deleteAccountDesc": "アカウントとすべてのデータを完全に削除します",
     "delete": "削除",
     "moreSettingsComingSoon": "その他の設定は近日追加予定です"
+  },
+  "onboarding": {
+    "completion": {
+      "title": "準備完了！",
+      "videoReady": "{{type}}を作成する準備ができました",
+      "imageReady": "{{type}}画像を作成する準備ができました",
+      "startButton": "広告作成を開始",
+      "navigating": "移動中..."
+    },
+    "productEditor": {
+      "loadError": "画像の読み込みに失敗しました",
+      "instruction": "アバターと比較しながら商品サイズを調整してください",
+      "loading": "画像を読み込み中...",
+      "saveError": "保存エラー",
+      "processingFailed": "画像処理に失敗しました",
+      "fetchError": "商品情報を取得できません",
+      "genericError": "エラーが発生しました",
+      "saving": "保存中...",
+      "complete": "完了"
+    },
+    "modal": {
+      "videoTypeTitle": "動画広告タイプを選択",
+      "videoSetupTitle": "動画広告作成準備",
+      "imageTypeTitle": "画像広告タイプを選択",
+      "imageSetupTitle": "画像広告作成準備",
+      "subtitles": {
+        "videoType": "作成したい動画広告タイプを選択してください",
+        "imageType": "作成したい画像広告タイプを選択してください",
+        "product": "広告に使用する商品を選択または登録してください",
+        "productProcessing": "商品画像を分析中です",
+        "productEditing": "商品サイズを調整してください",
+        "avatar": "広告に出演するアバターを選択してください",
+        "avatarProcessing": "アバターを生成中です",
+        "complete": "すべての準備が完了しました"
+      },
+      "nextStep": "次のステップへ"
+    },
+    "steps": {
+      "product": "商品",
+      "avatar": "アバター",
+      "complete": "完了"
+    }
+  },
+  "slotLimit": {
+    "title": "スロットが満杯です",
+    "slot": "スロット",
+    "message": "現在{{type}}スロットが満杯です。新規作成するには既存のアイテムを削除するか、プランをアップグレードしてください。",
+    "upgrade": "プランをアップグレード",
+    "deleteExisting": "既存の{{type}}を削除",
+    "close": "閉じる"
+  },
+  "sidebar": {
+    "home": "ホーム",
+    "createAd": "広告作成",
+    "imageAd": "画像広告",
+    "videoAd": "動画広告",
+    "assets": "アセット",
+    "avatars": "アバター",
+    "products": "商品",
+    "music": "音楽",
+    "settings": "設定",
+    "profile": "プロフィール",
+    "subscription": "サブスクリプション",
+    "pricing": "料金プラン",
+    "logout": "ログアウト",
+    "credits": "クレジット"
   },
   "auth": {
     "welcomeBack": "おかえりなさい",

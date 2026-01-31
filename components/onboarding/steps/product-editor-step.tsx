@@ -10,6 +10,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Loader2, ZoomIn, ZoomOut, RotateCcw, Check } from 'lucide-react'
 import { useOnboarding, OnboardingProduct } from '../onboarding-context'
+import { useLanguage } from '@/contexts/language-context'
 
 // 기본값
 const DEFAULT_SCALE = 1.0
@@ -20,7 +21,22 @@ const SCALE_STEP = 0.05
 // 참조 아바타 이미지
 const REFERENCE_AVATAR_URL = 'https://pub-ec68419ff8bc464ca734a0ddb80a2823.r2.dev/avatars/compressed/5e0f3953-0983-492c-9f47-0410e584849e_1767873505794.webp'
 
+type ProductEditorT = {
+  loadError?: string
+  instruction?: string
+  loading?: string
+  saveError?: string
+  processingFailed?: string
+  fetchError?: string
+  genericError?: string
+  saving?: string
+  complete?: string
+}
+
 export function ProductEditorStep() {
+  const { t } = useLanguage()
+  const editorT = (t.onboarding as { productEditor?: ProductEditorT } | undefined)?.productEditor
+
   const {
     newProductId,
     productRembgTempUrl,
@@ -49,11 +65,11 @@ export function ProductEditorStep() {
       setIsLoading(false)
     }
     img.onerror = () => {
-      setEditorError('이미지 로드 실패')
+      setEditorError(editorT?.loadError || 'Image load failed')
       setIsLoading(false)
     }
     img.src = productRembgTempUrl
-  }, [productRembgTempUrl])
+  }, [productRembgTempUrl, editorT?.loadError])
 
   // 캔버스 표시 크기 계산
   const getDisplaySize = useCallback(() => {
@@ -130,20 +146,20 @@ export function ProductEditorStep() {
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || '이미지 처리에 실패했습니다')
+        throw new Error(data.error || editorT?.processingFailed || 'Image processing failed')
       }
 
       // 완료된 제품 정보 가져오기
       const productRes = await fetch(`/api/ad-products/${newProductId}`)
-      if (!productRes.ok) throw new Error('제품 정보를 가져올 수 없습니다')
+      if (!productRes.ok) throw new Error(editorT?.fetchError || 'Cannot fetch product info')
 
       const productData = await productRes.json()
       const product: OnboardingProduct = productData.product
 
       onProductEditingComplete(product)
     } catch (err) {
-      console.error('저장 오류:', err)
-      setEditorError(err instanceof Error ? err.message : '오류가 발생했습니다')
+      console.error(editorT?.saveError || 'Save error:', err)
+      setEditorError(err instanceof Error ? err.message : editorT?.genericError || 'An error occurred')
     } finally {
       setIsSaving(false)
     }
@@ -156,7 +172,9 @@ export function ProductEditorStep() {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
-        <p className="text-sm text-muted-foreground">이미지를 불러오는 중...</p>
+        <p className="text-sm text-muted-foreground">
+          {editorT?.loading || 'Loading image...'}
+        </p>
       </div>
     )
   }
@@ -165,7 +183,7 @@ export function ProductEditorStep() {
     <div className="space-y-4">
       {/* 안내 메시지 */}
       <p className="text-sm text-muted-foreground text-center">
-        아바타와 비교하면서 제품 크기를 조절하세요
+        {editorT?.instruction || 'Adjust product size while comparing with avatar'}
       </p>
 
       {/* 편집 영역 */}
@@ -231,7 +249,7 @@ export function ProductEditorStep() {
           <button
             onClick={handleReset}
             className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors ml-1"
-            title="초기화"
+            title="Reset"
           >
             <RotateCcw className="w-4 h-4 text-foreground" />
           </button>
@@ -261,12 +279,12 @@ export function ProductEditorStep() {
         {isSaving ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span>저장 중...</span>
+            <span>{editorT?.saving || 'Saving...'}</span>
           </>
         ) : (
           <>
             <Check className="w-4 h-4" />
-            <span>완료</span>
+            <span>{editorT?.complete || 'Complete'}</span>
           </>
         )}
       </button>

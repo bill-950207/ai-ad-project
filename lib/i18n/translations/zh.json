@@ -9,6 +9,8 @@
     "comingSoon": "即将推出",
     "cancel": "取消",
     "save": "保存",
+    "close": "关闭",
+    "type": "类型",
     "error": "出现错误",
     "errorDescription": "发生了意外错误。请重试。",
     "retry": "重试",
@@ -995,6 +997,72 @@
     "deleteAccountDesc": "永久删除您的账户和所有数据",
     "delete": "删除",
     "moreSettingsComingSoon": "更多设置即将推出"
+  },
+  "onboarding": {
+    "completion": {
+      "title": "准备就绪！",
+      "videoReady": "已准备好创建{{type}}",
+      "imageReady": "已准备好创建{{type}}图片",
+      "startButton": "开始创建广告",
+      "navigating": "跳转中..."
+    },
+    "productEditor": {
+      "loadError": "图片加载失败",
+      "instruction": "与虚拟形象对比调整产品尺寸",
+      "loading": "正在加载图片...",
+      "saveError": "保存错误",
+      "processingFailed": "图片处理失败",
+      "fetchError": "无法获取产品信息",
+      "genericError": "发生错误",
+      "saving": "保存中...",
+      "complete": "完成"
+    },
+    "modal": {
+      "videoTypeTitle": "选择视频广告类型",
+      "videoSetupTitle": "视频广告创建准备",
+      "imageTypeTitle": "选择图片广告类型",
+      "imageSetupTitle": "图片广告创建准备",
+      "subtitles": {
+        "videoType": "选择您想创建的视频广告类型",
+        "imageType": "选择您想创建的图片广告类型",
+        "product": "选择或注册广告产品",
+        "productProcessing": "正在分析产品图片",
+        "productEditing": "调整产品尺寸",
+        "avatar": "选择广告中的虚拟形象",
+        "avatarProcessing": "正在生成虚拟形象",
+        "complete": "所有准备工作已完成"
+      },
+      "nextStep": "下一步"
+    },
+    "steps": {
+      "product": "产品",
+      "avatar": "虚拟形象",
+      "complete": "完成"
+    }
+  },
+  "slotLimit": {
+    "title": "配额已满",
+    "slot": "配额",
+    "message": "当前{{type}}配额已满。如需新建，请删除现有项目或升级套餐。",
+    "upgrade": "升级套餐",
+    "deleteExisting": "删除现有{{type}}",
+    "close": "关闭"
+  },
+  "sidebar": {
+    "home": "首页",
+    "createAd": "创建广告",
+    "imageAd": "图片广告",
+    "videoAd": "视频广告",
+    "assets": "素材库",
+    "avatars": "虚拟形象",
+    "products": "产品",
+    "music": "音乐",
+    "settings": "设置",
+    "profile": "个人资料",
+    "subscription": "订阅管理",
+    "pricing": "定价",
+    "logout": "退出登录",
+    "credits": "积分"
   },
   "auth": {
     "welcomeBack": "欢迎回来",

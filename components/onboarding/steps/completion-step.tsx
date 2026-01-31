@@ -12,9 +12,25 @@ import { Check, Package, User, Sparkles, ArrowRight, Image, Video, Loader2 } fro
 import { useOnboarding } from '../onboarding-context'
 import { useLanguage } from '@/contexts/language-context'
 
+type OnboardingT = {
+  completion?: {
+    title?: string
+    videoReady?: string
+    imageReady?: string
+    startButton?: string
+    navigating?: string
+  }
+  steps?: {
+    product?: string
+    avatar?: string
+    complete?: string
+  }
+}
+
 export function CompletionStep() {
   const router = useRouter()
   const { t } = useLanguage()
+  const onboardingT = (t.onboarding as OnboardingT | undefined)
   const {
     targetType,
     videoAdType,
@@ -51,12 +67,29 @@ export function CompletionStep() {
     return types[imageAdType]?.title || imageAdType
   }
 
-  // 대상 타입 텍스트
-  const videoTypeText = videoAdType === 'productDescription' ? '제품 설명 영상' : '제품 광고 영상'
+  // 영상 광고 유형 번역 가져오기
+  const getVideoTypeTitle = () => {
+    const types = t.videoAdTypes as unknown as Record<string, { title: string }>
+    return videoAdType === 'productDescription'
+      ? types?.productDescription?.title || 'Product Description Video'
+      : types?.productAd?.title || 'Product Ad Video'
+  }
+
+  const videoTypeText = getVideoTypeTitle()
   const imageTypeText = getImageTypeTitle()
 
   // productOnly 타입은 아바타가 필요 없음
   const showAvatarSection = imageAdType !== 'productOnly'
+
+  // 준비 완료 메시지
+  const getReadyMessage = () => {
+    if (targetType === 'video') {
+      const template = onboardingT?.completion?.videoReady || 'Ready to create {{type}}'
+      return template.replace('{{type}}', videoTypeText)
+    }
+    const template = onboardingT?.completion?.imageReady || 'Ready to create {{type}} image'
+    return template.replace('{{type}}', imageTypeText)
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[400px] py-8">
@@ -69,7 +102,7 @@ export function CompletionStep() {
         <div
           className="relative w-20 h-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30"
           role="img"
-          aria-label="완료"
+          aria-label="Complete"
         >
           <Check className="w-10 h-10 text-white" strokeWidth={3} aria-hidden="true" />
         </div>
@@ -78,13 +111,10 @@ export function CompletionStep() {
       {/* 완료 메시지 */}
       <div className="text-center mt-6 animate-[fadeIn_0.5s_ease-out_0.2s_backwards]">
         <h3 className="text-2xl font-bold text-foreground tracking-tight">
-          준비 완료!
+          {onboardingT?.completion?.title || 'Ready!'}
         </h3>
         <p className="text-muted-foreground mt-2">
-          {targetType === 'video'
-            ? `${videoTypeText}을(를) 만들 준비가 되었습니다`
-            : `${imageTypeText} 이미지를 만들 준비가 되었습니다`
-          }
+          {getReadyMessage()}
         </p>
       </div>
 
@@ -108,9 +138,11 @@ export function CompletionStep() {
                 )}
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">제품</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  {onboardingT?.steps?.product || 'Product'}
+                </p>
                 <p className="text-sm font-semibold text-foreground truncate max-w-[100px]">
-                  {selectedProduct?.name || '없음'}
+                  {selectedProduct?.name || 'None'}
                 </p>
               </div>
             </div>
@@ -138,11 +170,13 @@ export function CompletionStep() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">아바타</p>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      {onboardingT?.steps?.avatar || 'Avatar'}
+                    </p>
                     <p className="text-sm font-semibold text-foreground truncate max-w-[100px]">
                       {selectedAvatarInfo?.type === 'ai-generated'
-                        ? 'AI 자동'
-                        : selectedAvatarInfo?.displayName || '없음'}
+                        ? 'AI Auto'
+                        : selectedAvatarInfo?.displayName || 'None'}
                     </p>
                   </div>
                 </div>
@@ -160,7 +194,9 @@ export function CompletionStep() {
                 )}
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">유형</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  {t.common?.type || 'Type'}
+                </p>
                 <p className="text-sm font-semibold text-foreground truncate max-w-[100px]">
                   {targetType === 'video' ? videoTypeText : imageTypeText}
                 </p>
@@ -180,11 +216,11 @@ export function CompletionStep() {
           {isNavigating ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
-              <span>이동 중...</span>
+              <span>{onboardingT?.completion?.navigating || 'Navigating...'}</span>
             </>
           ) : (
             <>
-              <span>광고 만들기 시작</span>
+              <span>{onboardingT?.completion?.startButton || 'Start Creating Ad'}</span>
               <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
             </>
           )}

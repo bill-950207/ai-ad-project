@@ -11,12 +11,19 @@
 import { useMemo } from 'react'
 import { Check, Package, User, Sparkles } from 'lucide-react'
 import { useOnboarding, OnboardingStep } from './onboarding-context'
+import { useLanguage } from '@/contexts/language-context'
 
-// 전체 메인 단계 정의
+type OnboardingStepsT = {
+  product?: string
+  avatar?: string
+  complete?: string
+}
+
+// All main steps definition (labels will be replaced with translations)
 const ALL_MAIN_STEPS = [
-  { key: 'product', label: '제품', icon: Package },
-  { key: 'avatar', label: '아바타', icon: User },
-  { key: 'complete', label: '완료', icon: Sparkles },
+  { key: 'product', labelKey: 'product', icon: Package },
+  { key: 'avatar', labelKey: 'avatar', icon: User },
+  { key: 'complete', labelKey: 'complete', icon: Sparkles },
 ] as const
 
 type MainStep = typeof ALL_MAIN_STEPS[number]['key']
@@ -40,8 +47,17 @@ function getMainStep(step: OnboardingStep): MainStep {
   }
 }
 
+// Default labels for fallback
+const DEFAULT_LABELS: Record<string, string> = {
+  product: 'Product',
+  avatar: 'Avatar',
+  complete: 'Complete',
+}
+
 export function OnboardingStepIndicator() {
   const { step, imageAdType } = useOnboarding()
+  const { t } = useLanguage()
+  const stepsT = (t.onboarding as { steps?: OnboardingStepsT } | undefined)?.steps
 
   // productOnly 타입은 아바타 단계 제외
   const mainSteps = useMemo(() => {
@@ -54,6 +70,11 @@ export function OnboardingStepIndicator() {
   const currentMainStep = getMainStep(step)
   const currentIndex = mainSteps.findIndex(s => s.key === currentMainStep)
 
+  // Get translated label
+  const getLabel = (labelKey: string): string => {
+    return (stepsT as Record<string, string> | undefined)?.[labelKey] || DEFAULT_LABELS[labelKey] || labelKey
+  }
+
   return (
     <div className="flex items-center justify-center">
       {mainSteps.map((mainStep, index) => {
@@ -61,6 +82,7 @@ export function OnboardingStepIndicator() {
         const isCurrent = index === currentIndex
         const isPending = index > currentIndex
         const Icon = mainStep.icon
+        const label = getLabel(mainStep.labelKey)
 
         return (
           <div key={mainStep.key} className="flex items-start">
@@ -84,7 +106,7 @@ export function OnboardingStepIndicator() {
                   }
                 `}
                 role="img"
-                aria-label={`${mainStep.label} ${isCompleted ? '완료' : isCurrent ? '진행 중' : '대기'}`}
+                aria-label={`${label} ${isCompleted ? 'completed' : isCurrent ? 'in progress' : 'pending'}`}
               >
                 {/* 현재 단계 펄스 효과 */}
                 {isCurrent && (
@@ -105,7 +127,7 @@ export function OnboardingStepIndicator() {
                   ${isPending ? 'text-muted-foreground/60' : ''}
                 `}
               >
-                {mainStep.label}
+                {label}
               </span>
             </div>
 
