@@ -11,9 +11,7 @@ import {
   Download,
   RefreshCw,
   AlertCircle,
-  CheckCircle2,
   Sparkles,
-  Clapperboard,
   Check,
   MessageSquarePlus,
   X,
@@ -41,7 +39,7 @@ const FREE_USER_LIMITS = {
   maxResolution: '540p' as VideoResolution,
 }
 
-// Vidu Q2 해상도 옵션 (중앙 상수 사용)
+// Vidu Q3 해상도 옵션 (중앙 상수 사용)
 const RESOLUTION_OPTIONS: { value: VideoResolution; label: string; desc: string; creditsPerSecond: number }[] = [
   { value: '540p', label: 'SD (540p)', desc: '빠른 생성', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['540p'] },
   { value: '720p', label: 'HD (720p)', desc: '표준 화질', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['720p'] },
@@ -231,13 +229,6 @@ function VideoRegenerateModal({
       </div>
     </div>
   )
-}
-
-interface VideoStatus {
-  requestId: string
-  status: 'generating' | 'completed' | 'failed'
-  resultUrl?: string
-  errorMessage?: string
 }
 
 interface SceneVideoStatus {
@@ -477,21 +468,16 @@ export function WizardStep5() {
     selectedProduct,
     scenarioInfo,
     aspectRatio,
-    duration,
     sceneDurations,
     updateSceneDuration,
     videoResolution,
     setVideoResolution,
     sceneCount,
-    multiShot,
-    videoCount,
-    videoModel,
     firstSceneOptions,
     selectedSceneIndex,
     sceneKeyframes,
     sceneVideoSegments,
     setSceneVideoSegments,
-    updateSceneVideoSegment,
     reorderSceneVideoSegments,
     finalVideoUrl,
     setFinalVideoUrl,
@@ -499,11 +485,6 @@ export function WizardStep5() {
     setIsGeneratingVideo,
     generationProgress,
     setGenerationProgress,
-    videoRequestIds,
-    setVideoRequestIds,
-    resultVideoUrls,
-    setResultVideoUrls,
-    addResultVideoUrl,
     goToPrevStep,
     saveDraft,
   } = useProductAdWizard()
@@ -515,9 +496,7 @@ export function WizardStep5() {
   const [error, setError] = useState<string | null>(null)
   const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false)
   const [statusMessage, setStatusMessage] = useState<string>('')
-  const [videoStatuses, setVideoStatuses] = useState<VideoStatus[]>([])
   const [sceneVideoStatuses, setSceneVideoStatuses] = useState<SceneVideoStatus[]>([])
-  const [selectedVideoIndex, setSelectedVideoIndex] = useState(0)
   const [isMergingVideos, setIsMergingVideos] = useState(false)
   const [regeneratingSceneIndex, setRegeneratingSceneIndex] = useState<number | null>(null)
   const [modalSceneInfo, setModalSceneInfo] = useState<{ sceneIndex: number; originalSceneIndex: number } | null>(null)
@@ -527,15 +506,12 @@ export function WizardStep5() {
   const [sceneVersions, setSceneVersions] = useState<Record<number, SceneVersion[]>>({})
   const [isLoadingVersions, setIsLoadingVersions] = useState<Record<number, boolean>>({})
   const [isSwitchingVersion, setIsSwitchingVersion] = useState<number | null>(null)
-  const pollingRef = useRef<NodeJS.Timeout | null>(null)
   const transitionPollingRef = useRef<NodeJS.Timeout | null>(null)
   const progressTimerRef = useRef<NodeJS.Timeout | null>(null)
   const progressStartTimeRef = useRef<number>(0)
   const progressTotalDurationRef = useRef<number>(0)
-  const isPollingActiveRef = useRef(false)
   const isTransitionPollingActiveRef = useRef(false)
-  const hasAttemptedMultiSceneResumeRef = useRef(false)  // 멀티씬 폴링 재개 시도 여부
-  const videoRefs = useRef<(HTMLVideoElement | null)[]>([])
+  const hasAttemptedMultiSceneResumeRef = useRef(false)  // 폴링 재개 시도 여부
 
   // DnD 센서 설정
   const sensors = useSensors(
@@ -603,14 +579,11 @@ export function WizardStep5() {
     return option.creditsPerSecond * totalDuration
   })()
 
-  // 멀티씬 모드 확인 (Kling O1 또는 Vidu Q2)
-  const isMultiSceneMode = videoModel === 'kling-o1' || videoModel === 'vidu-q2'
+  // Vidu Q3 전용 모드 (항상 멀티씬 워크플로우 사용)
+  const isMultiSceneMode = true  // Vidu만 사용하므로 항상 true
 
   const selectedScene = selectedSceneIndex !== null ? firstSceneOptions[selectedSceneIndex] : null
-  const hasCompletedVideos = isMultiSceneMode
-    ? (finalVideoUrl !== null || sceneVideoStatuses.filter(s => s.status === 'completed').length > 0)
-    : resultVideoUrls.length > 0
-  const allVideosCompleted = videoStatuses.length > 0 && videoStatuses.every(v => v.status === 'completed' || v.status === 'failed')
+  const hasCompletedVideos = finalVideoUrl !== null || sceneVideoStatuses.filter(s => s.status === 'completed').length > 0
 
   // ============================================================
   // 씬 버전 관리 함수들
@@ -1118,201 +1091,6 @@ export function WizardStep5() {
 
   // 자동 합치기 비활성화 - 사용자가 "완료" 버튼을 누르면 합치기 시작
 
-  // ============================================================
-  // 일반 모드: 영상 생성
-  // ============================================================
-
-  // 영상 생성 시작
-  const startVideoGeneration = async () => {
-    if (!selectedScene?.imageUrl || !scenarioInfo || !selectedProduct) return
-
-    // 크레딧 체크
-    if (credits !== null && credits < estimatedCredits) {
-      setShowInsufficientCreditsModal(true)
-      return
-    }
-
-    setError(null)
-    setIsGeneratingVideo(true)
-    setGenerationProgress(0)
-    setStatusMessage('영상 생성을 준비하고 있습니다...')
-    setVideoStatuses([])
-    setVideoRequestIds([])
-    setResultVideoUrls([])
-
-    try {
-      const res = await fetch('/api/product-ad/generate-video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          draftId,
-          startFrameUrl: selectedScene.imageUrl,
-          productName: selectedProduct.name,
-          scenarioElements: scenarioInfo.elements,
-          aspectRatio,
-          duration,
-          multiShot,
-          videoCount,
-          videoModel,
-        }),
-      })
-
-      if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(errorData.error || '영상 생성 요청 실패')
-      }
-
-      const data = await res.json()
-      const requests: { requestId: string; prompt: string }[] = data.requests || [{ requestId: data.requestId, prompt: data.prompt }]
-
-      // 요청 ID들 저장
-      const requestIds = requests.map(r => r.requestId)
-      setVideoRequestIds(requestIds)
-
-      // 초기 상태 설정
-      const initialStatuses: VideoStatus[] = requestIds.map(id => ({
-        requestId: id,
-        status: 'generating',
-      }))
-      setVideoStatuses(initialStatuses)
-
-      // DB 업데이트
-      await saveDraft({
-        videoRequestId: requestIds[0],
-        status: 'GENERATING_VIDEO',
-      })
-
-      // 폴링 시작
-      startPolling(requestIds)
-    } catch (err) {
-      console.error('영상 생성 오류:', err)
-      setError(err instanceof Error ? err.message : '영상 생성에 실패했습니다.')
-      setIsGeneratingVideo(false)
-    }
-  }
-
-  // 상태 폴링
-  const startPolling = useCallback((requestIds: string[]) => {
-    // 이미 폴링 중이면 중복 시작 방지
-    if (isPollingActiveRef.current) {
-      return
-    }
-
-    if (pollingRef.current) {
-      clearInterval(pollingRef.current)
-    }
-
-    isPollingActiveRef.current = true
-    let progressValue = 5
-    // 완료된 URL을 폴링 루프 내에서 추적 (클로저 문제 해결)
-    const collectedUrls: string[] = []
-
-    const pollStatus = async () => {
-      let allCompleted = true
-      let completedCount = 0
-
-      for (const requestId of requestIds) {
-        try {
-          const res = await fetch(`/api/product-ad/status/${encodeURIComponent(requestId)}?type=video`)
-          if (!res.ok) {
-            allCompleted = false
-            continue
-          }
-
-          const data = await res.json()
-
-          if (data.status === 'IN_QUEUE') {
-            setStatusMessage(`대기열에서 처리를 기다리는 중... (${completedCount}/${requestIds.length})`)
-            allCompleted = false
-          } else if (data.status === 'IN_PROGRESS') {
-            setStatusMessage(`영상을 생성하고 있습니다... (${completedCount}/${requestIds.length})`)
-            allCompleted = false
-          } else if (data.status === 'COMPLETED' && data.resultUrl) {
-            completedCount++
-            setVideoStatuses(prev => prev.map(v =>
-              v.requestId === requestId
-                ? { ...v, status: 'completed', resultUrl: data.resultUrl }
-                : v
-            ))
-
-            // 완료된 URL 수집 및 결과 URL 추가 (중복 방지)
-            if (!collectedUrls.includes(data.resultUrl)) {
-              collectedUrls.push(data.resultUrl)
-              addResultVideoUrl(data.resultUrl)
-            }
-          } else if (data.status === 'FAILED') {
-            completedCount++
-            setVideoStatuses(prev => prev.map(v =>
-              v.requestId === requestId
-                ? { ...v, status: 'failed', errorMessage: data.errorMessage }
-                : v
-            ))
-          } else {
-            allCompleted = false
-          }
-        } catch {
-          allCompleted = false
-        }
-      }
-
-      progressValue = Math.min(5 + (completedCount / requestIds.length) * 95, 95)
-      setGenerationProgress(Math.round(progressValue))
-
-      if (allCompleted) {
-        if (pollingRef.current) {
-          clearInterval(pollingRef.current)
-          pollingRef.current = null
-        }
-        isPollingActiveRef.current = false
-
-        setGenerationProgress(100)
-        setIsGeneratingVideo(false)
-        setStatusMessage('영상 생성이 완료되었습니다!')
-
-        // DB 업데이트 (폴링 중 수집한 URL 사용)
-        if (collectedUrls.length > 0) {
-          await saveDraft({
-            videoUrl: collectedUrls[0],
-            status: 'COMPLETED',
-          })
-          // 크레딧 갱신
-          refreshCredits()
-        }
-      }
-    }
-
-    pollingRef.current = setInterval(pollStatus, 5000)
-    pollStatus()
-  }, [setGenerationProgress, setIsGeneratingVideo, setResultVideoUrls, saveDraft])
-
-  // 컴포넌트 언마운트 시 폴링 정리
-  useEffect(() => {
-    return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current)
-      }
-      isPollingActiveRef.current = false
-    }
-  }, [])
-
-  // 이미 생성 중인 영상이 있으면 폴링 재개 (최초 마운트 시에만)
-  useEffect(() => {
-    // 이미 폴링 중이면 무시
-    if (isPollingActiveRef.current) {
-      return
-    }
-
-    if (videoRequestIds.length > 0 && resultVideoUrls.length === 0 && !isGeneratingVideo) {
-      setIsGeneratingVideo(true)
-      const initialStatuses: VideoStatus[] = videoRequestIds.map(id => ({
-        requestId: id,
-        status: 'generating',
-      }))
-      setVideoStatuses(initialStatuses)
-      startPolling(videoRequestIds)
-    }
-  }, [videoRequestIds, resultVideoUrls.length, isGeneratingVideo, setIsGeneratingVideo, startPolling])
-
   // 멀티씬 모드: context에서 sceneVideoSegments 복원하여 폴링 재개
   // sceneVideoSegments가 비동기로 로드되므로 의존성 배열에 포함
   useEffect(() => {
@@ -1383,23 +1161,7 @@ export function WizardStep5() {
     }
   }
 
-  // 전체 다운로드
-  const handleDownloadAll = async () => {
-    for (let i = 0; i < resultVideoUrls.length; i++) {
-      await handleDownload(resultVideoUrls[i], i)
-    }
-  }
-
-  // 영상 재생성
-  const handleRegenerate = () => {
-    setResultVideoUrls([])
-    setVideoRequestIds([])
-    setVideoStatuses([])
-    setError(null)
-    startVideoGeneration()
-  }
-
-  // Kling O1 모드에서 완료된 씬 영상 URL들
+  // 완료된 씬 영상 URL들
   const completedSceneVideoUrls = sceneVideoStatuses
     .filter(s => s.status === 'completed' && s.videoUrl)
     .sort((a, b) => a.sceneIndex - b.sceneIndex)
@@ -1414,12 +1176,12 @@ export function WizardStep5() {
   }
 
   // 완료 후 상세 페이지로 이동
-  // 멀티씬 모드에서 영상이 합쳐지지 않았다면 먼저 합친 후 이동
+  // 영상이 합쳐지지 않았다면 먼저 합친 후 이동
   const handleComplete = async () => {
     if (!draftId) return
 
-    // 멀티씬 모드에서 합쳐진 영상이 없고, 완료된 씬 영상이 2개 이상이면 먼저 합치기
-    if (isMultiSceneMode && !finalVideoUrl && completedSceneVideoUrls.length >= 2) {
+    // 합쳐진 영상이 없고, 완료된 씬 영상이 2개 이상이면 먼저 합치기
+    if (!finalVideoUrl && completedSceneVideoUrls.length >= 2) {
       setError(null)
       setIsMergingVideos(true)
       setStatusMessage('영상을 합치는 중...')
@@ -1450,16 +1212,16 @@ export function WizardStep5() {
         // 크레딧 갱신
         refreshCredits()
 
-        // 상세 페이지로 이동
-        router.push(`/dashboard/video-ad/${draftId}`)
+        // 상세 페이지로 이동 (replace로 히스토리 대체하여 뒤로가기 시 위저드로 돌아가지 않도록)
+        router.replace(`/dashboard/video-ad/${draftId}`)
       } catch (err) {
         console.error('영상 합치기 오류:', err)
         setError(err instanceof Error ? err.message : '영상 합치기에 실패했습니다.')
         setIsMergingVideos(false)
       }
     } else {
-      // 이미 합쳐졌거나 일반 모드면 바로 이동
-      router.push(`/dashboard/video-ad/${draftId}`)
+      // 이미 합쳐졌거나 씬이 1개면 바로 이동 (replace로 히스토리 대체)
+      router.replace(`/dashboard/video-ad/${draftId}`)
     }
   }
 
@@ -1471,23 +1233,17 @@ export function WizardStep5() {
           {hasCompletedVideos ? '영상 생성 완료' : '광고 영상 생성'}
         </h2>
         <p className="text-muted-foreground mt-2">
-          {isMultiSceneMode
-            ? (hasCompletedVideos
-                ? `${completedSceneVideoUrls.length}개의 씬 영상이 완성되었습니다`
-                : `${sceneKeyframes.length}개 씬별 영상을 생성합니다`)
-            : (hasCompletedVideos
-                ? `${resultVideoUrls.length}개의 제품 광고 영상이 완성되었습니다`
-                : '선택한 첫 씬으로 광고 영상을 생성합니다')
-          }
+          {hasCompletedVideos
+            ? `${completedSceneVideoUrls.length}개의 씬 영상이 완성되었습니다`
+            : `${sceneKeyframes.length}개 씬별 영상을 생성합니다`}
         </p>
       </div>
 
       {/* 결과 영상 */}
       {hasCompletedVideos ? (
         <div className="space-y-4">
-          {/* Kling O1 모드: 씬 전환 영상 목록 */}
-          {isMultiSceneMode ? (
-            <div className="space-y-4">
+          {/* 씬 전환 영상 목록 */}
+          <div className="space-y-4">
               {/* 합쳐진 최종 영상이 있으면 표시 */}
               {finalVideoUrl ? (
                 <>
@@ -1617,176 +1373,10 @@ export function WizardStep5() {
                 </>
               )}
             </div>
-          ) : (
-            /* 일반 모드: 영상 목록 */
-            videoStatuses.length > 1 ? (
-              <div className="space-y-4">
-                {/* 선택된 영상 큰 플레이어 */}
-                <div className="relative h-80 bg-black rounded-xl overflow-hidden flex items-center justify-center">
-                  {resultVideoUrls[selectedVideoIndex] ? (
-                    <video
-                      ref={el => { videoRefs.current[selectedVideoIndex] = el }}
-                      src={resultVideoUrls[selectedVideoIndex]}
-                      controls
-                      className="max-w-full max-h-full"
-                      poster={selectedScene?.imageUrl}
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center">
-                      <Loader2 className="w-10 h-10 animate-spin text-primary mb-3" />
-                      <span className="text-sm text-muted-foreground">영상을 선택해 주세요</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 영상 썸네일 목록 (완료된 영상 + 로딩 중인 영상) */}
-                <div className="flex justify-center w-full">
-                <div className={`grid gap-4 ${
-                  videoStatuses.length === 1 ? 'grid-cols-1 max-w-md' :
-                  videoStatuses.length === 2 ? 'grid-cols-2 max-w-2xl' :
-                  videoStatuses.length === 3 ? 'grid-cols-3 max-w-3xl' :
-                  videoStatuses.length === 4 ? 'grid-cols-2 max-w-2xl' :
-                  videoStatuses.length <= 6 ? 'grid-cols-3 max-w-3xl' :
-                  'grid-cols-4 max-w-4xl'
-                } justify-items-center w-full`}>
-                  {videoStatuses.map((videoStatus, index) => {
-                    const isCompleted = videoStatus.status === 'completed' && videoStatus.resultUrl
-                    const isGenerating = videoStatus.status === 'generating'
-                    const isFailed = videoStatus.status === 'failed'
-                    const completedVideos = videoStatuses.filter(v => v.status === 'completed' && v.resultUrl)
-                    const completedIndex = completedVideos.findIndex(v => v.requestId === videoStatus.requestId)
-
-                    return (
-                      <button
-                        key={videoStatus.requestId}
-                        onClick={() => isCompleted && completedIndex >= 0 && setSelectedVideoIndex(completedIndex)}
-                        disabled={!isCompleted}
-                        className={`relative w-full ${getAspectRatioClass(aspectRatio)} bg-black rounded-lg overflow-hidden border-2 transition-all ${
-                          isCompleted && completedIndex === selectedVideoIndex
-                            ? 'border-primary ring-2 ring-primary/20'
-                            : isCompleted
-                              ? 'border-border hover:border-primary/50'
-                              : 'border-border cursor-not-allowed'
-                        }`}
-                      >
-                        {isCompleted ? (
-                          <video
-                            src={videoStatus.resultUrl}
-                            className="absolute inset-0 w-full h-full object-contain"
-                            muted
-                          />
-                        ) : isGenerating ? (
-                          <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-secondary/50">
-                            <Loader2 className="w-6 h-6 animate-spin text-primary mb-2" />
-                            <span className="text-xs text-muted-foreground">생성 중...</span>
-                          </div>
-                        ) : isFailed ? (
-                          <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-destructive/10">
-                            <AlertCircle className="w-6 h-6 text-destructive mb-2" />
-                            <span className="text-xs text-destructive">실패</span>
-                          </div>
-                        ) : null}
-                        <div className="absolute bottom-1 left-1 px-2 py-0.5 bg-black/70 rounded text-xs text-white">
-                          영상 {index + 1}
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-                </div>
-
-                {/* 액션 버튼 */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleDownload(resultVideoUrls[selectedVideoIndex], selectedVideoIndex)}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
-                  >
-                    <Download className="w-5 h-5" />
-                    선택 영상 다운로드
-                  </button>
-                  <button
-                    onClick={handleDownloadAll}
-                    className="flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
-                  >
-                    <Download className="w-5 h-5" />
-                    전체 ({resultVideoUrls.length})
-                  </button>
-                  <button
-                    onClick={handleRegenerate}
-                    className="flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
-                  >
-                    <RefreshCw className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={handleComplete}
-                    className="flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
-                  >
-                    <Check className="w-5 h-5" />
-                    완료
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* 단일 영상 플레이어 또는 로딩 */}
-                <div className="relative h-80 bg-black rounded-xl overflow-hidden flex items-center justify-center">
-                  {videoStatuses.length === 1 && videoStatuses[0].status === 'generating' ? (
-                    <div className="flex flex-col items-center justify-center">
-                      <Loader2 className="w-10 h-10 animate-spin text-primary mb-3" />
-                      <span className="text-sm text-muted-foreground">영상 생성 중...</span>
-                    </div>
-                  ) : videoStatuses.length === 1 && videoStatuses[0].status === 'failed' ? (
-                    <div className="flex flex-col items-center justify-center">
-                      <AlertCircle className="w-10 h-10 text-destructive mb-3" />
-                      <span className="text-sm text-destructive">영상 생성 실패</span>
-                    </div>
-                  ) : resultVideoUrls[0] ? (
-                    <video
-                      ref={el => { videoRefs.current[0] = el }}
-                      src={resultVideoUrls[0]}
-                      controls
-                      className="max-w-full max-h-full"
-                      poster={selectedScene?.imageUrl}
-                    />
-                  ) : null}
-                </div>
-
-                {/* 액션 버튼 */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => resultVideoUrls[0] && handleDownload(resultVideoUrls[0], 0)}
-                    disabled={!resultVideoUrls[0]}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-                  >
-                    <Download className="w-5 h-5" />
-                    영상 다운로드
-                  </button>
-                  <button
-                    onClick={handleRegenerate}
-                    className="flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
-                  >
-                    <RefreshCw className="w-5 h-5" />
-                    다시 생성
-                  </button>
-                  <button
-                    onClick={handleComplete}
-                    disabled={!resultVideoUrls[0]}
-                    className="flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
-                  >
-                    <Check className="w-5 h-5" />
-                    완료
-                  </button>
-                </div>
-              </div>
-            )
-          )}
         </div>
       ) : (
-        <>
-          {/* Kling O1 모드: 통합된 영상 생성 UI */}
-          {isMultiSceneMode ? (
-            <div className="space-y-6">
-              {/* 키프레임 그리드 (상단) */}
+        <div className="space-y-6">
+          {/* 키프레임 그리드 (상단) */}
               <div className="flex justify-center w-full">
                 <div className={`grid gap-4 ${
                   sceneKeyframes.length === 1 ? 'grid-cols-1 max-w-sm' :
@@ -1831,18 +1421,9 @@ export function WizardStep5() {
                               <Loader2 className="w-8 h-8 animate-spin text-white" />
                             </div>
                           ) : isSceneCompleted ? (
-                            <button
-                              onClick={() => {
-                                const completedVideos = sceneVideoStatuses
-                                  .filter(s => s.status === 'completed' && s.videoUrl)
-                                  .sort((a, b) => a.sceneIndex - b.sceneIndex)
-                                const idx = completedVideos.findIndex(v => v.sceneIndex === kf.sceneIndex)
-                                if (idx >= 0) setSelectedVideoIndex(idx)
-                              }}
-                              className="absolute inset-0 bg-black/30 flex items-center justify-center hover:bg-black/40 transition-colors group"
-                            >
-                              <Play className="w-8 h-8 text-white group-hover:scale-110 transition-transform" />
-                            </button>
+                            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                              <Play className="w-8 h-8 text-white" />
+                            </div>
                           ) : isSceneFailed ? (
                             <div className="absolute inset-0 bg-red-500/30 flex items-center justify-center">
                               <AlertCircle className="w-6 h-6 text-white" />
@@ -1958,177 +1539,14 @@ export function WizardStep5() {
                 </div>
               )}
 
-              {/* 에러 메시지 */}
-              {error && (
-                <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                  <p className="text-sm text-red-600">{error}</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            /* 일반 모드: 선택된 첫 씬 미리보기 */
-            selectedScene?.imageUrl && (
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium text-foreground">선택된 첫 씬</h3>
-                <div className="relative h-64 rounded-xl overflow-hidden bg-secondary/30">
-                  <Image
-                    src={selectedScene.imageUrl}
-                    alt="선택된 첫 씬"
-                    fill
-                    className="object-contain"
-                  />
-                </div>
-              </div>
-            )
-          )}
-
-          {/* 일반 모드 전용: 시나리오 요약 */}
-          {!isMultiSceneMode && scenarioInfo && (
-            <div className="p-4 bg-secondary/30 rounded-xl space-y-2">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">시나리오 요약</span>
-              </div>
-              <div className="text-sm">
-                {scenarioInfo.elements?.mood && (
-                  <div>
-                    <span className="text-muted-foreground">분위기: </span>
-                    <span className="text-foreground">{scenarioInfo.elements.mood}</span>
-                  </div>
-                )}
-              </div>
+          {/* 에러 메시지 */}
+          {error && (
+            <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+              <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
-
-          {/* 일반 모드 전용: 영상 설정 정보 */}
-          {!isMultiSceneMode && (
-            <div className="flex flex-wrap gap-3 justify-center text-sm">
-              <div className="px-3 py-1.5 bg-secondary/50 rounded-lg">
-                <span className="text-muted-foreground">비율: </span>
-                <span className="text-foreground font-medium">{aspectRatio}</span>
-              </div>
-              <div className="px-3 py-1.5 bg-secondary/50 rounded-lg">
-                <span className="text-muted-foreground">길이: </span>
-                <span className="text-foreground font-medium">{duration}초</span>
-              </div>
-              <div className="px-3 py-1.5 bg-primary/10 rounded-lg">
-                <span className="text-muted-foreground">모델: </span>
-                <span className="text-primary font-medium">
-                  {videoModel === 'seedance' ? 'Seedance' : videoModel === 'kling2.6' ? 'Kling 2.6' : 'Wan 2.6'}
-                </span>
-              </div>
-              {multiShot && (
-                <div className="px-3 py-1.5 bg-primary/10 rounded-lg flex items-center gap-1.5">
-                  <Clapperboard className="w-3.5 h-3.5 text-primary" />
-                  <span className="text-primary font-medium">멀티샷</span>
-                </div>
-              )}
-              <div className="px-3 py-1.5 bg-secondary/50 rounded-lg">
-                <span className="text-muted-foreground">생성 개수: </span>
-                <span className="text-foreground font-medium">{videoCount}개</span>
-              </div>
-            </div>
-          )}
-
-          {/* 일반 모드 전용: 생성 중 상태 또는 생성 버튼 */}
-          {!isMultiSceneMode && (
-            <>
-              {isGeneratingVideo ? (
-                <div className="space-y-4">
-                  {/* 프로그레스 바 */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{statusMessage}</span>
-                      <span className="text-foreground font-medium">{generationProgress}%</span>
-                    </div>
-                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full transition-all duration-500"
-                        style={{ width: `${generationProgress}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* 개별 영상 상태 */}
-                  {videoStatuses.length > 1 && (
-                    <div className={`grid gap-3 ${
-                      videoStatuses.length <= 3 ? 'grid-cols-1' :
-                      videoStatuses.length === 4 ? 'grid-cols-2' :
-                      videoStatuses.length <= 6 ? 'grid-cols-3' :
-                      'grid-cols-4'
-                    }`}>
-                      {videoStatuses.map((vs, index) => (
-                        <div
-                          key={vs.requestId}
-                          className={`p-3 rounded-lg border ${
-                            vs.status === 'completed'
-                              ? 'bg-green-500/10 border-green-500/30'
-                              : vs.status === 'failed'
-                              ? 'bg-red-500/10 border-red-500/30'
-                              : 'bg-secondary/30 border-border'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            {vs.status === 'generating' && (
-                              <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                            )}
-                            {vs.status === 'completed' && (
-                              <CheckCircle2 className="w-4 h-4 text-green-500" />
-                            )}
-                            {vs.status === 'failed' && (
-                              <AlertCircle className="w-4 h-4 text-red-500" />
-                            )}
-                            <span className="text-sm font-medium">영상 {index + 1}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-center gap-3 py-8">
-                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                    <div className="text-center">
-                      <p className="font-medium text-foreground">
-                        {videoCount > 1 ? `${videoCount}개의 영상` : '영상'} 생성 중...
-                      </p>
-                      <p className="text-sm text-muted-foreground">약 1~3분 소요됩니다</p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                /* 생성 버튼 */
-                <button
-                  onClick={startVideoGeneration}
-                  disabled={!selectedScene?.imageUrl}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-                >
-                  <Video className="w-5 h-5" />
-                  {videoCount > 1 ? `광고 영상 ${videoCount}개 생성하기` : '광고 영상 생성하기'}
-                </button>
-              )}
-
-              {/* 에러 메시지 */}
-              {error && (
-                <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                  <p className="text-sm text-red-600">{error}</p>
-                </div>
-              )}
-
-              {/* 이전 버튼 */}
-              {!isGeneratingVideo && !isMergingVideos && regeneratingSceneIndex === null && (
-                <button
-                  onClick={goToPrevStep}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  이전 단계로
-                </button>
-              )}
-            </>
-          )}
-        </>
+        </div>
       )}
 
       {/* 영상 재생성 모달 */}

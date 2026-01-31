@@ -19,7 +19,7 @@ export interface AdProduct {
 export type WizardStep = 1 | 2 | 3 | 4 | 5
 export type ScenarioMethod = 'direct' | 'ai-auto' | 'reference'
 export type AspectRatio = '16:9' | '9:16' | '1:1' | null
-export type VideoModel = 'seedance' | 'kling2.6' | 'wan2.6' | 'kling-o1' | 'vidu-q2' | 'vidu'
+export type VideoModel = 'vidu'
 export type VideoResolution = '540p' | '720p' | '1080p'
 
 // 광고 요소 옵션들 (전체 영상용 - 레거시)
