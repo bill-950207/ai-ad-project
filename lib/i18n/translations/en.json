@@ -181,7 +181,90 @@
     "keepContent": "Keep Your Content Forever",
     "creditsRollOver": "Credits Roll Over",
     "ctaText": "Start free on any plan. Create your first ad today!",
-    "startFree": "Start Free"
+    "startFree": "Start Free",
+    "plans": {
+      "free": {
+        "description": "Perfect to get started",
+        "valueHighlight": "",
+        "features": [
+          "AI Avatar Generation",
+          "AI Background Music",
+          "Auto Background Removal",
+          "1 Image at a Time",
+          "Shortest Video Only",
+          "Watermark Included"
+        ],
+        "limits": {
+          "avatars": "Up to 3",
+          "music": "Up to 5",
+          "products": "Up to 3",
+          "credits": "15 Credits (One-time)",
+          "imageEstimate": "~7 Ad Images",
+          "videoEstimate": ""
+        }
+      },
+      "starter": {
+        "description": "For individual creators",
+        "valueHighlight": "4x More Affordable",
+        "features": [
+          "All Free Features",
+          "No Watermark",
+          "HD Upscaling",
+          "Up to 5 Images at Once",
+          "Custom Video Length",
+          "Priority Queue"
+        ],
+        "limits": {
+          "avatars": "Up to 9",
+          "music": "Up to 15",
+          "products": "Up to 9",
+          "credits": "120 Credits/mo",
+          "imageEstimate": "~60 Ad Images",
+          "videoEstimate": "~12 Ad Videos"
+        }
+      },
+      "pro": {
+        "description": "For professionals",
+        "valueHighlight": "$0.14 per Image",
+        "features": [
+          "All Starter Features",
+          "Top Priority Processing",
+          "High Quality Images",
+          "3 Videos at Once",
+          "Pro Templates",
+          "Premium Support"
+        ],
+        "limits": {
+          "avatars": "Up to 30",
+          "music": "Up to 50",
+          "products": "Up to 30",
+          "credits": "420 Credits/mo",
+          "imageEstimate": "~210 Ad Images",
+          "videoEstimate": "~42 Ad Videos"
+        }
+      },
+      "business": {
+        "description": "For teams and enterprises",
+        "valueHighlight": "$0.12 per Image",
+        "features": [
+          "All Pro Features",
+          "Unlimited Content",
+          "Dedicated Support",
+          "API Access",
+          "Team Collaboration",
+          "Custom Branding",
+          "Priority Updates"
+        ],
+        "limits": {
+          "avatars": "Unlimited",
+          "music": "Unlimited",
+          "products": "Unlimited",
+          "credits": "1,600 Credits/mo",
+          "imageEstimate": "~800 Ad Images",
+          "videoEstimate": "~160 Ad Videos"
+        }
+      }
+    }
   },
   "showcase": {
     "title": "Gallery",
@@ -1182,6 +1265,74 @@
     "deleteAccountDesc": "Permanently delete your account and all data",
     "delete": "Delete",
     "moreSettingsComingSoon": "More settings coming soon"
+  },
+  "onboarding": {
+    "settingUp": "Setting up",
+    "step1Title": "Nice to meet you! 👋",
+    "step1Subtitle": "First, tell us your name.",
+    "nameLabel": "Name *",
+    "namePlaceholder": "John Doe",
+    "companyLabel": "Company (optional)",
+    "companyPlaceholder": "Company or brand name",
+    "step2Title": "What's your role, {{name}}?",
+    "step2Subtitle": "Help us serve you better.",
+    "step3Title": "What industry are you in?",
+    "step3Subtitle": "For personalized recommendations.",
+    "step4Title": "Almost there! 🎉",
+    "step4Subtitle": "Just a few more questions. (optional)",
+    "teamSizeLabel": "Team size",
+    "referralLabel": "How did you hear about AIAD?",
+    "previous": "Previous",
+    "next": "Next",
+    "start": "Get Started",
+    "onboardingFailed": "Failed to complete onboarding",
+    "errorOccurred": "An error occurred",
+    "decorTitle1": "Answer a few questions",
+    "decorTitle2": "Preparing your personalized experience",
+    "decorTitle3": "Almost done!",
+    "decorTitle4": "Ready to start!",
+    "decorSubtitle1": "Simple setup for a better service experience",
+    "decorSubtitle2": "We'll recommend features suited to your role",
+    "decorSubtitle3": "We'll prepare templates for your industry",
+    "decorSubtitle4": "5 free credits are waiting for you!",
+    "jobTitles": {
+      "ceo": "CEO/Founder",
+      "marketer": "Marketer",
+      "designer": "Designer",
+      "developer": "Developer",
+      "pm": "PM/Planner",
+      "freelancer": "Freelancer",
+      "student": "Student",
+      "other": "Other"
+    },
+    "industries": {
+      "ecommerce": "E-commerce/Online Shopping",
+      "beauty": "Beauty/Cosmetics",
+      "fashion": "Fashion/Apparel",
+      "food": "Food/F&B",
+      "tech": "IT/Tech",
+      "health": "Health/Healthcare",
+      "education": "Education",
+      "finance": "Finance/Fintech",
+      "agency": "Ad/Marketing Agency",
+      "other": "Other"
+    },
+    "teamSizes": {
+      "1": "1 (Individual)",
+      "2-10": "2-10",
+      "11-50": "11-50",
+      "51-200": "51-200",
+      "201+": "200+"
+    },
+    "referralSources": {
+      "search": "Search (Google, etc.)",
+      "sns": "SNS (Instagram, YouTube, etc.)",
+      "friend": "Friend referral",
+      "ad": "Online ad",
+      "blog": "Blog/Article",
+      "event": "Event/Seminar",
+      "other": "Other"
+    }
   },
   "auth": {
     "welcomeBack": "Welcome back",

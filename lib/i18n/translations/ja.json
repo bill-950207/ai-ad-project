@@ -181,7 +181,90 @@
     "keepContent": "コンテンツ永久保存",
     "creditsRollOver": "クレジット繰越",
     "ctaText": "すべてのプランで無料スタート。今すぐ最初の広告を作成！",
-    "startFree": "無料で始める"
+    "startFree": "無料で始める",
+    "plans": {
+      "free": {
+        "description": "始めるのに最適な無料プラン",
+        "valueHighlight": "",
+        "features": [
+          "AIアバター生成",
+          "AI BGM生成",
+          "自動背景除去",
+          "画像1枚ずつ生成",
+          "最短動画のみ",
+          "透かし付き"
+        ],
+        "limits": {
+          "avatars": "最大3個",
+          "music": "最大5個",
+          "products": "最大3個",
+          "credits": "15クレジット（1回）",
+          "imageEstimate": "～7枚の広告画像",
+          "videoEstimate": ""
+        }
+      },
+      "starter": {
+        "description": "個人クリエイター向けプラン",
+        "valueHighlight": "他社より4倍お得",
+        "features": [
+          "全Free機能含む",
+          "透かしなし",
+          "HD高画質アップスケール",
+          "画像最大5枚同時生成",
+          "動画長さ選択可能",
+          "優先生成キュー"
+        ],
+        "limits": {
+          "avatars": "最大9個",
+          "music": "最大15個",
+          "products": "最大9個",
+          "credits": "120クレジット/月",
+          "imageEstimate": "～60枚の広告画像",
+          "videoEstimate": "～12本の広告動画"
+        }
+      },
+      "pro": {
+        "description": "プロフェッショナル向けプラン",
+        "valueHighlight": "画像1枚$0.14",
+        "features": [
+          "全Starter機能含む",
+          "最優先生成処理",
+          "高品質画像生成",
+          "動画3本同時生成",
+          "プロ用テンプレート",
+          "プレミアムサポート"
+        ],
+        "limits": {
+          "avatars": "最大30個",
+          "music": "最大50個",
+          "products": "最大30個",
+          "credits": "420クレジット/月",
+          "imageEstimate": "～210枚の広告画像",
+          "videoEstimate": "～42本の広告動画"
+        }
+      },
+      "business": {
+        "description": "チームと企業向けプラン",
+        "valueHighlight": "画像1枚$0.12",
+        "features": [
+          "全Pro機能含む",
+          "無制限コンテンツ生成",
+          "専用サポート",
+          "APIアクセス",
+          "チームコラボ機能",
+          "カスタムブランディング",
+          "優先機能アップデート"
+        ],
+        "limits": {
+          "avatars": "無制限",
+          "music": "無制限",
+          "products": "無制限",
+          "credits": "1,600クレジット/月",
+          "imageEstimate": "～800枚の広告画像",
+          "videoEstimate": "～160本の広告動画"
+        }
+      }
+    }
   },
   "showcase": {
     "title": "制作事例",
@@ -1182,6 +1265,74 @@
     "deleteAccountDesc": "アカウントとすべてのデータを完全に削除します",
     "delete": "削除",
     "moreSettingsComingSoon": "その他の設定は近日追加予定です"
+  },
+  "onboarding": {
+    "settingUp": "設定中",
+    "step1Title": "はじめまして！👋",
+    "step1Subtitle": "まず、お名前を教えてください。",
+    "nameLabel": "お名前 *",
+    "namePlaceholder": "山田太郎",
+    "companyLabel": "会社名（任意）",
+    "companyPlaceholder": "会社またはブランド名",
+    "step2Title": "{{name}}さんの役割は？",
+    "step2Subtitle": "より良いサービスのためにお聞かせください。",
+    "step3Title": "どの業界でお仕事されていますか？",
+    "step3Subtitle": "パーソナライズされた推薦のため。",
+    "step4Title": "もう少しです！🎉",
+    "step4Subtitle": "最後にもう少しお聞かせください。（任意）",
+    "teamSizeLabel": "チーム規模",
+    "referralLabel": "AIADをどこで知りましたか？",
+    "previous": "戻る",
+    "next": "次へ",
+    "start": "始める",
+    "onboardingFailed": "オンボーディングの完了に失敗しました",
+    "errorOccurred": "エラーが発生しました",
+    "decorTitle1": "いくつかの質問にお答えください",
+    "decorTitle2": "パーソナライズされた体験を準備中",
+    "decorTitle3": "もうすぐ完了！",
+    "decorTitle4": "準備完了！",
+    "decorSubtitle1": "より良いサービス体験のための簡単な設定",
+    "decorSubtitle2": "役割に合った機能をご提案します",
+    "decorSubtitle3": "業種に合ったテンプレートを準備します",
+    "decorSubtitle4": "5つの無料クレジットがお待ちしています！",
+    "jobTitles": {
+      "ceo": "代表/CEO",
+      "marketer": "マーケター",
+      "designer": "デザイナー",
+      "developer": "開発者",
+      "pm": "PM/プランナー",
+      "freelancer": "フリーランス",
+      "student": "学生",
+      "other": "その他"
+    },
+    "industries": {
+      "ecommerce": "Eコマース/オンラインショップ",
+      "beauty": "ビューティー/化粧品",
+      "fashion": "ファッション/アパレル",
+      "food": "食品/F&B",
+      "tech": "IT/テック",
+      "health": "健康/ヘルスケア",
+      "education": "教育",
+      "finance": "金融/フィンテック",
+      "agency": "広告/マーケティング会社",
+      "other": "その他"
+    },
+    "teamSizes": {
+      "1": "1人（個人）",
+      "2-10": "2-10人",
+      "11-50": "11-50人",
+      "51-200": "51-200人",
+      "201+": "200人以上"
+    },
+    "referralSources": {
+      "search": "検索（Googleなど）",
+      "sns": "SNS（Instagram、YouTubeなど）",
+      "friend": "知人の紹介",
+      "ad": "オンライン広告",
+      "blog": "ブログ/記事",
+      "event": "イベント/セミナー",
+      "other": "その他"
+    }
   },
   "auth": {
     "welcomeBack": "おかえりなさい",
