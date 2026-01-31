@@ -290,39 +290,79 @@ Based on the product characteristics and storytelling needs, YOU decide the opti
 - Complex or premium products: 5-8 scenes
 Choose what best tells this product's story.
 
-=== SCENE-BY-SCENE STORYTELLING ===
-CRITICAL: Design each scene to flow naturally into the next while maintaining the overall mood.
-Think of it as a short film that tells a story about the product.
-Create a unique and creative narrative arc that best suits this specific product.
+=== TONE & STORY CONSISTENCY ===
+CRITICAL: Each scenario must tell a coherent mini-story with the product as the hero.
+
+1. DETERMINE OVERALL TONE first (based on product):
+   - Analyze product image: colors, materials, packaging → derive tone
+   - Premium/Luxury → Elegant, sophisticated, refined visuals
+   - Beauty/Skincare → Clean, soft, trustworthy atmosphere
+   - Tech/Gadgets → Modern, sleek, innovative feel
+   - Food/Beverage → Warm, appetizing, inviting mood
+
+2. STORY ARC structure:
+   - Scene 1: Introduction/Discovery (제품과의 첫 만남)
+   - Middle scenes: Exploration/Features (제품 탐색, 특징 부각)
+   - Final scene: Satisfaction/Result (만족감, 결과)
+
+3. SCENE CONTINUITY rules:
+   - Each scene must logically connect to the next
+   - Maintain consistent color temperature across all scenes
+   - Mood can evolve (e.g., curious → impressed → satisfied) but stay within the same tone family
+   - Avoid jarring transitions (e.g., don't go from calm indoor to extreme outdoor suddenly)
 
 === FOR EACH SCENE, PROVIDE ===
 1. background (배경/장소, 한국어): 제품 특성에 맞는 창의적이고 구체적인 장소 (자유 작성)
+   - 이전 씬과 자연스럽게 연결되는 장소 선택
 
 2. mood (분위기/톤, 한국어): 제품과 씬에 어울리는 구체적인 분위기 (자유 작성)
+   - 전체 톤을 유지하면서 씬별로 감정 변화 표현
 
 3. additionalPrompt (추가 지시사항, 한국어): 이 씬만의 특별한 연출/카메라 워크/비주얼 포인트 (자유 작성)
 
 4. movementAmplitude: "small" | "medium" | "large" | "auto"
+   - small: 미세한 움직임, 디테일 강조, 안정적 (클로즈업, 질감 표현)
+   - medium: 부드러운 움직임, 제품 탐색 (기본 권장)
+   - large: 역동적 움직임, 임팩트 (오프닝, 전환)
+   - auto: 씬 특성에 맞게 자동 결정
+
+   씬 위치별 권장:
+   - 오프닝: medium~large (주목 유도)
+   - 중간 씬: small~medium (디테일 집중)
+   - 마지막 씬: small (안정감, 마무리)
 
 5. imagePrompt (영어, 50-80 words): Seedream 이미지 생성용
    - Start with: "The ${productName} shown in the attached image"
    - End with: "soft professional lighting, photorealistic, 4K, commercial quality"
    - NO PEOPLE
-   - NO visible studio equipment, cameras, tripods, lighting rigs, softboxes, reflectors, or any production equipment
-   - Describe lighting as EFFECT only (e.g., "soft warm light from above"), NOT as visible equipment
+   - NO visible studio equipment in the scene
+   - Describe lighting as EFFECT only (e.g., "soft warm light from above"), NOT as equipment
+   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "lens", "shot on", "filmed", "recorded", "photographer"
+     (These words cause cameras/equipment to appear in the generated image!)
+   - Describe the FINAL SCENE only, never mention filming process or equipment
 
 6. videoPrompt (영어, 50-80 words): Vidu 영상 생성용
    - Start with: "The ${productName} shown in the attached image"
-   - Include motion with "slowly"
    - End with: "soft natural lighting, photorealistic, 4K"
    - NO PEOPLE
-   - NO visible studio equipment, cameras, tripods, lighting rigs, softboxes, reflectors, or any production equipment
-   - Describe lighting as EFFECT only, NOT as visible equipment
+   - NO visible studio equipment in the scene
+   - Describe lighting as EFFECT only, NOT as equipment
+   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "lens", "shot on", "filmed", "recorded", "photographer"
+     (These words cause cameras/equipment to appear in the generated video!)
+
+   모션 묘사 가이드라인 (카메라 언급 없이 결과만 묘사):
+   - 제품 움직임: "slowly rotating", "gently floating", "gradually revealing"
+   - 시점 변화: "moving closer to details", "pulling back to show full view"
+   - 분위기: "drifting through soft light", "emerging from shadows"
+   - 씬 특성에 맞게 선택: 오프닝(역동적) / 중간(탐색적) / 마지막(안정적)
 
 === VIDEO SETTINGS ===
 - aspectRatio: "16:9" (landscape), "9:16" (portrait/vertical), or "1:1" (square)
 - sceneCount: The number of scenes YOU decided (2-8)
-- sceneDurations: Array of durations matching your sceneCount (1-8 seconds each)
+- sceneDurations: Array of durations matching your sceneCount
+  - RECOMMENDED: 2-4 seconds per scene (optimal for engagement and visual rhythm)
+  - Range: 1-8 seconds each
+  - Vary durations for rhythm (avoid same duration consecutively)
 
 === OUTPUT FORMAT ===
 1. "elements": { "mood": "overall mood in ${outputLanguage}" }
@@ -373,34 +413,76 @@ ${referenceElements ? Object.entries(referenceElements).map(([key, value]) => `-
 Based on the product characteristics and reference style, YOU decide the optimal number of scenes (2-8).
 Choose what best tells this product's story while adapting the reference style.
 
+=== TONE & STORY CONSISTENCY ===
+CRITICAL: Adapt the reference video's tone while creating a coherent product story.
+
+1. EXTRACT TONE from reference video:
+   - Identify the reference's mood, pacing, and visual style
+   - Apply this tone consistently to your product scenario
+
+2. STORY ARC structure:
+   - Scene 1: Introduction/Discovery (제품과의 첫 만남)
+   - Middle scenes: Exploration/Features (제품 탐색, 특징 부각)
+   - Final scene: Satisfaction/Result (만족감, 결과)
+
+3. SCENE CONTINUITY rules:
+   - Each scene must logically connect to the next
+   - Maintain consistent color temperature across all scenes
+   - Mood can evolve but stay within the reference tone family
+   - Match the reference video's transition style
+
 === FOR EACH SCENE, PROVIDE ===
 1. background (배경/장소, 한국어): 참조 스타일을 적용하여 제품에 맞게 자유 작성
+   - 이전 씬과 자연스럽게 연결되는 장소 선택
 
 2. mood (분위기/톤, 한국어): 참조 영상의 분위기를 기반으로 제품에 맞게 자유 작성
+   - 전체 톤을 유지하면서 씬별로 감정 변화 표현
 
 3. additionalPrompt (추가 지시사항, 한국어): 참조 영상의 연출을 분석하여 적용 (자유 작성)
 
 4. movementAmplitude: "small" | "medium" | "large" | "auto"
+   - small: 미세한 움직임, 디테일 강조, 안정적 (클로즈업, 질감 표현)
+   - medium: 부드러운 움직임, 제품 탐색 (기본 권장)
+   - large: 역동적 움직임, 임팩트 (오프닝, 전환)
+   - auto: 씬 특성에 맞게 자동 결정
+
+   씬 위치별 권장:
+   - 오프닝: medium~large (주목 유도)
+   - 중간 씬: small~medium (디테일 집중)
+   - 마지막 씬: small (안정감, 마무리)
 
 5. imagePrompt (영어, 50-80 words): Seedream 이미지 생성용
    - Start with: "The ${productName} shown in the attached image"
    - End with: "soft professional lighting, photorealistic, 4K, commercial quality"
    - NO PEOPLE
-   - NO visible studio equipment, cameras, tripods, lighting rigs, softboxes, reflectors, or any production equipment
-   - Describe lighting as EFFECT only (e.g., "soft warm light from above"), NOT as visible equipment
+   - NO visible studio equipment in the scene
+   - Describe lighting as EFFECT only (e.g., "soft warm light from above"), NOT as equipment
+   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "lens", "shot on", "filmed", "recorded", "photographer"
+     (These words cause cameras/equipment to appear in the generated image!)
+   - Describe the FINAL SCENE only, never mention filming process or equipment
 
 6. videoPrompt (영어, 50-80 words): Vidu 영상 생성용
    - Start with: "The ${productName} shown in the attached image"
-   - Include motion with "slowly"
    - End with: "soft natural lighting, photorealistic, 4K"
    - NO PEOPLE
-   - NO visible studio equipment, cameras, tripods, lighting rigs, softboxes, reflectors, or any production equipment
-   - Describe lighting as EFFECT only, NOT as visible equipment
+   - NO visible studio equipment in the scene
+   - Describe lighting as EFFECT only, NOT as equipment
+   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "lens", "shot on", "filmed", "recorded", "photographer"
+     (These words cause cameras/equipment to appear in the generated video!)
+
+   모션 묘사 가이드라인 (카메라 언급 없이 결과만 묘사):
+   - 제품 움직임: "slowly rotating", "gently floating", "gradually revealing"
+   - 시점 변화: "moving closer to details", "pulling back to show full view"
+   - 분위기: "drifting through soft light", "emerging from shadows"
+   - 씬 특성에 맞게 선택: 오프닝(역동적) / 중간(탐색적) / 마지막(안정적)
 
 === VIDEO SETTINGS ===
 - aspectRatio: "16:9" (landscape), "9:16" (portrait/vertical), or "1:1" (square)
 - sceneCount: The number of scenes YOU decided (2-8)
-- sceneDurations: Array of durations matching your sceneCount (1-8 seconds each)
+- sceneDurations: Array of durations matching your sceneCount
+  - RECOMMENDED: 2-4 seconds per scene (optimal for engagement and visual rhythm)
+  - Range: 1-8 seconds each
+  - Vary durations for rhythm (avoid same duration consecutively)
 
 === OUTPUT FORMAT ===
 1. "elements": { "mood": "overall mood in ${outputLanguage}" }
