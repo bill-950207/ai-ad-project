@@ -115,7 +115,7 @@ export function MusicSelectModal({
   const [selectedMusic, setSelectedMusic] = useState<AdMusic | null>(null)
   const [selectedTrackIndex, setSelectedTrackIndex] = useState(0)
   const [timeRange, setTimeRange] = useState<[number, number]>([0, Math.min(15, videoDuration)])
-  const [musicVolume, setMusicVolume] = useState(30) // 0-100%
+  const [musicVolume, setMusicVolume] = useState(40) // 기본값: 보통
 
   // 미리듣기 상태
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false)
@@ -165,7 +165,7 @@ export function MusicSelectModal({
       setSelectedMusic(null)
       setSelectedTrackIndex(0)
       setTimeRange([0, Math.min(15, videoDuration)])
-      setMusicVolume(30)
+      setMusicVolume(40)
       setTrackSelectModalOpen(false)
       setPendingMusic(null)
     }
@@ -505,19 +505,28 @@ export function MusicSelectModal({
                     </button>
 
                     {/* 볼륨 조절 */}
-                    <div className="flex items-center gap-2 flex-1">
+                    <div className="flex items-center gap-2">
                       <Volume2 className="w-4 h-4 text-muted-foreground" />
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={musicVolume}
-                        onChange={(e) => setMusicVolume(Number(e.target.value))}
-                        className="flex-1 h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
-                      />
-                      <span className="text-sm text-muted-foreground w-10">
-                        {musicVolume}%
-                      </span>
+                      <span className="text-sm text-muted-foreground">음량</span>
+                      <div className="flex gap-1">
+                        {[
+                          { label: '작게', value: 20 },
+                          { label: '보통', value: 40 },
+                          { label: '크게', value: 60 },
+                        ].map((option) => (
+                          <button
+                            key={option.value}
+                            onClick={() => setMusicVolume(option.value)}
+                            className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                              musicVolume === option.value
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-secondary text-foreground hover:bg-secondary/80'
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
