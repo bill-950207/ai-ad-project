@@ -337,7 +337,7 @@ CRITICAL: Each scenario must tell a coherent mini-story with the product as the 
    - NO PEOPLE
    - NO visible studio equipment in the scene
    - Describe lighting as EFFECT only (e.g., "soft warm light from above"), NOT as equipment
-   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "lens", "shot on", "filmed", "recorded", "photographer", "shooting", "capture"
+   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "photographer", "filming", "behind the scenes", "DSLR", "mirrorless"
      (These words cause cameras/equipment to appear in the generated image!)
    - Describe the FINAL SCENE only, never mention filming process or equipment
    - ⚠️ WARNING: Do NOT include product name "${productName}" in the prompt - it may contain misleading words
@@ -467,7 +467,7 @@ CRITICAL: Adapt the reference video's tone while creating a coherent product sto
    - NO PEOPLE
    - NO visible studio equipment in the scene
    - Describe lighting as EFFECT only (e.g., "soft warm light from above"), NOT as equipment
-   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "lens", "shot on", "filmed", "recorded", "photographer", "shooting", "capture"
+   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "photographer", "filming", "behind the scenes", "DSLR", "mirrorless"
      (These words cause cameras/equipment to appear in the generated image!)
    - Describe the FINAL SCENE only, never mention filming process or equipment
    - ⚠️ WARNING: Do NOT include product name "${productName}" in the prompt - it may contain misleading words

@@ -165,6 +165,10 @@ OUTPUT LANGUAGE: English (prompts must be in English for AI image generation)
 Product Name: ${productName}
 Product Image: [The product image is provided as reference]
 
+⚠️ WARNING: Do NOT include the product name "${productName}" directly in the generated prompts.
+The product name may contain misleading words (e.g., "Camera Lens Cleaner" would generate actual cameras).
+Instead, use generic terms like "the product", "the bottle", "the item" based on what you see in the image.
+
 === SCENARIO ELEMENTS ===
 Background/Location: ${elements.background}
 Mood/Tone: ${elements.mood}
