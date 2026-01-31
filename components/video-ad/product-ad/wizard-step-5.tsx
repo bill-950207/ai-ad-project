@@ -465,7 +465,6 @@ export function WizardStep5() {
   const { credits, refreshCredits } = useCredits()
   const {
     draftId,
-    selectedProduct,
     scenarioInfo,
     aspectRatio,
     sceneDurations,
@@ -473,8 +472,6 @@ export function WizardStep5() {
     videoResolution,
     setVideoResolution,
     sceneCount,
-    firstSceneOptions,
-    selectedSceneIndex,
     sceneKeyframes,
     sceneVideoSegments,
     setSceneVideoSegments,
@@ -495,7 +492,6 @@ export function WizardStep5() {
 
   const [error, setError] = useState<string | null>(null)
   const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false)
-  const [statusMessage, setStatusMessage] = useState<string>('')
   const [sceneVideoStatuses, setSceneVideoStatuses] = useState<SceneVideoStatus[]>([])
   const [isMergingVideos, setIsMergingVideos] = useState(false)
   const [regeneratingSceneIndex, setRegeneratingSceneIndex] = useState<number | null>(null)
@@ -582,7 +578,6 @@ export function WizardStep5() {
   // Vidu Q3 전용 모드 (항상 멀티씬 워크플로우 사용)
   const isMultiSceneMode = true  // Vidu만 사용하므로 항상 true
 
-  const selectedScene = selectedSceneIndex !== null ? firstSceneOptions[selectedSceneIndex] : null
   const hasCompletedVideos = finalVideoUrl !== null || sceneVideoStatuses.filter(s => s.status === 'completed').length > 0
 
   // ============================================================
@@ -1121,7 +1116,6 @@ export function WizardStep5() {
         // 생성 중인 항목이 있으면 폴링 시작
         if (hasGenerating) {
           setIsGeneratingVideo(true)
-          setStatusMessage('영상 생성을 재개합니다...')
           startSceneVideoPolling(restoredStatuses)
         }
       }
@@ -1184,7 +1178,6 @@ export function WizardStep5() {
     if (!finalVideoUrl && completedSceneVideoUrls.length >= 2) {
       setError(null)
       setIsMergingVideos(true)
-      setStatusMessage('영상을 합치는 중...')
 
       try {
         const res = await fetch('/api/product-ad/merge-videos', {
