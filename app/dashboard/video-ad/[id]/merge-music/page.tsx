@@ -101,7 +101,7 @@ export default function MergeMusicPage() {
           trackIndex: Number(trackIndex) || 0,
           startTime: Number(startTime),
           endTime: Number(endTime),
-          musicVolume: Number(musicVolume) || 0.3,
+          musicVolume: Number(musicVolume) || 0.4,
         }),
       })
 
@@ -157,6 +157,14 @@ export default function MergeMusicPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
+  // 볼륨 라벨
+  const getVolumeLabel = (volume: number) => {
+    const percent = Math.round(volume * 100)
+    if (percent <= 25) return '작게'
+    if (percent <= 50) return '보통'
+    return '크게'
+  }
+
   const getStepIcon = () => {
     if (status.step === 'completed') {
       return <CheckCircle className="w-16 h-16 text-green-500" />
@@ -204,7 +212,7 @@ export default function MergeMusicPage() {
                 </span>
                 <span className="flex items-center gap-1">
                   <Volume2 className="w-3 h-3" />
-                  {Math.round(Number(musicVolume) * 100)}%
+                  {getVolumeLabel(Number(musicVolume))}
                 </span>
               </div>
             </div>
