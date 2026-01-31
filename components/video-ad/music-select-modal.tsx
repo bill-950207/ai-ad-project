@@ -65,33 +65,33 @@ interface MusicSelectModalProps {
   videoAdId: string
 }
 
-// 분위기 라벨
-const MOOD_LABELS: Record<string, string> = {
-  bright: '밝은',
-  calm: '차분한',
-  emotional: '감성적',
-  professional: '전문적',
-  exciting: '신나는',
-  trendy: '트렌디',
-  playful: '유쾌한',
-  romantic: '로맨틱',
-  nostalgic: '향수적',
+// Mood labels (fallback)
+const DEFAULT_MOOD_LABELS: Record<string, string> = {
+  bright: 'Bright',
+  calm: 'Calm',
+  emotional: 'Emotional',
+  professional: 'Professional',
+  exciting: 'Exciting',
+  trendy: 'Trendy',
+  playful: 'Playful',
+  romantic: 'Romantic',
+  nostalgic: 'Nostalgic',
 }
 
-// 장르 라벨
-const GENRE_LABELS: Record<string, string> = {
-  pop: '팝',
-  electronic: '일렉트로닉',
-  classical: '클래식',
-  jazz: '재즈',
-  rock: '록',
-  hiphop: '힙합',
-  ambient: '앰비언트',
-  acoustic: '어쿠스틱',
-  lofi: '로파이',
-  cinematic: '시네마틱',
+// Genre labels (fallback)
+const DEFAULT_GENRE_LABELS: Record<string, string> = {
+  pop: 'Pop',
+  electronic: 'Electronic',
+  classical: 'Classical',
+  jazz: 'Jazz',
+  rock: 'Rock',
+  hiphop: 'Hip-hop',
+  ambient: 'Ambient',
+  acoustic: 'Acoustic',
+  lofi: 'Lo-fi',
+  cinematic: 'Cinematic',
   rnb: 'R&B',
-  folk: '포크',
+  folk: 'Folk',
 }
 
 export function MusicSelectModal({
@@ -513,9 +513,9 @@ export function MusicSelectModal({
                       <span className="text-sm text-muted-foreground">음량</span>
                       <div className="flex gap-1">
                         {[
-                          { label: '작게', value: 20 },
-                          { label: '보통', value: 40 },
-                          { label: '크게', value: 60 },
+                          { label: 'Low', value: 20 },
+                          { label: 'Medium', value: 40 },
+                          { label: 'High', value: 60 },
                         ].map((option) => (
                           <button
                             key={option.value}

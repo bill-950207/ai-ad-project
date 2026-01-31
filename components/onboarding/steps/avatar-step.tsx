@@ -18,41 +18,41 @@ import { AvatarOptions } from '@/lib/avatar/prompt-builder'
 // 탭 타입
 type TabType = 'existing' | 'ai' | 'create'
 
-// AI 아바타 옵션
+// AI avatar options (fallback)
 const GENDER_OPTIONS = [
-  { value: 'any', label: '성별 무관' },
-  { value: 'female', label: '여성' },
-  { value: 'male', label: '남성' },
+  { value: 'any', label: 'Any Gender' },
+  { value: 'female', label: 'Female' },
+  { value: 'male', label: 'Male' },
 ] as const
 
 const AGE_OPTIONS = [
-  { value: 'any', label: '연령 무관' },
-  { value: 'young', label: '20-30대' },
-  { value: 'middle', label: '30-40대' },
-  { value: 'mature', label: '40-50대' },
+  { value: 'any', label: 'Any Age' },
+  { value: 'young', label: '20-30s' },
+  { value: 'middle', label: '30-40s' },
+  { value: 'mature', label: '40-50s' },
 ] as const
 
 const STYLE_OPTIONS = [
-  { value: 'any', label: '무관' },
-  { value: 'natural', label: '자연스러운' },
-  { value: 'professional', label: '전문적인' },
-  { value: 'casual', label: '캐주얼' },
-  { value: 'elegant', label: '우아한' },
+  { value: 'any', label: 'Any' },
+  { value: 'natural', label: 'Natural' },
+  { value: 'professional', label: 'Professional' },
+  { value: 'casual', label: 'Casual' },
+  { value: 'elegant', label: 'Elegant' },
 ] as const
 
 const ETHNICITY_OPTIONS = [
-  { value: 'any', label: '무관' },
-  { value: 'korean', label: '한국인' },
-  { value: 'asian', label: '아시아인' },
-  { value: 'western', label: '서양인' },
+  { value: 'any', label: 'Any' },
+  { value: 'korean', label: 'Korean' },
+  { value: 'asian', label: 'Asian' },
+  { value: 'western', label: 'Western' },
 ] as const
 
 const BODY_TYPE_OPTIONS = [
-  { value: 'any', label: 'AI 추천' },
-  { value: 'slim', label: '날씬' },
-  { value: 'average', label: '보통' },
-  { value: 'athletic', label: '탄탄' },
-  { value: 'curvy', label: '글래머' },
+  { value: 'any', label: 'AI Recommend' },
+  { value: 'slim', label: 'Slim' },
+  { value: 'average', label: 'Average' },
+  { value: 'athletic', label: 'Athletic' },
+  { value: 'curvy', label: 'Curvy' },
 ] as const
 
 interface AvatarWithOutfits extends OnboardingAvatar {
@@ -566,15 +566,15 @@ export function AvatarStep() {
                           : 'bg-secondary/50 text-foreground hover:bg-secondary'
                       }`}
                     >
-                      {v === 'female' ? '여성' : '남성'}
+                      {v === 'female' ? 'Female' : 'Male'}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* 나이대 */}
+              {/* Age */}
               <div>
-                <label className="block text-xs text-muted-foreground mb-2">나이대</label>
+                <label className="block text-xs text-muted-foreground mb-2">Age</label>
                 <div className="flex gap-2 flex-wrap">
                   {(['early20s', 'late20s', '30s', '40plus'] as const).map((v) => (
                     <button
@@ -587,15 +587,15 @@ export function AvatarStep() {
                           : 'bg-secondary/50 text-foreground hover:bg-secondary'
                       }`}
                     >
-                      {v === 'early20s' ? '20대 초반' : v === 'late20s' ? '20대 후반' : v === '30s' ? '30대' : '40대+'}
+                      {v === 'early20s' ? 'Early 20s' : v === 'late20s' ? 'Late 20s' : v === '30s' ? '30s' : '40s+'}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* 인종 */}
+              {/* Ethnicity */}
               <div>
-                <label className="block text-xs text-muted-foreground mb-2">인종</label>
+                <label className="block text-xs text-muted-foreground mb-2">Ethnicity</label>
                 <div className="flex gap-2 flex-wrap">
                   {(['eastAsian', 'caucasian', 'black', 'hispanic'] as const).map((v) => (
                     <button
@@ -608,19 +608,19 @@ export function AvatarStep() {
                           : 'bg-secondary/50 text-foreground hover:bg-secondary'
                       }`}
                     >
-                      {v === 'eastAsian' ? '동아시아인' : v === 'caucasian' ? '백인' : v === 'black' ? '흑인' : '히스패닉'}
+                      {v === 'eastAsian' ? 'East Asian' : v === 'caucasian' ? 'Caucasian' : v === 'black' ? 'Black' : 'Hispanic'}
                     </button>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* 체형 */}
+            {/* Body Type */}
             <div className="bg-secondary/20 rounded-lg p-4 space-y-4">
-              <h3 className="text-sm font-semibold text-foreground">체형</h3>
+              <h3 className="text-sm font-semibold text-foreground">Body Type</h3>
 
               <div>
-                <label className="block text-xs text-muted-foreground mb-2">체형</label>
+                <label className="block text-xs text-muted-foreground mb-2">Body Type</label>
                 <div className="flex gap-2 flex-wrap">
                   {(['slim', 'average', 'athletic', 'curvy'] as const).map((v) => (
                     <button
@@ -633,7 +633,7 @@ export function AvatarStep() {
                           : 'bg-secondary/50 text-foreground hover:bg-secondary'
                       }`}
                     >
-                      {v === 'slim' ? '날씬' : v === 'average' ? '보통' : v === 'athletic' ? '탄탄' : '글래머'}
+                      {v === 'slim' ? 'Slim' : v === 'average' ? 'Average' : v === 'athletic' ? 'Athletic' : 'Curvy'}
                     </button>
                   ))}
                 </div>

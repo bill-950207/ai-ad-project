@@ -221,30 +221,30 @@ function SelectedOptionsSummary({ options, t }: SelectedOptionsSummaryProps) {
   const selectedItems = useMemo(() => {
     const items: { key: string; label: string; value: string }[] = []
 
-    if (options.gender) items.push({ key: 'gender', label: '성별', value: avatarOptions[options.gender] || options.gender })
-    if (options.age) items.push({ key: 'age', label: '나이', value: avatarOptions[options.age] || options.age })
-    if (options.ethnicity) items.push({ key: 'ethnicity', label: '인종', value: avatarOptions[options.ethnicity] || options.ethnicity })
+    if (options.gender) items.push({ key: 'gender', label: 'Gender', value: avatarOptions[options.gender] || options.gender })
+    if (options.age) items.push({ key: 'age', label: 'Age', value: avatarOptions[options.age] || options.age })
+    if (options.ethnicity) items.push({ key: 'ethnicity', label: 'Ethnicity', value: avatarOptions[options.ethnicity] || options.ethnicity })
     if (options.bodyType) {
       const bodyKey = options.bodyType === 'muscular' ? 'bodyMuscular' :
                       options.bodyType === 'curvy' ? 'bodyCurvy' :
                       options.bodyType === 'athletic' ? 'bodyAthletic' :
                       options.bodyType === 'average' ? 'bodyAverage' : 'bodySlim'
-      items.push({ key: 'bodyType', label: '체형', value: avatarOptions[bodyKey] || options.bodyType })
+      items.push({ key: 'bodyType', label: 'Body Type', value: avatarOptions[bodyKey] || options.bodyType })
     }
     if (options.hairStyle) {
       const hairKey = options.hairStyle === 'short' ? 'hairShort' :
                       options.hairStyle === 'medium' ? 'hairMedium' : 'hairLong'
-      items.push({ key: 'hairStyle', label: '헤어', value: avatarOptions[hairKey] || options.hairStyle })
+      items.push({ key: 'hairStyle', label: 'Hair', value: avatarOptions[hairKey] || options.hairStyle })
     }
     if (options.outfitStyle) {
       const outfitKey = `outfit${options.outfitStyle.charAt(0).toUpperCase() + options.outfitStyle.slice(1)}`
-      items.push({ key: 'outfitStyle', label: '의상', value: avatarOptions[outfitKey] || options.outfitStyle })
+      items.push({ key: 'outfitStyle', label: 'Outfit', value: avatarOptions[outfitKey] || options.outfitStyle })
     }
     if (options.background) {
       const bgKey = options.background === 'studioWhite' ? 'bgStudioWhite' :
                     options.background === 'studioGray' ? 'bgStudioGray' :
                     `bg${options.background.charAt(0).toUpperCase() + options.background.slice(1)}`
-      items.push({ key: 'background', label: '배경', value: avatarOptions[bgKey] || options.background })
+      items.push({ key: 'background', label: 'Background', value: avatarOptions[bgKey] || options.background })
     }
 
     return items
@@ -254,7 +254,7 @@ function SelectedOptionsSummary({ options, t }: SelectedOptionsSummaryProps) {
 
   return (
     <div className="mb-6 p-4 bg-secondary/30 rounded-xl border border-border">
-      <p className="text-xs text-muted-foreground mb-2 font-medium">선택된 옵션</p>
+      <p className="text-xs text-muted-foreground mb-2 font-medium">Selected Options</p>
       <div className="flex flex-wrap gap-2">
         {selectedItems.map((item) => (
           <span
@@ -285,7 +285,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
 
-  const stepLabels = ['기본 정보', '외모', '스타일']
+  const stepLabels = ['Basic Info', 'Appearance', 'Style']
   const totalSteps = 3
 
   const handleSubmit = async (e: React.FormEvent) => {

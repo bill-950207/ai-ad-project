@@ -112,24 +112,24 @@ interface VideoTypeInfo {
 
 const videoTypeLabels: Record<VideoType, VideoTypeInfo> = {
   UGC: {
-    label: 'UGC 스타일',
-    desc: '인플루언서처럼 자연스럽게',
+    label: 'UGC Style',
+    desc: 'Natural like an influencer',
     icon: 'User',
     recommendedCompositions: ['ugc-selfie', 'ugc-closeup', 'selfie-front', 'selfie-high'],
     recommendedPoses: ['holding-product', 'showing-product', 'using-product'],
     recommendedOutfits: ['casual_everyday', 'trendy_fashion', 'cozy_comfortable'],
   },
   podcast: {
-    label: '팟캐스트',
-    desc: '대화하듯 친밀하게',
+    label: 'Podcast',
+    desc: 'Intimate like a conversation',
     icon: 'Mic',
     recommendedCompositions: ['tripod', 'closeup', 'selfie-front'],
     recommendedPoses: ['talking-only', 'holding-product'],
     recommendedOutfits: ['cozy_comfortable', 'casual_everyday', 'minimal_simple'],
   },
   expert: {
-    label: '전문가 설명',
-    desc: '전문적으로 설명',
+    label: 'Expert Explanation',
+    desc: 'Professional explanation',
     icon: 'GraduationCap',
     recommendedCompositions: ['tripod', 'fullbody', 'selfie-front'],
     recommendedPoses: ['talking-only', 'showing-product'],
@@ -158,73 +158,73 @@ interface CameraCompositionInfo {
 }
 
 const cameraCompositionLabels: Record<CameraComposition, CameraCompositionInfo> = {
-  // 공통
+  // Common
   auto: {
-    label: '자동',
-    desc: 'AI가 자연스러운 구도 선택',
+    label: 'Auto',
+    desc: 'AI selects natural composition',
     exampleImage: '/images/camera/auto.png',
   },
   closeup: {
-    label: '클로즈업',
-    desc: '얼굴 위주 가까운 촬영',
+    label: 'Close-up',
+    desc: 'Face-focused close shot',
     exampleImage: '/images/camera/closeup.png',
   },
-  // UGC용
+  // UGC
   'selfie-high': {
-    label: '셀카 (위에서)',
-    desc: '위에서 아래로 내려다보는 셀카',
+    label: 'Selfie (High Angle)',
+    desc: 'Looking down from above',
     exampleImage: '/images/camera/selfie-high.png',
   },
   'selfie-front': {
-    label: '셀카 (정면)',
-    desc: '눈높이에서 정면으로 촬영',
+    label: 'Selfie (Front)',
+    desc: 'Eye level front shot',
     exampleImage: '/images/camera/selfie-front.png',
   },
   'selfie-side': {
-    label: '셀카 (측면)',
-    desc: '약간 측면에서 촬영',
+    label: 'Selfie (Side)',
+    desc: 'Slightly from the side',
     exampleImage: '/images/camera/selfie-side.png',
   },
   'ugc-closeup': {
-    label: '인플루언서 클로즈업',
-    desc: '가슴 위부터 얼굴까지 가깝게',
+    label: 'Influencer Close-up',
+    desc: 'Chest to face close shot',
     exampleImage: '/images/camera/ugc-closeup.png',
   },
   'ugc-selfie': {
-    label: 'UGC 셀카',
-    desc: '폰을 들고 찍는 셀카 구도',
+    label: 'UGC Selfie',
+    desc: 'Phone selfie composition',
     exampleImage: '/images/camera/ugc-selfie.png',
   },
-  // Podcast용
+  // Podcast
   webcam: {
-    label: '웹캠 정면',
-    desc: '일반적인 팟캐스트 스타일',
+    label: 'Webcam Front',
+    desc: 'Standard podcast style',
     exampleImage: '/images/camera/webcam.png',
   },
   'medium-shot': {
-    label: '미디엄샷',
-    desc: '상반신이 보이는 구도',
+    label: 'Medium Shot',
+    desc: 'Upper body visible',
     exampleImage: '/images/camera/medium-shot.png',
   },
   'three-quarter': {
-    label: '3/4 뷰',
-    desc: '약간 측면을 바라보는 앵글',
+    label: '3/4 View',
+    desc: 'Slightly angled view',
     exampleImage: '/images/camera/three-quarter.png',
   },
-  // Expert용
+  // Expert
   tripod: {
-    label: '정면 (삼각대)',
-    desc: '안정적인 정면 촬영',
+    label: 'Front (Tripod)',
+    desc: 'Stable front shot',
     exampleImage: '/images/camera/tripod.png',
   },
   fullbody: {
-    label: '전신',
-    desc: '전신이 보이는 구도',
+    label: 'Full Body',
+    desc: 'Full body visible',
     exampleImage: '/images/camera/fullbody.png',
   },
   presenter: {
-    label: '프레젠터',
-    desc: '강연자/발표자 스타일',
+    label: 'Presenter',
+    desc: 'Speaker/presenter style',
     exampleImage: '/images/camera/presenter.png',
   },
 }
@@ -261,57 +261,57 @@ interface ModelPoseInfo {
 }
 
 const modelPoseLabels: Record<ModelPose, ModelPoseInfo> = {
-  // 공통
+  // Common
   auto: {
-    label: '자동',
-    desc: 'AI가 제품에 맞는 포즈 선택',
+    label: 'Auto',
+    desc: 'AI selects pose for product',
   },
   'talking-only': {
-    label: '말로만 설명',
-    desc: '제품 없이 말로만 설명하기',
+    label: 'Talking Only',
+    desc: 'Explain without product',
   },
   'showing-product': {
-    label: '제품 제시',
-    desc: '제품을 카메라 앞에 보여주기',
+    label: 'Showing Product',
+    desc: 'Show product to camera',
   },
-  // UGC용
+  // UGC
   'holding-product': {
-    label: '제품 들기',
-    desc: '제품을 손에 들고 자연스럽게',
+    label: 'Holding Product',
+    desc: 'Hold product naturally',
   },
   'using-product': {
-    label: '제품 사용',
-    desc: '제품을 직접 사용하는 모습',
+    label: 'Using Product',
+    desc: 'Demonstrate using product',
   },
   unboxing: {
-    label: '언박싱',
-    desc: '제품 개봉/꺼내는 모습',
+    label: 'Unboxing',
+    desc: 'Unbox/open product',
   },
   reaction: {
-    label: '리액션',
-    desc: '제품에 대한 감탄/반응',
+    label: 'Reaction',
+    desc: 'React to product',
   },
-  // Podcast용
+  // Podcast
   'desk-presenter': {
-    label: '책상 앞',
-    desc: '책상에 앉아 제품 소개',
+    label: 'At Desk',
+    desc: 'Present at desk',
   },
   'casual-chat': {
-    label: '캐주얼 대화',
-    desc: '친구와 대화하듯 자연스럽게',
+    label: 'Casual Chat',
+    desc: 'Natural conversation style',
   },
-  // Expert용
+  // Expert
   demonstrating: {
-    label: '시연',
-    desc: '제품 기능/사용법 시연',
+    label: 'Demonstrating',
+    desc: 'Demonstrate features',
   },
   presenting: {
-    label: '프레젠터',
-    desc: '전문가처럼 설명하는 포즈',
+    label: 'Presenter',
+    desc: 'Expert presentation pose',
   },
   explaining: {
-    label: '설명',
-    desc: '진지하게 설명하는 모습',
+    label: 'Explaining',
+    desc: 'Serious explanation',
   },
 }
 
@@ -350,32 +350,32 @@ interface OutfitPresetInfo {
 
 const outfitPresetLabels: Record<OutfitPreset, OutfitPresetInfo> = {
   casual_everyday: {
-    label: '캐주얼',
-    desc: '편안한 티셔츠, 청바지 등 일상적인 스타일',
+    label: 'Casual',
+    desc: 'Comfortable t-shirts, jeans, everyday style',
   },
   formal_elegant: {
-    label: '포멀/우아',
-    desc: '세련된 드레스나 정장, 고급스러운 분위기',
+    label: 'Formal/Elegant',
+    desc: 'Sophisticated dress or suit, luxurious atmosphere',
   },
   professional_business: {
-    label: '비즈니스',
-    desc: '전문적인 비즈니스 정장, 깔끔한 셔츠',
+    label: 'Business',
+    desc: 'Professional business suit, clean shirt',
   },
   sporty_athletic: {
-    label: '스포티',
-    desc: '운동복, 애슬레저 스타일',
+    label: 'Sporty',
+    desc: 'Athletic wear, athleisure style',
   },
   cozy_comfortable: {
-    label: '편안한',
-    desc: '니트, 가디건 등 따뜻하고 편안한 스타일',
+    label: 'Cozy',
+    desc: 'Knits, cardigans, warm and comfortable style',
   },
   trendy_fashion: {
-    label: '트렌디',
-    desc: '최신 유행 스타일, 패셔너블한 룩',
+    label: 'Trendy',
+    desc: 'Latest fashion trends, fashionable look',
   },
   minimal_simple: {
-    label: '미니멀',
-    desc: '심플한 단색 의상, 절제된 우아함',
+    label: 'Minimal',
+    desc: 'Simple solid colors, restrained elegance',
   },
 }
 
@@ -402,73 +402,73 @@ interface LocationPresetInfo {
 }
 
 const locationPresetLabels: Record<LocationPreset, LocationPresetInfo> = {
-  // UGC용
+  // UGC
   living_room: {
-    label: '거실',
-    desc: '따뜻한 홈 인테리어 배경',
+    label: 'Living Room',
+    desc: 'Warm home interior background',
     promptValue: 'cozy modern living room with warm ambient lighting, comfortable sofa visible in background',
   },
   bedroom: {
-    label: '침실',
-    desc: '편안한 침실 분위기',
+    label: 'Bedroom',
+    desc: 'Comfortable bedroom atmosphere',
     promptValue: 'cozy bedroom setting with soft bedding visible, intimate and relaxed atmosphere',
   },
   cafe: {
-    label: '카페',
-    desc: '트렌디한 카페 분위기',
+    label: 'Cafe',
+    desc: 'Trendy cafe atmosphere',
     promptValue: 'trendy cafe interior with warm lighting, coffee shop atmosphere, blurred background elements',
   },
   outdoor: {
-    label: '야외',
-    desc: '자연광 야외 배경',
+    label: 'Outdoor',
+    desc: 'Natural light outdoor background',
     promptValue: 'bright outdoor setting with natural daylight, greenery in soft focus background',
   },
   bathroom: {
-    label: '욕실',
-    desc: '뷰티/스킨케어 제품용',
+    label: 'Bathroom',
+    desc: 'For beauty/skincare products',
     promptValue: 'clean modern bathroom with bright lighting, mirror and vanity visible, skincare routine setting',
   },
-  // Podcast용
+  // Podcast
   home_office: {
-    label: '홈오피스',
-    desc: '깔끔한 책상/작업공간',
+    label: 'Home Office',
+    desc: 'Clean desk/workspace',
     promptValue: 'clean home office setup with minimal desk, organized bookshelf, natural light from window',
   },
   study: {
-    label: '서재',
-    desc: '책장이 보이는 지적인 공간',
+    label: 'Study',
+    desc: 'Intellectual space with bookshelves',
     promptValue: 'intellectual study room with bookshelves in background, warm desk lamp lighting, scholarly atmosphere',
   },
   podcast_studio: {
-    label: '팟캐스트 스튜디오',
-    desc: '마이크/조명이 있는 전문 공간',
+    label: 'Podcast Studio',
+    desc: 'Professional space with mic/lighting',
     promptValue: 'professional podcast studio setup with acoustic panels, warm ambient lighting, content creator atmosphere',
   },
-  // Expert용
+  // Expert
   studio: {
-    label: '스튜디오',
-    desc: '심플한 단색 배경',
+    label: 'Studio',
+    desc: 'Simple solid background',
     promptValue: 'professional studio setting with soft gradient background, clean and minimal',
   },
   office: {
-    label: '사무실',
-    desc: '전문적인 오피스 환경',
+    label: 'Office',
+    desc: 'Professional office environment',
     promptValue: 'professional corporate office with modern furniture, clean lines, business environment',
   },
   meeting_room: {
-    label: '회의실',
-    desc: '프레젠테이션/세미나 분위기',
+    label: 'Meeting Room',
+    desc: 'Presentation/seminar atmosphere',
     promptValue: 'professional meeting room with presentation setup, corporate environment, authority setting',
   },
   minimal: {
-    label: '미니멀',
-    desc: '깨끗한 화이트/그레이 배경',
+    label: 'Minimal',
+    desc: 'Clean white/gray background',
     promptValue: 'clean minimal white or light gray background, simple and distraction-free',
   },
-  // 공통
+  // Common
   custom: {
-    label: '직접 입력',
-    desc: '원하는 장소 직접 설명',
+    label: 'Custom',
+    desc: 'Describe your own location',
     promptValue: '',
   },
 }
@@ -1846,12 +1846,12 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     )
   }
 
-  // 단계 정보
+  // Step info
   const STEPS = [
-    { step: 1, title: '제품/아바타', description: '제품 및 아바타 선택' },
-    { step: 2, title: '영상 정보', description: '영상 정보 입력' },
-    { step: 3, title: '대본/음성', description: '대본 및 음성 선택' },
-    { step: 4, title: '생성', description: '영상 생성' },
+    { step: 1, title: 'Product/Avatar', description: 'Select product and avatar' },
+    { step: 2, title: 'Video Info', description: 'Enter video information' },
+    { step: 3, title: 'Script/Voice', description: 'Select script and voice' },
+    { step: 4, title: 'Generate', description: 'Generate video' },
   ]
 
   // 선택 항목 표시 여부
@@ -2243,18 +2243,18 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
             </p>
           </div>
 
-          {/* 대본 언어 선택 */}
+          {/* Script language selection */}
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <Globe className="w-4 h-4 inline mr-2" />
-              대본 언어
+              {t.productDescriptionVideo?.scriptLanguage || 'Script Language'}
             </label>
             <div className="grid grid-cols-4 gap-2">
               {([
-                { code: 'ko', label: '한국어' },
+                { code: 'ko', label: 'Korean' },
                 { code: 'en', label: 'English' },
-                { code: 'ja', label: '日本語' },
-                { code: 'zh', label: '中文' },
+                { code: 'ja', label: 'Japanese' },
+                { code: 'zh', label: 'Chinese' },
               ] as const).map((lang) => (
                 <button
                   key={lang.code}
@@ -2295,16 +2295,16 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
             </div>
           </div>
 
-          {/* 영상 해상도 */}
+          {/* Video resolution */}
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <Monitor className="w-4 h-4 inline mr-2" />
-              영상 해상도
+              {t.productDescriptionVideo?.resolution || 'Video Resolution'}
             </label>
             <div className="grid grid-cols-2 gap-3">
               {([
-                { value: '480p', label: '480p', desc: '빠른 생성' },
-                { value: '720p', label: '720p', desc: '고화질' },
+                { value: '480p', label: '480p', desc: t.productDescriptionVideo?.fastGeneration || 'Fast generation' },
+                { value: '720p', label: '720p', desc: t.productDescriptionVideo?.highQuality || 'High quality' },
               ] as const).map((r) => (
                 <button
                   key={r.value}
@@ -2809,16 +2809,16 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                     ))}
                   </div>
 
-                  {/* 대본 편집 */}
+                  {/* Script editing */}
                   <div className="bg-card border border-border rounded-xl p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm font-medium text-foreground">선택된 대본</label>
+                      <label className="text-sm font-medium text-foreground">{t.productDescriptionVideo?.selectedScript || 'Selected Script'}</label>
                       <button
                         onClick={() => setIsEditingScript(!isEditingScript)}
                         className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
                       >
                         <Edit3 className="w-3 h-3" />
-                        {isEditingScript ? '완료' : '편집'}
+                        {isEditingScript ? (t.common?.done || 'Done') : (t.common?.edit || 'Edit')}
                       </button>
                     </div>
                     <textarea
@@ -2832,7 +2832,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                         }`}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      {editedScript.length}자 (약 {estimateScriptDuration(editedScript)}초)
+                      {editedScript.length} {t.productDescriptionVideo?.characters || 'chars'} (~{estimateScriptDuration(editedScript)}{t.productDescriptionVideo?.seconds || 's'})
                     </p>
                   </div>
                 </div>
@@ -2871,13 +2871,13 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                                   ? 'bg-pink-500/20 text-pink-500'
                                   : 'bg-blue-500/20 text-blue-500'
                                 }`}>
-                                {voice.gender === 'female' ? '여성' : '남성'}
+                                {voice.gender === 'female' ? (t.common?.female || 'Female') : (t.common?.male || 'Male')}
                               </span>
                             </div>
                             <p className="text-[11px] text-muted-foreground mt-0.5">{voice.description}</p>
                           </button>
 
-                          {/* 미리듣기 버튼 */}
+                          {/* Preview button */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
@@ -2888,7 +2888,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                                 ? 'bg-primary text-primary-foreground'
                                 : 'bg-secondary/80 text-foreground hover:bg-primary/20'
                               } disabled:opacity-50`}
-                            title={playingVoiceId === voice.id ? '정지' : '미리듣기'}
+                            title={playingVoiceId === voice.id ? (t.common?.stop || 'Stop') : (t.common?.preview || 'Preview')}
                           >
                             {loadingPreviewId === voice.id ? (
                               <Loader2 className="w-3 h-3 animate-spin" />

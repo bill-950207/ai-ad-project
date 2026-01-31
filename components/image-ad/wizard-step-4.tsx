@@ -430,17 +430,17 @@ export function WizardStep4() {
     resetWizard()
   }
 
-  // 비율 옵션
+  // Ratio options
   const ratioOptions: { ratio: AspectRatio; label: string; width: string; height: string }[] = [
-    { ratio: '1:1', label: '정사각형', width: 'w-8', height: 'h-8' },
-    { ratio: '16:9', label: '가로형', width: 'w-10', height: 'h-6' },
-    { ratio: '9:16', label: '세로형', width: 'w-6', height: 'h-10' },
+    { ratio: '1:1', label: 'Square', width: 'w-8', height: 'h-8' },
+    { ratio: '16:9', label: 'Landscape', width: 'w-10', height: 'h-6' },
+    { ratio: '9:16', label: 'Portrait', width: 'w-6', height: 'h-10' },
   ]
 
-  // 퀄리티 옵션
+  // Quality options
   const qualityOptions: { quality: Quality; label: string; description: string }[] = [
-    { quality: 'medium', label: '보통', description: '빠른 생성' },
-    { quality: 'high', label: '높음', description: '고품질' },
+    { quality: 'medium', label: 'Medium', description: 'Fast generation' },
+    { quality: 'high', label: 'High', description: 'High quality' },
   ]
 
   // 생성 결과 화면
@@ -608,7 +608,7 @@ export function WizardStep4() {
               {(selectedProduct?.rembg_image_url || selectedProduct?.image_url || localImageUrl) ? (
                 <img
                   src={selectedProduct?.rembg_image_url || selectedProduct?.image_url || localImageUrl || ''}
-                  alt="제품"
+                  alt="Product"
                   className="w-full h-full object-contain"
                 />
               ) : (
@@ -629,7 +629,7 @@ export function WizardStep4() {
               {selectedAvatarInfo ? (
                 <img
                   src={selectedAvatarInfo.imageUrl}
-                  alt="아바타"
+                  alt="Avatar"
                   className="w-full h-full object-cover"
                 />
               ) : (

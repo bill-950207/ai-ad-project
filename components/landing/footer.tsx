@@ -21,32 +21,32 @@ export function Footer() {
   const { t, language } = useLanguage()
   const isKo = language === 'ko'
 
-  // 푸터 링크 데이터
+  // Footer link data
   const footerLinks = {
     product: {
-      title: isKo ? '제품' : 'Product',
+      title: t.footer?.product?.title || 'Product',
       links: [
-        { label: isKo ? '이미지 광고' : 'Image Ads', href: '/login' },
-        { label: isKo ? '영상 광고' : 'Video Ads', href: '/login' },
-        { label: isKo ? '아바타' : 'Avatars', href: '/login' },
-        { label: isKo ? '가격' : 'Pricing', href: '#' },
+        { label: t.footer?.product?.imageAds || 'Image Ads', href: '/login' },
+        { label: t.footer?.product?.videoAds || 'Video Ads', href: '/login' },
+        { label: t.footer?.product?.avatars || 'Avatars', href: '/login' },
+        { label: t.footer?.product?.pricing || 'Pricing', href: '#' },
       ],
     },
     company: {
-      title: isKo ? '회사' : 'Company',
+      title: t.footer?.company?.title || 'Company',
       links: [
-        { label: isKo ? '소개' : 'About', href: '#' },
-        { label: isKo ? '블로그' : 'Blog', href: '#' },
-        { label: isKo ? '채용' : 'Careers', href: '#' },
-        { label: isKo ? '문의' : 'Contact', href: '#' },
+        { label: t.footer?.company?.about || 'About', href: '#' },
+        { label: t.footer?.company?.blog || 'Blog', href: '#' },
+        { label: t.footer?.company?.careers || 'Careers', href: '#' },
+        { label: t.footer?.company?.contact || 'Contact', href: '#' },
       ],
     },
     legal: {
-      title: isKo ? '법적 정보' : 'Legal',
+      title: t.footer?.legal?.title || 'Legal',
       links: [
-        { label: isKo ? '이용약관' : 'Terms of Service', href: '/legal/terms' },
-        { label: isKo ? '개인정보처리방침' : 'Privacy Policy', href: '/legal/privacy' },
-        { label: isKo ? '쿠키 정책' : 'Cookie Policy', href: '#' },
+        { label: t.footer?.legal?.terms || 'Terms of Service', href: '/legal/terms' },
+        { label: t.footer?.legal?.privacy || 'Privacy Policy', href: '/legal/privacy' },
+        { label: t.footer?.legal?.cookies || 'Cookie Policy', href: '#' },
       ],
     },
   }

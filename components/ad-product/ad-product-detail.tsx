@@ -357,7 +357,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
                 {/* 제품명 */}
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">
-                    {t.adProduct.productName || '제품명'}
+                    {t.adProduct.productName || 'Product Name'}
                   </label>
                   <input
                     type="text"
@@ -371,7 +371,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">
-                      {t.adProduct.brand || '브랜드'}
+                      {t.adProduct.brand || 'Brand'}
                     </label>
                     <input
                       type="text"
@@ -383,7 +383,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">
-                      {t.adProduct.price || '가격'}
+                      {t.adProduct.price || 'Price'}
                     </label>
                     <input
                       type="text"
@@ -450,7 +450,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
                     disabled={isSaving}
                     className="flex-1 py-2 text-sm font-medium border border-border rounded-lg hover:bg-secondary/50 transition-colors disabled:opacity-50"
                   >
-                    {t.common?.cancel || '취소'}
+                    {t.common?.cancel || 'Cancel'}
                   </button>
                   <button
                     onClick={handleSave}
@@ -462,7 +462,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
                     ) : (
                       <Check className="w-4 h-4" />
                     )}
-                    {t.common?.save || '저장'}
+                    {t.common?.save || 'Save'}
                   </button>
                 </div>
               </div>
@@ -473,14 +473,14 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
                   <div className="flex items-start gap-3">
                     <Building2 className="w-5 h-5 text-muted-foreground mt-0.5" />
                     <div>
-                      <p className="text-xs text-muted-foreground">{t.adProduct.brand || '브랜드'}</p>
+                      <p className="text-xs text-muted-foreground">{t.adProduct.brand || 'Brand'}</p>
                       <p className="text-sm text-foreground">{product.brand || '-'}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <DollarSign className="w-5 h-5 text-muted-foreground mt-0.5" />
                     <div>
-                      <p className="text-xs text-muted-foreground">{t.adProduct.price || '가격'}</p>
+                      <p className="text-xs text-muted-foreground">{t.adProduct.price || 'Price'}</p>
                       <p className="text-sm text-foreground">{product.price || '-'}</p>
                     </div>
                   </div>
@@ -490,7 +490,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
                 <div className="flex items-start gap-3">
                   <FileText className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
                   <div className="flex-1">
-                    <p className="text-xs text-muted-foreground">{t.adProduct.description || '설명'}</p>
+                    <p className="text-xs text-muted-foreground">{t.adProduct.description || 'Description'}</p>
                     <p className="text-sm text-foreground whitespace-pre-wrap">{product.description || '-'}</p>
                   </div>
                 </div>
@@ -575,7 +575,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
                   {/* 호버 오버레이 */}
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <span className="px-4 py-2 bg-white text-black rounded-lg text-sm font-medium">
-                      {t.imageAdDetail?.viewDetail || '상세보기'}
+                      {t.imageAdDetail?.viewDetail || 'View Detail'}
                     </span>
                   </div>
                   {/* 광고 타입 뱃지 */}

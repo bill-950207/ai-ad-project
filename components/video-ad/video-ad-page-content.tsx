@@ -238,24 +238,24 @@ export function VideoAdPageContent() {
   const getStatusBadge = (status: string, wizardStep?: number | null, category?: string | null) => {
     const stepName = getStepName(category, wizardStep)
     const statusConfig: Record<string, { label: string; className: string }> = {
-      'DRAFT': { label: `임시저장 (${stepName})`, className: 'bg-orange-500/80 text-white' },
-      'GENERATING_SCRIPTS': { label: '대본 생성 중', className: 'bg-indigo-500/80 text-white animate-pulse' },
-      'GENERATING_AUDIO': { label: '음성 생성 중', className: 'bg-pink-500/80 text-white animate-pulse' },
-      'PENDING': { label: t.videoAd?.status?.pending || '대기 중', className: 'bg-yellow-500/80 text-white' },
-      'IN_QUEUE': { label: t.videoAd?.status?.inQueue || '큐 대기', className: 'bg-blue-500/80 text-white animate-pulse' },
-      'IN_PROGRESS': { label: t.videoAd?.status?.inProgress || '생성 중', className: 'bg-purple-500/80 text-white animate-pulse' },
-      'COMPLETED': { label: t.videoAd?.status?.completed || '완료', className: 'bg-green-500/80 text-white' },
-      'FAILED': { label: t.videoAd?.status?.failed || '실패', className: 'bg-red-500/80 text-white' },
-      // Avatar Motion 상태
-      'GENERATING_STORY': { label: '스토리 생성 중', className: 'bg-cyan-500/80 text-white animate-pulse' },
-      'GENERATING_FRAMES': { label: '프레임 생성 중', className: 'bg-teal-500/80 text-white animate-pulse' },
-      'GENERATING_AVATAR': { label: '아바타 생성 중', className: 'bg-violet-500/80 text-white animate-pulse' },
-      'FRAMES_COMPLETED': { label: '프레임 완료', className: 'bg-emerald-500/80 text-white' },
-      // Product Ad 상태
-      'GENERATING_SCENARIO': { label: '시나리오 생성 중', className: 'bg-cyan-500/80 text-white animate-pulse' },
-      'GENERATING_SCENES': { label: '첫 씬 생성 중', className: 'bg-teal-500/80 text-white animate-pulse' },
-      'SCENES_COMPLETED': { label: '첫 씬 완료', className: 'bg-emerald-500/80 text-white' },
-      'GENERATING_VIDEO': { label: '영상 생성 중', className: 'bg-violet-500/80 text-white animate-pulse' },
+      'DRAFT': { label: `${t.videoAd?.status?.draft || 'Draft'} (${stepName})`, className: 'bg-orange-500/80 text-white' },
+      'GENERATING_SCRIPTS': { label: t.videoAd?.status?.generatingScripts || 'Generating Scripts', className: 'bg-indigo-500/80 text-white animate-pulse' },
+      'GENERATING_AUDIO': { label: t.videoAd?.status?.generatingAudio || 'Generating Audio', className: 'bg-pink-500/80 text-white animate-pulse' },
+      'PENDING': { label: t.videoAd?.status?.pending || 'Pending', className: 'bg-yellow-500/80 text-white' },
+      'IN_QUEUE': { label: t.videoAd?.status?.inQueue || 'In Queue', className: 'bg-blue-500/80 text-white animate-pulse' },
+      'IN_PROGRESS': { label: t.videoAd?.status?.inProgress || 'In Progress', className: 'bg-purple-500/80 text-white animate-pulse' },
+      'COMPLETED': { label: t.videoAd?.status?.completed || 'Completed', className: 'bg-green-500/80 text-white' },
+      'FAILED': { label: t.videoAd?.status?.failed || 'Failed', className: 'bg-red-500/80 text-white' },
+      // Avatar Motion status
+      'GENERATING_STORY': { label: t.videoAd?.status?.generatingStory || 'Generating Story', className: 'bg-cyan-500/80 text-white animate-pulse' },
+      'GENERATING_FRAMES': { label: t.videoAd?.status?.generatingFrames || 'Generating Frames', className: 'bg-teal-500/80 text-white animate-pulse' },
+      'GENERATING_AVATAR': { label: t.videoAd?.status?.generatingAvatar || 'Generating Avatar', className: 'bg-violet-500/80 text-white animate-pulse' },
+      'FRAMES_COMPLETED': { label: t.videoAd?.status?.framesCompleted || 'Frames Completed', className: 'bg-emerald-500/80 text-white' },
+      // Product Ad status
+      'GENERATING_SCENARIO': { label: t.videoAd?.status?.generatingScenario || 'Generating Scenario', className: 'bg-cyan-500/80 text-white animate-pulse' },
+      'GENERATING_SCENES': { label: t.videoAd?.status?.generatingScenes || 'Generating Scenes', className: 'bg-teal-500/80 text-white animate-pulse' },
+      'SCENES_COMPLETED': { label: t.videoAd?.status?.scenesCompleted || 'Scenes Completed', className: 'bg-emerald-500/80 text-white' },
+      'GENERATING_VIDEO': { label: t.videoAd?.status?.generatingVideo || 'Generating Video', className: 'bg-violet-500/80 text-white animate-pulse' },
     }
     const config = statusConfig[status] || { label: status, className: 'bg-gray-500/80 text-white' }
     return (
@@ -267,27 +267,27 @@ export function VideoAdPageContent() {
 
   const getCategoryLabel = (category: string | null) => {
     const categoryLabels: Record<string, string> = {
-      'productDescription': '제품 설명',
-      'avatarMotion': '아바타 모션',
-      'productAd': '제품 광고',
-      'productShowcase': '제품 쇼케이스',
-      'lifestyle': '라이프스타일',
-      'testimonial': '후기/추천',
+      'productDescription': t.videoAd?.category?.productDescription || 'Product Description',
+      'avatarMotion': t.videoAd?.category?.avatarMotion || 'Avatar Motion',
+      'productAd': t.videoAd?.category?.productAd || 'Product Ad',
+      'productShowcase': t.videoAd?.category?.productShowcase || 'Product Showcase',
+      'lifestyle': t.videoAd?.category?.lifestyle || 'Lifestyle',
+      'testimonial': t.videoAd?.category?.testimonial || 'Testimonial',
     }
-    return categoryLabels[category || ''] || '영상 광고'
+    return categoryLabels[category || ''] || t.videoAd?.title || 'Video Ad'
   }
 
-  // 카테고리와 단계 번호에 따른 단계 이름 반환
+  // Get step name based on category and step number
   const getStepName = (category: string | null | undefined, step: number | null | undefined): string => {
     const stepNumber = step || 1
 
     const stepNames: Record<string, string[]> = {
-      // productDescription: 4단계
-      'productDescription': ['제품/아바타', '영상 정보', '대본/음성', '생성'],
-      // avatarMotion: 6단계
-      'avatarMotion': ['아바타/제품', '스토리 방식', '시나리오', '영상 설정', '프레임 생성', '영상 생성'],
-      // productAd: 6단계
-      'productAd': ['제품 선택', '설정 방식', '시나리오', '설정', '첫 씬', '영상 생성'],
+      // productDescription: 4 steps
+      'productDescription': ['Product/Avatar', 'Video Info', 'Script/Voice', 'Generate'],
+      // avatarMotion: 6 steps
+      'avatarMotion': ['Avatar/Product', 'Story Mode', 'Scenario', 'Settings', 'Frame Gen', 'Video Gen'],
+      // productAd: 6 steps
+      'productAd': ['Product', 'Settings', 'Scenario', 'Config', 'First Scene', 'Video Gen'],
     }
 
     const steps = stepNames[category || '']
@@ -295,7 +295,7 @@ export function VideoAdPageContent() {
       return steps[stepNumber - 1]
     }
 
-    return `${stepNumber}단계`
+    return `Step ${stepNumber}`
   }
 
   return (
@@ -396,7 +396,7 @@ export function VideoAdPageContent() {
                               className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors text-sm"
                             >
                               <Trash2 className="w-4 h-4" />
-                              <span className="hidden sm:inline">{t.videoAd?.delete || '삭제'}</span>
+                              <span className="hidden sm:inline">{t.videoAd?.delete || 'Delete'}</span>
                             </button>
                           </div>
                         </>
@@ -418,7 +418,7 @@ export function VideoAdPageContent() {
                               className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors text-sm"
                             >
                               <Trash2 className="w-4 h-4" />
-                              <span className="hidden sm:inline">{t.videoAd?.delete || '삭제'}</span>
+                              <span className="hidden sm:inline">{t.videoAd?.delete || 'Delete'}</span>
                             </button>
                           </div>
                         </div>
@@ -644,7 +644,7 @@ export function VideoAdPageContent() {
                   onClick={handleCancelDelete}
                   className="flex-1 px-4 py-3 bg-muted text-foreground rounded-xl hover:bg-muted/80 transition-all duration-200 font-medium border border-border"
                 >
-                  {t.videoAd?.deleteModal?.cancel || '취소'}
+                  {t.videoAd?.deleteModal?.cancel || 'Cancel'}
                 </button>
                 <button
                   onClick={handleConfirmDelete}

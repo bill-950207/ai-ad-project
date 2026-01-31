@@ -217,7 +217,7 @@ export function SubscriptionContent() {
                       {subscription.displayName}
                     </h2>
                     <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getPlanBadgeColor(subscription.planType)}`}>
-                      {isPaid ? '유료' : '무료'}
+                      {isPaid ? 'Paid' : 'Free'}
                     </span>
                   </div>
                 </div>
@@ -292,7 +292,7 @@ export function SubscriptionContent() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-foreground">HD 업스케일</p>
-                    <p className="text-xs text-muted-foreground">{features.hdUpscale ? '사용 가능' : '미지원'}</p>
+                    <p className="text-xs text-muted-foreground">{features.hdUpscale ? 'Available' : 'Not available'}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 bg-white/10 rounded-xl p-3">
@@ -301,7 +301,7 @@ export function SubscriptionContent() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-foreground">워터마크</p>
-                    <p className="text-xs text-muted-foreground">{features.watermarkFree ? '제거됨' : '포함'}</p>
+                    <p className="text-xs text-muted-foreground">{features.watermarkFree ? 'Removed' : 'Included'}</p>
                   </div>
                 </div>
               </div>
@@ -380,7 +380,7 @@ export function SubscriptionContent() {
                 <div>
                   <p className="font-medium text-foreground">아바타 생성</p>
                   <p className="text-sm text-muted-foreground">
-                    {usage.avatars.used} / {usage.avatars.limit === -1 ? '무제한' : usage.avatars.limit}
+                    {usage.avatars.used} / {usage.avatars.limit === -1 ? 'Unlimited' : usage.avatars.limit}
                   </p>
                 </div>
               </div>
@@ -407,7 +407,7 @@ export function SubscriptionContent() {
                 <div>
                   <p className="font-medium text-foreground">음악 생성</p>
                   <p className="text-sm text-muted-foreground">
-                    {usage.music.used} / {usage.music.limit === -1 ? '무제한' : usage.music.limit}
+                    {usage.music.used} / {usage.music.limit === -1 ? 'Unlimited' : usage.music.limit}
                   </p>
                 </div>
               </div>
@@ -434,7 +434,7 @@ export function SubscriptionContent() {
                 <div>
                   <p className="font-medium text-foreground">제품 등록</p>
                   <p className="text-sm text-muted-foreground">
-                    {usage.products.used} / {usage.products.limit === -1 ? '무제한' : usage.products.limit}
+                    {usage.products.used} / {usage.products.limit === -1 ? 'Unlimited' : usage.products.limit}
                   </p>
                 </div>
               </div>

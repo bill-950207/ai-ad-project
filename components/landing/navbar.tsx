@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
 
 export function Navbar() {
-  const { language } = useLanguage()
+  const { t, language } = useLanguage()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const supabase = createClient()
@@ -29,9 +29,9 @@ export function Navbar() {
   }, [supabase.auth])
 
   const navLinks = [
-    { label: isKo ? '기능' : 'Features', href: '#features' },
-    { label: isKo ? '사용법' : 'How it works', href: '#workflow' },
-    { label: isKo ? '갤러리' : 'Gallery', href: '#gallery' },
+    { label: t.landing?.nav?.features || 'Features', href: '#features' },
+    { label: t.landing?.nav?.howItWorks || 'How it works', href: '#workflow' },
+    { label: t.landing?.nav?.gallery || 'Gallery', href: '#gallery' },
   ]
 
   return (
@@ -69,7 +69,7 @@ export function Navbar() {
                 href="/dashboard"
                 className="px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
-                {isKo ? '대시보드' : 'Dashboard'}
+                {t.landing?.nav?.dashboard || 'Dashboard'}
               </Link>
             ) : (
               <>
@@ -77,7 +77,7 @@ export function Navbar() {
                   href="/login"
                   className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
-                  {isKo ? '로그인' : 'Login'}
+                  {t.landing?.nav?.login || 'Login'}
                 </Link>
                 <Link
                   href="/signup"
@@ -124,7 +124,7 @@ export function Navbar() {
                     href="/dashboard"
                     className="w-full px-4 py-2.5 rounded-lg text-sm font-medium text-center bg-primary text-primary-foreground"
                   >
-                    {isKo ? '대시보드' : 'Dashboard'}
+                    {t.landing?.nav?.dashboard || 'Dashboard'}
                   </Link>
                 ) : (
                   <>
@@ -132,7 +132,7 @@ export function Navbar() {
                       href="/login"
                       className="w-full px-4 py-2.5 rounded-lg text-sm font-medium text-center border border-border hover:bg-secondary transition-colors"
                     >
-                      {isKo ? '로그인' : 'Login'}
+                      {t.landing?.nav?.login || 'Login'}
                     </Link>
                     <Link
                       href="/signup"

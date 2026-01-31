@@ -69,41 +69,41 @@ interface AvatarSelectModalProps {
   selectedType?: 'avatar' | 'outfit' | 'ai-generated'
 }
 
-// AI 아바타 옵션 라벨
-const GENDER_OPTIONS = [
-  { value: 'any', label: '성별 무관' },
-  { value: 'female', label: '여성' },
-  { value: 'male', label: '남성' },
+// AI avatar option labels (fallback)
+const DEFAULT_GENDER_OPTIONS = [
+  { value: 'any', label: 'Any Gender' },
+  { value: 'female', label: 'Female' },
+  { value: 'male', label: 'Male' },
 ] as const
 
-const AGE_OPTIONS = [
-  { value: 'any', label: '연령 무관' },
-  { value: 'young', label: '20-30대' },
-  { value: 'middle', label: '30-40대' },
-  { value: 'mature', label: '40-50대' },
+const DEFAULT_AGE_OPTIONS = [
+  { value: 'any', label: 'Any Age' },
+  { value: 'young', label: '20-30s' },
+  { value: 'middle', label: '30-40s' },
+  { value: 'mature', label: '40-50s' },
 ] as const
 
-const STYLE_OPTIONS = [
-  { value: 'any', label: '무관' },
-  { value: 'natural', label: '자연스러운' },
-  { value: 'professional', label: '전문적인' },
-  { value: 'casual', label: '캐주얼' },
-  { value: 'elegant', label: '우아한' },
+const DEFAULT_STYLE_OPTIONS = [
+  { value: 'any', label: 'Any' },
+  { value: 'natural', label: 'Natural' },
+  { value: 'professional', label: 'Professional' },
+  { value: 'casual', label: 'Casual' },
+  { value: 'elegant', label: 'Elegant' },
 ] as const
 
-const ETHNICITY_OPTIONS = [
-  { value: 'any', label: '무관' },
-  { value: 'korean', label: '한국인' },
-  { value: 'asian', label: '아시아인' },
-  { value: 'western', label: '서양인' },
+const DEFAULT_ETHNICITY_OPTIONS = [
+  { value: 'any', label: 'Any' },
+  { value: 'korean', label: 'Korean' },
+  { value: 'asian', label: 'Asian' },
+  { value: 'western', label: 'Western' },
 ] as const
 
-const BODY_TYPE_OPTIONS = [
-  { value: 'any', label: 'AI 추천' },
-  { value: 'slim', label: '날씬' },
-  { value: 'average', label: '보통' },
-  { value: 'athletic', label: '탄탄' },
-  { value: 'curvy', label: '글래머' },
+const DEFAULT_BODY_TYPE_OPTIONS = [
+  { value: 'any', label: 'AI Recommend' },
+  { value: 'slim', label: 'Slim' },
+  { value: 'average', label: 'Average' },
+  { value: 'athletic', label: 'Athletic' },
+  { value: 'curvy', label: 'Curvy' },
 ] as const
 
 export function AvatarSelectModal({

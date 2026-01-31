@@ -123,9 +123,9 @@ const plans: Plan[] = [
       '우선 기능 업데이트',
     ],
     limits: {
-      avatars: '무제한',
-      music: '무제한',
-      products: '무제한',
+      avatars: 'Unlimited',
+      music: 'Unlimited',
+      products: 'Unlimited',
       credits: '1,600 크레딧/월',
       imageEstimate: '~800개 광고 이미지',
       videoEstimate: '~160개 광고 영상',
@@ -203,7 +203,7 @@ export function PricingContent() {
   }
 
   const getPrice = (plan: Plan) => {
-    if (plan.priceMonthly === 0) return '무료'
+    if (plan.priceMonthly === 0) return 'Free'
     const price = interval === 'monthly' ? plan.priceMonthly : plan.priceYearly / 12
     return `$${price.toFixed(2)}`
   }
@@ -216,7 +216,7 @@ export function PricingContent() {
     return savings > 0 ? savings : null
   }
 
-  const isUnlimited = (value: string) => value === '무제한'
+  const isUnlimited = (value: string) => value === 'Unlimited'
 
   const getButtonState = (plan: Plan) => {
     const isCurrentPlan = plan.name === currentPlanType
@@ -225,7 +225,7 @@ export function PricingContent() {
 
     if (isCurrentPlan) {
       return {
-        text: '현재 플랜',
+        text: 'Current Plan',
         disabled: true,
         className: 'bg-primary/20 text-primary border-2 border-primary cursor-default',
       }
@@ -233,7 +233,7 @@ export function PricingContent() {
 
     if (isLowerOrEqual && !isCurrentPlan) {
       return {
-        text: '다운그레이드 불가',
+        text: 'Downgrade N/A',
         disabled: true,
         className: 'bg-secondary text-muted-foreground cursor-not-allowed opacity-50',
       }
@@ -241,7 +241,7 @@ export function PricingContent() {
 
     if (isHigher) {
       return {
-        text: loading === plan.name ? '처리 중...' : '업그레이드',
+        text: loading === plan.name ? 'Processing...' : 'Upgrade',
         disabled: loading === plan.name,
         className: plan.popular
           ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-[1.02]'
@@ -252,7 +252,7 @@ export function PricingContent() {
     }
 
     return {
-      text: '구독하기',
+      text: 'Subscribe',
       disabled: false,
       className: 'bg-secondary text-foreground hover:bg-secondary/80',
     }
