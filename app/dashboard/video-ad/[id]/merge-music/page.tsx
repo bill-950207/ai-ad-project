@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { Music, Loader2, CheckCircle, XCircle, ArrowLeft, Volume2 } from 'lucide-react'
+import { Music, Loader2, CheckCircle, XCircle, ArrowLeft } from 'lucide-react'
 import Image from 'next/image'
 
 interface MergeStatus {
@@ -157,14 +157,6 @@ export default function MergeMusicPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
-  // 볼륨 라벨
-  const getVolumeLabel = (volume: number) => {
-    const percent = Math.round(volume * 100)
-    if (percent <= 25) return '작게'
-    if (percent <= 50) return '보통'
-    return '크게'
-  }
-
   const getStepIcon = () => {
     if (status.step === 'completed') {
       return <CheckCircle className="w-16 h-16 text-green-500" />
@@ -206,15 +198,9 @@ export default function MergeMusicPage() {
               <h3 className="font-medium text-foreground truncate">
                 {musicName ? decodeURIComponent(musicName) : '선택된 음악'}
               </h3>
-              <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-                <span>
-                  {formatTime(Number(startTime))} - {formatTime(Number(endTime))}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Volume2 className="w-3 h-3" />
-                  {getVolumeLabel(Number(musicVolume))}
-                </span>
-              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                {formatTime(Number(startTime))} - {formatTime(Number(endTime))}
+              </p>
             </div>
           </div>
 
