@@ -759,14 +759,17 @@ export function WizardStep5() {
 
     try {
       // 키프레임에 씬 프롬프트, 개별 duration, movementAmplitude 추가
+      // ★ videoPrompt가 있으면 영상 생성에 우선 사용 (더 동적인 모션 포함)
       const keyframesWithPrompts = completedKeyframes.map((kf) => {
         const sceneInfo = scenarioInfo.scenes?.find(s => s.index === kf.sceneIndex)
+        // videoPrompt가 있으면 영상용으로 사용, 없으면 scenePrompt 사용
+        const videoPromptToUse = sceneInfo?.videoPrompt || sceneInfo?.scenePrompt
         return {
           sceneIndex: kf.sceneIndex,
           imageUrl: kf.imageUrl!,
-          scenePrompt: sceneInfo?.scenePrompt,
+          scenePrompt: videoPromptToUse,  // 영상 생성용 프롬프트
           duration: sceneDurations[kf.sceneIndex] ?? 3,  // 각 씬별 duration
-          movementAmplitude: sceneInfo?.movementAmplitude ?? 'small',  // 카메라/모션 강도 (기본 small - 안정적)
+          movementAmplitude: sceneInfo?.movementAmplitude ?? 'medium',  // 카메라/모션 강도 (기본 medium - 동적)
         }
       })
 

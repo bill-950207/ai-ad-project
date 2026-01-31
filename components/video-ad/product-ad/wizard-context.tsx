@@ -90,7 +90,8 @@ export interface FirstSceneOption {
 // 개별 씬 정보 (시나리오의 각 씬)
 export interface SceneInfo {
   index: number
-  scenePrompt: string        // 이 씬의 이미지 생성 프롬프트
+  scenePrompt: string        // 이 씬의 이미지 생성 프롬프트 (Seedream)
+  videoPrompt?: string       // 이 씬의 영상 생성 프롬프트 (Vidu) - 별도 모션 포함
   transitionPrompt?: string  // 이 씬에서 다음 씬으로의 전환 프롬프트
   duration: number           // 전환 영상 길이 (3-10초)
   movementAmplitude?: 'auto' | 'small' | 'medium' | 'large'  // 카메라/모션 강도

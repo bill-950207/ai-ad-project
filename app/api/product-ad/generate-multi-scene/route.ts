@@ -19,14 +19,19 @@ const genAI = new GoogleGenAI({
 
 const MODEL_NAME = 'gemini-3-flash-preview'
 
-// 씬별 광고 요소
+// 씬별 광고 요소 (신규 - 시나리오 API에서 생성한 프롬프트 포함)
 interface SceneElementOptions {
   background: string
   mood: string
-  cameraAngle: string
-  productPlacement: string
-  lighting: string
-  colorTone: string
+  additionalPrompt?: string
+  movementAmplitude?: 'auto' | 'small' | 'medium' | 'large'
+  imagePrompt?: string   // 시나리오에서 생성한 Seedream용 프롬프트
+  videoPrompt?: string   // 시나리오에서 생성한 Vidu용 프롬프트
+  // 레거시 필드 (하위 호환)
+  cameraAngle?: string
+  productPlacement?: string
+  lighting?: string
+  colorTone?: string
 }
 
 // 레거시 호환용 (전체 요소)
@@ -54,7 +59,8 @@ interface GenerateMultiSceneRequest {
 
 interface SceneOutput {
   index: number
-  scenePrompt: string
+  scenePrompt: string      // 키프레임 이미지 생성용 (Seedream)
+  videoPrompt?: string     // 영상 생성용 (Vidu) - 별도 모션 프롬프트
   duration: number
   movementAmplitude: 'auto' | 'small' | 'medium' | 'large'
 }
@@ -119,6 +125,37 @@ export async function POST(request: NextRequest) {
 
     // 각 씬의 평균 길이 계산
     const avgDuration = Math.min(10, Math.max(3, Math.floor(totalDuration / (sceneCount - 1))))
+
+    // ★ 시나리오에서 이미 imagePrompt가 생성되어 있으면 직접 사용 (LLM 호출 건너뛰기)
+    const allHaveImagePrompt = resolvedSceneElements.every(elem => elem.imagePrompt && elem.imagePrompt.trim().length > 0)
+
+    if (allHaveImagePrompt) {
+      console.log('[generate-multi-scene] 시나리오에서 생성된 imagePrompt 사용 (LLM 스킵)')
+
+      // 씬 프로그레션에 따른 기본 movementAmplitude 결정
+      const getDefaultAmplitude = (idx: number, total: number): 'small' | 'medium' | 'large' => {
+        if (idx === 0) return 'small'  // 도입
+        if (idx === total - 1) return 'large'  // 클라이맥스
+        return 'medium'  // 중간
+      }
+
+      const scenes: SceneOutput[] = resolvedSceneElements.map((elem, idx) => ({
+        index: idx,
+        scenePrompt: elem.imagePrompt!,  // 시나리오에서 생성한 Seedream용 프롬프트
+        videoPrompt: elem.videoPrompt,   // 시나리오에서 생성한 Vidu용 프롬프트
+        duration: avgDuration,
+        movementAmplitude: elem.movementAmplitude || getDefaultAmplitude(idx, resolvedSceneElements.length),
+      }))
+
+      return NextResponse.json({
+        scenes,
+        visualStyle: 'AI-optimized premium commercial quality',
+        narrativeFlow: '시나리오 기반 동적 씬 프로그레션 (도입 → 빌드업 → 클라이맥스)',
+      })
+    }
+
+    // imagePrompt가 없으면 기존처럼 LLM으로 생성
+    console.log('[generate-multi-scene] imagePrompt 없음 - LLM으로 생성')
 
     // 제품 이미지 base64 변환
     let productImageData: { base64: string; mimeType: string } | null = null
