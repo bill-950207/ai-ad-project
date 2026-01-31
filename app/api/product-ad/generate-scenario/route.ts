@@ -332,43 +332,53 @@ CRITICAL: Each scenario must tell a coherent mini-story with the product as the 
    - 마지막 씬: small (안정감, 마무리)
 
 5. imagePrompt (영어, 50-80 words): Seedream 이미지 생성용
-   - Start with: "The ${productName} shown in the attached image"
+   - Start with: "The product shown in the attached image" (제품명 대신 generic 표현 사용)
    - End with: "soft professional lighting, photorealistic, 4K, commercial quality"
    - NO PEOPLE
    - NO visible studio equipment in the scene
    - Describe lighting as EFFECT only (e.g., "soft warm light from above"), NOT as equipment
-   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "lens", "shot on", "filmed", "recorded", "photographer"
+   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "lens", "shot on", "filmed", "recorded", "photographer", "shooting", "capture"
      (These words cause cameras/equipment to appear in the generated image!)
    - Describe the FINAL SCENE only, never mention filming process or equipment
+   - ⚠️ WARNING: Do NOT include product name "${productName}" in the prompt - it may contain misleading words
 
 6. videoPrompt (영어, 50-80 words): Vidu 영상 생성용
-   - Start with: "The ${productName} shown in the attached image"
+   - Start with: "The product shown in the attached image" (제품명 대신 generic 표현 사용)
    - End with: "soft natural lighting, photorealistic, 4K"
    - NO PEOPLE
    - NO visible studio equipment in the scene
    - Describe lighting as EFFECT only, NOT as equipment
-   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "lens", "shot on", "filmed", "recorded", "photographer"
+   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "lens", "shot on", "filmed", "recorded", "photographer", "shooting", "capture"
      (These words cause cameras/equipment to appear in the generated video!)
+   - ⚠️ WARNING: Do NOT include product name "${productName}" in the prompt - it may contain misleading words
 
-   모션 묘사 가이드라인 (카메라 언급 없이 결과만 묘사):
-   - 제품 움직임: "slowly rotating", "gently floating", "gradually revealing"
-   - 시점 변화: "moving closer to details", "pulling back to show full view"
-   - 분위기: "drifting through soft light", "emerging from shadows"
-   - 씬 특성에 맞게 선택: 오프닝(역동적) / 중간(탐색적) / 마지막(안정적)
+   Motion description guidelines (describe results without mentioning camera):
+   - Product motion: "slowly rotating", "gently floating", "gradually revealing"
+   - Viewpoint shift: "moving closer to details", "pulling back to show full view"
+   - Atmosphere: "drifting through soft light", "emerging from shadows"
+   - Match motion to scene position: opening (dynamic) / middle (exploratory) / final (stable)
 
 === VIDEO SETTINGS ===
-- aspectRatio: "16:9" (landscape), "9:16" (portrait/vertical), or "1:1" (square)
+- aspectRatio: Choose based on content purpose
+  - "16:9": Landscape, YouTube/TV ads, wide product shots
+  - "9:16": Vertical, Instagram Reels/TikTok/Shorts, mobile-first
+  - "1:1": Square, Instagram feed, balanced composition
 - sceneCount: The number of scenes YOU decided (2-8)
 - sceneDurations: Array of durations matching your sceneCount
   - RECOMMENDED: 2-4 seconds per scene (optimal for engagement and visual rhythm)
   - Range: 1-8 seconds each
   - Vary durations for rhythm (avoid same duration consecutively)
 
+=== CRITICAL: ARRAY LENGTH CONSISTENCY ===
+- sceneElements array length MUST equal sceneCount
+- sceneDurations array length MUST equal sceneCount
+- Example: If sceneCount is 4, provide exactly 4 sceneElements and 4 sceneDurations
+
 === OUTPUT FORMAT ===
 1. "elements": { "mood": "overall mood in ${outputLanguage}" }
-2. "sceneElements": all 6 fields for each scene
+2. "sceneElements": all 6 fields for each scene (array length = sceneCount)
 3. title, description, background, mood, additionalPrompt: ${outputLanguage}
-4. imagePrompt, videoPrompt: English only
+4. imagePrompt, videoPrompt: English only (NEVER include product name)
 
 background, mood, additionalPrompt: Write creatively and freely based on the product.
 
@@ -452,43 +462,53 @@ CRITICAL: Adapt the reference video's tone while creating a coherent product sto
    - 마지막 씬: small (안정감, 마무리)
 
 5. imagePrompt (영어, 50-80 words): Seedream 이미지 생성용
-   - Start with: "The ${productName} shown in the attached image"
+   - Start with: "The product shown in the attached image" (제품명 대신 generic 표현 사용)
    - End with: "soft professional lighting, photorealistic, 4K, commercial quality"
    - NO PEOPLE
    - NO visible studio equipment in the scene
    - Describe lighting as EFFECT only (e.g., "soft warm light from above"), NOT as equipment
-   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "lens", "shot on", "filmed", "recorded", "photographer"
+   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "lens", "shot on", "filmed", "recorded", "photographer", "shooting", "capture"
      (These words cause cameras/equipment to appear in the generated image!)
    - Describe the FINAL SCENE only, never mention filming process or equipment
+   - ⚠️ WARNING: Do NOT include product name "${productName}" in the prompt - it may contain misleading words
 
 6. videoPrompt (영어, 50-80 words): Vidu 영상 생성용
-   - Start with: "The ${productName} shown in the attached image"
+   - Start with: "The product shown in the attached image" (제품명 대신 generic 표현 사용)
    - End with: "soft natural lighting, photorealistic, 4K"
    - NO PEOPLE
    - NO visible studio equipment in the scene
    - Describe lighting as EFFECT only, NOT as equipment
-   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "lens", "shot on", "filmed", "recorded", "photographer"
+   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "lens", "shot on", "filmed", "recorded", "photographer", "shooting", "capture"
      (These words cause cameras/equipment to appear in the generated video!)
+   - ⚠️ WARNING: Do NOT include product name "${productName}" in the prompt - it may contain misleading words
 
-   모션 묘사 가이드라인 (카메라 언급 없이 결과만 묘사):
-   - 제품 움직임: "slowly rotating", "gently floating", "gradually revealing"
-   - 시점 변화: "moving closer to details", "pulling back to show full view"
-   - 분위기: "drifting through soft light", "emerging from shadows"
-   - 씬 특성에 맞게 선택: 오프닝(역동적) / 중간(탐색적) / 마지막(안정적)
+   Motion description guidelines (describe results without mentioning camera):
+   - Product motion: "slowly rotating", "gently floating", "gradually revealing"
+   - Viewpoint shift: "moving closer to details", "pulling back to show full view"
+   - Atmosphere: "drifting through soft light", "emerging from shadows"
+   - Match motion to scene position: opening (dynamic) / middle (exploratory) / final (stable)
 
 === VIDEO SETTINGS ===
-- aspectRatio: "16:9" (landscape), "9:16" (portrait/vertical), or "1:1" (square)
+- aspectRatio: Choose based on content purpose
+  - "16:9": Landscape, YouTube/TV ads, wide product shots
+  - "9:16": Vertical, Instagram Reels/TikTok/Shorts, mobile-first
+  - "1:1": Square, Instagram feed, balanced composition
 - sceneCount: The number of scenes YOU decided (2-8)
 - sceneDurations: Array of durations matching your sceneCount
   - RECOMMENDED: 2-4 seconds per scene (optimal for engagement and visual rhythm)
   - Range: 1-8 seconds each
   - Vary durations for rhythm (avoid same duration consecutively)
 
+=== CRITICAL: ARRAY LENGTH CONSISTENCY ===
+- sceneElements array length MUST equal sceneCount
+- sceneDurations array length MUST equal sceneCount
+- Example: If sceneCount is 4, provide exactly 4 sceneElements and 4 sceneDurations
+
 === OUTPUT FORMAT ===
 1. "elements": { "mood": "overall mood in ${outputLanguage}" }
-2. "sceneElements": all 6 fields for each scene
+2. "sceneElements": all 6 fields for each scene (array length = sceneCount)
 3. title, description, background, mood, additionalPrompt: ${outputLanguage}
-4. imagePrompt, videoPrompt: English only
+4. imagePrompt, videoPrompt: English only (NEVER include product name)
 
 background, mood, additionalPrompt: Write creatively and freely based on the product.
 
