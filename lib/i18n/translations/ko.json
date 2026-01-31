@@ -81,6 +81,25 @@
     "closeMenu": "메뉴 닫기",
     "startFree": "무료로 시작"
   },
+  "footer": {
+    "product": "제품",
+    "imageAds": "이미지 광고",
+    "videoAds": "영상 광고",
+    "avatars": "아바타",
+    "pricing": "가격",
+    "company": "회사",
+    "about": "소개",
+    "blog": "블로그",
+    "careers": "채용",
+    "contact": "문의",
+    "legal": "법적 정보",
+    "terms": "이용약관",
+    "privacy": "개인정보처리방침",
+    "cookies": "쿠키 정책",
+    "description": "전문적인 광고 콘텐츠를 몇 분 만에 제작하세요. 이미지, 영상, 아바타까지 모두 지원합니다.",
+    "copyright": "모든 권리 보유.",
+    "allSystemsOperational": "모든 시스템 정상"
+  },
   "nav": {
     "adCreationTools": "광고 생성 도구",
     "adWorkflow": "광고 워크플로우",

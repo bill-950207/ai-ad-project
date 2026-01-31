@@ -18,35 +18,34 @@ import { Github, Twitter, Linkedin, Mail, ArrowUpRight } from 'lucide-react'
 // ============================================================
 
 export function Footer() {
-  const { t, language } = useLanguage()
-  const isKo = language === 'ko'
+  const { t } = useLanguage()
 
   // 푸터 링크 데이터
   const footerLinks = {
     product: {
-      title: isKo ? '제품' : 'Product',
+      title: t.footer.product,
       links: [
-        { label: isKo ? '이미지 광고' : 'Image Ads', href: '/login' },
-        { label: isKo ? '영상 광고' : 'Video Ads', href: '/login' },
-        { label: isKo ? '아바타' : 'Avatars', href: '/login' },
-        { label: isKo ? '가격' : 'Pricing', href: '#' },
+        { label: t.footer.imageAds, href: '/login' },
+        { label: t.footer.videoAds, href: '/login' },
+        { label: t.footer.avatars, href: '/login' },
+        { label: t.footer.pricing, href: '#' },
       ],
     },
     company: {
-      title: isKo ? '회사' : 'Company',
+      title: t.footer.company,
       links: [
-        { label: isKo ? '소개' : 'About', href: '#' },
-        { label: isKo ? '블로그' : 'Blog', href: '#' },
-        { label: isKo ? '채용' : 'Careers', href: '#' },
-        { label: isKo ? '문의' : 'Contact', href: '#' },
+        { label: t.footer.about, href: '#' },
+        { label: t.footer.blog, href: '#' },
+        { label: t.footer.careers, href: '#' },
+        { label: t.footer.contact, href: '#' },
       ],
     },
     legal: {
-      title: isKo ? '법적 정보' : 'Legal',
+      title: t.footer.legal,
       links: [
-        { label: isKo ? '이용약관' : 'Terms of Service', href: '/legal/terms' },
-        { label: isKo ? '개인정보처리방침' : 'Privacy Policy', href: '/legal/privacy' },
-        { label: isKo ? '쿠키 정책' : 'Cookie Policy', href: '#' },
+        { label: t.footer.terms, href: '/legal/terms' },
+        { label: t.footer.privacy, href: '/legal/privacy' },
+        { label: t.footer.cookies, href: '#' },
       ],
     },
   }
@@ -78,9 +77,7 @@ export function Footer() {
 
             {/* 설명 */}
             <p className="mt-4 text-sm text-muted-foreground max-w-xs leading-relaxed">
-              {isKo
-                ? '전문적인 광고 콘텐츠를 몇 분 만에 제작하세요. 이미지, 영상, 아바타까지 모두 지원합니다.'
-                : 'Create professional ad content in minutes. Support for images, videos, and avatars.'}
+              {t.footer.description}
             </p>
 
             {/* 소셜 링크 */}
@@ -129,13 +126,13 @@ export function Footer() {
         <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3">
           {/* 저작권 */}
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} AIAD. {isKo ? '모든 권리 보유.' : 'All rights reserved.'}
+            © {new Date().getFullYear()} AIAD. {t.footer.copyright}
           </p>
 
           {/* 상태 표시 */}
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-            <span>{isKo ? '모든 시스템 정상' : 'All systems operational'}</span>
+            <span>{t.footer.allSystemsOperational}</span>
           </div>
         </div>
       </div>

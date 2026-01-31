@@ -45,7 +45,7 @@ export function InsufficientCreditsModal({
           router.push('/dashboard/pricing')
         }
       } catch (error) {
-        console.error('Draft 저장 오류:', error)
+        console.error('Draft save error:', error)
         router.push('/dashboard/pricing')
       } finally {
         setIsSaving(false)

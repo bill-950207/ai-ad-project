@@ -81,6 +81,25 @@
     "closeMenu": "关闭菜单",
     "startFree": "免费开始"
   },
+  "footer": {
+    "product": "产品",
+    "imageAds": "图片广告",
+    "videoAds": "视频广告",
+    "avatars": "虚拟形象",
+    "pricing": "定价",
+    "company": "公司",
+    "about": "关于我们",
+    "blog": "博客",
+    "careers": "招聘",
+    "contact": "联系我们",
+    "legal": "法律信息",
+    "terms": "服务条款",
+    "privacy": "隐私政策",
+    "cookies": "Cookie政策",
+    "description": "几分钟内创建专业广告内容。支持图片、视频和虚拟形象。",
+    "copyright": "保留所有权利。",
+    "allSystemsOperational": "所有系统正常运行"
+  },
   "nav": {
     "adCreationTools": "广告创作工具",
     "adWorkflow": "广告工作流程",

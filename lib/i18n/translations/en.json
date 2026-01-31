@@ -81,6 +81,25 @@
     "closeMenu": "Close menu",
     "startFree": "Start Free"
   },
+  "footer": {
+    "product": "Product",
+    "imageAds": "Image Ads",
+    "videoAds": "Video Ads",
+    "avatars": "Avatars",
+    "pricing": "Pricing",
+    "company": "Company",
+    "about": "About",
+    "blog": "Blog",
+    "careers": "Careers",
+    "contact": "Contact",
+    "legal": "Legal",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "cookies": "Cookie Policy",
+    "description": "Create professional ad content in minutes. Support for images, videos, and avatars.",
+    "copyright": "All rights reserved.",
+    "allSystemsOperational": "All systems operational"
+  },
   "nav": {
     "adCreationTools": "Ad Creation Tools",
     "adWorkflow": "Ad Workflow",
