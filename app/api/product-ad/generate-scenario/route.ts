@@ -305,13 +305,16 @@ Create a unique and creative narrative arc that best suits this specific product
 4. movementAmplitude: "small" | "medium" | "large" | "auto"
 
 5. imagePrompt (영어, 50-80 words): Seedream 이미지 생성용
-   - Start with: "The product shown in the attached image"
+   - Start with: "The product shown in the attached image" (NEVER use "${productName}"!)
    - End with: "soft professional lighting, photorealistic, 4K, commercial quality"
    - NO PEOPLE
-   - NO visible studio equipment, cameras, tripods, lighting rigs, softboxes, reflectors, or any production equipment
-   - Describe lighting as EFFECT only (e.g., "soft warm light from above"), NOT as visible equipment
-   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "photographer", "filming", "behind the scenes", "DSLR", "mirrorless"
-   - ⚠️ Do NOT use "${productName}" directly - use generic terms like "the product", "the item"
+   - Describe lighting as EFFECT only (e.g., "soft warm light"), NOT as visible equipment
+
+   🚨 CRITICAL - These words will generate actual cameras in the image:
+   ❌ BANNED: "camera", "Camera", "tripod", "DSLR", "mirrorless"
+   ❌ BANNED: "photographer", "filming", "behind the scenes", "photo shoot"
+   ❌ BANNED: the product name "${productName}" (may contain "Camera" or similar)
+   ✅ USE ONLY: "the product", "the item", "the bottle", "the package"
 
 6. videoPrompt (영어, 50-80 words): Vidu 영상 생성용
    - Start with: "The product shown in the attached image"
@@ -388,13 +391,16 @@ Choose what best tells this product's story while adapting the reference style.
 4. movementAmplitude: "small" | "medium" | "large" | "auto"
 
 5. imagePrompt (영어, 50-80 words): Seedream 이미지 생성용
-   - Start with: "The product shown in the attached image"
+   - Start with: "The product shown in the attached image" (NEVER use "${productName}"!)
    - End with: "soft professional lighting, photorealistic, 4K, commercial quality"
    - NO PEOPLE
-   - NO visible studio equipment, cameras, tripods, lighting rigs, softboxes, reflectors, or any production equipment
-   - Describe lighting as EFFECT only (e.g., "soft warm light from above"), NOT as visible equipment
-   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "photographer", "filming", "behind the scenes", "DSLR", "mirrorless"
-   - ⚠️ Do NOT use "${productName}" directly - use generic terms like "the product", "the item"
+   - Describe lighting as EFFECT only (e.g., "soft warm light"), NOT as visible equipment
+
+   🚨 CRITICAL - These words will generate actual cameras in the image:
+   ❌ BANNED: "camera", "Camera", "tripod", "DSLR", "mirrorless"
+   ❌ BANNED: "photographer", "filming", "behind the scenes", "photo shoot"
+   ❌ BANNED: the product name "${productName}" (may contain "Camera" or similar)
+   ✅ USE ONLY: "the product", "the item", "the bottle", "the package"
 
 6. videoPrompt (영어, 50-80 words): Vidu 영상 생성용
    - Start with: "The product shown in the attached image"

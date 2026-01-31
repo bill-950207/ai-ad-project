@@ -257,8 +257,14 @@ function buildMultiScenePrompt(
 
   return `You are an expert advertising video director creating a PREMIUM AD CAMPAIGN with ${sceneCount} scenes.
 
+🚨🚨🚨 READ FIRST - ABSOLUTE FORBIDDEN WORDS 🚨🚨🚨
+These words will cause actual cameras/equipment to appear in generated videos:
+❌ BANNED: "camera", "Camera", "tripod", "DSLR", "mirrorless", "lens" (except "lens flare")
+❌ BANNED: "photographer", "filming", "behind the scenes", "photo shoot", "studio setup"
+❌ BANNED: The product name "${productName}" - may contain misleading words like "Camera"
+✅ USE ONLY: "the product", "the item", "the bottle", "the package"
+
 🎬 GOAL: Create ${sceneCount} SCENES where EACH scene uses its OWN specific elements listed below.
-IMPORTANT: Each scene has DIFFERENT settings - USE the specific elements for EACH scene.
 
 === CRITICAL RULES ===
 ❌ ABSOLUTELY NO PEOPLE:
@@ -266,10 +272,9 @@ IMPORTANT: Each scene has DIFFERENT settings - USE the specific elements for EAC
 - ONLY the product, objects, environment, and natural elements
 
 ❌ ABSOLUTELY NO VISIBLE PRODUCTION EQUIPMENT:
-- NO cameras, tripods, lighting rigs, softboxes, ring lights, reflectors, or any studio equipment
-- NO behind-the-scenes elements, production setups, or filming equipment
-- Describe lighting as EFFECT only (e.g., "soft highlights", "dramatic shadows"), NOT as visible equipment
-- The video should look like a FINAL ADVERTISEMENT, not a behind-the-scenes photo
+- NO cameras, tripods, lighting rigs, softboxes, ring lights, reflectors
+- Describe lighting as EFFECT only (e.g., "soft highlights", "dramatic shadows")
+- The video should look like a FINAL ADVERTISEMENT
 
 ✅ OUTPUT LANGUAGE:
 - scenePrompt: English only (for AI video generation)
