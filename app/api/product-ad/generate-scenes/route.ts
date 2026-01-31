@@ -162,16 +162,26 @@ Create ${count} different image generation prompts for a PREMIUM 3D COMMERCIAL-S
 OUTPUT LANGUAGE: English (prompts must be in English for AI image generation)
 
 === PRODUCT INFORMATION ===
-Product Name: ${productName}
+Product: [Refer to the product shown in the attached image]
 Product Image: [The product image is provided as reference]
+
+⚠️ WARNING: Do NOT include the product name "${productName}" directly in the generated prompts.
+The product name may contain misleading words (e.g., "Camera Lens Cleaner" would generate actual cameras).
+Instead, use generic terms like "the product", "the bottle", "the item" based on what you see in the image.
 
 === SCENARIO ELEMENTS ===
 Background/Location: ${elements.background}
 Mood/Tone: ${elements.mood}
-Camera Angle: ${elements.cameraAngle}
+Composition/Angle: ${elements.cameraAngle}
 Product Placement: ${elements.productPlacement}
-Lighting Style: ${elements.lighting}
+Lighting Effect: ${elements.lighting}
 Color Tone: ${elements.colorTone}
+
+⚠️ FORBIDDEN WORDS (이 단어들을 프롬프트에 포함하면 촬영 장비가 이미지에 등장함!):
+NEVER include: "camera", "tripod", "photographer", "filming", "behind the scenes", "DSLR", "mirrorless"
+These words trigger the AI to generate actual cameras/equipment in the image!
+
+Note: "shot on 85mm lens at f/2.8" is OK - this describes image quality specs, not visible equipment.
 
 === ⭐ PREMIUM 3D COMMERCIAL STYLE (매우 중요!) ===
 Create ultra-realistic, visually striking 3D commercial-style product shots with these elements:

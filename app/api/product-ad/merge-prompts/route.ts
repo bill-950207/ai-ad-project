@@ -50,7 +50,7 @@ Rules:
 2. Preserve the key visual elements from the original prompt
 3. Incorporate the additional request naturally
 4. Keep the prompt concise (under 100 words)
-5. Focus on visual description, camera movement, and mood
+5. Focus on visual description, motion, and mood
 6. Do not include technical jargon or model-specific terms
 
 Original Prompt:
