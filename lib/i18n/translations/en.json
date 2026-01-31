@@ -81,6 +81,22 @@
     "closeMenu": "Close menu",
     "startFree": "Start Free"
   },
+  "showcase": {
+    "title": "Gallery",
+    "subtitle": "Check out real ad content created with our platform",
+    "tabAll": "All",
+    "tabImage": "Images",
+    "tabVideo": "Videos",
+    "loading": "Loading...",
+    "imageAd": "Image Ad",
+    "productDescription": "Product Description Video",
+    "productAd": "Product Ad Video",
+    "assetsUsed": "Assets Used",
+    "product": "Product",
+    "avatar": "Avatar",
+    "createThisAd": "Create This Ad",
+    "createSimilar": "Create a similar style ad"
+  },
   "footer": {
     "product": "Product",
     "imageAds": "Image Ads",
@@ -509,6 +525,15 @@
       "inProgress": "Generating",
       "completed": "Completed",
       "failed": "Failed"
+    },
+    "alerts": {
+      "deleteFailed": "Delete failed",
+      "deleteError": "Error occurred while deleting",
+      "generateError": "Error occurred while generating video",
+      "noThumbnail": "Cannot register to showcase without a thumbnail",
+      "showcaseRegistered": "Registered to showcase",
+      "registerFailed": "Registration failed",
+      "registerError": "Error occurred while registering"
     }
   },
   "imageAdTypes": {

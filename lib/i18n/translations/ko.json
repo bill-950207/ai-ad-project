@@ -81,6 +81,22 @@
     "closeMenu": "메뉴 닫기",
     "startFree": "무료로 시작"
   },
+  "showcase": {
+    "title": "제작 사례",
+    "subtitle": "실제 제작된 광고 콘텐츠를 확인해 보세요",
+    "tabAll": "전체",
+    "tabImage": "이미지",
+    "tabVideo": "영상",
+    "loading": "로딩 중...",
+    "imageAd": "이미지 광고",
+    "productDescription": "제품 설명 영상",
+    "productAd": "제품 광고 영상",
+    "assetsUsed": "사용된 에셋",
+    "product": "제품",
+    "avatar": "아바타",
+    "createThisAd": "이런 광고 만들기",
+    "createSimilar": "비슷한 스타일의 광고를 만들어 보세요"
+  },
   "footer": {
     "product": "제품",
     "imageAds": "이미지 광고",
@@ -509,6 +525,15 @@
       "inProgress": "생성 중",
       "completed": "완료",
       "failed": "실패"
+    },
+    "alerts": {
+      "deleteFailed": "삭제 실패",
+      "deleteError": "삭제 중 오류가 발생했습니다",
+      "generateError": "영상 생성 중 오류가 발생했습니다",
+      "noThumbnail": "썸네일이 없어 쇼케이스로 등록할 수 없습니다",
+      "showcaseRegistered": "쇼케이스에 등록되었습니다",
+      "registerFailed": "등록 실패",
+      "registerError": "등록 중 오류가 발생했습니다"
     }
   },
   "imageAdTypes": {

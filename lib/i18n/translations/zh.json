@@ -81,6 +81,22 @@
     "closeMenu": "关闭菜单",
     "startFree": "免费开始"
   },
+  "showcase": {
+    "title": "作品展示",
+    "subtitle": "查看使用我们平台创建的真实广告内容",
+    "tabAll": "全部",
+    "tabImage": "图片",
+    "tabVideo": "视频",
+    "loading": "加载中...",
+    "imageAd": "图片广告",
+    "productDescription": "产品介绍视频",
+    "productAd": "产品广告视频",
+    "assetsUsed": "使用的素材",
+    "product": "产品",
+    "avatar": "虚拟形象",
+    "createThisAd": "创建此广告",
+    "createSimilar": "创建类似风格的广告"
+  },
   "footer": {
     "product": "产品",
     "imageAds": "图片广告",
@@ -509,6 +525,15 @@
       "inProgress": "生成中",
       "completed": "已完成",
       "failed": "失败"
+    },
+    "alerts": {
+      "deleteFailed": "删除失败",
+      "deleteError": "删除时发生错误",
+      "generateError": "视频生成时发生错误",
+      "noThumbnail": "没有缩略图，无法注册到展示区",
+      "showcaseRegistered": "已注册到展示区",
+      "registerFailed": "注册失败",
+      "registerError": "注册时发生错误"
     }
   },
   "imageAdTypes": {

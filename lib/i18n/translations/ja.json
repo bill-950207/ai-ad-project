@@ -81,6 +81,22 @@
     "closeMenu": "メニューを閉じる",
     "startFree": "無料で始める"
   },
+  "showcase": {
+    "title": "制作事例",
+    "subtitle": "実際に制作された広告コンテンツをご覧ください",
+    "tabAll": "すべて",
+    "tabImage": "画像",
+    "tabVideo": "動画",
+    "loading": "読み込み中...",
+    "imageAd": "画像広告",
+    "productDescription": "商品説明動画",
+    "productAd": "商品広告動画",
+    "assetsUsed": "使用アセット",
+    "product": "商品",
+    "avatar": "アバター",
+    "createThisAd": "この広告を作る",
+    "createSimilar": "似たスタイルの広告を作成してみてください"
+  },
   "footer": {
     "product": "製品",
     "imageAds": "画像広告",
@@ -509,6 +525,15 @@
       "inProgress": "生成中",
       "completed": "完了",
       "failed": "失敗"
+    },
+    "alerts": {
+      "deleteFailed": "削除に失敗しました",
+      "deleteError": "削除中にエラーが発生しました",
+      "generateError": "動画生成中にエラーが発生しました",
+      "noThumbnail": "サムネイルがないためショーケースに登録できません",
+      "showcaseRegistered": "ショーケースに登録しました",
+      "registerFailed": "登録に失敗しました",
+      "registerError": "登録中にエラーが発生しました"
     }
   },
   "imageAdTypes": {

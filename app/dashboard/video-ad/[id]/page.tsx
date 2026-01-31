@@ -371,11 +371,11 @@ export default function VideoAdDetailPage() {
         router.push('/dashboard/video-ad')
       } else {
         const error = await res.json()
-        alert(error.error || '삭제 실패')
+        alert(error.error || t.videoAd.alerts.deleteFailed)
       }
     } catch (error) {
-      console.error('삭제 오류:', error)
-      alert('삭제 중 오류가 발생했습니다')
+      console.error('Delete error:', error)
+      alert(t.videoAd.alerts.deleteError)
     } finally {
       setIsDeleting(false)
       setShowDeleteConfirm(false)
@@ -460,7 +460,7 @@ export default function VideoAdDetailPage() {
       videoAd.ad_products?.image_url
 
     if (!thumbnailUrl) {
-      alert('썸네일이 없어 쇼케이스로 등록할 수 없습니다.')
+      alert(t.videoAd.alerts.noThumbnail)
       return
     }
 
@@ -484,14 +484,14 @@ export default function VideoAdDetailPage() {
       })
 
       if (res.ok) {
-        alert('쇼케이스에 등록되었습니다.')
+        alert(t.videoAd.alerts.showcaseRegistered)
       } else {
         const error = await res.json()
-        alert(error.error || '등록 실패')
+        alert(error.error || t.videoAd.alerts.registerFailed)
       }
     } catch (error) {
-      console.error('쇼케이스 등록 오류:', error)
-      alert('등록 중 오류가 발생했습니다.')
+      console.error('Showcase registration error:', error)
+      alert(t.videoAd.alerts.registerError)
     } finally {
       setIsRegisteringShowcase(false)
     }

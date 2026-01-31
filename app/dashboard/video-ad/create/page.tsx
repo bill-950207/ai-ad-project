@@ -274,8 +274,8 @@ function VideoAdCreateContent() {
 
       await pollStatus()
     } catch (error) {
-      console.error('영상 생성 오류:', error)
-      alert(error instanceof Error ? error.message : '영상 생성 중 오류가 발생했습니다')
+      console.error('Video generation error:', error)
+      alert(error instanceof Error ? error.message : t.videoAd.alerts.generateError)
       setGenerationStatus('')
       setGenerationPhase('idle')
     } finally {
