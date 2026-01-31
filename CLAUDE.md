@@ -239,13 +239,10 @@ AI 서비스 비용 × 2.5배 마진 기준 (~$0.07/크레딧, 100원)
 | 이미지 광고 (고화질) | 3 | |
 | 제품설명 영상 (480p) | 5 | Hailuo + TTS |
 | 제품설명 영상 (720p) | 10 | |
-| 제품 광고 (seedance, 4초) | 8 | 해상도/길이별 |
-| 제품 광고 (wan2.6, 5초) | 10 | |
 | 키프레임 이미지 | 1 | Seedream 4.5 |
-| 전환 영상 | 12 | Kling O1 |
-| Vidu Q2 (540p/초) | 1 | 초당 |
-| Vidu Q2 (720p/초) | 2 | |
-| Vidu Q2 (1080p/초) | 3 | |
+| Vidu Q3 (540p/초) | 1 | 제품 광고 영상 (초당) |
+| Vidu Q3 (720p/초) | 2 | |
+| Vidu Q3 (1080p/초) | 3 | |
 | 음악 생성 | 1 | Suno V5 |
 | 배경 제거 | 0 | 무료 |
 | 제품 등록 (한도 초과 시) | 1 | |
@@ -292,7 +289,8 @@ await UsageTracker.incrementAvatarCount(userId)
 | 아바타 생성 | Kie.ai (Z-Image) | FAL.ai |
 | 이미지 광고 | Kie.ai (Seedream 4.5) | FAL.ai (GPT-Image 1.5) |
 | 배경 제거 | Kie.ai (Recraft) | FAL.ai (Rembg) |
-| 영상 생성 | Kie.ai (Kling 2.6, Wan 2.6) | FAL.ai (Vidu Q2, Kling O1) |
+| 제품 광고 영상 | WaveSpeed (Vidu Q3) | - |
+| 키프레임 이미지 | Kie.ai (Seedream 4.5) | - |
 | TTS | WaveSpeed (Minimax) | ElevenLabs |
 | 토킹 영상 | Kie.ai (Kling Avatar) | WaveSpeed (InfiniteTalk) |
 | 음악 생성 | Kie.ai (Suno V5) | - |
@@ -301,7 +299,12 @@ await UsageTracker.incrementAvatarCount(userId)
 ### Kie.ai (`lib/kie/client.ts`)
 - Bearer 토큰 인증
 - Task 기반 비동기 API (taskId 폴링)
-- 모델: Z-Image, Seedream 4.5, Kling 2.6, Wan 2.6, Suno V5
+- 모델: Z-Image, Seedream 4.5, Suno V5
+
+### WaveSpeed AI (`lib/wavespeed/client.ts`)
+- API Key 인증
+- 큐 기반 비동기 API (requestId 폴링)
+- 모델: Vidu Q3 (제품 광고 영상), Minimax TTS
 
 ### FAL.ai (`lib/fal/client.ts`)
 - @fal-ai/client 패키지 사용
@@ -444,8 +447,9 @@ AVATAR_AI_PROVIDER=kie  # 'kie' | 'fal'
 ## Recent Features
 
 최근 구현된 주요 기능들:
+- **Vidu Q3 전용 모드:** 제품 광고 영상 생성을 Vidu Q3 단일 모델로 통합 (1-16초 지원)
 - **드래프트 시스템:** 이미지/영상 광고 자동 저장/복원
-- **크레딧 시스템 v2:** 키프레임, Vidu Q2, 제품설명 영상 세분화
+- **크레딧 시스템 v2:** 키프레임, Vidu Q3, 제품설명 영상 세분화
 - **씬 버전 관리:** 멀티씬 영상 버전 히스토리
 - **통합 업그레이드 모달:** 크레딧 부족 시 일관된 UX
 - **쇼케이스 갤러리:** 관리자 큐레이션 예시 광고
@@ -458,5 +462,7 @@ AVATAR_AI_PROVIDER=kie  # 'kie' | 'fal'
 - **아바타 모션:** `/api/avatar-motion/*`, `components/video-ad/avatar-motion/`
 - **아바타 의상 변경:** `/api/avatars/*/outfits/*`, `avatar_outfits` 테이블
 - **배경 생성:** `/api/ad-backgrounds/*`, `dashboard/background/`
+- **레거시 영상 모델:** Seedance, Kling 2.6, Wan 2.6, Kling O1, Vidu Q2 (제품 광고는 Vidu Q3 전용)
+- **일반 모드 영상 생성:** `/api/product-ad/generate-video` (멀티씬 모드만 사용)
 
 해당 코드는 레거시로 유지되며, 신규 개발이나 버그 수정 대상이 아님.
