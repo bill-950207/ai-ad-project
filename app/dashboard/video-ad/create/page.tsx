@@ -576,13 +576,13 @@ function VideoAdCreateContent() {
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs text-muted-foreground mb-1">
-                    {videoAd?.productName || '제품명'} *
+                    {videoAd?.productName || 'Product Name'} *
                   </label>
                   <input
                     type="text"
                     value={productName}
                     onChange={(e) => setProductName(e.target.value)}
-                    placeholder={videoAd?.productNamePlaceholder || '제품명을 입력하세요'}
+                    placeholder={videoAd?.productNamePlaceholder || 'Enter product name'}
                     className="w-full px-4 py-2 bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
@@ -669,7 +669,7 @@ function VideoAdCreateContent() {
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 <Monitor className="w-4 h-4 inline mr-2" />
-                {videoAd?.resolution || '해상도'}
+                {videoAd?.resolution || 'Resolution'}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {(['720p', '1080p'] as VideoResolution[]).map((r) => (

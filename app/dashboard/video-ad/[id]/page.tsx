@@ -532,11 +532,11 @@ export default function VideoAdDetailPage() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; className: string }> = {
-      'PENDING': { label: videoAdT?.status?.pending || '대기 중', className: 'bg-yellow-500/20 text-yellow-500' },
-      'IN_QUEUE': { label: videoAdT?.status?.inQueue || '큐 대기', className: 'bg-blue-500/20 text-blue-500' },
-      'IN_PROGRESS': { label: videoAdT?.status?.inProgress || '생성 중', className: 'bg-purple-500/20 text-purple-500' },
-      'COMPLETED': { label: videoAdT?.status?.completed || '완료', className: 'bg-green-500/20 text-green-500' },
-      'FAILED': { label: videoAdT?.status?.failed || '실패', className: 'bg-red-500/20 text-red-500' },
+      'PENDING': { label: videoAdT?.status?.pending || 'Pending', className: 'bg-yellow-500/20 text-yellow-500' },
+      'IN_QUEUE': { label: videoAdT?.status?.inQueue || 'In Queue', className: 'bg-blue-500/20 text-blue-500' },
+      'IN_PROGRESS': { label: videoAdT?.status?.inProgress || 'Generating', className: 'bg-purple-500/20 text-purple-500' },
+      'COMPLETED': { label: videoAdT?.status?.completed || 'Completed', className: 'bg-green-500/20 text-green-500' },
+      'FAILED': { label: videoAdT?.status?.failed || 'Failed', className: 'bg-red-500/20 text-red-500' },
     }
     const config = statusConfig[status] || { label: status, className: 'bg-gray-500/20 text-gray-500' }
     return (
@@ -672,14 +672,14 @@ export default function VideoAdDetailPage() {
                   className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                 >
                   <Download className="w-4 h-4" />
-                  {videoAdT?.download || '다운로드'}
+                  {videoAdT?.download || 'Download'}
                 </button>
                 <button
                   onClick={() => setShowMusicModal(true)}
                   className="flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-lg hover:bg-secondary/80 transition-colors"
                 >
                   <Music className="w-4 h-4" />
-                  {videoAd.bgm_info ? '음악 변경' : '음악 추가'}
+                  {videoAd.bgm_info ? 'Change Music' : 'Add Music'}
                 </button>
                 {isAdmin && (
                   <button
@@ -692,7 +692,7 @@ export default function VideoAdDetailPage() {
                     ) : (
                       <Star className="w-4 h-4" />
                     )}
-                    쇼케이스 등록
+                    Register Showcase
                   </button>
                 )}
                 <button
@@ -700,7 +700,7 @@ export default function VideoAdDetailPage() {
                   className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
-                  {videoAdT?.delete || '삭제'}
+                  {videoAdT?.delete || 'Delete'}
                 </button>
               </div>
             )}
@@ -711,7 +711,7 @@ export default function VideoAdDetailPage() {
             <div className="bg-card border border-border rounded-xl p-4">
               <h3 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                 <FileText className="w-4 h-4" />
-                {videoAdT?.prompt || '프롬프트'}
+                {videoAdT?.prompt || 'Prompt'}
               </h3>
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                 {videoAd.prompt}
@@ -828,18 +828,18 @@ export default function VideoAdDetailPage() {
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" />
-                  대본 스크립트
+                  Script
                 </h3>
                 {videoAd.script_style && (
                   <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
                     {(() => {
                       const styleLabels: Record<string, string> = {
-                        'formal': '전문적',
-                        'casual': '친근함',
-                        'energetic': '활기찬',
-                        'professional': '전문적',
-                        'friendly': '친근함',
-                        'luxury': '고급스러움',
+                        'formal': 'Professional',
+                        'casual': 'Casual',
+                        'energetic': 'Energetic',
+                        'professional': 'Professional',
+                        'friendly': 'Friendly',
+                        'luxury': 'Luxury',
                       }
                       return styleLabels[videoAd.script_style || ''] || videoAd.script_style
                     })()}
@@ -869,7 +869,7 @@ export default function VideoAdDetailPage() {
               <div className="bg-card border border-border rounded-xl p-4">
                 <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                   <Package className="w-4 h-4" />
-                  {videoAdT?.product || '제품'} 정보
+                  {videoAdT?.product || 'Product'} Info
                 </h3>
                 {product ? (
                   // DB 제품 또는 JSON 형식 제품 정보
@@ -881,7 +881,7 @@ export default function VideoAdDetailPage() {
                       {(product.rembg_image_url || product.image_url) && (
                         <img
                           src={product.rembg_image_url || product.image_url || ''}
-                          alt={product.name || '제품'}
+                          alt={product.name || 'Product'}
                           className="w-12 h-12 object-contain rounded bg-secondary/30"
                         />
                       )}
@@ -897,7 +897,7 @@ export default function VideoAdDetailPage() {
                       {(product.rembg_image_url || product.image_url) && (
                         <img
                           src={product.rembg_image_url || product.image_url || ''}
-                          alt={product.name || '제품'}
+                          alt={product.name || 'Product'}
                           className="w-12 h-12 object-contain rounded bg-secondary/30"
                         />
                       )}
@@ -924,7 +924,7 @@ export default function VideoAdDetailPage() {
             <div className="bg-card border border-border rounded-xl p-4">
               <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                 <User className="w-4 h-4" />
-                {videoAdT?.avatar || '아바타'}
+                {videoAdT?.avatar || 'Avatar'}
               </h3>
               <Link
                 href={`/dashboard/avatar/${videoAd.avatars.id}`}
@@ -942,12 +942,12 @@ export default function VideoAdDetailPage() {
             </div>
           )}
 
-          {/* 의상 정보 */}
+          {/* Outfit Info */}
           {videoAd.avatar_outfits && (
             <div className="bg-card border border-border rounded-xl p-4">
               <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                 <Shirt className="w-4 h-4" />
-                의상
+                Outfit
               </h3>
               <div className="flex items-center gap-3">
                 {videoAd.avatar_outfits.image_url && (
@@ -998,63 +998,63 @@ export default function VideoAdDetailPage() {
                   <span className="text-foreground">{videoAd.video_fps}</span>
                 </div>
               )}
-              {/* 카메라 구도 */}
+              {/* Camera Composition */}
               {videoAd.camera_composition && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground flex items-center gap-2">
                     <Camera className="w-4 h-4" />
-                    카메라 구도
+                    Camera
                   </span>
                   <span className="text-foreground">
                     {(() => {
                       const compositionLabels: Record<string, string> = {
-                        'auto': '자동',
-                        'selfie-high': '셀카 (위에서)',
-                        'selfie-front': '셀카 (정면)',
-                        'selfie-side': '셀카 (측면)',
-                        'tripod': '삼각대',
-                        'closeup': '클로즈업',
-                        'fullbody': '전신',
+                        'auto': 'Auto',
+                        'selfie-high': 'Selfie (High)',
+                        'selfie-front': 'Selfie (Front)',
+                        'selfie-side': 'Selfie (Side)',
+                        'tripod': 'Tripod',
+                        'closeup': 'Close-up',
+                        'fullbody': 'Full Body',
                       }
                       return compositionLabels[videoAd.camera_composition || ''] || videoAd.camera_composition
                     })()}
                   </span>
                 </div>
               )}
-              {/* 음성 */}
+              {/* Voice */}
               {videoAd.voice_name && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground flex items-center gap-2">
                     <Mic className="w-4 h-4" />
-                    음성
+                    Voice
                   </span>
                   <span className="text-foreground">{videoAd.voice_name}</span>
                 </div>
               )}
-              {/* 대본 스타일 */}
+              {/* Script Style */}
               {videoAd.script_style && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    대본 스타일
+                    Script Style
                   </span>
                   <span className="text-foreground">
                     {(() => {
                       const styleLabels: Record<string, string> = {
-                        'professional': '전문적',
-                        'friendly': '친근함',
-                        'luxury': '고급스러움',
+                        'professional': 'Professional',
+                        'friendly': 'Friendly',
+                        'luxury': 'Luxury',
                       }
                       return styleLabels[videoAd.script_style || ''] || videoAd.script_style
                     })()}
                   </span>
                 </div>
               )}
-              {/* 생성일 */}
+              {/* Created At */}
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  생성일
+                  Created
                 </span>
                 <span className="text-foreground">
                   {new Date(videoAd.created_at).toLocaleDateString()}
@@ -1107,22 +1107,22 @@ export default function VideoAdDetailPage() {
         </div>
       </div>
 
-      {/* 삭제 확인 모달 */}
+      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-card border border-border rounded-xl p-6 max-w-sm w-full mx-4">
             <h3 className="text-lg font-medium text-foreground mb-2">
-              {videoAdT?.confirmDelete || '이 영상 광고를 삭제하시겠습니까?'}
+              {videoAdT?.confirmDelete || 'Are you sure you want to delete this video ad?'}
             </h3>
             <p className="text-sm text-muted-foreground mb-6">
-              삭제된 영상은 복구할 수 없습니다.
+              Deleted videos cannot be recovered.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 className="flex-1 px-4 py-2 bg-secondary text-foreground rounded-lg hover:bg-secondary/80 transition-colors"
               >
-                취소
+                Cancel
               </button>
               <button
                 onClick={handleDelete}
@@ -1132,7 +1132,7 @@ export default function VideoAdDetailPage() {
                 {isDeleting ? (
                   <Loader2 className="w-4 h-4 animate-spin mx-auto" />
                 ) : (
-                  '삭제'
+                  'Delete'
                 )}
               </button>
             </div>

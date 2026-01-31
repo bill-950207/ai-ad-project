@@ -513,7 +513,7 @@ export default function MusicPage() {
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                         <div className="text-center text-white">
                           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                          <p className="text-sm">{(musicT?.generating as string) || '생성 중...'}</p>
+                          <p className="text-sm">{(musicT?.generating as string) || 'Generating...'}</p>
                         </div>
                       </div>
                     )}
@@ -612,7 +612,7 @@ export default function MusicPage() {
                           className="flex items-center gap-1 px-3 py-1.5 text-sm bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
                         >
                           <Download className="w-3.5 h-3.5" />
-                          {(musicT?.download as string) || '다운로드'}
+                          {(musicT?.download as string) || 'Download'}
                         </button>
                       )}
                       <button
@@ -802,7 +802,7 @@ export default function MusicPage() {
               {/* 분위기 */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
-                  {(musicT?.mood as string) || '분위기'}
+                  {(musicT?.mood as string) || 'Mood'}
                   {useAiRecommendation && formData.mood && (
                     <span className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded">AI</span>
                   )}
@@ -830,7 +830,7 @@ export default function MusicPage() {
               {/* 장르 */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
-                  {(musicT?.genre as string) || '장르'}
+                  {(musicT?.genre as string) || 'Genre'}
                   {useAiRecommendation && formData.genre && (
                     <span className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded">AI</span>
                   )}
@@ -895,7 +895,7 @@ export default function MusicPage() {
                 }}
                 className="flex-1 px-4 py-3 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-colors font-medium"
               >
-                {(musicT?.cancel as string) || '취소'}
+                {(musicT?.cancel as string) || 'Cancel'}
               </button>
               <button
                 onClick={handleCreate}
@@ -905,12 +905,12 @@ export default function MusicPage() {
                 {isCreating ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    {(musicT?.generating as string) || '생성 중...'}
+                    {(musicT?.generating as string) || 'Generating...'}
                   </>
                 ) : (
                   <>
                     <Coins className="w-4 h-4" />
-                    {(musicT?.generate as string) || '생성하기'} ({MUSIC_CREDIT_COST} 크레딧)
+                    {(musicT?.generate as string) || 'Generate'} ({MUSIC_CREDIT_COST} Credits)
                   </>
                 )}
               </button>

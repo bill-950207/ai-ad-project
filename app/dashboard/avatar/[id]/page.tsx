@@ -236,22 +236,22 @@ function GeneratingAnimation({ isUploading = false, avatarName }: GeneratingAnim
 function OptionTags({ options }: { options: AvatarOptions }) {
   const tags: { label: string; value: string }[] = []
 
-  if (options.gender) tags.push({ label: '성별', value: genderLabels[options.gender] || options.gender })
-  if (options.age) tags.push({ label: '나이', value: ageLabels[options.age] || options.age })
-  if (options.ethnicity) tags.push({ label: '인종', value: ethnicityLabels[options.ethnicity] || options.ethnicity })
-  if (options.height) tags.push({ label: '키', value: heightLabels[options.height] || options.height })
-  if (options.bodyType) tags.push({ label: '체형', value: bodyTypeLabels[options.bodyType] || options.bodyType })
-  if (options.hairStyle) tags.push({ label: '헤어', value: hairStyleLabels[options.hairStyle] || options.hairStyle })
+  if (options.gender) tags.push({ label: 'Gender', value: genderLabels[options.gender] || options.gender })
+  if (options.age) tags.push({ label: 'Age', value: ageLabels[options.age] || options.age })
+  if (options.ethnicity) tags.push({ label: 'Ethnicity', value: ethnicityLabels[options.ethnicity] || options.ethnicity })
+  if (options.height) tags.push({ label: 'Height', value: heightLabels[options.height] || options.height })
+  if (options.bodyType) tags.push({ label: 'Body Type', value: bodyTypeLabels[options.bodyType] || options.bodyType })
+  if (options.hairStyle) tags.push({ label: 'Hair', value: hairStyleLabels[options.hairStyle] || options.hairStyle })
   if (options.hairColor) {
     if (options.hairColor === 'custom' && options.customHairColor) {
-      tags.push({ label: '머리색', value: options.customHairColor })
+      tags.push({ label: 'Hair Color', value: options.customHairColor })
     } else {
-      tags.push({ label: '머리색', value: hairColorLabels[options.hairColor] || options.hairColor })
+      tags.push({ label: 'Hair Color', value: hairColorLabels[options.hairColor] || options.hairColor })
     }
   }
-  if (options.outfitStyle) tags.push({ label: '의상', value: outfitStyleLabels[options.outfitStyle] || options.outfitStyle })
-  if (options.background) tags.push({ label: '배경', value: backgroundLabels[options.background] || options.background })
-  if (options.pose) tags.push({ label: '포즈', value: poseLabels[options.pose] || options.pose })
+  if (options.outfitStyle) tags.push({ label: 'Outfit', value: outfitStyleLabels[options.outfitStyle] || options.outfitStyle })
+  if (options.background) tags.push({ label: 'Background', value: backgroundLabels[options.background] || options.background })
+  if (options.pose) tags.push({ label: 'Pose', value: poseLabels[options.pose] || options.pose })
 
   if (tags.length === 0) return null
 
@@ -586,7 +586,7 @@ export default function AvatarDetailPage() {
               <>
                 <div className="border-t border-border pt-5">
                   <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                    {avatar.options ? '생성 옵션' : '프롬프트'}
+                    {avatar.options ? 'Generation Options' : 'Prompt'}
                   </h3>
                   {avatar.options ? (
                     <OptionTags options={avatar.options} />

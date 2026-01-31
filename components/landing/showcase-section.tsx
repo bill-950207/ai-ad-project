@@ -395,7 +395,7 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
                         />
                       </div>
                       <span className="text-[10px] text-muted-foreground">
-                        {language === 'ko' ? '제품' : 'Product'}
+                        {t.landing?.product || 'Product'}
                       </span>
                     </div>
                   )}
@@ -412,7 +412,7 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
                         />
                       </div>
                       <span className="text-[10px] text-muted-foreground">
-                        {language === 'ko' ? '아바타' : 'Avatar'}
+                        {t.landing?.avatar || 'Avatar'}
                       </span>
                     </div>
                   )}
@@ -627,7 +627,7 @@ export function ShowcaseSection({ initialShowcases = [] }: ShowcaseSectionProps)
                       : 'text-muted-foreground hover:text-foreground'
                   } ${isTransitioning ? 'cursor-not-allowed' : ''}`}
                 >
-                  {tab === 'all' ? (language === 'ko' ? '전체' : 'All') : tab === 'image' ? (language === 'ko' ? '이미지' : 'Images') : (language === 'ko' ? '영상' : 'Videos')}
+                  {tab === 'all' ? (t.landing?.filterAll || 'All') : tab === 'image' ? (t.landing?.filterImage || 'Images') : (t.landing?.filterVideo || 'Videos')}
                 </button>
               ))}
             </div>

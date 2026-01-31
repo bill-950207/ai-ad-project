@@ -18,6 +18,8 @@
     "goHome": "Go home"
   },
   "landing": {
+    "product": "Product",
+    "avatar": "Avatar",
     "badge": "AI-Powered Ad Creation",
     "headline": "Create Stunning Ads with ",
     "headlineHighlight": "AI Magic",
@@ -1071,6 +1073,97 @@
     "pricing": "Pricing",
     "logout": "Logout",
     "credits": "Credits"
+  },
+  "mergeMusic": {
+    "title": "Merge Music",
+    "selectedMusic": "Selected Music",
+    "merging": "Merging music...",
+    "completed": "Merge Complete!",
+    "error": "Error",
+    "invalidMusicInfo": "Invalid music information.",
+    "mergeFailed": "Music merge failed.",
+    "unknownError": "An unknown error occurred.",
+    "redirecting": "Redirecting to video page shortly...",
+    "goBack": "Go Back",
+    "retry": "Retry",
+    "doNotClose": "Do not close this window. Merge is in progress.",
+    "steps": {
+      "downloading": "Preparing music and video files...",
+      "downloadingProgress": "Downloading music and video files...",
+      "processing": "Merging music with video...",
+      "uploading": "Saving merged video...",
+      "completed": "Music merge completed!"
+    }
+  },
+  "onboardingForm": {
+    "settingUp": "Setting up",
+    "welcome": "Welcome! 👋",
+    "askName": "First, tell us your name.",
+    "name": "Name",
+    "namePlaceholder": "John Doe",
+    "companyOptional": "Company (Optional)",
+    "companyPlaceholder": "Company or brand name",
+    "askRole": "What's your role, {{name}}?",
+    "roleDescription": "Help us serve you better.",
+    "askIndustry": "What industry are you in?",
+    "industryDescription": "For personalized recommendations.",
+    "almostDone": "Almost done! 🎉",
+    "finalQuestions": "Just a few more questions. (Optional)",
+    "teamSize": "Team Size",
+    "howDidYouFind": "How did you find ADAI?",
+    "onboardingFailed": "Onboarding failed",
+    "genericError": "An error occurred",
+    "prev": "Previous",
+    "next": "Next",
+    "start": "Get Started",
+    "rightSide": {
+      "step1Title": "Answer a few questions",
+      "step1Desc": "Quick setup for a better experience",
+      "step2Title": "Preparing your personalized experience",
+      "step2Desc": "We'll recommend features suited to your role",
+      "step3Title": "Almost there!",
+      "step3Desc": "We'll prepare templates for your industry",
+      "step4Title": "Ready to go!",
+      "step4Desc": "5 free credits are waiting for you!"
+    },
+    "jobTitles": {
+      "ceo": "CEO/Founder",
+      "marketer": "Marketer",
+      "designer": "Designer",
+      "developer": "Developer",
+      "pm": "PM/Planner",
+      "freelancer": "Freelancer",
+      "student": "Student",
+      "other": "Other"
+    },
+    "industries": {
+      "ecommerce": "E-commerce/Online Shopping",
+      "beauty": "Beauty/Cosmetics",
+      "fashion": "Fashion/Apparel",
+      "food": "Food/F&B",
+      "tech": "IT/Tech",
+      "health": "Health/Healthcare",
+      "education": "Education",
+      "finance": "Finance/Fintech",
+      "agency": "Advertising/Marketing Agency",
+      "other": "Other"
+    },
+    "teamSizes": {
+      "1": "1 (Individual)",
+      "2-10": "2-10",
+      "11-50": "11-50",
+      "51-200": "51-200",
+      "201+": "200+"
+    },
+    "referralSources": {
+      "search": "Search (Google, etc.)",
+      "sns": "Social Media (Instagram, YouTube, etc.)",
+      "friend": "Friend's Recommendation",
+      "ad": "Online Ads",
+      "blog": "Blog/Article",
+      "event": "Event/Seminar",
+      "other": "Other"
+    }
   },
   "auth": {
     "welcomeBack": "Welcome back",

@@ -18,6 +18,8 @@
     "goHome": "홈으로"
   },
   "landing": {
+    "product": "제품",
+    "avatar": "아바타",
     "badge": "AI 기반 광고 제작",
     "headline": "",
     "headlineHighlight": "AI 마법",
@@ -1071,6 +1073,97 @@
     "pricing": "요금제",
     "logout": "로그아웃",
     "credits": "크레딧"
+  },
+  "mergeMusic": {
+    "title": "음악 합성",
+    "selectedMusic": "선택된 음악",
+    "merging": "음악 합성 중...",
+    "completed": "합성 완료!",
+    "error": "오류 발생",
+    "invalidMusicInfo": "음악 정보가 올바르지 않습니다.",
+    "mergeFailed": "음악 합성에 실패했습니다.",
+    "unknownError": "알 수 없는 오류가 발생했습니다.",
+    "redirecting": "잠시 후 영상 페이지로 이동합니다...",
+    "goBack": "돌아가기",
+    "retry": "다시 시도",
+    "doNotClose": "창을 닫지 마세요. 합성이 진행 중입니다.",
+    "steps": {
+      "downloading": "음악과 영상 파일을 준비하고 있습니다...",
+      "downloadingProgress": "음악과 영상 파일을 다운로드하고 있습니다...",
+      "processing": "음악을 영상에 합성하고 있습니다...",
+      "uploading": "합성된 영상을 저장하고 있습니다...",
+      "completed": "음악 합성이 완료되었습니다!"
+    }
+  },
+  "onboardingForm": {
+    "settingUp": "설정 진행중",
+    "welcome": "반갑습니다! 👋",
+    "askName": "먼저 이름을 알려주세요.",
+    "name": "이름",
+    "namePlaceholder": "홍길동",
+    "companyOptional": "회사명 (선택)",
+    "companyPlaceholder": "회사 또는 브랜드명",
+    "askRole": "{{name}}님의 역할은요?",
+    "roleDescription": "더 나은 서비스를 위해 알려주세요.",
+    "askIndustry": "어떤 분야에서 일하시나요?",
+    "industryDescription": "맞춤형 추천을 위해 알려주세요.",
+    "almostDone": "거의 다 왔어요! 🎉",
+    "finalQuestions": "마지막으로 몇 가지만 더 알려주세요. (선택)",
+    "teamSize": "팀 규모",
+    "howDidYouFind": "ADAI를 어떻게 알게 되셨나요?",
+    "onboardingFailed": "온보딩 완료에 실패했습니다",
+    "genericError": "오류가 발생했습니다",
+    "prev": "이전",
+    "next": "다음",
+    "start": "시작하기",
+    "rightSide": {
+      "step1Title": "몇 가지 질문에 답해주세요",
+      "step1Desc": "더 나은 서비스 경험을 위해 간단한 설정을 진행합니다",
+      "step2Title": "맞춤형 경험을 준비중이에요",
+      "step2Desc": "역할에 맞는 기능을 추천해 드릴게요",
+      "step3Title": "거의 다 됐어요!",
+      "step3Desc": "업종에 맞는 템플릿을 준비해 드릴게요",
+      "step4Title": "시작할 준비가 됐어요!",
+      "step4Desc": "5개의 무료 크레딧이 기다리고 있어요!"
+    },
+    "jobTitles": {
+      "ceo": "대표/CEO",
+      "marketer": "마케터",
+      "designer": "디자이너",
+      "developer": "개발자",
+      "pm": "PM/기획자",
+      "freelancer": "프리랜서",
+      "student": "학생",
+      "other": "기타"
+    },
+    "industries": {
+      "ecommerce": "이커머스/온라인쇼핑",
+      "beauty": "뷰티/화장품",
+      "fashion": "패션/의류",
+      "food": "식품/F&B",
+      "tech": "IT/테크",
+      "health": "건강/헬스케어",
+      "education": "교육",
+      "finance": "금융/핀테크",
+      "agency": "광고/마케팅 에이전시",
+      "other": "기타"
+    },
+    "teamSizes": {
+      "1": "1인 (개인)",
+      "2-10": "2-10명",
+      "11-50": "11-50명",
+      "51-200": "51-200명",
+      "201+": "200명 이상"
+    },
+    "referralSources": {
+      "search": "검색 (구글, 네이버 등)",
+      "sns": "SNS (인스타그램, 유튜브 등)",
+      "friend": "지인 추천",
+      "ad": "온라인 광고",
+      "blog": "블로그/아티클",
+      "event": "행사/세미나",
+      "other": "기타"
+    }
   },
   "auth": {
     "welcomeBack": "다시 오신 것을 환영합니다",

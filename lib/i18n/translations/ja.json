@@ -18,6 +18,8 @@
     "goHome": "ホームへ"
   },
   "landing": {
+    "product": "商品",
+    "avatar": "アバター",
     "badge": "AI搭載広告作成",
     "headline": "",
     "headlineHighlight": "AIマジック",
@@ -1071,6 +1073,97 @@
     "pricing": "料金プラン",
     "logout": "ログアウト",
     "credits": "クレジット"
+  },
+  "mergeMusic": {
+    "title": "音楽合成",
+    "selectedMusic": "選択した音楽",
+    "merging": "音楽を合成中...",
+    "completed": "合成完了！",
+    "error": "エラー発生",
+    "invalidMusicInfo": "音楽情報が正しくありません。",
+    "mergeFailed": "音楽の合成に失敗しました。",
+    "unknownError": "不明なエラーが発生しました。",
+    "redirecting": "まもなく動画ページに移動します...",
+    "goBack": "戻る",
+    "retry": "再試行",
+    "doNotClose": "ウィンドウを閉じないでください。合成中です。",
+    "steps": {
+      "downloading": "音楽と動画ファイルを準備中...",
+      "downloadingProgress": "音楽と動画ファイルをダウンロード中...",
+      "processing": "音楽を動画に合成中...",
+      "uploading": "合成した動画を保存中...",
+      "completed": "音楽の合成が完了しました！"
+    }
+  },
+  "onboardingForm": {
+    "settingUp": "セットアップ中",
+    "welcome": "ようこそ！👋",
+    "askName": "まず、お名前を教えてください。",
+    "name": "名前",
+    "namePlaceholder": "山田太郎",
+    "companyOptional": "会社名（任意）",
+    "companyPlaceholder": "会社またはブランド名",
+    "askRole": "{{name}}さんの役割は？",
+    "roleDescription": "より良いサービスのために教えてください。",
+    "askIndustry": "どの業界で働いていますか？",
+    "industryDescription": "カスタマイズされた提案のために教えてください。",
+    "almostDone": "もう少しです！🎉",
+    "finalQuestions": "最後にいくつか教えてください。（任意）",
+    "teamSize": "チームサイズ",
+    "howDidYouFind": "ADAIをどこで知りましたか？",
+    "onboardingFailed": "オンボーディングに失敗しました",
+    "genericError": "エラーが発生しました",
+    "prev": "前へ",
+    "next": "次へ",
+    "start": "始める",
+    "rightSide": {
+      "step1Title": "いくつかの質問に答えてください",
+      "step1Desc": "より良い体験のための簡単なセットアップです",
+      "step2Title": "パーソナライズされた体験を準備中",
+      "step2Desc": "あなたの役割に合った機能をお勧めします",
+      "step3Title": "もうすぐ完了！",
+      "step3Desc": "あなたの業界に合ったテンプレートを準備します",
+      "step4Title": "準備完了！",
+      "step4Desc": "5つの無料クレジットが待っています！"
+    },
+    "jobTitles": {
+      "ceo": "CEO/創業者",
+      "marketer": "マーケター",
+      "designer": "デザイナー",
+      "developer": "開発者",
+      "pm": "PM/プランナー",
+      "freelancer": "フリーランサー",
+      "student": "学生",
+      "other": "その他"
+    },
+    "industries": {
+      "ecommerce": "Eコマース/オンラインショッピング",
+      "beauty": "ビューティー/化粧品",
+      "fashion": "ファッション/アパレル",
+      "food": "食品/F&B",
+      "tech": "IT/テック",
+      "health": "健康/ヘルスケア",
+      "education": "教育",
+      "finance": "金融/フィンテック",
+      "agency": "広告/マーケティングエージェンシー",
+      "other": "その他"
+    },
+    "teamSizes": {
+      "1": "1人（個人）",
+      "2-10": "2-10人",
+      "11-50": "11-50人",
+      "51-200": "51-200人",
+      "201+": "200人以上"
+    },
+    "referralSources": {
+      "search": "検索（Googleなど）",
+      "sns": "SNS（Instagram、YouTubeなど）",
+      "friend": "友人の紹介",
+      "ad": "オンライン広告",
+      "blog": "ブログ/記事",
+      "event": "イベント/セミナー",
+      "other": "その他"
+    }
   },
   "auth": {
     "welcomeBack": "おかえりなさい",

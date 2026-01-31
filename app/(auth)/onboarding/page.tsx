@@ -5,56 +5,62 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Loader2, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react'
+import { useLanguage } from '@/contexts/language-context'
 
-// 직책 옵션
-const JOB_TITLES = [
-  { value: 'ceo', label: '대표/CEO' },
-  { value: 'marketer', label: '마케터' },
-  { value: 'designer', label: '디자이너' },
-  { value: 'developer', label: '개발자' },
-  { value: 'pm', label: 'PM/기획자' },
-  { value: 'freelancer', label: '프리랜서' },
-  { value: 'student', label: '학생' },
-  { value: 'other', label: '기타' },
-]
+type OnboardingFormT = {
+  settingUp?: string
+  welcome?: string
+  askName?: string
+  name?: string
+  namePlaceholder?: string
+  companyOptional?: string
+  companyPlaceholder?: string
+  askRole?: string
+  roleDescription?: string
+  askIndustry?: string
+  industryDescription?: string
+  almostDone?: string
+  finalQuestions?: string
+  teamSize?: string
+  howDidYouFind?: string
+  onboardingFailed?: string
+  genericError?: string
+  prev?: string
+  next?: string
+  start?: string
+  rightSide?: {
+    step1Title?: string
+    step1Desc?: string
+    step2Title?: string
+    step2Desc?: string
+    step3Title?: string
+    step3Desc?: string
+    step4Title?: string
+    step4Desc?: string
+  }
+  jobTitles?: Record<string, string>
+  industries?: Record<string, string>
+  teamSizes?: Record<string, string>
+  referralSources?: Record<string, string>
+}
 
-// 업종 옵션
-const INDUSTRIES = [
-  { value: 'ecommerce', label: '이커머스/온라인쇼핑' },
-  { value: 'beauty', label: '뷰티/화장품' },
-  { value: 'fashion', label: '패션/의류' },
-  { value: 'food', label: '식품/F&B' },
-  { value: 'tech', label: 'IT/테크' },
-  { value: 'health', label: '건강/헬스케어' },
-  { value: 'education', label: '교육' },
-  { value: 'finance', label: '금융/핀테크' },
-  { value: 'agency', label: '광고/마케팅 에이전시' },
-  { value: 'other', label: '기타' },
-]
+// Job title options
+const JOB_TITLE_VALUES = ['ceo', 'marketer', 'designer', 'developer', 'pm', 'freelancer', 'student', 'other']
 
-// 팀 규모 옵션
-const TEAM_SIZES = [
-  { value: '1', label: '1인 (개인)' },
-  { value: '2-10', label: '2-10명' },
-  { value: '11-50', label: '11-50명' },
-  { value: '51-200', label: '51-200명' },
-  { value: '201+', label: '200명 이상' },
-]
+// Industry options
+const INDUSTRY_VALUES = ['ecommerce', 'beauty', 'fashion', 'food', 'tech', 'health', 'education', 'finance', 'agency', 'other']
 
-// 유입 경로 옵션
-const REFERRAL_SOURCES = [
-  { value: 'search', label: '검색 (구글, 네이버 등)' },
-  { value: 'sns', label: 'SNS (인스타그램, 유튜브 등)' },
-  { value: 'friend', label: '지인 추천' },
-  { value: 'ad', label: '온라인 광고' },
-  { value: 'blog', label: '블로그/아티클' },
-  { value: 'event', label: '행사/세미나' },
-  { value: 'other', label: '기타' },
-]
+// Team size options
+const TEAM_SIZE_VALUES = ['1', '2-10', '11-50', '51-200', '201+']
+
+// Referral source options
+const REFERRAL_SOURCE_VALUES = ['search', 'sns', 'friend', 'ad', 'blog', 'event', 'other']
 
 export default function OnboardingPage() {
   const router = useRouter()
   const supabase = createClient()
+  const { t } = useLanguage()
+  const formT = t.onboardingForm as OnboardingFormT | undefined
 
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -119,14 +125,14 @@ export default function OnboardingPage() {
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || '온보딩 완료에 실패했습니다')
+        throw new Error(data.error || formT?.onboardingFailed || 'Onboarding failed')
       }
 
       // 대시보드로 이동
       router.push('/dashboard')
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : '오류가 발생했습니다')
+      setError(err instanceof Error ? err.message : (formT?.genericError || 'An error occurred'))
       setLoading(false)
     }
   }
@@ -155,7 +161,7 @@ export default function OnboardingPage() {
           {/* Progress Bar */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">설정 진행중</span>
+              <span className="text-sm text-muted-foreground">{formT?.settingUp || 'Setting up'}</span>
               <span className="text-sm text-muted-foreground">{step}/4</span>
             </div>
             <div className="h-2 bg-secondary rounded-full overflow-hidden">
@@ -171,22 +177,22 @@ export default function OnboardingPage() {
             <div className="space-y-6">
               <div>
                 <h1 className="text-3xl font-bold text-foreground mb-2">
-                  반갑습니다! 👋
+                  {formT?.welcome || 'Welcome! 👋'}
                 </h1>
                 <p className="text-muted-foreground">
-                  먼저 이름을 알려주세요.
+                  {formT?.askName || 'First, tell us your name.'}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  이름 *
+                  {formT?.name || 'Name'} *
                 </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="홍길동"
+                  placeholder={formT?.namePlaceholder || 'John Doe'}
                   className="w-full px-4 py-3 bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                   autoFocus
                 />
@@ -194,13 +200,13 @@ export default function OnboardingPage() {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  회사명 (선택)
+                  {formT?.companyOptional || 'Company (Optional)'}
                 </label>
                 <input
                   type="text"
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
-                  placeholder="회사 또는 브랜드명"
+                  placeholder={formT?.companyPlaceholder || 'Company or brand name'}
                   className="w-full px-4 py-3 bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                 />
               </div>
@@ -212,25 +218,25 @@ export default function OnboardingPage() {
             <div className="space-y-6">
               <div>
                 <h1 className="text-3xl font-bold text-foreground mb-2">
-                  {name}님의 역할은요?
+                  {(formT?.askRole || "What's your role, {{name}}?").replace('{{name}}', name)}
                 </h1>
                 <p className="text-muted-foreground">
-                  더 나은 서비스를 위해 알려주세요.
+                  {formT?.roleDescription || 'Help us serve you better.'}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                {JOB_TITLES.map((job) => (
+                {JOB_TITLE_VALUES.map((jobValue) => (
                   <button
-                    key={job.value}
-                    onClick={() => setJobTitle(job.value)}
+                    key={jobValue}
+                    onClick={() => setJobTitle(jobValue)}
                     className={`p-4 rounded-lg border text-left transition-all ${
-                      jobTitle === job.value
+                      jobTitle === jobValue
                         ? 'border-primary bg-primary/10 text-foreground'
                         : 'border-border hover:border-primary/50 text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    {job.label}
+                    {formT?.jobTitles?.[jobValue] || jobValue}
                   </button>
                 ))}
               </div>
@@ -242,25 +248,25 @@ export default function OnboardingPage() {
             <div className="space-y-6">
               <div>
                 <h1 className="text-3xl font-bold text-foreground mb-2">
-                  어떤 분야에서 일하시나요?
+                  {formT?.askIndustry || 'What industry are you in?'}
                 </h1>
                 <p className="text-muted-foreground">
-                  맞춤형 추천을 위해 알려주세요.
+                  {formT?.industryDescription || 'For personalized recommendations.'}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                {INDUSTRIES.map((ind) => (
+                {INDUSTRY_VALUES.map((indValue) => (
                   <button
-                    key={ind.value}
-                    onClick={() => setIndustry(ind.value)}
+                    key={indValue}
+                    onClick={() => setIndustry(indValue)}
                     className={`p-4 rounded-lg border text-left transition-all ${
-                      industry === ind.value
+                      industry === indValue
                         ? 'border-primary bg-primary/10 text-foreground'
                         : 'border-border hover:border-primary/50 text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    {ind.label}
+                    {formT?.industries?.[indValue] || indValue}
                   </button>
                 ))}
               </div>
@@ -272,29 +278,29 @@ export default function OnboardingPage() {
             <div className="space-y-6">
               <div>
                 <h1 className="text-3xl font-bold text-foreground mb-2">
-                  거의 다 왔어요! 🎉
+                  {formT?.almostDone || 'Almost done! 🎉'}
                 </h1>
                 <p className="text-muted-foreground">
-                  마지막으로 몇 가지만 더 알려주세요. (선택)
+                  {formT?.finalQuestions || 'Just a few more questions. (Optional)'}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-3">
-                  팀 규모
+                  {formT?.teamSize || 'Team Size'}
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {TEAM_SIZES.map((size) => (
+                  {TEAM_SIZE_VALUES.map((sizeValue) => (
                     <button
-                      key={size.value}
-                      onClick={() => setTeamSize(size.value)}
+                      key={sizeValue}
+                      onClick={() => setTeamSize(sizeValue)}
                       className={`px-4 py-2 rounded-lg border transition-all ${
-                        teamSize === size.value
+                        teamSize === sizeValue
                           ? 'border-primary bg-primary/10 text-foreground'
                           : 'border-border hover:border-primary/50 text-muted-foreground hover:text-foreground'
                       }`}
                     >
-                      {size.label}
+                      {formT?.teamSizes?.[sizeValue] || sizeValue}
                     </button>
                   ))}
                 </div>
@@ -302,20 +308,20 @@ export default function OnboardingPage() {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-3">
-                  ADAI를 어떻게 알게 되셨나요?
+                  {formT?.howDidYouFind || 'How did you find ADAI?'}
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {REFERRAL_SOURCES.map((source) => (
+                  {REFERRAL_SOURCE_VALUES.map((sourceValue) => (
                     <button
-                      key={source.value}
-                      onClick={() => setReferralSource(source.value)}
+                      key={sourceValue}
+                      onClick={() => setReferralSource(sourceValue)}
                       className={`px-4 py-2 rounded-lg border transition-all ${
-                        referralSource === source.value
+                        referralSource === sourceValue
                           ? 'border-primary bg-primary/10 text-foreground'
                           : 'border-border hover:border-primary/50 text-muted-foreground hover:text-foreground'
                       }`}
                     >
-                      {source.label}
+                      {formT?.referralSources?.[sourceValue] || sourceValue}
                     </button>
                   ))}
                 </div>
@@ -339,7 +345,7 @@ export default function OnboardingPage() {
                 disabled={loading}
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
-                이전
+                {formT?.prev || 'Previous'}
               </Button>
             ) : (
               <div />
@@ -350,7 +356,7 @@ export default function OnboardingPage() {
                 onClick={() => setStep(step + 1)}
                 disabled={!canProceed()}
               >
-                다음
+                {formT?.next || 'Next'}
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             ) : (
@@ -363,7 +369,7 @@ export default function OnboardingPage() {
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
-                    시작하기
+                    {formT?.start || 'Get Started'}
                     <Sparkles className="w-4 h-4 ml-1" />
                   </>
                 )}
@@ -385,16 +391,16 @@ export default function OnboardingPage() {
                   <Sparkles className="w-12 h-12 text-primary" />
                 </div>
                 <h3 className="text-2xl font-bold text-foreground mb-4">
-                  {step === 1 && '몇 가지 질문에 답해주세요'}
-                  {step === 2 && '맞춤형 경험을 준비중이에요'}
-                  {step === 3 && '거의 다 됐어요!'}
-                  {step === 4 && '시작할 준비가 됐어요!'}
+                  {step === 1 && (formT?.rightSide?.step1Title || 'Answer a few questions')}
+                  {step === 2 && (formT?.rightSide?.step2Title || 'Preparing your personalized experience')}
+                  {step === 3 && (formT?.rightSide?.step3Title || 'Almost there!')}
+                  {step === 4 && (formT?.rightSide?.step4Title || 'Ready to go!')}
                 </h3>
                 <p className="text-muted-foreground">
-                  {step === 1 && '더 나은 서비스 경험을 위해 간단한 설정을 진행합니다'}
-                  {step === 2 && '역할에 맞는 기능을 추천해 드릴게요'}
-                  {step === 3 && '업종에 맞는 템플릿을 준비해 드릴게요'}
-                  {step === 4 && '5개의 무료 크레딧이 기다리고 있어요!'}
+                  {step === 1 && (formT?.rightSide?.step1Desc || 'Quick setup for a better experience')}
+                  {step === 2 && (formT?.rightSide?.step2Desc || "We'll recommend features suited to your role")}
+                  {step === 3 && (formT?.rightSide?.step3Desc || "We'll prepare templates for your industry")}
+                  {step === 4 && (formT?.rightSide?.step4Desc || '5 free credits are waiting for you!')}
                 </p>
               </div>
             </div>
