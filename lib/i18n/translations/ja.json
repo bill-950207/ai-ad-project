@@ -81,6 +81,65 @@
     "closeMenu": "メニューを閉じる",
     "startFree": "無料で始める"
   },
+  "hero": {
+    "tagline": "専門家不要、自分で作れます",
+    "headlinePart1": "広告を",
+    "headlinePart2": "3分で完成",
+    "description": "AIがプロレベルの広告画像と動画を自動生成します。複雑な編集？高額な代理店？もう必要ありません。",
+    "ctaStart": "無料で始める",
+    "ctaSamples": "サンプルを見る",
+    "noCreditCard": "クレジットカード不要",
+    "freeCredits": "無料クレジット付き"
+  },
+  "workflow": {
+    "title": "簡単3ステップ",
+    "subtitle": "複雑なツール？不要です。製品写真さえあればAIにお任せ。",
+    "imageAd": "画像広告",
+    "videoAd": "動画広告",
+    "totalTime": "合計所要時間:",
+    "imageTime": "約2分",
+    "videoTime": "約5分",
+    "imageSteps": {
+      "step1Title": "製品を登録",
+      "step1Desc": "製品写真をアップロードするとAIが自動で背景を除去",
+      "step1Time": "30秒",
+      "step2Title": "スタイル選択",
+      "step2Desc": "お好みの広告スタイルと背景を選択",
+      "step2Time": "10秒",
+      "step3Title": "広告完成",
+      "step3Desc": "AI生成広告をダウンロード",
+      "step3Time": "30秒"
+    },
+    "videoSteps": {
+      "step1Title": "製品＆アバター",
+      "step1Desc": "製品とアバターを選択。なければ新規作成可能",
+      "step1Time": "1分",
+      "step2Title": "台本入力",
+      "step2Desc": "台本を入力するかAIに自動生成させる",
+      "step2Time": "30秒",
+      "step3Title": "動画完成",
+      "step3Desc": "AI動画生成後ダウンロード",
+      "step3Time": "2-3分"
+    }
+  },
+  "features": {
+    "title": "必要なものすべて",
+    "subtitle": "製品写真だけご用意ください。AIがプロ級の広告を作成します。",
+    "benefits": {
+      "noExperience": {
+        "title": "経験不要",
+        "description": "デザイン経験なしでプロレベルの広告作成"
+      },
+      "quick": {
+        "title": "高速作成",
+        "description": "代理店は数日、AIは数分"
+      },
+      "cost": {
+        "title": "コスト削減",
+        "description": "広告制作費を90%以上節約"
+      }
+    }
+  },
   "showcase": {
     "title": "制作事例",
     "subtitle": "実際に制作された広告コンテンツをご覧ください",

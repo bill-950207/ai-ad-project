@@ -81,6 +81,65 @@
     "closeMenu": "关闭菜单",
     "startFree": "免费开始"
   },
+  "hero": {
+    "tagline": "无需专家，自己动手",
+    "headlinePart1": "广告，",
+    "headlinePart2": "3分钟搞定",
+    "description": "AI自动生成专业级广告图片和视频。复杂编辑？昂贵代理商？都不需要了。",
+    "ctaStart": "免费开始",
+    "ctaSamples": "查看样例",
+    "noCreditCard": "无需信用卡",
+    "freeCredits": "赠送免费积分"
+  },
+  "workflow": {
+    "title": "简单3步骤",
+    "subtitle": "复杂工具？不需要。只要有产品照片，AI帮你搞定一切。",
+    "imageAd": "图片广告",
+    "videoAd": "视频广告",
+    "totalTime": "总耗时：",
+    "imageTime": "约2分钟",
+    "videoTime": "约5分钟",
+    "imageSteps": {
+      "step1Title": "上传产品",
+      "step1Desc": "上传产品照片，AI自动去除背景",
+      "step1Time": "30秒",
+      "step2Title": "选择风格",
+      "step2Desc": "选择您喜欢的广告风格和背景",
+      "step2Time": "10秒",
+      "step3Title": "下载广告",
+      "step3Desc": "下载AI生成的广告",
+      "step3Time": "30秒"
+    },
+    "videoSteps": {
+      "step1Title": "产品和虚拟形象",
+      "step1Desc": "选择产品和虚拟形象，没有可以新建",
+      "step1Time": "1分钟",
+      "step2Title": "输入脚本",
+      "step2Desc": "输入脚本或让AI自动生成",
+      "step2Time": "30秒",
+      "step3Title": "视频完成",
+      "step3Desc": "AI生成视频后下载",
+      "step3Time": "2-3分钟"
+    }
+  },
+  "features": {
+    "title": "您需要的一切",
+    "subtitle": "只需准备产品照片，AI为您制作专业级广告。",
+    "benefits": {
+      "noExperience": {
+        "title": "无需经验",
+        "description": "无设计经验也能制作专家级广告"
+      },
+      "quick": {
+        "title": "快速制作",
+        "description": "代理商需要几天，AI只需几分钟"
+      },
+      "cost": {
+        "title": "节省成本",
+        "description": "广告制作成本节省90%以上"
+      }
+    }
+  },
   "showcase": {
     "title": "作品展示",
     "subtitle": "查看使用我们平台创建的真实广告内容",

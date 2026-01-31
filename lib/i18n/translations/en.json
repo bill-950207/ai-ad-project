@@ -81,6 +81,65 @@
     "closeMenu": "Close menu",
     "startFree": "Start Free"
   },
+  "hero": {
+    "tagline": "Create it yourself, no experts needed",
+    "headlinePart1": "Create ads",
+    "headlinePart2": "in 3 minutes",
+    "description": "Images, videos, avatars. Create professional ads with just a few clicks.",
+    "ctaStart": "Start Free",
+    "ctaSamples": "View Samples",
+    "noCreditCard": "No credit card",
+    "freeCredits": "Free credits included"
+  },
+  "workflow": {
+    "title": "Simple 3 Steps",
+    "subtitle": "No complicated work. Just a few clicks and your ad is ready",
+    "imageAd": "Image Ad",
+    "videoAd": "Video Ad",
+    "totalTime": "Total time:",
+    "imageTime": "~2 minutes",
+    "videoTime": "~5 minutes",
+    "imageSteps": {
+      "step1Title": "Upload Product",
+      "step1Desc": "Enter product image or URL. Background removal and resizing are handled automatically.",
+      "step1Time": "30 sec",
+      "step2Title": "Choose Style",
+      "step2Desc": "Select your desired ad style from recommendations. One click is all it takes.",
+      "step2Time": "10 sec",
+      "step3Title": "Download",
+      "step3Desc": "Professional-quality ad images are generated. Download them right away.",
+      "step3Time": "30 sec"
+    },
+    "videoSteps": {
+      "step1Title": "Product & Avatar",
+      "step1Desc": "Register your product and select an avatar. You can also create your own avatar from a single photo.",
+      "step1Time": "1 min",
+      "step2Title": "Enter Script",
+      "step2Desc": "Enter your ad text. Natural voice and lip sync are generated automatically.",
+      "step2Time": "30 sec",
+      "step3Title": "Video Ready",
+      "step3Desc": "High-quality video with talking avatar is ready. Use it right away without editing.",
+      "step3Time": "2-3 min"
+    }
+  },
+  "features": {
+    "title": "Everything You Need",
+    "subtitle": "Just prepare a product photo. AI creates professional-grade ads for you.",
+    "benefits": {
+      "noExperience": {
+        "title": "No Experience Needed",
+        "description": "Create expert-level ads without design experience"
+      },
+      "quick": {
+        "title": "Quick Creation",
+        "description": "Agency takes days, AI takes minutes"
+      },
+      "cost": {
+        "title": "Cost Savings",
+        "description": "Save over 90% on ad production costs"
+      }
+    }
+  },
   "showcase": {
     "title": "Gallery",
     "subtitle": "Check out real ad content created with our platform",
