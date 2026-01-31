@@ -9,7 +9,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Image as ImageIcon, Video, ArrowRight, Sparkles } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 import { useOnboarding, VideoAdType } from '@/components/onboarding/onboarding-context'
@@ -40,7 +40,8 @@ const FALLBACK_IMAGE_EXAMPLES = [
   '/examples/image-ad-3.webp',
 ]
 
-const FALLBACK_VIDEO_EXAMPLE = '/examples/video-ad-example.mp4'
+// 영상 폴백은 빈 배열 (API에서 가져온 데이터 사용, 없으면 그라데이션 배경)
+const FALLBACK_VIDEO_EXAMPLES: string[] = []
 
 // ============================================================
 // 배경 이미지 슬라이더 컴포넌트
@@ -106,6 +107,65 @@ function BackgroundSlider({ images, interval = 4000 }: BackgroundSliderProps) {
 }
 
 // ============================================================
+// 배경 비디오 슬라이더 컴포넌트
+// ============================================================
+
+interface VideoSliderProps {
+  videos: string[]
+}
+
+function VideoSlider({ videos }: VideoSliderProps) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([])
+
+  const handleVideoEnded = useCallback(() => {
+    if (videos.length <= 1) return
+
+    setIsTransitioning(true)
+    setTimeout(() => {
+      setCurrentIndex((prev) => (prev + 1) % videos.length)
+      setIsTransitioning(false)
+    }, 300)
+  }, [videos.length])
+
+  // 인덱스 변경 시 해당 비디오 재생
+  useEffect(() => {
+    const currentVideo = videoRefs.current[currentIndex]
+    if (currentVideo) {
+      currentVideo.currentTime = 0
+      currentVideo.play().catch(() => {
+        // 자동재생 실패 시 무시 (브라우저 정책)
+      })
+    }
+  }, [currentIndex])
+
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      {videos.map((src, index) => (
+        <video
+          key={src}
+          ref={(el) => { videoRefs.current[index] = el }}
+          src={src}
+          autoPlay={index === 0}
+          loop={videos.length === 1}
+          muted
+          playsInline
+          onEnded={handleVideoEnded}
+          className={`
+            absolute inset-0 w-full h-full object-cover
+            transition-opacity duration-500 ease-in-out
+            ${index === currentIndex && !isTransitioning ? 'opacity-100' : 'opacity-0'}
+          `}
+        />
+      ))}
+      {/* 하단 텍스트 가독성을 위한 그라데이션 */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/10" />
+    </div>
+  )
+}
+
+// ============================================================
 // 광고 생성 카드 컴포넌트
 // ============================================================
 
@@ -114,7 +174,7 @@ interface AdCreationCardProps {
   title: string
   description: string
   images?: string[]
-  videoUrl?: string
+  videos?: string[]
   gradientFrom: string
   icon: React.ReactNode
   onClick: () => void
@@ -126,7 +186,7 @@ function AdCreationCard({
   title,
   description,
   images,
-  videoUrl,
+  videos,
   gradientFrom,
   icon,
   onClick,
@@ -139,21 +199,10 @@ function AdCreationCard({
       style={{ animationDelay: `${delay}ms` }}
     >
       {/* 배경 - 이미지 또는 비디오 */}
-      {type === 'video' && videoUrl ? (
-        <div className="absolute inset-0 overflow-hidden">
-          <video
-            src={videoUrl}
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          {/* 하단 텍스트 가독성을 위한 그라데이션 (하얀 배경 대응) */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/10" />
-        </div>
+      {type === 'video' && videos && videos.length > 0 ? (
+        <VideoSlider videos={videos} />
       ) : images ? (
-        <BackgroundSlider images={images} interval={5000} />
+        <BackgroundSlider images={images} interval={2500} />
       ) : null}
 
       {/* 폴백 그라데이션 (이미지 없을 때) */}
@@ -208,7 +257,7 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
 
   // 쇼케이스 데이터 상태
   const [imageShowcases, setImageShowcases] = useState<string[]>(FALLBACK_IMAGE_EXAMPLES)
-  const [videoShowcase, setVideoShowcase] = useState<string>(FALLBACK_VIDEO_EXAMPLE)
+  const [videoShowcases, setVideoShowcases] = useState<string[]>(FALLBACK_VIDEO_EXAMPLES)
 
   // 쇼케이스 데이터 로드
   useEffect(() => {
@@ -217,7 +266,7 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
         // 이미지와 영상 쇼케이스 병렬 조회
         const [imageRes, videoRes] = await Promise.all([
           fetch('/api/showcases?type=image&limit=5&random=true'),
-          fetch('/api/showcases?type=video&limit=1&random=true'),
+          fetch('/api/showcases?type=video&limit=3&random=true'),
         ])
 
         if (imageRes.ok) {
@@ -230,8 +279,13 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
 
         if (videoRes.ok) {
           const videoData = await videoRes.json()
-          if (videoData.showcases && videoData.showcases.length > 0 && videoData.showcases[0].media_url) {
-            setVideoShowcase(videoData.showcases[0].media_url)
+          if (videoData.showcases && videoData.showcases.length > 0) {
+            const videoUrls = videoData.showcases
+              .filter((s: Showcase) => s.media_url)
+              .map((s: Showcase) => s.media_url as string)
+            if (videoUrls.length > 0) {
+              setVideoShowcases(videoUrls)
+            }
           }
         }
       } catch (error) {
@@ -295,7 +349,7 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
           type="video"
           title={t.nav.videoAd}
           description={t.videoAd.subtitle}
-          videoUrl={videoShowcase}
+          videos={videoShowcases}
           gradientFrom="from-rose-600/40"
           icon={<Video className="w-5 h-5 text-white" />}
           onClick={() => startOnboarding('video')}
