@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { Music, Loader2, CheckCircle, XCircle, ArrowLeft, Volume2 } from 'lucide-react'
+import { Music, Loader2, CheckCircle, XCircle, ArrowLeft } from 'lucide-react'
 import Image from 'next/image'
 
 interface MergeStatus {
@@ -101,7 +101,7 @@ export default function MergeMusicPage() {
           trackIndex: Number(trackIndex) || 0,
           startTime: Number(startTime),
           endTime: Number(endTime),
-          musicVolume: Number(musicVolume) || 0.3,
+          musicVolume: Number(musicVolume) || 0.4,
         }),
       })
 
@@ -198,15 +198,9 @@ export default function MergeMusicPage() {
               <h3 className="font-medium text-foreground truncate">
                 {musicName ? decodeURIComponent(musicName) : '선택된 음악'}
               </h3>
-              <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-                <span>
-                  {formatTime(Number(startTime))} - {formatTime(Number(endTime))}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Volume2 className="w-3 h-3" />
-                  {Math.round(Number(musicVolume) * 100)}%
-                </span>
-              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                {formatTime(Number(startTime))} - {formatTime(Number(endTime))}
+              </p>
             </div>
           </div>
 
@@ -234,7 +228,6 @@ export default function MergeMusicPage() {
                     style={{ width: `${status.progress}%` }}
                   />
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">{status.progress}%</p>
               </div>
             )}
 

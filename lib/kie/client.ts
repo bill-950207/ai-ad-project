@@ -1460,160 +1460,91 @@ export async function submitAdBackgroundToQueue(
 }
 
 /**
- * 음악 스타일 프롬프트 생성
+ * 음악 스타일 프롬프트 생성 (Suno V5 최적화)
  *
- * Suno V5 모델에 최적화된 프롬프트 생성
- * - 분위기, 장르, 제품 유형을 조합하여 효과적인 광고 음악 프롬프트 생성
- * - 템포, 악기 힌트, 구조 힌트 포함
+ * Suno V5 권장사항 준수:
+ * - 4-7개 설명자 (30+개 → 6개로 축소)
+ * - 구조: 장르 + 템포/분위기 + 악기(3개) + 제품특성 + "instrumental only, no vocals"
+ * - 모호한 단어 제거: cool, urban, mainstream, radio-friendly, cutting-edge, epic
+ * - BPM 숫자 대신 템포 형용사 사용
+ * - 악기는 "and"로 연결하여 하나의 설명자로 처리
+ *
+ * @see https://plainenglish.io/blog/i-made-10-suno-v5-prompt-patterns-that-never-miss
  */
 function buildMusicStylePrompt(mood: string, genre: string, productType: string): string {
-  // 분위기별 스타일 및 템포 힌트
-  const moodStyles: Record<string, { style: string; tempo: string; energy: string }> = {
-    bright: {
-      style: 'uplifting, cheerful, positive energy, joyful, sunshine vibes',
-      tempo: 'medium-fast tempo (110-130 BPM)',
-      energy: 'high energy, feel-good'
-    },
-    calm: {
-      style: 'relaxing, soothing, peaceful, gentle, tranquil',
-      tempo: 'slow tempo (60-80 BPM)',
-      energy: 'low energy, meditative'
-    },
-    emotional: {
-      style: 'touching, heartfelt, cinematic, moving, inspiring',
-      tempo: 'moderate tempo (80-100 BPM)',
-      energy: 'emotional build-up, crescendo'
-    },
-    professional: {
-      style: 'corporate, confident, sophisticated, trustworthy, polished',
-      tempo: 'moderate tempo (90-110 BPM)',
-      energy: 'steady, confident'
-    },
-    exciting: {
-      style: 'energetic, dynamic, thrilling, adrenaline, powerful',
-      tempo: 'fast tempo (120-140 BPM)',
-      energy: 'high energy, intense'
-    },
-    trendy: {
-      style: 'modern, fresh, contemporary, stylish, cutting-edge',
-      tempo: 'medium-fast tempo (100-120 BPM)',
-      energy: 'cool, urban'
-    },
-    playful: {
-      style: 'playful, fun, whimsical, bouncy, lighthearted',
-      tempo: 'medium-fast tempo (110-125 BPM)',
-      energy: 'upbeat, cheerful'
-    },
-    romantic: {
-      style: 'romantic, tender, loving, intimate, dreamy',
-      tempo: 'slow-moderate tempo (70-90 BPM)',
-      energy: 'soft, passionate'
-    },
-    nostalgic: {
-      style: 'nostalgic, retro, sentimental, warm memories, vintage feel',
-      tempo: 'moderate tempo (85-100 BPM)',
-      energy: 'warm, reflective'
-    },
+  // Suno V5 최적화: 구체적 장르 (한 단어 장르 피하기)
+  const genreMap: Record<string, string> = {
+    pop: 'upbeat synth-pop',
+    electronic: 'electronic dance',
+    classical: 'orchestral cinematic',
+    jazz: 'smooth jazz',
+    rock: 'modern rock',
+    hiphop: 'chill hip-hop',
+    ambient: 'atmospheric ambient',
+    acoustic: 'warm acoustic',
+    lofi: 'lo-fi chill',
+    cinematic: 'dramatic orchestral',  // "epic" 제거
+    rnb: 'contemporary R&B',
+    folk: 'acoustic folk',
   }
 
-  // 장르별 스타일 및 악기 힌트
-  const genreStyles: Record<string, { style: string; instruments: string }> = {
-    pop: {
-      style: 'pop music, catchy melody, radio-friendly, mainstream',
-      instruments: 'synth pads, electronic drums, bass, bright keys'
-    },
-    electronic: {
-      style: 'electronic, EDM influences, synth-heavy, modern production',
-      instruments: 'synthesizers, electronic beats, arpeggios, bass drops'
-    },
-    classical: {
-      style: 'orchestral, elegant, refined, timeless, majestic',
-      instruments: 'strings, piano, brass, woodwinds, orchestral arrangement'
-    },
-    jazz: {
-      style: 'jazz, smooth, sophisticated, groovy, swing feel',
-      instruments: 'piano, saxophone, upright bass, brushed drums'
-    },
-    rock: {
-      style: 'rock, guitar-driven, powerful, bold, raw energy',
-      instruments: 'electric guitar, drums, bass guitar, power chords'
-    },
-    hiphop: {
-      style: 'hip-hop, rhythmic, urban, groove-based, trap influences',
-      instruments: 'heavy 808 bass, hi-hats, snare, sampled loops'
-    },
-    ambient: {
-      style: 'ambient, atmospheric, ethereal, spacious, dreamy',
-      instruments: 'soft pads, reverb-heavy textures, subtle percussion'
-    },
-    acoustic: {
-      style: 'acoustic, warm, natural, organic, intimate',
-      instruments: 'acoustic guitar, soft percussion, ukulele, piano'
-    },
-    lofi: {
-      style: 'lo-fi, chill, relaxed beats, vintage warmth, tape hiss',
-      instruments: 'mellow keys, vinyl crackle, soft drums, jazzy samples'
-    },
-    cinematic: {
-      style: 'cinematic, epic, dramatic, movie soundtrack, orchestral power',
-      instruments: 'full orchestra, percussion, brass fanfares, choir'
-    },
-    rnb: {
-      style: 'R&B, smooth, soulful, groovy, contemporary R&B',
-      instruments: 'smooth synths, mellow bass, soft drums, vocal-like melodies'
-    },
-    folk: {
-      style: 'folk, rustic, storytelling, earthy, handcrafted feel',
-      instruments: 'acoustic guitar, banjo, harmonica, light percussion'
-    },
+  // Suno V5 최적화: 템포 + 분위기 통합 (설명자 수 절약)
+  const moodTempoMap: Record<string, string> = {
+    bright: 'upbeat cheerful energy',
+    calm: 'slow peaceful atmosphere',
+    emotional: 'building heartfelt mood',
+    professional: 'steady sophisticated tone',
+    exciting: 'fast powerful drive',
+    trendy: 'groovy fresh vibe',
+    playful: 'bouncy lighthearted feel',
+    romantic: 'slow dreamy atmosphere',
+    nostalgic: 'warm sentimental mood',
   }
 
-  // 제품 유형별 분위기 보완
-  const productStyles: Record<string, string> = {
-    cosmetics: 'beauty advertisement, luxurious feel, feminine elegance, glamorous, premium skincare',
-    food: 'food commercial, appetizing atmosphere, warm and inviting, delicious, homestyle',
-    tech: 'technology ad, innovative feel, futuristic vibes, sleek and modern, digital',
-    fashion: 'fashion advertisement, stylish and chic, runway vibes, high fashion, trendsetting',
-    health: 'wellness commercial, fresh and clean, revitalizing energy, natural, healthy lifestyle',
-    automobile: 'car advertisement, powerful and dynamic, premium quality, road adventure, luxury drive',
-    finance: 'financial services ad, trustworthy and stable, professional, secure, reliable',
-    lifestyle: 'lifestyle commercial, comfortable everyday, friendly vibes, relatable, modern living',
-    sports: 'sports advertisement, athletic energy, competitive spirit, victory, motivation',
-    kids: 'kids product ad, playful and fun, family-friendly, colorful, magical wonder',
-    pet: 'pet product commercial, heartwarming, lovable, companion vibes, cute and cuddly',
-    travel: 'travel advertisement, adventure awaits, wanderlust, exotic destinations, vacation vibes',
+  // Suno V5 최적화: 악기 3개를 "and"로 연결 (하나의 설명자)
+  const instrumentMap: Record<string, string> = {
+    pop: 'bright synths and punchy drums and warm bass',
+    electronic: 'layered synths and electronic beats and deep bass',
+    classical: 'strings and piano and brass',
+    jazz: 'piano and soft saxophone and upright bass',
+    rock: 'electric guitar and drums and bass',
+    hiphop: '808 bass and crisp hi-hats and keys',
+    ambient: 'soft pads and textures and gentle swells',
+    acoustic: 'acoustic guitar and soft percussion and piano',
+    lofi: 'mellow keys and vinyl texture and soft drums',
+    cinematic: 'orchestra and percussion and choir',
+    rnb: 'smooth synths and mellow bass and soft drums',
+    folk: 'acoustic guitar and percussion and harmonica',
   }
 
-  const moodData = moodStyles[mood] || { style: mood, tempo: 'moderate tempo', energy: 'balanced' }
-  const genreData = genreStyles[genre] || { style: genre, instruments: 'various instruments' }
-  const productStyle = productStyles[productType] || productType
+  // Suno V5 최적화: 제품별 특성 (간결하게 1개 설명자)
+  const productStyleMap: Record<string, string> = {
+    cosmetics: 'elegant premium polish',
+    food: 'warm inviting feel',
+    tech: 'sleek modern production',
+    fashion: 'stylish refined sound',
+    health: 'fresh clean energy',
+    automobile: 'powerful dynamic presence',
+    finance: 'trustworthy stable tone',
+    lifestyle: 'friendly warm atmosphere',
+    sports: 'motivating punchy drive',
+    kids: 'magical bright wonder',
+    pet: 'heartwarming gentle softness',
+    travel: 'adventurous spacious feel',
+  }
 
-  // 효과적인 광고 음악 프롬프트 구성
-  const prompt = [
-    // 기본 구조
-    'instrumental advertisement background music',
-    'commercial jingle style',
-    '30 seconds duration',
-    'broadcast quality production',
+  // Suno V5 권장 구조: 6개 설명자
+  // [장르] + [템포/분위기] + [악기 3개] + [제품특성] + [no vocals]
+  const parts = [
+    genreMap[genre] || genre,                           // 1. 장르
+    moodTempoMap[mood] || 'moderate balanced energy',   // 2. 템포+분위기
+    instrumentMap[genre] || 'various instruments',      // 3. 악기 (and로 연결)
+    productStyleMap[productType] || 'polished mix',     // 4. 제품특성
+    'instrumental only',                                // 5. instrumental
+    'no vocals',                                        // 6. no vocals (V5 필수)
+  ]
 
-    // 분위기
-    moodData.style,
-    moodData.tempo,
-    moodData.energy,
-
-    // 장르
-    genreData.style,
-    genreData.instruments,
-
-    // 제품 특성
-    productStyle,
-
-    // 구조 힌트
-    'clear intro, catchy hook, smooth ending',
-    'memorable melody, professional mix',
-  ].filter(Boolean).join(', ')
-
-  return prompt
+  return parts.join(', ')
 }
 
 // ============================================================
