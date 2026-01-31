@@ -9,11 +9,46 @@
     "comingSoon": "곧 출시 예정",
     "cancel": "취소",
     "save": "저장",
+    "close": "닫기",
     "error": "오류가 발생했습니다",
     "errorDescription": "예기치 않은 문제가 발생했습니다. 다시 시도해 주세요.",
+    "errorDetails": "에러 상세 정보",
+    "devMode": "개발 모드",
     "retry": "다시 시도",
     "goBack": "뒤로 가기",
-    "goHome": "홈으로"
+    "goHome": "홈으로",
+    "thisFeature": "이 기능",
+    "saving": "저장 중...",
+    "savePending": "저장 대기 중",
+    "saved": "저장됨",
+    "saveFailed": "저장 실패"
+  },
+  "modal": {
+    "insufficientCredits": {
+      "title": "크레딧이 부족합니다",
+      "creditStatus": "크레딧 현황",
+      "required": "필요 크레딧",
+      "available": "보유 크레딧",
+      "shortfall": "부족한 크레딧",
+      "message": "을(를) 사용하려면 추가 크레딧이 필요합니다. 플랜을 업그레이드하면 더 많은 크레딧을 받을 수 있습니다.",
+      "autoSave": "현재 작업 내용이 자동 저장됩니다",
+      "upgrade": "플랜 업그레이드"
+    },
+    "slotLimit": {
+      "title": "슬롯이 가득 찼습니다",
+      "slot": "슬롯",
+      "defaultMessage": "현재 슬롯이 가득 찼습니다. 새로 생성하려면 기존 항목을 삭제하거나 플랜을 업그레이드하세요.",
+      "deleteExisting": "기존 항목 삭제하기",
+      "upgrade": "플랜 업그레이드"
+    }
+  },
+  "slotTypes": {
+    "avatar": "아바타",
+    "music": "음악",
+    "product": "제품",
+    "avatarManage": "아바타 관리",
+    "musicManage": "음악 관리",
+    "productManage": "제품 관리"
   },
   "landing": {
     "badge": "AI 기반 광고 제작",
@@ -38,7 +73,13 @@
     "dashboard": "대시보드",
     "login": "로그인",
     "signUp": "회원가입",
-    "pricing": "요금제"
+    "pricing": "요금제",
+    "features": "기능",
+    "howItWorks": "사용법",
+    "gallery": "갤러리",
+    "openMenu": "메뉴 열기",
+    "closeMenu": "메뉴 닫기",
+    "startFree": "무료로 시작"
   },
   "nav": {
     "adCreationTools": "광고 생성 도구",

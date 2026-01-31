@@ -9,11 +9,46 @@
     "comingSoon": "Coming soon",
     "cancel": "Cancel",
     "save": "Save",
+    "close": "Close",
     "error": "Something went wrong",
     "errorDescription": "An unexpected error occurred. Please try again.",
+    "errorDetails": "Error details",
+    "devMode": "Dev mode",
     "retry": "Try again",
     "goBack": "Go back",
-    "goHome": "Go home"
+    "goHome": "Go home",
+    "thisFeature": "This feature",
+    "saving": "Saving...",
+    "savePending": "Save pending",
+    "saved": "Saved",
+    "saveFailed": "Save failed"
+  },
+  "modal": {
+    "insufficientCredits": {
+      "title": "Insufficient Credits",
+      "creditStatus": "Credit Status",
+      "required": "Required",
+      "available": "Available",
+      "shortfall": "Shortfall",
+      "message": "requires more credits. Upgrade your plan to get more credits.",
+      "autoSave": "Your work will be saved automatically",
+      "upgrade": "Upgrade Plan"
+    },
+    "slotLimit": {
+      "title": "Slot Limit Reached",
+      "slot": "slot",
+      "defaultMessage": "You've reached the slot limit. Delete existing items or upgrade your plan to create more.",
+      "deleteExisting": "Delete existing items",
+      "upgrade": "Upgrade Plan"
+    }
+  },
+  "slotTypes": {
+    "avatar": "Avatar",
+    "music": "Music",
+    "product": "Product",
+    "avatarManage": "Manage Avatars",
+    "musicManage": "Manage Music",
+    "productManage": "Manage Products"
   },
   "landing": {
     "badge": "AI-Powered Ad Creation",
@@ -38,7 +73,13 @@
     "dashboard": "Dashboard",
     "login": "Login",
     "signUp": "Sign Up",
-    "pricing": "Pricing"
+    "pricing": "Pricing",
+    "features": "Features",
+    "howItWorks": "How it works",
+    "gallery": "Gallery",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "startFree": "Start Free"
   },
   "nav": {
     "adCreationTools": "Ad Creation Tools",

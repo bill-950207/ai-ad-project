@@ -9,11 +9,46 @@
     "comingSoon": "近日公開",
     "cancel": "キャンセル",
     "save": "保存",
+    "close": "閉じる",
     "error": "エラーが発生しました",
     "errorDescription": "予期しないエラーが発生しました。もう一度お試しください。",
+    "errorDetails": "エラー詳細",
+    "devMode": "開発モード",
     "retry": "再試行",
     "goBack": "戻る",
-    "goHome": "ホームへ"
+    "goHome": "ホームへ",
+    "thisFeature": "この機能",
+    "saving": "保存中...",
+    "savePending": "保存待機中",
+    "saved": "保存済み",
+    "saveFailed": "保存失敗"
+  },
+  "modal": {
+    "insufficientCredits": {
+      "title": "クレジット不足",
+      "creditStatus": "クレジット状況",
+      "required": "必要",
+      "available": "保有",
+      "shortfall": "不足",
+      "message": "を使用するには追加クレジットが必要です。プランをアップグレードすると、より多くのクレジットを獲得できます。",
+      "autoSave": "作業内容は自動保存されます",
+      "upgrade": "プランアップグレード"
+    },
+    "slotLimit": {
+      "title": "スロット上限に達しました",
+      "slot": "スロット",
+      "defaultMessage": "スロットが満杯です。新規作成するには既存のアイテムを削除するか、プランをアップグレードしてください。",
+      "deleteExisting": "既存アイテムを削除",
+      "upgrade": "プランアップグレード"
+    }
+  },
+  "slotTypes": {
+    "avatar": "アバター",
+    "music": "音楽",
+    "product": "商品",
+    "avatarManage": "アバター管理",
+    "musicManage": "音楽管理",
+    "productManage": "商品管理"
   },
   "landing": {
     "badge": "AI搭載広告作成",
@@ -38,7 +73,13 @@
     "dashboard": "ダッシュボード",
     "login": "ログイン",
     "signUp": "新規登録",
-    "pricing": "料金プラン"
+    "pricing": "料金プラン",
+    "features": "機能",
+    "howItWorks": "使い方",
+    "gallery": "ギャラリー",
+    "openMenu": "メニューを開く",
+    "closeMenu": "メニューを閉じる",
+    "startFree": "無料で始める"
   },
   "nav": {
     "adCreationTools": "広告作成ツール",

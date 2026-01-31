@@ -9,11 +9,46 @@
     "comingSoon": "即将推出",
     "cancel": "取消",
     "save": "保存",
+    "close": "关闭",
     "error": "出现错误",
     "errorDescription": "发生了意外错误。请重试。",
+    "errorDetails": "错误详情",
+    "devMode": "开发模式",
     "retry": "重试",
     "goBack": "返回",
-    "goHome": "回到首页"
+    "goHome": "回到首页",
+    "thisFeature": "此功能",
+    "saving": "保存中...",
+    "savePending": "等待保存",
+    "saved": "已保存",
+    "saveFailed": "保存失败"
+  },
+  "modal": {
+    "insufficientCredits": {
+      "title": "积分不足",
+      "creditStatus": "积分状态",
+      "required": "所需",
+      "available": "可用",
+      "shortfall": "缺少",
+      "message": "需要更多积分才能使用。升级您的方案以获取更多积分。",
+      "autoSave": "您的工作将自动保存",
+      "upgrade": "升级方案"
+    },
+    "slotLimit": {
+      "title": "已达到上限",
+      "slot": "槽位",
+      "defaultMessage": "槽位已满。请删除现有项目或升级方案以创建更多。",
+      "deleteExisting": "删除现有项目",
+      "upgrade": "升级方案"
+    }
+  },
+  "slotTypes": {
+    "avatar": "虚拟形象",
+    "music": "音乐",
+    "product": "产品",
+    "avatarManage": "管理虚拟形象",
+    "musicManage": "管理音乐",
+    "productManage": "管理产品"
   },
   "landing": {
     "badge": "AI驱动的广告创作",
@@ -38,7 +73,13 @@
     "dashboard": "控制面板",
     "login": "登录",
     "signUp": "注册",
-    "pricing": "定价"
+    "pricing": "定价",
+    "features": "功能",
+    "howItWorks": "使用方法",
+    "gallery": "作品展示",
+    "openMenu": "打开菜单",
+    "closeMenu": "关闭菜单",
+    "startFree": "免费开始"
   },
   "nav": {
     "adCreationTools": "广告创作工具",
