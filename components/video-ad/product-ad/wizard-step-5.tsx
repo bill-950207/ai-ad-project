@@ -769,7 +769,7 @@ export function WizardStep5() {
           imageUrl: kf.imageUrl!,
           scenePrompt: videoPromptToUse,  // 영상 생성용 프롬프트
           duration: sceneDurations[kf.sceneIndex] ?? 3,  // 각 씬별 duration
-          movementAmplitude: sceneInfo?.movementAmplitude ?? 'medium',  // 카메라/모션 강도 (기본 medium - 동적)
+          movementAmplitude: sceneInfo?.movementAmplitude ?? 'auto',  // 카메라/모션 강도 (기본 auto - AI가 콘텐츠에 맞게 결정)
         }
       })
 
@@ -799,9 +799,15 @@ export function WizardStep5() {
       }))
       setSceneVideoStatuses(initialStatuses)
 
-      // DB 업데이트
+      // DB 업데이트 (requestId를 명시적으로 저장하여 새로고침 후 폴링 재개 가능)
       await saveDraft({
         status: 'GENERATING_SCENE_VIDEOS',
+        sceneVideoUrls: initialStatuses.map(s => ({
+          sceneIndex: s.sceneIndex,
+          requestId: s.requestId,
+          videoUrl: s.videoUrl,
+          status: s.status,
+        })),
       })
 
       // 폴링 시작
@@ -890,11 +896,24 @@ export function WizardStep5() {
       const data = await res.json()
       const sceneVideo = data.sceneVideos[0]
 
-      setSceneVideoStatuses(prev => prev.map(s =>
+      // 상태 업데이트 및 드래프트 저장을 위한 새 상태 계산
+      const updatedStatuses = sceneVideoStatuses.map(s =>
         s.sceneIndex === sceneIndex
-          ? { ...s, requestId: sceneVideo.requestId, status: 'generating' }
+          ? { ...s, requestId: sceneVideo.requestId, status: 'generating' as const }
           : s
-      ))
+      )
+      setSceneVideoStatuses(updatedStatuses)
+
+      // DB 업데이트 (requestId를 명시적으로 저장하여 새로고침 후 폴링 재개 가능)
+      await saveDraft({
+        status: 'GENERATING_SCENE_VIDEOS',
+        sceneVideoUrls: updatedStatuses.map(s => ({
+          sceneIndex: s.sceneIndex,
+          requestId: s.requestId,
+          videoUrl: s.videoUrl,
+          status: s.status,
+        })),
+      })
 
       // 단일 씬 폴링 시작 (duration 전달)
       startSingleSceneVideoPolling(sceneIndex, sceneVideo.requestId, useDuration)
@@ -992,12 +1011,18 @@ export function WizardStep5() {
 
     isTransitionPollingActiveRef.current = true
     const collectedUrls: string[] = []
+    // 현재 상태를 추적하기 위한 맵 (새로고침 후 복구를 위해)
+    const currentStatusMap = new Map<string, SceneVideoStatus>(
+      statuses.map(s => [s.requestId, { ...s }])
+    )
 
     const pollStatus = async () => {
       let allCompleted = true
+      let hasStatusChange = false
 
       for (const sceneVideo of statuses) {
-        if (sceneVideo.status === 'completed' || sceneVideo.status === 'failed') {
+        const currentStatus = currentStatusMap.get(sceneVideo.requestId)
+        if (currentStatus?.status === 'completed' || currentStatus?.status === 'failed') {
           continue
         }
 
@@ -1013,6 +1038,14 @@ export function WizardStep5() {
           if (data.status === 'IN_QUEUE' || data.status === 'IN_PROGRESS') {
             allCompleted = false
           } else if (data.status === 'COMPLETED' && data.resultUrl) {
+            // 상태 맵 업데이트
+            currentStatusMap.set(sceneVideo.requestId, {
+              ...sceneVideo,
+              status: 'completed',
+              videoUrl: data.resultUrl,
+            })
+            hasStatusChange = true
+
             setSceneVideoStatuses(prev => prev.map(s =>
               s.requestId === sceneVideo.requestId
                 ? { ...s, status: 'completed', videoUrl: data.resultUrl }
@@ -1028,6 +1061,14 @@ export function WizardStep5() {
               saveSceneVersion(sceneIndex, data.resultUrl, sceneVideo.requestId, undefined, duration)
             }
           } else if (data.status === 'FAILED') {
+            // 상태 맵 업데이트
+            currentStatusMap.set(sceneVideo.requestId, {
+              ...sceneVideo,
+              status: 'failed',
+              errorMessage: data.errorMessage,
+            })
+            hasStatusChange = true
+
             setSceneVideoStatuses(prev => prev.map(s =>
               s.requestId === sceneVideo.requestId
                 ? { ...s, status: 'failed', errorMessage: data.errorMessage }
@@ -1039,6 +1080,19 @@ export function WizardStep5() {
         } catch {
           allCompleted = false
         }
+      }
+
+      // 상태 변경이 있으면 드래프트 저장 (새로고침 후 복구 가능하도록)
+      if (hasStatusChange) {
+        const updatedStatuses = Array.from(currentStatusMap.values())
+        saveDraft({
+          sceneVideoUrls: updatedStatuses.map(s => ({
+            sceneIndex: s.sceneIndex,
+            requestId: s.requestId,
+            videoUrl: s.videoUrl,
+            status: s.status,
+          })),
+        })
       }
 
       if (allCompleted) {

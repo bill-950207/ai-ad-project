@@ -180,11 +180,11 @@ export async function POST(request: NextRequest) {
                       },
                       imagePrompt: {
                         type: Type.STRING,
-                        description: 'Seedream용 영어 이미지 프롬프트 (50-80 words)',
+                        description: 'Seedream용 영어 이미지 프롬프트 (50-100 words)',
                       },
                       videoPrompt: {
                         type: Type.STRING,
-                        description: 'Vidu용 영어 영상 프롬프트 (50-80 words, motion included)',
+                        description: 'Vidu용 영어 영상 프롬프트 (50-100 words, motion included)',
                       },
                     },
                   },
@@ -201,11 +201,11 @@ export async function POST(request: NextRequest) {
                     },
                     sceneCount: {
                       type: Type.INTEGER,
-                      description: '씬 개수 (2-8)',
+                      description: '씬 개수 (2-8, 권장: 3개)',
                     },
                     sceneDurations: {
                       type: Type.ARRAY,
-                      description: '각 씬별 영상 길이 (초, 1-8초)',
+                      description: '각 씬별 영상 길이 (1-8초, 권장: 2-4초)',
                       items: { type: Type.INTEGER },
                     },
                   },
@@ -314,7 +314,7 @@ Create a unique and creative narrative arc that best suits this specific product
    - Technical/feature-focused → prefer "medium" for clarity
    - Food/beverage → "small" to "medium" for appetizing presentation
 
-5. imagePrompt (영어, 50-80 words): Seedream 이미지 생성용
+5. imagePrompt (영어, 50-100 words): Seedream 이미지 생성용
    - Start with: "The product shown in the attached image" (NEVER use "${productName}"!)
    - End with: "soft professional lighting, photorealistic, 4K, commercial quality"
    - NO PEOPLE
@@ -326,21 +326,31 @@ Create a unique and creative narrative arc that best suits this specific product
    ❌ BANNED: the product name "${productName}" (may contain "Camera" or similar)
    ✅ USE ONLY: "the product", "the item", "the bottle", "the package"
 
-6. videoPrompt (영어, 50-80 words): Vidu 영상 생성용
+6. videoPrompt (영어, 50-100 words): Vidu 영상 생성용
    - Start with: "The product shown in the attached image"
-   - Include motion with "slowly" and "steady, gimbal-stabilized"
-   - Include "no camera shake", "professional dolly motion" for stability
-   - End with: "soft natural lighting, photorealistic, 4K"
-   - NO PEOPLE
-   - NO visible studio equipment, cameras, tripods, lighting rigs, softboxes, reflectors, or any production equipment
-   - Describe lighting as EFFECT only, NOT as visible equipment
-   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "photographer", "filming", "behind the scenes", "DSLR", "mirrorless", "handheld", "shaky"
-   - ⚠️ Do NOT use "${productName}" directly - use generic terms like "the product", "the item"
+   - **BE SPECIFIC about motion:**
+     • Direction: "slowly moving left to right", "gently orbiting around", "rising upward"
+     • Speed: "slowly", "gently", "smoothly" (avoid sudden/fast movements)
+     • Camera angle: "low angle looking up", "eye-level", "slight top-down view"
+   - Include "steady, gimbal-stabilized", "no camera shake", "professional dolly motion"
+   - **Add environmental effects for immersion:**
+     • "soft particles floating", "gentle mist", "subtle light rays", "bokeh in background"
+     • Keep effects elegant and product-focused
+   - End with: "soft natural lighting, photorealistic, 4K, cinematic quality"
+   - NO PEOPLE, NO visible studio equipment
+   - ⚠️ FORBIDDEN: "camera", "tripod", "photographer", "filming", "DSLR", "handheld", "shaky"
+   - ⚠️ Do NOT use "${productName}" - use "the product", "the item"
 
 === VIDEO SETTINGS ===
 - aspectRatio: "16:9" (landscape), "9:16" (portrait/vertical), or "1:1" (square)
-- sceneCount: The number of scenes YOU decided (2-8)
-- sceneDurations: Array of durations matching your sceneCount (1-8 seconds each)
+- sceneCount: Number of scenes (2-8, **recommend 3 scenes** for optimal pacing)
+- sceneDurations: Array of durations (1-8 seconds each, **recommend 2-4 seconds per scene**)
+
+💡 PACING GUIDELINE:
+- Modern ads work best with SHORT, PUNCHY scenes that transition quickly
+- 3 scenes × 2-4 seconds = 6-12 second total (ideal for social media ads)
+- Keep viewers engaged with fast cuts rather than long static shots
+- This is a recommendation, not a strict rule - adjust based on product/mood if needed
 
 === OUTPUT FORMAT ===
 1. "elements": { "mood": "overall mood in ${outputLanguage}" }
@@ -406,7 +416,7 @@ Choose what best tells this product's story while adapting the reference style.
 
    Adapt to the reference video's motion style while matching the product characteristics.
 
-5. imagePrompt (영어, 50-80 words): Seedream 이미지 생성용
+5. imagePrompt (영어, 50-100 words): Seedream 이미지 생성용
    - Start with: "The product shown in the attached image" (NEVER use "${productName}"!)
    - End with: "soft professional lighting, photorealistic, 4K, commercial quality"
    - NO PEOPLE
@@ -418,21 +428,31 @@ Choose what best tells this product's story while adapting the reference style.
    ❌ BANNED: the product name "${productName}" (may contain "Camera" or similar)
    ✅ USE ONLY: "the product", "the item", "the bottle", "the package"
 
-6. videoPrompt (영어, 50-80 words): Vidu 영상 생성용
+6. videoPrompt (영어, 50-100 words): Vidu 영상 생성용
    - Start with: "The product shown in the attached image"
-   - Include motion with "slowly" and "steady, gimbal-stabilized"
-   - Include "no camera shake", "professional dolly motion" for stability
-   - End with: "soft natural lighting, photorealistic, 4K"
-   - NO PEOPLE
-   - NO visible studio equipment, cameras, tripods, lighting rigs, softboxes, reflectors, or any production equipment
-   - Describe lighting as EFFECT only, NOT as visible equipment
-   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "photographer", "filming", "behind the scenes", "DSLR", "mirrorless", "handheld", "shaky"
-   - ⚠️ Do NOT use "${productName}" directly - use generic terms like "the product", "the item"
+   - **BE SPECIFIC about motion:**
+     • Direction: "slowly moving left to right", "gently orbiting around", "rising upward"
+     • Speed: "slowly", "gently", "smoothly" (avoid sudden/fast movements)
+     • Camera angle: "low angle looking up", "eye-level", "slight top-down view"
+   - Include "steady, gimbal-stabilized", "no camera shake", "professional dolly motion"
+   - **Add environmental effects for immersion:**
+     • "soft particles floating", "gentle mist", "subtle light rays", "bokeh in background"
+     • Keep effects elegant and product-focused
+   - End with: "soft natural lighting, photorealistic, 4K, cinematic quality"
+   - NO PEOPLE, NO visible studio equipment
+   - ⚠️ FORBIDDEN: "camera", "tripod", "photographer", "filming", "DSLR", "handheld", "shaky"
+   - ⚠️ Do NOT use "${productName}" - use "the product", "the item"
 
 === VIDEO SETTINGS ===
 - aspectRatio: "16:9" (landscape), "9:16" (portrait/vertical), or "1:1" (square)
-- sceneCount: The number of scenes YOU decided (2-8)
-- sceneDurations: Array of durations matching your sceneCount (1-8 seconds each)
+- sceneCount: Number of scenes (2-8, **recommend 3 scenes** for optimal pacing)
+- sceneDurations: Array of durations (1-8 seconds each, **recommend 2-4 seconds per scene**)
+
+💡 PACING GUIDELINE:
+- Modern ads work best with SHORT, PUNCHY scenes that transition quickly
+- 3 scenes × 2-4 seconds = 6-12 second total (ideal for social media ads)
+- Keep viewers engaged with fast cuts rather than long static shots
+- This is a recommendation, not a strict rule - adjust based on product/mood if needed
 
 === OUTPUT FORMAT ===
 1. "elements": { "mood": "overall mood in ${outputLanguage}" }

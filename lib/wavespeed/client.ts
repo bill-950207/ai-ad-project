@@ -1195,12 +1195,12 @@ export type ViduMovementAmplitude = 'auto' | 'small' | 'medium' | 'large'
  * Vidu Q3 입력 타입
  */
 export interface ViduImageToVideoInput {
-  prompt: string           // 영상 생성 프롬프트
+  prompt: string           // 영상 생성 프롬프트 (50-100 words 권장)
   image: string            // 시작 이미지 URL
   duration?: ViduDuration  // 영상 길이 (1-16초, 기본 5)
   resolution?: ViduResolution  // 해상도 (기본 720p)
   bgm?: boolean            // 배경 음악 (기본 false)
-  movement_amplitude?: ViduMovementAmplitude  // 움직임 강도 (기본 small - 안정적)
+  movement_amplitude?: ViduMovementAmplitude  // 움직임 강도 (기본 auto)
   seed?: number            // 시드 값 (-1 = 랜덤)
   generate_audio?: boolean // 오디오 자동 생성 (Q3 신규 파라미터)
 }
@@ -1282,7 +1282,7 @@ export async function submitViduImageToVideoTask(input: ViduImageToVideoInput): 
       duration: input.duration ?? 5,
       resolution: input.resolution ?? '720p',
       bgm: input.bgm ?? false,
-      movement_amplitude: input.movement_amplitude ?? 'small',  // 기본값 'small' - 안정적인 카메라 워크
+      movement_amplitude: input.movement_amplitude ?? 'auto',  // 기본값 'auto' - AI가 콘텐츠에 맞게 결정
       seed: input.seed ?? -1,
       generate_audio: input.generate_audio ?? false,  // Q3 신규 파라미터
     }),

@@ -50,7 +50,7 @@ export function createDefaultSceneElement(): SceneElementOptions {
     background: '',
     mood: '',
     additionalPrompt: '',
-    movementAmplitude: 'medium',
+    movementAmplitude: 'auto',
   }
 }
 

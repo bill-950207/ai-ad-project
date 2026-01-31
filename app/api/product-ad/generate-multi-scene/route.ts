@@ -132,19 +132,12 @@ export async function POST(request: NextRequest) {
     if (allHaveImagePrompt) {
       console.log('[generate-multi-scene] 시나리오에서 생성된 imagePrompt 사용 (LLM 스킵)')
 
-      // 씬 프로그레션에 따른 기본 movementAmplitude 결정
-      const getDefaultAmplitude = (idx: number, total: number): 'small' | 'medium' | 'large' => {
-        if (idx === 0) return 'small'  // 도입
-        if (idx === total - 1) return 'large'  // 클라이맥스
-        return 'medium'  // 중간
-      }
-
       const scenes: SceneOutput[] = resolvedSceneElements.map((elem, idx) => ({
         index: idx,
         scenePrompt: elem.imagePrompt!,  // 시나리오에서 생성한 Seedream용 프롬프트
         videoPrompt: elem.videoPrompt,   // 시나리오에서 생성한 Vidu용 프롬프트
         duration: avgDuration,
-        movementAmplitude: elem.movementAmplitude || getDefaultAmplitude(idx, resolvedSceneElements.length),
+        movementAmplitude: elem.movementAmplitude || 'auto',  // 기본값 'auto' - AI가 콘텐츠에 맞게 결정
       }))
 
       return NextResponse.json({
@@ -196,7 +189,7 @@ export async function POST(request: NextRequest) {
                 },
                 scenePrompt: {
                   type: Type.STRING,
-                  description: '이 씬의 개별 영상 프롬프트 - 모션 포함, 사람 제외, 40-60단어 (영어)',
+                  description: '이 씬의 개별 영상 프롬프트 - 모션 포함, 사람 제외, 50-100 words (영어)',
                 },
                 duration: {
                   type: Type.NUMBER,
@@ -354,7 +347,7 @@ While scenes have DIFFERENT settings, they should share:
 2. **Quality level**: All scenes should feel like same premium campaign
 3. **Transition flow**: Scenes should connect naturally
 
-=== SCENE PROMPT STRUCTURE (50-80 words) ===
+=== SCENE PROMPT STRUCTURE (50-100 words) ===
 Each scenePrompt MUST:
 1. START by identifying the product: "The product shown in the attached image"
 2. Use THAT SCENE's specific background, lighting, composition from the elements above

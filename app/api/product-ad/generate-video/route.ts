@@ -265,7 +265,7 @@ ${modelSpecificGuidelines}
 1. Describe smooth, natural motion for the product
 2. Include motion and movement that enhances the product appeal
 3. Maintain the established mood throughout
-4. Keep the prompt concise but descriptive (50-80 words)
+4. Keep the prompt concise but descriptive (50-100 words)
 5. Avoid sudden changes or jarring transitions
 6. The video should feel premium and polished
 
