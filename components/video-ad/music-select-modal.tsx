@@ -227,7 +227,10 @@ export function MusicSelectModal({
     const audio = new Audio(track.audioUrl)
     audio.currentTime = timeRange[0]
     audio.volume = musicVolume / 100
-    audio.play()
+    audio.play().catch(() => {
+      // 자동재생 정책에 의한 실패 시 무시
+      setIsPreviewPlaying(false)
+    })
 
     audioRef.current = audio
 

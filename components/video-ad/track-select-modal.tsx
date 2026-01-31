@@ -72,7 +72,10 @@ export function TrackSelectModal({
 
     const audio = new Audio(track.audioUrl)
     audio.volume = 0.7
-    audio.play()
+    audio.play().catch(() => {
+      // 자동재생 정책에 의한 실패 시 무시
+      setPlayingTrackIndex(null)
+    })
     audio.onended = () => {
       setPlayingTrackIndex(null)
       audioRef.current = null

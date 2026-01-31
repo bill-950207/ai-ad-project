@@ -242,7 +242,6 @@ export default function MergeMusicPage() {
                     style={{ width: `${status.progress}%` }}
                   />
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">{status.progress}%</p>
               </div>
             )}
 
