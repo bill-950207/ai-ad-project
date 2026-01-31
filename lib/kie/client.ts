@@ -1837,7 +1837,7 @@ export async function createSeedanceTask(
       aspect_ratio: input.aspect_ratio || '9:16',
       resolution: input.resolution || '720p',
       duration: input.duration || '8',
-      fixed_lens: input.fixed_lens ?? false,
+      fixed_lens: input.fixed_lens ?? true,  // 기본값 true - 안정적인 카메라 워크
       generate_audio: input.generate_audio ?? false,
     },
   }

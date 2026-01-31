@@ -315,12 +315,13 @@ Create a unique and creative narrative arc that best suits this specific product
 
 6. videoPrompt (영어, 50-80 words): Vidu 영상 생성용
    - Start with: "The product shown in the attached image"
-   - Include motion with "slowly"
+   - Include motion with "slowly" and "steady, gimbal-stabilized"
+   - Include "no camera shake", "professional dolly motion" for stability
    - End with: "soft natural lighting, photorealistic, 4K"
    - NO PEOPLE
    - NO visible studio equipment, cameras, tripods, lighting rigs, softboxes, reflectors, or any production equipment
    - Describe lighting as EFFECT only, NOT as visible equipment
-   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "photographer", "filming", "behind the scenes", "DSLR", "mirrorless"
+   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "photographer", "filming", "behind the scenes", "DSLR", "mirrorless", "handheld", "shaky"
    - ⚠️ Do NOT use "${productName}" directly - use generic terms like "the product", "the item"
 
 === VIDEO SETTINGS ===
@@ -397,12 +398,13 @@ Choose what best tells this product's story while adapting the reference style.
 
 6. videoPrompt (영어, 50-80 words): Vidu 영상 생성용
    - Start with: "The product shown in the attached image"
-   - Include motion with "slowly"
+   - Include motion with "slowly" and "steady, gimbal-stabilized"
+   - Include "no camera shake", "professional dolly motion" for stability
    - End with: "soft natural lighting, photorealistic, 4K"
    - NO PEOPLE
    - NO visible studio equipment, cameras, tripods, lighting rigs, softboxes, reflectors, or any production equipment
    - Describe lighting as EFFECT only, NOT as visible equipment
-   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "photographer", "filming", "behind the scenes", "DSLR", "mirrorless"
+   - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "photographer", "filming", "behind the scenes", "DSLR", "mirrorless", "handheld", "shaky"
    - ⚠️ Do NOT use "${productName}" directly - use generic terms like "the product", "the item"
 
 === VIDEO SETTINGS ===

@@ -156,9 +156,9 @@ export async function POST(request: NextRequest) {
     const sceneVideoRequests: SceneVideoRequest[] = []
 
     for (const keyframe of sortedKeyframes) {
-      // 씬 프롬프트 (없으면 기본값 - 모션 요소 포함)
+      // 씬 프롬프트 (없으면 기본값 - 안정적인 카메라 워크 강조)
       const scenePrompt = keyframe.scenePrompt ||
-        `Product centered in frame. Camera slowly pushes in on the product. Soft lighting gently shifts creating subtle shadow movement. Premium advertisement aesthetic, photorealistic, 4K.`
+        `Product centered in frame with steady, stable framing. Gentle gimbal-stabilized motion slowly revealing product details. Soft even lighting, no camera shake. Premium commercial aesthetic, photorealistic, 4K.`
 
       // 씬별 duration 사용 (없으면 글로벌 duration 사용)
       // FREE 사용자는 최대 4초로 제한
@@ -166,8 +166,8 @@ export async function POST(request: NextRequest) {
       if (isFreeUser) {
         sceneDuration = Math.min(sceneDuration, FREE_USER_LIMITS.maxDuration)
       }
-      // 씬별 movementAmplitude 사용 (없으면 'auto')
-      const sceneMovementAmplitude = keyframe.movementAmplitude ?? 'auto'
+      // 씬별 movementAmplitude 사용 (없으면 'small' - 안정적인 카메라 워크)
+      const sceneMovementAmplitude = keyframe.movementAmplitude ?? 'small'
 
       let requestId: string
       let provider: 'wavespeed' | 'fal' = 'wavespeed'

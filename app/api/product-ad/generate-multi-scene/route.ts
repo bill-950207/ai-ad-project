@@ -329,9 +329,15 @@ NEVER include: "camera", "tripod", "photographer", "filming", "behind the scenes
 - Maximum 2 visual effects per scene
 
 === 🎚️ MOVEMENT AMPLITUDE ===
-- "small": Static, elegant (close-up, detail shots)
-- "medium": Moderate motion (recommended)
-- "large": Dynamic, energetic (opening/closing)
+- "small": Static, elegant, gimbal-stabilized (RECOMMENDED for professional look)
+- "medium": Moderate motion with stability
+- "large": Dynamic, energetic (use sparingly - opening/closing only)
+
+=== 🎥 CAMERA STABILIZATION (매우 중요!) ===
+- Include "steady", "stable", "gimbal-stabilized" in prompts for smooth motion
+- Add "no camera shake", "professional dolly motion" for stability
+- AVOID "handheld", "shaky" - these cause unstable, amateur-looking footage
+- Default to "small" movementAmplitude for broadcast-quality stability
 
 === DURATION ===
 Each scene: ${avgDuration} seconds (range: 3-8)
