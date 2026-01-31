@@ -59,6 +59,16 @@ export const SEEDREAM_FORBIDDEN_TERMS = [
   'camera lens visible',
   'filming equipment',
   'recording setup',
+  // ⚠️ 단순 카메라 용어 (이미지에 카메라가 등장하는 원인)
+  // 주의: "shot on 85mm lens"는 이미지 품질 스펙이므로 괜찮음
+  // 문제가 되는 것은 "camera", "tripod" 등 장비를 직접 언급하는 것
+  'camera',           // "camera" 단독 사용 시 카메라가 등장
+  'tripod',           // 삼각대가 등장
+  'photographer',     // 사진가가 등장
+  'filming',          // 촬영 현장 분위기
+  'behind the scenes',// 촬영 현장
+  'DSLR',             // DSLR 카메라가 등장
+  'mirrorless',       // 미러리스 카메라가 등장
 ]
 
 /** 조명/카메라 장비 방지 네거티브 프롬프트 */

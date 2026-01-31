@@ -168,10 +168,16 @@ Product Image: [The product image is provided as reference]
 === SCENARIO ELEMENTS ===
 Background/Location: ${elements.background}
 Mood/Tone: ${elements.mood}
-Camera Angle: ${elements.cameraAngle}
+Composition/Angle: ${elements.cameraAngle}
 Product Placement: ${elements.productPlacement}
-Lighting Style: ${elements.lighting}
+Lighting Effect: ${elements.lighting}
 Color Tone: ${elements.colorTone}
+
+=== ⚠️ FORBIDDEN WORDS (이 단어들을 프롬프트에 포함하면 촬영 장비가 이미지에 등장함!) ===
+NEVER include: "camera", "tripod", "photographer", "filming", "behind the scenes", "DSLR", "mirrorless"
+These words trigger the AI to generate actual cameras/equipment in the image!
+
+Note: "shot on 85mm lens at f/2.8" is OK - this describes image quality specs, not visible equipment.
 
 === ⭐ PREMIUM 3D COMMERCIAL STYLE (매우 중요!) ===
 Create ultra-realistic, visually striking 3D commercial-style product shots with these elements:
@@ -231,15 +237,15 @@ The variations should differ ONLY in:
 All variations must look like they belong to the SAME AD CAMPAIGN:
 
 - Version 1: Hero shot with maximum dynamic elements (splashes, floating ingredients)
-  * Camera: Front-facing hero angle, product centered
+  * Angle: Front-facing hero view, product centered
   * Most dramatic splash/motion effects
 
 - Version 2: Elegant profile with dramatic lighting and reflections
-  * Camera: 45-degree side angle showcasing product depth
+  * Angle: 45-degree side view showcasing product depth
   * Emphasis on lighting and reflections, moderate motion effects
 
 - Version 3: Top-down creative composition with atmospheric effects
-  * Camera: 30-degree overhead angle revealing product top
+  * Angle: 30-degree overhead view revealing product top
   * Unique perspective, subtle motion effects, emphasis on atmosphere
 
 Generate ${count} prompts optimized for PREMIUM 3D COMMERCIAL-STYLE product advertisement.
