@@ -528,6 +528,9 @@ export default function VideoAdDetailPage() {
     videoInfo?: string
     processing?: string
     processingDesc?: string
+    scriptStyle?: string
+    styleLabels?: Record<string, string>
+    cameraAngles?: Record<string, string>
   } | undefined
 
   const getStatusBadge = (status: string) => {
@@ -828,21 +831,11 @@ export default function VideoAdDetailPage() {
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" />
-                  대본 스크립트
+                  {videoAdT?.scriptStyle || 'Script Style'}
                 </h3>
                 {videoAd.script_style && (
                   <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
-                    {(() => {
-                      const styleLabels: Record<string, string> = {
-                        'formal': '전문적',
-                        'casual': '친근함',
-                        'energetic': '활기찬',
-                        'professional': '전문적',
-                        'friendly': '친근함',
-                        'luxury': '고급스러움',
-                      }
-                      return styleLabels[videoAd.script_style || ''] || videoAd.script_style
-                    })()}
+                    {videoAdT?.styleLabels?.[videoAd.script_style] || videoAd.script_style}
                   </span>
                 )}
               </div>
@@ -869,7 +862,7 @@ export default function VideoAdDetailPage() {
               <div className="bg-card border border-border rounded-xl p-4">
                 <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                   <Package className="w-4 h-4" />
-                  {videoAdT?.product || '제품'} 정보
+                  {videoAdT?.productInfo || 'Product Info'}
                 </h3>
                 {product ? (
                   // DB 제품 또는 JSON 형식 제품 정보
@@ -881,7 +874,7 @@ export default function VideoAdDetailPage() {
                       {(product.rembg_image_url || product.image_url) && (
                         <img
                           src={product.rembg_image_url || product.image_url || ''}
-                          alt={product.name || '제품'}
+                          alt={product.name || (videoAdT?.product || 'Product')}
                           className="w-12 h-12 object-contain rounded bg-secondary/30"
                         />
                       )}
@@ -897,7 +890,7 @@ export default function VideoAdDetailPage() {
                       {(product.rembg_image_url || product.image_url) && (
                         <img
                           src={product.rembg_image_url || product.image_url || ''}
-                          alt={product.name || '제품'}
+                          alt={product.name || (videoAdT?.product || 'Product')}
                           className="w-12 h-12 object-contain rounded bg-secondary/30"
                         />
                       )}
@@ -1006,18 +999,7 @@ export default function VideoAdDetailPage() {
                     카메라 구도
                   </span>
                   <span className="text-foreground">
-                    {(() => {
-                      const compositionLabels: Record<string, string> = {
-                        'auto': '자동',
-                        'selfie-high': '셀카 (위에서)',
-                        'selfie-front': '셀카 (정면)',
-                        'selfie-side': '셀카 (측면)',
-                        'tripod': '삼각대',
-                        'closeup': '클로즈업',
-                        'fullbody': '전신',
-                      }
-                      return compositionLabels[videoAd.camera_composition || ''] || videoAd.camera_composition
-                    })()}
+                    {videoAdT?.cameraAngles?.[videoAd.camera_composition || ''] || videoAd.camera_composition}
                   </span>
                 </div>
               )}
@@ -1026,7 +1008,7 @@ export default function VideoAdDetailPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground flex items-center gap-2">
                     <Mic className="w-4 h-4" />
-                    음성
+                    {t.common?.voice || 'Voice'}
                   </span>
                   <span className="text-foreground">{videoAd.voice_name}</span>
                 </div>
@@ -1036,17 +1018,10 @@ export default function VideoAdDetailPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    대본 스타일
+                    {videoAdT?.scriptStyle || 'Script Style'}
                   </span>
                   <span className="text-foreground">
-                    {(() => {
-                      const styleLabels: Record<string, string> = {
-                        'professional': '전문적',
-                        'friendly': '친근함',
-                        'luxury': '고급스러움',
-                      }
-                      return styleLabels[videoAd.script_style || ''] || videoAd.script_style
-                    })()}
+                    {videoAdT?.styleLabels?.[videoAd.script_style] || videoAd.script_style}
                   </span>
                 </div>
               )}
@@ -1054,7 +1029,7 @@ export default function VideoAdDetailPage() {
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  생성일
+                  {videoAdT?.createdAt || 'Created'}
                 </span>
                 <span className="text-foreground">
                   {new Date(videoAd.created_at).toLocaleDateString()}
@@ -1112,17 +1087,17 @@ export default function VideoAdDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-card border border-border rounded-xl p-6 max-w-sm w-full mx-4">
             <h3 className="text-lg font-medium text-foreground mb-2">
-              {videoAdT?.confirmDelete || '이 영상 광고를 삭제하시겠습니까?'}
+              {(videoAdT as { deleteModal?: { confirm?: string } })?.deleteModal?.confirm || 'Delete this video ad?'}
             </h3>
             <p className="text-sm text-muted-foreground mb-6">
-              삭제된 영상은 복구할 수 없습니다.
+              {(videoAdT as { deleteModal?: { warning?: string } })?.deleteModal?.warning || 'Deleted videos cannot be recovered.'}
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 className="flex-1 px-4 py-2 bg-secondary text-foreground rounded-lg hover:bg-secondary/80 transition-colors"
               >
-                취소
+                {(videoAdT as { deleteModal?: { cancel?: string } })?.deleteModal?.cancel || t.common?.cancel || 'Cancel'}
               </button>
               <button
                 onClick={handleDelete}
@@ -1132,7 +1107,7 @@ export default function VideoAdDetailPage() {
                 {isDeleting ? (
                   <Loader2 className="w-4 h-4 animate-spin mx-auto" />
                 ) : (
-                  '삭제'
+                  videoAdT?.delete || 'Delete'
                 )}
               </button>
             </div>

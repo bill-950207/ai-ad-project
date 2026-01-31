@@ -21,7 +21,9 @@
     "saving": "保存中...",
     "savePending": "保存待機中",
     "saved": "保存済み",
-    "saveFailed": "保存失敗"
+    "saveFailed": "保存失敗",
+    "voice": "音声",
+    "delete": "削除"
   },
   "modal": {
     "insufficientCredits": {
@@ -719,6 +721,22 @@
       "showcaseRegistered": "ショーケースに登録しました",
       "registerFailed": "登録に失敗しました",
       "registerError": "登録中にエラーが発生しました"
+    },
+    "scriptStyle": "スクリプトスタイル",
+    "productInfo": "製品情報",
+    "styleLabels": {
+      "formal": "フォーマル",
+      "casual": "カジュアル",
+      "energetic": "エネルギッシュ",
+      "professional": "プロフェッショナル",
+      "friendly": "フレンドリー",
+      "luxury": "ラグジュアリー"
+    },
+    "cameraAngles": {
+      "auto": "自動",
+      "tripod": "三脚",
+      "closeup": "クローズアップ",
+      "fullbody": "全身"
     }
   },
   "imageAdTypes": {

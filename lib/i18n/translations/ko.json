@@ -21,7 +21,9 @@
     "saving": "저장 중...",
     "savePending": "저장 대기 중",
     "saved": "저장됨",
-    "saveFailed": "저장 실패"
+    "saveFailed": "저장 실패",
+    "voice": "음성",
+    "delete": "삭제"
   },
   "modal": {
     "insufficientCredits": {
@@ -719,6 +721,22 @@
       "showcaseRegistered": "쇼케이스에 등록되었습니다",
       "registerFailed": "등록 실패",
       "registerError": "등록 중 오류가 발생했습니다"
+    },
+    "scriptStyle": "대본 스크립트",
+    "productInfo": "제품 정보",
+    "styleLabels": {
+      "formal": "전문적",
+      "casual": "친근함",
+      "energetic": "활기찬",
+      "professional": "전문적",
+      "friendly": "친근함",
+      "luxury": "고급스러움"
+    },
+    "cameraAngles": {
+      "auto": "자동",
+      "tripod": "삼각대",
+      "closeup": "클로즈업",
+      "fullbody": "전신"
     }
   },
   "imageAdTypes": {

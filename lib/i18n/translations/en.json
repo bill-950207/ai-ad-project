@@ -21,7 +21,9 @@
     "saving": "Saving...",
     "savePending": "Save pending",
     "saved": "Saved",
-    "saveFailed": "Save failed"
+    "saveFailed": "Save failed",
+    "voice": "Voice",
+    "delete": "Delete"
   },
   "modal": {
     "insufficientCredits": {
@@ -719,6 +721,22 @@
       "showcaseRegistered": "Registered to showcase",
       "registerFailed": "Registration failed",
       "registerError": "Error occurred while registering"
+    },
+    "scriptStyle": "Script Style",
+    "productInfo": "Product Info",
+    "styleLabels": {
+      "formal": "Formal",
+      "casual": "Casual",
+      "energetic": "Energetic",
+      "professional": "Professional",
+      "friendly": "Friendly",
+      "luxury": "Luxury"
+    },
+    "cameraAngles": {
+      "auto": "Auto",
+      "tripod": "Tripod",
+      "closeup": "Close-up",
+      "fullbody": "Full Body"
     }
   },
   "imageAdTypes": {

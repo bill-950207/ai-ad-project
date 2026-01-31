@@ -21,7 +21,9 @@
     "saving": "保存中...",
     "savePending": "等待保存",
     "saved": "已保存",
-    "saveFailed": "保存失败"
+    "saveFailed": "保存失败",
+    "voice": "语音",
+    "delete": "删除"
   },
   "modal": {
     "insufficientCredits": {
@@ -719,6 +721,22 @@
       "showcaseRegistered": "已注册到展示区",
       "registerFailed": "注册失败",
       "registerError": "注册时发生错误"
+    },
+    "scriptStyle": "脚本风格",
+    "productInfo": "产品信息",
+    "styleLabels": {
+      "formal": "正式",
+      "casual": "休闲",
+      "energetic": "活力",
+      "professional": "专业",
+      "friendly": "友好",
+      "luxury": "奢华"
+    },
+    "cameraAngles": {
+      "auto": "自动",
+      "tripod": "三脚架",
+      "closeup": "特写",
+      "fullbody": "全身"
     }
   },
   "imageAdTypes": {
