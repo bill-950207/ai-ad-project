@@ -13,58 +13,7 @@ import {
   type EditAspectRatio,
 } from '@/lib/kie/client'
 import { KEYFRAME_CREDIT_COST } from '@/lib/credits'
-
-/**
- * 프롬프트에서 카메라/촬영장비 관련 금지 단어를 제거합니다.
- * Seedream 4.5 모델이 이 단어들을 보면 실제 카메라/장비를 생성합니다.
- */
-const FORBIDDEN_WORDS = [
-  // 카메라 관련
-  'camera', 'Camera', 'CAMERA',
-  'tripod', 'Tripod',
-  'DSLR', 'dslr',
-  'mirrorless', 'Mirrorless',
-  // 촬영 관련
-  'photographer', 'Photographer',
-  'filming', 'Filming',
-  'behind the scenes', 'Behind the scenes',
-  'photo shoot', 'photoshoot',
-  'studio setup', 'Studio setup',
-  'production setup', 'Production setup',
-  // 기타 장비
-  'softbox', 'Softbox',
-  'ring light', 'Ring light',
-  'lighting rig', 'Lighting rig',
-  'reflector', 'Reflector',
-]
-
-/**
- * 프롬프트를 정제하여 금지 단어를 제거합니다.
- */
-function sanitizePrompt(prompt: string): string {
-  let sanitized = prompt
-
-  // 금지 단어 제거
-  for (const word of FORBIDDEN_WORDS) {
-    // 단어 경계를 고려하여 교체 (대소문자 구분)
-    const regex = new RegExp(`\\b${word}\\b`, 'g')
-    sanitized = sanitized.replace(regex, '')
-  }
-
-  // 연속된 공백 정리
-  sanitized = sanitized.replace(/\s+/g, ' ').trim()
-
-  // 연속된 쉼표/마침표 정리
-  sanitized = sanitized.replace(/,\s*,/g, ',').replace(/\.\s*\./g, '.')
-  sanitized = sanitized.replace(/,\s*\./g, '.').replace(/\.\s*,/g, ',')
-
-  // 안전 키워드 추가 (프롬프트 끝에)
-  if (!sanitized.toLowerCase().includes('no visible equipment')) {
-    sanitized += ' No visible studio equipment or production setup.'
-  }
-
-  return sanitized
-}
+import { sanitizePrompt } from '@/lib/prompts/sanitize'
 
 interface SceneInput {
   index: number

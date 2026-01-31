@@ -341,10 +341,11 @@ export function WizardStep3() {
     fetchUserPlan()
   }, [setSceneCount, sceneCount])
 
-  // Vidu Q2 모델 강제 설정
+  // Vidu Q3 모델 강제 설정
   useEffect(() => {
-    if (videoModel !== 'vidu-q2') {
-      setVideoModel('vidu-q2')
+    // 'vidu-q2'도 'vidu'로 마이그레이션 (레거시 드래프트 호환)
+    if (videoModel !== 'vidu') {
+      setVideoModel('vidu')
     }
   }, [videoModel, setVideoModel])
 
@@ -739,7 +740,7 @@ export function WizardStep3() {
               const sceneElement = sceneElements[index] || createDefaultSceneElement()
               const complete = isSceneComplete(index)
               const duration = sceneDurations[index] || 3
-              const maxDuration = isFreeUser ? FREE_USER_LIMITS.maxDuration : 8
+              const maxDuration = isFreeUser ? FREE_USER_LIMITS.maxDuration : 16  // Vidu Q3: 최대 16초
               return (
                 <div
                   key={index}

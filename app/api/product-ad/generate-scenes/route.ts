@@ -18,41 +18,7 @@ import {
   createEditTask,
   type EditAspectRatio,
 } from '@/lib/kie/client'
-
-/**
- * 프롬프트에서 카메라/촬영장비 관련 금지 단어를 제거합니다.
- * Seedream 4.5 모델이 이 단어들을 보면 실제 카메라/장비를 생성합니다.
- */
-const FORBIDDEN_WORDS = [
-  'camera', 'Camera', 'CAMERA',
-  'tripod', 'Tripod',
-  'DSLR', 'dslr',
-  'mirrorless', 'Mirrorless',
-  'photographer', 'Photographer',
-  'filming', 'Filming',
-  'behind the scenes', 'Behind the scenes',
-  'photo shoot', 'photoshoot',
-  'studio setup', 'Studio setup',
-  'production setup', 'Production setup',
-  'softbox', 'Softbox',
-  'ring light', 'Ring light',
-  'lighting rig', 'Lighting rig',
-  'reflector', 'Reflector',
-]
-
-function sanitizePrompt(prompt: string): string {
-  let sanitized = prompt
-  for (const word of FORBIDDEN_WORDS) {
-    const regex = new RegExp(`\\b${word}\\b`, 'g')
-    sanitized = sanitized.replace(regex, '')
-  }
-  sanitized = sanitized.replace(/\s+/g, ' ').trim()
-  sanitized = sanitized.replace(/,\s*,/g, ',').replace(/\.\s*\./g, '.')
-  if (!sanitized.toLowerCase().includes('no visible equipment')) {
-    sanitized += ' No visible studio equipment or production setup.'
-  }
-  return sanitized
-}
+import { sanitizePrompt } from '@/lib/prompts/sanitize'
 
 // Gemini 클라이언트 초기화
 const genAI = new GoogleGenAI({
