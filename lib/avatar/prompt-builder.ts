@@ -154,6 +154,12 @@ const backgroundMap: Record<string, string> = {
   gym: 'in a modern fitness gym with exercise equipment, bright lighting, sharp clear background',
 }
 
+/** 성별에 따른 외모 개선 문구 (자연스럽게 매력적으로) */
+const attractivenessEnhancerMap: Record<string, string> = {
+  female: 'beautiful attractive face with refined features, clear smooth skin, bright expressive eyes, elegant natural beauty',
+  male: 'handsome attractive face with well-defined features, clear healthy skin, confident charming expression, naturally good-looking',
+}
+
 /** 포즈 스타일 매핑 (항상 카메라 응시) */
 const poseMap: Record<string, string> = {
   standingFull: 'standing full body shot, looking directly at camera, eye contact, confident posture',
@@ -201,6 +207,11 @@ export function buildPromptFromOptions(options: AvatarOptions): string {
   let subject = `A ${ethnicity} ${gender}`.trim()
   if (age) subject += ` ${age}`
   parts.push(subject)
+
+  // 외모 개선 문구 (성별에 따라 자연스럽게 매력적인 외모 적용)
+  if (options.gender && attractivenessEnhancerMap[options.gender]) {
+    parts.push(attractivenessEnhancerMap[options.gender])
+  }
 
   // 체형 (키와 체형) - 성별에 따른 구체적인 신체 비율 사용
   const bodyDescParts: string[] = []
