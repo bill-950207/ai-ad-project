@@ -19,7 +19,7 @@ export interface AdProduct {
 export type WizardStep = 1 | 2 | 3 | 4 | 5
 export type ScenarioMethod = 'direct' | 'ai-auto' | 'reference'
 export type AspectRatio = '16:9' | '9:16' | '1:1' | null
-export type VideoModel = 'seedance' | 'kling2.6' | 'wan2.6' | 'kling-o1' | 'vidu-q2'
+export type VideoModel = 'seedance' | 'kling2.6' | 'wan2.6' | 'kling-o1' | 'vidu-q2' | 'vidu'
 export type VideoResolution = '540p' | '720p' | '1080p'
 
 // 광고 요소 옵션들 (전체 영상용 - 레거시)
@@ -329,7 +329,7 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
     createDefaultSceneElement(),
   ])  // 씬별 광고 요소 (기본 3개 씬)
   const [multiShot, setMultiShot] = useState(false)
-  const [videoModel, setVideoModel] = useState<VideoModel>('vidu-q2')  // 기본 Vidu Q2
+  const [videoModel, setVideoModel] = useState<VideoModel>('vidu')  // 기본 Vidu Q3
   const [videoCount, setVideoCount] = useState(1)
   const [isVideoSettingsFromScenario, setIsVideoSettingsFromScenario] = useState(false)  // AI 시나리오 영상 설정 적용 여부
   const [isGeneratingScenes, setIsGeneratingScenes] = useState(false)
@@ -438,7 +438,7 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
     setSceneDurations(prev => {
       const updated = [...prev]
       if (sceneIndex >= 0 && sceneIndex < updated.length) {
-        updated[sceneIndex] = Math.max(1, Math.min(8, duration))  // 1-8초 범위
+        updated[sceneIndex] = Math.max(1, Math.min(16, duration))  // 1-16초 범위 (Vidu Q3)
       }
       return updated
     })
@@ -1002,7 +1002,7 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
     ])
     setMultiShot(false)
     setVideoCount(1)
-    setVideoModel('vidu-q2')
+    setVideoModel('vidu')
     setIsVideoSettingsFromScenario(false)
     setIsGeneratingScenes(false)
     setFirstSceneOptions([])

@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 
       // 전환 프롬프트 (없으면 기본값)
       const transitionPrompt = fromKeyframe.transitionPrompt ||
-        `Smooth cinematic transition from scene ${i + 1} to scene ${i + 2}. The scene transforms naturally with elegant camera movement. Soft professional lighting effect, no visible studio equipment or production setup.`
+        `Professional gimbal-stabilized smooth transition from scene ${i + 1} to scene ${i + 2}. Steady camera glide with no handheld shakiness. The scene transforms naturally with elegant, controlled motion. Soft professional lighting effect, broadcast quality stability.`
 
       // 전환 영상 길이 (기본 5초)
       const duration = String(Math.min(10, Math.max(3, fromKeyframe.duration || 5))) as KlingO1Duration

@@ -225,9 +225,9 @@ async function generateVideoPrompt(
   const modelSpecificGuidelines = getModelGuidelines(videoModel, false)
 
   const variationHints = [
-    'Focus on elegant, slow camera movements and subtle product highlights.',
+    'Focus on elegant, slow motion and subtle product highlights.',
     'Emphasize dynamic lighting transitions and atmospheric depth.',
-    'Create an artistic, cinematic feel with creative camera angles.',
+    'Create an artistic, cinematic feel with creative composition angles.',
   ]
 
   const prompt = `You are an expert advertising video prompt engineer.
@@ -239,12 +239,16 @@ OUTPUT LANGUAGE: English (prompt must be in English for AI video generation)
 ${videoModel === 'wan2.6' ? 'Wan 2.6 (Alibaba) - High resolution 1080p, excels at cinematic quality and detailed textures' : 'Seedance 1.5 Pro (ByteDance) - Smooth motion, natural movements, elegant transitions'}
 
 === PRODUCT INFORMATION ===
-Product Name: ${productName}
+Product: [Refer to the product shown in the start frame image]
+
+⚠️ WARNING: Do NOT include the product name "${productName}" directly in the generated prompt.
+The product name may contain misleading words (e.g., "Camera Lens Cleaner" would generate actual cameras).
+Instead, use generic terms like "the product", "the bottle", "the item" based on the start frame image.
 
 === SCENARIO ELEMENTS ===
 Background/Location: ${elements.background}
 Mood/Tone: ${elements.mood}
-Camera Angle: ${elements.cameraAngle}
+Composition/Angle: ${elements.cameraAngle}
 Product Placement: ${elements.productPlacement}
 Lighting Style: ${elements.lighting}
 Color Tone: ${elements.colorTone}
@@ -259,16 +263,25 @@ ${modelSpecificGuidelines}
 
 === GENERAL GUIDELINES ===
 1. Describe smooth, natural motion for the product
-2. Include camera movement that enhances the product appeal
+2. Include motion and movement that enhances the product appeal
 3. Maintain the established mood throughout
 4. Keep the prompt concise but descriptive (50-80 words)
 5. Avoid sudden changes or jarring transitions
 6. The video should feel premium and polished
 
+=== 🎥 CAMERA STABILIZATION (매우 중요!) ===
+- Use "steady", "stable", "gimbal-stabilized" keywords for smooth motion
+- Include "no camera shake", "professional dolly motion" for stability
+- AVOID "handheld", "shaky", "dynamic camera" - these cause unstable footage
+- All motion should feel like professional broadcast/commercial quality
+
 === CRITICAL: NO VISIBLE EQUIPMENT ===
 - NO cameras, tripods, lighting rigs, softboxes, ring lights, reflectors, or any studio equipment visible
 - Describe lighting as EFFECT only (e.g., "soft highlights", "dramatic shadows"), NOT as visible equipment
 - The video should look like a FINAL ADVERTISEMENT, not a behind-the-scenes production
+
+⚠️ FORBIDDEN WORDS (이 단어들을 프롬프트에 포함하면 촬영 장비가 영상에 등장함!):
+NEVER include: "camera", "tripod", "photographer", "filming", "behind the scenes", "DSLR", "mirrorless"
 
 Create a single, optimized video prompt.`
 
@@ -309,13 +322,13 @@ function getModelGuidelines(videoModel: VideoModel, isMultiShot: boolean): strin
     return isMultiShot
       ? `For Wan 2.6 Multi-Shot:
 - Leverage 1080p high resolution for detailed close-ups
-- Use dramatic camera movements between shots (dolly-in, crane shots, tracking)
+- Use dramatic motion between shots (dolly-in, crane shots, tracking)
 - Include clear visual transitions between shots
 - Focus on cinematic storytelling with emotional build-up
 - Each shot should have distinct framing and composition`
       : `For Wan 2.6:
 - Leverage 1080p resolution for crisp, detailed product shots
-- Include cinematic camera movements (slow dolly, elegant pans)
+- Include cinematic motion (slow dolly, elegant pans)
 - Focus on high-quality textures and reflections
 - Use dramatic lighting transitions
 - Emphasize visual depth and atmosphere`
@@ -325,13 +338,13 @@ function getModelGuidelines(videoModel: VideoModel, isMultiShot: boolean): strin
   return isMultiShot
     ? `For Seedance Multi-Shot:
 - Focus on smooth, fluid transitions between shots
-- Use gentle camera movements that flow naturally
+- Use gentle motion that flows naturally
 - Maintain consistent lighting across shots
 - Keep product as the visual anchor throughout
 - Emphasize elegant, premium feel in each shot`
     : `For Seedance:
 - Prioritize smooth, natural motion throughout
-- Use slow, elegant camera movements (gentle dolly, subtle pan)
+- Use slow, elegant motion (gentle dolly, subtle pan)
 - Focus on fluid product motion (smooth rotation, gentle floating)
 - Maintain soft lighting transitions
 - Create a polished, refined aesthetic`
@@ -366,12 +379,16 @@ OUTPUT LANGUAGE: English (prompt must be in English for AI video generation)
 ${videoModel === 'wan2.6' ? 'Wan 2.6 (Alibaba) - Native multi-shot support, 1080p resolution, cinematic quality' : 'Seedance 1.5 Pro (ByteDance) - Smooth transitions, natural motion, 720p'}
 
 === PRODUCT INFORMATION ===
-Product Name: ${productName}
+Product: [Refer to the product shown in the start frame image]
+
+⚠️ WARNING: Do NOT include the product name "${productName}" directly in the generated prompt.
+The product name may contain misleading words (e.g., "Camera Lens Cleaner" would generate actual cameras).
+Instead, use generic terms like "the product", "the bottle", "the item" based on the start frame image.
 
 === SCENARIO ELEMENTS ===
 Background/Location: ${elements.background}
 Mood/Tone: ${elements.mood}
-Camera Angle: ${elements.cameraAngle}
+Composition/Angle: ${elements.cameraAngle}
 Product Placement: ${elements.productPlacement}
 Lighting Style: ${elements.lighting}
 Color Tone: ${elements.colorTone}
@@ -387,7 +404,7 @@ Use this exact format:
 "Shot 1: [description]. Shot 2: [description]. Shot 3: [description]."
 
 === REFERENCE EXAMPLES ===
-Example 1 (Product Focus): "Shot 1: Close-up on the product, soft professional lighting highlights its sleek surface. Shot 2: Camera slowly pulls back revealing the premium packaging. Shot 3: Product rotates elegantly, catching light reflections as camera dollies around."
+Example 1 (Product Focus): "Shot 1: Close-up on the product, soft professional lighting highlights its sleek surface. Shot 2: View slowly pulls back revealing the premium packaging. Shot 3: Product rotates elegantly, catching light reflections as view dollies around."
 
 Example 2 (Cinematic): "Shot 1: Wide establishing shot of minimalist setting with product centered. Shot 2: Dynamic dolly-in to hero shot, dramatic lighting builds. Shot 3: Extreme close-up on product details, lens flare accents the premium finish."
 
@@ -397,15 +414,24 @@ ${modelSpecificGuidelines}
 === GENERAL GUIDELINES ===
 1. Each shot should be distinct but flow naturally into the next
 2. Start with establishing shot, build to hero shot of the product
-3. Include specific camera movements (dolly-in, pan, close-up, etc.)
+3. Include specific motion (dolly-in, pan, close-up, etc.)
 4. End with a memorable final shot showcasing the product
 5. Keep each shot description concise (15-25 words)
 6. Total prompt should be 60-120 words
+
+=== 🎥 CAMERA STABILIZATION (매우 중요!) ===
+- Use "steady", "stable", "gimbal-stabilized" keywords for smooth motion
+- Include "no camera shake", "professional dolly motion" for stability
+- AVOID "handheld", "shaky", "dynamic camera" - these cause unstable footage
+- All motion should feel like professional broadcast/commercial quality
 
 === CRITICAL: NO VISIBLE EQUIPMENT ===
 - NO cameras, tripods, lighting rigs, softboxes, ring lights, reflectors, or any studio equipment visible
 - Describe lighting as EFFECT only (e.g., "soft highlights", "dramatic shadows"), NOT as visible equipment
 - The video should look like a FINAL ADVERTISEMENT, not a behind-the-scenes production
+
+⚠️ FORBIDDEN WORDS (이 단어들을 프롬프트에 포함하면 촬영 장비가 영상에 등장함!):
+NEVER include: "camera", "tripod", "photographer", "filming", "behind the scenes", "DSLR", "mirrorless"
 
 Create a multi-shot prompt that tells a compelling visual story about the product.`
 

@@ -246,9 +246,9 @@ function buildMultiScenePrompt(
 === SCENE ${idx + 1} SPECIFIC ELEMENTS ===
 - Background: ${elem.background || 'Clean seamless backdrop'}
 - Mood: ${elem.mood || overallMood || 'Premium commercial'}
-- Camera Angle: ${elem.cameraAngle || 'Cinematic'}
+- Composition/Angle: ${elem.cameraAngle || 'Cinematic'}
 - Product Placement: ${elem.productPlacement || 'Center hero'}
-- Lighting: ${elem.lighting || 'Professional even lighting'}
+- Lighting Effect: ${elem.lighting || 'Professional even lighting'}
 - Color Tone: ${elem.colorTone || 'Natural'}
 `).join('\n')
 
@@ -257,8 +257,14 @@ function buildMultiScenePrompt(
 
   return `You are an expert advertising video director creating a PREMIUM AD CAMPAIGN with ${sceneCount} scenes.
 
+🚨🚨🚨 READ FIRST - ABSOLUTE FORBIDDEN WORDS 🚨🚨🚨
+These words will cause actual cameras/equipment to appear in generated videos:
+❌ BANNED: "camera", "Camera", "tripod", "DSLR", "mirrorless", "lens" (except "lens flare")
+❌ BANNED: "photographer", "filming", "behind the scenes", "photo shoot", "studio setup"
+❌ BANNED: The product name "${productName}" - may contain misleading words like "Camera"
+✅ USE ONLY: "the product", "the item", "the bottle", "the package"
+
 🎬 GOAL: Create ${sceneCount} SCENES where EACH scene uses its OWN specific elements listed below.
-IMPORTANT: Each scene has DIFFERENT settings - USE the specific elements for EACH scene.
 
 === CRITICAL RULES ===
 ❌ ABSOLUTELY NO PEOPLE:
@@ -266,10 +272,9 @@ IMPORTANT: Each scene has DIFFERENT settings - USE the specific elements for EAC
 - ONLY the product, objects, environment, and natural elements
 
 ❌ ABSOLUTELY NO VISIBLE PRODUCTION EQUIPMENT:
-- NO cameras, tripods, lighting rigs, softboxes, ring lights, reflectors, or any studio equipment
-- NO behind-the-scenes elements, production setups, or filming equipment
-- Describe lighting as EFFECT only (e.g., "soft highlights", "dramatic shadows"), NOT as visible equipment
-- The video should look like a FINAL ADVERTISEMENT, not a behind-the-scenes photo
+- NO cameras, tripods, lighting rigs, softboxes, ring lights, reflectors
+- Describe lighting as EFFECT only (e.g., "soft highlights", "dramatic shadows")
+- The video should look like a FINAL ADVERTISEMENT
 
 ✅ OUTPUT LANGUAGE:
 - scenePrompt: English only (for AI video generation)
@@ -281,8 +286,12 @@ IMPORTANT: Each scene has DIFFERENT settings - USE the specific elements for EAC
 - This ensures the AI uses the EXACT product appearance
 
 === PRODUCT INFORMATION ===
-Product Name: ${productName}
+Product: [Refer to the product shown in the attached image]
 Product Description: ${productDescription || 'Not provided'}
+
+⚠️ WARNING: Do NOT include the product name "${productName}" directly in the generated prompts.
+The product name may contain misleading words (e.g., "Camera Lens Cleaner" would generate actual cameras).
+Instead, use generic terms like "the product", "the item" based on the attached image.
 Product Selling Points:
 ${sellingPointsText}
 Product Image: [ATTACHED - This is the PRODUCT to feature]
@@ -297,7 +306,7 @@ EACH SCENE HAS DIFFERENT SETTINGS. You MUST use the specific elements for each s
 ${sceneElementsDescription}
 
 ⚠️ IMPORTANT:
-- Scene 1 MUST use Scene 1's background, lighting, camera angle, etc.
+- Scene 1 MUST use Scene 1's background, lighting, composition, etc.
 - Scene 2 MUST use Scene 2's settings, which may be DIFFERENT from Scene 1
 - And so on for all scenes
 - This creates visual variety while maintaining the overall mood
@@ -310,21 +319,30 @@ While scenes have DIFFERENT settings, they should share:
 
 === SCENE PROMPT STRUCTURE (50-80 words) ===
 Each scenePrompt MUST:
-1. START by identifying the product: "The ${productName} shown in the attached image"
-2. Use THAT SCENE's specific background, lighting, camera angle from the elements above
+1. START by identifying the product: "The product shown in the attached image"
+2. Use THAT SCENE's specific background, lighting, composition from the elements above
 3. Be UNIQUE based on its specific elements
-4. End with: "[THAT SCENE'S COLOR TONE] tones, cinematic lighting, photorealistic, 4K"
+4. End with: "[THAT SCENE'S COLOR TONE] tones, soft professional lighting, photorealistic, 4K"
+
+⚠️ FORBIDDEN WORDS (이 단어들을 프롬프트에 포함하면 촬영 장비가 영상에 등장함!):
+NEVER include: "camera", "tripod", "photographer", "filming", "behind the scenes", "DSLR", "mirrorless"
 
 === VIDU Q2 VIDEO AI RULES ===
 - NO text/label rendering expectations
 - Simple surface descriptions (no contradictions)
-- ALL camera movements MUST include "slowly"
+- ALL motion MUST include "slowly"
 - Maximum 2 visual effects per scene
 
 === 🎚️ MOVEMENT AMPLITUDE ===
-- "small": Static, elegant (close-up, detail shots)
-- "medium": Moderate camera movement (recommended)
-- "large": Dynamic, energetic (opening/closing)
+- "small": Static, elegant, gimbal-stabilized (RECOMMENDED for professional look)
+- "medium": Moderate motion with stability
+- "large": Dynamic, energetic (use sparingly - opening/closing only)
+
+=== 🎥 CAMERA STABILIZATION (매우 중요!) ===
+- Include "steady", "stable", "gimbal-stabilized" in prompts for smooth motion
+- Add "no camera shake", "professional dolly motion" for stability
+- AVOID "handheld", "shaky" - these cause unstable, amateur-looking footage
+- Default to "small" movementAmplitude for broadcast-quality stability
 
 === DURATION ===
 Each scene: ${avgDuration} seconds (range: 3-8)

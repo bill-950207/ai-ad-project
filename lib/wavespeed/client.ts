@@ -1171,41 +1171,42 @@ export async function getInfiniteTalkQueueResponse(
 }
 
 // ============================================================
-// Vidu Q2 Turbo Image-to-Video (영상 생성)
+// Vidu Q3 Image-to-Video (영상 생성)
 // ============================================================
 
-const VIDU_Q2_TURBO_URL = 'https://api.wavespeed.ai/api/v3/vidu/image-to-video-q2-turbo'
+const VIDU_Q3_URL = 'https://api.wavespeed.ai/api/v3/vidu/q3/image-to-video'
 
 /**
- * Vidu Q2 Turbo 해상도 타입
+ * Vidu Q3 해상도 타입
  */
 export type ViduResolution = '540p' | '720p' | '1080p'
 
 /**
- * Vidu Q2 Turbo 영상 길이 타입 (1-8초)
+ * Vidu Q3 영상 길이 타입 (1-16초)
  */
-export type ViduDuration = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
+export type ViduDuration = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16
 
 /**
- * Vidu Q2 Turbo 움직임 강도 타입
+ * Vidu Q3 움직임 강도 타입
  */
 export type ViduMovementAmplitude = 'auto' | 'small' | 'medium' | 'large'
 
 /**
- * Vidu Q2 Turbo 입력 타입
+ * Vidu Q3 입력 타입
  */
 export interface ViduImageToVideoInput {
   prompt: string           // 영상 생성 프롬프트
   image: string            // 시작 이미지 URL
-  duration?: ViduDuration  // 영상 길이 (1-8초, 기본 5)
+  duration?: ViduDuration  // 영상 길이 (1-16초, 기본 5)
   resolution?: ViduResolution  // 해상도 (기본 720p)
   bgm?: boolean            // 배경 음악 (기본 false)
-  movement_amplitude?: ViduMovementAmplitude  // 움직임 강도 (기본 auto)
+  movement_amplitude?: ViduMovementAmplitude  // 움직임 강도 (기본 small - 안정적)
   seed?: number            // 시드 값 (-1 = 랜덤)
+  generate_audio?: boolean // 오디오 자동 생성 (Q3 신규 파라미터)
 }
 
 /**
- * Vidu Q2 Turbo 작업 응답
+ * Vidu Q3 작업 응답
  */
 interface ViduTaskResponse {
   code: number
@@ -1222,7 +1223,7 @@ interface ViduTaskResponse {
 }
 
 /**
- * Vidu Q2 Turbo 결과 응답
+ * Vidu Q3 결과 응답
  */
 interface ViduResultResponse {
   code: number
@@ -1239,7 +1240,7 @@ interface ViduResultResponse {
 }
 
 /**
- * Vidu Q2 Turbo 크레딧 계산
+ * Vidu Q3 크레딧 계산
  *
  * 해상도와 길이에 따라 크레딧을 계산합니다:
  * - 540p: 초당 5 크레딧
@@ -1263,13 +1264,13 @@ export function calculateViduCredits(
 }
 
 /**
- * Vidu Q2 Turbo 작업 제출
+ * Vidu Q3 작업 제출
  *
  * @param input 입력 데이터
  * @returns 작업 ID
  */
 export async function submitViduImageToVideoTask(input: ViduImageToVideoInput): Promise<string> {
-  const response = await fetch(VIDU_Q2_TURBO_URL, {
+  const response = await fetch(VIDU_Q3_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -1281,27 +1282,28 @@ export async function submitViduImageToVideoTask(input: ViduImageToVideoInput): 
       duration: input.duration ?? 5,
       resolution: input.resolution ?? '720p',
       bgm: input.bgm ?? false,
-      movement_amplitude: input.movement_amplitude ?? 'auto',
+      movement_amplitude: input.movement_amplitude ?? 'small',  // 기본값 'small' - 안정적인 카메라 워크
       seed: input.seed ?? -1,
+      generate_audio: input.generate_audio ?? false,  // Q3 신규 파라미터
     }),
   })
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`Vidu Q2 Turbo 작업 제출 실패: ${response.status} - ${errorText}`)
+    throw new Error(`Vidu Q3 작업 제출 실패: ${response.status} - ${errorText}`)
   }
 
   const result: ViduTaskResponse = await response.json()
 
   if (result.code !== 200) {
-    throw new Error(`Vidu Q2 Turbo 작업 제출 오류: ${result.message}`)
+    throw new Error(`Vidu Q3 작업 제출 오류: ${result.message}`)
   }
 
   return result.data.id
 }
 
 /**
- * Vidu Q2 Turbo 작업 결과 조회
+ * Vidu Q3 작업 결과 조회
  *
  * @param requestId 작업 ID
  * @returns 결과 데이터
@@ -1316,20 +1318,20 @@ export async function getViduImageToVideoResult(requestId: string): Promise<Vidu
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`Vidu Q2 Turbo 결과 조회 실패: ${response.status} - ${errorText}`)
+    throw new Error(`Vidu Q3 결과 조회 실패: ${response.status} - ${errorText}`)
   }
 
   const result: ViduResultResponse = await response.json()
 
   if (result.code !== 200) {
-    throw new Error(`Vidu Q2 Turbo 결과 조회 오류: ${result.message}`)
+    throw new Error(`Vidu Q3 결과 조회 오류: ${result.message}`)
   }
 
   return result.data
 }
 
 /**
- * Vidu Q2 Turbo 큐 제출 (fal.ai 호환 인터페이스)
+ * Vidu Q3 큐 제출 (fal.ai 호환 인터페이스)
  *
  * @param input 입력 데이터
  * @returns 큐 제출 응답 (request_id 포함)
@@ -1342,7 +1344,7 @@ export async function submitViduToQueue(
 }
 
 /**
- * Vidu Q2 Turbo 상태 조회 (fal.ai 호환 인터페이스)
+ * Vidu Q3 상태 조회 (fal.ai 호환 인터페이스)
  *
  * @param requestId 작업 ID
  * @returns 상태 정보
@@ -1365,7 +1367,7 @@ export async function getViduQueueStatus(
 }
 
 /**
- * Vidu Q2 Turbo 결과 조회 (fal.ai 호환 인터페이스)
+ * Vidu Q3 결과 조회 (fal.ai 호환 인터페이스)
  *
  * @param requestId 작업 ID
  * @returns 영상 정보
@@ -1376,7 +1378,7 @@ export async function getViduQueueResponse(
   const result = await getViduImageToVideoResult(requestId)
 
   if (result.status === 'failed') {
-    throw new Error('Vidu Q2 Turbo 영상 생성 실패')
+    throw new Error('Vidu Q3 영상 생성 실패')
   }
 
   if (!result.outputs || result.outputs.length === 0) {
@@ -1389,7 +1391,7 @@ export async function getViduQueueResponse(
 }
 
 /**
- * Vidu Q2 Turbo 영상 생성 완료까지 폴링
+ * Vidu Q3 영상 생성 완료까지 폴링
  *
  * @param requestId 작업 ID
  * @param maxAttempts 최대 시도 횟수 (기본 120, 10분)
@@ -1411,12 +1413,12 @@ export async function waitForViduResult(
     }
 
     if (result.status === 'failed') {
-      throw new Error('Vidu Q2 Turbo 영상 생성 실패')
+      throw new Error('Vidu Q3 영상 생성 실패')
     }
 
     await new Promise((resolve) => setTimeout(resolve, intervalMs))
     attempts++
   }
 
-  throw new Error('Vidu Q2 Turbo 작업 시간 초과')
+  throw new Error('Vidu Q3 작업 시간 초과')
 }

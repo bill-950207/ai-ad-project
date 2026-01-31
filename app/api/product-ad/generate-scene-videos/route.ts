@@ -1,5 +1,5 @@
 /**
- * 멀티씬 영상 생성 API (Vidu Q2 Turbo)
+ * 멀티씬 영상 생성 API (Vidu Q3)
  *
  * POST: 각 씬 키프레임 이미지로 개별 영상을 생성합니다.
  * - 씬1 이미지 → 씬1 영상
@@ -7,11 +7,10 @@
  * - ...
  *
  * 지원 모델:
- * - vidu-q2: WaveSpeed Vidu Q2 Turbo (Primary)
- * - fallback: fal.ai Vidu Q2 (WaveSpeed 실패 시)
+ * - vidu: WaveSpeed Vidu Q3
  *
  * 해상도: 540p, 720p, 1080p
- * 영상 길이: 1-8초
+ * 영상 길이: 1-16초
  *
  * 전환 방식: 컷 전환 (하드컷)
  */
@@ -26,9 +25,6 @@ import {
   type ViduResolution,
   type ViduDuration,
 } from '@/lib/wavespeed/client'
-import {
-  submitViduQ2ToQueue as submitFalViduQ2ToQueue,
-} from '@/lib/fal/client'
 import { VIDU_CREDIT_COST_PER_SECOND } from '@/lib/credits'
 
 // FREE 사용자 제한
@@ -42,15 +38,16 @@ interface SceneKeyframe {
   sceneIndex: number
   imageUrl: string
   scenePrompt?: string  // 씬 영상 프롬프트
-  duration?: number     // 씬별 영상 길이 (1-8초)
+  duration?: number     // 씬별 영상 길이 (1-16초)
   movementAmplitude?: 'auto' | 'small' | 'medium' | 'large'  // 카메라/모션 강도
 }
 
 interface GenerateSceneVideosRequest {
   keyframes: SceneKeyframe[]
-  duration?: number        // 씬당 영상 길이 (1-8초, 기본 4)
+  duration?: number        // 씬당 영상 길이 (1-16초, 기본 4)
   resolution?: ViduResolution  // 해상도 (540p, 720p, 1080p, 기본 720p)
   audioEnabled?: boolean   // 배경 음악 (기본 false)
+  generateAudio?: boolean  // 오디오 자동 생성 (Q3 신규)
 }
 
 interface SceneVideoRequest {
@@ -61,10 +58,10 @@ interface SceneVideoRequest {
 }
 
 /**
- * 안전하게 duration을 ViduDuration으로 변환
+ * 안전하게 duration을 ViduDuration으로 변환 (1-16초)
  */
 function toViduDuration(d: number): ViduDuration {
-  const clamped = Math.min(Math.max(Math.round(d), 1), 8)
+  const clamped = Math.min(Math.max(Math.round(d), 1), 16)
   return clamped as ViduDuration
 }
 
@@ -156,9 +153,9 @@ export async function POST(request: NextRequest) {
     const sceneVideoRequests: SceneVideoRequest[] = []
 
     for (const keyframe of sortedKeyframes) {
-      // 씬 프롬프트 (없으면 기본값 - 모션 요소 포함)
+      // 씬 프롬프트 (없으면 기본값 - 안정적인 카메라 워크 강조)
       const scenePrompt = keyframe.scenePrompt ||
-        `Product centered in frame. Camera slowly pushes in on the product. Soft lighting gently shifts creating subtle shadow movement. Premium advertisement aesthetic, photorealistic, 4K.`
+        `Product centered in frame with steady, stable framing. Gentle gimbal-stabilized motion slowly revealing product details. Soft even lighting, no camera shake. Premium commercial aesthetic, photorealistic, 4K.`
 
       // 씬별 duration 사용 (없으면 글로벌 duration 사용)
       // FREE 사용자는 최대 4초로 제한
@@ -166,49 +163,26 @@ export async function POST(request: NextRequest) {
       if (isFreeUser) {
         sceneDuration = Math.min(sceneDuration, FREE_USER_LIMITS.maxDuration)
       }
-      // 씬별 movementAmplitude 사용 (없으면 'auto')
-      const sceneMovementAmplitude = keyframe.movementAmplitude ?? 'auto'
+      // 씬별 movementAmplitude 사용 (없으면 'small' - 안정적인 카메라 워크)
+      const sceneMovementAmplitude = keyframe.movementAmplitude ?? 'small'
 
-      let requestId: string
-      let provider: 'wavespeed' | 'fal' = 'wavespeed'
-
-      try {
-        // WaveSpeed Vidu Q2 Turbo (Primary)
-        const result = await submitViduToQueue({
-          prompt: scenePrompt,
-          image: keyframe.imageUrl,
-          duration: toViduDuration(sceneDuration),
-          resolution: effectiveResolution,
-          bgm: audioEnabled,
-          movement_amplitude: sceneMovementAmplitude,
-        })
-        requestId = `wavespeed-vidu:${result.request_id}`
-        provider = 'wavespeed'
-      } catch (waveSpeedError) {
-        // WaveSpeed 실패 시 fal.ai로 Fallback
-        console.warn('WaveSpeed Vidu Q2 실패, fal.ai로 Fallback:', waveSpeedError)
-
-        try {
-          const falResult = await submitFalViduQ2ToQueue({
-            prompt: scenePrompt,
-            image_url: keyframe.imageUrl,
-            duration: Math.min(Math.max(sceneDuration, 2), 8) as 2 | 3 | 4 | 5 | 6 | 7 | 8,
-            resolution: effectiveResolution === '1080p' ? '1080p' : '720p',  // fal.ai는 720p, 1080p만 지원
-            movement_amplitude: sceneMovementAmplitude,
-          })
-          requestId = `fal-vidu:${falResult.request_id}`
-          provider = 'fal'
-        } catch (falError) {
-          console.error('fal.ai Vidu Q2도 실패:', falError)
-          throw new Error('모든 비디오 생성 서비스가 실패했습니다')
-        }
-      }
+      // WaveSpeed Vidu Q3
+      const result = await submitViduToQueue({
+        prompt: scenePrompt,
+        image: keyframe.imageUrl,
+        duration: toViduDuration(sceneDuration),
+        resolution: effectiveResolution,
+        bgm: audioEnabled,
+        movement_amplitude: sceneMovementAmplitude,
+        generate_audio: body.generateAudio ?? false,  // Q3 신규 파라미터
+      })
+      const requestId = `wavespeed-vidu:${result.request_id}`
 
       sceneVideoRequests.push({
         sceneIndex: keyframe.sceneIndex,
         requestId,
         prompt: scenePrompt,
-        provider,
+        provider: 'wavespeed',
       })
     }
 

@@ -13,6 +13,7 @@ import {
   type EditAspectRatio,
 } from '@/lib/kie/client'
 import { KEYFRAME_CREDIT_COST } from '@/lib/credits'
+import { sanitizePrompt } from '@/lib/prompts/sanitize'
 
 interface SceneInput {
   index: number
@@ -79,8 +80,11 @@ export async function POST(request: NextRequest) {
     // 각 씬에 대해 Seedream 4.5로 이미지 생성 요청
     const requests = await Promise.all(
       scenes.map(async (scene) => {
+        // 프롬프트에서 금지 단어 제거 (카메라/촬영장비 등장 방지)
+        const sanitizedPrompt = sanitizePrompt(scene.scenePrompt)
+
         const result = await createEditTask({
-          prompt: scene.scenePrompt,
+          prompt: sanitizedPrompt,
           image_urls: [productImageUrl],
           aspect_ratio: mapAspectRatio(aspectRatio),
           quality: 'high',
@@ -88,7 +92,7 @@ export async function POST(request: NextRequest) {
         return {
           sceneIndex: scene.index,
           requestId: `kie:${result.taskId}`,
-          prompt: scene.scenePrompt,
+          prompt: sanitizedPrompt,  // 정제된 프롬프트 반환
         }
       })
     )
