@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import { DualRangeSlider } from '@/components/ui/dual-range-slider'
+import { TrackSelectModal } from './track-select-modal'
 
 interface MusicTrack {
   id: string
@@ -106,6 +107,10 @@ export function MusicSelectModal({
   const [musicList, setMusicList] = useState<AdMusic[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
+  // 트랙 선택 모달 상태
+  const [trackSelectModalOpen, setTrackSelectModalOpen] = useState(false)
+  const [pendingMusic, setPendingMusic] = useState<AdMusic | null>(null)
+
   // 선택 상태
   const [selectedMusic, setSelectedMusic] = useState<AdMusic | null>(null)
   const [selectedTrackIndex, setSelectedTrackIndex] = useState(0)
@@ -143,14 +148,26 @@ export function MusicSelectModal({
     }
   }, [isOpen, fetchMusicList])
 
-  // 모달 닫힐 때 정리
+  // 모달 닫힐 때 정리 - stopPreview는 아래에서 정의됨
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!isOpen) {
-      stopPreview()
+      // stopPreview 대신 직접 정리
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current = null
+      }
+      if (previewTimeoutRef.current) {
+        clearTimeout(previewTimeoutRef.current)
+        previewTimeoutRef.current = null
+      }
+      setIsPreviewPlaying(false)
       setSelectedMusic(null)
       setSelectedTrackIndex(0)
       setTimeRange([0, Math.min(15, videoDuration)])
       setMusicVolume(30)
+      setTrackSelectModalOpen(false)
+      setPendingMusic(null)
     }
   }, [isOpen, videoDuration])
 
@@ -187,6 +204,19 @@ export function MusicSelectModal({
     }
   }, [selectedMusic, selectedTrackIndex, videoDuration, getSelectedTrack])
 
+  // 미리듣기 정지 (startPreview보다 먼저 정의)
+  const stopPreview = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current = null
+    }
+    if (previewTimeoutRef.current) {
+      clearTimeout(previewTimeoutRef.current)
+      previewTimeoutRef.current = null
+    }
+    setIsPreviewPlaying(false)
+  }, [])
+
   // 미리듣기 시작
   const startPreview = useCallback(() => {
     const track = getSelectedTrack()
@@ -209,20 +239,7 @@ export function MusicSelectModal({
 
     audio.onended = () => stopPreview()
     setIsPreviewPlaying(true)
-  }, [getSelectedTrack, timeRange, musicVolume])
-
-  // 미리듣기 정지
-  const stopPreview = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current = null
-    }
-    if (previewTimeoutRef.current) {
-      clearTimeout(previewTimeoutRef.current)
-      previewTimeoutRef.current = null
-    }
-    setIsPreviewPlaying(false)
-  }, [])
+  }, [getSelectedTrack, timeRange, musicVolume, stopPreview])
 
   // 미리듣기 토글
   const togglePreview = () => {
@@ -232,6 +249,37 @@ export function MusicSelectModal({
       startPreview()
     }
   }
+
+  // 음악 선택 핸들러 (트랙이 2개 이상이면 트랙 선택 모달 열기)
+  const handleMusicClick = useCallback((music: AdMusic) => {
+    stopPreview()
+
+    // 트랙이 2개 이상이면 트랙 선택 모달 열기
+    if (music.tracks && music.tracks.length > 1) {
+      setPendingMusic(music)
+      setTrackSelectModalOpen(true)
+    } else {
+      // 트랙이 1개이거나 없으면 바로 선택
+      setSelectedMusic(music)
+      setSelectedTrackIndex(0)
+    }
+  }, [stopPreview])
+
+  // 트랙 선택 완료 핸들러
+  const handleTrackSelect = useCallback((trackIndex: number) => {
+    if (pendingMusic) {
+      setSelectedMusic(pendingMusic)
+      setSelectedTrackIndex(trackIndex)
+      setPendingMusic(null)
+    }
+    setTrackSelectModalOpen(false)
+  }, [pendingMusic])
+
+  // 트랙 선택 모달 닫기 핸들러
+  const handleTrackSelectClose = useCallback(() => {
+    setTrackSelectModalOpen(false)
+    setPendingMusic(null)
+  }, [])
 
   // 적용
   const handleApply = () => {
@@ -326,11 +374,7 @@ export function MusicSelectModal({
                     return (
                       <button
                         key={music.id}
-                        onClick={() => {
-                          setSelectedMusic(music)
-                          setSelectedTrackIndex(0)
-                          stopPreview()
-                        }}
+                        onClick={() => handleMusicClick(music)}
                         className={`relative flex items-center gap-3 p-3 rounded-lg border transition-colors text-left ${
                           isSelected
                             ? 'border-primary bg-primary/10'
@@ -383,31 +427,28 @@ export function MusicSelectModal({
                 </div>
               </div>
 
-              {/* 트랙 선택 (여러 트랙이 있는 경우) */}
+              {/* 선택된 트랙 정보 표시 (트랙이 2개 이상인 경우) */}
               {selectedMusic && selectedMusic.tracks && selectedMusic.tracks.length > 1 && (
-                <div>
-                  <h3 className="text-sm font-medium text-foreground mb-3">트랙 선택</h3>
-                  <div className="flex gap-2 flex-wrap">
-                    {selectedMusic.tracks.map((track, index) => (
-                      <button
-                        key={track.id}
-                        onClick={() => {
-                          setSelectedTrackIndex(index)
-                          stopPreview()
-                        }}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          selectedTrackIndex === index
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary text-foreground hover:bg-secondary/80'
-                        }`}
-                      >
-                        트랙 {index + 1}
-                        <span className="ml-1 text-xs opacity-70">
-                          ({formatTime(track.duration)})
-                        </span>
-                      </button>
-                    ))}
+                <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">선택된 트랙:</span>
+                    <span className="text-sm font-medium text-foreground">
+                      트랙 {selectedTrackIndex + 1}
+                      <span className="ml-1 text-xs text-muted-foreground">
+                        ({formatTime(selectedMusic.tracks[selectedTrackIndex]?.duration || 0)})
+                      </span>
+                    </span>
                   </div>
+                  <button
+                    onClick={() => {
+                      stopPreview()
+                      setPendingMusic(selectedMusic)
+                      setTrackSelectModalOpen(true)
+                    }}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    다른 트랙 선택
+                  </button>
                 </div>
               )}
 
@@ -502,6 +543,17 @@ export function MusicSelectModal({
           </button>
         </div>
       </div>
+
+      {/* 트랙 선택 모달 */}
+      {pendingMusic && pendingMusic.tracks && pendingMusic.tracks.length > 1 && (
+        <TrackSelectModal
+          isOpen={trackSelectModalOpen}
+          onClose={handleTrackSelectClose}
+          onSelect={handleTrackSelect}
+          musicName={pendingMusic.name}
+          tracks={pendingMusic.tracks}
+        />
+      )}
     </div>
   )
 }
