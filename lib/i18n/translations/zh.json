@@ -1898,7 +1898,7 @@
     "delete": "删除",
     "moreSettingsComingSoon": "更多设置即将推出"
   },
-  "onboarding": {
+  "authOnboarding": {
     "settingUp": "设置中",
     "step1Title": "很高兴认识你！👋",
     "step1Subtitle": "首先，告诉我们您的名字。",

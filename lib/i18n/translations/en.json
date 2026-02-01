@@ -1898,7 +1898,7 @@
     "delete": "Delete",
     "moreSettingsComingSoon": "More settings coming soon"
   },
-  "onboarding": {
+  "authOnboarding": {
     "settingUp": "Setting up",
     "step1Title": "Nice to meet you! 👋",
     "step1Subtitle": "First, tell us your name.",

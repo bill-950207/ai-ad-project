@@ -1898,7 +1898,7 @@
     "delete": "削除",
     "moreSettingsComingSoon": "その他の設定は近日追加予定です"
   },
-  "onboarding": {
+  "authOnboarding": {
     "settingUp": "設定中",
     "step1Title": "はじめまして！👋",
     "step1Subtitle": "まず、お名前を教えてください。",

@@ -59,7 +59,7 @@ export default function OnboardingPage() {
   const supabase = createClient()
   const { t } = useLanguage()
 
-  const onboardingT = t.onboarding as OnboardingTranslation | undefined
+  const onboardingT = (t as Record<string, unknown>).authOnboarding as OnboardingTranslation | undefined
 
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
