@@ -1,30 +1,40 @@
 /**
  * TTS 모듈 진입점
  *
- * 통합 TTS 서비스 및 개별 클라이언트를 export합니다.
+ * Kie.ai ElevenLabs v3 TTS 서비스를 export합니다.
  */
 
-// 통합 서비스
+// Kie.ai ElevenLabs v3 TTS
 export {
-  UnifiedTTSService,
-  getTTSService,
-  generateSpeech,
-  type TTSProvider,
+  // 타입
   type TTSLanguage,
-  type TTSRequest,
-  type TTSResult,
-  type TTSServiceConfig,
-} from './unified-service'
-
-// 개별 클라이언트 (필요시 직접 접근)
-export { textToSpeech as minimaxTTS } from '@/lib/wavespeed/client'
-export {
-  textToSpeech as elevenLabsTTS,
-  type EmotionPreset,
-  EMOTION_PRESETS,
-  addAudioTag,
-  getRecommendedAudioTags,
-  isV3Model,
-  type AudioTag,
-  AUDIO_TAG_DESCRIPTIONS,
-} from '@/lib/elevenlabs/client'
+  type VoiceInfo,
+  type KieTTSInput,
+  type KieTTSOutput,
+  type KieTTSResult,
+  type TTSQueueSubmitResponse,
+  type TTSQueueStatusResponse,
+  // 음성 목록
+  KOREAN_VOICES,
+  ENGLISH_VOICES,
+  JAPANESE_VOICES,
+  CHINESE_VOICES,
+  VOICES_BY_LANGUAGE,
+  LANGUAGE_LABELS,
+  // 유틸리티
+  getVoicesByLanguage,
+  getAllVoices,
+  findVoiceById,
+  detectLanguage,
+  estimateAudioDuration,
+  getRecommendedCharCount,
+  // 핵심 함수
+  createTTSTask,
+  waitForTTSResult,
+  textToSpeech,
+  downloadAudio,
+  // 큐 인터페이스
+  submitTTSToQueue,
+  getTTSQueueStatus,
+  getTTSQueueResponse,
+} from '@/lib/kie/tts'

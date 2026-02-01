@@ -1,9 +1,11 @@
 /**
- * Minimax 음성 프리뷰 API 라우트
+ * 음성 프리뷰 API 라우트
  *
- * GET /api/minimax-voices/preview?voiceId=Korean_SweetGirl
+ * GET /api/minimax-voices/preview?voiceId=korean_female_1
  * - 캐시된 프리뷰가 있으면 반환
  * - 없으면 실시간 생성 후 캐시하여 반환
+ *
+ * NOTE: Kie.ai ElevenLabs v3 TTS로 마이그레이션되었습니다.
  */
 
 export const dynamic = 'force-dynamic'
@@ -13,20 +15,31 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import {
   findVoiceById,
-  generateVoicePreview,
-  type VoiceLanguage,
-} from '@/lib/wavespeed/client'
+  textToSpeech,
+  type TTSLanguage,
+} from '@/lib/kie/tts'
 
 /**
  * 음성 ID에서 언어 코드 추출
  */
-function getLanguageFromVoiceId(voiceId: string): VoiceLanguage {
-  if (voiceId.startsWith('Korean_')) return 'ko'
-  if (voiceId.startsWith('English_') || voiceId.includes('_female_') || voiceId.includes('_male_')) return 'en'
-  if (voiceId.startsWith('Japanese_')) return 'ja'
-  if (voiceId.startsWith('Chinese (Mandarin)_') || voiceId === 'Arrogant_Miss') return 'zh'
+function getLanguageFromVoiceId(voiceId: string): TTSLanguage {
+  if (voiceId.startsWith('korean_')) return 'ko'
+  if (voiceId.startsWith('english_')) return 'en'
+  if (voiceId.startsWith('japanese_')) return 'ja'
+  if (voiceId.startsWith('chinese_')) return 'zh'
   return 'ko'
 }
+
+/**
+ * 음성 프리뷰용 샘플 텍스트
+ */
+const SAMPLE_TEXTS: Record<TTSLanguage, string> = {
+  ko: '안녕하세요! 좋은 하루 되세요.',
+  en: 'Hello! Have a great day.',
+  ja: 'こんにちは！素敵な一日を。',
+  zh: '你好！祝你有美好的一天。',
+  auto: 'Hello! Have a great day.',
+} as Record<TTSLanguage, string>
 
 /**
  * GET /api/minimax-voices/preview
@@ -70,12 +83,17 @@ export async function GET(request: NextRequest) {
     }
 
     // 캐시가 없으면 실시간 생성
-    console.log(`[TTS Preview] 생성 시작: voiceId=${voiceId}, voiceInfo=`, voiceInfo)
-    const audioUrl = await generateVoicePreview(voiceId)
+    const language = voiceInfo.language || getLanguageFromVoiceId(voiceId)
+    const sampleText = SAMPLE_TEXTS[language] || SAMPLE_TEXTS['en']
+
+    console.log(`[TTS Preview] 생성 시작: voiceId=${voiceId}, language=${language}`)
+    const audioUrl = await textToSpeech(sampleText, voiceId, {
+      stability: 0.5,
+      languageCode: language,
+    })
     console.log(`[TTS Preview] 생성 완료: audioUrl=${audioUrl}`)
 
     // 캐시에 저장
-    const language = getLanguageFromVoiceId(voiceId)
     await prisma.voice_previews.create({
       data: {
         voice_id: voiceId,
