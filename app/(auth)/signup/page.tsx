@@ -61,7 +61,7 @@ export default function SignupPage() {
           }
         }
       } catch (error) {
-        console.error('쇼케이스 영상 로드 실패:', error)
+        console.error('Failed to load showcase video:', error)
         // 실패 시 폴백 영상 유지
       }
     }

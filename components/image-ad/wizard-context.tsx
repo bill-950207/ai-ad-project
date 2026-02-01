@@ -253,7 +253,7 @@ export function ImageAdWizardProvider({
             })
           }
         })
-        .catch(err => console.error('초기 제품 로드 오류:', err))
+        .catch(err => console.error('Failed to load initial products:', err))
     }
 
     // 초기 아바타 설정
@@ -281,7 +281,7 @@ export function ImageAdWizardProvider({
             })
           }
         })
-        .catch(err => console.error('초기 아바타 로드 오류:', err))
+        .catch(err => console.error('Failed to load initial avatars:', err))
     } else if (initialAvatarType === 'outfit' && initialAvatarId && initialOutfitId) {
       // 의상 선택
       fetch(`/api/avatars/${initialAvatarId}`)
@@ -300,7 +300,7 @@ export function ImageAdWizardProvider({
             })
           }
         })
-        .catch(err => console.error('초기 의상 로드 오류:', err))
+        .catch(err => console.error('Failed to load initial outfits:', err))
     }
   }, [initialProductId, initialAvatarType, initialAvatarId, initialOutfitId, initialAiAvatarOptions])
 

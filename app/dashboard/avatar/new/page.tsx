@@ -49,7 +49,7 @@ export default function NewAvatarPage() {
           setSlotInfo(errorData.slotInfo)
           setShowSlotLimitModal(true)
         } else {
-          setError(errorData.error || '슬롯이 가득 찼습니다')
+          setError(errorData.error || 'Slot is full')
         }
         setIsSubmitting(false)
         return
@@ -68,7 +68,7 @@ export default function NewAvatarPage() {
       // 성공 시 isSubmitting을 true로 유지하여 리다이렉트 전 중복 제출 방지
       router.push('/dashboard/avatar')
     } catch (err) {
-      console.error('아바타 생성 오류:', err)
+      console.error('Avatar creation error:', err)
       setError(t.avatar.error)
       setIsSubmitting(false)
     }
@@ -102,7 +102,7 @@ export default function NewAvatarPage() {
         <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-destructive">오류가 발생했습니다</p>
+            <p className="font-medium text-destructive">{t.common?.error || 'An error occurred'}</p>
             <p className="text-sm text-destructive/80 mt-1">{error}</p>
           </div>
         </div>

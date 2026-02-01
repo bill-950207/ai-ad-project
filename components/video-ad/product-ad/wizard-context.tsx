@@ -374,7 +374,7 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
             }
           }
         })
-        .catch(err => console.error('초기 제품 로드 오류:', err))
+        .catch(err => console.error('Failed to load initial products:', err))
     }
   }, [initialProductId])
 

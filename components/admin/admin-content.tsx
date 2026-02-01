@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/contexts/language-context'
 import {
   Plus,
   Pencil,
@@ -58,10 +59,52 @@ const initialFormData: FormData = {
 
 export function AdminContent() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [showcases, setShowcases] = useState<Showcase[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
+
+  // 번역 타입
+  type AdminShowcaseT = {
+    title?: string
+    subtitle?: string
+    addNew?: string
+    order?: string
+    thumbnail?: string
+    titleLabel?: string
+    type?: string
+    status?: string
+    actions?: string
+    noShowcases?: string
+    image?: string
+    video?: string
+    active?: string
+    inactive?: string
+    delete?: string
+    cancel?: string
+    save?: string
+    add?: string
+    editShowcase?: string
+    addShowcase?: string
+    typeLabel?: string
+    titleRequired?: string
+    description?: string
+    descriptionPlaceholder?: string
+    titlePlaceholder?: string
+    thumbnailUrl?: string
+    videoUrl?: string
+    adType?: string
+    adTypePlaceholder?: string
+    category?: string
+    categoryPlaceholder?: string
+    displayOrder?: string
+    isActive?: string
+    validation?: {
+      titleAndThumbnailRequired?: string
+    }
+  }
+  const adminT = (t.admin as { showcase?: AdminShowcaseT } | undefined)?.showcase
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -137,7 +180,7 @@ export function AdminContent() {
   // CRUD handlers
   const handleSave = async () => {
     if (!formData.title || !formData.thumbnail_url) {
-      alert('제목과 썸네일 URL은 필수입니다.')
+      alert(adminT?.validation?.titleAndThumbnailRequired || 'Title and thumbnail URL are required.')
       return
     }
 
@@ -224,9 +267,9 @@ export function AdminContent() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">쇼케이스 관리</h1>
+          <h1 className="text-2xl font-bold">{adminT?.title || 'Showcase Management'}</h1>
           <p className="text-muted-foreground mt-1">
-            대시보드에 표시될 광고 예시를 관리합니다.
+            {adminT?.subtitle || 'Manage ad examples displayed on dashboard.'}
           </p>
         </div>
         <button
@@ -238,7 +281,7 @@ export function AdminContent() {
           )}
         >
           <Plus className="w-4 h-4" />
-          새 쇼케이스 추가
+          {adminT?.addNew || 'Add New Showcase'}
         </button>
       </div>
 
@@ -248,22 +291,22 @@ export function AdminContent() {
           <thead>
             <tr className="border-b border-border bg-muted/30">
               <th className="w-10 px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                순서
+                {adminT?.order || 'Order'}
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                썸네일
+                {adminT?.thumbnail || 'Thumbnail'}
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                제목
+                {adminT?.titleLabel || 'Title'}
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                유형
+                {adminT?.type || 'Type'}
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                상태
+                {adminT?.status || 'Status'}
               </th>
               <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                작업
+                {adminT?.actions || 'Actions'}
               </th>
             </tr>
           </thead>
@@ -271,7 +314,7 @@ export function AdminContent() {
             {showcases.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
-                  등록된 쇼케이스가 없습니다.
+                  {adminT?.noShowcases || 'No showcases registered.'}
                 </td>
               </tr>
             ) : (
@@ -315,7 +358,7 @@ export function AdminContent() {
                       ) : (
                         <Video className="w-3 h-3" />
                       )}
-                      {showcase.type === 'image' ? '이미지' : '영상'}
+                      {showcase.type === 'image' ? (adminT?.image || 'Image') : (adminT?.video || 'Video')}
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -331,12 +374,12 @@ export function AdminContent() {
                       {showcase.is_active ? (
                         <>
                           <Eye className="w-3 h-3" />
-                          활성
+                          {adminT?.active || 'Active'}
                         </>
                       ) : (
                         <>
                           <EyeOff className="w-3 h-3" />
-                          비활성
+                          {adminT?.inactive || 'Inactive'}
                         </>
                       )}
                     </button>
@@ -355,13 +398,13 @@ export function AdminContent() {
                             onClick={() => handleDelete(showcase.id)}
                             className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
                           >
-                            삭제
+                            {adminT?.delete || 'Delete'}
                           </button>
                           <button
                             onClick={() => setDeleteConfirmId(null)}
                             className="px-2 py-1 text-xs bg-muted rounded hover:bg-muted/80 transition-colors"
                           >
-                            취소
+                            {adminT?.cancel || 'Cancel'}
                           </button>
                         </div>
                       ) : (
@@ -392,7 +435,7 @@ export function AdminContent() {
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <h2 className="text-lg font-semibold">
-                {editingShowcase ? '쇼케이스 수정' : '새 쇼케이스 추가'}
+                {editingShowcase ? (adminT?.editShowcase || 'Edit Showcase') : (adminT?.addShowcase || 'Add New Showcase')}
               </h2>
               <button
                 onClick={closeModal}
@@ -406,7 +449,7 @@ export function AdminContent() {
             <div className="px-6 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
               {/* Type */}
               <div>
-                <label className="block text-sm font-medium mb-2">유형</label>
+                <label className="block text-sm font-medium mb-2">{adminT?.typeLabel || 'Type'}</label>
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -419,7 +462,7 @@ export function AdminContent() {
                     )}
                   >
                     <Image className="w-4 h-4" />
-                    이미지
+                    {adminT?.image || 'Image'}
                   </button>
                   <button
                     type="button"
@@ -432,7 +475,7 @@ export function AdminContent() {
                     )}
                   >
                     <Video className="w-4 h-4" />
-                    영상
+                    {adminT?.video || 'Video'}
                   </button>
                 </div>
               </div>
@@ -440,33 +483,33 @@ export function AdminContent() {
               {/* Title */}
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  제목 <span className="text-red-400">*</span>
+                  {adminT?.titleRequired || 'Title'} <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   className="w-full px-3 py-2.5 bg-muted/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  placeholder="쇼케이스 제목"
+                  placeholder={adminT?.titlePlaceholder || 'Showcase title'}
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium mb-2">설명</label>
+                <label className="block text-sm font-medium mb-2">{adminT?.description || 'Description'}</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   rows={2}
                   className="w-full px-3 py-2.5 bg-muted/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
-                  placeholder="쇼케이스 설명 (선택)"
+                  placeholder={adminT?.descriptionPlaceholder || 'Showcase description (optional)'}
                 />
               </div>
 
               {/* Thumbnail URL */}
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  썸네일 URL <span className="text-red-400">*</span>
+                  {adminT?.thumbnailUrl || 'Thumbnail URL'} <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="url"
@@ -480,7 +523,7 @@ export function AdminContent() {
               {/* Media URL (for video) */}
               {formData.type === 'video' && (
                 <div>
-                  <label className="block text-sm font-medium mb-2">영상 URL</label>
+                  <label className="block text-sm font-medium mb-2">{adminT?.videoUrl || 'Video URL'}</label>
                   <input
                     type="url"
                     value={formData.media_url}
@@ -493,31 +536,31 @@ export function AdminContent() {
 
               {/* Ad Type */}
               <div>
-                <label className="block text-sm font-medium mb-2">광고 타입</label>
+                <label className="block text-sm font-medium mb-2">{adminT?.adType || 'Ad Type'}</label>
                 <input
                   type="text"
                   value={formData.ad_type}
                   onChange={(e) => setFormData(prev => ({ ...prev, ad_type: e.target.value }))}
                   className="w-full px-3 py-2.5 bg-muted/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  placeholder="예: productOnly, holding, productDescription"
+                  placeholder={adminT?.adTypePlaceholder || 'e.g., productOnly, holding, productDescription'}
                 />
               </div>
 
               {/* Category */}
               <div>
-                <label className="block text-sm font-medium mb-2">카테고리</label>
+                <label className="block text-sm font-medium mb-2">{adminT?.category || 'Category'}</label>
                 <input
                   type="text"
                   value={formData.category}
                   onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
                   className="w-full px-3 py-2.5 bg-muted/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  placeholder="예: 뷰티, 패션, 식품"
+                  placeholder={adminT?.categoryPlaceholder || 'e.g., Beauty, Fashion, Food'}
                 />
               </div>
 
               {/* Display Order */}
               <div>
-                <label className="block text-sm font-medium mb-2">표시 순서</label>
+                <label className="block text-sm font-medium mb-2">{adminT?.displayOrder || 'Display Order'}</label>
                 <input
                   type="number"
                   value={formData.display_order}
@@ -529,7 +572,7 @@ export function AdminContent() {
 
               {/* Active Toggle */}
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">활성화</label>
+                <label className="text-sm font-medium">{adminT?.isActive || 'Active'}</label>
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, is_active: !prev.is_active }))}
@@ -554,7 +597,7 @@ export function AdminContent() {
                 onClick={closeModal}
                 className="px-4 py-2 rounded-lg border border-border hover:bg-white/5 transition-colors"
               >
-                취소
+                {adminT?.cancel || 'Cancel'}
               </button>
               <button
                 onClick={handleSave}
@@ -567,7 +610,7 @@ export function AdminContent() {
                 )}
               >
                 {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                {editingShowcase ? '저장' : '추가'}
+                {editingShowcase ? (adminT?.save || 'Save') : (adminT?.add || 'Add')}
               </button>
             </div>
           </div>

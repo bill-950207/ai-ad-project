@@ -667,7 +667,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         setVoices(data.voices || [])
       }
     } catch (error) {
-      console.error('음성 목록 로드 오류:', error)
+      console.error('Failed to load voice list:', error)
     } finally {
       setIsLoadingVoices(false)
     }
@@ -693,7 +693,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         setVoices(data.voices || [])
       }
     } catch (error) {
-      console.error('데이터 로드 오류:', error)
+      console.error('Failed to load data:', error)
     } finally {
       setIsLoading(false)
     }
@@ -731,7 +731,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
             }
           }
         })
-        .catch(err => console.error('초기 제품 로드 오류:', err))
+        .catch(err => console.error('Failed to load initial products:', err))
     }
 
     // 초기 아바타 설정 (재개 중이 아닌 경우에만)
@@ -766,7 +766,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               })
             }
           })
-          .catch(err => console.error('초기 아바타 로드 오류:', err))
+          .catch(err => console.error('Failed to load initial avatars:', err))
       } else if (initialAvatarType === 'outfit' && initialAvatarId && initialOutfitId) {
         // 의상 선택
         fetch(`/api/avatars/${initialAvatarId}`)
@@ -785,7 +785,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               })
             }
           })
-          .catch(err => console.error('초기 의상 로드 오류:', err))
+          .catch(err => console.error('Failed to load initial outfits:', err))
       }
     }
   }, [initialProductId, initialAvatarType, initialAvatarId, initialOutfitId, initialAiAvatarOptions, resumeVideoAdId])
@@ -996,7 +996,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           }
         }
       } catch (error) {
-        console.error('데이터 로드 오류:', error)
+        console.error('Failed to load data:', error)
       } finally {
         setIsLoadingDraft(false)
       }
@@ -1012,7 +1012,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           }
         }
       } catch (error) {
-        console.error('드래프트 로드 오류:', error)
+        console.error('Failed to load draft:', error)
       } finally {
         setIsLoadingDraft(false)
       }
@@ -1100,7 +1100,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           }
         }
       } catch (e) {
-        console.error('대본 파싱 오류:', e)
+        console.error('Script parsing error:', e)
       }
     }
     if (draft.script) setEditedScript(draft.script)
@@ -1171,7 +1171,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       }
 
       if (status.status === 'FAILED') {
-        throw new Error(status.error || '영상 생성 실패')
+        throw new Error(status.error || 'Video generation failed')
       }
 
       if (status.queuePosition) {
@@ -1183,7 +1183,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       await new Promise(resolve => setTimeout(resolve, 3000))
       return pollVideoStatus(reqId, provider, adId)
     } catch (error) {
-      console.error('상태 폴링 오류:', error)
+      console.error('Status polling error:', error)
       setGenerationStatus('오류가 발생했습니다')
       setIsGeneratingVideo(false)
     }
@@ -1320,7 +1320,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       try {
         const res = await fetch(`/api/video-ads/product-description/image-status?requests=${encodeURIComponent(JSON.stringify(requests))}`)
         if (!res.ok) {
-          console.error('이미지 상태 확인 실패:', res.status)
+          console.error('Failed to check image status:', res.status)
           return
         }
 
@@ -1476,7 +1476,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
 
       if (!res.ok) {
         const error = await res.json()
-        throw new Error(error.error || '대본 생성 실패')
+        throw new Error(error.error || 'Script generation failed')
       }
 
       const data = await res.json()
@@ -1535,7 +1535,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         })
       }
     } catch (error) {
-      console.error('대본 생성 오류:', error)
+      console.error('Script generation error:', error)
       alert(error instanceof Error ? error.message : '대본 생성 중 오류가 발생했습니다')
       setStep(2)
       // 에러 발생 시 DRAFT 상태로 복원
@@ -1600,7 +1600,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
 
       if (!ttsRes.ok) {
         const error = await ttsRes.json()
-        throw new Error(error.error || '음성 생성 실패')
+        throw new Error(error.error || 'Voice generation failed')
       }
 
       const ttsData = await ttsRes.json()
@@ -1635,7 +1635,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
 
       if (!videoRes.ok) {
         const error = await videoRes.json()
-        throw new Error(error.error || '영상 생성 요청 실패')
+        throw new Error(error.error || 'Failed to request video generation')
       }
 
       const videoData = await videoRes.json()
@@ -1669,7 +1669,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         }
 
         if (status.status === 'FAILED') {
-          throw new Error(status.error || '영상 생성 실패')
+          throw new Error(status.error || 'Video generation failed')
         }
 
         if (status.queuePosition) {
@@ -1684,7 +1684,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
 
       await pollStatus()
     } catch (error) {
-      console.error('영상 생성 오류:', error)
+      console.error('Video generation error:', error)
       alert(error instanceof Error ? error.message : '영상 생성 중 오류가 발생했습니다')
       setGenerationStatus('')
       // 에러 발생 시 DRAFT 상태로 복원
@@ -1740,7 +1740,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       setLoadingPreviewId(null)
       setPlayingVoiceId(voice.id)
       audio.play().catch(err => {
-        console.error('오디오 재생 오류:', err)
+        console.error('Audio playback error:', err)
         setPlayingVoiceId(null)
       })
     }
@@ -1752,7 +1752,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     audio.onerror = () => {
       setLoadingPreviewId(null)
       setPlayingVoiceId(null)
-      console.error('오디오 로드 오류:', voice.id)
+      console.error('Audio load error:', voice.id)
     }
 
     // 오디오 로드 시작
@@ -1839,7 +1839,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-3" />
           {isLoadingDraft && (
-            <p className="text-sm text-muted-foreground">데이터를 불러오는 중...</p>
+            <p className="text-sm text-muted-foreground">{(t.productDescWizard as Record<string, string>)?.loadingDraft || 'Loading saved data...'}</p>
           )}
         </div>
       </div>

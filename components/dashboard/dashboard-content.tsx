@@ -289,7 +289,7 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
           }
         }
       } catch (error) {
-        console.error('쇼케이스 데이터 로드 실패:', error)
+        console.error('Failed to load showcase data:', error)
         // 실패 시 폴백 값 유지
       }
     }

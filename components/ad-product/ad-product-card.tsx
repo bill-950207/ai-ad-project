@@ -67,7 +67,7 @@ export function AdProductCard({ product, onDelete, onRetry }: AdProductCardProps
         onDelete?.(product.id)
       }
     } catch (error) {
-      console.error('삭제 오류:', error)
+      console.error('Delete error:', error)
     } finally {
       setIsDeleting(false)
     }
@@ -85,7 +85,7 @@ export function AdProductCard({ product, onDelete, onRetry }: AdProductCardProps
       })
       onRetry?.(product)
     } catch (error) {
-      console.error('재시도 오류:', error)
+      console.error('Retry error:', error)
     } finally {
       setIsRetrying(false)
     }
@@ -163,7 +163,7 @@ export function AdProductCard({ product, onDelete, onRetry }: AdProductCardProps
         {isPolling && ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(product.status) && (
           <div className="absolute top-3 right-3">
             <span className="text-xs px-2.5 py-1 rounded-lg whitespace-nowrap bg-gradient-to-r from-primary to-accent text-white font-medium animate-pulse backdrop-blur-sm">
-              배경 제거 중...
+              {t.adProduct?.removingBackground || 'Removing background...'}
             </span>
           </div>
         )}
@@ -191,7 +191,7 @@ export function AdProductCard({ product, onDelete, onRetry }: AdProductCardProps
               ) : (
                 <RefreshCw className="w-4 h-4" />
               )}
-              <span>재시도</span>
+              <span>{t.common?.retry || 'Retry'}</span>
             </button>
             <button
               onClick={handleDelete}
@@ -203,7 +203,7 @@ export function AdProductCard({ product, onDelete, onRetry }: AdProductCardProps
               ) : (
                 <Trash2 className="w-4 h-4" />
               )}
-              <span>삭제</span>
+              <span>{t.common?.delete || 'Delete'}</span>
             </button>
           </div>
         )}
@@ -219,13 +219,13 @@ export function AdProductCard({ product, onDelete, onRetry }: AdProductCardProps
               onClick={handleImageAdClick}
               className="flex-1 flex items-center justify-center px-2 py-1.5 text-xs font-medium text-foreground bg-muted/50 hover:bg-primary/10 hover:text-primary rounded-lg transition-all duration-200"
             >
-              이미지 광고 생성
+              {t.adProduct?.createImageAd || 'Create Image Ad'}
             </button>
             <button
               onClick={handleVideoAdClick}
               className="flex-1 flex items-center justify-center px-2 py-1.5 text-xs font-medium text-foreground bg-muted/50 hover:bg-primary/10 hover:text-primary rounded-lg transition-all duration-200"
             >
-              영상 광고 생성
+              {t.adProduct?.createVideoAd || 'Create Video Ad'}
             </button>
           </div>
         )}

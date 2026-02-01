@@ -6,8 +6,9 @@
 
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { useLanguage } from '@/contexts/language-context'
 import {
   X,
   Music,
@@ -64,33 +65,32 @@ interface MusicSelectModalProps {
   videoAdId: string
 }
 
-// 분위기 라벨
-const MOOD_LABELS: Record<string, string> = {
-  bright: '밝은',
-  calm: '차분한',
-  emotional: '감성적',
-  professional: '전문적',
-  exciting: '신나는',
-  trendy: '트렌디',
-  playful: '유쾌한',
-  romantic: '로맨틱',
-  nostalgic: '향수적',
+// Default fallback labels (English)
+const DEFAULT_MOOD_LABELS: Record<string, string> = {
+  bright: 'Bright',
+  calm: 'Calm',
+  emotional: 'Emotional',
+  professional: 'Professional',
+  exciting: 'Exciting',
+  trendy: 'Trendy',
+  playful: 'Playful',
+  romantic: 'Romantic',
+  nostalgic: 'Nostalgic',
 }
 
-// 장르 라벨
-const GENRE_LABELS: Record<string, string> = {
-  pop: '팝',
-  electronic: '일렉트로닉',
-  classical: '클래식',
-  jazz: '재즈',
-  rock: '록',
-  hiphop: '힙합',
-  ambient: '앰비언트',
-  acoustic: '어쿠스틱',
-  lofi: '로파이',
-  cinematic: '시네마틱',
+const DEFAULT_GENRE_LABELS: Record<string, string> = {
+  pop: 'Pop',
+  electronic: 'Electronic',
+  classical: 'Classical',
+  jazz: 'Jazz',
+  rock: 'Rock',
+  hiphop: 'Hip-Hop',
+  ambient: 'Ambient',
+  acoustic: 'Acoustic',
+  lofi: 'Lo-Fi',
+  cinematic: 'Cinematic',
   rnb: 'R&B',
-  folk: '포크',
+  folk: 'Folk',
 }
 
 export function MusicSelectModal({
@@ -101,6 +101,18 @@ export function MusicSelectModal({
   videoAdId,
 }: MusicSelectModalProps) {
   const router = useRouter()
+  const { t } = useLanguage()
+
+  // Get mood and genre labels from translations
+  const musicT = (t as Record<string, unknown>).adMusic as Record<string, unknown> | undefined
+  const MOOD_LABELS = useMemo(() => {
+    const moods = musicT?.moods as Record<string, string> | undefined
+    return moods || DEFAULT_MOOD_LABELS
+  }, [musicT])
+  const GENRE_LABELS = useMemo(() => {
+    const genres = musicT?.genres as Record<string, string> | undefined
+    return genres || DEFAULT_GENRE_LABELS
+  }, [musicT])
 
   // 음악 목록 상태
   const [musicList, setMusicList] = useState<AdMusic[]>([])
@@ -131,7 +143,7 @@ export function MusicSelectModal({
         setMusicList(completedMusic)
       }
     } catch (error) {
-      console.error('음악 목록 조회 오류:', error)
+      console.error('Failed to fetch music list:', error)
     } finally {
       setIsLoading(false)
     }
@@ -287,7 +299,7 @@ export function MusicSelectModal({
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
             <Music className="w-5 h-5" />
-            배경 음악 선택
+            {t.musicSelect?.title || 'Select Background Music'}
           </h2>
           <button
             onClick={onClose}
@@ -306,16 +318,16 @@ export function MusicSelectModal({
           ) : musicList.length === 0 ? (
             <div className="text-center py-12">
               <Music className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">생성된 음악이 없습니다</p>
+              <p className="text-muted-foreground">{t.musicSelect?.noMusic || 'No music generated'}</p>
               <p className="text-sm text-muted-foreground mt-1">
-                음악 페이지에서 먼저 음악을 생성해주세요
+                {t.musicSelect?.createFirst || 'Please create music from the Music page first'}
               </p>
             </div>
           ) : (
             <div className="space-y-6">
               {/* 음악 목록 */}
               <div>
-                <h3 className="text-sm font-medium text-foreground mb-3">음악 선택</h3>
+                <h3 className="text-sm font-medium text-foreground mb-3">{t.musicSelect?.selectMusic || 'Select Music'}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {musicList.map((music) => {
                     const isSelected = selectedMusic?.id === music.id
@@ -366,7 +378,7 @@ export function MusicSelectModal({
                           </div>
                           {trackCount > 1 && (
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              {trackCount}개 트랙
+                              {(t.musicSelect?.tracksCount || '{{count}} tracks').replace('{{count}}', String(trackCount))}
                             </p>
                           )}
                         </div>
@@ -386,7 +398,7 @@ export function MusicSelectModal({
               {/* 트랙 선택 (여러 트랙이 있는 경우) */}
               {selectedMusic && selectedMusic.tracks && selectedMusic.tracks.length > 1 && (
                 <div>
-                  <h3 className="text-sm font-medium text-foreground mb-3">트랙 선택</h3>
+                  <h3 className="text-sm font-medium text-foreground mb-3">{t.musicSelect?.selectTrack || 'Select Track'}</h3>
                   <div className="flex gap-2 flex-wrap">
                     {selectedMusic.tracks.map((track, index) => (
                       <button
@@ -401,7 +413,7 @@ export function MusicSelectModal({
                             : 'bg-secondary text-foreground hover:bg-secondary/80'
                         }`}
                       >
-                        트랙 {index + 1}
+                        {(t.musicSelect?.trackNumber || 'Track {{number}}').replace('{{number}}', String(index + 1))}
                         <span className="ml-1 text-xs opacity-70">
                           ({formatTime(track.duration)})
                         </span>
@@ -417,11 +429,11 @@ export function MusicSelectModal({
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
                       <Clock className="w-4 h-4" />
-                      구간 선택
+                      {t.musicSelect?.selectRange || 'Select Range'}
                     </h3>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground">
-                        영상 길이: {formatTime(videoDuration)}
+                        {t.musicSelect?.videoDuration || 'Video duration:'} {formatTime(videoDuration)}
                       </span>
                       <button
                         onClick={() => {
@@ -430,7 +442,7 @@ export function MusicSelectModal({
                         }}
                         className="text-xs text-primary hover:underline"
                       >
-                        영상에 맞추기
+                        {t.musicSelect?.fitToVideo || 'Fit to video'}
                       </button>
                     </div>
                   </div>
@@ -453,12 +465,12 @@ export function MusicSelectModal({
                       {isPreviewPlaying ? (
                         <>
                           <Pause className="w-4 h-4" />
-                          정지
+                          {t.musicSelect?.stop || 'Stop'}
                         </>
                       ) : (
                         <>
                           <Play className="w-4 h-4" />
-                          미리듣기
+                          {t.musicSelect?.preview || 'Preview'}
                         </>
                       )}
                     </button>
@@ -491,14 +503,14 @@ export function MusicSelectModal({
             onClick={onClose}
             className="px-4 py-2 text-foreground bg-secondary rounded-lg hover:bg-secondary/80 transition-colors"
           >
-            취소
+            {t.common?.cancel || 'Cancel'}
           </button>
           <button
             onClick={handleApply}
             disabled={!selectedMusic || !selectedTrack}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            적용하기
+            {t.musicSelect?.apply || 'Apply'}
           </button>
         </div>
       </div>

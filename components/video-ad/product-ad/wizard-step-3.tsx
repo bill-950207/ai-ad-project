@@ -81,6 +81,7 @@ interface MoodSelectorProps {
 }
 
 function MoodSelector({ value, onChange, isAiRecommended }: MoodSelectorProps) {
+  const { t } = useLanguage()
   const [isExpanded, setIsExpanded] = useState(false)
   const [customValue, setCustomValue] = useState('')
 
@@ -96,7 +97,7 @@ function MoodSelector({ value, onChange, isAiRecommended }: MoodSelectorProps) {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <label className="text-sm font-medium text-foreground flex items-center gap-2">
-          전체 분위기
+          {t.productAdWizard?.step3?.overallMood || 'Overall Mood'}
           {isAiRecommended && (
             <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded-full flex items-center gap-1">
               <Sparkles className="w-2.5 h-2.5" />
@@ -116,7 +117,7 @@ function MoodSelector({ value, onChange, isAiRecommended }: MoodSelectorProps) {
       >
         <div className="flex items-center justify-between">
           <span className={value ? 'text-foreground' : 'text-muted-foreground'}>
-            {value || '영상의 전체 분위기를 선택해주세요'}
+            {value || (t.productAdWizard?.step3?.selectMoodPlaceholder || 'Select the overall mood for the video')}
           </span>
           {isExpanded ? (
             <ChevronUp className="w-4 h-4 text-muted-foreground" />
@@ -152,7 +153,7 @@ function MoodSelector({ value, onChange, isAiRecommended }: MoodSelectorProps) {
               type="text"
               value={customValue}
               onChange={(e) => setCustomValue(e.target.value)}
-              placeholder="직접 입력..."
+              placeholder={t.common?.customInput || 'Custom input...'}
               className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -165,7 +166,7 @@ function MoodSelector({ value, onChange, isAiRecommended }: MoodSelectorProps) {
               disabled={!customValue.trim()}
               className="px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              적용
+              {t.common?.apply || 'Apply'}
             </button>
           </div>
         </div>
@@ -186,6 +187,7 @@ function CompactElementSelector({
   value,
   onChange,
 }: CompactElementSelectorProps) {
+  const { t } = useLanguage()
   const [isExpanded, setIsExpanded] = useState(false)
   const [customValue, setCustomValue] = useState('')
   const element = AD_ELEMENT_OPTIONS[elementKey]
@@ -214,7 +216,7 @@ function CompactElementSelector({
       >
         <div className="flex items-center justify-between">
           <span className={value ? 'text-foreground' : 'text-muted-foreground'}>
-            {value || '선택'}
+            {value || (t.common?.select || 'Select')}
           </span>
           {isExpanded ? (
             <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
@@ -250,7 +252,7 @@ function CompactElementSelector({
               type="text"
               value={customValue}
               onChange={(e) => setCustomValue(e.target.value)}
-              placeholder="직접 입력..."
+              placeholder={t.common?.customInput || 'Custom input...'}
               className="flex-1 px-2 py-1.5 bg-background border border-border rounded text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -263,7 +265,7 @@ function CompactElementSelector({
               disabled={!customValue.trim()}
               className="px-2 py-1.5 bg-primary text-primary-foreground rounded text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              적용
+              {t.common?.apply || 'Apply'}
             </button>
           </div>
         </div>
@@ -312,7 +314,7 @@ export function WizardStep3() {
   } = useProductAdWizard()
 
   // i18n
-  const { language } = useLanguage()
+  const { language, t } = useLanguage()
 
   // 중복 호출 방지를 위한 ref
   const isGeneratingRef = useRef(false)
@@ -335,7 +337,7 @@ export function WizardStep3() {
           }
         }
       } catch (error) {
-        console.error('플랜 정보 로드 오류:', error)
+        console.error('Failed to load plan info:', error)
       }
     }
     fetchUserPlan()
@@ -369,7 +371,7 @@ export function WizardStep3() {
         }),
       })
 
-      if (!res.ok) throw new Error('시나리오 생성 실패')
+      if (!res.ok) throw new Error('Scenario generation failed')
 
       const data = await res.json()
       setGeneratedScenarios(data.scenarios)
@@ -391,7 +393,7 @@ export function WizardStep3() {
         }
       }
     } catch (error) {
-      console.error('시나리오 생성 오류:', error)
+      console.error('Scenario generation error:', error)
     } finally {
       isGeneratingRef.current = false
       setIsGeneratingScenario(false)
@@ -421,7 +423,7 @@ export function WizardStep3() {
         }),
       })
 
-      if (!res.ok) throw new Error('시나리오 생성 실패')
+      if (!res.ok) throw new Error('Scenario generation failed')
 
       const data = await res.json()
       if (data.scenarios.length > 0) {
@@ -439,7 +441,7 @@ export function WizardStep3() {
         }
       }
     } catch (error) {
-      console.error('시나리오 생성 오류:', error)
+      console.error('Scenario generation error:', error)
     } finally {
       isGeneratingRef.current = false
       setIsGeneratingScenario(false)
@@ -511,9 +513,9 @@ export function WizardStep3() {
         <div className="text-center">
           <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
           <p className="text-foreground font-medium">
-            {scenarioMethod === 'ai-auto' ? 'AI가 최적의 시나리오를 추천하고 있습니다...' : '참조 영상을 분석하여 시나리오를 구성하고 있습니다...'}
+            {scenarioMethod === 'ai-auto' ? (t.productAdWizard?.step3?.aiRecommending || 'AI is recommending the optimal scenario...') : (t.productAdWizard?.step3?.analyzingReference || 'Analyzing reference video to build scenario...')}
           </p>
-          <p className="text-sm text-muted-foreground mt-2">잠시만 기다려주세요</p>
+          <p className="text-sm text-muted-foreground mt-2">{t.common?.pleaseWait || 'Please wait'}</p>
         </div>
       </div>
     )
@@ -523,13 +525,13 @@ export function WizardStep3() {
     <div className="max-w-3xl mx-auto space-y-6">
       {/* 헤더 */}
       <div className="text-center">
-        <h2 className="text-xl font-bold text-foreground">시나리오 및 영상 설정</h2>
+        <h2 className="text-xl font-bold text-foreground">{t.productAdWizard?.step3?.title || 'Scenario & Video Settings'}</h2>
         <p className="text-muted-foreground mt-2">
           {scenarioMethod === 'direct'
-            ? '원하는 광고 분위기와 영상 설정을 선택해주세요'
+            ? (t.productAdWizard?.step3?.subtitleDirect || 'Select your desired ad mood and video settings')
             : scenarioMethod === 'ai-auto'
-              ? 'AI가 추천한 시나리오를 선택하고 영상 설정을 확인하세요'
-              : '참조 영상 분석 결과를 기반으로 설정을 확인하세요'}
+              ? (t.productAdWizard?.step3?.subtitleAi || 'Select AI recommended scenario and review video settings')
+              : (t.productAdWizard?.step3?.subtitleReference || 'Review settings based on reference video analysis')}
         </p>
       </div>
 
@@ -541,13 +543,13 @@ export function WizardStep3() {
       {scenarioMethod === 'ai-auto' && generatedScenarios.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-foreground">추천 시나리오</h3>
+            <h3 className="text-sm font-medium text-foreground">{t.productAdWizard?.step3?.recommendedScenarios || 'Recommended Scenarios'}</h3>
             <button
               onClick={generateAiScenarios}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              다시 추천
+              {t.productAdWizard?.step3?.regenerate || 'Regenerate'}
             </button>
           </div>
 
@@ -565,7 +567,7 @@ export function WizardStep3() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-semibold text-foreground">{scenario.title || `시나리오 ${index + 1}`}</h4>
+                      <h4 className="font-semibold text-foreground">{scenario.title || `${t.productAdWizard?.step3?.scenario || 'Scenario'} ${index + 1}`}</h4>
                       {selectedScenarioIndex === index && (
                         <Check className="w-4 h-4 text-primary" />
                       )}
@@ -594,7 +596,7 @@ export function WizardStep3() {
         <div className="p-4 bg-secondary/30 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">참조 영상 분석 결과</span>
+            <span className="text-sm font-medium text-foreground">{t.productAdWizard?.step3?.referenceAnalysisResult || 'Reference Video Analysis Result'}</span>
           </div>
           <p className="text-sm text-muted-foreground">{referenceInfo.analyzedDescription}</p>
         </div>
@@ -614,22 +616,22 @@ export function WizardStep3() {
       {/* ─────────────────────────────────────────────────────────────────── */}
 
       <div className="pt-4 border-t border-border">
-        <h3 className="text-base font-semibold text-foreground mb-4">영상 설정</h3>
+        <h3 className="text-base font-semibold text-foreground mb-4">{t.productAdWizard?.step3?.videoSettings || 'Video Settings'}</h3>
 
         {/* AI 추천 설정 알림 */}
         {isVideoSettingsFromScenario && (
           <div className="flex items-center justify-between p-4 rounded-xl bg-primary/5 border border-primary/20 mb-4">
             <div className="flex items-center gap-2">
               <Lock className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-foreground">AI 시나리오 추천 설정</span>
-              <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">적용됨</span>
+              <span className="text-sm font-medium text-foreground">{t.productAdWizard?.step3?.aiRecommendedSettings || 'AI Scenario Recommended Settings'}</span>
+              <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">{t.productAdWizard?.step3?.applied || 'Applied'}</span>
             </div>
             <button
               onClick={unlockVideoSettings}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
             >
               <Unlock className="w-3.5 h-3.5" />
-              수정
+              {t.common?.edit || 'Edit'}
             </button>
           </div>
         )}
@@ -638,7 +640,7 @@ export function WizardStep3() {
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Maximize className="w-4 h-4 text-muted-foreground" />
-            <h4 className="text-sm font-medium text-foreground">영상 비율</h4>
+            <h4 className="text-sm font-medium text-foreground">{t.productAdWizard?.step3?.aspectRatio || 'Aspect Ratio'}</h4>
             {isVideoSettingsFromScenario && (
               <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded-full flex items-center gap-1">
                 <Sparkles className="w-2.5 h-2.5" />
@@ -672,7 +674,7 @@ export function WizardStep3() {
         <div className="space-y-4 mt-6">
           <div className="flex items-center gap-2">
             <Film className="w-4 h-4 text-muted-foreground" />
-            <h4 className="text-sm font-medium text-foreground">씬 구성</h4>
+            <h4 className="text-sm font-medium text-foreground">{t.productAdWizard?.step3?.sceneComposition || 'Scene Composition'}</h4>
             {isVideoSettingsFromScenario && (
               <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded-full flex items-center gap-1">
                 <Sparkles className="w-2.5 h-2.5" />
@@ -680,16 +682,16 @@ export function WizardStep3() {
               </span>
             )}
             <span className="text-xs text-muted-foreground ml-auto">
-              총 {totalDuration}초
+              {t.productAdWizard?.step3?.totalDuration || 'Total'} {totalDuration}{t.productAdWizard?.step3?.seconds || 's'}
             </span>
           </div>
           <p className="text-xs text-muted-foreground -mt-2">
-            씬 개수를 선택하세요. 각 씬의 상세 설정은 아래에서 할 수 있습니다.
+            {t.productAdWizard?.step3?.sceneCountHint || 'Select the number of scenes. Detailed settings for each scene are available below.'}
           </p>
 
           {/* 씬 개수 선택 */}
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground w-16">씬 개수</span>
+            <span className="text-sm text-muted-foreground w-16">{t.productAdWizard?.step3?.sceneCount || 'Scenes'}</span>
             <div className="flex gap-1.5 flex-1">
               {[2, 3, 4, 5, 6, 7, 8].map((count) => {
                 const isLocked = isFreeUser && count > FREE_USER_LIMITS.maxSceneCount
@@ -718,7 +720,7 @@ export function WizardStep3() {
           {isFreeUser && (
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Crown className="w-3 h-3" />
-              STARTER 이상 구독 시 최대 8개 씬, 씬당 최대 8초까지 설정 가능
+              {t.productAdWizard?.step3?.upgradeHint || 'Subscribe to STARTER or higher for up to 8 scenes and 8 seconds per scene'}
             </p>
           )}
         </div>
@@ -727,10 +729,10 @@ export function WizardStep3() {
         <div className="space-y-4 mt-6">
           <div className="flex items-center gap-2">
             <Palette className="w-4 h-4 text-muted-foreground" />
-            <h4 className="text-sm font-medium text-foreground">씬별 광고 요소</h4>
+            <h4 className="text-sm font-medium text-foreground">{t.productAdWizard?.step3?.sceneAdElements || 'Scene Ad Elements'}</h4>
           </div>
           <p className="text-xs text-muted-foreground -mt-2">
-            각 씬마다 시간, 배경, 분위기를 설정하고, 추가 지시사항을 입력할 수 있습니다
+            {t.productAdWizard?.step3?.sceneElementsHint || 'Set duration, background, and mood for each scene, and add optional instructions'}
           </p>
 
           {/* 모든 씬 세로 나열 */}
@@ -748,11 +750,11 @@ export function WizardStep3() {
                   {/* 씬 헤더: 번호 + 시간 조절 */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-foreground">씬 {index + 1}</span>
+                      <span className="text-sm font-medium text-foreground">{t.productAdWizard?.step3?.scene || 'Scene'} {index + 1}</span>
                     </div>
                     {/* 영상 길이 조절 */}
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">영상 길이</span>
+                      <span className="text-xs text-muted-foreground">{t.productAdWizard?.step3?.videoDuration || 'Duration'}</span>
                       <div className="flex items-center gap-1 bg-background rounded-lg border border-border px-1">
                         <button
                           onClick={() => updateSceneDuration(index, duration - 1)}
@@ -770,7 +772,7 @@ export function WizardStep3() {
                           <Plus className="w-3 h-3" />
                         </button>
                       </div>
-                      <span className="text-xs text-muted-foreground">초</span>
+                      <span className="text-xs text-muted-foreground">{t.productAdWizard?.step3?.seconds || 's'}</span>
                     </div>
                   </div>
 
@@ -791,12 +793,12 @@ export function WizardStep3() {
                   {/* 추가 지시사항 (선택) */}
                   <div className="mt-3">
                     <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                      추가 지시사항 <span className="text-muted-foreground/60">(선택)</span>
+                      {t.productAdWizard?.step3?.additionalInstructions || 'Additional Instructions'} <span className="text-muted-foreground/60">({t.common?.optional || 'Optional'})</span>
                     </label>
                     <textarea
                       value={sceneElement.additionalPrompt || ''}
                       onChange={(e) => updateSceneElement(index, 'additionalPrompt', e.target.value)}
-                      placeholder="예: 제품이 천천히 회전하며 나타남, 백라이트로 실루엣 강조..."
+                      placeholder={t.productAdWizard?.step3?.additionalInstructionsPlaceholder || 'E.g., Product slowly rotates while appearing, backlit silhouette...'}
                       className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
                       rows={2}
                     />
@@ -806,7 +808,7 @@ export function WizardStep3() {
                   {!complete && (
                     <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 mt-2">
                       <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
-                      배경과 분위기는 필수입니다
+                      {t.productAdWizard?.step3?.requiredHint || 'Background and mood are required'}
                     </p>
                   )}
                 </div>
@@ -827,14 +829,14 @@ export function WizardStep3() {
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          이전
+          {t.common?.prev || 'Previous'}
         </button>
         <button
           onClick={handleNext}
           disabled={!canProceedToStep4()}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          다음
+          {t.common?.next || 'Next'}
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
@@ -843,10 +845,10 @@ export function WizardStep3() {
       {!canProceedToStep4() && scenarioInfo && (
         <p className="text-center text-sm text-muted-foreground">
           {!scenarioInfo.elements.mood
-            ? '전체 분위기를 선택해주세요'
+            ? (t.productAdWizard?.step3?.selectMood || 'Please select the overall mood')
             : !aspectRatio
-              ? '영상 비율을 선택해주세요'
-              : '모든 씬의 배경과 분위기를 설정해주세요'}
+              ? (t.productAdWizard?.step3?.selectRatio || 'Please select the aspect ratio')
+              : (t.productAdWizard?.step3?.setAllScenes || 'Please set background and mood for all scenes')}
         </p>
       )}
     </div>

@@ -124,7 +124,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
           setIsAdmin(profile?.role === 'ADMIN')
         }
       } catch (error) {
-        console.error('권한 확인 오류:', error)
+        console.error('Error checking admin permission:', error)
       }
     }
     checkAdmin()
@@ -140,7 +140,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
         router.push('/dashboard/image-ad')
       }
     } catch (error) {
-      console.error('이미지 광고 조회 오류:', error)
+      console.error('Error fetching image ad:', error)
       router.push('/dashboard/image-ad')
     } finally {
       setIsLoading(false)
@@ -152,7 +152,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
   }, [fetchImageAd])
 
   const handleDelete = async () => {
-    if (!confirm(t.imageAdDetail?.confirmDelete || '이 이미지 광고를 삭제하시겠습니까?')) return
+    if (!confirm(t.imageAdDetail?.confirmDelete || 'Are you sure you want to delete this image ad?')) return
 
     setIsDeleting(true)
     try {
@@ -164,7 +164,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
         router.push('/dashboard/image-ad')
       }
     } catch (error) {
-      console.error('삭제 오류:', error)
+      console.error('Error deleting image ad:', error)
     } finally {
       setIsDeleting(false)
     }
@@ -200,7 +200,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
       document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
     } catch (error) {
-      console.error('다운로드 오류:', error)
+      console.error('Error downloading image:', error)
     }
   }
 
@@ -226,7 +226,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
   const handleRegisterShowcase = async () => {
     if (!imageAd || !selectedImageUrl) return
 
-    if (!confirm('이 이미지 광고를 쇼케이스로 등록하시겠습니까?')) return
+    if (!confirm(t.imageAdDetail?.confirmShowcaseRegister || 'Register this image ad as a showcase?')) return
 
     setIsRegisteringShowcase(true)
     try {
@@ -236,7 +236,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
         body: JSON.stringify({
           type: 'image',
           adId: imageAd.id,
-          title: imageAd.ad_products?.name || '이미지 광고',
+          title: imageAd.ad_products?.name || (t.imageAdDetail?.defaultAdTitle || 'Image Ad'),
           description: imageAd.prompt?.slice(0, 200) || null,
           thumbnailUrl: selectedImageUrl,
           mediaUrl: selectedOriginalUrl,
@@ -248,14 +248,14 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
       })
 
       if (res.ok) {
-        alert('쇼케이스로 등록되었습니다.')
+        alert(t.imageAdDetail?.showcaseRegistered || 'Successfully registered as showcase.')
       } else {
         const data = await res.json()
-        alert(data.error || '등록에 실패했습니다.')
+        alert(data.error || (t.imageAdDetail?.registerFailed || 'Failed to register.'))
       }
     } catch (error) {
-      console.error('쇼케이스 등록 오류:', error)
-      alert('등록 중 오류가 발생했습니다.')
+      console.error('Error registering showcase:', error)
+      alert(t.imageAdDetail?.registerError || 'An error occurred during registration.')
     } finally {
       setIsRegisteringShowcase(false)
     }
@@ -264,11 +264,11 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
   const handleDeleteSingleImage = async (index: number) => {
     // 마지막 하나 남은 이미지는 삭제 불가
     if (imageUrls.length <= 1) {
-      alert(t.imageAdDetail?.cannotDeleteLastImage || '마지막 이미지는 삭제할 수 없습니다.')
+      alert(t.imageAdDetail?.cannotDeleteLastImage || 'Cannot delete the last image.')
       return
     }
 
-    if (!confirm(t.imageAdDetail?.confirmDeleteSingleImage || '이 이미지를 삭제하시겠습니까?')) return
+    if (!confirm(t.imageAdDetail?.confirmDeleteSingleImage || 'Are you sure you want to delete this image?')) return
 
     setIsDeletingSingle(true)
     try {
@@ -290,11 +290,11 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
         }
       } else {
         const data = await res.json()
-        alert(data.error || '이미지 삭제에 실패했습니다.')
+        alert(data.error || (t.imageAdDetail?.deleteSingleFailed || 'Failed to delete image.'))
       }
     } catch (error) {
-      console.error('이미지 삭제 오류:', error)
-      alert('이미지 삭제에 실패했습니다.')
+      console.error('Error deleting single image:', error)
+      alert(t.imageAdDetail?.deleteSingleFailed || 'Failed to delete image.')
     } finally {
       setIsDeletingSingle(false)
     }
@@ -334,44 +334,44 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
     if (i18nLabels?.groupLabels?.[key]) return i18nLabels.groupLabels[key]
     if (i18nLabels?.groupLabels?.[normalizedKey]) return i18nLabels.groupLabels[normalizedKey]
 
-    // 폴백 라벨 (소문자 키로 통일)
+    // Fallback labels (normalized to lowercase keys)
     const fallbackLabels: Record<string, string> = {
-      pose: '포즈',
-      gaze: '시선',
-      background: '배경',
-      expression: '표정',
-      framing: '프레이밍',
-      lighting: '조명',
-      angle: '앵글',
-      style: '스타일',
-      action: '액션',
-      setting: '장소',
-      focus: '포커스',
-      scene: '씬',
-      location: '장소',
-      time: '시간대',
-      mood: '분위기',
-      layout: '레이아웃',
-      season: '계절',
-      theme: '테마',
-      atmosphere: '분위기',
-      productplacement: '제품 배치',
-      // 추가 키들
-      color: '컬러',
-      effect: '효과',
-      composition: '구도',
-      props: '소품',
-      weather: '날씨',
-      emotion: '감정',
-      intensity: '강도',
-      direction: '방향',
-      model_type: '모델 타입',
-      product_size: '제품 크기',
-      camera_distance: '카메라 거리',
-      custom_prompt: '커스텀 프롬프트',
-      // AI 생성 옵션 키들
-      outfit: '의상',
-      colortone: '컬러톤',
+      pose: 'Pose',
+      gaze: 'Gaze',
+      background: 'Background',
+      expression: 'Expression',
+      framing: 'Framing',
+      lighting: 'Lighting',
+      angle: 'Angle',
+      style: 'Style',
+      action: 'Action',
+      setting: 'Setting',
+      focus: 'Focus',
+      scene: 'Scene',
+      location: 'Location',
+      time: 'Time',
+      mood: 'Mood',
+      layout: 'Layout',
+      season: 'Season',
+      theme: 'Theme',
+      atmosphere: 'Atmosphere',
+      productplacement: 'Product Placement',
+      // Additional keys
+      color: 'Color',
+      effect: 'Effect',
+      composition: 'Composition',
+      props: 'Props',
+      weather: 'Weather',
+      emotion: 'Emotion',
+      intensity: 'Intensity',
+      direction: 'Direction',
+      model_type: 'Model Type',
+      product_size: 'Product Size',
+      camera_distance: 'Camera Distance',
+      custom_prompt: 'Custom Prompt',
+      // AI generated option keys
+      outfit: 'Outfit',
+      colortone: 'Color Tone',
     }
     return fallbackLabels[normalizedKey] || key
   }
@@ -871,7 +871,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
     // 문자열이 아닌 경우 문자열로 변환
     const strValue = String(value)
     // 커스텀 옵션인 경우 그대로 표시
-    if (strValue === '__custom__') return ((t as Record<string, unknown>).imageAdOptions as Record<string, string> | undefined)?.custom || '커스텀'
+    if (strValue === '__custom__') return ((t as Record<string, unknown>).imageAdOptions as Record<string, string> | undefined)?.custom || 'Custom'
     // 번역된 라벨 반환
     return getOptionValueLabel(key, strValue)
   }
@@ -901,7 +901,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
           </button>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              {t.imageAdDetail?.title || '이미지 광고 상세'}
+              {t.imageAdDetail?.title || 'Image Ad Detail'}
             </h1>
             <div className="flex items-center gap-3 mt-1.5">
               <span className="px-2.5 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-medium">
@@ -925,13 +925,13 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
             ) : (
               <Download className="w-4 h-4" />
             )}
-            {hasMultipleImages ? `다운로드 (${imageUrls.length})` : '다운로드'}
+            {hasMultipleImages ? `${t.common?.download || 'Download'} (${imageUrls.length})` : (t.common?.download || 'Download')}
           </button>
           {/* 편집 버튼 */}
           <button
             onClick={() => setEditModalOpen(true)}
             className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-muted-foreground hover:text-foreground transition-all duration-200"
-            title="편집"
+            title={t.common?.edit || 'Edit'}
           >
             <Wand2 className="w-4 h-4" />
           </button>
@@ -955,7 +955,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
             onClick={handleDelete}
             disabled={isDeleting}
             className="p-2.5 rounded-xl bg-white/5 hover:bg-red-500/10 border border-white/10 hover:border-red-500/20 text-muted-foreground hover:text-red-500 transition-all duration-200 disabled:opacity-50"
-            title={t.adProduct?.delete || '삭제'}
+            title={t.adProduct?.delete || 'Delete'}
           >
             {isDeleting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -992,21 +992,21 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-xl transition-all duration-200"
-                          title="원본 보기"
+                          title={t.imageAdDetail?.viewOriginal || 'View original'}
                         >
                           <ExternalLink className="w-4 h-4" />
                         </a>
                         <button
                           onClick={() => handleDownload()}
                           className="p-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-xl transition-all duration-200"
-                          title="다운로드"
+                          title={t.common?.download || 'Download'}
                         >
                           <Download className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => setEditModalOpen(true)}
                           className="p-2.5 bg-primary/80 hover:bg-primary backdrop-blur-sm text-white rounded-xl transition-all duration-200"
-                          title="편집"
+                          title={t.common?.edit || 'Edit'}
                         >
                           <Wand2 className="w-4 h-4" />
                         </button>
@@ -1016,7 +1016,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                           onClick={() => handleDeleteSingleImage(selectedImageIndex)}
                           disabled={isDeletingSingle}
                           className="p-2.5 bg-red-500/80 hover:bg-red-500 backdrop-blur-sm text-white rounded-xl transition-all duration-200 disabled:opacity-50"
-                          title="이미지 삭제"
+                          title={t.imageAdDetail?.deleteImage || 'Delete image'}
                         >
                           {isDeletingSingle ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -1095,7 +1095,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                   <Package className="w-4 h-4" />
                 </div>
                 <h3 className="font-medium text-foreground">
-                  {t.imageAdDetail?.product || '광고 제품'}
+                  {t.imageAdDetail?.product || 'Ad Product'}
                 </h3>
               </div>
               <div className="flex items-center gap-4">
@@ -1118,7 +1118,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                     onClick={() => router.push(`/dashboard/image-ad/product/${imageAd.product_id}`)}
                     className="text-sm text-primary hover:text-primary/80 transition-colors"
                   >
-                    {t.imageAdDetail?.viewProduct || '제품 상세보기'} →
+                    {t.imageAdDetail?.viewProduct || 'View Product'} →
                   </button>
                 </div>
               </div>
@@ -1136,7 +1136,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                   <User className="w-4 h-4" />
                 </div>
                 <h3 className="font-medium text-foreground">
-                  {t.imageAdDetail?.avatar || '아바타'}
+                  {t.imageAdDetail?.avatar || 'Avatar'}
                 </h3>
               </div>
               <div className="flex items-center gap-4">
@@ -1159,7 +1159,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                     onClick={() => router.push(`/dashboard/avatar/${imageAd.avatar_id}`)}
                     className="text-sm text-primary hover:text-primary/80 transition-colors"
                   >
-                    {t.imageAdDetail?.viewAvatar || '아바타 상세보기'} →
+                    {t.imageAdDetail?.viewAvatar || 'View Avatar'} →
                   </button>
                 </div>
               </div>
@@ -1177,7 +1177,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                   <Shirt className="w-4 h-4" />
                 </div>
                 <h3 className="font-medium text-foreground">
-                  {t.imageAdDetail?.outfit || '의상'}
+                  {t.imageAdDetail?.outfit || 'Outfit'}
                 </h3>
               </div>
               <div className="flex items-center gap-4">
@@ -1209,25 +1209,25 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                 <Settings2 className="w-4 h-4" />
               </div>
               <h3 className="font-medium text-foreground">
-                {t.imageAdDetail?.options || '생성 옵션'}
+                {t.imageAdDetail?.options || 'Generation Options'}
               </h3>
             </div>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between items-center py-2 border-b border-white/[0.04]">
                 <span className="text-muted-foreground">
-                  {t.imageAdDetail?.adType || '광고 유형'}
+                  {t.imageAdDetail?.adType || 'Ad Type'}
                 </span>
                 <span className="text-foreground font-medium">{getAdTypeTitle(imageAd.ad_type)}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-white/[0.04]">
                 <span className="text-muted-foreground">
-                  {t.imageAdDetail?.aspectRatio || '이미지 비율'}
+                  {t.imageAdDetail?.aspectRatio || 'Aspect Ratio'}
                 </span>
                 <span className="text-foreground font-medium">{getAspectRatioLabel(imageAd.image_size)}</span>
               </div>
               <div className="flex justify-between items-center py-2">
                 <span className="text-muted-foreground">
-                  {t.imageAdDetail?.quality || '퀄리티'}
+                  {t.imageAdDetail?.quality || 'Quality'}
                 </span>
                 <span className="text-foreground font-medium">{getQualityLabel(imageAd.quality)}</span>
               </div>
@@ -1245,7 +1245,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
                   <Settings2 className="w-4 h-4" />
                 </div>
                 <h3 className="font-medium text-foreground">
-                  {t.imageAdDetail?.detailSettings || '상세 설정'}
+                  {t.imageAdDetail?.detailSettings || 'Detail Settings'}
                 </h3>
               </div>
               <div className="space-y-1.5">

@@ -19,14 +19,35 @@ import { ProductEditorStep } from './steps/product-editor-step'
 import { AvatarStep } from './steps/avatar-step'
 import { AvatarProcessingStep } from './steps/avatar-processing-step'
 import { CompletionStep } from './steps/completion-step'
+import { useLanguage } from '@/contexts/language-context'
 
 export function OnboardingFlowModal() {
+  const { t } = useLanguage()
   const { isOpen, step, targetType, imageAdType, closeOnboarding, error, selectedProduct, selectedAvatarInfo, goToStep, isNavigating } = useOnboarding()
   const [isAnimating, setIsAnimating] = useState(false)
   const [currentStep, setCurrentStep] = useState(step)
   const [isReady, setIsReady] = useState(false)
   const [wasOpen, setWasOpen] = useState(false)
   const [isEntering, setIsEntering] = useState(false)
+
+  // Translation type
+  type OnboardingModalT = {
+    videoTypeTitle?: string
+    videoTypeSubtitle?: string
+    imageTypeTitle?: string
+    imageTypeSubtitle?: string
+    videoAdPrepare?: string
+    imageAdPrepare?: string
+    productSubtitle?: string
+    productProcessingSubtitle?: string
+    productEditingSubtitle?: string
+    avatarSubtitle?: string
+    avatarProcessingSubtitle?: string
+    completeSubtitle?: string
+    close?: string
+    nextStep?: string
+  }
+  const onbT = t.onboardingModal as OnboardingModalT | undefined
 
   // 모달 열림/닫힘 상태 변화 감지
   useEffect(() => {
@@ -92,32 +113,32 @@ export function OnboardingFlowModal() {
   // 헤더 타이틀 결정
   const getHeaderTitle = () => {
     if (targetType === 'video') {
-      if (currentStep === 'video-type') return '영상 광고 유형 선택'
-      return '영상 광고 생성 준비'
+      if (currentStep === 'video-type') return onbT?.videoTypeTitle || 'Select Video Ad Type'
+      return onbT?.videoAdPrepare || 'Prepare Video Ad'
     }
-    if (currentStep === 'image-type') return '이미지 광고 유형 선택'
-    return '이미지 광고 생성 준비'
+    if (currentStep === 'image-type') return onbT?.imageTypeTitle || 'Select Image Ad Type'
+    return onbT?.imageAdPrepare || 'Prepare Image Ad'
   }
 
   // 헤더 서브타이틀 결정
   const getHeaderSubtitle = () => {
     switch (currentStep) {
       case 'video-type':
-        return '만들고 싶은 영상 광고 유형을 선택하세요'
+        return onbT?.videoTypeSubtitle || 'Select the type of video ad you want to create'
       case 'image-type':
-        return '만들고 싶은 이미지 광고 유형을 선택하세요'
+        return onbT?.imageTypeSubtitle || 'Select the type of image ad you want to create'
       case 'product':
-        return '광고에 사용할 제품을 선택하거나 등록하세요'
+        return onbT?.productSubtitle || 'Select or register a product for your ad'
       case 'product-processing':
-        return '제품 이미지를 분석하고 있습니다'
+        return onbT?.productProcessingSubtitle || 'Analyzing product image'
       case 'product-editing':
-        return '제품 크기를 조절하세요'
+        return onbT?.productEditingSubtitle || 'Adjust product size'
       case 'avatar':
-        return '광고에 출연할 아바타를 선택하세요'
+        return onbT?.avatarSubtitle || 'Select an avatar for your ad'
       case 'avatar-processing':
-        return '아바타를 생성하고 있습니다'
+        return onbT?.avatarProcessingSubtitle || 'Generating avatar'
       case 'complete':
-        return '모든 준비가 완료되었습니다'
+        return onbT?.completeSubtitle || 'All preparations are complete'
       default:
         return ''
     }
@@ -173,7 +194,7 @@ export function OnboardingFlowModal() {
             {!isNavigating && (
               <button
                 onClick={closeOnboarding}
-                aria-label="닫기"
+                aria-label={onbT?.close || 'Close'}
                 className="p-2.5 rounded-xl hover:bg-secondary/80 transition-[background-color,transform] hover:scale-105 active:scale-95 flex-shrink-0"
               >
                 <X className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
@@ -234,7 +255,7 @@ export function OnboardingFlowModal() {
                 <span className="truncate max-w-[150px] font-medium">{selectedProduct.name}</span>
               </div>
               <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-              <span>다음 단계로</span>
+              <span>{onbT?.nextStep || 'Next Step'}</span>
             </button>
           </div>
         )}
@@ -261,7 +282,7 @@ export function OnboardingFlowModal() {
                 <span className="truncate max-w-[150px] font-medium">{selectedAvatarInfo.displayName}</span>
               </div>
               <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-              <span>다음 단계로</span>
+              <span>{onbT?.nextStep || 'Next Step'}</span>
             </button>
           </div>
         )}

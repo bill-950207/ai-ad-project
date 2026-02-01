@@ -14,46 +14,73 @@ import { Sparkles, User, Plus, Check, Loader2, ChevronDown, Shirt } from 'lucide
 import { useOnboarding, OnboardingAvatar } from '../onboarding-context'
 import { AiAvatarOptions, SelectedAvatarInfo } from '@/components/video-ad/avatar-select-modal'
 import { AvatarOptions } from '@/lib/avatar/prompt-builder'
+import { useLanguage } from '@/contexts/language-context'
+
+// Translation type for avatar step
+type AvatarStepT = {
+  loadingAvatars?: string
+  existingAvatars?: string
+  aiRecommend?: string
+  createNew?: string
+  noAvatars?: string
+  noAvatarsHint?: string
+  default?: string
+  outfits?: string
+  outfitList?: string
+  aiGenerateTitle?: string
+  aiGenerateDesc?: string
+  selectAvatarCharacteristics?: string
+  gender?: string
+  genderAny?: string
+  female?: string
+  male?: string
+  ageGroup?: string
+  ageAny?: string
+  age2030?: string
+  age3040?: string
+  age4050?: string
+  style?: string
+  styleAny?: string
+  styleNatural?: string
+  styleProfessional?: string
+  styleCasual?: string
+  styleElegant?: string
+  ethnicity?: string
+  ethnicityAny?: string
+  korean?: string
+  asian?: string
+  western?: string
+  bodyType?: string
+  bodyTypeAiRecommend?: string
+  slim?: string
+  average?: string
+  athletic?: string
+  curvy?: string
+  selectAsAiModel?: string
+  avatarName?: string
+  avatarNamePlaceholder?: string
+  basicInfo?: string
+  ageRange?: string
+  early20s?: string
+  late20s?: string
+  thirties?: string
+  fortyPlus?: string
+  eastAsian?: string
+  caucasian?: string
+  black?: string
+  hispanic?: string
+  creating?: string
+  createAvatar?: string
+  enterAvatarName?: string
+  avatarCreationFailed?: string
+  errorOccurred?: string
+  failedToLoadAvatars?: string
+  aiGeneratedModel?: string
+  aiAutoGenerate?: string
+}
 
 // 탭 타입
 type TabType = 'existing' | 'ai' | 'create'
-
-// AI 아바타 옵션
-const GENDER_OPTIONS = [
-  { value: 'any', label: '성별 무관' },
-  { value: 'female', label: '여성' },
-  { value: 'male', label: '남성' },
-] as const
-
-const AGE_OPTIONS = [
-  { value: 'any', label: '연령 무관' },
-  { value: 'young', label: '20-30대' },
-  { value: 'middle', label: '30-40대' },
-  { value: 'mature', label: '40-50대' },
-] as const
-
-const STYLE_OPTIONS = [
-  { value: 'any', label: '무관' },
-  { value: 'natural', label: '자연스러운' },
-  { value: 'professional', label: '전문적인' },
-  { value: 'casual', label: '캐주얼' },
-  { value: 'elegant', label: '우아한' },
-] as const
-
-const ETHNICITY_OPTIONS = [
-  { value: 'any', label: '무관' },
-  { value: 'korean', label: '한국인' },
-  { value: 'asian', label: '아시아인' },
-  { value: 'western', label: '서양인' },
-] as const
-
-const BODY_TYPE_OPTIONS = [
-  { value: 'any', label: 'AI 추천' },
-  { value: 'slim', label: '날씬' },
-  { value: 'average', label: '보통' },
-  { value: 'athletic', label: '탄탄' },
-  { value: 'curvy', label: '글래머' },
-] as const
 
 interface AvatarWithOutfits extends OnboardingAvatar {
   outfits: Array<{
@@ -65,6 +92,46 @@ interface AvatarWithOutfits extends OnboardingAvatar {
 }
 
 export function AvatarStep() {
+  const { t } = useLanguage()
+  const avatarT = t.onboarding?.avatarStep as AvatarStepT | undefined
+
+  // Dynamic option labels
+  const GENDER_OPTIONS = [
+    { value: 'any', label: avatarT?.genderAny || 'Any Gender' },
+    { value: 'female', label: avatarT?.female || 'Female' },
+    { value: 'male', label: avatarT?.male || 'Male' },
+  ] as const
+
+  const AGE_OPTIONS = [
+    { value: 'any', label: avatarT?.ageAny || 'Any Age' },
+    { value: 'young', label: avatarT?.age2030 || '20-30s' },
+    { value: 'middle', label: avatarT?.age3040 || '30-40s' },
+    { value: 'mature', label: avatarT?.age4050 || '40-50s' },
+  ] as const
+
+  const STYLE_OPTIONS = [
+    { value: 'any', label: avatarT?.styleAny || 'Any' },
+    { value: 'natural', label: avatarT?.styleNatural || 'Natural' },
+    { value: 'professional', label: avatarT?.styleProfessional || 'Professional' },
+    { value: 'casual', label: avatarT?.styleCasual || 'Casual' },
+    { value: 'elegant', label: avatarT?.styleElegant || 'Elegant' },
+  ] as const
+
+  const ETHNICITY_OPTIONS = [
+    { value: 'any', label: avatarT?.ethnicityAny || 'Any' },
+    { value: 'korean', label: avatarT?.korean || 'Korean' },
+    { value: 'asian', label: avatarT?.asian || 'Asian' },
+    { value: 'western', label: avatarT?.western || 'Western' },
+  ] as const
+
+  const BODY_TYPE_OPTIONS = [
+    { value: 'any', label: avatarT?.bodyTypeAiRecommend || 'AI Recommend' },
+    { value: 'slim', label: avatarT?.slim || 'Slim' },
+    { value: 'average', label: avatarT?.average || 'Average' },
+    { value: 'athletic', label: avatarT?.athletic || 'Athletic' },
+    { value: 'curvy', label: avatarT?.curvy || 'Curvy' },
+  ] as const
+
   const {
     avatars,
     selectedAvatarInfo,
@@ -121,8 +188,8 @@ export function AvatarStep() {
           setActiveTab('ai')
         }
       } catch (err) {
-        console.error('아바타 로드 오류:', err)
-        setError('아바타 목록을 불러올 수 없습니다')
+        console.error('Avatar load error:', err)
+        setError(avatarT?.failedToLoadAvatars || 'Failed to load avatars')
       } finally {
         setIsLoadingAvatars(false)
       }
@@ -144,9 +211,9 @@ export function AvatarStep() {
     setSelectedAvatarInfo({
       type: 'ai-generated',
       avatarId: 'ai-generated',
-      avatarName: 'AI 생성 모델',
+      avatarName: avatarT?.aiGeneratedModel || 'AI Generated Model',
       imageUrl: '',
-      displayName: 'AI 자동 생성',
+      displayName: avatarT?.aiAutoGenerate || 'AI Auto Generate',
       aiOptions,
     })
     goToStep('complete')
@@ -183,7 +250,7 @@ export function AvatarStep() {
   // 아바타 생성 제출
   const handleCreateAvatar = async () => {
     if (!avatarName.trim()) {
-      setCreateError('아바타 이름을 입력해주세요')
+      setCreateError(avatarT?.enterAvatarName || 'Please enter an avatar name')
       return
     }
 
@@ -202,14 +269,14 @@ export function AvatarStep() {
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || '아바타 생성에 실패했습니다')
+        throw new Error(data.error || (avatarT?.avatarCreationFailed || 'Failed to create avatar'))
       }
 
       const data = await res.json()
       onAvatarCreated(data.avatar.id)
     } catch (err) {
-      console.error('아바타 생성 오류:', err)
-      setCreateError(err instanceof Error ? err.message : '오류가 발생했습니다')
+      console.error('Avatar creation error:', err)
+      setCreateError(err instanceof Error ? err.message : (avatarT?.errorOccurred || 'An error occurred'))
       setIsCreatingAvatar(false)
     }
   }
@@ -229,7 +296,7 @@ export function AvatarStep() {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
-        <p className="text-sm text-muted-foreground">아바타 목록을 불러오는 중...</p>
+        <p className="text-sm text-muted-foreground">{avatarT?.loadingAvatars || 'Loading avatars...'}</p>
       </div>
     )
   }
@@ -247,7 +314,7 @@ export function AvatarStep() {
           }`}
         >
           <User className="w-4 h-4" />
-          기존 아바타
+          {avatarT?.existingAvatars || 'Existing Avatars'}
           {avatarsWithOutfits.length > 0 && (
             <span className={`text-xs px-1.5 py-0.5 rounded-full ${
               activeTab === 'existing' ? 'bg-white/20' : 'bg-primary/20 text-primary'
@@ -265,7 +332,7 @@ export function AvatarStep() {
           }`}
         >
           <Sparkles className="w-4 h-4" />
-          AI 추천
+          {avatarT?.aiRecommend || 'AI Recommend'}
         </button>
         <button
           onClick={() => setActiveTab('create')}
@@ -276,7 +343,7 @@ export function AvatarStep() {
           }`}
         >
           <Plus className="w-4 h-4" />
-          새로 만들기
+          {avatarT?.createNew || 'Create New'}
         </button>
       </div>
 
@@ -288,9 +355,9 @@ export function AvatarStep() {
             {avatarsWithOutfits.length === 0 ? (
               <div className="text-center py-12">
                 <User className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">생성된 아바타가 없습니다</p>
+                <p className="text-muted-foreground">{avatarT?.noAvatars || 'No avatars created'}</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  AI 추천 또는 새로 만들기 탭을 이용해주세요
+                  {avatarT?.noAvatarsHint || 'Please use AI Recommend or Create New tab'}
                 </p>
               </div>
             ) : (
@@ -328,7 +395,7 @@ export function AvatarStep() {
                             </div>
                           )}
                           <div className="absolute bottom-0 left-0 right-0 bg-black/60 py-0.5 px-1">
-                            <span className="text-[10px] text-white">기본</span>
+                            <span className="text-[10px] text-white">{avatarT?.default || 'Default'}</span>
                           </div>
                         </button>
 
@@ -343,7 +410,7 @@ export function AvatarStep() {
                               className="flex items-center gap-1 mt-1 text-xs text-primary hover:text-primary/80 transition-colors"
                             >
                               <Shirt className="w-3 h-3" />
-                              <span>의상 {avatar.outfits.length}개</span>
+                              <span>{avatarT?.outfits || 'Outfits'} {avatar.outfits.length}</span>
                               <ChevronDown className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                             </button>
                           )}
@@ -353,7 +420,7 @@ export function AvatarStep() {
                       {/* 의상 목록 */}
                       {isExpanded && hasOutfits && (
                         <div className="border-t border-border bg-secondary/20 p-3">
-                          <p className="text-xs text-muted-foreground mb-2">의상 교체 목록</p>
+                          <p className="text-xs text-muted-foreground mb-2">{avatarT?.outfitList || 'Outfit list'}</p>
                           <div className="flex gap-2 overflow-x-auto pb-2">
                             {avatar.outfits.map((outfit) => {
                               const isOutfitSelected = selectedAvatarInfo?.outfitId === outfit.id
@@ -411,17 +478,17 @@ export function AvatarStep() {
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-foreground">AI가 제품에 맞는 아바타 생성</h3>
-                  <p className="text-xs text-muted-foreground">제품 정보를 분석하여 어울리는 가상 아바타를 자동 생성</p>
+                  <h3 className="font-medium text-foreground">{avatarT?.aiGenerateTitle || 'AI generates avatar for your product'}</h3>
+                  <p className="text-xs text-muted-foreground">{avatarT?.aiGenerateDesc || 'Analyzes product info to auto-generate a matching virtual avatar'}</p>
                 </div>
               </div>
             </div>
 
-            <p className="text-sm text-muted-foreground">생성할 아바타의 특성을 선택하세요</p>
+            <p className="text-sm text-muted-foreground">{avatarT?.selectAvatarCharacteristics || 'Select avatar characteristics to generate'}</p>
 
             {/* 성별 */}
             <div>
-              <label className="text-xs font-medium text-foreground mb-2 block">성별</label>
+              <label className="text-xs font-medium text-foreground mb-2 block">{avatarT?.gender || 'Gender'}</label>
               <div className="flex gap-2">
                 {GENDER_OPTIONS.map((option) => (
                   <button
@@ -441,7 +508,7 @@ export function AvatarStep() {
 
             {/* 연령대 */}
             <div>
-              <label className="text-xs font-medium text-foreground mb-2 block">연령대</label>
+              <label className="text-xs font-medium text-foreground mb-2 block">{avatarT?.ageGroup || 'Age Group'}</label>
               <div className="flex gap-2 flex-wrap">
                 {AGE_OPTIONS.map((option) => (
                   <button
@@ -461,7 +528,7 @@ export function AvatarStep() {
 
             {/* 인종 */}
             <div>
-              <label className="text-xs font-medium text-foreground mb-2 block">인종</label>
+              <label className="text-xs font-medium text-foreground mb-2 block">{avatarT?.ethnicity || 'Ethnicity'}</label>
               <div className="flex gap-2">
                 {ETHNICITY_OPTIONS.map((option) => (
                   <button
@@ -481,7 +548,7 @@ export function AvatarStep() {
 
             {/* 체형 */}
             <div>
-              <label className="text-xs font-medium text-foreground mb-2 block">체형</label>
+              <label className="text-xs font-medium text-foreground mb-2 block">{avatarT?.bodyType || 'Body Type'}</label>
               <div className="grid grid-cols-3 gap-2">
                 {BODY_TYPE_OPTIONS.map((option) => (
                   <button
@@ -501,7 +568,7 @@ export function AvatarStep() {
 
             {/* 스타일 */}
             <div>
-              <label className="text-xs font-medium text-foreground mb-2 block">스타일</label>
+              <label className="text-xs font-medium text-foreground mb-2 block">{avatarT?.style || 'Style'}</label>
               <div className="grid grid-cols-3 gap-2">
                 {STYLE_OPTIONS.map((option) => (
                   <button
@@ -525,7 +592,7 @@ export function AvatarStep() {
               className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 mt-2"
             >
               <Sparkles className="w-4 h-4" />
-              AI 모델로 선택하기
+              {avatarT?.selectAsAiModel || 'Select as AI Model'}
             </button>
           </div>
         )}
@@ -536,24 +603,24 @@ export function AvatarStep() {
             {/* 아바타 이름 */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                아바타 이름 <span className="text-red-500">*</span>
+                {avatarT?.avatarName || 'Avatar Name'} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={avatarName}
                 onChange={(e) => setAvatarName(e.target.value)}
-                placeholder="예: 밝은 모델"
+                placeholder={avatarT?.avatarNamePlaceholder || 'e.g., Bright Model'}
                 className="w-full px-4 py-2 bg-secondary/30 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
 
             {/* 기본 정보 */}
             <div className="bg-secondary/20 rounded-lg p-4 space-y-4">
-              <h3 className="text-sm font-semibold text-foreground">기본 정보</h3>
+              <h3 className="text-sm font-semibold text-foreground">{avatarT?.basicInfo || 'Basic Info'}</h3>
 
               {/* 성별 */}
               <div>
-                <label className="block text-xs text-muted-foreground mb-2">성별</label>
+                <label className="block text-xs text-muted-foreground mb-2">{avatarT?.gender || 'Gender'}</label>
                 <div className="flex gap-2 flex-wrap">
                   {(['female', 'male'] as const).map((v) => (
                     <button
@@ -566,7 +633,7 @@ export function AvatarStep() {
                           : 'bg-secondary/50 text-foreground hover:bg-secondary'
                       }`}
                     >
-                      {v === 'female' ? '여성' : '남성'}
+                      {v === 'female' ? (avatarT?.female || 'Female') : (avatarT?.male || 'Male')}
                     </button>
                   ))}
                 </div>
@@ -574,7 +641,7 @@ export function AvatarStep() {
 
               {/* 나이대 */}
               <div>
-                <label className="block text-xs text-muted-foreground mb-2">나이대</label>
+                <label className="block text-xs text-muted-foreground mb-2">{avatarT?.ageRange || 'Age Range'}</label>
                 <div className="flex gap-2 flex-wrap">
                   {(['early20s', 'late20s', '30s', '40plus'] as const).map((v) => (
                     <button
@@ -587,7 +654,7 @@ export function AvatarStep() {
                           : 'bg-secondary/50 text-foreground hover:bg-secondary'
                       }`}
                     >
-                      {v === 'early20s' ? '20대 초반' : v === 'late20s' ? '20대 후반' : v === '30s' ? '30대' : '40대+'}
+                      {v === 'early20s' ? (avatarT?.early20s || 'Early 20s') : v === 'late20s' ? (avatarT?.late20s || 'Late 20s') : v === '30s' ? (avatarT?.thirties || '30s') : (avatarT?.fortyPlus || '40+')}
                     </button>
                   ))}
                 </div>
@@ -595,7 +662,7 @@ export function AvatarStep() {
 
               {/* 인종 */}
               <div>
-                <label className="block text-xs text-muted-foreground mb-2">인종</label>
+                <label className="block text-xs text-muted-foreground mb-2">{avatarT?.ethnicity || 'Ethnicity'}</label>
                 <div className="flex gap-2 flex-wrap">
                   {(['eastAsian', 'caucasian', 'black', 'hispanic'] as const).map((v) => (
                     <button
@@ -608,7 +675,7 @@ export function AvatarStep() {
                           : 'bg-secondary/50 text-foreground hover:bg-secondary'
                       }`}
                     >
-                      {v === 'eastAsian' ? '동아시아인' : v === 'caucasian' ? '백인' : v === 'black' ? '흑인' : '히스패닉'}
+                      {v === 'eastAsian' ? (avatarT?.eastAsian || 'East Asian') : v === 'caucasian' ? (avatarT?.caucasian || 'Caucasian') : v === 'black' ? (avatarT?.black || 'Black') : (avatarT?.hispanic || 'Hispanic')}
                     </button>
                   ))}
                 </div>
@@ -617,10 +684,10 @@ export function AvatarStep() {
 
             {/* 체형 */}
             <div className="bg-secondary/20 rounded-lg p-4 space-y-4">
-              <h3 className="text-sm font-semibold text-foreground">체형</h3>
+              <h3 className="text-sm font-semibold text-foreground">{avatarT?.bodyType || 'Body Type'}</h3>
 
               <div>
-                <label className="block text-xs text-muted-foreground mb-2">체형</label>
+                <label className="block text-xs text-muted-foreground mb-2">{avatarT?.bodyType || 'Body Type'}</label>
                 <div className="flex gap-2 flex-wrap">
                   {(['slim', 'average', 'athletic', 'curvy'] as const).map((v) => (
                     <button
@@ -633,7 +700,7 @@ export function AvatarStep() {
                           : 'bg-secondary/50 text-foreground hover:bg-secondary'
                       }`}
                     >
-                      {v === 'slim' ? '날씬' : v === 'average' ? '보통' : v === 'athletic' ? '탄탄' : '글래머'}
+                      {v === 'slim' ? (avatarT?.slim || 'Slim') : v === 'average' ? (avatarT?.average || 'Average') : v === 'athletic' ? (avatarT?.athletic || 'Athletic') : (avatarT?.curvy || 'Curvy')}
                     </button>
                   ))}
                 </div>
@@ -654,10 +721,10 @@ export function AvatarStep() {
               {isCreatingAvatar ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>생성 중...</span>
+                  <span>{avatarT?.creating || 'Creating...'}</span>
                 </>
               ) : (
-                '아바타 생성하기'
+                avatarT?.createAvatar || 'Create Avatar'
               )}
             </button>
           </div>

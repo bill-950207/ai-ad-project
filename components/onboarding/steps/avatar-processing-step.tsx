@@ -38,7 +38,7 @@ export function AvatarProcessingStep() {
         const { avatar, tempImageUrl } = data
 
         if (avatar.status === 'FAILED') {
-          setError(avatar.error_message || '아바타 생성에 실패했습니다')
+          setError(avatar.error_message || 'Avatar generation failed')
           goToStep('avatar')
           return
         }
@@ -76,7 +76,7 @@ export function AvatarProcessingStep() {
                 const completeData = await completeRes.json()
                 onAvatarProcessingComplete(completeData.avatar)
               } catch (uploadErr) {
-                console.error('업로드 오류:', uploadErr)
+                console.error('Upload error:', uploadErr)
                 setError('이미지 저장에 실패했습니다')
                 goToStep('avatar')
               }
@@ -92,7 +92,7 @@ export function AvatarProcessingStep() {
             break
         }
       } catch (err) {
-        console.error('상태 폴링 오류:', err)
+        console.error('Status polling error:', err)
       }
     }
 

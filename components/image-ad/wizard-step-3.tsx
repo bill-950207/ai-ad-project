@@ -177,7 +177,7 @@ export function WizardStep3() {
       })
 
       if (!res.ok) {
-        throw new Error('추천 생성 실패')
+        throw new Error('Recommendation generation failed')
       }
 
       const result = await res.json()
@@ -190,7 +190,7 @@ export function WizardStep3() {
         applyScenarioOptions(firstScenario, 0)
       }
     } catch (error) {
-      console.error('AI 자동 설정 오류:', error)
+      console.error('AI auto settings error:', error)
       // 에러 시 ref 리셋하여 재시도 가능하게
       if (!isManualRefresh) {
         aiRecommendationRequestedRef.current = false
@@ -220,7 +220,7 @@ export function WizardStep3() {
       }
 
       // AI 추천처럼 상세한 이유 표시 (reason 필드 사용)
-      newAiReasons[opt.key] = opt.reason || `참조 이미지에서 분석됨 (신뢰도: ${Math.round(opt.confidence * 100)}%)`
+      newAiReasons[opt.key] = opt.reason || `Analyzed from reference image (confidence: ${Math.round(opt.confidence * 100)}%)`
     }
 
     setCategoryOptions(newCategoryOptions)
@@ -270,7 +270,7 @@ export function WizardStep3() {
   if (!categoryConfig) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        해당 광고 유형에 대한 옵션이 없습니다.
+        {t.imageAd?.options?.noOptions || 'No options available for this ad type.'}
       </div>
     )
   }
@@ -285,9 +285,9 @@ export function WizardStep3() {
               <Loader2 className="w-8 h-8 text-primary animate-spin" />
             </div>
             <div className="text-center">
-              <h3 className="font-medium text-foreground mb-1">AI가 최적의 설정을 분석 중입니다</h3>
+              <h3 className="font-medium text-foreground mb-1">{t.imageAd?.options?.aiAnalyzing || 'AI is analyzing optimal settings'}</h3>
               <p className="text-sm text-muted-foreground">
-                {selectedProduct ? `"${selectedProduct.name}"` : '제품'}에 맞는 광고 설정을 추천하고 있습니다...
+                {(t.imageAd?.options?.aiAnalyzingDesc || 'Analyzing {product} product and avatar characteristics...').replace('{product}', selectedProduct?.name || 'product')}
               </p>
             </div>
           </div>
@@ -300,7 +300,7 @@ export function WizardStep3() {
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-primary" />
-              추천 시나리오
+              {t.imageAd?.options?.recommendedScenario || 'Recommended Scenario'}
             </h3>
             <button
               onClick={handleRefreshAiRecommendation}
@@ -308,7 +308,7 @@ export function WizardStep3() {
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
             >
               <RefreshCw className="w-3 h-3" />
-              다시 추천
+              {t.imageAd?.options?.reRecommend || 'Re-recommend'}
             </button>
           </div>
 
@@ -352,7 +352,7 @@ export function WizardStep3() {
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1">
                 <h3 className="font-medium text-primary">
-                  {settingMethod === 'reference' ? 'AI 분석 결과' : '선택된 시나리오 전략'}
+                  {settingMethod === 'reference' ? t.imageAd?.options?.analysisResult || 'AI Analysis Results' : t.imageAd?.options?.selectedStrategy || 'Selected Scenario Strategy'}
                 </h3>
                 {settingMethod === 'ai-auto' && generatedScenarios.length === 0 && (
                   <button
@@ -361,7 +361,7 @@ export function WizardStep3() {
                     className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
                   >
                     <RefreshCw className="w-3 h-3" />
-                    다시 추천
+                    {t.imageAd?.options?.reRecommend || 'Re-recommend'}
                   </button>
                 )}
               </div>
@@ -375,7 +375,7 @@ export function WizardStep3() {
       {!isAiRecommending && (
         <div className="bg-card border border-border rounded-xl p-6 space-y-6">
           <div className="flex items-center justify-between pb-4 border-b border-border">
-            <h2 className="text-lg font-semibold text-foreground">상세 옵션 설정</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t.imageAd?.options?.title || 'Detailed Options'}</h2>
             {settingMethod === 'direct' && (
               <button
                 onClick={() => loadAiRecommendation(true)}
@@ -383,7 +383,7 @@ export function WizardStep3() {
                 className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-primary/80 to-primary text-primary-foreground text-sm rounded-lg hover:from-primary hover:to-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Bot className="w-4 h-4" />
-                AI 자동 설정
+                {t.imageAd?.options?.aiAutoSettings || 'AI Auto Settings'}
               </button>
             )}
           </div>
@@ -425,7 +425,7 @@ export function WizardStep3() {
                       }`}
                     >
                       <Edit3 className="w-3 h-3" />
-                      직접 입력
+                      {t.imageAd?.options?.manualInput || 'Manual Input'}
                     </button>
                   )}
                 </div>
@@ -435,7 +435,7 @@ export function WizardStep3() {
                     type="text"
                     value={customOptions[group.key] || ''}
                     onChange={(e) => updateCustomOption(group.key, e.target.value)}
-                    placeholder={`${groupLabel}을(를) 직접 입력하세요...`}
+                    placeholder={(t.imageAd?.options?.selectPlaceholder || 'Select {label}').replace('{label}', groupLabel)}
                     className="w-full px-4 py-2.5 text-sm bg-secondary/50 border border-primary/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                   />
                 ) : (
@@ -480,12 +480,12 @@ export function WizardStep3() {
       {!isAiRecommending && (
         <div className="bg-card border border-border rounded-xl p-6">
           <label className="block text-sm font-medium text-foreground mb-3">
-            {imageAdCreate.additionalPrompt || '추가 설명 (선택)'}
+            {t.imageAd?.options?.additionalDesc || imageAdCreate.additionalPrompt || 'Additional Description (Optional)'}
           </label>
           <textarea
             value={additionalPrompt}
             onChange={(e) => setAdditionalPrompt(e.target.value)}
-            placeholder={imageAdCreate.additionalPromptPlaceholder || '원하는 스타일이나 분위기를 자유롭게 설명해주세요...'}
+            placeholder={t.imageAd?.options?.additionalPlaceholder || imageAdCreate.additionalPromptPlaceholder || 'Freely describe your desired style or atmosphere...'}
             rows={4}
             className="w-full px-4 py-3 bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground resize-none"
           />
@@ -499,7 +499,7 @@ export function WizardStep3() {
           className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium border border-border hover:bg-secondary/50 transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
-          이전 단계
+          {t.imageAd?.wizard?.prevStep || 'Previous Step'}
         </button>
 
         <button
@@ -511,7 +511,7 @@ export function WizardStep3() {
               : 'bg-secondary text-muted-foreground cursor-not-allowed'
           }`}
         >
-          다음 단계
+          {t.imageAd?.wizard?.nextStep || 'Next Step'}
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>

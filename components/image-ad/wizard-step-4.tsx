@@ -52,7 +52,7 @@ const getImageSize = (ratio: AspectRatio): '1024x1024' | '1536x1024' | '1024x153
 
 export function WizardStep4() {
   const router = useRouter()
-  const { t: _t } = useLanguage()
+  const { t } = useLanguage()
   const { credits, refreshCredits } = useCredits()
   const {
     adType,
@@ -121,7 +121,7 @@ export function WizardStep4() {
           }
         }
       } catch (error) {
-        console.error('플랜 정보 로드 오류:', error)
+        console.error('Plan info load error:', error)
       }
     }
     fetchUserPlan()
@@ -182,12 +182,12 @@ export function WizardStep4() {
         body: formData,
       })
 
-      if (!res.ok) throw new Error('업로드 실패')
+      if (!res.ok) throw new Error('Upload failed')
 
       const { url } = await res.json()
       return url
     } catch (error) {
-      console.error('이미지 업로드 오류:', error)
+      console.error('Image upload error:', error)
       return null
     }
   }
@@ -253,7 +253,7 @@ export function WizardStep4() {
 
       if (!createRes.ok) {
         const error = await createRes.json()
-        throw new Error(error.error || '생성 요청 실패')
+        throw new Error(error.error || 'Generation request failed')
       }
 
       const { imageAdIds } = await createRes.json()
@@ -270,7 +270,7 @@ export function WizardStep4() {
       const imageAdId = imageAdIds?.[0]
 
       if (!imageAdId) {
-        throw new Error('이미지 광고 ID가 없습니다')
+        throw new Error('Image ad ID is missing')
       }
 
       // 폴링 시작 전 취소 플래그 초기화
@@ -282,7 +282,7 @@ export function WizardStep4() {
         while (attempts < maxAttempts) {
           // 컴포넌트 언마운트 시 폴링 중단
           if (isCancelledRef.current) {
-            throw new Error('폴링이 취소되었습니다')
+            throw new Error('Polling was cancelled')
           }
 
           // 이전 요청이 진행 중이면 대기 후 재시도
@@ -304,7 +304,7 @@ export function WizardStep4() {
             clearTimeout(timeoutId)
 
             if (!statusRes.ok) {
-              throw new Error('상태 확인 실패')
+              throw new Error('Status check failed')
             }
 
             const status = await statusRes.json()
@@ -360,9 +360,9 @@ export function WizardStep4() {
             } else if (status.status === 'FAILED') {
               // NSFW 오류 체크
               if (status.error === 'NSFW_CONTENT_DETECTED' || status.error?.includes('NSFW')) {
-                throw new Error('생성된 이미지가 콘텐츠 정책(NSFW)에 위배되어 차단되었습니다. 다른 옵션으로 다시 시도해주세요.')
+                throw new Error(t.imageAd?.generate?.nsfwError || 'Generated images were blocked due to content policy (NSFW). Please try again with different options.')
               }
-              throw new Error(status.error || '이미지 생성 실패')
+              throw new Error(status.error || 'Image generation failed')
             }
 
             // 진행률 업데이트 (batch-status API의 progress 필드 활용)
@@ -389,13 +389,13 @@ export function WizardStep4() {
           await new Promise(resolve => setTimeout(resolve, pollInterval))
         }
 
-        throw new Error('이미지 생성 시간 초과')
+        throw new Error(t.imageAd?.generate?.timeoutError || 'Image generation timed out')
       }
 
       const imageUrls = await pollBatchStatus()
 
       if (imageUrls.length === 0) {
-        throw new Error('모든 이미지 생성 실패')
+        throw new Error(t.imageAd?.generate?.allFailedError || 'All image generations failed')
       }
 
       setResultImages(imageUrls)
@@ -408,12 +408,12 @@ export function WizardStep4() {
       refreshCredits()
     } catch (error) {
       // 폴링 취소는 사용자가 의도적으로 이탈한 것이므로 에러 표시 안함
-      if (error instanceof Error && error.message === '폴링이 취소되었습니다') {
-        console.log('사용자가 생성 중 이탈함')
+      if (error instanceof Error && error.message === 'Polling was cancelled') {
+        console.log('User left during generation')
         return
       }
-      console.error('생성 오류:', error)
-      alert(error instanceof Error ? error.message : '생성 중 오류가 발생했습니다')
+      console.error('Generation error:', error)
+      alert(error instanceof Error ? error.message : t.imageAd?.generate?.error || 'An error occurred during generation')
     } finally {
       setIsGenerating(false)
       if (progressIntervalRef.current) {
@@ -432,15 +432,15 @@ export function WizardStep4() {
 
   // 비율 옵션
   const ratioOptions: { ratio: AspectRatio; label: string; width: string; height: string }[] = [
-    { ratio: '1:1', label: '정사각형', width: 'w-8', height: 'h-8' },
-    { ratio: '16:9', label: '가로형', width: 'w-10', height: 'h-6' },
-    { ratio: '9:16', label: '세로형', width: 'w-6', height: 'h-10' },
+    { ratio: '1:1', label: t.imageAd?.generate?.square || 'Square', width: 'w-8', height: 'h-8' },
+    { ratio: '16:9', label: t.imageAd?.generate?.landscape || 'Landscape', width: 'w-10', height: 'h-6' },
+    { ratio: '9:16', label: t.imageAd?.generate?.portrait || 'Portrait', width: 'w-6', height: 'h-10' },
   ]
 
   // 퀄리티 옵션
   const qualityOptions: { quality: Quality; label: string; description: string }[] = [
-    { quality: 'medium', label: '보통', description: '빠른 생성' },
-    { quality: 'high', label: '높음', description: '고품질' },
+    { quality: 'medium', label: t.imageAd?.generate?.normal || 'Normal', description: t.imageAd?.generate?.normalDesc || 'Fast generation' },
+    { quality: 'high', label: t.imageAd?.generate?.high || 'High', description: t.imageAd?.generate?.highDesc || 'High quality' },
   ]
 
   // 생성 결과 화면
@@ -451,9 +451,9 @@ export function WizardStep4() {
           <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
             <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
-          <h2 className="text-2xl font-bold text-foreground mb-2">광고 이미지 생성 완료!</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-2">{t.imageAd?.generate?.complete || 'Image Ad Generation Complete!'}</h2>
           <p className="text-muted-foreground">
-            {resultImages.length}개의 이미지가 생성되었습니다
+            {(t.imageAd?.generate?.imagesGenerated || '{count} images have been generated').replace('{count}', String(resultImages.length))}
           </p>
         </div>
 
@@ -466,13 +466,13 @@ export function WizardStep4() {
                   <div className="aspect-square bg-secondary/50 animate-pulse flex items-center justify-center">
                     <div className="flex flex-col items-center gap-2">
                       <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
-                      <span className="text-sm text-muted-foreground">이미지 로딩 중...</span>
+                      <span className="text-sm text-muted-foreground">{t.imageAd?.generate?.imageLoading || 'Loading image...'}</span>
                     </div>
                   </div>
                 )}
                 <img
                   src={url}
-                  alt={`생성된 이미지 ${index + 1}`}
+                  alt={(t.imageAd?.generate?.generatedImage || 'Generated image {index}').replace('{index}', String(index + 1))}
                   className={`w-full h-auto transition-opacity duration-300 ${loadedImages.has(index) ? 'opacity-100' : 'opacity-0 absolute'}`}
                   onLoad={() => {
                     setLoadedImages(prev => new Set(prev).add(index))
@@ -488,7 +488,7 @@ export function WizardStep4() {
                       setEditModalOpen(true)
                     }}
                     className="p-3 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
-                    title="이미지 편집"
+                    title={t.common?.edit || 'Edit'}
                   >
                     <Wand2 className="w-5 h-5 text-white" />
                   </button>
@@ -518,21 +518,21 @@ export function WizardStep4() {
             onClick={handleCreateNew}
             className="px-6 py-3 rounded-xl font-medium border border-border hover:bg-secondary/50 transition-colors"
           >
-            새로운 광고 만들기
+            {t.imageAd?.generate?.createNew || 'Create New Ad'}
           </button>
           {resultAdIds.length > 0 && (
             <button
               onClick={() => router.replace(`/dashboard/image-ad/${resultAdIds[0]}`)}
               className="px-6 py-3 rounded-xl font-medium border border-primary text-primary hover:bg-primary/10 transition-colors"
             >
-              광고 상세 보기
+              {t.imageAd?.generate?.viewDetail || 'View Ad Details'}
             </button>
           )}
           <button
             onClick={() => router.replace('/dashboard/image-ad')}
             className="px-6 py-3 rounded-xl font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
           >
-            광고 목록으로
+            {t.imageAd?.generate?.backToList || 'Back to List'}
           </button>
         </div>
 
@@ -566,16 +566,16 @@ export function WizardStep4() {
             <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Loader2 className="w-10 h-10 text-primary animate-spin" />
             </div>
-            <h2 className="text-xl font-bold text-foreground mb-2">광고 이미지 생성 중</h2>
+            <h2 className="text-xl font-bold text-foreground mb-2">{t.imageAd?.generate?.generating || 'Generating Image Ad'}</h2>
             <p className="text-muted-foreground">
-              AI가 {numImages}개의 이미지를 생성하고 있습니다...
+              {(t.imageAd?.generate?.generatingDesc || 'AI is generating {count} images...').replace('{count}', String(numImages))}
             </p>
           </div>
 
           {/* 프로그레스 바 */}
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">진행률</span>
+              <span className="text-muted-foreground">{t.imageAd?.generate?.progress || 'Progress'}</span>
               <span className="font-medium text-foreground">{Math.round(generationProgress)}%</span>
             </div>
             <div className="h-3 bg-secondary rounded-full overflow-hidden">
@@ -586,7 +586,7 @@ export function WizardStep4() {
             </div>
             {generationProgress >= 99 && (
               <p className="text-xs text-muted-foreground text-center mt-2">
-                거의 완료되었습니다...
+                {t.imageAd?.generate?.almostDone || 'Almost done...'}
               </p>
             )}
           </div>
@@ -600,7 +600,7 @@ export function WizardStep4() {
     <div className="max-w-3xl mx-auto space-y-6">
       {/* 미리보기 요약 */}
       <div className="bg-card border border-border rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">생성 미리보기</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">{t.imageAd?.generate?.preview || 'Generation Preview'}</h2>
         <div className="grid grid-cols-2 gap-4">
           {/* 제품 */}
           <div className="flex items-center gap-3 p-3 bg-secondary/30 rounded-lg">
@@ -608,7 +608,7 @@ export function WizardStep4() {
               {(selectedProduct?.rembg_image_url || selectedProduct?.image_url || localImageUrl) ? (
                 <img
                   src={selectedProduct?.rembg_image_url || selectedProduct?.image_url || localImageUrl || ''}
-                  alt="제품"
+                  alt={t.imageAd?.generate?.product || 'Product'}
                   className="w-full h-full object-contain"
                 />
               ) : (
@@ -616,9 +616,9 @@ export function WizardStep4() {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground">제품</p>
+              <p className="text-xs text-muted-foreground">{t.imageAd?.generate?.product || 'Product'}</p>
               <p className="text-sm font-medium text-foreground truncate">
-                {selectedProduct?.name || '직접 업로드'}
+                {selectedProduct?.name || t.imageAdCreate?.directUpload || 'Direct Upload'}
               </p>
             </div>
           </div>
@@ -629,7 +629,7 @@ export function WizardStep4() {
               {selectedAvatarInfo ? (
                 <img
                   src={selectedAvatarInfo.imageUrl}
-                  alt="아바타"
+                  alt={t.imageAd?.generate?.avatar || 'Avatar'}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -637,9 +637,9 @@ export function WizardStep4() {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground">아바타</p>
+              <p className="text-xs text-muted-foreground">{t.imageAd?.generate?.avatar || 'Avatar'}</p>
               <p className="text-sm font-medium text-foreground truncate">
-                {selectedAvatarInfo?.displayName || '선택 안함'}
+                {selectedAvatarInfo?.displayName || t.common?.notSelected || 'Not selected'}
               </p>
             </div>
           </div>
@@ -650,7 +650,7 @@ export function WizardStep4() {
       <div className="bg-card border border-border rounded-xl p-6">
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <ImageIcon className="w-5 h-5" />
-          이미지 비율
+          {t.imageAd?.generate?.aspectRatio || 'Aspect Ratio'}
         </h2>
         <div className="grid grid-cols-3 gap-3">
           {ratioOptions.map(({ ratio, label, width, height }) => (
@@ -683,13 +683,13 @@ export function WizardStep4() {
       <div className="bg-card border border-border rounded-xl p-6">
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <Settings className="w-5 h-5" />
-          생성 옵션
+          {t.imageAd?.generate?.options || 'Generation Options'}
         </h2>
 
         <div className="space-y-4">
           {/* 퀄리티 */}
           <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">퀄리티</label>
+            <label className="text-sm font-medium text-foreground mb-2 block">{t.imageAd?.generate?.quality || 'Quality'}</label>
             <div className="grid grid-cols-2 gap-3">
               {qualityOptions.map(({ quality: q, label, description }) => {
                 const isLocked = isFreeUser && q === 'high'
@@ -725,10 +725,10 @@ export function WizardStep4() {
           {/* 생성 개수 */}
           <div>
             <label className="text-sm font-medium text-foreground mb-2 block">
-              생성 개수
+              {t.imageAd?.generate?.count || 'Number of Images'}
               {isFreeUser && (
                 <span className="ml-2 text-xs text-muted-foreground font-normal">
-                  (Free: 최대 2개)
+                  {t.imageAd?.generate?.freeLimit || '(Free: max 2)'}
                 </span>
               )}
             </label>
@@ -759,7 +759,7 @@ export function WizardStep4() {
             {isFreeUser && (
               <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
                 <Crown className="w-3 h-3" />
-                STARTER 이상 구독 시 최대 5개까지 생성 가능
+                {t.imageAd?.generate?.starterLimit || 'Subscribe to STARTER or higher to generate up to 5 images'}
               </p>
             )}
           </div>
@@ -774,9 +774,9 @@ export function WizardStep4() {
               <Coins className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">사용 크레딧</p>
+              <p className="text-sm text-muted-foreground">{t.imageAd?.generate?.credits || 'Credits to Use'}</p>
               <p className="text-2xl font-bold text-primary">
-                {calculateCredits(quality, numImages)} 크레딧
+                {(t.imageAd?.generate?.creditsUnit || '{amount} credits').replace('{amount}', String(calculateCredits(quality, numImages)))}
               </p>
             </div>
           </div>
@@ -785,7 +785,7 @@ export function WizardStep4() {
             className="flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl"
           >
             <Sparkles className="w-5 h-5" />
-            광고 생성하기
+            {t.imageAd?.generate?.generateButton || 'Generate Ad'}
           </button>
         </div>
       </div>
@@ -797,7 +797,7 @@ export function WizardStep4() {
           className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium border border-border hover:bg-secondary/50 transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
-          이전 단계
+          {t.imageAd?.wizard?.prevStep || 'Previous Step'}
         </button>
       </div>
 
@@ -807,7 +807,7 @@ export function WizardStep4() {
         onClose={() => setShowInsufficientCreditsModal(false)}
         requiredCredits={calculateCredits(quality, numImages)}
         availableCredits={credits ?? 0}
-        featureName="이미지 광고 생성"
+        featureName={t.imageAd?.createTitle || 'Create Image Ad'}
         onSaveDraft={saveDraft}
       />
     </div>

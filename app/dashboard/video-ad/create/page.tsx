@@ -49,11 +49,62 @@ type VideoResolution = '720p' | '1080p'
 type AspectRatio = '1:1' | '16:9' | '9:16'
 type ProductInputMode = 'direct' | 'url'
 
+interface VideoAdGenerationStatus {
+  generatingScript?: string
+  generatingFirstScene?: string
+  generatingFirstSceneQueue?: string
+  generatingVideo?: string
+  generatingVideoQueue?: string
+  completed?: string
+  requestFailed?: string
+  statusCheckFailed?: string
+  generationFailed?: string
+  timeout?: string
+  localImage?: string
+}
+
+interface VideoAdTranslation {
+  generationStatus?: VideoAdGenerationStatus
+  createAd?: string
+  selectProduct?: string
+  selectAvatar?: string
+  noProductSelected?: string
+  noAvatarSelected?: string
+  productInfo?: string
+  directInput?: string
+  urlInput?: string
+  productName?: string
+  productNamePlaceholder?: string
+  productDescription?: string
+  productDescriptionPlaceholder?: string
+  targetAudience?: string
+  targetAudiencePlaceholder?: string
+  keyFeatures?: string
+  keyFeaturesPlaceholder?: string
+  adTone?: string
+  adTonePlaceholder?: string
+  productUrl?: string
+  productUrlPlaceholder?: string
+  duration?: string
+  resolution?: string
+  aspectRatio?: string
+  creditsRequired?: string
+  generate?: string
+  generating?: string
+  alerts?: {
+    generateError?: string
+  }
+  [key: string]: unknown
+}
+
 function VideoAdCreateContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const category = searchParams.get('category')
   const { t } = useLanguage()
+
+  const videoAdT = t.videoAd as VideoAdTranslation | undefined
+  const statusT = videoAdT?.generationStatus
 
   // 파일 입력 ref - hooks는 항상 동일한 순서로 호출되어야 함
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -122,7 +173,7 @@ function VideoAdCreateContent() {
         setAvatars(completedAvatars)
       }
     } catch (error) {
-      console.error('데이터 로드 오류:', error)
+      console.error('Failed to load data:', error)
     } finally {
       setIsLoading(false)
     }
@@ -182,17 +233,17 @@ function VideoAdCreateContent() {
 
     setIsGenerating(true)
     setGenerationPhase('prompts')
-    setGenerationStatus('영상 대본을 생성 중입니다...')
+    setGenerationStatus(statusT?.generatingScript || 'Generating video script...')
     setFirstSceneImageUrl(null)
     setProductSummary(null)
 
     try {
       const productInfo = [
-        productName && `제품명: ${productName}`,
-        productDescription && `설명: ${productDescription}`,
-        targetAudience && `타겟: ${targetAudience}`,
-        keyFeatures && `특징: ${keyFeatures}`,
-        adTone && `톤앤매너: ${adTone}`,
+        productName && `Product: ${productName}`,
+        productDescription && `Description: ${productDescription}`,
+        targetAudience && `Target: ${targetAudience}`,
+        keyFeatures && `Features: ${keyFeatures}`,
+        adTone && `Tone: ${adTone}`,
       ].filter(Boolean).join('\n')
 
       const res = await fetch('/api/video-ads', {
@@ -212,7 +263,7 @@ function VideoAdCreateContent() {
 
       if (!res.ok) {
         const error = await res.json()
-        throw new Error(error.error || '영상 생성 요청 실패')
+        throw new Error(error.error || (statusT?.requestFailed || 'Video generation request failed'))
       }
 
       const data = await res.json()
@@ -220,7 +271,7 @@ function VideoAdCreateContent() {
 
       setProductSummary(summary)
       setGenerationPhase('image')
-      setGenerationStatus('영상 첫 씬 이미지를 생성 중입니다...')
+      setGenerationStatus(statusT?.generatingFirstScene || 'Generating first scene image...')
 
       const pollInterval = 3000
       const maxAttempts = 200
@@ -229,27 +280,28 @@ function VideoAdCreateContent() {
       const pollStatus = async (): Promise<void> => {
         const statusRes = await fetch(`/api/video-ads/status/${videoAdId}`)
         if (!statusRes.ok) {
-          throw new Error('상태 확인 실패')
+          throw new Error(statusT?.statusCheckFailed || 'Status check failed')
         }
 
         const status = await statusRes.json()
 
         if (status.status === 'COMPLETED') {
-          setGenerationStatus('완료!')
+          setGenerationStatus(statusT?.completed || 'Completed!')
           router.push(`/dashboard/video-ad/${videoAdId}`)
           return
         }
 
         if (status.status === 'FAILED') {
-          throw new Error(status.error || '영상 생성 실패')
+          throw new Error(status.error || (statusT?.generationFailed || 'Video generation failed'))
         }
 
         if (['IMAGE_IN_QUEUE', 'IMAGE_IN_PROGRESS'].includes(status.status)) {
           setGenerationPhase('image')
           if (status.queuePosition) {
-            setGenerationStatus(`영상 첫 씬 이미지를 생성 중입니다... (${status.queuePosition}번째)`)
+            const queueMsg = statusT?.generatingFirstSceneQueue?.replace('{{position}}', status.queuePosition) || `Generating first scene image... (#${status.queuePosition})`
+            setGenerationStatus(queueMsg)
           } else {
-            setGenerationStatus('영상 첫 씬 이미지를 생성 중입니다...')
+            setGenerationStatus(statusT?.generatingFirstScene || 'Generating first scene image...')
           }
         } else if (['IN_QUEUE', 'IN_PROGRESS'].includes(status.status)) {
           setGenerationPhase('video')
@@ -257,15 +309,16 @@ function VideoAdCreateContent() {
             setFirstSceneImageUrl(status.firstSceneImageUrl)
           }
           if (status.queuePosition) {
-            setGenerationStatus(`영상을 생성 중입니다... (${status.queuePosition}번째)`)
+            const queueMsg = statusT?.generatingVideoQueue?.replace('{{position}}', status.queuePosition) || `Generating video... (#${status.queuePosition})`
+            setGenerationStatus(queueMsg)
           } else {
-            setGenerationStatus('영상을 생성 중입니다...')
+            setGenerationStatus(statusT?.generatingVideo || 'Generating video...')
           }
         }
 
         attempts++
         if (attempts >= maxAttempts) {
-          throw new Error('생성 시간 초과')
+          throw new Error(statusT?.timeout || 'Generation timed out')
         }
 
         await new Promise(resolve => setTimeout(resolve, pollInterval))
@@ -336,12 +389,12 @@ function VideoAdCreateContent() {
       {/* 헤더 */}
       <AdCreationHeader
         backHref="/dashboard/video-ad"
-        title={videoAd?.createAd || '영상 광고 생성'}
+        title={videoAdT?.createAd || 'Create Video Ad'}
         selectedProduct={selectedProduct ? {
           name: selectedProduct.name,
           imageUrl: selectedProduct.rembg_image_url || selectedProduct.image_url,
         } : localImagePreview ? {
-          name: localImageFile?.name || '로컬 이미지',
+          name: localImageFile?.name || (statusT?.localImage || 'Local image'),
           imageUrl: localImagePreview,
         } : null}
         selectedAvatar={selectedAvatar ? {
@@ -357,7 +410,7 @@ function VideoAdCreateContent() {
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-2">
               <Package className="w-4 h-4 inline mr-2" />
-              {videoAd?.selectProduct || '제품 선택'}
+              {videoAd?.selectProduct || 'Select Product'}
             </label>
 
             {/* 숨겨진 파일 입력 */}
@@ -378,10 +431,10 @@ function VideoAdCreateContent() {
                   <div className="flex items-center gap-3">
                     <img
                       src={localImagePreview}
-                      alt="로컬 이미지"
+                      alt={statusT?.localImage || 'Local image'}
                       className="w-8 h-8 object-contain rounded"
                     />
-                    <span className="text-foreground">{localImageFile?.name || '로컬 이미지'}</span>
+                    <span className="text-foreground">{localImageFile?.name || (statusT?.localImage || 'Local image')}</span>
                   </div>
                 ) : selectedProduct ? (
                   <div className="flex items-center gap-3">
@@ -396,7 +449,7 @@ function VideoAdCreateContent() {
                   </div>
                 ) : (
                   <span className="text-muted-foreground">
-                    {videoAd?.noProductSelected || '제품을 선택하세요'}
+                    {videoAd?.noProductSelected || 'Select a product'}
                   </span>
                 )}
                 {localImagePreview ? (
@@ -467,7 +520,7 @@ function VideoAdCreateContent() {
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-2">
               <User className="w-4 h-4 inline mr-2" />
-              {videoAd?.selectAvatar || '아바타 선택'}
+              {videoAd?.selectAvatar || 'Select Avatar'}
             </label>
             <div className="relative">
               <button
@@ -487,7 +540,7 @@ function VideoAdCreateContent() {
                   </div>
                 ) : (
                   <span className="text-muted-foreground">
-                    {videoAd?.noAvatarSelected || '아바타를 선택하세요'}
+                    {videoAd?.noAvatarSelected || 'Select an avatar'}
                   </span>
                 )}
                 <ChevronDown className="w-4 h-4 text-muted-foreground" />
@@ -497,7 +550,7 @@ function VideoAdCreateContent() {
                 <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                   {avatars.length === 0 ? (
                     <div className="p-4 text-center text-muted-foreground text-sm">
-                      생성된 아바타가 없습니다
+                      {videoAd?.noAvatarsCreated || 'No avatars created yet'}
                     </div>
                   ) : (
                     avatars.map((avatar) => (
@@ -532,7 +585,7 @@ function VideoAdCreateContent() {
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <FileText className="w-4 h-4 inline mr-2" />
-              {videoAd?.productInfo || '제품 정보'}
+              {videoAd?.productInfo || 'Product Info'}
             </label>
             <div className="flex gap-2 mb-4">
               <button
@@ -544,7 +597,7 @@ function VideoAdCreateContent() {
                 }`}
               >
                 <FileText className="w-4 h-4" />
-                {videoAd?.directInput || '직접 입력'}
+                {videoAd?.directInput || 'Direct Input'}
               </button>
               <button
                 onClick={() => setProductInputMode('url')}
@@ -555,7 +608,7 @@ function VideoAdCreateContent() {
                 }`}
               >
                 <LinkIcon className="w-4 h-4" />
-                {videoAd?.urlInput || 'URL 입력'}
+                {videoAd?.urlInput || 'URL Input'}
               </button>
             </div>
 
@@ -565,36 +618,36 @@ function VideoAdCreateContent() {
                   type="url"
                   value={productUrl}
                   onChange={(e) => setProductUrl(e.target.value)}
-                  placeholder={videoAd?.productUrlPlaceholder || '제품 상세 페이지 URL을 입력하세요'}
+                  placeholder={videoAd?.productUrlPlaceholder || 'Enter product page URL'}
                   className="w-full px-4 py-2 bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                 />
                 <p className="text-xs text-muted-foreground">
-                  AI가 URL에서 제품 정보를 자동으로 분석합니다
+                  {videoAd?.urlAnalysisHint || 'AI will automatically analyze product info from the URL'}
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs text-muted-foreground mb-1">
-                    {videoAd?.productName || '제품명'} *
+                    {videoAd?.productName || 'Product Name'} *
                   </label>
                   <input
                     type="text"
                     value={productName}
                     onChange={(e) => setProductName(e.target.value)}
-                    placeholder={videoAd?.productNamePlaceholder || '제품명을 입력하세요'}
+                    placeholder={videoAd?.productNamePlaceholder || 'Enter product name'}
                     className="w-full px-4 py-2 bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs text-muted-foreground mb-1">
-                    {videoAd?.productDescription || '제품 설명'}
+                    {videoAd?.productDescription || 'Product Description'}
                   </label>
                   <textarea
                     value={productDescription}
                     onChange={(e) => setProductDescription(e.target.value)}
-                    placeholder={videoAd?.productDescriptionPlaceholder || '제품의 주요 특징과 장점을 설명하세요'}
+                    placeholder={videoAd?.productDescriptionPlaceholder || 'Describe the main features and benefits'}
                     rows={2}
                     className="w-full px-4 py-2 bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground resize-none"
                   />
@@ -602,39 +655,39 @@ function VideoAdCreateContent() {
 
                 <div>
                   <label className="block text-xs text-muted-foreground mb-1">
-                    {videoAd?.targetAudience || '타겟 고객'}
+                    {videoAd?.targetAudience || 'Target Audience'}
                   </label>
                   <input
                     type="text"
                     value={targetAudience}
                     onChange={(e) => setTargetAudience(e.target.value)}
-                    placeholder={videoAd?.targetAudiencePlaceholder || '예: 20-30대 여성, 피부 고민이 있는 분'}
+                    placeholder={videoAd?.targetAudiencePlaceholder || 'e.g., Women aged 20-30 with skin concerns'}
                     className="w-full px-4 py-2 bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs text-muted-foreground mb-1">
-                    {videoAd?.keyFeatures || '핵심 특징'}
+                    {videoAd?.keyFeatures || 'Key Features'}
                   </label>
                   <input
                     type="text"
                     value={keyFeatures}
                     onChange={(e) => setKeyFeatures(e.target.value)}
-                    placeholder={videoAd?.keyFeaturesPlaceholder || '예: 천연 성분, 24시간 보습, 빠른 흡수'}
+                    placeholder={videoAd?.keyFeaturesPlaceholder || 'e.g., Natural ingredients, 24-hour moisturizing'}
                     className="w-full px-4 py-2 bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs text-muted-foreground mb-1">
-                    {videoAd?.adTone || '광고 톤앤매너'}
+                    {videoAd?.adTone || 'Ad Tone'}
                   </label>
                   <input
                     type="text"
                     value={adTone}
                     onChange={(e) => setAdTone(e.target.value)}
-                    placeholder={videoAd?.adTonePlaceholder || '예: 세련된, 신뢰감 있는, 발랄한'}
+                    placeholder={videoAd?.adTonePlaceholder || 'e.g., Sophisticated, trustworthy, playful'}
                     className="w-full px-4 py-2 bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
@@ -647,7 +700,7 @@ function VideoAdCreateContent() {
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 <Clock className="w-4 h-4 inline mr-2" />
-                {videoAd?.duration || '영상 길이'}
+                {videoAd?.duration || 'Duration'}
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {([5, 10, 15] as VideoDuration[]).map((d) => (
@@ -660,7 +713,7 @@ function VideoAdCreateContent() {
                         : 'border-border text-muted-foreground hover:border-primary/50'
                     }`}
                   >
-                    {d}초
+                    {d}{videoAd?.seconds || 's'}
                   </button>
                 ))}
               </div>
@@ -669,7 +722,7 @@ function VideoAdCreateContent() {
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 <Monitor className="w-4 h-4 inline mr-2" />
-                {videoAd?.resolution || '해상도'}
+                {videoAd?.resolution || 'Resolution'}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {(['720p', '1080p'] as VideoResolution[]).map((r) => (
@@ -691,7 +744,7 @@ function VideoAdCreateContent() {
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 <RatioIcon className="w-4 h-4 inline mr-2" />
-                {videoAd?.aspectRatio || '화면 비율'}
+                {videoAd?.aspectRatio || 'Aspect Ratio'}
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {(['1:1', '16:9', '9:16'] as AspectRatio[]).map((ratio) => (
@@ -715,7 +768,7 @@ function VideoAdCreateContent() {
           <div className="bg-card border border-border rounded-xl p-4">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm text-muted-foreground">
-                {videoAd?.creditsRequired || '크레딧 소모'}
+                {videoAd?.creditsRequired || 'Credits Required'}
               </span>
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-primary" />
@@ -731,12 +784,12 @@ function VideoAdCreateContent() {
               {isGenerating ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  {videoAd?.generating || '생성 중...'}
+                  {videoAd?.generating || 'Generating...'}
                 </>
               ) : (
                 <>
                   <Play className="w-5 h-5" />
-                  {videoAd?.generate || '영상 생성하기'}
+                  {videoAd?.generate || 'Generate Video'}
                 </>
               )}
             </button>

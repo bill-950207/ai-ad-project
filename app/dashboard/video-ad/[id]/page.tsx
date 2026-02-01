@@ -233,7 +233,7 @@ export default function VideoAdDetailPage() {
           setIsAdmin(profile?.role === 'ADMIN')
         }
       } catch (error) {
-        console.error('권한 확인 오류:', error)
+        console.error('Permission check error:', error)
       }
     }
     checkAdmin()
@@ -255,7 +255,7 @@ export default function VideoAdDetailPage() {
         // 로컬 상태 업데이트
         setVideoAd(prev => prev ? { ...prev, video_duration: actualDuration } : null)
       } catch (error) {
-        console.error('영상 길이 업데이트 오류:', error)
+        console.error('Video duration update error:', error)
       }
     }
   }, [videoAd])
@@ -277,7 +277,7 @@ export default function VideoAdDetailPage() {
         router.push('/dashboard/video-ad')
       }
     } catch (error) {
-      console.error('영상 광고 조회 오류:', error)
+      console.error('Video ad fetch error:', error)
     } finally {
       setIsLoading(false)
     }
@@ -299,7 +299,7 @@ export default function VideoAdDetailPage() {
         setSceneVersions(data.groupedByScene || {})
       }
     } catch (error) {
-      console.error('씬 버전 조회 오류:', error)
+      console.error('Scene version fetch error:', error)
     } finally {
       setIsLoadingVersions(false)
     }
@@ -334,7 +334,7 @@ export default function VideoAdDetailPage() {
         await fetchSceneVersions()
       }
     } catch (error) {
-      console.error('씬 버전 전환 오류:', error)
+      console.error('Scene version switch error:', error)
     } finally {
       setSwitchingVersionScene(null)
     }
@@ -397,7 +397,7 @@ export default function VideoAdDetailPage() {
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
     } catch (error) {
-      console.error('다운로드 오류:', error)
+      console.error('Download error:', error)
       // 직접 링크로 fallback
       window.open(videoAd.video_url, '_blank')
     }
@@ -472,7 +472,7 @@ export default function VideoAdDetailPage() {
         body: JSON.stringify({
           type: 'video',
           adId: videoAd.id,
-          title: videoAd.ad_products?.name || '영상 광고',
+          title: videoAd.ad_products?.name || 'Video Ad',
           description: videoAd.product_summary || videoAd.prompt || null,
           thumbnailUrl: thumbnailUrl,
           mediaUrl: videoAd.video_url,
@@ -535,11 +535,11 @@ export default function VideoAdDetailPage() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; className: string }> = {
-      'PENDING': { label: videoAdT?.status?.pending || '대기 중', className: 'bg-yellow-500/20 text-yellow-500' },
-      'IN_QUEUE': { label: videoAdT?.status?.inQueue || '큐 대기', className: 'bg-blue-500/20 text-blue-500' },
-      'IN_PROGRESS': { label: videoAdT?.status?.inProgress || '생성 중', className: 'bg-purple-500/20 text-purple-500' },
-      'COMPLETED': { label: videoAdT?.status?.completed || '완료', className: 'bg-green-500/20 text-green-500' },
-      'FAILED': { label: videoAdT?.status?.failed || '실패', className: 'bg-red-500/20 text-red-500' },
+      'PENDING': { label: videoAdT?.status?.pending || 'Pending', className: 'bg-yellow-500/20 text-yellow-500' },
+      'IN_QUEUE': { label: videoAdT?.status?.inQueue || 'In Queue', className: 'bg-blue-500/20 text-blue-500' },
+      'IN_PROGRESS': { label: videoAdT?.status?.inProgress || 'In Progress', className: 'bg-purple-500/20 text-purple-500' },
+      'COMPLETED': { label: videoAdT?.status?.completed || 'Completed', className: 'bg-green-500/20 text-green-500' },
+      'FAILED': { label: videoAdT?.status?.failed || 'Failed', className: 'bg-red-500/20 text-red-500' },
     }
     const config = statusConfig[status] || { label: status, className: 'bg-gray-500/20 text-gray-500' }
     return (
@@ -560,12 +560,12 @@ export default function VideoAdDetailPage() {
   if (!videoAd) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">영상 광고를 찾을 수 없습니다</p>
+        <p className="text-muted-foreground">{(videoAdT as Record<string, string>)?.notFound || 'Video ad not found'}</p>
         <Link
           href="/dashboard/video-ad"
           className="mt-4 inline-block text-primary hover:underline"
         >
-          목록으로 돌아가기
+          {(videoAdT as Record<string, string>)?.backToList || 'Back to list'}
         </Link>
       </div>
     )
@@ -584,7 +584,7 @@ export default function VideoAdDetailPage() {
           </Link>
           <div>
             <h1 className="text-xl font-bold text-foreground">
-              {videoAdT?.title || '영상 광고'} 상세
+              {videoAdT?.title || 'Video Ad'}
             </h1>
             <p className="text-sm text-muted-foreground">
               {new Date(videoAd.created_at).toLocaleString()}
@@ -649,7 +649,7 @@ export default function VideoAdDetailPage() {
                 </>
               ) : videoAd.status === 'FAILED' ? (
                 <div className="w-full h-full flex flex-col items-center justify-center text-red-400">
-                  <p className="text-lg font-medium mb-2">생성 실패</p>
+                  <p className="text-lg font-medium mb-2">{videoAdT?.status?.failed || 'Generation Failed'}</p>
                   {videoAd.error_message && (
                     <p className="text-sm text-red-400/80">{videoAd.error_message}</p>
                   )}
@@ -658,10 +658,10 @@ export default function VideoAdDetailPage() {
                 <div className="w-full h-full flex flex-col items-center justify-center">
                   <RefreshCw className="w-12 h-12 text-primary animate-spin mb-4" />
                   <p className="text-foreground font-medium">
-                    {videoAdT?.processing || '영상을 생성하는 중입니다...'}
+                    {videoAdT?.processing || 'Generating video...'}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {videoAdT?.processingDesc || '약 2-5분 소요됩니다'}
+                    {videoAdT?.processingDesc || 'This will take 2-5 minutes'}
                   </p>
                 </div>
               )}
@@ -675,14 +675,14 @@ export default function VideoAdDetailPage() {
                   className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                 >
                   <Download className="w-4 h-4" />
-                  {videoAdT?.download || '다운로드'}
+                  {videoAdT?.download || 'Download'}
                 </button>
                 <button
                   onClick={() => setShowMusicModal(true)}
                   className="flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-lg hover:bg-secondary/80 transition-colors"
                 >
                   <Music className="w-4 h-4" />
-                  {videoAd.bgm_info ? '음악 변경' : '음악 추가'}
+                  {videoAd.bgm_info ? (videoAdT?.changeMusic || 'Change Music') : (videoAdT?.addMusic || 'Add Music')}
                 </button>
                 {isAdmin && (
                   <button
@@ -695,7 +695,7 @@ export default function VideoAdDetailPage() {
                     ) : (
                       <Star className="w-4 h-4" />
                     )}
-                    쇼케이스 등록
+                    {videoAdT?.registerShowcase || 'Register Showcase'}
                   </button>
                 )}
                 <button
@@ -703,7 +703,7 @@ export default function VideoAdDetailPage() {
                   className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
-                  {videoAdT?.delete || '삭제'}
+                  {videoAdT?.delete || 'Delete'}
                 </button>
               </div>
             )}
@@ -714,7 +714,7 @@ export default function VideoAdDetailPage() {
             <div className="bg-card border border-border rounded-xl p-4">
               <h3 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                 <FileText className="w-4 h-4" />
-                {videoAdT?.prompt || '프롬프트'}
+                {videoAdT?.prompt || 'Prompt'}
               </h3>
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                 {videoAd.prompt}
@@ -727,7 +727,7 @@ export default function VideoAdDetailPage() {
             <div className="bg-card border border-border rounded-xl p-4">
               <h3 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                 <FileText className="w-4 h-4" />
-                {videoAdT?.expandedPrompt || '확장 프롬프트'}
+                {videoAdT?.expandedPrompt || 'Expanded Prompt'}
               </h3>
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                 {videoAd.prompt_expanded}
@@ -749,7 +749,7 @@ export default function VideoAdDetailPage() {
               <div className="bg-card border border-border rounded-xl p-5">
                 <h3 className="text-base font-semibold text-foreground flex items-center gap-2 mb-4">
                   <Film className="w-5 h-5 text-primary" />
-                  씬별 영상 ({sceneVideos.length}개)
+                  {(videoAdT as Record<string, string>)?.sceneVideos || 'Scene Videos'} ({sceneVideos.length})
                 </h3>
 
                 {/* 가로 스크롤 레이아웃 */}
@@ -782,9 +782,9 @@ export default function VideoAdDetailPage() {
                         </div>
                         {/* 씬 라벨 */}
                         <div className="mt-2 flex items-center justify-between">
-                          <span className="text-sm font-medium text-foreground">씬 {sv.sceneIndex + 1}</span>
+                          <span className="text-sm font-medium text-foreground">{(videoAdT as Record<string, string>)?.scene || 'Scene'} {sv.sceneIndex + 1}</span>
                           {sceneDuration && (
-                            <span className="text-xs text-muted-foreground">{sceneDuration}초</span>
+                            <span className="text-xs text-muted-foreground">{sceneDuration}{t.common?.secondsShort || 's'}</span>
                           )}
                         </div>
                         {/* 버전 드롭다운 (여러 버전이 있을 때만 표시) */}
@@ -803,7 +803,7 @@ export default function VideoAdDetailPage() {
                             >
                               {versions.map((version) => (
                                 <option key={version.id} value={version.id}>
-                                  v{version.version} {version.is_active ? '(활성)' : ''}
+                                  v{version.version} {version.is_active ? `(${(videoAdT as Record<string, string>)?.active || 'Active'})` : ''}
                                 </option>
                               ))}
                             </select>
@@ -917,7 +917,7 @@ export default function VideoAdDetailPage() {
             <div className="bg-card border border-border rounded-xl p-4">
               <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                 <User className="w-4 h-4" />
-                {videoAdT?.avatar || '아바타'}
+                {videoAdT?.avatar || 'Avatar'}
               </h3>
               <Link
                 href={`/dashboard/avatar/${videoAd.avatars.id}`}
@@ -940,7 +940,7 @@ export default function VideoAdDetailPage() {
             <div className="bg-card border border-border rounded-xl p-4">
               <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                 <Shirt className="w-4 h-4" />
-                의상
+                {(videoAdT as Record<string, string>)?.outfit || 'Outfit'}
               </h3>
               <div className="flex items-center gap-3">
                 {videoAd.avatar_outfits.image_url && (
@@ -959,7 +959,7 @@ export default function VideoAdDetailPage() {
           <div className="bg-card border border-border rounded-xl p-4">
             <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
               <Settings className="w-4 h-4" />
-              영상 설정
+              {(videoAdT as Record<string, string>)?.videoSettings || 'Video Settings'}
             </h3>
             <div className="space-y-3 text-sm">
               {/* 실제 길이 */}
@@ -967,16 +967,16 @@ export default function VideoAdDetailPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground flex items-center gap-2">
                     <Clock className="w-4 h-4" />
-                    영상 길이
+                    {videoAdT?.duration || 'Duration'}
                   </span>
-                  <span className="text-foreground">{videoAd.video_duration.toFixed(1)}초</span>
+                  <span className="text-foreground">{videoAd.video_duration.toFixed(1)}{t.common?.secondsShort || 's'}</span>
                 </div>
               )}
               {/* 해상도 */}
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground flex items-center gap-2">
                   <Monitor className="w-4 h-4" />
-                  해상도
+                  {videoAdT?.resolution || 'Resolution'}
                 </span>
                 <span className="text-foreground">
                   {videoAd.video_width && videoAd.video_height
@@ -996,7 +996,7 @@ export default function VideoAdDetailPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground flex items-center gap-2">
                     <Camera className="w-4 h-4" />
-                    카메라 구도
+                    {(videoAdT as Record<string, string>)?.cameraAngle || 'Camera Angle'}
                   </span>
                   <span className="text-foreground">
                     {videoAdT?.cameraAngles?.[videoAd.camera_composition || ''] || videoAd.camera_composition}
@@ -1043,21 +1043,21 @@ export default function VideoAdDetailPage() {
             <div className="bg-card border border-border rounded-xl p-4">
               <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                 <Music className="w-4 h-4" />
-                배경 음악
+                {(videoAdT as Record<string, string>)?.bgm || 'Background Music'}
               </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">음악</span>
+                  <span className="text-muted-foreground">{(videoAdT as Record<string, string>)?.musicLabel || 'Music'}</span>
                   <span className="text-foreground">{videoAd.bgm_info.music_name}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">구간</span>
+                  <span className="text-muted-foreground">{(videoAdT as Record<string, string>)?.segment || 'Segment'}</span>
                   <span className="text-foreground">
                     {formatTime(videoAd.bgm_info.start_time)} - {formatTime(videoAd.bgm_info.end_time)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">볼륨</span>
+                  <span className="text-muted-foreground">{(videoAdT as Record<string, string>)?.volume || 'Volume'}</span>
                   <span className="text-foreground">
                     {Math.round(videoAd.bgm_info.music_volume * 100)}%
                   </span>
@@ -1071,7 +1071,7 @@ export default function VideoAdDetailPage() {
             <div className="bg-card border border-border rounded-xl p-4">
               <h3 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
-                촬영 장소
+                {(videoAdT as Record<string, string>)?.location || 'Location'}
               </h3>
               <p className="text-sm text-muted-foreground">
                 {videoAd.location_prompt}

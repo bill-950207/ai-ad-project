@@ -11,18 +11,20 @@
 import { useMemo } from 'react'
 import { Check, Package, User, Sparkles } from 'lucide-react'
 import { useOnboarding, OnboardingStep } from './onboarding-context'
+import { useLanguage } from '@/contexts/language-context'
 
-// 전체 메인 단계 정의
-const ALL_MAIN_STEPS = [
-  { key: 'product', label: '제품', icon: Package },
-  { key: 'avatar', label: '아바타', icon: User },
-  { key: 'complete', label: '완료', icon: Sparkles },
-] as const
+// Step key definitions
+const STEP_KEYS = ['product', 'avatar', 'complete'] as const
+const STEP_ICONS = {
+  product: Package,
+  avatar: User,
+  complete: Sparkles,
+} as const
 
-type MainStep = typeof ALL_MAIN_STEPS[number]['key']
+type MainStepKey = typeof STEP_KEYS[number]
 
 // 현재 온보딩 단계를 메인 단계로 매핑
-function getMainStep(step: OnboardingStep): MainStep {
+function getMainStep(step: OnboardingStep): MainStepKey {
   switch (step) {
     case 'video-type':
     case 'image-type':
@@ -42,17 +44,37 @@ function getMainStep(step: OnboardingStep): MainStep {
 
 export function OnboardingStepIndicator() {
   const { step, imageAdType } = useOnboarding()
+  const { t } = useLanguage()
 
-  // productOnly 타입은 아바타 단계 제외
+  // Translation helper
+  const onboardingT = (t as Record<string, unknown>).onboarding as Record<string, unknown> | undefined
+  const stepsT = onboardingT?.steps as Record<string, string> | undefined
+  const statusT = onboardingT?.status as Record<string, string> | undefined
+
+  // Build main steps with translations
   const mainSteps = useMemo(() => {
+    const allSteps = STEP_KEYS.map(key => ({
+      key,
+      label: stepsT?.[key] || key.charAt(0).toUpperCase() + key.slice(1),
+      icon: STEP_ICONS[key],
+    }))
+
+    // productOnly 타입은 아바타 단계 제외
     if (imageAdType === 'productOnly') {
-      return ALL_MAIN_STEPS.filter(s => s.key !== 'avatar')
+      return allSteps.filter(s => s.key !== 'avatar')
     }
-    return [...ALL_MAIN_STEPS]
-  }, [imageAdType])
+    return allSteps
+  }, [imageAdType, stepsT])
 
   const currentMainStep = getMainStep(step)
   const currentIndex = mainSteps.findIndex(s => s.key === currentMainStep)
+
+  // Status labels
+  const getStatusLabel = (isCompleted: boolean, isCurrent: boolean) => {
+    if (isCompleted) return statusT?.completed || 'Completed'
+    if (isCurrent) return statusT?.inProgress || 'In Progress'
+    return statusT?.pending || 'Pending'
+  }
 
   return (
     <div className="flex items-center justify-center">
@@ -84,7 +106,7 @@ export function OnboardingStepIndicator() {
                   }
                 `}
                 role="img"
-                aria-label={`${mainStep.label} ${isCompleted ? '완료' : isCurrent ? '진행 중' : '대기'}`}
+                aria-label={`${mainStep.label} ${getStatusLabel(isCompleted, isCurrent)}`}
               >
                 {/* 현재 단계 펄스 효과 */}
                 {isCurrent && (

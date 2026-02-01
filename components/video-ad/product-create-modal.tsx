@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { X, Loader2, ImageIcon, Plus, Minus, Check, AlertCircle, Link as LinkIcon, Edit3 } from 'lucide-react'
 import { SlotLimitModal } from '@/components/ui/slot-limit-modal'
+import { useLanguage } from '@/contexts/language-context'
 
 type InputMode = 'url' | 'manual'
 
@@ -28,6 +29,7 @@ const MAX_DIMENSION = 4096
 const MAX_PIXELS = 16 * 1024 * 1024 // 16MP
 
 export function ProductCreateModal({ isOpen, onClose, onProductCreated }: ProductCreateModalProps) {
+  const { t } = useLanguage()
   // 입력 모드 (URL / 직접 입력)
   const [inputMode, setInputMode] = useState<InputMode>('manual')
 
@@ -90,14 +92,14 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
   const validateImage = (file: File): Promise<boolean> => {
     return new Promise((resolve) => {
       if (file.size > MAX_FILE_SIZE) {
-        setError('이미지 크기는 5MB 이하여야 합니다')
+        setError(t.productCreate?.errorMaxSize || 'Image must be 5MB or less')
         resolve(false)
         return
       }
 
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
       if (!allowedTypes.includes(file.type)) {
-        setError('PNG, JPG, WEBP 형식만 지원됩니다')
+        setError(t.productCreate?.errorFormat || 'Only PNG, JPG, WEBP formats are supported')
         resolve(false)
         return
       }
@@ -108,19 +110,19 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
         const { width, height } = img
 
         if (width < MIN_DIMENSION || height < MIN_DIMENSION) {
-          setError(`이미지는 최소 ${MIN_DIMENSION}x${MIN_DIMENSION}px 이상이어야 합니다`)
+          setError((t.productCreate?.errorMinDimension || 'Image must be at least {{size}}px').replace('{{size}}', `${MIN_DIMENSION}x${MIN_DIMENSION}`))
           resolve(false)
           return
         }
 
         if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-          setError(`이미지는 최대 ${MAX_DIMENSION}x${MAX_DIMENSION}px 이하여야 합니다`)
+          setError((t.productCreate?.errorMaxDimension || 'Image must be at most {{size}}px').replace('{{size}}', `${MAX_DIMENSION}x${MAX_DIMENSION}`))
           resolve(false)
           return
         }
 
         if (width * height > MAX_PIXELS) {
-          setError('이미지 총 픽셀 수가 16MP를 초과합니다')
+          setError(t.productCreate?.errorMaxPixels || 'Image exceeds 16MP total pixels')
           resolve(false)
           return
         }
@@ -128,7 +130,7 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
         resolve(true)
       }
       img.onerror = () => {
-        setError('이미지를 읽을 수 없습니다')
+        setError(t.productCreate?.errorCannotRead || 'Cannot read image')
         resolve(false)
       }
       img.src = URL.createObjectURL(file)
@@ -158,7 +160,7 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
       // 파일 업로드 시 URL에서 가져온 이미지 초기화
       setSourceImageUrl(null)
     } catch {
-      setError('이미지 처리 중 오류가 발생했습니다')
+      setError(t.productCreate?.errorProcessing || 'Error processing image')
     }
   }
 
@@ -207,7 +209,7 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
   // URL에서 제품 정보 추출
   const handleExtractUrl = async () => {
     if (!productUrl.trim()) {
-      setError('URL을 입력해주세요')
+      setError(t.productCreate?.errorEnterUrl || 'Please enter a URL')
       return
     }
 
@@ -223,7 +225,7 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
 
       if (!res.ok) {
         const errorData = await res.json()
-        throw new Error(errorData.error || '정보를 가져올 수 없습니다')
+        throw new Error(errorData.error || t.productCreate?.errorCannotFetch || 'Cannot fetch information')
       }
 
       const data = await res.json()
@@ -244,8 +246,8 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
 
       setUrlExtracted(true)
     } catch (err) {
-      console.error('URL 추출 오류:', err)
-      setError(err instanceof Error ? err.message : '정보를 가져올 수 없습니다')
+      console.error('URL extraction error:', err)
+      setError(err instanceof Error ? err.message : t.productCreate?.errorCannotFetch || 'Cannot fetch information')
     } finally {
       setIsExtractingUrl(false)
     }
@@ -278,23 +280,23 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
           pollingRef.current = null
         }
         setIsPolling(false)
-        setError(data.product?.error_message || '제품 처리 중 오류가 발생했습니다. 다시 시도해주세요.')
+        setError(data.product?.error_message || t.productCreate?.errorProcessFailed || 'Product processing failed. Please try again.')
       }
     } catch (err) {
-      console.error('제품 상태 조회 실패:', err)
+      console.error('Product status check failed:', err)
     }
   }
 
   // 제품 등록
   const handleSubmit = async () => {
     if (!name.trim()) {
-      setError('제품 이름을 입력해주세요')
+      setError(t.productCreate?.errorEnterName || 'Please enter product name')
       return
     }
 
     // 이미지 필수 체크 (파일 업로드 또는 URL에서 가져온 이미지)
     if (!imageDataUrl && !sourceImageUrl) {
-      setError('제품 이미지를 업로드해주세요')
+      setError(t.productCreate?.errorUploadImage || 'Please upload product image')
       return
     }
 
@@ -327,17 +329,17 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
       if (!res.ok) {
         const data = await res.json()
         if (res.status === 402) {
-          setError('크레딧이 부족합니다')
+          setError(t.productCreate?.errorInsufficientCredits || 'Insufficient credits')
         } else if (res.status === 403) {
           // 제품 슬롯 한도 도달 - 모달 표시
           if (data.slotInfo) {
             setSlotInfo(data.slotInfo)
             setShowSlotLimitModal(true)
           } else {
-            setError('제품 등록 한도에 도달했습니다')
+            setError(t.productCreate?.errorLimitReached || 'Product registration limit reached')
           }
         } else {
-          setError(data.error || '제품 등록에 실패했습니다')
+          setError(data.error || t.productCreate?.errorRegistrationFailed || 'Product registration failed')
         }
         setIsSubmitting(false)
         return
@@ -362,8 +364,8 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
       }, 2000)
 
     } catch (err) {
-      console.error('제품 등록 실패:', err)
-      setError('제품 등록 중 오류가 발생했습니다')
+      console.error('Product registration failed:', err)
+      setError(t.productCreate?.errorRegistrationError || 'Error during product registration')
       setIsSubmitting(false)
     }
   }
@@ -382,7 +384,7 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
       <div className="relative w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto bg-card border border-border rounded-2xl shadow-xl">
         {/* 헤더 */}
         <div className="sticky top-0 flex items-center justify-between p-4 border-b border-border bg-card rounded-t-2xl">
-          <h2 className="text-lg font-bold text-foreground">새 제품 등록</h2>
+          <h2 className="text-lg font-bold text-foreground">{t.productCreate?.title || 'Register New Product'}</h2>
           <button
             onClick={onClose}
             disabled={isSubmitting || isPolling}
@@ -401,7 +403,7 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
                 {imagePreview && (
                   <img
                     src={imagePreview}
-                    alt="처리 중"
+                    alt={t.productCreate?.processing || 'Processing'}
                     className="w-full h-full object-contain rounded-lg"
                   />
                 )}
@@ -409,9 +411,9 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
                   <Loader2 className="w-8 h-8 text-primary animate-spin" />
                 </div>
               </div>
-              <p className="text-foreground font-medium mb-2">배경 제거 중...</p>
+              <p className="text-foreground font-medium mb-2">{t.productCreate?.removingBackground || 'Removing background...'}</p>
               <p className="text-sm text-muted-foreground">
-                잠시만 기다려주세요
+                {t.productCreate?.pleaseWait || 'Please wait a moment'}
               </p>
             </div>
           ) : (
@@ -428,7 +430,7 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
                   }`}
                 >
                   <LinkIcon className="w-4 h-4" />
-                  URL로 가져오기
+                  {t.productCreate?.fromUrl || 'From URL'}
                 </button>
                 <button
                   onClick={() => setInputMode('manual')}
@@ -440,7 +442,7 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
                   }`}
                 >
                   <Edit3 className="w-4 h-4" />
-                  직접 입력
+                  {t.productCreate?.manual || 'Manual Input'}
                 </button>
               </div>
 
@@ -448,7 +450,7 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
               {inputMode === 'url' && (
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-foreground">
-                    제품 URL
+                    {t.productCreate?.productUrl || 'Product URL'}
                   </label>
                   <div className="flex gap-2">
                     <input
@@ -467,15 +469,15 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
                       {isExtractingUrl ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          분석 중
+                          {t.productCreate?.analyzing || 'Analyzing'}
                         </>
                       ) : (
-                        '정보 가져오기'
+                        t.productCreate?.fetchInfo || 'Fetch Info'
                       )}
                     </button>
                   </div>
                   {urlExtracted && (
-                    <p className="text-xs text-green-500">정보를 가져왔습니다. 아래에서 확인 및 수정하세요.</p>
+                    <p className="text-xs text-green-500">{t.productCreate?.infoFetched || 'Information fetched. Please review and edit below.'}</p>
                   )}
                 </div>
               )}
@@ -491,13 +493,13 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
               {/* 제품 이름 */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  제품 이름 <span className="text-red-500">*</span>
+                  {t.productCreate?.productName || 'Product Name'} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="예: 수분 크림 300ml"
+                  placeholder={t.productCreate?.productNamePlaceholder || 'e.g., Moisturizer 300ml'}
                   className="w-full px-3 py-2.5 bg-secondary/50 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   disabled={isSubmitting}
                 />
@@ -506,7 +508,7 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
               {/* 제품 이미지 */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  제품 이미지 <span className="text-red-500">*</span>
+                  {t.productCreate?.productImage || 'Product Image'} <span className="text-red-500">*</span>
                 </label>
                 <div
                   onDragOver={handleDragOver}
@@ -532,7 +534,7 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
                     <div className="relative aspect-square max-w-[200px] mx-auto">
                       <img
                         src={imagePreview}
-                        alt="제품 미리보기"
+                        alt={t.productCreate?.productPreview || 'Product preview'}
                         className="w-full h-full object-contain rounded-lg"
                       />
                       <button
@@ -551,10 +553,10 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
                     <div className="text-center">
                       <ImageIcon className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
                       <p className="text-sm text-muted-foreground">
-                        클릭하거나 이미지를 드래그하세요
+                        {t.productCreate?.dropOrClick || 'Click or drag an image'}
                       </p>
                       <p className="text-xs text-muted-foreground/70 mt-1">
-                        PNG, JPG, WEBP (최대 5MB)
+                        {t.productCreate?.imageFormats || 'PNG, JPG, WEBP (max 5MB)'}
                       </p>
                     </div>
                   )}
@@ -564,12 +566,12 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
               {/* 제품 설명 */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  제품 설명 <span className="text-muted-foreground text-xs">(선택)</span>
+                  {t.productCreate?.productDescription || 'Product Description'} <span className="text-muted-foreground text-xs">({t.common?.optional || 'Optional'})</span>
                 </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="제품에 대한 설명을 입력하세요..."
+                  placeholder={t.productCreate?.descriptionPlaceholder || 'Enter product description...'}
                   rows={2}
                   className="w-full px-3 py-2.5 bg-secondary/50 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
                   disabled={isSubmitting}
@@ -579,7 +581,7 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
               {/* 셀링 포인트 */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  셀링 포인트 <span className="text-muted-foreground text-xs">(선택)</span>
+                  {t.productCreate?.sellingPoints || 'Selling Points'} <span className="text-muted-foreground text-xs">({t.common?.optional || 'Optional'})</span>
                 </label>
                 <div className="space-y-2">
                   {sellingPoints.map((point, index) => (
@@ -588,7 +590,7 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
                         type="text"
                         value={point}
                         onChange={(e) => updateSellingPoint(index, e.target.value)}
-                        placeholder="예: 24시간 보습"
+                        placeholder={t.productCreate?.sellingPointPlaceholder || 'e.g., 24-hour moisture'}
                         className="flex-1 px-3 py-2 bg-secondary/50 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                         disabled={isSubmitting}
                       />
@@ -610,7 +612,7 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
                       className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
                     >
                       <Plus className="w-3 h-3" />
-                      포인트 추가
+                      {t.productCreate?.addPoint || 'Add point'}
                     </button>
                   )}
                 </div>
@@ -627,7 +629,7 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
               disabled={isSubmitting}
               className="flex-1 px-4 py-2.5 text-foreground bg-secondary hover:bg-secondary/80 rounded-lg font-medium transition-colors disabled:opacity-50"
             >
-              취소
+              {t.common?.cancel || 'Cancel'}
             </button>
             <button
               onClick={handleSubmit}
@@ -637,12 +639,12 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  등록 중...
+                  {t.productCreate?.registering || 'Registering...'}
                 </>
               ) : (
                 <>
                   <Check className="w-4 h-4" />
-                  등록하기
+                  {t.productCreate?.register || 'Register'}
                 </>
               )}
             </button>

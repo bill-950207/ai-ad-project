@@ -46,7 +46,7 @@ export default function AdProductsPage() {
         setProducts(data.products)
       }
     } catch (error) {
-      console.error('광고 제품 목록 조회 오류:', error)
+      console.error('Failed to fetch ad product list:', error)
     } finally {
       setIsLoading(false)
     }
@@ -82,7 +82,7 @@ export default function AdProductsPage() {
               ))
             }
           } catch (error) {
-            console.error('제품 상태 폴링 오류:', error)
+            console.error('Product status polling error:', error)
           }
         }
       }, 2000) // 2초 간격
@@ -148,7 +148,7 @@ export default function AdProductsPage() {
             <Package className="w-10 h-10 text-primary" />
           </div>
           <h3 className="text-xl font-semibold text-foreground mb-3">{t.adProduct.emptyProducts}</h3>
-          <p className="text-muted-foreground mb-6">광고에 사용할 제품을 등록해주세요</p>
+          <p className="text-muted-foreground mb-6">{t.adProduct.emptyDescription || 'Register products to use in your ads'}</p>
           <button
             onClick={handleRegisterProduct}
             className="px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors font-medium"

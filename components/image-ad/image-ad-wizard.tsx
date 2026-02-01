@@ -15,12 +15,7 @@ import { WizardStep4 } from './wizard-step-4'
 // 단계 정보
 // ============================================================
 
-const STEPS: { step: WizardStep; title: string; description: string }[] = [
-  { step: 1, title: '기본 정보', description: '유형, 제품, 아바타' },
-  { step: 2, title: '설정 방식', description: '직접/AI/참조' },
-  { step: 3, title: '상세 옵션', description: '포즈, 배경, 조명' },
-  { step: 4, title: '생성', description: '비율, 퀄리티, 가격' },
-]
+const STEP_KEYS = ['step1', 'step2', 'step3', 'step4'] as const
 
 // ============================================================
 // 헤더 컴포넌트 (선택 항목 포함)
@@ -32,6 +27,15 @@ function WizardHeader() {
 
   const types = t.imageAdTypes as unknown as Record<string, { title: string }>
   const adTypeTitle = types[adType]?.title || adType
+
+  // 번역된 단계 정보
+  const imageAdT = t.imageAd as { wizard?: { steps?: Record<string, { title?: string; description?: string }> }; createTitle?: string } | undefined
+  const wizardSteps = imageAdT?.wizard?.steps
+  const STEPS = STEP_KEYS.map((key, index) => ({
+    step: (index + 1) as WizardStep,
+    title: wizardSteps?.[key]?.title || ['Basic Info', 'Settings', 'Options', 'Generate'][index],
+    description: wizardSteps?.[key]?.description || ''
+  }))
 
   // 결과 화면 또는 생성 중에는 헤더 숨김
   if (resultImages.length > 0 || isGenerating) {
@@ -56,7 +60,7 @@ function WizardHeader() {
             <ArrowLeft className="w-4 h-4 text-muted-foreground" />
           </Link>
           <div>
-            <h1 className="text-lg font-bold text-foreground">이미지 광고 생성</h1>
+            <h1 className="text-lg font-bold text-foreground">{imageAdT?.createTitle || 'Create Image Ad'}</h1>
             <p className="text-xs text-muted-foreground">{adTypeTitle}</p>
           </div>
         </div>
@@ -187,7 +191,10 @@ function WizardHeader() {
 // ============================================================
 
 function WizardContent() {
+  const { t } = useLanguage()
   const { step, isLoadingDraft } = useImageAdWizard()
+
+  const imageAdT = t.imageAd as { loadingDraft?: string; pleaseWait?: string } | undefined
 
   // Draft 로딩 중
   if (isLoadingDraft) {
@@ -199,8 +206,8 @@ function WizardContent() {
             <div className="absolute inset-0 w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
           <div className="text-center">
-            <p className="text-lg font-medium text-foreground">저장된 작업을 불러오는 중...</p>
-            <p className="text-sm text-muted-foreground mt-1">잠시만 기다려주세요</p>
+            <p className="text-lg font-medium text-foreground">{imageAdT?.loadingDraft || 'Loading saved work...'}</p>
+            <p className="text-sm text-muted-foreground mt-1">{imageAdT?.pleaseWait || 'Please wait'}</p>
           </div>
         </div>
       </div>

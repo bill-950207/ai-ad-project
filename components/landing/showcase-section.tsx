@@ -534,7 +534,7 @@ export function ShowcaseSection({ initialShowcases = [] }: ShowcaseSectionProps)
         setShowcases(combined)
       }
     } catch (error) {
-      console.error('쇼케이스 로드 오류:', error)
+      console.error('Failed to load showcases:', error)
     } finally {
       setIsLoading(false)
       setIsLoadingMore(false)

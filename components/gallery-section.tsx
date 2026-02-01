@@ -43,7 +43,7 @@ export function GallerySection() {
           setShowcases(data.data || [])
         }
       } catch (error) {
-        console.error('쇼케이스 로드 오류:', error)
+        console.error('Failed to load showcases:', error)
       } finally {
         setIsLoading(false)
       }
@@ -81,19 +81,19 @@ export function GallerySection() {
             active={filter === 'all'}
             onClick={() => setFilter('all')}
             icon={null}
-            label={t.landing.filterAll || '전체'}
+            label={t.landing.filterAll || 'All'}
           />
           <FilterTab
             active={filter === 'video'}
             onClick={() => setFilter('video')}
             icon={<Film className="h-4 w-4" />}
-            label={t.landing.filterVideo || '영상'}
+            label={t.landing.filterVideo || 'Video'}
           />
           <FilterTab
             active={filter === 'image'}
             onClick={() => setFilter('image')}
             icon={<ImageIcon className="h-4 w-4" />}
-            label={t.landing.filterImage || '이미지'}
+            label={t.landing.filterImage || 'Image'}
           />
         </div>
 
@@ -104,7 +104,7 @@ export function GallerySection() {
           </div>
         ) : filteredShowcases.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-muted-foreground">{t.landing.noShowcases || '쇼케이스가 없습니다'}</p>
+            <p className="text-muted-foreground">{t.landing.noShowcases || 'No showcases available'}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:gap-6">

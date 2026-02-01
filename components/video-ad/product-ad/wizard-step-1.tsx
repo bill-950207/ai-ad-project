@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react'
 import { Package, ArrowRight, Loader2, Plus, Check, ChevronDown, Minus } from 'lucide-react'
 import { useProductAdWizard, AdProduct } from './wizard-context'
 import { ProductCreateModal } from '../product-create-modal'
+import { useLanguage } from '@/contexts/language-context'
 
 export function WizardStep1() {
+  const { t } = useLanguage()
   const {
     draftId,
     selectedProduct,
@@ -41,7 +43,7 @@ export function WizardStep1() {
           setProducts(completedProducts)
         }
       } catch (error) {
-        console.error('제품 목록 로드 실패:', error)
+        console.error('Failed to load product list:', error)
       } finally {
         setIsLoading(false)
       }
@@ -94,9 +96,9 @@ export function WizardStep1() {
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
           <Package className="w-6 h-6 text-primary" />
         </div>
-        <h2 className="text-xl font-bold text-foreground">광고할 제품 선택</h2>
+        <h2 className="text-xl font-bold text-foreground">{t.productAdWizard?.step1?.title || 'Select Product to Advertise'}</h2>
         <p className="text-muted-foreground mt-2">
-          영상 광고로 만들 제품을 선택하고 정보를 확인해주세요
+          {t.productAdWizard?.step1?.subtitle || 'Select a product for your video ad and review its information'}
         </p>
       </div>
 
@@ -104,7 +106,7 @@ export function WizardStep1() {
       <div className="bg-card border border-border rounded-xl p-4">
         <label className="block text-sm font-medium text-foreground mb-2">
           <Package className="w-4 h-4 inline mr-2" />
-          제품 선택
+          {t.productAdWizard?.step1?.selectProduct || 'Select Product'}
         </label>
 
         {isLoading ? (
@@ -129,7 +131,7 @@ export function WizardStep1() {
                   <span className="text-foreground font-medium">{selectedProduct.name}</span>
                 </div>
               ) : (
-                <span className="text-muted-foreground">제품을 선택하세요</span>
+                <span className="text-muted-foreground">{t.productAdWizard?.step1?.selectProductPlaceholder || 'Select a product'}</span>
               )}
               <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showProductDropdown ? 'rotate-180' : ''}`} />
             </button>
@@ -138,7 +140,7 @@ export function WizardStep1() {
               <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                 {products.length === 0 ? (
                   <div className="p-4 text-center">
-                    <p className="text-muted-foreground text-sm mb-3">등록된 제품이 없습니다</p>
+                    <p className="text-muted-foreground text-sm mb-3">{t.productAdWizard?.step1?.noProducts || 'No products registered'}</p>
                     <button
                       onClick={() => {
                         setShowProductDropdown(false)
@@ -147,7 +149,7 @@ export function WizardStep1() {
                       className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
                     >
                       <Plus className="w-3 h-3" />
-                      제품 등록하기
+                      {t.productAdWizard?.step1?.registerProduct || 'Register Product'}
                     </button>
                   </div>
                 ) : (
@@ -163,7 +165,7 @@ export function WizardStep1() {
                       <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center">
                         <Plus className="w-5 h-5" />
                       </div>
-                      <span className="font-medium">새 제품 등록</span>
+                      <span className="font-medium">{t.productAdWizard?.step1?.newProduct || 'Register New Product'}</span>
                     </button>
                     {products.map((product) => (
                     <button
@@ -204,17 +206,17 @@ export function WizardStep1() {
               </div>
               <div>
                 <h4 className="font-medium text-foreground text-sm">{selectedProduct.name}</h4>
-                <p className="text-xs text-muted-foreground">제품 정보를 확인하고 편집하세요</p>
+                <p className="text-xs text-muted-foreground">{t.productAdWizard?.step1?.reviewAndEdit || 'Review and edit product information'}</p>
               </div>
             </div>
 
             {/* 설명 */}
             <div>
-              <label className="block text-xs text-muted-foreground mb-1">제품 설명</label>
+              <label className="block text-xs text-muted-foreground mb-1">{t.productAdWizard?.step1?.productDescription || 'Product Description'}</label>
               <textarea
                 value={editableDescription}
                 onChange={(e) => setEditableDescription(e.target.value)}
-                placeholder="제품에 대한 설명..."
+                placeholder={t.productAdWizard?.step1?.descriptionPlaceholder || 'Description of the product...'}
                 rows={3}
                 className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
               />
@@ -223,7 +225,7 @@ export function WizardStep1() {
             {/* 셀링 포인트 */}
             <div>
               <label className="block text-xs text-muted-foreground mb-1">
-                셀링 포인트 <span className="text-muted-foreground/70">(예: &quot;24시간 보습&quot;, &quot;피부과 추천&quot;)</span>
+                {t.productAdWizard?.step1?.sellingPoints || 'Selling Points'} <span className="text-muted-foreground/70">{t.productAdWizard?.step1?.sellingPointsExample || '(e.g., "24-hour moisture", "Dermatologist recommended")'}</span>
               </label>
               <div className="space-y-2">
                 {editableSellingPoints.map((point, index) => (
@@ -232,7 +234,7 @@ export function WizardStep1() {
                       type="text"
                       value={point}
                       onChange={(e) => updateSellingPoint(index, e.target.value)}
-                      placeholder="제품의 장점이나 특징"
+                      placeholder={t.productAdWizard?.step1?.pointPlaceholder || 'Product advantage or feature'}
                       className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                     />
                     {editableSellingPoints.length > 1 && (
@@ -251,7 +253,7 @@ export function WizardStep1() {
                     className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
                   >
                     <Plus className="w-3 h-3" />
-                    포인트 추가
+                    {t.productAdWizard?.step1?.addPoint || 'Add point'}
                   </button>
                 )}
               </div>
@@ -267,7 +269,7 @@ export function WizardStep1() {
           disabled={!canProceedToStep2()}
           className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          다음
+          {t.common?.next || 'Next'}
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
@@ -275,7 +277,7 @@ export function WizardStep1() {
       {/* 안내 메시지 */}
       {!canProceedToStep2() && (
         <p className="text-center text-sm text-muted-foreground">
-          제품을 선택해주세요
+          {t.productAdWizard?.step1?.pleaseSelect || 'Please select a product'}
         </p>
       )}
 

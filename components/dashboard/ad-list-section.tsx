@@ -77,8 +77,8 @@ function AdCard({ item, type, onClick }: AdCardProps) {
 
   const getStatusLabel = () => {
     if (item.status === 'COMPLETED') return null
-    if (item.status === 'FAILED') return t.videoAd?.status?.failed || '실패'
-    return t.videoAd?.status?.inProgress || '생성 중'
+    if (item.status === 'FAILED') return t.videoAd?.status?.failed || 'Failed'
+    return t.videoAd?.status?.inProgress || 'In Progress'
   }
 
   const statusLabel = getStatusLabel()
@@ -172,7 +172,7 @@ export function AdListSection({ type, title, viewAllHref }: AdListSectionProps) 
         // 아이템 변환
         const transformedItems: AdItem[] = adsArray.slice(0, MAX_VISIBLE_ITEMS).map((ad: ImageAdResponse | VideoAdResponse) => ({
           id: ad.id,
-          name: ad.name || (ad as ImageAdResponse).product?.name || (type === 'image' ? '이미지 광고' : '영상 광고'),
+          name: ad.name || (ad as ImageAdResponse).product?.name || (type === 'image' ? 'Image Ad' : 'Video Ad'),
           thumbnail: type === 'image'
             ? ((ad as ImageAdResponse).images?.[0]?.image_url || (ad as ImageAdResponse).image_url || null)
             : ((ad as VideoAdResponse).thumbnail_url || null),
@@ -272,7 +272,7 @@ export function AdListSection({ type, title, viewAllHref }: AdListSectionProps) 
           {hasProcessing && (
             <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary">
               <Loader2 className="w-3 h-3 animate-spin" />
-              <span className="text-[10px]">{t.dashboard?.recentWork?.processing || '생성 중'}</span>
+              <span className="text-[10px]">{t.dashboard?.recentWork?.processing || 'In Progress'}</span>
             </div>
           )}
         </div>
@@ -299,7 +299,7 @@ export function AdListSection({ type, title, viewAllHref }: AdListSectionProps) 
               onClick={handleViewAll}
               className="pointer-events-auto flex items-center gap-1.5 px-4 py-2 bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium rounded-lg transition-colors"
             >
-              <span>{type === 'image' ? '이미지 광고 더보기' : '영상 광고 더보기'}</span>
+              <span>{type === 'image' ? (t.dashboard?.viewMoreImages || 'View more image ads') : (t.dashboard?.viewMoreVideos || 'View more video ads')}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

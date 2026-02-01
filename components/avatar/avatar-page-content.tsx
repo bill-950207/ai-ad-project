@@ -57,7 +57,7 @@ export function AvatarPageContent() {
         setAvatars(data.avatars)
       }
     } catch (err) {
-      console.error('아바타 목록 조회 오류:', err)
+      console.error('Avatar list fetch error:', err)
     } finally {
       setIsLoading(false)
     }
@@ -94,7 +94,7 @@ export function AvatarPageContent() {
               ))
             }
           } catch (error) {
-            console.error('아바타 상태 폴링 오류:', error)
+            console.error('Avatar status polling error:', error)
           }
         }
       }, 2000) // 2초 간격
@@ -127,7 +127,7 @@ export function AvatarPageContent() {
         setAvatars(prev => prev.filter(a => a.id !== id))
       }
     } catch (err) {
-      console.error('아바타 삭제 오류:', err)
+      console.error('Avatar delete error:', err)
     }
   }
 
@@ -161,7 +161,7 @@ export function AvatarPageContent() {
         // 로딩 중
         <div className="bg-card border border-border rounded-xl p-12 text-center">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-muted-foreground">로딩 중...</p>
+          <p className="text-muted-foreground">{t.common?.loading || 'Loading...'}</p>
         </div>
       ) : (
         // 아바타 목록 표시

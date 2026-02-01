@@ -51,7 +51,7 @@ export function AdProductScanner({ productId, sourceImageUrl, onComplete }: AdPr
           }
         }
       } catch (error) {
-        console.error('상태 폴링 오류:', error)
+        console.error('Status polling error:', error)
       }
       return false
     }
