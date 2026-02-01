@@ -317,7 +317,17 @@ Think of it as a mini commercial film - each scene must logically lead to the ne
 
 3. additionalPrompt (추가 지시사항, 한국어): 이 씬만의 특별한 연출/카메라 워크/비주얼 포인트 (자유 작성)
 
-4. movementAmplitude: "small" | "medium" | "large" | "auto"
+4. movementAmplitude: Choose based on PRODUCT TYPE and SCENE MOOD (not just scene position!)
+   - "small": Luxury/premium products (cosmetics, jewelry, perfume), calm/elegant mood
+   - "medium": General products, feature demonstrations, balanced energy
+   - "large": Sports/energy products, dynamic/exciting mood, action-oriented
+   - "auto": Let AI decide based on content
+
+   Consider the PRODUCT CHARACTERISTICS and OVERALL MOOD when choosing:
+   - Premium/luxury feel → prefer "small" for elegance
+   - Energetic/sporty feel → prefer "medium" or "large"
+   - Technical/feature-focused → prefer "medium" for clarity
+   - Food/beverage → "small" to "medium" for appetizing presentation
 
 5. imagePrompt (영어, 50-100 words): Seedream 이미지 생성용
    - Start with: "The product shown in the attached image" (NEVER use "${productName}"!)
@@ -414,7 +424,13 @@ Keep it impactful while adapting the reference style. Match pacing to product pe
 
 3. additionalPrompt (추가 지시사항, 한국어): 참조 영상의 연출을 분석하여 적용 (자유 작성)
 
-4. movementAmplitude: "small" | "medium" | "large" | "auto"
+4. movementAmplitude: Choose based on PRODUCT TYPE, REFERENCE STYLE, and SCENE MOOD
+   - "small": Luxury/premium, calm/elegant mood, slow reference style
+   - "medium": General products, feature demonstrations, balanced energy
+   - "large": Sports/energy products, dynamic/exciting reference style
+   - "auto": Let AI decide based on content
+
+   Adapt to the reference video's motion style while matching the product characteristics.
 
 5. imagePrompt (영어, 50-100 words): Seedream 이미지 생성용
    - Start with: "The product shown in the attached image" (NEVER use "${productName}"!)
