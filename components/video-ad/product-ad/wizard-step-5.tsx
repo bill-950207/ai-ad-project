@@ -151,19 +151,19 @@ function VideoRegenerateModal({
               <Clock className="w-4 h-4 text-muted-foreground" />
               영상 길이
             </label>
-            <div className="flex gap-2">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((d) => (
+            <div className="grid grid-cols-8 gap-1.5">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map((d) => (
                 <button
                   key={d}
                   onClick={() => setDuration(d)}
                   disabled={isLoading}
-                  className={`flex-1 py-2 text-sm font-medium rounded-lg border-2 transition-all ${
+                  className={`py-2 text-sm font-medium rounded-lg border-2 transition-all ${
                     duration === d
                       ? 'border-primary bg-primary/10 text-primary'
                       : 'border-border bg-secondary/30 text-foreground hover:border-primary/50'
                   } disabled:opacity-50`}
                 >
-                  {d}초
+                  {d}
                 </button>
               ))}
             </div>
@@ -763,12 +763,14 @@ export function WizardStep5() {
 
     try {
       // 키프레임에 씬 프롬프트, 개별 duration, movementAmplitude 추가
+      // videoPrompt가 있으면 영상 생성에 사용 (Vidu 전용 모션 포함)
       const keyframesWithPrompts = completedKeyframes.map((kf) => {
         const sceneInfo = scenarioInfo.scenes?.find(s => s.index === kf.sceneIndex)
         return {
           sceneIndex: kf.sceneIndex,
           imageUrl: kf.imageUrl!,
-          scenePrompt: sceneInfo?.scenePrompt,
+          // videoPrompt가 있으면 영상 생성에 사용, 없으면 scenePrompt 사용
+          scenePrompt: sceneInfo?.videoPrompt || sceneInfo?.scenePrompt,
           duration: sceneDurations[kf.sceneIndex] ?? 3,  // 각 씬별 duration
           movementAmplitude: sceneInfo?.movementAmplitude ?? 'auto',  // 카메라/모션 강도 (기본 auto - AI가 자동 결정)
         }
@@ -847,14 +849,16 @@ export function WizardStep5() {
 
     try {
       // 추가 프롬프트가 있으면 LLM으로 합치기
-      let finalPrompt = sceneInfo.scenePrompt
+      // videoPrompt가 있으면 영상 생성에 사용 (Vidu 전용 모션 포함)
+      const basePrompt = sceneInfo.videoPrompt || sceneInfo.scenePrompt
+      let finalPrompt = basePrompt
 
       if (additionalPrompt.trim()) {
         const mergeRes = await fetch('/api/product-ad/merge-prompts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            originalPrompt: sceneInfo.scenePrompt,
+            originalPrompt: basePrompt,
             additionalPrompt: additionalPrompt.trim(),
           }),
         })
