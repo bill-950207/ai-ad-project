@@ -17,6 +17,7 @@ import {
   generateAiAvatarPrompt,
   type CameraCompositionType,
 } from '@/lib/gemini/client'
+import { genAI } from '@/lib/gemini'
 import {
   submitSeedreamFirstFrameToQueue,
   type SeedreamAspectRatio,
@@ -29,6 +30,97 @@ import {
   type ZImageAspectRatio,
 } from '@/lib/kie/client'
 import { buildAiAvatarPrompt, type AiAvatarOptions } from '@/lib/avatar/prompt-builder'
+
+/** 지원되는 민족성 타입 */
+type SupportedEthnicity = 'korean' | 'asian' | 'western' | 'japanese' | 'chinese'
+
+/**
+ * 언어 기반 민족성 결정
+ * ethnicity가 'any' 또는 undefined인 경우 대본 언어에 맞는 민족성 반환
+ */
+function resolveEthnicityByLanguage(
+  ethnicity: string | undefined,
+  language: string
+): SupportedEthnicity {
+  // 이미 명시적 민족성이면 그대로 반환 (유효한 값인 경우)
+  if (ethnicity && ethnicity !== 'any') {
+    const validEthnicities: SupportedEthnicity[] = ['korean', 'asian', 'western', 'japanese', 'chinese']
+    if (validEthnicities.includes(ethnicity as SupportedEthnicity)) {
+      return ethnicity as SupportedEthnicity
+    }
+  }
+
+  // 언어 기반 민족성 매핑
+  // AiAvatarOptions 타입에 정의된 값만 사용: 'korean' | 'asian' | 'western' | 'japanese' | 'chinese' | 'any'
+  const languageToEthnicityMap: Record<string, SupportedEthnicity> = {
+    'ko': 'korean',
+    'ja': 'japanese',
+    'zh': 'chinese',
+    'en': 'western',
+    'es': 'western',  // 스페인어 → 서양인 (타입 제약)
+    'pt': 'western',  // 포르투갈어 → 서양인 (타입 제약)
+    'fr': 'western',
+    'de': 'western',
+  }
+
+  const resolvedEthnicity = languageToEthnicityMap[language] || 'western'
+  console.log(`[민족성 결정] 언어 기반 결정: ${language} → ${resolvedEthnicity}`)
+  return resolvedEthnicity
+}
+
+/**
+ * 제품 컨텍스트 기반 성별 결정
+ * targetGender가 'any'인 경우 Gemini를 통해 제품에 적합한 성별 결정
+ */
+async function resolveTargetGender(
+  targetGender: string | undefined,
+  productInfo: string
+): Promise<'male' | 'female'> {
+  // 이미 명시적 성별이면 그대로 반환
+  if (targetGender === 'male') return 'male'
+  if (targetGender === 'female') return 'female'
+
+  // 'any' 또는 undefined인 경우 Gemini에게 제품 컨텍스트 기반 결정 요청
+  try {
+    const prompt = `You are a marketing expert. Based on the product information below, determine which gender would be most appropriate as a product presenter/model in an advertisement video.
+
+=== PRODUCT INFORMATION ===
+${productInfo}
+
+=== DECISION CRITERIA ===
+Consider:
+1. Product's primary target audience (e.g., cosmetics → typically female, power tools → typically male)
+2. Product category conventions in advertising
+3. Brand positioning and marketing norms
+4. If the product is gender-neutral, consider which presenter gender would be more effective for engagement
+
+=== RESPONSE FORMAT ===
+Respond with ONLY a JSON object:
+{"gender": "male" or "female", "reason": "brief explanation"}
+
+Note: You MUST choose either "male" or "female". Do not respond with "any" or "neutral".`
+
+    const response = await genAI.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config: { responseMimeType: 'application/json' },
+    })
+
+    const responseText = response.text || ''
+    const result = JSON.parse(responseText)
+
+    if (result.gender === 'male' || result.gender === 'female') {
+      console.log(`[성별 결정] 제품 기반 결정: ${result.gender} (이유: ${result.reason})`)
+      return result.gender
+    }
+  } catch (error) {
+    console.error('[성별 결정] Gemini 호출 실패, 기본값 사용:', error)
+  }
+
+  // 기본값: female (광고 업계 관행)
+  console.log('[성별 결정] 기본값 사용: female')
+  return 'female'
+}
 
 /**
  * POST /api/video-ads/product-description/generate-scripts
@@ -124,10 +216,26 @@ export async function POST(request: NextRequest) {
     } else {
       // AI 아바타 설명 구성
       if (aiAvatarOptions) {
+        // 'any' 성별인 경우 제품 기반으로 성별 사전 결정
+        const resolvedGender = await resolveTargetGender(
+          aiAvatarOptions.targetGender,
+          productInfo.trim()
+        )
+        // aiAvatarOptions에 결정된 성별 반영 (이후 아바타 프롬프트 생성에서도 사용)
+        aiAvatarOptions.targetGender = resolvedGender
+
+        // 'any' 민족성인 경우 언어 기반으로 민족성 결정
+        const resolvedEthnicity = resolveEthnicityByLanguage(
+          aiAvatarOptions.ethnicity,
+          language
+        )
+        // aiAvatarOptions에 결정된 민족성 반영 (이후 아바타 프롬프트 생성에서도 사용)
+        aiAvatarOptions.ethnicity = resolvedEthnicity
+
         const parts = []
-        if (aiAvatarOptions.targetGender) parts.push(aiAvatarOptions.targetGender)
+        parts.push(resolvedGender)  // 결정된 성별 사용 (항상 male 또는 female)
         if (aiAvatarOptions.targetAge) parts.push(aiAvatarOptions.targetAge)
-        if (aiAvatarOptions.ethnicity) parts.push(aiAvatarOptions.ethnicity)
+        parts.push(resolvedEthnicity)  // 결정된 민족성 사용 (항상 특정 민족)
         if (aiAvatarOptions.style) parts.push(aiAvatarOptions.style + ' style')
         if (aiAvatarOptions.bodyType && aiAvatarOptions.bodyType !== 'any') parts.push(aiAvatarOptions.bodyType + ' body type')
         avatarDescription = parts.join(', ')

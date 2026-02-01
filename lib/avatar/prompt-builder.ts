@@ -316,7 +316,7 @@ export interface AiAvatarOptions {
   targetGender?: 'male' | 'female' | 'any'
   targetAge?: 'young' | 'middle' | 'mature' | 'any'
   style?: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
-  ethnicity?: 'korean' | 'asian' | 'western' | 'any'
+  ethnicity?: 'korean' | 'asian' | 'western' | 'japanese' | 'chinese' | 'any'
   bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'any'
 }
 

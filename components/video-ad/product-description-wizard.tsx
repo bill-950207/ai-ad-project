@@ -248,7 +248,7 @@ type ModelPose =
   // 공통
   | 'auto' | 'talking-only' | 'showing-product'
   // UGC용
-  | 'holding-product' | 'using-product' | 'unboxing' | 'reaction'
+  | 'holding-product' | 'using-product' | 'reaction'
   // Podcast용
   | 'desk-presenter' | 'casual-chat'
   // Expert용
@@ -283,10 +283,6 @@ const modelPoseLabels: Record<ModelPose, ModelPoseInfo> = {
     label: 'Using Product',
     desc: 'Demonstrate using product',
   },
-  unboxing: {
-    label: 'Unboxing',
-    desc: 'Unbox/open product',
-  },
   reaction: {
     label: 'Reaction',
     desc: 'React to product',
@@ -317,7 +313,7 @@ const modelPoseLabels: Record<ModelPose, ModelPoseInfo> = {
 
 // 영상 스타일별 모델 포즈 옵션
 const modelPosesByVideoType: Record<VideoType, ModelPose[]> = {
-  UGC: ['auto', 'holding-product', 'using-product', 'showing-product', 'unboxing', 'reaction'],
+  UGC: ['auto', 'holding-product', 'using-product', 'showing-product', 'reaction'],
   podcast: ['auto', 'desk-presenter', 'casual-chat', 'showing-product', 'talking-only'],
   expert: ['auto', 'presenting', 'explaining', 'demonstrating', 'showing-product', 'talking-only'],
 }
@@ -516,6 +512,7 @@ interface DraftData {
   first_frame_urls: string[] | null  // 첫 프레임 이미지 URL 배열 (WebP 압축본, 표시용)
   first_frame_original_urls: string[] | null  // 첫 프레임 원본 이미지 URL 배열 (PNG 원본, 영상 생성용)
   first_frame_prompt: string | null
+  first_scene_options: string | null  // 이미지 폴링 요청 정보 JSON
   voice_id: string | null
   voice_name: string | null
   video_type: string | null  // 비디오 타입 (UGC, podcast, expert)
@@ -629,6 +626,15 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
   const [imageRequests, setImageRequests] = useState<ImageRequest[]>([])  // 이미지 생성 요청 정보
   const [isLoadingImages, setIsLoadingImages] = useState(false)  // 이미지 로딩 중 여부
   const imagePollingRef = useRef<NodeJS.Timeout | null>(null)  // 폴링 타이머 ref
+  // startImagePolling 함수 참조 (restoreDraftData에서 사용)
+  type StartImagePollingFn = (
+    requests: ImageRequest[],
+    generatedScripts: Script[],
+    generatedLocationDesc: string,
+    generatedFirstFramePrompt: string,
+    generatedEditedScript: string
+  ) => Promise<void>
+  const startImagePollingRef = useRef<StartImagePollingFn | null>(null)
 
   // Step 3: 음성 (Step 4에서 통합됨)
   const [selectedVoice, setSelectedVoice] = useState<Voice | null>(null)
@@ -869,19 +875,21 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     draftId, selectedAvatarInfo, selectedProduct, productInfo, locationPrompt,
     duration, resolution, cameraComposition, modelPose, outfitMode, outfitPreset, outfitCustom,
     scripts, selectedScriptIndex, editedScript, firstFrameUrl, firstFrameUrls,
-    firstFrameOriginalUrls, firstFramePrompt, locationDescription, selectedVoice, videoType
+    firstFrameOriginalUrls, firstFramePrompt, locationDescription, selectedVoice, videoType,
+    imageRequests,  // 이미지 폴링 요청 정보
   })
   useEffect(() => {
     stateRef.current = {
       draftId, selectedAvatarInfo, selectedProduct, productInfo, locationPrompt,
       duration, resolution, cameraComposition, modelPose, outfitMode, outfitPreset, outfitCustom,
       scripts, selectedScriptIndex, editedScript, firstFrameUrl, firstFrameUrls,
-      firstFrameOriginalUrls, firstFramePrompt, locationDescription, selectedVoice, videoType
+      firstFrameOriginalUrls, firstFramePrompt, locationDescription, selectedVoice, videoType,
+      imageRequests,  // 이미지 폴링 요청 정보
     }
   }, [draftId, selectedAvatarInfo, selectedProduct, productInfo, locationPrompt,
     duration, resolution, cameraComposition, modelPose, outfitMode, outfitPreset, outfitCustom,
     scripts, selectedScriptIndex, editedScript, firstFrameUrl, firstFrameUrls,
-    firstFrameOriginalUrls, firstFramePrompt, locationDescription, selectedVoice, videoType])
+    firstFrameOriginalUrls, firstFramePrompt, locationDescription, selectedVoice, videoType, imageRequests])
 
   // 비동기 Draft 저장 (단계 전환 시 사용)
   const saveDraftAsync = useCallback((currentStep: WizardStep, overrides?: {
@@ -893,7 +901,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     firstFramePrompt?: string
     editedScript?: string
     selectedScriptIndex?: number
-    status?: 'DRAFT' | 'GENERATING_SCRIPTS' | 'GENERATING_AUDIO'
+    imageRequests?: ImageRequest[]  // 이미지 폴링 요청 정보
+    status?: 'DRAFT' | 'GENERATING_SCRIPTS' | 'GENERATING_IMAGES' | 'GENERATING_AUDIO'
   }) => {
     const state = stateRef.current
 
@@ -906,6 +915,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     const firstFramePromptToSave = overrides?.firstFramePrompt ?? state.firstFramePrompt
     const editedScriptToSave = overrides?.editedScript ?? state.editedScript
     const scriptIndexToSave = overrides?.selectedScriptIndex ?? state.selectedScriptIndex
+    const imageRequestsToSave = overrides?.imageRequests ?? state.imageRequests
 
     const payload = {
       id: state.draftId,
@@ -933,6 +943,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       firstFrameUrls: firstFrameUrlsToSave.length > 0 ? firstFrameUrlsToSave : null,
       firstFrameOriginalUrls: firstFrameOriginalUrlsToSave.length > 0 ? firstFrameOriginalUrlsToSave : null,
       firstFramePrompt: firstFramePromptToSave,
+      imageRequests: imageRequestsToSave.length > 0 ? imageRequestsToSave : null,  // 이미지 폴링 요청 정보
       voiceId: state.selectedVoice?.id,
       voiceName: state.selectedVoice?.name,
       videoType: state.videoType,
@@ -1140,9 +1151,58 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       })
     }
 
+    // 이미지 폴링 상태 복원 (GENERATING_IMAGES 상태일 때)
+    let restoredImageRequests: ImageRequest[] = []
+    if (draft.first_scene_options) {
+      try {
+        restoredImageRequests = JSON.parse(draft.first_scene_options)
+        if (Array.isArray(restoredImageRequests) && restoredImageRequests.length > 0) {
+          setImageRequests(restoredImageRequests)
+        }
+      } catch (e) {
+        console.error('이미지 요청 정보 파싱 오류:', e)
+      }
+    }
+
     // 마법사 단계 복원
     if (draft.wizard_step >= 1 && draft.wizard_step <= 5) {
       setStep(draft.wizard_step as WizardStep)
+    }
+
+    // GENERATING_IMAGES 상태이면 이미지 폴링 재개
+    if (draft.status === 'GENERATING_IMAGES' && restoredImageRequests.length > 0) {
+      console.log('[드래프트 복원] 이미지 폴링 재개:', restoredImageRequests)
+      setIsLoadingImages(true)
+
+      // scripts 데이터 파싱
+      let restoredScripts: Script[] = []
+      let restoredLocationDesc = ''
+      if (draft.scripts_json) {
+        try {
+          const parsedData = JSON.parse(draft.scripts_json)
+          if (parsedData.scripts && Array.isArray(parsedData.scripts)) {
+            restoredScripts = parsedData.scripts
+            restoredLocationDesc = parsedData.locationDescription || ''
+          } else if (Array.isArray(parsedData)) {
+            restoredScripts = parsedData
+          }
+        } catch (e) {
+          console.error('대본 파싱 오류 (폴링 재개용):', e)
+        }
+      }
+
+      // 이미지 폴링 재개 (setTimeout으로 상태 업데이트 후 실행, ref 사용)
+      setTimeout(() => {
+        if (startImagePollingRef.current) {
+          startImagePollingRef.current(
+            restoredImageRequests,
+            restoredScripts,
+            restoredLocationDesc,
+            draft.first_frame_prompt || '',
+            draft.script || ''
+          )
+        }
+      }, 500)  // ref가 초기화될 시간을 위해 약간 지연
     }
   }
 
@@ -1165,7 +1225,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         // 크레딧 갱신
         refreshCredits()
         setTimeout(() => {
-          router.push(`/dashboard/video-ad/${adId}`)
+          // replace 사용: 뒤로가기 시 생성 페이지가 아닌 목록 페이지로 이동
+          router.replace(`/dashboard/video-ad/${adId}`)
         }, 1000)
         return
       }
@@ -1310,6 +1371,17 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       clearInterval(imagePollingRef.current)
     }
 
+    // 이미지 폴링 시작 시 드래프트 저장 (GENERATING_IMAGES 상태)
+    saveDraftAsync(3, {
+      scripts: generatedScripts,
+      locationDescription: generatedLocationDesc,
+      firstFramePrompt: generatedFirstFramePrompt,
+      editedScript: generatedEditedScript,
+      selectedScriptIndex: 0,
+      imageRequests: requests,
+      status: 'GENERATING_IMAGES',
+    })
+
     const maxAttempts = 40  // 최대 40회 (2분)
     let attempts = 0
 
@@ -1408,6 +1480,11 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     // 이후 3초 간격으로 폴링
     imagePollingRef.current = setInterval(pollImages, 3000)
   }, [saveDraftAsync])
+
+  // startImagePolling ref 업데이트 (restoreDraftData에서 사용)
+  useEffect(() => {
+    startImagePollingRef.current = startImagePolling
+  }, [startImagePolling])
 
   // 컴포넌트 언마운트 시 폴링 정리
   useEffect(() => {
@@ -1595,6 +1672,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           script: editedScript,
           voiceId: selectedVoice.id,
           voiceName: selectedVoice.name,
+          languageCode: scriptLanguage,  // 대본 언어 전달 (TTS 발음 품질 향상)
         }),
       })
 
@@ -1663,7 +1741,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           // 크레딧 갱신
           refreshCredits()
           setTimeout(() => {
-            router.push(`/dashboard/video-ad/${videoData.videoAdId}`)
+            // replace 사용: 뒤로가기 시 생성 페이지가 아닌 목록 페이지로 이동
+            router.replace(`/dashboard/video-ad/${videoData.videoAdId}`)
           }, 1000)
           return
         }
@@ -1687,8 +1766,10 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       console.error('영상 생성 오류:', error)
       alert(error instanceof Error ? error.message : '영상 생성 중 오류가 발생했습니다')
       setGenerationStatus('')
-      // 에러 발생 시 DRAFT 상태로 복원
-      saveDraftAsync(4, { status: 'DRAFT' })    } finally {
+      // 에러 발생 시 이전 단계(Step 3)로 돌아가기
+      setStep(3)
+      saveDraftAsync(3, { status: 'DRAFT' })
+    } finally {
       setIsGeneratingAudio(false)
       setIsGeneratingVideo(false)
     }
@@ -1723,16 +1804,35 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       audioRef.current = null
     }
 
-    // ElevenLabs 음성은 previewUrl이 이미 제공됨
-    const previewUrl = voice.previewUrl
+    setLoadingPreviewId(voice.id)
+
+    // previewUrl이 없으면 API를 통해 실시간 생성
+    let previewUrl = voice.previewUrl
 
     if (!previewUrl) {
-      console.warn('프리뷰 URL이 없습니다:', voice.id)
+      try {
+        console.log(`[Preview] 프리뷰 생성 요청: voice=${voice.id}, language=${scriptLanguage}`)
+        const res = await fetch(`/api/minimax-voices/preview?voiceId=${voice.id}&language=${scriptLanguage}`)
+        if (!res.ok) {
+          throw new Error(`프리뷰 생성 실패: ${res.status}`)
+        }
+        const data = await res.json()
+        previewUrl = data.audioUrl
+        console.log(`[Preview] 프리뷰 생성 완료: ${previewUrl}`)
+      } catch (err) {
+        console.error('프리뷰 생성 오류:', err)
+        setLoadingPreviewId(null)
+        return
+      }
+    }
+
+    if (!previewUrl) {
+      console.warn('프리뷰 URL을 가져올 수 없습니다:', voice.id)
+      setLoadingPreviewId(null)
       return
     }
 
     // 새 오디오 재생
-    setLoadingPreviewId(voice.id)
     const audio = new Audio(previewUrl)
     audioRef.current = audio
 
@@ -1757,7 +1857,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
 
     // 오디오 로드 시작
     audio.load()
-  }, [playingVoiceId])
+  }, [playingVoiceId, scriptLanguage])
 
   // 오디오 정리 함수
   const stopAudioPreview = useCallback(() => {
@@ -2759,20 +2859,6 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   )}
                 </div>
               </div>
-
-              {/* AI 추천 의상 표시 (ai_recommend 모드일 때) */}
-              {outfitMode === 'ai_recommend' && recommendedOutfit && (
-                <div className="bg-card border border-border rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                    <h2 className="text-lg font-semibold text-foreground">AI 추천 의상</h2>
-                  </div>
-                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                    <p className="text-foreground font-medium mb-2">{recommendedOutfit.localizedDescription}</p>
-                    <p className="text-sm text-muted-foreground">{recommendedOutfit.reason}</p>
-                  </div>
-                </div>
-              )}
 
               {/* 대본 선택 + 음성 선택 (2열 레이아웃) */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

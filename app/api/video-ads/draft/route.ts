@@ -51,6 +51,8 @@ export async function POST(request: NextRequest) {
       firstFrameUrls,  // 첫 프레임 이미지 URL 배열 (WebP 압축본, 표시용)
       firstFrameOriginalUrls,  // 첫 프레임 원본 이미지 URL 배열 (PNG, 영상 생성용)
       firstFramePrompt,
+      // 이미지 폴링 데이터
+      imageRequests,  // 이미지 생성 요청 정보 [{requestId, provider, index}, ...]
       // Step 4 데이터
       voiceId,
       voiceName,
@@ -59,7 +61,7 @@ export async function POST(request: NextRequest) {
     } = body
 
     // 허용된 상태값 (DRAFT 계열 상태만 허용)
-    const allowedStatuses = ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO']
+    const allowedStatuses = ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_IMAGES', 'GENERATING_AUDIO']
     const validStatus = status && allowedStatuses.includes(status) ? status : undefined
 
     // 카테고리 필수
@@ -78,7 +80,7 @@ export async function POST(request: NextRequest) {
         where: {
           id,
           user_id: user.id,
-          status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO'] },
+          status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_IMAGES', 'GENERATING_AUDIO'] },
         },
       })
 
@@ -109,6 +111,7 @@ export async function POST(request: NextRequest) {
           first_frame_urls: firstFrameUrls || null,
           first_frame_original_urls: firstFrameOriginalUrls || null,
           first_frame_prompt: firstFramePrompt || null,
+          first_scene_options: imageRequests ? JSON.stringify(imageRequests) : null,  // 이미지 폴링 요청 정보
           voice_id: voiceId || null,
           voice_name: voiceName || null,
           video_type: videoType || null,
@@ -142,6 +145,7 @@ export async function POST(request: NextRequest) {
           first_frame_urls: firstFrameUrls || null,
           first_frame_original_urls: firstFrameOriginalUrls || null,
           first_frame_prompt: firstFramePrompt || null,
+          first_scene_options: imageRequests ? JSON.stringify(imageRequests) : null,  // 이미지 폴링 요청 정보
           voice_id: voiceId || null,
           voice_name: voiceName || null,
           video_type: videoType || null,
@@ -185,7 +189,7 @@ export async function GET(request: NextRequest) {
         where: {
           id,
           user_id: user.id,
-          status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO'] },
+          status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_IMAGES', 'GENERATING_AUDIO'] },
         },
       })
       return NextResponse.json({ draft })
@@ -201,7 +205,7 @@ export async function GET(request: NextRequest) {
       where: {
         user_id: user.id,
         category,
-        status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO'] },
+        status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_IMAGES', 'GENERATING_AUDIO'] },
       },
       orderBy: {
         updated_at: 'desc',
@@ -242,7 +246,7 @@ export async function DELETE(request: NextRequest) {
         where: {
           id,
           user_id: user.id,
-          status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO'] },
+          status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_IMAGES', 'GENERATING_AUDIO'] },
         },
       })
     } else if (category) {
@@ -251,7 +255,7 @@ export async function DELETE(request: NextRequest) {
         where: {
           user_id: user.id,
           category,
-          status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO'] },
+          status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_IMAGES', 'GENERATING_AUDIO'] },
         },
       })
     } else {

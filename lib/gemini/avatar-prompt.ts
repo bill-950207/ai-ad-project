@@ -118,7 +118,6 @@ const modelPoseDescriptions: Record<ModelPoseType, string> = {
   // UGC용 (손 묘사 강화)
   'holding-product': 'Model holding product at chest level - relaxed grip with all five fingers gently curved around product, thumb visible on front, fingertips making natural contact',
   'using-product': 'Model actively using the product - fingers interacting naturally (pressing, applying, opening), anatomically correct hand positioning',
-  unboxing: 'Model opening/unboxing product - both hands visible with fingers working on packaging, one hand stabilizing while other lifts/pulls, all ten fingers rendered',
   reaction: 'Model showing genuine reaction - product held loosely in one hand, other hand may gesture, expressive face, relaxed finger positioning',
   // Podcast용 (손 묘사 강화)
   'desk-presenter': 'Model seated at desk - product on desk within reach, one hand resting near product with relaxed fingers, other hand gesturing, casual professional',
@@ -149,6 +148,15 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
   const ageMap: Record<string, string> = { young: '20-30대', middle: '30-40대', mature: '40-50대', any: '연령대 무관' }
   const styleMap: Record<string, string> = { natural: '자연스럽고 편안한', professional: '전문적이고 세련된', casual: '캐주얼하고 편안한', elegant: '우아하고 고급스러운', any: '스타일 무관' }
   const ethnicityMap: Record<string, string> = { korean: '한국인', asian: '아시아인', western: '서양인', japanese: '일본인', chinese: '중국인', any: '인종 무관' }
+  // 영어 민족성 키워드 (이미지 생성 모델용 - 프롬프트에 필수 포함)
+  const ethnicityEnglishMap: Record<string, string> = {
+    korean: 'Korean',
+    asian: 'East Asian',
+    western: 'Caucasian Western',
+    japanese: 'Japanese',
+    chinese: 'Chinese',
+    any: '',
+  }
 
   // 성별별 체형 프롬프트 (영어 - 이미지 생성 모델 최적화)
   const femaleBodyTypeMap: Record<string, string> = {
@@ -212,6 +220,7 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
   const targetAgeText = ageMap[input.targetAge || 'any']
   const styleText = styleMap[input.style || 'any']
   const ethnicityText = ethnicityMap[resolvedEthnicity]
+  const ethnicityEnglish = ethnicityEnglishMap[resolvedEthnicity] || ''
   const bodyTypeText = getBodyTypeDescription(input.bodyType || 'any', input.targetGender)
 
   const cameraConfig = input.cameraComposition
@@ -273,7 +282,7 @@ ${input.productImageUrl ? '제품 이미지가 Figure 1로 첨부되어 있습�
 - 성별: ${targetGenderText}
 - 연령대: ${targetAgeText}
 - 스타일: ${styleText}
-- 인종/민족: ${ethnicityText}
+- 인종/민족: ${ethnicityText} (⚠️ 프롬프트에 반드시 "${ethnicityEnglish}" 키워드 포함 필수)
 - Body type (use this exact English phrase in prompt): ${bodyTypeText}
 
 === 장소/배경 ===
@@ -287,13 +296,14 @@ ${ugcSelfieProductInstruction}
 ${outfitSection ? `=== 의상 설정 ===\n${outfitSection}` : ''}
 
 === 작성 지침 ===
-1. 아바타: 인종, 성별, 나이대, 피부톤, 머리카락, 표정, 의상 상세 묘사
-2. 배경: 선명한 배경 (블러 금지), 자연광 - "${videoTypeStyle.korean}" 스타일에 맞는 배경
-3. 카메라: Shot on Sony A7IV, 35mm f/8, deep depth of field
-4. 품질: ultra-realistic cinematic editorial photography, 8K quality
-5. 중요: 이미지는 "${videoTypeStyle.korean}" 영상 스타일의 분위기를 반영해야 합니다
-6. 중요: 생성된 프롬프트에 제품명, 브랜드명을 절대 포함하지 마세요. 제품은 "the product"로만 지칭하세요.
-${input.productImageUrl ? '7. 손+제품: 손가락 위치, 그립 방식, 접촉면을 구체적으로 묘사하세요. 아바타와 제품의 조명이 일치해야 합니다.' : ''}
+1. ⚠️ 아바타 인종 필수: 프롬프트 첫 부분에 반드시 "${ethnicityEnglish}" 키워드를 포함하세요. 예: "A ${ethnicityEnglish} woman in her 20s..."
+2. 아바타: 성별, 나이대, 피부톤, 머리카락, 표정, 의상 상세 묘사
+3. 배경: 선명한 배경 (블러 금지), 자연광 - "${videoTypeStyle.korean}" 스타일에 맞는 배경
+4. 카메라: Shot on Sony A7IV, 35mm f/8, deep depth of field
+5. 품질: ultra-realistic cinematic editorial photography, 8K quality
+6. 중요: 이미지는 "${videoTypeStyle.korean}" 영상 스타일의 분위기를 반영해야 합니다
+7. 중요: 생성된 프롬프트에 제품명, 브랜드명을 절대 포함하지 마세요. 제품은 "the product"로만 지칭하세요.
+${input.productImageUrl ? '8. 손+제품: 손가락 위치, 그립 방식, 접촉면을 구체적으로 묘사하세요. 아바타와 제품의 조명이 일치해야 합니다.' : ''}
 
 === 중요: 오버레이 요소 금지 ===
 ${NO_OVERLAY_ELEMENTS}
