@@ -125,39 +125,39 @@ export function AvatarSelectModal({
   const optionsT = avatarT?.options as Record<string, string> | undefined
 
   const GENDER_OPTIONS = useMemo(() => optionsT ? [
-    { value: 'any', label: optionsT.anyGender || 'Any Gender' },
-    { value: 'female', label: optionsT.female || 'Female' },
-    { value: 'male', label: optionsT.male || 'Male' },
+    { value: 'any' as const, label: optionsT.anyGender || 'Any Gender' },
+    { value: 'female' as const, label: optionsT.female || 'Female' },
+    { value: 'male' as const, label: optionsT.male || 'Male' },
   ] : DEFAULT_GENDER_OPTIONS, [optionsT])
 
   const AGE_OPTIONS = useMemo(() => optionsT ? [
-    { value: 'any', label: optionsT.anyAge || 'Any Age' },
-    { value: 'young', label: optionsT['20s'] || '20-30s' },
-    { value: 'middle', label: optionsT['30s'] || '30-40s' },
-    { value: 'mature', label: optionsT['40s'] || '40-50s' },
+    { value: 'any' as const, label: optionsT.anyAge || 'Any Age' },
+    { value: 'young' as const, label: optionsT['20s'] || '20-30s' },
+    { value: 'middle' as const, label: optionsT['30s'] || '30-40s' },
+    { value: 'mature' as const, label: optionsT['40s'] || '40-50s' },
   ] : DEFAULT_AGE_OPTIONS, [optionsT])
 
   const STYLE_OPTIONS = useMemo(() => optionsT ? [
-    { value: 'any', label: optionsT.any || 'Any' },
-    { value: 'natural', label: optionsT.natural || 'Natural' },
-    { value: 'professional', label: optionsT.professional || 'Professional' },
-    { value: 'casual', label: optionsT.casual || 'Casual' },
-    { value: 'elegant', label: optionsT.elegant || 'Elegant' },
+    { value: 'any' as const, label: optionsT.any || 'Any' },
+    { value: 'natural' as const, label: optionsT.natural || 'Natural' },
+    { value: 'professional' as const, label: optionsT.professional || 'Professional' },
+    { value: 'casual' as const, label: optionsT.casual || 'Casual' },
+    { value: 'elegant' as const, label: optionsT.elegant || 'Elegant' },
   ] : DEFAULT_STYLE_OPTIONS, [optionsT])
 
   const ETHNICITY_OPTIONS = useMemo(() => optionsT ? [
-    { value: 'any', label: optionsT.any || 'Any' },
-    { value: 'korean', label: optionsT.korean || 'Korean' },
-    { value: 'asian', label: optionsT.asian || 'Asian' },
-    { value: 'western', label: optionsT.western || 'Western' },
+    { value: 'any' as const, label: optionsT.any || 'Any' },
+    { value: 'korean' as const, label: optionsT.korean || 'Korean' },
+    { value: 'asian' as const, label: optionsT.asian || 'Asian' },
+    { value: 'western' as const, label: optionsT.western || 'Western' },
   ] : DEFAULT_ETHNICITY_OPTIONS, [optionsT])
 
   const BODY_TYPE_OPTIONS = useMemo(() => optionsT ? [
-    { value: 'any', label: optionsT.aiRecommend || 'AI Recommend' },
-    { value: 'slim', label: optionsT.slim || 'Slim' },
-    { value: 'average', label: optionsT.average || 'Average' },
-    { value: 'athletic', label: optionsT.athletic || 'Athletic' },
-    { value: 'curvy', label: optionsT.curvy || 'Curvy' },
+    { value: 'any' as const, label: optionsT.aiRecommend || 'AI Recommend' },
+    { value: 'slim' as const, label: optionsT.slim || 'Slim' },
+    { value: 'average' as const, label: optionsT.average || 'Average' },
+    { value: 'athletic' as const, label: optionsT.athletic || 'Athletic' },
+    { value: 'curvy' as const, label: optionsT.curvy || 'Curvy' },
   ] : DEFAULT_BODY_TYPE_OPTIONS, [optionsT])
 
   // AI 아바타 옵션 상태

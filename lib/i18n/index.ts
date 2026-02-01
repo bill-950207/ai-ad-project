@@ -17,8 +17,9 @@ import zh from './translations/zh.json'
 /** 지원 언어 코드 */
 export type Language = 'ko' | 'en' | 'ja' | 'zh'
 
-/** 번역 텍스트 타입 (한국어 JSON 구조 기준) */
-export type Translations = typeof ko
+/** 번역 텍스트 타입 (느슨한 타입으로 런타임 유연성 확보) */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Translations = Record<string, any>
 
 // ============================================================
 // 상수 정의

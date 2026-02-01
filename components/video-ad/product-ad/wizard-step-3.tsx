@@ -343,10 +343,10 @@ export function WizardStep3() {
     fetchUserPlan()
   }, [setSceneCount, sceneCount])
 
-  // Vidu Q2 모델 강제 설정
+  // Vidu Q3 모델 강제 설정
   useEffect(() => {
-    if (videoModel !== 'vidu-q2') {
-      setVideoModel('vidu-q2')
+    if (videoModel !== 'vidu') {
+      setVideoModel('vidu')
     }
   }, [videoModel, setVideoModel])
 

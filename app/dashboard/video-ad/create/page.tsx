@@ -337,35 +337,8 @@ function VideoAdCreateContent() {
   }
 
   // 번역
-  const videoAd = t.videoAd as {
-    title?: string
-    createAd?: string
-    selectProduct?: string
-    selectAvatar?: string
-    noProductSelected?: string
-    noAvatarSelected?: string
-    productInfo?: string
-    directInput?: string
-    urlInput?: string
-    productName?: string
-    productNamePlaceholder?: string
-    productDescription?: string
-    productDescriptionPlaceholder?: string
-    targetAudience?: string
-    targetAudiencePlaceholder?: string
-    keyFeatures?: string
-    keyFeaturesPlaceholder?: string
-    adTone?: string
-    adTonePlaceholder?: string
-    productUrl?: string
-    productUrlPlaceholder?: string
-    duration?: string
-    resolution?: string
-    aspectRatio?: string
-    generate?: string
-    generating?: string
-    creditsRequired?: string
-  } | undefined
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const videoAd = t.videoAd as any
 
   // 크레딧 계산
   const calculateCredits = () => {

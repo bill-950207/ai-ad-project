@@ -84,28 +84,8 @@ export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null)
   const [user, setUser] = useState<boolean | null>(null)
 
-  const pricingT = t.pricingPage as {
-    badge: string
-    title: string
-    subtitle: string
-    monthly: string
-    yearly: string
-    popular: string
-    free: string
-    perMonth: string
-    yearlySavings: string
-    avatars: string
-    music: string
-    products: string
-    credits: string
-    getStarted: string
-    cancelAnytime: string
-    keepContent: string
-    creditsRollOver: string
-    ctaText: string
-    startFree: string
-    plans: Record<string, PlanTranslation>
-  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pricingT = t.pricingPage as any
 
   useEffect(() => {
     const checkUser = async () => {

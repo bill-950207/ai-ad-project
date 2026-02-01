@@ -51,19 +51,8 @@ export function CompletionStep() {
     return types[imageAdType]?.title || imageAdType
   }
 
-  // Translation type
-  type OnboardingT = {
-    readyTitle?: string
-    readyToCreateVideo?: string
-    readyToCreateImage?: string
-    navigating?: string
-    startCreatingAd?: string
-    videoTypes?: {
-      productDescription?: string
-      productAd?: string
-    }
-  }
-  const onbT = t.onboarding as OnboardingT | undefined
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onbT = t.onboarding as any
 
   // 대상 타입 텍스트
   const videoTypeText = videoAdType === 'productDescription'

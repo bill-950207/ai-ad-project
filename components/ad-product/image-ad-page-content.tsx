@@ -355,8 +355,7 @@ export function ImageAdPageContent() {
 
   // 광고 유형 이름 변환
   const getAdTypeName = (adType: string) => {
-    const typeKey = adType as keyof typeof t.imageAdTypes
-    return (t.imageAdTypes as Record<string, { title?: string }>)?.[typeKey]?.title || adType
+    return t.imageAdTypes?.[adType]?.title || adType
   }
 
   // 마법사 스텝 이름

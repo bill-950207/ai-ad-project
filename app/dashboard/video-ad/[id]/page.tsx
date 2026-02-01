@@ -505,33 +505,8 @@ export default function VideoAdDetailPage() {
   }
 
   // 번역
-  const videoAdT = t.videoAd as {
-    title?: string
-    status?: {
-      pending?: string
-      inQueue?: string
-      inProgress?: string
-      completed?: string
-      failed?: string
-    }
-    confirmDelete?: string
-    download?: string
-    delete?: string
-    product?: string
-    avatar?: string
-    duration?: string
-    resolution?: string
-    createdAt?: string
-    prompt?: string
-    productInfo?: string
-    expandedPrompt?: string
-    videoInfo?: string
-    processing?: string
-    processingDesc?: string
-    scriptStyle?: string
-    styleLabels?: Record<string, string>
-    cameraAngles?: Record<string, string>
-  } | undefined
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const videoAdT = t.videoAd as any
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; className: string }> = {

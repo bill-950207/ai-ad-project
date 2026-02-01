@@ -607,8 +607,8 @@ export function WizardStep5() {
     return option.creditsPerSecond * totalDuration
   })()
 
-  // 멀티씬 모드 확인 (Kling O1 또는 Vidu Q2)
-  const isMultiSceneMode = videoModel === 'kling-o1' || videoModel === 'vidu-q2'
+  // Vidu Q3 전용 모드 (항상 멀티씬)
+  const isMultiSceneMode = videoModel === 'vidu'
 
   const selectedScene = selectedSceneIndex !== null ? firstSceneOptions[selectedSceneIndex] : null
   const hasCompletedVideos = isMultiSceneMode
