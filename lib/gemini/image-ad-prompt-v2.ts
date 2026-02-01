@@ -402,6 +402,12 @@ function postProcessPrompt(prompt: string, hasLogo: boolean | undefined, adType:
     }
   }
 
+  // 조명/카메라 장비 방지 문구 (항상 추가 - 이미지 모델에 직접 지시)
+  // Seedream 4.5는 negative_prompt를 지원하지 않으므로 프롬프트에 직접 포함
+  if (!lowerPrompt.includes('no visible lighting') && !lowerPrompt.includes('no equipment')) {
+    additions.push('No visible lighting equipment, no spotlights, no camera gear, no studio fixtures in frame.')
+  }
+
   return additions.length > 0 ? `${prompt} ${additions.join(' ')}` : prompt
 }
 
