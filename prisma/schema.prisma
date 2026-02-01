@@ -858,6 +858,7 @@ enum video_ad_status {
   AWAITING_REVIEW
   DRAFT
   GENERATING_SCRIPTS
+  GENERATING_IMAGES
   GENERATING_AUDIO
   // Avatar Motion 상태
   GENERATING_STORY
@@ -984,15 +985,17 @@ model ad_background {
 }
 
 /// 음성 프리뷰 캐시 (TTS 음성 샘플 저장)
+/// voice_id + language 조합으로 캐싱 (같은 음성이라도 언어별로 다른 프리뷰)
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model voice_previews {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  voice_id   String   @unique // 음성 ID (예: Korean_SweetGirl)
+  voice_id   String   // 음성 ID (예: BIvP0GN1cAtSRTxNHnWS)
   language   String   // 언어 코드 (ko, en, ja, zh)
   audio_url  String   // 생성된 오디오 URL
   created_at DateTime @default(now()) @db.Timestamptz(6)
   updated_at DateTime @default(now()) @db.Timestamptz(6)
 
+  @@unique([voice_id, language], map: "idx_voice_previews_voice_language")
   @@index([voice_id], map: "idx_voice_previews_voice_id")
   @@index([language], map: "idx_voice_previews_language")
   @@schema("public")

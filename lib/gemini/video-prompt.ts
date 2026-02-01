@@ -598,7 +598,6 @@ const modelPoseDescriptions: Record<ModelPoseType, string> = {
   // UGC용 - 자연스럽고 진정성 있는 포즈 (손 묘사 강화)
   'holding-product': 'Model holding product naturally at chest level - relaxed grip with all five fingers gently curved around product, thumb visible on front surface, fingertips making natural contact, casual authentic vibe',
   'using-product': 'Model actively demonstrating product use - fingers interacting naturally with product (pressing, applying, opening), anatomically correct hand positioning, genuine engagement shown through hand movement',
-  unboxing: 'Model opening/unboxing product - both hands visible with fingers working on packaging, one hand stabilizing box while other hand lifts/pulls, excited discovery expression, all ten fingers clearly rendered',
   reaction: 'Model showing genuine reaction to product - product held loosely in one hand at mid-chest, other hand may touch face or gesture, expressive authentic enthusiasm, relaxed finger positioning',
   // Podcast용 - 대화형 프레젠터 스타일 (손 묘사 강화)
   'desk-presenter': 'Model seated at desk - product placed on desk surface within reach, one hand resting near product with fingers relaxed, other hand may gesture while speaking, casual professional demeanor',

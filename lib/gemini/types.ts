@@ -168,7 +168,6 @@ export type ModelPoseType =
   // UGC용
   | 'holding-product'
   | 'using-product'
-  | 'unboxing'
   | 'reaction'
   // Podcast용
   | 'desk-presenter'

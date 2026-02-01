@@ -98,7 +98,7 @@ export interface VoiceInfo {
 /** TTS 입력 타입 */
 export interface KieTTSInput {
   text: string
-  voice_id: string
+  voice: string                // voice ID (not voice_id)
   stability?: number           // 0-1, 기본값 0.5
   language_code?: TTSLanguage  // 기본값 'auto'
 }
@@ -115,109 +115,144 @@ export interface KieTTSResult {
 }
 
 // ============================================================
-// 음성 목록 (나중에 테스트하면서 채워야 함)
+// 음성 목록 (ElevenLabs v3 - 모든 언어 지원)
 // ============================================================
 
 /**
- * 한국어 음성 목록
- * TODO: 실제 테스트 후 voice_id, 이름, 성별 등 업데이트 필요
+ * ElevenLabs Voice IDs
+ * NOTE: ElevenLabs는 모든 음성이 모든 언어를 지원합니다.
+ * TODO: 실제 테스트 후 name, gender 등 업데이트 필요
  */
-export const KOREAN_VOICES: VoiceInfo[] = [
-  // 예시 - 실제 voice_id는 테스트 후 업데이트 필요
-  {
-    id: 'korean_female_1',
-    name: '여성 1',
-    description: '한국어 여성 음성',
-    gender: 'female',
-    style: 'neutral',
-    language: 'ko',
-  },
-  {
-    id: 'korean_male_1',
-    name: '남성 1',
-    description: '한국어 남성 음성',
-    gender: 'male',
-    style: 'neutral',
-    language: 'ko',
-  },
-]
+export const VOICE_IDS = [
+  'BIvP0GN1cAtSRTxNHnWS',
+  'aMSt68OGf4xUZAnLpTU8',
+  'RILOU7YmBhvwJGDGjNmP',
+  'EkK5I93UQWFDigLMpZcX',
+  'Z3R5wn05IrDiVCyEkUrK',
+  'tnSpp4vdxKPjI9w0GnoV',
+  'NNl6r8mD7vthiJatiJt1',
+  'YOq2y2Up4RgXP2HyXjE5',
+  'Bj9UqZbhQsanLzgalpEG',
+  'c6SfcYrb2t09NHXiT80T',
+  'B8gJV1IhpuegLxdpXFOE',
+  'exsUS4vynmxd379XN4yO',
+  'BpjGufoPiobT79j2vtj4',
+  '2zRM7PkgwBPiau2jvVXc',
+  '1SM7GgM6IMuvQlz2BwM3',
+  'ouL9IsyrSnUkCmfnD02u',
+  '5l5f8iK3YPeGga21rQIX',
+  'scOwDtmlUjD3prqpp97I',
+  'NOpBlnGInO9m6vDvFkFC',
+  'BZgkqPqms7Kj9ulSkVzn',
+  'wo6udizrrtpIxWGp2qJk',
+  'yjJ45q8TVCrtMhEKurxY',
+  'gU0LNdkMOQCOrPrwtbee',
+  'DGzg6RaUqxGRTHSBjfgF',
+  'DGTOOUoGpoP6UZ9uSWfA',
+  'x70vRnQBMBu4FAYhjJbO',
+  'Sm1seazb4gs7RSlUVw7c',
+  'P1bg08DkjqiVEzOn76yG',
+  'qDuRKMlYmrm8trt5QyBn',
+  'kUUTqKQ05NMGulF08DDf',
+  'qXpMhyvQqiRxWQs4qSSB',
+  'TX3LPaxmHKxFdv7VOQHJ',
+  'iP95p4xoKVk53GoZ742B',
+  'SOYHLrjzK2X1ezoPC6cr',
+  'N2lVS1w4EtoT3dr4eOWO',
+  'FGY2WhTYpPnrIDTdsKH5',
+  'XB0fDUnXU5powFXDhCwa',
+  'cgSgspJ2msm6clMCkdW9',
+  'MnUw1cSnpiLoLhpd3Hqp',
+  'kPzsL2i3teMYv0FxEYQ6',
+  'UgBBYS2sOqTuMpoF3BR0',
+  'IjnA9kwZJHJ20Fp7Vmy6',
+  'KoQQbl9zjAdLgKZjm8Ol',
+  'hpp4J3VqNfWAUOO0d1Us',
+  'pNInz6obpgDQGcFmaJgB',
+  'nPczCjzI2devNBz1zQrb',
+  'L0Dsvb3SLTyegXwtm47J',
+  'uYXf8XasLslADfZ2MB4u',
+  'gs0tAILXbY5DNrJrsM6F',
+  'DTKMou8ccj1ZaWGBiotd',
+  'vBKc2FfBKJfcZNyEt1n6',
+  'TmNe0cCqkZBMwPWOd3RD',
+  'DYkrAHD8iwork3YSUBbs',
+  '56AoDkrOh6qfVPDXZ7Pt',
+  'eR40ATw9ArzDf9h3v7t7',
+  'g6xIsTj2HwM6VR4iXFCw',
+  'lcMyyd2HUfFzxdCaC4Ta',
+  '6aDn1KB0hjpdcocrUkmq',
+  'Sq93GQT4X1lKDXsQcixO',
+  'vfaqCOvlrKi4Zp7C2IAm',
+  'piI8Kku0DcvcL6TTSeQt',
+  'KTPVrSVAEUSJRClDzBw7',
+  'flHkNRp1BlvT73UL6gyz',
+  '9yzdeviXkFddZ4Oz8Mok',
+  'pPdl9cQBQq4p6mRkZy2Z',
+  '0SpgpJ4D3MpHCiWdyTg3',
+  'UFO0Yv86wqRxAt1DmXUu',
+  'oR4uRy4fHDUGGISL0Rev',
+  'zYcjlYFOd3taleS0gkk3',
+  'nzeAacJi50IvxcyDnMXa',
+  'ruirxsoakN0GWmGNIo04',
+  '1KFdM0QCwQn4rmn5nn9C',
+  'TC0Zp7WVFzhA8zpTlRqV',
+  'ljo9gAlSqKOvF6D8sOsX',
+  'PPzYpIqttlTYA83688JI',
+  'ZF6FPAbjXT4488VcRRnw',
+  '8JVbfL6oEdmuxKn5DK2C',
+  'iCrDUkL56s3C8sCRl7wb',
+  '1hlpeD1ydbI2ow0Tt3EW',
+  'wJqPPQ618aTW29mptyoc',
+  'EiNlNiXeDU1pqqOPrYMO',
+  'FUfBrNit0NNZAwb58KWH',
+  '4YYIPFl9wE5c4L2eu2Gb',
+  'OYWwCdDHouzDwiZJWOOu',
+  '6F5Zhi321D3Oq7v1oNT4',
+  'qNkzaJoHLLdpvgh5tISm',
+  'YXpFCvM1S3JbWEJhoskW',
+  '9PVP7ENhDskL0KYHAKtD',
+  'LG95yZDEHg6fCZdQjLqj',
+  'CeNX9CMwmxDxUF5Q2Inm',
+  'st7NwhTPEzqo2riw7qWC',
+  'aD6riP1btT197c6dACmy',
+  'FF7KdobWPaiR0vkcALHF',
+  'mtrellq69YZsNwzUSyXh',
+  'dHd5gvgSOzSfduK4CvEg',
+  'cTNP6ZM2mLTKj2BFhxEh',
+  'eVItLK1UvXctxuaRV2Oq',
+  'U1Vk2oyatMdYs096Ety7',
+  'esy0r39YPLQjOczyOib8',
+  'bwCXcoVxWNYMlC6Esa8u',
+  'D2jw4N9m4xePLTQ3IHjU',
+  'Tsns2HvNFKfGiNjllgqo',
+  'Atp5cNFg1Wj5gyKD7HWV',
+  '1cxc5c3E9K6F1wlqOJGV',
+  '1U02n4nD6AdIZ9CjF053',
+  'HgyIHe81F3nXywNwkraY',
+  'AeRdCCKzvd23BpJoofzx',
+  'LruHrtVF6PSyGItzMNHS',
+  'Qggl4b0xRMiqOwhPtVWT',
+  'zA6D7RyKdc2EClouEMkP',
+  '1wGbFxmAM3Fgw63G1zZJ',
+  'hqfrgApggtO1785R4Fsn',
+  'sH0WdfE5fsKuM2otdQZr',
+  'MJ0RnG71ty4LH3dvNfSd',
+] as const
 
 /**
- * 영어 음성 목록
- * TODO: 실제 테스트 후 voice_id, 이름, 성별 등 업데이트 필요
+ * 전체 음성 목록
+ * ElevenLabs 음성은 모든 언어를 지원하므로 언어 구분 없이 단일 목록으로 관리합니다.
+ * TODO: 실제 테스트 후 name, gender, style 등 업데이트 필요
  */
-export const ENGLISH_VOICES: VoiceInfo[] = [
-  {
-    id: 'english_female_1',
-    name: 'Female 1',
-    description: 'English female voice',
-    gender: 'female',
-    style: 'neutral',
-    language: 'en',
-  },
-  {
-    id: 'english_male_1',
-    name: 'Male 1',
-    description: 'English male voice',
-    gender: 'male',
-    style: 'neutral',
-    language: 'en',
-  },
-]
-
-/**
- * 일본어 음성 목록
- * TODO: 실제 테스트 후 voice_id, 이름, 성별 등 업데이트 필요
- */
-export const JAPANESE_VOICES: VoiceInfo[] = [
-  {
-    id: 'japanese_female_1',
-    name: '女性 1',
-    description: '日本語女性音声',
-    gender: 'female',
-    style: 'neutral',
-    language: 'ja',
-  },
-  {
-    id: 'japanese_male_1',
-    name: '男性 1',
-    description: '日本語男性音声',
-    gender: 'male',
-    style: 'neutral',
-    language: 'ja',
-  },
-]
-
-/**
- * 중국어 음성 목록
- * TODO: 실제 테스트 후 voice_id, 이름, 성별 등 업데이트 필요
- */
-export const CHINESE_VOICES: VoiceInfo[] = [
-  {
-    id: 'chinese_female_1',
-    name: '女性 1',
-    description: '中文女性语音',
-    gender: 'female',
-    style: 'neutral',
-    language: 'zh',
-  },
-  {
-    id: 'chinese_male_1',
-    name: '男性 1',
-    description: '中文男性语音',
-    gender: 'male',
-    style: 'neutral',
-    language: 'zh',
-  },
-]
-
-/** 언어별 음성 목록 */
-export const VOICES_BY_LANGUAGE: Record<string, VoiceInfo[]> = {
-  ko: KOREAN_VOICES,
-  en: ENGLISH_VOICES,
-  ja: JAPANESE_VOICES,
-  zh: CHINESE_VOICES,
-}
+export const VOICES: VoiceInfo[] = VOICE_IDS.map((id, index) => ({
+  id,
+  name: `Voice ${index + 1}`,
+  description: 'ElevenLabs multilingual voice',
+  gender: 'unknown' as const,
+  style: 'neutral',
+  language: 'auto' as TTSLanguage,
+}))
 
 /** 언어 라벨 */
 export const LANGUAGE_LABELS: Record<string, string> = {
@@ -233,33 +268,31 @@ export const LANGUAGE_LABELS: Record<string, string> = {
 
 /**
  * 언어별 음성 목록 가져오기
+ * NOTE: ElevenLabs 음성은 모든 언어를 지원하므로 언어와 무관하게 전체 목록 반환
  */
-export function getVoicesByLanguage(language: string): VoiceInfo[] {
-  return VOICES_BY_LANGUAGE[language] || KOREAN_VOICES
+export function getVoicesByLanguage(_language: string): VoiceInfo[] {
+  // ElevenLabs 음성은 모든 언어를 지원하므로 전체 목록 반환
+  return VOICES
 }
 
 /**
- * 모든 언어의 음성 목록 가져오기
+ * 모든 음성 목록 가져오기
+ * NOTE: ElevenLabs 음성은 언어별 구분 없이 단일 목록으로 반환
  */
 export function getAllVoices(): { language: string; label: string; voices: VoiceInfo[] }[] {
-  return Object.entries(VOICES_BY_LANGUAGE).map(([lang, voices]) => ({
-    language: lang,
-    label: LANGUAGE_LABELS[lang] || lang,
-    voices,
-  }))
+  // 단일 "전체" 그룹으로 반환 (언어별 구분 없음)
+  return [{
+    language: 'all',
+    label: 'All Voices',
+    voices: VOICES,
+  }]
 }
 
 /**
  * 음성 ID로 음성 정보 찾기
  */
 export function findVoiceById(voiceId: string): VoiceInfo | null {
-  const allVoices = [
-    ...KOREAN_VOICES,
-    ...ENGLISH_VOICES,
-    ...JAPANESE_VOICES,
-    ...CHINESE_VOICES,
-  ]
-  return allVoices.find((v) => v.id === voiceId) || null
+  return VOICES.find((v) => v.id === voiceId) || null
 }
 
 /**
@@ -326,13 +359,22 @@ export async function createTTSTask(
   input: KieTTSInput,
   callbackUrl?: string
 ): Promise<KieTTSOutput> {
+  // 'auto'는 지원되지 않으므로 실제 언어 코드 사용 (기본값: 'en')
+  const languageCode = input.language_code && input.language_code !== 'auto'
+    ? input.language_code
+    : 'en'
+
   const body: Record<string, unknown> = {
     model: ELEVENLABS_V3_MODEL,
     input: {
-      text: input.text,
-      voice_id: input.voice_id,
       stability: input.stability ?? 0.5,
-      language_code: input.language_code || 'auto',
+      language_code: languageCode,
+      dialogue: [
+        {
+          text: input.text,
+          voice: input.voice,
+        },
+      ],
     },
   }
 
@@ -340,7 +382,8 @@ export async function createTTSTask(
     body.callBackUrl = callbackUrl
   }
 
-  console.log(`[TTS] createTTSTask: voice_id=${input.voice_id}, text="${input.text.substring(0, 30)}..."`)
+  console.log(`[TTS] createTTSTask: voice=${input.voice}, text="${input.text.substring(0, 30)}..."`)
+  console.log(`[TTS] Request body:`, JSON.stringify(body, null, 2))
 
   const response = await fetch(`${KIE_API_BASE}/jobs/createTask`, {
     method: 'POST',
@@ -348,12 +391,14 @@ export async function createTTSTask(
     body: JSON.stringify(body),
   })
 
+  const responseText = await response.text()
+  console.log(`[TTS] Response status: ${response.status}, body: ${responseText}`)
+
   if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(parseKieError(response.status, errorText))
+    throw new Error(parseKieError(response.status, responseText))
   }
 
-  const result: KieApiResponse<KieTaskData> = await response.json()
+  const result: KieApiResponse<KieTaskData> = JSON.parse(responseText)
 
   if (result.code !== 200) {
     throw new Error(`Kie.ai TTS API 오류: ${result.msg}`)
@@ -413,7 +458,7 @@ export async function textToSpeech(
 ): Promise<string> {
   const { taskId } = await createTTSTask({
     text,
-    voice_id: voiceId,
+    voice: voiceId,
     stability: options?.stability,
     language_code: options?.languageCode,
   })
@@ -468,7 +513,7 @@ export async function submitTTSToQueue(
 ): Promise<TTSQueueSubmitResponse> {
   const { taskId } = await createTTSTask({
     text,
-    voice_id: voiceId,
+    voice: voiceId,
     stability: options?.stability,
     language_code: options?.languageCode,
   })

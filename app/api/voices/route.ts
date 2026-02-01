@@ -2,57 +2,33 @@
  * 음성 목록 API 라우트
  *
  * GET /api/voices - Kie.ai ElevenLabs v3 음성 목록 조회
- * GET /api/voices?language=ko - 특정 언어의 음성 목록 조회
- * GET /api/voices?all=true - 모든 언어의 음성 목록 조회
+ *
+ * NOTE: ElevenLabs 음성은 모든 언어를 지원하므로 언어 파라미터와 무관하게
+ * 항상 전체 음성 목록을 반환합니다.
  */
 
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import {
-  getVoicesByLanguage,
-  getAllVoices,
+  VOICES,
   LANGUAGE_LABELS,
-  type TTSLanguage,
 } from '@/lib/kie/tts'
 
 /**
  * GET /api/voices
  *
  * Kie.ai ElevenLabs v3 음성 목록을 조회합니다.
- * - ?language=ko|en|ja|zh: 특정 언어의 음성 목록
- * - ?all=true: 모든 언어의 음성 목록 (언어별 그룹화)
- * - 파라미터 없음: 한국어 음성 목록 (기본값)
+ * ElevenLabs 음성은 모든 언어를 지원하므로 언어 파라미터와 무관하게
+ * 항상 전체 음성 목록을 반환합니다.
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const language = searchParams.get('language') as TTSLanguage | null
     const all = searchParams.get('all')
 
-    // 모든 언어별 음성 조회
-    if (all === 'true') {
-      const voiceGroups = getAllVoices()
-
-      return NextResponse.json({
-        voicesByLanguage: voiceGroups,
-        languages: Object.entries(LANGUAGE_LABELS).map(([code, label]) => ({
-          code,
-          label,
-        })),
-        provider: 'kie-elevenlabs-v3',
-      })
-    }
-
-    // 특정 언어 음성 조회
-    const targetLanguage = language && ['ko', 'en', 'ja', 'zh'].includes(language)
-      ? language
-      : 'ko'
-
-    const voices = getVoicesByLanguage(targetLanguage)
-
     // 음성 정보 정규화 (UI 호환성)
-    const normalizedVoices = voices.map(voice => ({
+    const normalizedVoices = VOICES.map(voice => ({
       id: voice.id,
       voice_id: voice.id,
       name: voice.name,
@@ -61,14 +37,33 @@ export async function GET(request: NextRequest) {
       style: voice.style,
       preview_url: voice.previewUrl || null,
       previewUrl: voice.previewUrl || null,
-      language: voice.language,
+      language: 'all', // 모든 언어 지원
     }))
 
+    // 모든 언어별 음성 조회 (레거시 호환)
+    if (all === 'true') {
+      return NextResponse.json({
+        voicesByLanguage: [{
+          language: 'all',
+          label: 'All Voices',
+          voices: normalizedVoices,
+        }],
+        languages: Object.entries(LANGUAGE_LABELS).map(([code, label]) => ({
+          code,
+          label,
+        })),
+        provider: 'kie-elevenlabs-v3',
+        note: 'ElevenLabs voices support all languages',
+      })
+    }
+
+    // 단일 목록으로 반환 (언어 무관)
     return NextResponse.json({
       voices: normalizedVoices,
-      language: targetLanguage,
-      languageLabel: LANGUAGE_LABELS[targetLanguage] || targetLanguage,
+      language: 'all',
+      languageLabel: 'All Voices',
       provider: 'kie-elevenlabs-v3',
+      note: 'ElevenLabs voices support all languages',
     })
   } catch (error) {
     console.error('음성 목록 조회 오류:', error)

@@ -2,6 +2,7 @@
  * TTS 모듈 진입점
  *
  * Kie.ai ElevenLabs v3 TTS 서비스를 export합니다.
+ * ElevenLabs 음성은 모든 언어를 지원하므로 언어별 구분 없이 단일 목록으로 관리합니다.
  */
 
 // Kie.ai ElevenLabs v3 TTS
@@ -15,11 +16,8 @@ export {
   type TTSQueueSubmitResponse,
   type TTSQueueStatusResponse,
   // 음성 목록
-  KOREAN_VOICES,
-  ENGLISH_VOICES,
-  JAPANESE_VOICES,
-  CHINESE_VOICES,
-  VOICES_BY_LANGUAGE,
+  VOICE_IDS,
+  VOICES,
   LANGUAGE_LABELS,
   // 유틸리티
   getVoicesByLanguage,
