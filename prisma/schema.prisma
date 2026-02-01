@@ -444,6 +444,9 @@ model profiles {
   team_size       String?
   referral_source String?
   role            user_role        @default(MEMBER)
+  // 사용자 설정
+  email_notifications Boolean?     @default(true)  // 이메일 알림 수신 동의
+  marketing_emails    Boolean?     @default(false) // 마케팅 이메일 수신 동의
   ad_music        ad_music[]
   ad_products     ad_products[]
   ad_backgrounds  ad_background[]
