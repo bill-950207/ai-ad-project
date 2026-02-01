@@ -50,7 +50,7 @@ export function createDefaultSceneElement(): SceneElementOptions {
     background: '',
     mood: '',
     additionalPrompt: '',
-    movementAmplitude: 'medium',
+    movementAmplitude: 'auto',  // AI가 콘텐츠에 맞게 자동 결정
   }
 }
 

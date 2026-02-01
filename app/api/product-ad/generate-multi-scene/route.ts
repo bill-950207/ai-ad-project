@@ -5,7 +5,7 @@
  * - 각 씬은 개별 영상으로 생성된 후 나중에 합쳐짐
  * - 씬별로 다른 배경, 조명, 카메라 앵글 등 개별 설정 지원
  * - 모든 씬의 톤앤매너/색감이 일관되어야 자연스러운 합성 가능
- * - 사람/얼굴 제외, 제품 중심 광고
+ * - 제품 중심 광고 (손/신체 허용, 얼굴 클로즈업 제외)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
                 },
                 scenePrompt: {
                   type: Type.STRING,
-                  description: '이 씬의 개별 영상 프롬프트 - 모션 포함, 사람 제외, 40-60단어 (영어)',
+                  description: '이 씬의 개별 영상 프롬프트 - 모션 포함, 50-100 words (영어). 손/신체 허용, 얼굴 클로즈업 제외',
                 },
                 duration: {
                   type: Type.NUMBER,
@@ -267,9 +267,10 @@ These words will cause actual cameras/equipment to appear in generated videos:
 🎬 GOAL: Create ${sceneCount} SCENES where EACH scene uses its OWN specific elements listed below.
 
 === CRITICAL RULES ===
-❌ ABSOLUTELY NO PEOPLE:
-- NO humans, faces, hands, body parts, silhouettes
-- ONLY the product, objects, environment, and natural elements
+✅ HUMAN ELEMENTS ALLOWED (when relevant):
+- ❌ NO FULL FACE CLOSE-UPS (AI-generated faces often look unnatural)
+- ✅ ALLOWED: Hands holding/using the product, partial body, silhouettes, back view
+- ✅ ALLOWED: Lifestyle scenes with people (but keep faces obscured, out of frame, or from behind)
 
 ❌ ABSOLUTELY NO VISIBLE PRODUCTION EQUIPMENT:
 - NO cameras, tripods, lighting rigs, softboxes, ring lights, reflectors
@@ -311,13 +312,15 @@ ${sceneElementsDescription}
 - And so on for all scenes
 - This creates visual variety while maintaining the overall mood
 
-=== 🎨 VISUAL CONSISTENCY (톤앤매너 통일) ===
-While scenes have DIFFERENT settings, they should share:
-1. **Same overall mood/feeling**: ${overallMood || 'Premium commercial'}
-2. **Quality level**: All scenes should feel like same premium campaign
-3. **Transition flow**: Scenes should connect naturally
+=== 🎨 VISUAL CONSISTENCY & NARRATIVE FLOW (톤앤매너 + 스토리 연결) ===
+While scenes have DIFFERENT settings, they MUST tell a CONNECTED STORY:
+1. **Narrative arc**: Opening (grab attention) → Build interest → Climax (memorable ending)
+2. **Same overall mood/feeling**: ${overallMood || 'Premium commercial'}
+3. **Visual continuity**: Consistent color palette, lighting mood, recurring visual motifs
+4. **Logical flow**: Each scene should naturally lead to the next - NOT disconnected shots
+5. **Be bold**: Match visuals to product personality (luxury=elegant, sports=dynamic, tech=futuristic)
 
-=== SCENE PROMPT STRUCTURE (50-80 words) ===
+=== SCENE PROMPT STRUCTURE (50-100 words) ===
 Each scenePrompt MUST:
 1. START by identifying the product: "The product shown in the attached image"
 2. Use THAT SCENE's specific background, lighting, composition from the elements above
@@ -345,7 +348,7 @@ NEVER include: "camera", "tripod", "photographer", "filming", "behind the scenes
 - Default to "small" movementAmplitude for broadcast-quality stability
 
 === DURATION ===
-Each scene: ${avgDuration} seconds (range: 3-8)
+Each scene: ${avgDuration} seconds (recommended: 1-3 seconds, total video 6-15 seconds)
 
 Generate ${sceneCount} CONNECTED scene prompts for "${productName}".
 Create a unique and creative narrative flow that best highlights this specific product's characteristics.
@@ -354,7 +357,7 @@ Create a unique and creative narrative flow that best highlights this specific p
 1. Each scene MUST use ITS OWN specific elements from the list above
 2. Scene 1 uses Scene 1 elements, Scene 2 uses Scene 2 elements, etc.
 3. Scenes should flow together as one story while having VISUAL VARIETY
-4. NO REAL PEOPLE - only product and environment
+4. HUMAN ELEMENTS ALLOWED: Hands/body/silhouettes OK, but NO full face close-ups
 5. NO VISIBLE STUDIO EQUIPMENT - no cameras, tripods, lighting rigs, softboxes
 6. Each prompt ends with that scene's color tone + "soft professional lighting, photorealistic, 4K"
 7. End visualStyle with: "Overall mood: ${primaryColorTone}, premium commercial quality, no visible production equipment"`

@@ -163,8 +163,8 @@ export async function POST(request: NextRequest) {
       if (isFreeUser) {
         sceneDuration = Math.min(sceneDuration, FREE_USER_LIMITS.maxDuration)
       }
-      // 씬별 movementAmplitude 사용 (없으면 'small' - 안정적인 카메라 워크)
-      const sceneMovementAmplitude = keyframe.movementAmplitude ?? 'small'
+      // 씬별 movementAmplitude 사용 (없으면 'auto' - AI가 콘텐츠에 맞게 자동 결정)
+      const sceneMovementAmplitude = keyframe.movementAmplitude ?? 'auto'
 
       // WaveSpeed Vidu Q3
       const result = await submitViduToQueue({

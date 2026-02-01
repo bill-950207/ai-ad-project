@@ -180,11 +180,11 @@ export async function POST(request: NextRequest) {
                       },
                       imagePrompt: {
                         type: Type.STRING,
-                        description: 'Seedream용 영어 이미지 프롬프트 (50-80 words)',
+                        description: 'Seedream용 영어 이미지 프롬프트 (50-100 words)',
                       },
                       videoPrompt: {
                         type: Type.STRING,
-                        description: 'Vidu용 영어 영상 프롬프트 (50-80 words, motion included)',
+                        description: 'Vidu용 영어 영상 프롬프트 (50-100 words, motion included)',
                       },
                     },
                   },
@@ -201,11 +201,11 @@ export async function POST(request: NextRequest) {
                     },
                     sceneCount: {
                       type: Type.INTEGER,
-                      description: '씬 개수 (2-8)',
+                      description: '씬 개수 (3-5개 권장, 총 영상 6-15초 권장)',
                     },
                     sceneDurations: {
                       type: Type.ARRAY,
-                      description: '각 씬별 영상 길이 (초, 1-8초)',
+                      description: '각 씬별 영상 길이 (1-3초 권장)',
                       items: { type: Type.INTEGER },
                     },
                   },
@@ -283,17 +283,32 @@ Product Description: ${productDescription || 'Not provided'}
 Selling Points: ${sellingPoints?.join(', ') || 'Not provided'}
 Product Image: [Analyze the provided image for visual characteristics]
 
-=== SCENE COUNT (AI DECIDES) ===
-Based on the product characteristics and storytelling needs, YOU decide the optimal number of scenes (2-8).
-- Simple products: 2-3 scenes
-- Products with multiple features: 4-5 scenes
-- Complex or premium products: 5-8 scenes
-Choose what best tells this product's story.
+=== SCENE COUNT & PACING (AI DECIDES) ===
+Based on the product characteristics and storytelling needs, YOU decide the optimal number of scenes.
+**RECOMMENDED: 3-5 scenes, 1-3 seconds each, total video 6-15 seconds**
+- Elegant/luxury products: 3 scenes (2-3 seconds each, slower pacing)
+- Standard products: 4 scenes (2 seconds each) - MOST COMMON
+- Dynamic/feature-rich products: 5 scenes (1-2 seconds each, fast-paced)
+Keep it impactful. Match pacing to product personality - luxury=slower, sports/tech=faster cuts.
 
 === SCENE-BY-SCENE STORYTELLING ===
-CRITICAL: Design each scene to flow naturally into the next while maintaining the overall mood.
-Think of it as a short film that tells a story about the product.
-Create a unique and creative narrative arc that best suits this specific product.
+CRITICAL: Design scenes that tell a CONNECTED STORY with clear narrative flow.
+Think of it as a mini commercial film - each scene must logically lead to the next.
+
+**NARRATIVE STRUCTURE:**
+- Scene 1 (Opening): Introduce the product with visual impact - grab attention
+- Middle Scenes: Build interest, show features/benefits, create desire
+- Final Scene (Climax): Memorable ending - product hero shot or emotional peak
+
+**VISUAL CONTINUITY:**
+- Maintain consistent color palette and lighting mood across all scenes
+- Use visual motifs that connect scenes (e.g., same accent color, recurring element)
+- Each scene should feel like part of the SAME story, not disconnected shots
+
+**BE BOLD & CREATIVE:**
+- Match visuals to product personality (luxury=elegant, sports=dynamic, tech=futuristic)
+- Use dramatic lighting, interesting angles, environmental effects
+- Create visually stunning scenes that capture attention
 
 === FOR EACH SCENE, PROVIDE ===
 1. background (배경/장소, 한국어): 제품 특성에 맞는 창의적이고 구체적인 장소 (자유 작성)
@@ -304,24 +319,34 @@ Create a unique and creative narrative arc that best suits this specific product
 
 4. movementAmplitude: "small" | "medium" | "large" | "auto"
 
-5. imagePrompt (영어, 50-80 words): Seedream 이미지 생성용
+5. imagePrompt (영어, 50-100 words): Seedream 이미지 생성용
    - Start with: "The product shown in the attached image" (NEVER use "${productName}"!)
-   - End with: "soft professional lighting, photorealistic, 4K, commercial quality"
-   - NO PEOPLE
-   - Describe lighting as EFFECT only (e.g., "soft warm light"), NOT as visible equipment
+   - End with: "photorealistic, 8K, premium commercial advertisement"
 
-   🚨 CRITICAL - These words will generate actual cameras in the image:
-   ❌ BANNED: "camera", "Camera", "tripod", "DSLR", "mirrorless"
-   ❌ BANNED: "photographer", "filming", "behind the scenes", "photo shoot"
-   ❌ BANNED: the product name "${productName}" (may contain "Camera" or similar)
-   ✅ USE ONLY: "the product", "the item", "the bottle", "the package"
+   **HUMAN ELEMENTS (필요시 사람 포함 가능):**
+   ❌ NO FULL FACE CLOSE-UPS (AI-generated faces often look unnatural)
+   ✅ ALLOWED: Hands holding/using the product, partial body, silhouettes, back view
+   ✅ ALLOWED: Lifestyle scenes with people (but keep faces obscured, out of frame, or from behind)
 
-6. videoPrompt (영어, 50-80 words): Vidu 영상 생성용
+   **CREATE STUNNING VISUALS like real TV commercials:**
+   - **SPECIFIC ENVIRONMENT**: Describe exact location details (e.g., "floating above a reflective black water surface" not just "dark background")
+   - **DRAMATIC LIGHTING**: Use cinematic light effects (rim lighting, volumetric rays, neon glows, golden hour warmth, caustic reflections)
+   - **ATMOSPHERIC ELEMENTS**: Add particles, mist, water droplets, floating dust, lens flares, bokeh orbs, light streaks
+   - **PREMIUM SURFACES**: Reflective floors, glass, marble, brushed metal, wet surfaces with mirror reflections
+   - **SCENE 1 = HERO SHOT**: Product as the star - dramatic reveal, eye-catching composition, maximum visual impact
+
+   Example: "The product shown in the attached image floating majestically above an infinite black mirror surface, surrounded by swirling golden particles and soft volumetric light rays, dramatic rim lighting creates a glowing halo effect, scattered water droplets catch prismatic reflections, deep shadows contrast with ethereal highlights, photorealistic, 8K, premium commercial advertisement"
+
+   🚨 BANNED WORDS (will generate unwanted objects):
+   ❌ "camera", "tripod", "DSLR", "photographer", "filming", "studio setup"
+   ❌ the product name "${productName}" - use "the product" instead
+
+6. videoPrompt (영어, 50-100 words): Vidu 영상 생성용
    - Start with: "The product shown in the attached image"
    - Include motion with "slowly" and "steady, gimbal-stabilized"
    - Include "no camera shake", "professional dolly motion" for stability
    - End with: "soft natural lighting, photorealistic, 4K"
-   - NO PEOPLE
+   - HUMAN ELEMENTS: Hands/body allowed, but NO full face close-ups (keep faces out of frame or from behind)
    - NO visible studio equipment, cameras, tripods, lighting rigs, softboxes, reflectors, or any production equipment
    - Describe lighting as EFFECT only, NOT as visible equipment
    - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "photographer", "filming", "behind the scenes", "DSLR", "mirrorless", "handheld", "shaky"
@@ -329,8 +354,8 @@ Create a unique and creative narrative arc that best suits this specific product
 
 === VIDEO SETTINGS ===
 - aspectRatio: "16:9" (landscape), "9:16" (portrait/vertical), or "1:1" (square)
-- sceneCount: The number of scenes YOU decided (2-8)
-- sceneDurations: Array of durations matching your sceneCount (1-8 seconds each)
+- sceneCount: The number of scenes YOU decided (3-5 recommended)
+- sceneDurations: Array of durations matching your sceneCount (1-3 seconds each, total 6-15 seconds)
 
 === OUTPUT FORMAT ===
 1. "elements": { "mood": "overall mood in ${outputLanguage}" }
@@ -377,9 +402,10 @@ ${referenceDescription || 'No description provided'}
 Reference Elements:
 ${referenceElements ? Object.entries(referenceElements).map(([key, value]) => `- ${key}: ${value}`).join('\n') : 'Not provided'}
 
-=== SCENE COUNT (AI DECIDES) ===
-Based on the product characteristics and reference style, YOU decide the optimal number of scenes (2-8).
-Choose what best tells this product's story while adapting the reference style.
+=== SCENE COUNT & PACING (AI DECIDES) ===
+Based on the product characteristics and reference style, YOU decide the optimal number of scenes.
+**RECOMMENDED: 3-5 scenes, 1-3 seconds each, total video 6-15 seconds**
+Keep it impactful while adapting the reference style. Match pacing to product personality.
 
 === FOR EACH SCENE, PROVIDE ===
 1. background (배경/장소, 한국어): 참조 스타일을 적용하여 제품에 맞게 자유 작성
@@ -390,24 +416,34 @@ Choose what best tells this product's story while adapting the reference style.
 
 4. movementAmplitude: "small" | "medium" | "large" | "auto"
 
-5. imagePrompt (영어, 50-80 words): Seedream 이미지 생성용
+5. imagePrompt (영어, 50-100 words): Seedream 이미지 생성용
    - Start with: "The product shown in the attached image" (NEVER use "${productName}"!)
-   - End with: "soft professional lighting, photorealistic, 4K, commercial quality"
-   - NO PEOPLE
-   - Describe lighting as EFFECT only (e.g., "soft warm light"), NOT as visible equipment
+   - End with: "photorealistic, 8K, premium commercial advertisement"
 
-   🚨 CRITICAL - These words will generate actual cameras in the image:
-   ❌ BANNED: "camera", "Camera", "tripod", "DSLR", "mirrorless"
-   ❌ BANNED: "photographer", "filming", "behind the scenes", "photo shoot"
-   ❌ BANNED: the product name "${productName}" (may contain "Camera" or similar)
-   ✅ USE ONLY: "the product", "the item", "the bottle", "the package"
+   **HUMAN ELEMENTS (필요시 사람 포함 가능):**
+   ❌ NO FULL FACE CLOSE-UPS (AI-generated faces often look unnatural)
+   ✅ ALLOWED: Hands holding/using the product, partial body, silhouettes, back view
+   ✅ ALLOWED: Lifestyle scenes with people (but keep faces obscured, out of frame, or from behind)
 
-6. videoPrompt (영어, 50-80 words): Vidu 영상 생성용
+   **CREATE STUNNING VISUALS like real TV commercials:**
+   - **SPECIFIC ENVIRONMENT**: Describe exact location details (e.g., "floating above a reflective black water surface" not just "dark background")
+   - **DRAMATIC LIGHTING**: Use cinematic light effects (rim lighting, volumetric rays, neon glows, golden hour warmth, caustic reflections)
+   - **ATMOSPHERIC ELEMENTS**: Add particles, mist, water droplets, floating dust, lens flares, bokeh orbs, light streaks
+   - **PREMIUM SURFACES**: Reflective floors, glass, marble, brushed metal, wet surfaces with mirror reflections
+   - **SCENE 1 = HERO SHOT**: Product as the star - dramatic reveal, eye-catching composition, maximum visual impact
+
+   Example: "The product shown in the attached image floating majestically above an infinite black mirror surface, surrounded by swirling golden particles and soft volumetric light rays, dramatic rim lighting creates a glowing halo effect, scattered water droplets catch prismatic reflections, deep shadows contrast with ethereal highlights, photorealistic, 8K, premium commercial advertisement"
+
+   🚨 BANNED WORDS (will generate unwanted objects):
+   ❌ "camera", "tripod", "DSLR", "photographer", "filming", "studio setup"
+   ❌ the product name "${productName}" - use "the product" instead
+
+6. videoPrompt (영어, 50-100 words): Vidu 영상 생성용
    - Start with: "The product shown in the attached image"
    - Include motion with "slowly" and "steady, gimbal-stabilized"
    - Include "no camera shake", "professional dolly motion" for stability
    - End with: "soft natural lighting, photorealistic, 4K"
-   - NO PEOPLE
+   - HUMAN ELEMENTS: Hands/body allowed, but NO full face close-ups (keep faces out of frame or from behind)
    - NO visible studio equipment, cameras, tripods, lighting rigs, softboxes, reflectors, or any production equipment
    - Describe lighting as EFFECT only, NOT as visible equipment
    - ⚠️ FORBIDDEN WORDS: "camera", "tripod", "photographer", "filming", "behind the scenes", "DSLR", "mirrorless", "handheld", "shaky"
@@ -415,8 +451,8 @@ Choose what best tells this product's story while adapting the reference style.
 
 === VIDEO SETTINGS ===
 - aspectRatio: "16:9" (landscape), "9:16" (portrait/vertical), or "1:1" (square)
-- sceneCount: The number of scenes YOU decided (2-8)
-- sceneDurations: Array of durations matching your sceneCount (1-8 seconds each)
+- sceneCount: The number of scenes YOU decided (3-5 recommended)
+- sceneDurations: Array of durations matching your sceneCount (1-3 seconds each, total 6-15 seconds)
 
 === OUTPUT FORMAT ===
 1. "elements": { "mood": "overall mood in ${outputLanguage}" }

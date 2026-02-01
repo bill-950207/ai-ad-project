@@ -580,6 +580,10 @@ export function WizardStep5() {
 
   const hasCompletedVideos = finalVideoUrl !== null || sceneVideoStatuses.filter(s => s.status === 'completed').length > 0
 
+  // 모든 씬 영상이 완료되었는지 확인 (완료 버튼 활성화 조건)
+  const allVideosCompleted = sceneVideoStatuses.length > 0 &&
+    sceneVideoStatuses.every(s => s.status === 'completed' && s.videoUrl)
+
   // ============================================================
   // 씬 버전 관리 함수들
   // ============================================================
@@ -766,7 +770,7 @@ export function WizardStep5() {
           imageUrl: kf.imageUrl!,
           scenePrompt: sceneInfo?.scenePrompt,
           duration: sceneDurations[kf.sceneIndex] ?? 3,  // 각 씬별 duration
-          movementAmplitude: sceneInfo?.movementAmplitude ?? 'small',  // 카메라/모션 강도 (기본 small - 안정적)
+          movementAmplitude: sceneInfo?.movementAmplitude ?? 'auto',  // 카메라/모션 강도 (기본 auto - AI가 자동 결정)
         }
       })
 
@@ -796,9 +800,15 @@ export function WizardStep5() {
       }))
       setSceneVideoStatuses(initialStatuses)
 
-      // DB 업데이트
+      // DB 업데이트 - requestId 포함하여 저장 (새로고침 후 폴링 재개 가능)
       await saveDraft({
         status: 'GENERATING_SCENE_VIDEOS',
+        sceneVideoUrls: initialStatuses.map(s => ({
+          sceneIndex: s.sceneIndex,
+          requestId: s.requestId,
+          videoUrl: s.videoUrl,
+          status: s.status,
+        })),
       })
 
       // 폴링 시작
@@ -887,11 +897,22 @@ export function WizardStep5() {
       const data = await res.json()
       const sceneVideo = data.sceneVideos[0]
 
-      setSceneVideoStatuses(prev => prev.map(s =>
-        s.sceneIndex === sceneIndex
-          ? { ...s, requestId: sceneVideo.requestId, status: 'generating' }
-          : s
-      ))
+      setSceneVideoStatuses(prev => {
+        const updated = prev.map(s =>
+          s.sceneIndex === sceneIndex
+            ? { ...s, requestId: sceneVideo.requestId, status: 'generating' as const }
+            : s
+        )
+        // Draft 저장 - requestId 포함 (새로고침 후 폴링 재개 가능)
+        const sceneVideoUrls = updated.map(s => ({
+          sceneIndex: s.sceneIndex,
+          requestId: s.requestId,
+          videoUrl: s.videoUrl,
+          status: s.status,
+        }))
+        saveDraft({ sceneVideoUrls })
+        return updated
+      })
 
       // 단일 씬 폴링 시작 (duration 전달)
       startSingleSceneVideoPolling(sceneIndex, sceneVideo.requestId, useDuration)
@@ -1251,7 +1272,7 @@ export function WizardStep5() {
                   <div className="flex gap-3">
                     <button
                       onClick={handleComplete}
-                      disabled={regeneratingSceneIndex !== null}
+                      disabled={!allVideosCompleted || regeneratingSceneIndex !== null}
                       className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                     >
                       <Check className="w-5 h-5" />
@@ -1334,7 +1355,7 @@ export function WizardStep5() {
                   <div className="flex gap-3">
                     <button
                       onClick={handleComplete}
-                      disabled={isMergingVideos || regeneratingSceneIndex !== null}
+                      disabled={!allVideosCompleted || isMergingVideos || regeneratingSceneIndex !== null}
                       className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                     >
                       {isMergingVideos ? (
