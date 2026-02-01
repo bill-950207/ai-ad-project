@@ -7,60 +7,59 @@ import { Button } from '@/components/ui/button'
 import { Loader2, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 
-type OnboardingFormT = {
-  settingUp?: string
-  welcome?: string
-  askName?: string
-  name?: string
-  namePlaceholder?: string
-  companyOptional?: string
-  companyPlaceholder?: string
-  askRole?: string
-  roleDescription?: string
-  askIndustry?: string
-  industryDescription?: string
-  almostDone?: string
-  finalQuestions?: string
-  teamSize?: string
-  howDidYouFind?: string
-  onboardingFailed?: string
-  genericError?: string
-  prev?: string
-  next?: string
-  start?: string
-  rightSide?: {
-    step1Title?: string
-    step1Desc?: string
-    step2Title?: string
-    step2Desc?: string
-    step3Title?: string
-    step3Desc?: string
-    step4Title?: string
-    step4Desc?: string
-  }
-  jobTitles?: Record<string, string>
-  industries?: Record<string, string>
-  teamSizes?: Record<string, string>
-  referralSources?: Record<string, string>
+// 직책 키 목록
+const JOB_TITLE_KEYS = ['ceo', 'marketer', 'designer', 'developer', 'pm', 'freelancer', 'student', 'other'] as const
+
+// 업종 키 목록
+const INDUSTRY_KEYS = ['ecommerce', 'beauty', 'fashion', 'food', 'tech', 'health', 'education', 'finance', 'agency', 'other'] as const
+
+// 팀 규모 키 목록
+const TEAM_SIZE_KEYS = ['1', '2-10', '11-50', '51-200', '201+'] as const
+
+// 유입 경로 키 목록
+const REFERRAL_SOURCE_KEYS = ['search', 'sns', 'friend', 'ad', 'blog', 'event', 'other'] as const
+
+interface OnboardingTranslation {
+  settingUp: string
+  step1Title: string
+  step1Subtitle: string
+  nameLabel: string
+  namePlaceholder: string
+  companyLabel: string
+  companyPlaceholder: string
+  step2Title: string
+  step2Subtitle: string
+  step3Title: string
+  step3Subtitle: string
+  step4Title: string
+  step4Subtitle: string
+  teamSizeLabel: string
+  referralLabel: string
+  previous: string
+  next: string
+  start: string
+  onboardingFailed: string
+  errorOccurred: string
+  decorTitle1: string
+  decorTitle2: string
+  decorTitle3: string
+  decorTitle4: string
+  decorSubtitle1: string
+  decorSubtitle2: string
+  decorSubtitle3: string
+  decorSubtitle4: string
+  jobTitles: Record<string, string>
+  industries: Record<string, string>
+  teamSizes: Record<string, string>
+  referralSources: Record<string, string>
 }
-
-// Job title options
-const JOB_TITLE_VALUES = ['ceo', 'marketer', 'designer', 'developer', 'pm', 'freelancer', 'student', 'other']
-
-// Industry options
-const INDUSTRY_VALUES = ['ecommerce', 'beauty', 'fashion', 'food', 'tech', 'health', 'education', 'finance', 'agency', 'other']
-
-// Team size options
-const TEAM_SIZE_VALUES = ['1', '2-10', '11-50', '51-200', '201+']
-
-// Referral source options
-const REFERRAL_SOURCE_VALUES = ['search', 'sns', 'friend', 'ad', 'blog', 'event', 'other']
 
 export default function OnboardingPage() {
   const router = useRouter()
   const supabase = createClient()
   const { t } = useLanguage()
-  const formT = t.onboardingForm as OnboardingFormT | undefined
+
+  const onboardingT = t.onboarding as OnboardingTranslation | undefined
 
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -125,14 +124,14 @@ export default function OnboardingPage() {
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || formT?.onboardingFailed || 'Onboarding failed')
+        throw new Error(data.error || onboardingT?.onboardingFailed || 'Failed to complete onboarding')
       }
 
       // 대시보드로 이동
       router.push('/dashboard')
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : (formT?.genericError || 'An error occurred'))
+      setError(err instanceof Error ? err.message : onboardingT?.errorOccurred || 'An error occurred')
       setLoading(false)
     }
   }
@@ -143,6 +142,26 @@ export default function OnboardingPage() {
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     )
+  }
+
+  const getDecorTitle = () => {
+    switch (step) {
+      case 1: return onboardingT?.decorTitle1 || 'Answer a few questions'
+      case 2: return onboardingT?.decorTitle2 || 'Preparing your experience'
+      case 3: return onboardingT?.decorTitle3 || 'Almost done!'
+      case 4: return onboardingT?.decorTitle4 || 'Ready to start!'
+      default: return ''
+    }
+  }
+
+  const getDecorSubtitle = () => {
+    switch (step) {
+      case 1: return onboardingT?.decorSubtitle1 || 'Simple setup for a better experience'
+      case 2: return onboardingT?.decorSubtitle2 || 'We\'ll recommend features for your role'
+      case 3: return onboardingT?.decorSubtitle3 || 'We\'ll prepare templates for your industry'
+      case 4: return onboardingT?.decorSubtitle4 || '5 free credits are waiting!'
+      default: return ''
+    }
   }
 
   return (
@@ -161,7 +180,7 @@ export default function OnboardingPage() {
           {/* Progress Bar */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">{formT?.settingUp || 'Setting up'}</span>
+              <span className="text-sm text-muted-foreground">{onboardingT?.settingUp || 'Setting up'}</span>
               <span className="text-sm text-muted-foreground">{step}/4</span>
             </div>
             <div className="h-2 bg-secondary rounded-full overflow-hidden">
@@ -177,22 +196,22 @@ export default function OnboardingPage() {
             <div className="space-y-6">
               <div>
                 <h1 className="text-3xl font-bold text-foreground mb-2">
-                  {formT?.welcome || 'Welcome! 👋'}
+                  {onboardingT?.step1Title || 'Nice to meet you! 👋'}
                 </h1>
                 <p className="text-muted-foreground">
-                  {formT?.askName || 'First, tell us your name.'}
+                  {onboardingT?.step1Subtitle || 'First, tell us your name.'}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  {formT?.name || 'Name'} *
+                  {onboardingT?.nameLabel || 'Name *'}
                 </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder={formT?.namePlaceholder || 'John Doe'}
+                  placeholder={onboardingT?.namePlaceholder || 'John Doe'}
                   className="w-full px-4 py-3 bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                   autoFocus
                 />
@@ -200,13 +219,13 @@ export default function OnboardingPage() {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  {formT?.companyOptional || 'Company (Optional)'}
+                  {onboardingT?.companyLabel || 'Company (optional)'}
                 </label>
                 <input
                   type="text"
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
-                  placeholder={formT?.companyPlaceholder || 'Company or brand name'}
+                  placeholder={onboardingT?.companyPlaceholder || 'Company or brand name'}
                   className="w-full px-4 py-3 bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                 />
               </div>
@@ -218,25 +237,25 @@ export default function OnboardingPage() {
             <div className="space-y-6">
               <div>
                 <h1 className="text-3xl font-bold text-foreground mb-2">
-                  {(formT?.askRole || "What's your role, {{name}}?").replace('{{name}}', name)}
+                  {(onboardingT?.step2Title || "What's your role, {{name}}?").replace('{{name}}', name)}
                 </h1>
                 <p className="text-muted-foreground">
-                  {formT?.roleDescription || 'Help us serve you better.'}
+                  {onboardingT?.step2Subtitle || 'Help us serve you better.'}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                {JOB_TITLE_VALUES.map((jobValue) => (
+                {JOB_TITLE_KEYS.map((key) => (
                   <button
-                    key={jobValue}
-                    onClick={() => setJobTitle(jobValue)}
+                    key={key}
+                    onClick={() => setJobTitle(key)}
                     className={`p-4 rounded-lg border text-left transition-all ${
-                      jobTitle === jobValue
+                      jobTitle === key
                         ? 'border-primary bg-primary/10 text-foreground'
                         : 'border-border hover:border-primary/50 text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    {formT?.jobTitles?.[jobValue] || jobValue}
+                    {onboardingT?.jobTitles?.[key] || key}
                   </button>
                 ))}
               </div>
@@ -248,25 +267,25 @@ export default function OnboardingPage() {
             <div className="space-y-6">
               <div>
                 <h1 className="text-3xl font-bold text-foreground mb-2">
-                  {formT?.askIndustry || 'What industry are you in?'}
+                  {onboardingT?.step3Title || 'What industry are you in?'}
                 </h1>
                 <p className="text-muted-foreground">
-                  {formT?.industryDescription || 'For personalized recommendations.'}
+                  {onboardingT?.step3Subtitle || 'For personalized recommendations.'}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                {INDUSTRY_VALUES.map((indValue) => (
+                {INDUSTRY_KEYS.map((key) => (
                   <button
-                    key={indValue}
-                    onClick={() => setIndustry(indValue)}
+                    key={key}
+                    onClick={() => setIndustry(key)}
                     className={`p-4 rounded-lg border text-left transition-all ${
-                      industry === indValue
+                      industry === key
                         ? 'border-primary bg-primary/10 text-foreground'
                         : 'border-border hover:border-primary/50 text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    {formT?.industries?.[indValue] || indValue}
+                    {onboardingT?.industries?.[key] || key}
                   </button>
                 ))}
               </div>
@@ -278,29 +297,29 @@ export default function OnboardingPage() {
             <div className="space-y-6">
               <div>
                 <h1 className="text-3xl font-bold text-foreground mb-2">
-                  {formT?.almostDone || 'Almost done! 🎉'}
+                  {onboardingT?.step4Title || 'Almost there! 🎉'}
                 </h1>
                 <p className="text-muted-foreground">
-                  {formT?.finalQuestions || 'Just a few more questions. (Optional)'}
+                  {onboardingT?.step4Subtitle || 'Just a few more questions. (optional)'}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-3">
-                  {formT?.teamSize || 'Team Size'}
+                  {onboardingT?.teamSizeLabel || 'Team size'}
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {TEAM_SIZE_VALUES.map((sizeValue) => (
+                  {TEAM_SIZE_KEYS.map((key) => (
                     <button
-                      key={sizeValue}
-                      onClick={() => setTeamSize(sizeValue)}
+                      key={key}
+                      onClick={() => setTeamSize(key)}
                       className={`px-4 py-2 rounded-lg border transition-all ${
-                        teamSize === sizeValue
+                        teamSize === key
                           ? 'border-primary bg-primary/10 text-foreground'
                           : 'border-border hover:border-primary/50 text-muted-foreground hover:text-foreground'
                       }`}
                     >
-                      {formT?.teamSizes?.[sizeValue] || sizeValue}
+                      {onboardingT?.teamSizes?.[key] || key}
                     </button>
                   ))}
                 </div>
@@ -308,20 +327,20 @@ export default function OnboardingPage() {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-3">
-                  {formT?.howDidYouFind || 'How did you find ADAI?'}
+                  {onboardingT?.referralLabel || 'How did you hear about AIAD?'}
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {REFERRAL_SOURCE_VALUES.map((sourceValue) => (
+                  {REFERRAL_SOURCE_KEYS.map((key) => (
                     <button
-                      key={sourceValue}
-                      onClick={() => setReferralSource(sourceValue)}
+                      key={key}
+                      onClick={() => setReferralSource(key)}
                       className={`px-4 py-2 rounded-lg border transition-all ${
-                        referralSource === sourceValue
+                        referralSource === key
                           ? 'border-primary bg-primary/10 text-foreground'
                           : 'border-border hover:border-primary/50 text-muted-foreground hover:text-foreground'
                       }`}
                     >
-                      {formT?.referralSources?.[sourceValue] || sourceValue}
+                      {onboardingT?.referralSources?.[key] || key}
                     </button>
                   ))}
                 </div>
@@ -345,7 +364,7 @@ export default function OnboardingPage() {
                 disabled={loading}
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
-                {formT?.prev || 'Previous'}
+                {onboardingT?.previous || 'Previous'}
               </Button>
             ) : (
               <div />
@@ -356,7 +375,7 @@ export default function OnboardingPage() {
                 onClick={() => setStep(step + 1)}
                 disabled={!canProceed()}
               >
-                {formT?.next || 'Next'}
+                {onboardingT?.next || 'Next'}
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             ) : (
@@ -369,7 +388,7 @@ export default function OnboardingPage() {
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
-                    {formT?.start || 'Get Started'}
+                    {onboardingT?.start || 'Get Started'}
                     <Sparkles className="w-4 h-4 ml-1" />
                   </>
                 )}
@@ -391,16 +410,10 @@ export default function OnboardingPage() {
                   <Sparkles className="w-12 h-12 text-primary" />
                 </div>
                 <h3 className="text-2xl font-bold text-foreground mb-4">
-                  {step === 1 && (formT?.rightSide?.step1Title || 'Answer a few questions')}
-                  {step === 2 && (formT?.rightSide?.step2Title || 'Preparing your personalized experience')}
-                  {step === 3 && (formT?.rightSide?.step3Title || 'Almost there!')}
-                  {step === 4 && (formT?.rightSide?.step4Title || 'Ready to go!')}
+                  {getDecorTitle()}
                 </h3>
                 <p className="text-muted-foreground">
-                  {step === 1 && (formT?.rightSide?.step1Desc || 'Quick setup for a better experience')}
-                  {step === 2 && (formT?.rightSide?.step2Desc || "We'll recommend features suited to your role")}
-                  {step === 3 && (formT?.rightSide?.step3Desc || "We'll prepare templates for your industry")}
-                  {step === 4 && (formT?.rightSide?.step4Desc || '5 free credits are waiting for you!')}
+                  {getDecorSubtitle()}
                 </p>
               </div>
             </div>

@@ -2,151 +2,210 @@
 
 import { useState, useEffect } from 'react'
 import { Check, X, Sparkles, Zap, Building2, Infinity, Crown, TrendingUp, Loader2, AlertCircle } from 'lucide-react'
+import { useLanguage } from '@/contexts/language-context'
 
 type BillingInterval = 'monthly' | 'yearly'
+
+interface PlanLimits {
+  avatars: string
+  music: string
+  products: string
+  credits: string
+  imageEstimate?: string
+  videoEstimate?: string
+}
+
+interface PlanTranslation {
+  description: string
+  valueHighlight?: string
+  features: string[]
+  limits: PlanLimits
+}
 
 interface Plan {
   name: string
   displayName: string
-  description: string
   priceMonthly: number
   priceYearly: number
   icon: React.ReactNode
-  features: string[]
-  limits: {
-    avatars: string
-    music: string
-    products: string
-    credits: string
-    imageEstimate?: string
-    videoEstimate?: string
-  }
   popular?: boolean
   bestValue?: boolean
-  valueHighlight?: string
-  tier: number // 플랜 등급 (비교용)
+  tier: number
 }
 
-const plans: Plan[] = [
+// Static plan data (non-translatable)
+const basePlans: Plan[] = [
   {
     name: 'FREE',
     displayName: 'Free',
-    description: '시작하기 좋은 무료 플랜',
     priceMonthly: 0,
     priceYearly: 0,
     icon: <Sparkles className="w-5 h-5" />,
-    features: [
-      'AI 아바타 생성',
-      'AI 배경 음악 생성',
-      '제품 배경 자동 제거',
-      '이미지 1장씩 생성',
-      '영상 최단 길이만',
-      '워터마크 포함',
-    ],
-    limits: {
-      avatars: '최대 3개',
-      music: '최대 5개',
-      products: '최대 3개',
-      credits: '15 크레딧 (1회)',
-      imageEstimate: '~7개 광고 이미지',
-    },
     tier: 0,
   },
   {
     name: 'STARTER',
     displayName: 'Starter',
-    description: '개인 크리에이터를 위한 플랜',
     priceMonthly: 9.99,
     priceYearly: 99.90,
     icon: <Zap className="w-5 h-5" />,
-    features: [
-      '모든 Free 기능 포함',
-      '워터마크 제거',
-      'HD 고화질 업스케일',
-      '이미지 최대 5장 동시 생성',
-      '영상 길이 선택 가능',
-      '우선 생성 대기열',
-    ],
-    limits: {
-      avatars: '최대 9개',
-      music: '최대 15개',
-      products: '최대 9개',
-      credits: '120 크레딧/월',
-      imageEstimate: '~60개 광고 이미지',
-      videoEstimate: '~12개 광고 영상',
-    },
     popular: true,
-    valueHighlight: '타사 대비 4배 저렴',
     tier: 1,
   },
   {
     name: 'PRO',
     displayName: 'Pro',
-    description: '전문가를 위한 프로 플랜',
     priceMonthly: 29.99,
     priceYearly: 299.90,
     icon: <Crown className="w-5 h-5" />,
-    features: [
-      '모든 Starter 기능 포함',
-      '최우선 생성 처리',
-      'High 품질 이미지 생성',
-      '영상 3개 동시 생성',
-      '전문가 템플릿',
-      '프리미엄 고객 지원',
-    ],
-    limits: {
-      avatars: '최대 30개',
-      music: '최대 50개',
-      products: '최대 30개',
-      credits: '420 크레딧/월',
-      imageEstimate: '~210개 광고 이미지',
-      videoEstimate: '~42개 광고 영상',
-    },
     bestValue: true,
-    valueHighlight: '이미지당 $0.14',
     tier: 2,
   },
   {
     name: 'BUSINESS',
     displayName: 'Business',
-    description: '팀과 기업을 위한 플랜',
     priceMonthly: 99.99,
     priceYearly: 999.90,
     icon: <Building2 className="w-5 h-5" />,
+    tier: 3,
+  },
+]
+
+// Fallback translations (English)
+const fallbackPlanTranslations: Record<string, PlanTranslation> = {
+  free: {
+    description: 'Perfect to get started',
     features: [
-      '모든 Pro 기능 포함',
-      '무제한 콘텐츠 생성',
-      '전용 고객 지원',
-      'API 액세스',
-      '팀 협업 기능',
-      '맞춤 브랜딩 옵션',
-      '우선 기능 업데이트',
+      'AI Avatar Generation',
+      'AI Background Music',
+      'Auto Background Removal',
+      '1 Image at a Time',
+      'Shortest Video Only',
+      'Watermark Included',
+    ],
+    limits: {
+      avatars: 'Up to 3',
+      music: 'Up to 5',
+      products: 'Up to 3',
+      credits: '15 Credits (One-time)',
+      imageEstimate: '~7 Ad Images',
+    },
+  },
+  starter: {
+    description: 'For individual creators',
+    valueHighlight: '4x More Affordable',
+    features: [
+      'All Free Features',
+      'No Watermark',
+      'HD Upscaling',
+      'Up to 5 Images at Once',
+      'Custom Video Length',
+      'Priority Queue',
+    ],
+    limits: {
+      avatars: 'Up to 9',
+      music: 'Up to 15',
+      products: 'Up to 9',
+      credits: '120 Credits/mo',
+      imageEstimate: '~60 Ad Images',
+      videoEstimate: '~12 Ad Videos',
+    },
+  },
+  pro: {
+    description: 'For professionals',
+    valueHighlight: '$0.14 per Image',
+    features: [
+      'All Starter Features',
+      'Top Priority Processing',
+      'High Quality Images',
+      '3 Videos at Once',
+      'Pro Templates',
+      'Premium Support',
+    ],
+    limits: {
+      avatars: 'Up to 30',
+      music: 'Up to 50',
+      products: 'Up to 30',
+      credits: '420 Credits/mo',
+      imageEstimate: '~210 Ad Images',
+      videoEstimate: '~42 Ad Videos',
+    },
+  },
+  business: {
+    description: 'For teams and enterprises',
+    valueHighlight: '$0.12 per Image',
+    features: [
+      'All Pro Features',
+      'Unlimited Content',
+      'Dedicated Support',
+      'API Access',
+      'Team Collaboration',
+      'Custom Branding',
+      'Priority Updates',
     ],
     limits: {
       avatars: 'Unlimited',
       music: 'Unlimited',
       products: 'Unlimited',
-      credits: '1,600 크레딧/월',
-      imageEstimate: '~800개 광고 이미지',
-      videoEstimate: '~160개 광고 영상',
+      credits: '1,600 Credits/mo',
+      imageEstimate: '~800 Ad Images',
+      videoEstimate: '~160 Ad Videos',
     },
-    valueHighlight: '이미지당 $0.12',
-    tier: 3,
   },
-]
+}
 
-// 플랜 이름으로 tier 가져오기
+// Get plan tier by name
 const getPlanTier = (planName: string): number => {
-  const plan = plans.find(p => p.name === planName)
+  const plan = basePlans.find(p => p.name === planName)
   return plan?.tier ?? 0
 }
 
 export function PricingContent() {
+  const { t } = useLanguage()
   const [interval, setInterval] = useState<BillingInterval>('monthly')
   const [loading, setLoading] = useState<string | null>(null)
   const [currentPlanType, setCurrentPlanType] = useState<string>('FREE')
   const [pageLoading, setPageLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Translation type
+  type PricingPageT = {
+    title?: string
+    subtitle?: string
+    loadError?: string
+    checkoutError?: string
+    processingError?: string
+    monthlyBilling?: string
+    yearlyBilling?: string
+    save?: string
+    free?: string
+    perMonth?: string
+    yearlySavings?: string
+    avatars?: string
+    music?: string
+    products?: string
+    credits?: string
+    currentPlan?: string
+    popular?: string
+    bestValue?: string
+    cannotDowngrade?: string
+    upgrade?: string
+    processing?: string
+    subscribe?: string
+    cancelAnytime?: string
+    keepContent?: string
+    creditsRollOver?: string
+    allPlansCancelable?: string
+    watermarkIncluded?: string
+  }
+  const pricingT = t.pricingPage as PricingPageT | undefined
+
+  // Get translated plan data
+  const getPlanTranslation = (planName: string): PlanTranslation => {
+    const key = planName.toLowerCase()
+    const pricingPlans = (t.pricing as { plans?: Record<string, PlanTranslation> })?.plans
+    return pricingPlans?.[key] || fallbackPlanTranslations[key] || fallbackPlanTranslations.free
+  }
 
   useEffect(() => {
     // 현재 사용자의 플랜 정보 가져오기
@@ -161,7 +220,7 @@ export function PricingContent() {
         setCurrentPlanType(data.planType || 'FREE')
       } catch (err) {
         console.error('Failed to fetch current plan:', err)
-        setError('플랜 정보를 불러올 수 없습니다.')
+        setError(pricingT?.loadError || 'Unable to load plan info.')
       } finally {
         setPageLoading(false)
       }
@@ -192,18 +251,18 @@ export function PricingContent() {
       if (data.url) {
         window.location.href = data.url
       } else {
-        setError(data.error || '결제 페이지를 열 수 없습니다.')
+        setError(data.error || (pricingT?.checkoutError || 'Unable to open checkout page.'))
       }
     } catch (err) {
       console.error('Checkout error:', err)
-      setError('결제 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
+      setError(pricingT?.processingError || 'An error occurred during checkout. Please try again.')
     } finally {
       setLoading(null)
     }
   }
 
   const getPrice = (plan: Plan) => {
-    if (plan.priceMonthly === 0) return 'Free'
+    if (plan.priceMonthly === 0) return pricingT?.free || 'Free'
     const price = interval === 'monthly' ? plan.priceMonthly : plan.priceYearly / 12
     return `$${price.toFixed(2)}`
   }
@@ -216,7 +275,7 @@ export function PricingContent() {
     return savings > 0 ? savings : null
   }
 
-  const isUnlimited = (value: string) => value === 'Unlimited'
+  const isUnlimited = (value: string) => value === 'Unlimited' || value === '무제한' || value === '無制限' || value === '无限'
 
   const getButtonState = (plan: Plan) => {
     const isCurrentPlan = plan.name === currentPlanType
@@ -225,7 +284,7 @@ export function PricingContent() {
 
     if (isCurrentPlan) {
       return {
-        text: 'Current Plan',
+        text: pricingT?.currentPlan || 'Current Plan',
         disabled: true,
         className: 'bg-primary/20 text-primary border-2 border-primary cursor-default',
       }
@@ -233,7 +292,7 @@ export function PricingContent() {
 
     if (isLowerOrEqual && !isCurrentPlan) {
       return {
-        text: 'Downgrade N/A',
+        text: pricingT?.cannotDowngrade || 'Cannot Downgrade',
         disabled: true,
         className: 'bg-secondary text-muted-foreground cursor-not-allowed opacity-50',
       }
@@ -241,7 +300,7 @@ export function PricingContent() {
 
     if (isHigher) {
       return {
-        text: loading === plan.name ? 'Processing...' : 'Upgrade',
+        text: loading === plan.name ? (pricingT?.processing || 'Processing...') : (pricingT?.upgrade || 'Upgrade'),
         disabled: loading === plan.name,
         className: plan.popular
           ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-[1.02]'
@@ -252,7 +311,7 @@ export function PricingContent() {
     }
 
     return {
-      text: 'Subscribe',
+      text: pricingT?.subscribe || 'Subscribe',
       disabled: false,
       className: 'bg-secondary text-foreground hover:bg-secondary/80',
     }
@@ -269,9 +328,9 @@ export function PricingContent() {
   return (
     <div>
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-foreground mb-2">플랜 선택</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-2">{pricingT?.title || 'Choose a Plan'}</h1>
         <p className="text-muted-foreground">
-          필요에 맞는 플랜을 선택하세요. 언제든지 업그레이드할 수 있습니다.
+          {pricingT?.subtitle || 'Select the plan that fits your needs. You can upgrade anytime.'}
         </p>
       </div>
 
@@ -302,7 +361,7 @@ export function PricingContent() {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            월간 결제
+            {pricingT?.monthlyBilling || 'Monthly'}
           </button>
           <button
             onClick={() => setInterval('yearly')}
@@ -312,7 +371,7 @@ export function PricingContent() {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            연간 결제
+            {pricingT?.yearlyBilling || 'Yearly'}
             <span className="ml-2 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
               -17%
             </span>
@@ -322,9 +381,10 @@ export function PricingContent() {
 
       {/* Plans Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-        {plans.map((plan) => {
+        {basePlans.map((plan) => {
           const buttonState = getButtonState(plan)
           const isCurrentPlan = plan.name === currentPlanType
+          const planT = getPlanTranslation(plan.name)
 
           return (
             <div
@@ -342,17 +402,17 @@ export function PricingContent() {
               {/* Badges */}
               {isCurrentPlan && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full">
-                  현재 플랜
+                  {pricingT?.currentPlan || 'Current Plan'}
                 </div>
               )}
               {!isCurrentPlan && plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full">
-                  인기
+                  {pricingT?.popular || 'Popular'}
                 </div>
               )}
               {!isCurrentPlan && plan.bestValue && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-xs font-medium px-3 py-1 rounded-full">
-                  Best Value
+                  {pricingT?.bestValue || 'Best Value'}
                 </div>
               )}
 
@@ -372,7 +432,7 @@ export function PricingContent() {
               </div>
 
               <p className="text-sm text-muted-foreground mb-4">
-                {plan.description}
+                {planT.description}
               </p>
 
               <div className="mb-4">
@@ -380,63 +440,63 @@ export function PricingContent() {
                   {getPrice(plan)}
                 </span>
                 {plan.priceMonthly > 0 && (
-                  <span className="text-muted-foreground">/월</span>
+                  <span className="text-muted-foreground">{pricingT?.perMonth || '/mo'}</span>
                 )}
                 {interval === 'yearly' && getYearlySavings(plan) && (
                   <div className="mt-1">
                     <span className="text-sm font-semibold text-green-500">
-                      연 ${getYearlySavings(plan)?.toFixed(2)} 절약!
+                      {(pricingT?.yearlySavings || 'Save ${amount}/year!').replace('{amount}', getYearlySavings(plan)?.toFixed(2) || '')}
                     </span>
                   </div>
                 )}
               </div>
 
               {/* Value Highlight Badge */}
-              {plan.valueHighlight && (
+              {planT.valueHighlight && (
                 <div className="mb-4 inline-flex items-center gap-1 bg-green-500/10 text-green-600 text-xs font-medium px-2 py-1 rounded-full">
                   <TrendingUp className="w-3 h-3" />
-                  {plan.valueHighlight}
+                  {planT.valueHighlight}
                 </div>
               )}
 
               {/* Limits */}
               <div className="space-y-2 mb-6 pb-6 border-b border-border">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">아바타</span>
-                  <span className={`font-medium ${isUnlimited(plan.limits.avatars) ? 'text-purple-500 flex items-center gap-1' : 'text-foreground'}`}>
-                    {isUnlimited(plan.limits.avatars) && <Infinity className="w-4 h-4" />}
-                    {plan.limits.avatars}
+                  <span className="text-muted-foreground">{pricingT?.avatars || 'Avatars'}</span>
+                  <span className={`font-medium ${isUnlimited(planT.limits.avatars) ? 'text-purple-500 flex items-center gap-1' : 'text-foreground'}`}>
+                    {isUnlimited(planT.limits.avatars) && <Infinity className="w-4 h-4" />}
+                    {planT.limits.avatars}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">음악</span>
-                  <span className={`font-medium ${isUnlimited(plan.limits.music) ? 'text-purple-500 flex items-center gap-1' : 'text-foreground'}`}>
-                    {isUnlimited(plan.limits.music) && <Infinity className="w-4 h-4" />}
-                    {plan.limits.music}
+                  <span className="text-muted-foreground">{pricingT?.music || 'Music'}</span>
+                  <span className={`font-medium ${isUnlimited(planT.limits.music) ? 'text-purple-500 flex items-center gap-1' : 'text-foreground'}`}>
+                    {isUnlimited(planT.limits.music) && <Infinity className="w-4 h-4" />}
+                    {planT.limits.music}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">제품</span>
-                  <span className={`font-medium ${isUnlimited(plan.limits.products) ? 'text-purple-500 flex items-center gap-1' : 'text-foreground'}`}>
-                    {isUnlimited(plan.limits.products) && <Infinity className="w-4 h-4" />}
-                    {plan.limits.products}
+                  <span className="text-muted-foreground">{pricingT?.products || 'Products'}</span>
+                  <span className={`font-medium ${isUnlimited(planT.limits.products) ? 'text-purple-500 flex items-center gap-1' : 'text-foreground'}`}>
+                    {isUnlimited(planT.limits.products) && <Infinity className="w-4 h-4" />}
+                    {planT.limits.products}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">크레딧</span>
-                  <span className="font-semibold text-primary">{plan.limits.credits}</span>
+                  <span className="text-muted-foreground">{pricingT?.credits || 'Credits'}</span>
+                  <span className="font-semibold text-primary">{planT.limits.credits}</span>
                 </div>
                 {/* Credit Estimates - Image and Video separately */}
-                {(plan.limits.imageEstimate || plan.limits.videoEstimate) && (
+                {(planT.limits.imageEstimate || planT.limits.videoEstimate) && (
                   <div className="pt-2 space-y-1 border-t border-border/50 mt-2">
-                    {plan.limits.imageEstimate && (
+                    {planT.limits.imageEstimate && (
                       <div className="text-xs text-muted-foreground text-right">
-                        {plan.limits.imageEstimate}
+                        {planT.limits.imageEstimate}
                       </div>
                     )}
-                    {plan.limits.videoEstimate && (
+                    {planT.limits.videoEstimate && (
                       <div className="text-xs text-muted-foreground text-right">
-                        {plan.limits.videoEstimate}
+                        {planT.limits.videoEstimate}
                       </div>
                     )}
                   </div>
@@ -445,8 +505,8 @@ export function PricingContent() {
 
               {/* Features */}
               <ul className="space-y-3 mb-6 flex-grow">
-                {plan.features.map((feature, idx) => {
-                  const isLimitation = feature === '워터마크 포함'
+                {planT.features.map((feature, idx) => {
+                  const isLimitation = feature.toLowerCase().includes('watermark') || feature.includes('워터마크') || feature.includes('ウォーターマーク') || feature.includes('水印')
                   return (
                     <li key={idx} className="flex items-start gap-2 text-sm">
                       {isLimitation ? (
@@ -470,7 +530,7 @@ export function PricingContent() {
                 {loading === plan.name ? (
                   <span className="flex items-center justify-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    처리 중...
+                    {pricingT?.processing || 'Processing...'}
                   </span>
                 ) : (
                   buttonState.text
@@ -485,23 +545,22 @@ export function PricingContent() {
       <div className="mt-10 flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
         <div className="flex items-center gap-2">
           <Check className="w-4 h-4 text-green-500" />
-          <span>언제든 취소 가능</span>
+          <span>{pricingT?.cancelAnytime || 'Cancel Anytime'}</span>
         </div>
         <div className="flex items-center gap-2">
           <Check className="w-4 h-4 text-green-500" />
-          <span>생성 콘텐츠 영구 보관</span>
+          <span>{pricingT?.keepContent || 'Keep Your Content Forever'}</span>
         </div>
         <div className="flex items-center gap-2">
           <Check className="w-4 h-4 text-green-500" />
-          <span>크레딧 다음 달 이월</span>
+          <span>{pricingT?.creditsRollOver || 'Credits Roll Over'}</span>
         </div>
       </div>
 
       {/* FAQ or Additional Info */}
       <div className="mt-8 max-w-2xl mx-auto text-center">
         <p className="text-sm text-muted-foreground">
-          모든 유료 플랜은 언제든지 취소할 수 있습니다. 취소 시 다음 결제일까지 서비스를 이용할 수 있으며,
-          생성한 콘텐츠는 계속 보관됩니다.
+          {pricingT?.allPlansCancelable || 'All paid plans can be canceled at any time. You can continue using the service until the next billing date, and your content will be kept.'}
         </p>
       </div>
     </div>

@@ -73,7 +73,7 @@ export function ImageAdPageContent() {
         setPagination(data.pagination || null)
       }
     } catch (error) {
-      console.error('이미지 광고 목록 조회 오류:', error)
+      console.error('Image ad list fetch error:', error)
     } finally {
       setIsAdsLoading(false)
     }
@@ -254,7 +254,7 @@ export function ImageAdPageContent() {
       } catch (error) {
         // 타임아웃이나 네트워크 오류는 무시 (다음 폴링에서 재시도)
         if (error instanceof Error && error.name !== 'AbortError') {
-          console.error('이미지 광고 상태 폴링 오류:', error)
+          console.error('Image ad status polling error:', error)
         }
       } finally {
         pollingInProgressRef.current.delete(ad.id)
@@ -284,7 +284,7 @@ export function ImageAdPageContent() {
     e.stopPropagation()
     if (processingIds.has(adId)) return
 
-    if (!confirm('크레딧을 환불하고 이 광고를 삭제하시겠습니까?')) return
+    if (!confirm(t.imageAd?.confirmRefund || 'Refund credits and delete this ad?')) return
 
     setProcessingIds(prev => new Set(prev).add(adId))
 
@@ -297,14 +297,14 @@ export function ImageAdPageContent() {
         const data = await res.json()
         // 목록에서 제거
         setImageAds(prev => prev.filter(ad => ad.id !== adId))
-        alert(`${data.refundedCredits} 크레딧이 환불되었습니다.`)
+        alert((t.imageAd?.refundSuccess || '{credits} credits refunded').replace('{credits}', data.refundedCredits))
       } else {
         const error = await res.json()
-        alert(error.error || '환불에 실패했습니다.')
+        alert(error.error || t.imageAd?.refundFailed || 'Refund failed')
       }
     } catch (error) {
-      console.error('환불 오류:', error)
-      alert('환불 중 오류가 발생했습니다.')
+      console.error('Refund error:', error)
+      alert(t.imageAd?.refundError || 'An error occurred during refund')
     } finally {
       setProcessingIds(prev => {
         const next = new Set(prev)
@@ -339,11 +339,11 @@ export function ImageAdPageContent() {
         )
       } else {
         const error = await res.json()
-        alert(error.error || '재시도에 실패했습니다.')
+        alert(error.error || t.imageAd?.retryFailed || 'Retry failed')
       }
     } catch (error) {
-      console.error('재시도 오류:', error)
-      alert('재시도 중 오류가 발생했습니다.')
+      console.error('Retry error:', error)
+      alert(t.imageAd?.retryError || 'An error occurred during retry')
     } finally {
       setProcessingIds(prev => {
         const next = new Set(prev)
@@ -353,32 +353,22 @@ export function ImageAdPageContent() {
     }
   }
 
-  // 광고 유형 한글 변환
+  // 광고 유형 이름 변환
   const getAdTypeName = (adType: string) => {
-    const names: Record<string, string> = {
-      productOnly: '제품 단독',
-      wearing: '착용/사용',
-      using: '제품 사용',
-      seasonal: '시즌/이벤트',
-    }
-    return names[adType] || adType
+    const typeKey = adType as keyof typeof t.imageAdTypes
+    return (t.imageAdTypes as Record<string, { title?: string }>)?.[typeKey]?.title || adType
   }
 
   // 마법사 스텝 이름
   const getStepName = (step: number | null) => {
-    const stepNames: Record<number, string> = {
-      1: 'Basic Info',
-      2: 'Settings',
-      3: 'Options',
-      4: 'Generate',
-    }
-    return stepNames[step || 1] || 'Basic Info'
+    const stepKey = `step${step || 1}` as 'step1' | 'step2' | 'step3' | 'step4'
+    return (t.imageAd?.wizard?.steps as Record<string, { title?: string }>)?.[stepKey]?.title || 'Basic Info'
   }
 
   // Draft 삭제
   const handleDeleteDraft = async (adId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!confirm('Delete this draft?')) return
+    if (!confirm(t.imageAd?.confirmDeleteDraft || 'Delete this saved draft?')) return
     try {
       await fetch(`/api/image-ad/draft?id=${adId}`, { method: 'DELETE' })
       setImageAds(prev => prev.filter(ad => ad.id !== adId))
@@ -397,8 +387,8 @@ export function ImageAdPageContent() {
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">{t.imageAd?.title || '이미지 광고'}</h1>
-          <p className="text-muted-foreground">{t.imageAd?.subtitle || '이미지 광고를 생성하고 관리하세요'}</p>
+          <h1 className="text-2xl font-bold text-foreground mb-2">{t.imageAd?.title || 'Image Ad'}</h1>
+          <p className="text-muted-foreground">{t.imageAd?.subtitle || 'Create and manage your image ads'}</p>
         </div>
         <button
           onClick={handleCreateAd}
@@ -423,7 +413,7 @@ export function ImageAdPageContent() {
               <ImageIcon className="w-10 h-10 text-primary" />
             </div>
             <h3 className="text-xl font-semibold text-foreground mb-3">{t.adProduct.emptyAds}</h3>
-            <p className="text-muted-foreground mb-6">{'이미지 광고를 생성해보세요'}</p>
+            <p className="text-muted-foreground mb-6">{t.imageAd?.emptyDescription || 'Create your first image ad'}</p>
             <button
               onClick={handleCreateAd}
               className="px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors font-medium"
@@ -494,15 +484,15 @@ export function ImageAdPageContent() {
                       </div>
                       <span className="text-sm text-muted-foreground">
                         {isUploading
-                          ? '이미지 업로드 중...'
-                          : `이미지 생성 중... ${ad.num_images && ad.num_images > 1 ? `(${ad.num_images}장)` : ''}`
+                          ? t.imageAd?.uploading || 'Uploading images...'
+                          : `${t.imageAd?.generating || 'Generating images...'} ${ad.num_images && ad.num_images > 1 ? `(${ad.num_images})` : ''}`
                         }
                       </span>
                     </div>
                   ) : isFailed ? (
                     <div className="w-full aspect-square flex flex-col items-center justify-center bg-destructive/5 gap-3 p-4">
                       <ImageIcon className="w-10 h-10 text-destructive/50" />
-                      <span className="text-sm text-destructive font-medium">생성 실패</span>
+                      <span className="text-sm text-destructive font-medium">{t.imageAd?.generationFailed || 'Generation failed'}</span>
                       {/* 환불/재시도 버튼 */}
                       <div className="flex gap-2 mt-2">
                         <button
@@ -515,7 +505,7 @@ export function ImageAdPageContent() {
                           ) : (
                             <RefreshCw className="w-3.5 h-3.5" />
                           )}
-                          재시도
+                          {t.common?.retry || 'Retry'}
                         </button>
                         <button
                           onClick={(e) => handleRefund(ad.id, e)}
@@ -523,7 +513,7 @@ export function ImageAdPageContent() {
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-muted-foreground text-xs font-medium rounded-lg hover:bg-muted/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                           <CreditCard className="w-3.5 h-3.5" />
-                          환불
+                          {t.imageAd?.refund || 'Refund'}
                         </button>
                       </div>
                     </div>
@@ -533,7 +523,7 @@ export function ImageAdPageContent() {
                         <FileEdit className="w-8 h-8 text-primary" />
                       </div>
                       <span className="text-sm text-muted-foreground font-medium">
-                        임시 저장 · {getStepName(ad.wizard_step)}
+                        {t.imageAd?.draft || 'Draft'} · {getStepName(ad.wizard_step)}
                       </span>
                       <div className="flex gap-2 mt-2">
                         <button
@@ -544,14 +534,14 @@ export function ImageAdPageContent() {
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-xs font-medium rounded-lg hover:bg-primary/90 transition-colors"
                         >
                           <FileEdit className="w-3.5 h-3.5" />
-                          이어하기
+                          {t.imageAd?.continue || 'Continue'}
                         </button>
                         <button
                           onClick={(e) => handleDeleteDraft(ad.id, e)}
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-muted-foreground text-xs font-medium rounded-lg hover:bg-muted/80 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
-                          삭제
+                          {t.common?.delete || 'Delete'}
                         </button>
                       </div>
                     </div>
@@ -565,7 +555,7 @@ export function ImageAdPageContent() {
                   {ad.status === 'COMPLETED' && (
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
                       <span className="px-6 py-2.5 bg-white text-black rounded-xl text-sm font-semibold shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
-                        {t.imageAdDetail?.viewDetail || 'View Details'}
+                        {t.imageAdDetail?.viewDetail || 'View Detail'}
                       </span>
                     </div>
                   )}
@@ -581,7 +571,7 @@ export function ImageAdPageContent() {
                   {hasMultipleImages && ad.status === 'COMPLETED' && (
                     <div className="absolute top-3 right-3">
                       <span className="px-2.5 py-1 text-xs font-semibold bg-accent/90 text-accent-foreground rounded-lg backdrop-blur-sm">
-                        {imageCount}장
+                        {imageCount} {t.imageAd?.images || 'images'}
                       </span>
                     </div>
                   )}
@@ -590,7 +580,7 @@ export function ImageAdPageContent() {
                   {isInProgress && (
                     <div className="absolute top-3 right-3">
                       <span className="px-3 py-1.5 text-xs font-medium bg-gradient-to-r from-primary to-accent text-white rounded-lg backdrop-blur-sm animate-pulse">
-                        {isUploading ? '업로드 중...' : '생성 중...'}
+                        {isUploading ? t.imageAd?.uploadingBadge || 'Uploading...' : t.imageAd?.generatingBadge || 'Generating...'}
                       </span>
                     </div>
                   )}
@@ -599,7 +589,7 @@ export function ImageAdPageContent() {
                   {isFailed && (
                     <div className="absolute top-3 right-3">
                       <span className="px-3 py-1.5 text-xs font-medium bg-destructive/90 text-white rounded-lg backdrop-blur-sm">
-                        실패
+                        {t.imageAd?.failedBadge || 'Failed'}
                       </span>
                     </div>
                   )}
@@ -608,7 +598,7 @@ export function ImageAdPageContent() {
                   {isDraft && (
                     <div className="absolute top-3 right-3">
                       <span className="px-3 py-1.5 text-xs font-medium bg-yellow-500/90 text-white rounded-lg backdrop-blur-sm">
-                        임시저장
+                        {t.imageAd?.draftBadge || 'Draft'}
                       </span>
                     </div>
                   )}
@@ -699,7 +689,7 @@ export function ImageAdPageContent() {
 
             {/* 총 개수 표시 */}
             <span className="ml-4 text-sm text-muted-foreground font-medium">
-              총 {pagination.totalCount}개
+              {(t.imageAd?.totalCount || 'Total {count}').replace('{count}', String(pagination.totalCount))}
             </span>
           </div>
         )}

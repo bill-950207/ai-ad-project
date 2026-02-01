@@ -81,7 +81,7 @@ export function WizardStep1() {
         setProducts(completedProducts)
       }
     } catch (error) {
-      console.error('제품 로드 오류:', error)
+      console.error('Failed to load products:', error)
     } finally {
       setIsLoading(false)
     }
@@ -152,48 +152,84 @@ export function WizardStep1() {
 
   const types = t.imageAdTypes as unknown as Record<string, { title: string; description: string }>
 
+  // imageAd.wizard 번역
+  const imageAdT = t.imageAd as {
+    wizard?: {
+      selectAdType?: string
+      optional?: string
+      changeOutfit?: string
+      aiGenerated?: string
+      selectAvatar?: string
+      noProducts?: string
+      registerProduct?: string
+      newProduct?: string
+      productInfo?: string
+      productDescription?: string
+      productDescPlaceholder?: string
+      sellingPoints?: string
+      sellingPointsPlaceholder?: string
+      addPoint?: string
+      usageMethod?: string
+      usageMethodLabel?: string
+      usageMethodPlaceholder?: string
+      nextStep?: string
+      prevStep?: string
+    }
+    validation?: {
+      selectProduct?: string
+      selectAvatar?: string
+      enterUsageMethod?: string
+    }
+  } | undefined
+  const wizardT = imageAdT?.wizard
+  const validationT = imageAdT?.validation
+
   // 다음 단계 유효성 메시지
   const getValidationMessage = () => {
+    const selectProduct = validationT?.selectProduct || 'Please select a product'
+    const selectAvatar = validationT?.selectAvatar || 'Please select an avatar'
+    const enterUsageMethod = validationT?.enterUsageMethod || 'Please enter product usage method'
+
     // productOnly: 제품만 필수
     if (isProductOnly) {
       if (!selectedProduct) {
-        return '제품을 선택해주세요'
+        return selectProduct
       }
     }
     // seasonal: 제품 필수, 아바타 선택사항
     else if (isSeasonalType) {
       if (!selectedProduct) {
-        return '제품을 선택해주세요'
+        return selectProduct
       }
     }
     // wearing: 제품 + 아바타 모두 필수
     else if (isWearingType) {
       if (!selectedProduct) {
-        return '제품을 선택해주세요'
+        return selectProduct
       }
       if (!selectedAvatarInfo) {
-        return '아바타를 선택해주세요'
+        return selectAvatar
       }
     }
     // using: 제품 + 아바타 + 사용 방법 필수
     else if (isUsingType) {
       if (!selectedProduct) {
-        return '제품을 선택해주세요'
+        return selectProduct
       }
       if (!selectedAvatarInfo) {
-        return '아바타를 선택해주세요'
+        return selectAvatar
       }
       if (!productUsageMethod.trim()) {
-        return '제품 사용 방법을 입력해주세요'
+        return enterUsageMethod
       }
     }
     // 그 외: 제품 + 아바타 모두 필수
     else {
       if (!selectedProduct) {
-        return '제품을 선택해주세요'
+        return selectProduct
       }
       if (!selectedAvatarInfo) {
-        return '아바타를 선택해주세요'
+        return selectAvatar
       }
     }
     return null
@@ -212,7 +248,7 @@ export function WizardStep1() {
       {/* 광고 유형 선택 */}
       <div className="bg-card border border-border rounded-xl p-4">
         <label className="block text-sm font-medium text-foreground mb-3">
-          광고 유형 선택 <span className="text-red-500">*</span>
+          {wizardT?.selectAdType || 'Select Ad Type'} <span className="text-red-500">*</span>
         </label>
         <div className="grid grid-cols-4 gap-2">
           {AD_TYPE_LIST.map(({ type, icon: Icon }) => {
@@ -243,7 +279,7 @@ export function WizardStep1() {
             <User className="w-4 h-4 inline mr-2" />
             {imageAdCreate.selectAvatar}
             {isAvatarOptional ? (
-              <span className="text-muted-foreground ml-1 text-xs">(선택사항)</span>
+              <span className="text-muted-foreground ml-1 text-xs">{wizardT?.optional || '(Optional)'}</span>
             ) : (
               <span className="text-red-500 ml-1">*</span>
             )}
@@ -268,15 +304,15 @@ export function WizardStep1() {
                 <div>
                   <span className="text-foreground block">{selectedAvatarInfo.displayName}</span>
                   {selectedAvatarInfo.type === 'outfit' && (
-                    <span className="text-xs text-primary">의상 교체</span>
+                    <span className="text-xs text-primary">{wizardT?.changeOutfit || 'Change Outfit'}</span>
                   )}
                   {selectedAvatarInfo.type === 'ai-generated' && (
-                    <span className="text-xs text-purple-500">AI 자동 생성</span>
+                    <span className="text-xs text-purple-500">{wizardT?.aiGenerated || 'AI Generated'}</span>
                   )}
                 </div>
               </div>
             ) : (
-              <span className="text-muted-foreground">아바타를 선택하세요</span>
+              <span className="text-muted-foreground">{wizardT?.selectAvatar || 'Select avatar'}</span>
             )}
             <ChevronDown className="w-4 h-4 text-muted-foreground" />
           </button>
@@ -289,7 +325,7 @@ export function WizardStep1() {
           <Package className="w-4 h-4 inline mr-2" />
           {imageAdCreate.selectProduct}
           {isWearingType ? (
-            <span className="text-muted-foreground text-xs ml-1">(선택 사항)</span>
+            <span className="text-muted-foreground text-xs ml-1">{wizardT?.optional || '(Optional)'}</span>
           ) : (
             <span className="text-red-500 ml-1">*</span>
           )}
@@ -322,7 +358,7 @@ export function WizardStep1() {
               <div className="absolute z-50 w-full mt-2 bg-card border border-border rounded-xl shadow-lg max-h-64 overflow-y-auto">
                 {products.length === 0 ? (
                   <div className="p-4 text-center">
-                    <p className="text-muted-foreground text-sm mb-3">등록된 제품이 없습니다</p>
+                    <p className="text-muted-foreground text-sm mb-3">{wizardT?.noProducts || 'No products registered'}</p>
                     <button
                       onClick={() => {
                         setShowProductDropdown(false)
@@ -331,7 +367,7 @@ export function WizardStep1() {
                       className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
                     >
                       <Plus className="w-3 h-3" />
-                      제품 등록하기
+                      {wizardT?.registerProduct || 'Register Product'}
                     </button>
                   </div>
                 ) : (
@@ -347,7 +383,7 @@ export function WizardStep1() {
                       <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center">
                         <Plus className="w-5 h-5" />
                       </div>
-                      <span className="font-medium">새 제품 등록</span>
+                      <span className="font-medium">{wizardT?.newProduct || 'New Product'}</span>
                     </button>
                     {products.map((product) => (
                       <button
@@ -392,17 +428,17 @@ export function WizardStep1() {
                 </div>
                 <div>
                   <h4 className="font-medium text-foreground text-sm">{selectedProduct.name}</h4>
-                  <p className="text-xs text-muted-foreground">제품 정보를 확인하고 편집하세요</p>
+                  <p className="text-xs text-muted-foreground">{wizardT?.productInfo || 'Check and edit product information'}</p>
                 </div>
               </div>
 
               {/* 설명 */}
               <div>
-                <label className="block text-xs text-muted-foreground mb-1">제품 설명</label>
+                <label className="block text-xs text-muted-foreground mb-1">{wizardT?.productDescription || 'Product Description'}</label>
                 <textarea
                   value={editableDescription}
                   onChange={(e) => setEditableDescription(e.target.value)}
-                  placeholder="제품에 대한 설명..."
+                  placeholder={wizardT?.productDescPlaceholder || 'Describe your product...'}
                   rows={2}
                   className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
                 />
@@ -411,7 +447,7 @@ export function WizardStep1() {
               {/* 셀링 포인트 */}
               <div>
                 <label className="block text-xs text-muted-foreground mb-1">
-                  셀링 포인트 <span className="text-muted-foreground/70">(예: &quot;24시간 보습&quot;, &quot;피부과 추천&quot;)</span>
+                  {wizardT?.sellingPoints || 'Selling Points'}
                 </label>
                 <div className="space-y-2">
                   {editableSellingPoints.map((point, index) => (
@@ -420,7 +456,7 @@ export function WizardStep1() {
                         type="text"
                         value={point}
                         onChange={(e) => updateSellingPoint(index, e.target.value)}
-                        placeholder="제품의 장점이나 특징"
+                        placeholder={wizardT?.sellingPointsPlaceholder || 'Product advantages or features'}
                         className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                       />
                       {editableSellingPoints.length > 1 && (
@@ -439,7 +475,7 @@ export function WizardStep1() {
                       className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
                     >
                       <Plus className="w-3 h-3" />
-                      포인트 추가
+                      {wizardT?.addPoint || 'Add Point'}
                     </button>
                   )}
                 </div>
@@ -449,14 +485,13 @@ export function WizardStep1() {
               {isUsingType && (
                 <div>
                   <label className="block text-xs text-muted-foreground mb-1">
-                    제품 사용 방법 <span className="text-red-500">*</span>
-                    <span className="text-muted-foreground/70 ml-1">(예: &quot;얼굴에 바르는 중&quot;, &quot;손에 덜어서 사용&quot;)</span>
+                    {wizardT?.usageMethod || 'Usage Method'} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={productUsageMethod}
                     onChange={(e) => setProductUsageMethod(e.target.value)}
-                    placeholder="제품을 어떻게 사용하는 장면인지 입력하세요"
+                    placeholder={wizardT?.usageMethodPlaceholder || 'Enter how the product is used in the scene'}
                     className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   />
                 </div>
@@ -476,7 +511,7 @@ export function WizardStep1() {
               : 'bg-secondary text-muted-foreground cursor-not-allowed'
           }`}
         >
-          다음 단계
+          {wizardT?.nextStep || 'Next Step'}
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>

@@ -121,7 +121,17 @@
       "WebFetch(domain:elevenlabs.io)",
       "Bash(git merge:*)",
       "Bash(gh pr diff:*)",
-      "Bash(git stash pop:*)"
+      "Bash(git stash pop:*)",
+      "Bash(for f in lib/i18n/translations/*.json)",
+      "Bash(do echo -n \"$f: \")",
+      "Bash(while read file)",
+      "Bash(do if grep -q '[가-힣]' \"$file\")",
+      "Bash(then echo \"$file\")",
+      "Bash(fi:*)",
+      "Bash(do grep -Hn . \"$file\")",
+      "Bash(npx dotenv:*)",
+      "Bash(do grep -n \"[\\\\uac00-\\\\ud7af]\" \"$file\")",
+      "Bash(DIRECT_URL=\"postgresql://postgres.ilwhkpoxzxokfmzvpkof:Jocoding2006A@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres\" node scripts/run-migration.mjs prisma/migrations/20260201_add_user_preferences/migration.sql)"
     ]
   }
 }

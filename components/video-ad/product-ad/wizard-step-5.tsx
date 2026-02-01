@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCredits } from '@/contexts/credit-context'
+import { useLanguage } from '@/contexts/language-context'
 import { InsufficientCreditsModal } from '@/components/ui/insufficient-credits-modal'
 import {
   ArrowLeft,
@@ -11,7 +12,9 @@ import {
   Download,
   RefreshCw,
   AlertCircle,
+  CheckCircle2,
   Sparkles,
+  Clapperboard,
   Check,
   MessageSquarePlus,
   X,
@@ -39,11 +42,11 @@ const FREE_USER_LIMITS = {
   maxResolution: '540p' as VideoResolution,
 }
 
-// Vidu Q3 해상도 옵션 (중앙 상수 사용)
+// Vidu Q2 해상도 옵션 (중앙 상수 사용)
 const RESOLUTION_OPTIONS: { value: VideoResolution; label: string; desc: string; creditsPerSecond: number }[] = [
-  { value: '540p', label: 'SD (540p)', desc: 'Fast generation', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['540p'] },
-  { value: '720p', label: 'HD (720p)', desc: 'Standard quality', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['720p'] },
-  { value: '1080p', label: 'FHD (1080p)', desc: 'High quality', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['1080p'] },
+  { value: '540p', label: 'SD (540p)', desc: '빠른 생성', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['540p'] },
+  { value: '720p', label: 'HD (720p)', desc: '표준 화질', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['720p'] },
+  { value: '1080p', label: 'FHD (1080p)', desc: '고품질', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['1080p'] },
 ]
 import {
   DndContext,
@@ -94,6 +97,7 @@ function VideoRegenerateModal({
   resolution: VideoResolution
   aspectRatio: string | null
 }) {
+  const { t } = useLanguage()
   const [additionalPrompt, setAdditionalPrompt] = useState('')
   const [duration, setDuration] = useState(currentDuration)
 
@@ -125,9 +129,9 @@ function VideoRegenerateModal({
 
         <div className="space-y-4">
           <div>
-            <h3 className="text-lg font-bold text-foreground">씬 {sceneIndex + 1} 영상 다시 생성</h3>
+            <h3 className="text-lg font-bold text-foreground">{t.productAdWizard?.step5?.regenerateSceneVideo || 'Regenerate Scene Video'} {sceneIndex + 1}</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              추가 프롬프트를 입력하면 기존 시나리오와 함께 반영됩니다
+              {t.productAdWizard?.step5?.regenerateDesc || 'Additional prompts will be applied with the existing scenario'}
             </p>
           </div>
 
@@ -149,21 +153,21 @@ function VideoRegenerateModal({
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm font-medium text-foreground">
               <Clock className="w-4 h-4 text-muted-foreground" />
-              영상 길이
+              {t.productAdWizard?.step5?.videoDuration || 'Video Duration'}
             </label>
-            <div className="grid grid-cols-8 gap-1.5">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map((d) => (
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((d) => (
                 <button
                   key={d}
                   onClick={() => setDuration(d)}
                   disabled={isLoading}
-                  className={`py-2 text-sm font-medium rounded-lg border-2 transition-all ${
+                  className={`flex-1 py-2 text-sm font-medium rounded-lg border-2 transition-all ${
                     duration === d
                       ? 'border-primary bg-primary/10 text-primary'
                       : 'border-border bg-secondary/30 text-foreground hover:border-primary/50'
                   } disabled:opacity-50`}
                 >
-                  {d}
+                  {d}{t.common?.secondsShort || 's'}
                 </button>
               ))}
             </div>
@@ -173,11 +177,11 @@ function VideoRegenerateModal({
           <div className="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-lg">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Coins className="w-4 h-4 text-primary" />
-              <span>{resolutionLabel} / {duration}초</span>
+              <span>{resolutionLabel} / {duration}{t.common?.secondsShort || 's'}</span>
             </div>
             <div className="flex items-center gap-1.5 text-sm font-semibold text-primary">
               <span>{estimatedCredits}</span>
-              <span className="text-xs font-normal text-muted-foreground">크레딧</span>
+              <span className="text-xs font-normal text-muted-foreground">{t.common?.credits || 'Credits'}</span>
             </div>
           </div>
 
@@ -185,13 +189,13 @@ function VideoRegenerateModal({
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm font-medium text-foreground">
               <MessageSquarePlus className="w-4 h-4 text-muted-foreground" />
-              추가 프롬프트
-              <span className="text-xs text-muted-foreground font-normal">(선택)</span>
+              {t.productAdWizard?.step5?.additionalPrompt || 'Additional Prompt'}
+              <span className="text-xs text-muted-foreground font-normal">({t.common?.optional || 'Optional'})</span>
             </label>
             <textarea
               value={additionalPrompt}
               onChange={(e) => setAdditionalPrompt(e.target.value)}
-              placeholder="예: 카메라가 천천히 줌인, 더 역동적인 움직임..."
+              placeholder={t.productAdWizard?.step5?.additionalPromptPlaceholder || 'E.g., camera slowly zooms in, more dynamic motion...'}
               className="w-full px-3 py-2 text-sm bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
               rows={3}
               disabled={isLoading}
@@ -205,7 +209,7 @@ function VideoRegenerateModal({
               disabled={isLoading}
               className="flex-1 px-4 py-2.5 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
             >
-              취소
+              {t.common?.cancel || 'Cancel'}
             </button>
             <button
               onClick={() => onConfirm(additionalPrompt, duration)}
@@ -215,12 +219,12 @@ function VideoRegenerateModal({
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  처리 중...
+                  {t.common?.processing || 'Processing...'}
                 </>
               ) : (
                 <>
                   <RefreshCw className="w-4 h-4" />
-                  다시 생성
+                  {t.productAdWizard?.step5?.regenerate || 'Regenerate'}
                 </>
               )}
             </button>
@@ -229,6 +233,13 @@ function VideoRegenerateModal({
       </div>
     </div>
   )
+}
+
+interface VideoStatus {
+  requestId: string
+  status: 'generating' | 'completed' | 'failed'
+  resultUrl?: string
+  errorMessage?: string
 }
 
 interface SceneVideoStatus {
@@ -279,6 +290,7 @@ function SortableVideoCard({
   onVersionSelect?: (versionId: string) => void
   isLoadingVersions?: boolean
 }) {
+  const { t } = useLanguage()
   const [showVersionDropdown, setShowVersionDropdown] = useState(false)
   const {
     attributes,
@@ -331,7 +343,7 @@ function SortableVideoCard({
               isGenerating || isRegenerating ? 'bg-primary animate-pulse' :
               isFailed ? 'bg-red-500' : 'bg-muted'
             }`} />
-            <span className="text-base font-medium text-foreground">씬 {sceneVideo.sceneIndex + 1}</span>
+            <span className="text-base font-medium text-foreground">{t.productAdWizard?.step5?.scene || 'Scene'} {sceneVideo.sceneIndex + 1}</span>
             {/* 버전 히스토리 버튼 (완료된 영상이고 버전이 있을 때만) */}
             {isCompleted && versions && versions.length > 1 && (
               <div className="relative">
@@ -342,7 +354,7 @@ function SortableVideoCard({
                   }}
                   disabled={isLoadingVersions}
                   className="flex items-center gap-1 px-2 py-1 text-xs bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition-colors disabled:opacity-50"
-                  title="버전 히스토리"
+                  title={t.productAdWizard?.step5?.versionHistory || 'Version History'}
                 >
                   {isLoadingVersions ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -361,7 +373,7 @@ function SortableVideoCard({
                     />
                     <div className="absolute top-full left-0 mt-1 w-48 bg-background border border-border rounded-lg shadow-lg z-50 overflow-hidden">
                       <div className="px-3 py-2 border-b border-border bg-secondary/30">
-                        <p className="text-xs font-medium text-foreground">버전 히스토리</p>
+                        <p className="text-xs font-medium text-foreground">{t.productAdWizard?.step5?.versionHistory || 'Version History'}</p>
                       </div>
                       <div className="max-h-48 overflow-y-auto">
                         {versions.map((v) => (
@@ -381,7 +393,7 @@ function SortableVideoCard({
                             <div className="flex items-center gap-2">
                               <span className="font-medium">v{v.version}</span>
                               {v.duration && (
-                                <span className="text-xs text-muted-foreground">{v.duration}초</span>
+                                <span className="text-xs text-muted-foreground">{v.duration}{t.common?.secondsShort || 's'}</span>
                               )}
                             </div>
                             {v.is_active && (
@@ -401,7 +413,7 @@ function SortableVideoCard({
               onClick={() => onRegenerate(sceneVideo.sceneIndex, sceneVideo.originalSceneIndex)}
               disabled={isMergingVideos || regeneratingSceneIndex !== null}
               className="p-2 bg-secondary/50 text-muted-foreground rounded-lg hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50"
-              title="다시 생성"
+              title={t.productAdWizard?.step5?.regenerate || 'Regenerate'}
             >
               <RefreshCw className="w-4 h-4" />
             </button>
@@ -426,18 +438,18 @@ function SortableVideoCard({
                 </div>
               </div>
               <span className="text-base text-muted-foreground mt-4">
-                {isRegenerating ? '재생성 중...' : '생성 중...'}
+                {isRegenerating ? (t.productAdWizard?.step5?.regenerating || 'Regenerating...') : (t.productAdWizard?.step5?.generating || 'Generating...')}
               </span>
             </div>
           ) : isFailed ? (
             <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-destructive/5 to-destructive/10">
               <AlertCircle className="w-12 h-12 text-destructive mb-3" />
-              <span className="text-base text-destructive">생성 실패</span>
+              <span className="text-base text-destructive">{t.productAdWizard?.step5?.generationFailed || 'Generation Failed'}</span>
               <button
                 onClick={() => onRegenerate(sceneVideo.sceneIndex, sceneVideo.originalSceneIndex)}
                 className="mt-3 px-4 py-2 text-sm bg-destructive/20 text-destructive rounded-lg hover:bg-destructive/30 transition-colors"
               >
-                다시 시도
+                {t.common?.retry || 'Retry'}
               </button>
             </div>
           ) : null}
@@ -451,7 +463,7 @@ function SortableVideoCard({
               className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm bg-secondary/50 text-muted-foreground rounded-lg hover:bg-secondary hover:text-foreground transition-colors"
             >
               <Download className="w-4 h-4" />
-              다운로드
+              {t.common?.download || 'Download'}
             </button>
           </div>
         )}
@@ -461,20 +473,29 @@ function SortableVideoCard({
 }
 
 export function WizardStep5() {
+  const { t } = useLanguage()
   const router = useRouter()
   const { credits, refreshCredits } = useCredits()
   const {
     draftId,
+    selectedProduct,
     scenarioInfo,
     aspectRatio,
+    duration,
     sceneDurations,
     updateSceneDuration,
     videoResolution,
     setVideoResolution,
     sceneCount,
+    multiShot,
+    videoCount,
+    videoModel,
+    firstSceneOptions,
+    selectedSceneIndex,
     sceneKeyframes,
     sceneVideoSegments,
     setSceneVideoSegments,
+    updateSceneVideoSegment,
     reorderSceneVideoSegments,
     finalVideoUrl,
     setFinalVideoUrl,
@@ -482,6 +503,11 @@ export function WizardStep5() {
     setIsGeneratingVideo,
     generationProgress,
     setGenerationProgress,
+    videoRequestIds,
+    setVideoRequestIds,
+    resultVideoUrls,
+    setResultVideoUrls,
+    addResultVideoUrl,
     goToPrevStep,
     saveDraft,
   } = useProductAdWizard()
@@ -492,7 +518,10 @@ export function WizardStep5() {
 
   const [error, setError] = useState<string | null>(null)
   const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false)
+  const [statusMessage, setStatusMessage] = useState<string>('')
+  const [videoStatuses, setVideoStatuses] = useState<VideoStatus[]>([])
   const [sceneVideoStatuses, setSceneVideoStatuses] = useState<SceneVideoStatus[]>([])
+  const [selectedVideoIndex, setSelectedVideoIndex] = useState(0)
   const [isMergingVideos, setIsMergingVideos] = useState(false)
   const [regeneratingSceneIndex, setRegeneratingSceneIndex] = useState<number | null>(null)
   const [modalSceneInfo, setModalSceneInfo] = useState<{ sceneIndex: number; originalSceneIndex: number } | null>(null)
@@ -502,12 +531,15 @@ export function WizardStep5() {
   const [sceneVersions, setSceneVersions] = useState<Record<number, SceneVersion[]>>({})
   const [isLoadingVersions, setIsLoadingVersions] = useState<Record<number, boolean>>({})
   const [isSwitchingVersion, setIsSwitchingVersion] = useState<number | null>(null)
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
   const transitionPollingRef = useRef<NodeJS.Timeout | null>(null)
   const progressTimerRef = useRef<NodeJS.Timeout | null>(null)
   const progressStartTimeRef = useRef<number>(0)
   const progressTotalDurationRef = useRef<number>(0)
+  const isPollingActiveRef = useRef(false)
   const isTransitionPollingActiveRef = useRef(false)
-  const hasAttemptedMultiSceneResumeRef = useRef(false)  // 폴링 재개 시도 여부
+  const hasAttemptedMultiSceneResumeRef = useRef(false)  // 멀티씬 폴링 재개 시도 여부
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([])
 
   // DnD 센서 설정
   const sensors = useSensors(
@@ -561,7 +593,7 @@ export function WizardStep5() {
           }
         }
       } catch (error) {
-        console.error('플랜 정보 로드 오류:', error)
+        console.error('Error loading plan info:', error)
       }
     }
     fetchUserPlan()
@@ -575,14 +607,14 @@ export function WizardStep5() {
     return option.creditsPerSecond * totalDuration
   })()
 
-  // Vidu Q3 전용 모드 (항상 멀티씬 워크플로우 사용)
-  const isMultiSceneMode = true  // Vidu만 사용하므로 항상 true
+  // 멀티씬 모드 확인 (Kling O1 또는 Vidu Q2)
+  const isMultiSceneMode = videoModel === 'kling-o1' || videoModel === 'vidu-q2'
 
-  const hasCompletedVideos = finalVideoUrl !== null || sceneVideoStatuses.filter(s => s.status === 'completed').length > 0
-
-  // 모든 씬 영상이 완료되었는지 확인 (완료 버튼 활성화 조건)
-  const allVideosCompleted = sceneVideoStatuses.length > 0 &&
-    sceneVideoStatuses.every(s => s.status === 'completed' && s.videoUrl)
+  const selectedScene = selectedSceneIndex !== null ? firstSceneOptions[selectedSceneIndex] : null
+  const hasCompletedVideos = isMultiSceneMode
+    ? (finalVideoUrl !== null || sceneVideoStatuses.filter(s => s.status === 'completed').length > 0)
+    : resultVideoUrls.length > 0
+  const allVideosCompleted = videoStatuses.length > 0 && videoStatuses.every(v => v.status === 'completed' || v.status === 'failed')
 
   // ============================================================
   // 씬 버전 관리 함수들
@@ -623,7 +655,7 @@ export function WizardStep5() {
         }
       }
     } catch (error) {
-      console.error('버전 히스토리 조회 오류:', error)
+      console.error('Error fetching version history:', error)
     }
   }, [draftId])
 
@@ -657,7 +689,7 @@ export function WizardStep5() {
         await fetchSceneVersions()
       }
     } catch (error) {
-      console.error('버전 저장 오류:', error)
+      console.error('Error saving version:', error)
     }
   }, [draftId, videoResolution, fetchSceneVersions])
 
@@ -701,7 +733,7 @@ export function WizardStep5() {
         await fetchSceneVersions()
       }
     } catch (error) {
-      console.error('버전 전환 오류:', error)
+      console.error('Error switching version:', error)
     } finally {
       setIsSwitchingVersion(null)
       setIsLoadingVersions(prev => ({ ...prev, [sceneIndex]: false }))
@@ -733,7 +765,7 @@ export function WizardStep5() {
       .sort((a, b) => a.sceneIndex - b.sceneIndex)
 
     if (completedKeyframes.length === 0) {
-      setError('최소 1개 이상의 키프레임이 필요합니다.')
+      setError(t.productAdWizard?.step5?.errorMinKeyframe || 'At least 1 keyframe is required.')
       return
     }
 
@@ -763,16 +795,14 @@ export function WizardStep5() {
 
     try {
       // 키프레임에 씬 프롬프트, 개별 duration, movementAmplitude 추가
-      // videoPrompt가 있으면 영상 생성에 사용 (Vidu 전용 모션 포함)
       const keyframesWithPrompts = completedKeyframes.map((kf) => {
         const sceneInfo = scenarioInfo.scenes?.find(s => s.index === kf.sceneIndex)
         return {
           sceneIndex: kf.sceneIndex,
           imageUrl: kf.imageUrl!,
-          // videoPrompt가 있으면 영상 생성에 사용, 없으면 scenePrompt 사용
-          scenePrompt: sceneInfo?.videoPrompt || sceneInfo?.scenePrompt,
+          scenePrompt: sceneInfo?.scenePrompt,
           duration: sceneDurations[kf.sceneIndex] ?? 3,  // 각 씬별 duration
-          movementAmplitude: sceneInfo?.movementAmplitude ?? 'auto',  // 카메라/모션 강도 (기본 auto - AI가 자동 결정)
+          movementAmplitude: sceneInfo?.movementAmplitude ?? 'auto',  // 카메라/모션 강도
         }
       })
 
@@ -787,7 +817,7 @@ export function WizardStep5() {
 
       if (!res.ok) {
         const errorData = await res.json()
-        throw new Error(errorData.error || '씬 영상 생성 요청 실패')
+        throw new Error(errorData.error || 'Failed to request scene video generation')
       }
 
       const data = await res.json()
@@ -802,22 +832,16 @@ export function WizardStep5() {
       }))
       setSceneVideoStatuses(initialStatuses)
 
-      // DB 업데이트 - requestId 포함하여 저장 (새로고침 후 폴링 재개 가능)
+      // DB 업데이트
       await saveDraft({
         status: 'GENERATING_SCENE_VIDEOS',
-        sceneVideoUrls: initialStatuses.map(s => ({
-          sceneIndex: s.sceneIndex,
-          requestId: s.requestId,
-          videoUrl: s.videoUrl,
-          status: s.status,
-        })),
       })
 
       // 폴링 시작
       startSceneVideoPolling(initialStatuses)
     } catch (err) {
-      console.error('Kling O1 영상 생성 오류:', err)
-      setError(err instanceof Error ? err.message : '씬 영상 생성에 실패했습니다.')
+      console.error('Error generating Kling O1 video:', err)
+      setError(err instanceof Error ? err.message : (t.productAdWizard?.step5?.errorSceneGeneration || 'Failed to generate scene videos.'))
       setIsGeneratingVideo(false)
     }
   }
@@ -829,7 +853,7 @@ export function WizardStep5() {
     const keyframe = sceneKeyframes.find(kf => kf.sceneIndex === sceneIndex && kf.status === 'completed' && kf.imageUrl)
     const sceneInfo = scenarioInfo.scenes.find(s => s.index === sceneIndex)
     if (!keyframe || !sceneInfo) {
-      setError('해당 씬의 키프레임을 찾을 수 없습니다.')
+      setError(t.productAdWizard?.step5?.errorKeyframeNotFound || 'Keyframe not found for this scene.')
       return
     }
 
@@ -849,16 +873,14 @@ export function WizardStep5() {
 
     try {
       // 추가 프롬프트가 있으면 LLM으로 합치기
-      // videoPrompt가 있으면 영상 생성에 사용 (Vidu 전용 모션 포함)
-      const basePrompt = sceneInfo.videoPrompt || sceneInfo.scenePrompt
-      let finalPrompt = basePrompt
+      let finalPrompt = sceneInfo.scenePrompt
 
       if (additionalPrompt.trim()) {
         const mergeRes = await fetch('/api/product-ad/merge-prompts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            originalPrompt: basePrompt,
+            originalPrompt: sceneInfo.scenePrompt,
             additionalPrompt: additionalPrompt.trim(),
           }),
         })
@@ -896,41 +918,30 @@ export function WizardStep5() {
         }),
       })
 
-      if (!res.ok) throw new Error('씬 영상 재생성 요청 실패')
+      if (!res.ok) throw new Error('Failed to request scene video regeneration')
 
       const data = await res.json()
       const sceneVideo = data.sceneVideos[0]
 
-      setSceneVideoStatuses(prev => {
-        const updated = prev.map(s =>
-          s.sceneIndex === sceneIndex
-            ? { ...s, requestId: sceneVideo.requestId, status: 'generating' as const }
-            : s
-        )
-        // Draft 저장 - requestId 포함 (새로고침 후 폴링 재개 가능)
-        const sceneVideoUrls = updated.map(s => ({
-          sceneIndex: s.sceneIndex,
-          requestId: s.requestId,
-          videoUrl: s.videoUrl,
-          status: s.status,
-        }))
-        saveDraft({ sceneVideoUrls })
-        return updated
-      })
+      setSceneVideoStatuses(prev => prev.map(s =>
+        s.sceneIndex === sceneIndex
+          ? { ...s, requestId: sceneVideo.requestId, status: 'generating' }
+          : s
+      ))
 
       // 단일 씬 폴링 시작 (duration 전달)
       startSingleSceneVideoPolling(sceneIndex, sceneVideo.requestId, useDuration)
     } catch (err) {
-      console.error('씬 영상 재생성 오류:', err)
+      console.error('Error regenerating scene video:', err)
       setSceneVideoStatuses(prev => prev.map(s =>
         s.sceneIndex === sceneIndex
-          ? { ...s, status: 'failed', errorMessage: '재생성 실패' }
+          ? { ...s, status: 'failed', errorMessage: 'Regeneration failed' }
           : s
       ))
       setRegeneratingSceneIndex(null)
       setIsMergingPrompt(false)
       setModalSceneInfo(null)
-      setError('씬 영상 재생성에 실패했습니다.')
+      setError(t.productAdWizard?.step5?.errorSceneRegeneration || 'Failed to regenerate scene video.')
     }
   }
 
@@ -992,7 +1003,7 @@ export function WizardStep5() {
               : s
           ))
           setRegeneratingSceneIndex(null)
-          setError('씬 영상 재생성에 실패했습니다.')
+          setError(t.productAdWizard?.step5?.errorSceneRegeneration || 'Failed to regenerate scene video.')
         } else {
           setTimeout(() => pollStatus(), 5000)
         }
@@ -1111,6 +1122,201 @@ export function WizardStep5() {
 
   // 자동 합치기 비활성화 - 사용자가 "완료" 버튼을 누르면 합치기 시작
 
+  // ============================================================
+  // 일반 모드: 영상 생성
+  // ============================================================
+
+  // 영상 생성 시작
+  const startVideoGeneration = async () => {
+    if (!selectedScene?.imageUrl || !scenarioInfo || !selectedProduct) return
+
+    // 크레딧 체크
+    if (credits !== null && credits < estimatedCredits) {
+      setShowInsufficientCreditsModal(true)
+      return
+    }
+
+    setError(null)
+    setIsGeneratingVideo(true)
+    setGenerationProgress(0)
+    setStatusMessage('영상 생성을 준비하고 있습니다...')
+    setVideoStatuses([])
+    setVideoRequestIds([])
+    setResultVideoUrls([])
+
+    try {
+      const res = await fetch('/api/product-ad/generate-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          draftId,
+          startFrameUrl: selectedScene.imageUrl,
+          productName: selectedProduct.name,
+          scenarioElements: scenarioInfo.elements,
+          aspectRatio,
+          duration,
+          multiShot,
+          videoCount,
+          videoModel,
+        }),
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to request video generation')
+      }
+
+      const data = await res.json()
+      const requests: { requestId: string; prompt: string }[] = data.requests || [{ requestId: data.requestId, prompt: data.prompt }]
+
+      // 요청 ID들 저장
+      const requestIds = requests.map(r => r.requestId)
+      setVideoRequestIds(requestIds)
+
+      // 초기 상태 설정
+      const initialStatuses: VideoStatus[] = requestIds.map(id => ({
+        requestId: id,
+        status: 'generating',
+      }))
+      setVideoStatuses(initialStatuses)
+
+      // DB 업데이트
+      await saveDraft({
+        videoRequestId: requestIds[0],
+        status: 'GENERATING_VIDEO',
+      })
+
+      // 폴링 시작
+      startPolling(requestIds)
+    } catch (err) {
+      console.error('Error generating video:', err)
+      setError(err instanceof Error ? err.message : (t.productAdWizard?.step5?.errorVideoGeneration || 'Failed to generate video.'))
+      setIsGeneratingVideo(false)
+    }
+  }
+
+  // 상태 폴링
+  const startPolling = useCallback((requestIds: string[]) => {
+    // 이미 폴링 중이면 중복 시작 방지
+    if (isPollingActiveRef.current) {
+      return
+    }
+
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current)
+    }
+
+    isPollingActiveRef.current = true
+    let progressValue = 5
+    // 완료된 URL을 폴링 루프 내에서 추적 (클로저 문제 해결)
+    const collectedUrls: string[] = []
+
+    const pollStatus = async () => {
+      let allCompleted = true
+      let completedCount = 0
+
+      for (const requestId of requestIds) {
+        try {
+          const res = await fetch(`/api/product-ad/status/${encodeURIComponent(requestId)}?type=video`)
+          if (!res.ok) {
+            allCompleted = false
+            continue
+          }
+
+          const data = await res.json()
+
+          if (data.status === 'IN_QUEUE') {
+            setStatusMessage(`대기열에서 처리를 기다리는 중... (${completedCount}/${requestIds.length})`)
+            allCompleted = false
+          } else if (data.status === 'IN_PROGRESS') {
+            setStatusMessage(`영상을 생성하고 있습니다... (${completedCount}/${requestIds.length})`)
+            allCompleted = false
+          } else if (data.status === 'COMPLETED' && data.resultUrl) {
+            completedCount++
+            setVideoStatuses(prev => prev.map(v =>
+              v.requestId === requestId
+                ? { ...v, status: 'completed', resultUrl: data.resultUrl }
+                : v
+            ))
+
+            // 완료된 URL 수집 및 결과 URL 추가 (중복 방지)
+            if (!collectedUrls.includes(data.resultUrl)) {
+              collectedUrls.push(data.resultUrl)
+              addResultVideoUrl(data.resultUrl)
+            }
+          } else if (data.status === 'FAILED') {
+            completedCount++
+            setVideoStatuses(prev => prev.map(v =>
+              v.requestId === requestId
+                ? { ...v, status: 'failed', errorMessage: data.errorMessage }
+                : v
+            ))
+          } else {
+            allCompleted = false
+          }
+        } catch {
+          allCompleted = false
+        }
+      }
+
+      progressValue = Math.min(5 + (completedCount / requestIds.length) * 95, 95)
+      setGenerationProgress(Math.round(progressValue))
+
+      if (allCompleted) {
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current)
+          pollingRef.current = null
+        }
+        isPollingActiveRef.current = false
+
+        setGenerationProgress(100)
+        setIsGeneratingVideo(false)
+        setStatusMessage('영상 생성이 완료되었습니다!')
+
+        // DB 업데이트 (폴링 중 수집한 URL 사용)
+        if (collectedUrls.length > 0) {
+          await saveDraft({
+            videoUrl: collectedUrls[0],
+            status: 'COMPLETED',
+          })
+          // 크레딧 갱신
+          refreshCredits()
+        }
+      }
+    }
+
+    pollingRef.current = setInterval(pollStatus, 5000)
+    pollStatus()
+  }, [setGenerationProgress, setIsGeneratingVideo, setResultVideoUrls, saveDraft])
+
+  // 컴포넌트 언마운트 시 폴링 정리
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+      }
+      isPollingActiveRef.current = false
+    }
+  }, [])
+
+  // 이미 생성 중인 영상이 있으면 폴링 재개 (최초 마운트 시에만)
+  useEffect(() => {
+    // 이미 폴링 중이면 무시
+    if (isPollingActiveRef.current) {
+      return
+    }
+
+    if (videoRequestIds.length > 0 && resultVideoUrls.length === 0 && !isGeneratingVideo) {
+      setIsGeneratingVideo(true)
+      const initialStatuses: VideoStatus[] = videoRequestIds.map(id => ({
+        requestId: id,
+        status: 'generating',
+      }))
+      setVideoStatuses(initialStatuses)
+      startPolling(videoRequestIds)
+    }
+  }, [videoRequestIds, resultVideoUrls.length, isGeneratingVideo, setIsGeneratingVideo, startPolling])
+
   // 멀티씬 모드: context에서 sceneVideoSegments 복원하여 폴링 재개
   // sceneVideoSegments가 비동기로 로드되므로 의존성 배열에 포함
   useEffect(() => {
@@ -1141,6 +1347,7 @@ export function WizardStep5() {
         // 생성 중인 항목이 있으면 폴링 시작
         if (hasGenerating) {
           setIsGeneratingVideo(true)
+          setStatusMessage('영상 생성을 재개합니다...')
           startSceneVideoPolling(restoredStatuses)
         }
       }
@@ -1176,11 +1383,27 @@ export function WizardStep5() {
       document.body.removeChild(a)
       window.URL.revokeObjectURL(blobUrl)
     } catch (err) {
-      console.error('다운로드 오류:', err)
+      console.error('Error downloading video:', err)
     }
   }
 
-  // 완료된 씬 영상 URL들
+  // 전체 다운로드
+  const handleDownloadAll = async () => {
+    for (let i = 0; i < resultVideoUrls.length; i++) {
+      await handleDownload(resultVideoUrls[i], i)
+    }
+  }
+
+  // 영상 재생성
+  const handleRegenerate = () => {
+    setResultVideoUrls([])
+    setVideoRequestIds([])
+    setVideoStatuses([])
+    setError(null)
+    startVideoGeneration()
+  }
+
+  // Kling O1 모드에서 완료된 씬 영상 URL들
   const completedSceneVideoUrls = sceneVideoStatuses
     .filter(s => s.status === 'completed' && s.videoUrl)
     .sort((a, b) => a.sceneIndex - b.sceneIndex)
@@ -1195,14 +1418,15 @@ export function WizardStep5() {
   }
 
   // 완료 후 상세 페이지로 이동
-  // 영상이 합쳐지지 않았다면 먼저 합친 후 이동
+  // 멀티씬 모드에서 영상이 합쳐지지 않았다면 먼저 합친 후 이동
   const handleComplete = async () => {
     if (!draftId) return
 
-    // 합쳐진 영상이 없고, 완료된 씬 영상이 2개 이상이면 먼저 합치기
-    if (!finalVideoUrl && completedSceneVideoUrls.length >= 2) {
+    // 멀티씬 모드에서 합쳐진 영상이 없고, 완료된 씬 영상이 2개 이상이면 먼저 합치기
+    if (isMultiSceneMode && !finalVideoUrl && completedSceneVideoUrls.length >= 2) {
       setError(null)
       setIsMergingVideos(true)
+      setStatusMessage(t.productAdWizard?.step5?.mergingVideos || 'Merging videos...')
 
       try {
         const res = await fetch('/api/product-ad/merge-videos', {
@@ -1216,7 +1440,7 @@ export function WizardStep5() {
 
         if (!res.ok) {
           const errorData = await res.json()
-          throw new Error(errorData.error || '영상 합치기 실패')
+          throw new Error(errorData.error || 'Failed to merge videos')
         }
 
         const data = await res.json()
@@ -1230,16 +1454,16 @@ export function WizardStep5() {
         // 크레딧 갱신
         refreshCredits()
 
-        // 상세 페이지로 이동 (replace로 히스토리 대체하여 뒤로가기 시 위저드로 돌아가지 않도록)
-        router.replace(`/dashboard/video-ad/${draftId}`)
+        // 상세 페이지로 이동
+        router.push(`/dashboard/video-ad/${draftId}`)
       } catch (err) {
-        console.error('영상 합치기 오류:', err)
-        setError(err instanceof Error ? err.message : '영상 합치기에 실패했습니다.')
+        console.error('Error merging videos:', err)
+        setError(err instanceof Error ? err.message : (t.productAdWizard?.step5?.errorMergeVideo || 'Failed to merge videos.'))
         setIsMergingVideos(false)
       }
     } else {
-      // 이미 합쳐졌거나 씬이 1개면 바로 이동 (replace로 히스토리 대체)
-      router.replace(`/dashboard/video-ad/${draftId}`)
+      // 이미 합쳐졌거나 일반 모드면 바로 이동
+      router.push(`/dashboard/video-ad/${draftId}`)
     }
   }
 
@@ -1248,20 +1472,26 @@ export function WizardStep5() {
       {/* 헤더 */}
       <div className="text-center">
         <h2 className="text-xl font-bold text-foreground">
-          {hasCompletedVideos ? '영상 생성 완료' : '광고 영상 생성'}
+          {hasCompletedVideos ? (t.productAdWizard?.step5?.titleComplete || 'Video Generation Complete') : (t.productAdWizard?.step5?.title || 'Generate Ad Video')}
         </h2>
         <p className="text-muted-foreground mt-2">
-          {hasCompletedVideos
-            ? `${completedSceneVideoUrls.length}개의 씬 영상이 완성되었습니다`
-            : `${sceneKeyframes.length}개 씬별 영상을 생성합니다`}
+          {isMultiSceneMode
+            ? (hasCompletedVideos
+                ? (t.productAdWizard?.step5?.sceneVideosComplete?.replace('{count}', String(completedSceneVideoUrls.length)) || `${completedSceneVideoUrls.length} scene videos completed`)
+                : (t.productAdWizard?.step5?.generatingSceneVideos?.replace('{count}', String(sceneKeyframes.length)) || `Generating videos for ${sceneKeyframes.length} scenes`))
+            : (hasCompletedVideos
+                ? (t.productAdWizard?.step5?.videosComplete?.replace('{count}', String(resultVideoUrls.length)) || `${resultVideoUrls.length} product ad videos completed`)
+                : (t.productAdWizard?.step5?.subtitleGenerate || 'Generate ad video from the selected first scene'))
+          }
         </p>
       </div>
 
       {/* 결과 영상 */}
       {hasCompletedVideos ? (
         <div className="space-y-4">
-          {/* 씬 전환 영상 목록 */}
-          <div className="space-y-4">
+          {/* Kling O1 모드: 씬 전환 영상 목록 */}
+          {isMultiSceneMode ? (
+            <div className="space-y-4">
               {/* 합쳐진 최종 영상이 있으면 표시 */}
               {finalVideoUrl ? (
                 <>
@@ -1276,24 +1506,24 @@ export function WizardStep5() {
                   <div className="flex gap-3">
                     <button
                       onClick={handleComplete}
-                      disabled={!allVideosCompleted || regeneratingSceneIndex !== null}
+                      disabled={regeneratingSceneIndex !== null}
                       className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                     >
                       <Check className="w-5 h-5" />
-                      완료
+                      {t.common?.complete || 'Complete'}
                     </button>
                     <button
                       onClick={() => handleDownload(finalVideoUrl, 0)}
                       className="flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
                     >
                       <Download className="w-5 h-5" />
-                      다운로드
+                      {t.common?.download || 'Download'}
                     </button>
                     <button
                       onClick={() => setFinalVideoUrl(null)}
                       className="flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
                     >
-                      개별 영상
+                      {t.productAdWizard?.step5?.individualVideos || 'Individual Videos'}
                     </button>
                     <button
                       onClick={handleMultiSceneRegenerate}
@@ -1309,9 +1539,9 @@ export function WizardStep5() {
                   {sceneVideoStatuses.length > 0 && (
                     <div className="space-y-3">
                       <p className="text-sm text-muted-foreground">
-                        각 씬 영상을 확인하고 재생해보세요
+                        {t.productAdWizard?.step5?.reviewSceneVideos || 'Review and play each scene video'}
                         {sceneVideoStatuses.filter(s => s.status === 'completed').length >= 2 && (
-                          <span className="text-primary ml-1">(드래그하여 순서 변경 가능)</span>
+                          <span className="text-primary ml-1">({t.productAdWizard?.step5?.dragToReorder || 'Drag to reorder'})</span>
                         )}
                       </p>
                       <DndContext
@@ -1359,23 +1589,23 @@ export function WizardStep5() {
                   <div className="flex gap-3">
                     <button
                       onClick={handleComplete}
-                      disabled={!allVideosCompleted || isMergingVideos || regeneratingSceneIndex !== null}
+                      disabled={isMergingVideos || regeneratingSceneIndex !== null}
                       className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                     >
                       {isMergingVideos ? (
                         <>
                           <Loader2 className="w-5 h-5 animate-spin" />
-                          영상 합치는 중...
+                          {t.productAdWizard?.step5?.mergingVideos || 'Merging videos...'}
                         </>
                       ) : regeneratingSceneIndex !== null ? (
                         <>
                           <Loader2 className="w-5 h-5 animate-spin" />
-                          씬 재생성 중...
+                          {t.productAdWizard?.step5?.regeneratingScene || 'Regenerating scene...'}
                         </>
                       ) : (
                         <>
                           <Check className="w-5 h-5" />
-                          완료
+                          {t.common?.complete || 'Complete'}
                         </>
                       )}
                     </button>
@@ -1385,16 +1615,182 @@ export function WizardStep5() {
                       className="flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
                     >
                       <RefreshCw className="w-5 h-5" />
-                      전체 재생성
+                      {t.productAdWizard?.step5?.regenerateAll || 'Regenerate All'}
                     </button>
                   </div>
                 </>
               )}
             </div>
+          ) : (
+            /* 일반 모드: 영상 목록 */
+            videoStatuses.length > 1 ? (
+              <div className="space-y-4">
+                {/* 선택된 영상 큰 플레이어 */}
+                <div className="relative h-80 bg-black rounded-xl overflow-hidden flex items-center justify-center">
+                  {resultVideoUrls[selectedVideoIndex] ? (
+                    <video
+                      ref={el => { videoRefs.current[selectedVideoIndex] = el }}
+                      src={resultVideoUrls[selectedVideoIndex]}
+                      controls
+                      className="max-w-full max-h-full"
+                      poster={selectedScene?.imageUrl}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center">
+                      <Loader2 className="w-10 h-10 animate-spin text-primary mb-3" />
+                      <span className="text-sm text-muted-foreground">{t.productAdWizard?.step5?.selectVideo || 'Please select a video'}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 영상 썸네일 목록 (완료된 영상 + 로딩 중인 영상) */}
+                <div className="flex justify-center w-full">
+                <div className={`grid gap-4 ${
+                  videoStatuses.length === 1 ? 'grid-cols-1 max-w-md' :
+                  videoStatuses.length === 2 ? 'grid-cols-2 max-w-2xl' :
+                  videoStatuses.length === 3 ? 'grid-cols-3 max-w-3xl' :
+                  videoStatuses.length === 4 ? 'grid-cols-2 max-w-2xl' :
+                  videoStatuses.length <= 6 ? 'grid-cols-3 max-w-3xl' :
+                  'grid-cols-4 max-w-4xl'
+                } justify-items-center w-full`}>
+                  {videoStatuses.map((videoStatus, index) => {
+                    const isCompleted = videoStatus.status === 'completed' && videoStatus.resultUrl
+                    const isGenerating = videoStatus.status === 'generating'
+                    const isFailed = videoStatus.status === 'failed'
+                    const completedVideos = videoStatuses.filter(v => v.status === 'completed' && v.resultUrl)
+                    const completedIndex = completedVideos.findIndex(v => v.requestId === videoStatus.requestId)
+
+                    return (
+                      <button
+                        key={videoStatus.requestId}
+                        onClick={() => isCompleted && completedIndex >= 0 && setSelectedVideoIndex(completedIndex)}
+                        disabled={!isCompleted}
+                        className={`relative w-full ${getAspectRatioClass(aspectRatio)} bg-black rounded-lg overflow-hidden border-2 transition-all ${
+                          isCompleted && completedIndex === selectedVideoIndex
+                            ? 'border-primary ring-2 ring-primary/20'
+                            : isCompleted
+                              ? 'border-border hover:border-primary/50'
+                              : 'border-border cursor-not-allowed'
+                        }`}
+                      >
+                        {isCompleted ? (
+                          <video
+                            src={videoStatus.resultUrl}
+                            className="absolute inset-0 w-full h-full object-contain"
+                            muted
+                          />
+                        ) : isGenerating ? (
+                          <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-secondary/50">
+                            <Loader2 className="w-6 h-6 animate-spin text-primary mb-2" />
+                            <span className="text-xs text-muted-foreground">{t.productAdWizard?.step5?.generating || 'Generating...'}</span>
+                          </div>
+                        ) : isFailed ? (
+                          <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-destructive/10">
+                            <AlertCircle className="w-6 h-6 text-destructive mb-2" />
+                            <span className="text-xs text-destructive">{t.common?.failed || 'Failed'}</span>
+                          </div>
+                        ) : null}
+                        <div className="absolute bottom-1 left-1 px-2 py-0.5 bg-black/70 rounded text-xs text-white">
+                          {t.productAdWizard?.step5?.video || 'Video'} {index + 1}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+                </div>
+
+                {/* 액션 버튼 */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleDownload(resultVideoUrls[selectedVideoIndex], selectedVideoIndex)}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    <Download className="w-5 h-5" />
+                    {t.productAdWizard?.step5?.downloadSelected || 'Download Selected'}
+                  </button>
+                  <button
+                    onClick={handleDownloadAll}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
+                  >
+                    <Download className="w-5 h-5" />
+                    {t.common?.all || 'All'} ({resultVideoUrls.length})
+                  </button>
+                  <button
+                    onClick={handleRegenerate}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
+                  >
+                    <RefreshCw className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={handleComplete}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+                  >
+                    <Check className="w-5 h-5" />
+                    {t.common?.complete || 'Complete'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* 단일 영상 플레이어 또는 로딩 */}
+                <div className="relative h-80 bg-black rounded-xl overflow-hidden flex items-center justify-center">
+                  {videoStatuses.length === 1 && videoStatuses[0].status === 'generating' ? (
+                    <div className="flex flex-col items-center justify-center">
+                      <Loader2 className="w-10 h-10 animate-spin text-primary mb-3" />
+                      <span className="text-sm text-muted-foreground">{t.productAdWizard?.step5?.generatingVideo || 'Generating video...'}</span>
+                    </div>
+                  ) : videoStatuses.length === 1 && videoStatuses[0].status === 'failed' ? (
+                    <div className="flex flex-col items-center justify-center">
+                      <AlertCircle className="w-10 h-10 text-destructive mb-3" />
+                      <span className="text-sm text-destructive">{t.productAdWizard?.step5?.generationFailed || 'Video generation failed'}</span>
+                    </div>
+                  ) : resultVideoUrls[0] ? (
+                    <video
+                      ref={el => { videoRefs.current[0] = el }}
+                      src={resultVideoUrls[0]}
+                      controls
+                      className="max-w-full max-h-full"
+                      poster={selectedScene?.imageUrl}
+                    />
+                  ) : null}
+                </div>
+
+                {/* 액션 버튼 */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => resultVideoUrls[0] && handleDownload(resultVideoUrls[0], 0)}
+                    disabled={!resultVideoUrls[0]}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >
+                    <Download className="w-5 h-5" />
+                    {t.productAdWizard?.step5?.downloadVideo || 'Download Video'}
+                  </button>
+                  <button
+                    onClick={handleRegenerate}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
+                  >
+                    <RefreshCw className="w-5 h-5" />
+                    {t.productAdWizard?.step5?.regenerate || 'Regenerate'}
+                  </button>
+                  <button
+                    onClick={handleComplete}
+                    disabled={!resultVideoUrls[0]}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+                  >
+                    <Check className="w-5 h-5" />
+                    {t.common?.complete || 'Complete'}
+                  </button>
+                </div>
+              </div>
+            )
+          )}
         </div>
       ) : (
-        <div className="space-y-6">
-          {/* 키프레임 그리드 (상단) */}
+        <>
+          {/* Kling O1 모드: 통합된 영상 생성 UI */}
+          {isMultiSceneMode ? (
+            <div className="space-y-6">
+              {/* 키프레임 그리드 (상단) */}
               <div className="flex justify-center w-full">
                 <div className={`grid gap-4 ${
                   sceneKeyframes.length === 1 ? 'grid-cols-1 max-w-sm' :
@@ -1428,7 +1824,7 @@ export function WizardStep5() {
                         >
                           <Image
                             src={kf.imageUrl!}
-                            alt={`씬 ${kf.sceneIndex + 1}`}
+                            alt={`${t.productAdWizard?.step5?.scene || 'Scene'} ${kf.sceneIndex + 1}`}
                             fill
                             className="object-contain"
                           />
@@ -1439,9 +1835,18 @@ export function WizardStep5() {
                               <Loader2 className="w-8 h-8 animate-spin text-white" />
                             </div>
                           ) : isSceneCompleted ? (
-                            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                              <Play className="w-8 h-8 text-white" />
-                            </div>
+                            <button
+                              onClick={() => {
+                                const completedVideos = sceneVideoStatuses
+                                  .filter(s => s.status === 'completed' && s.videoUrl)
+                                  .sort((a, b) => a.sceneIndex - b.sceneIndex)
+                                const idx = completedVideos.findIndex(v => v.sceneIndex === kf.sceneIndex)
+                                if (idx >= 0) setSelectedVideoIndex(idx)
+                              }}
+                              className="absolute inset-0 bg-black/30 flex items-center justify-center hover:bg-black/40 transition-colors group"
+                            >
+                              <Play className="w-8 h-8 text-white group-hover:scale-110 transition-transform" />
+                            </button>
                           ) : isSceneFailed ? (
                             <div className="absolute inset-0 bg-red-500/30 flex items-center justify-center">
                               <AlertCircle className="w-6 h-6 text-white" />
@@ -1450,7 +1855,7 @@ export function WizardStep5() {
 
                           {/* 씬 번호 */}
                           <div className="absolute bottom-1 left-1 px-2 py-0.5 bg-black/70 rounded text-xs text-white font-medium">
-                            씬 {kf.sceneIndex + 1}
+                            {t.productAdWizard?.step5?.scene || 'Scene'} {kf.sceneIndex + 1}
                           </div>
 
                           {/* 완료 체크 */}
@@ -1469,7 +1874,7 @@ export function WizardStep5() {
               {isGeneratingVideo && (
                 <div className="space-y-2 p-4 bg-primary/5 border border-primary/20 rounded-xl">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">영상을 생성 중입니다...</span>
+                    <span className="text-muted-foreground">{t.productAdWizard?.step5?.generatingVideo || 'Generating video...'}</span>
                     <span className="text-foreground font-medium">{generationProgress}%</span>
                   </div>
                   <div className="h-2 bg-secondary rounded-full overflow-hidden">
@@ -1487,10 +1892,10 @@ export function WizardStep5() {
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-primary" />
-                      영상 품질
+                      {t.productAdWizard?.step5?.videoQuality || 'Video Quality'}
                     </h3>
                     <span className="text-xs text-muted-foreground">
-                      {sceneCount}개 씬 x {totalDuration}초 = 예상 {estimatedCredits} 크레딧
+                      {sceneCount} {t.productAdWizard?.step5?.scenes || 'scenes'} x {totalDuration}{t.common?.secondsShort || 's'} = {t.productAdWizard?.step5?.estimated || 'Estimated'} {estimatedCredits} {t.common?.credits || 'Credits'}
                     </span>
                   </div>
 
@@ -1520,7 +1925,7 @@ export function WizardStep5() {
                               {option.label}
                             </div>
                             <div className="text-[10px] text-muted-foreground mt-0.5">{option.desc}</div>
-                            <div className="text-xs text-primary mt-1">{option.creditsPerSecond} 크레딧/초</div>
+                            <div className="text-xs text-primary mt-1">{option.creditsPerSecond} {t.common?.credits || 'Credits'}/{t.common?.secondsShort || 's'}</div>
                           </div>
                         </button>
                       )
@@ -1530,7 +1935,7 @@ export function WizardStep5() {
                   {isFreeUser && (
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <Crown className="w-3 h-3" />
-                      STARTER 이상 구독 시 HD/FHD 품질 사용 가능
+                      {t.productAdWizard?.step5?.upgradeForQuality || 'Subscribe to STARTER or higher for HD/FHD quality'}
                     </p>
                   )}
                 </div>
@@ -1544,7 +1949,7 @@ export function WizardStep5() {
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-4 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-colors"
                   >
                     <ArrowLeft className="w-4 h-4" />
-                    이전 단계
+                    {t.productAdWizard?.step5?.prevStep || 'Previous Step'}
                   </button>
                   <button
                     onClick={startMultiSceneVideoGeneration}
@@ -1552,19 +1957,182 @@ export function WizardStep5() {
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-4 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                   >
                     <Video className="w-5 h-5" />
-                    영상 생성 ({estimatedCredits} 크레딧)
+                    {t.productAdWizard?.step5?.generateVideo || 'Generate Video'} ({estimatedCredits} {t.common?.credits || 'Credits'})
                   </button>
                 </div>
               )}
 
-          {/* 에러 메시지 */}
-          {error && (
-            <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-              <p className="text-sm text-red-600">{error}</p>
+              {/* 에러 메시지 */}
+              {error && (
+                <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* 일반 모드: 선택된 첫 씬 미리보기 */
+            selectedScene?.imageUrl && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-foreground">{t.productAdWizard?.step5?.selectedFirstScene || 'Selected First Scene'}</h3>
+                <div className="relative h-64 rounded-xl overflow-hidden bg-secondary/30">
+                  <Image
+                    src={selectedScene.imageUrl}
+                    alt={t.productAdWizard?.step5?.selectedFirstScene || 'Selected First Scene'}
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+              </div>
+            )
+          )}
+
+          {/* 일반 모드 전용: 시나리오 요약 */}
+          {!isMultiSceneMode && scenarioInfo && (
+            <div className="p-4 bg-secondary/30 rounded-xl space-y-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">{t.productAdWizard?.step5?.scenarioSummary || 'Scenario Summary'}</span>
+              </div>
+              <div className="text-sm">
+                {scenarioInfo.elements?.mood && (
+                  <div>
+                    <span className="text-muted-foreground">{t.productAdWizard?.step5?.mood || 'Mood'}: </span>
+                    <span className="text-foreground">{scenarioInfo.elements.mood}</span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
-        </div>
+
+          {/* 일반 모드 전용: 영상 설정 정보 */}
+          {!isMultiSceneMode && (
+            <div className="flex flex-wrap gap-3 justify-center text-sm">
+              <div className="px-3 py-1.5 bg-secondary/50 rounded-lg">
+                <span className="text-muted-foreground">{t.productAdWizard?.step5?.ratio || 'Ratio'}: </span>
+                <span className="text-foreground font-medium">{aspectRatio}</span>
+              </div>
+              <div className="px-3 py-1.5 bg-secondary/50 rounded-lg">
+                <span className="text-muted-foreground">{t.productAdWizard?.step5?.duration || 'Duration'}: </span>
+                <span className="text-foreground font-medium">{duration}{t.common?.secondsShort || 's'}</span>
+              </div>
+              <div className="px-3 py-1.5 bg-primary/10 rounded-lg">
+                <span className="text-muted-foreground">{t.productAdWizard?.step5?.model || 'Model'}: </span>
+                <span className="text-primary font-medium">
+                  {videoModel === 'seedance' ? 'Seedance' : videoModel === 'kling2.6' ? 'Kling 2.6' : 'Wan 2.6'}
+                </span>
+              </div>
+              {multiShot && (
+                <div className="px-3 py-1.5 bg-primary/10 rounded-lg flex items-center gap-1.5">
+                  <Clapperboard className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-primary font-medium">{t.productAdWizard?.step5?.multiShot || 'Multi-shot'}</span>
+                </div>
+              )}
+              <div className="px-3 py-1.5 bg-secondary/50 rounded-lg">
+                <span className="text-muted-foreground">{t.productAdWizard?.step5?.count || 'Count'}: </span>
+                <span className="text-foreground font-medium">{videoCount}</span>
+              </div>
+            </div>
+          )}
+
+          {/* 일반 모드 전용: 생성 중 상태 또는 생성 버튼 */}
+          {!isMultiSceneMode && (
+            <>
+              {isGeneratingVideo ? (
+                <div className="space-y-4">
+                  {/* 프로그레스 바 */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">{statusMessage}</span>
+                      <span className="text-foreground font-medium">{generationProgress}%</span>
+                    </div>
+                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary rounded-full transition-all duration-500"
+                        style={{ width: `${generationProgress}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* 개별 영상 상태 */}
+                  {videoStatuses.length > 1 && (
+                    <div className={`grid gap-3 ${
+                      videoStatuses.length <= 3 ? 'grid-cols-1' :
+                      videoStatuses.length === 4 ? 'grid-cols-2' :
+                      videoStatuses.length <= 6 ? 'grid-cols-3' :
+                      'grid-cols-4'
+                    }`}>
+                      {videoStatuses.map((vs, index) => (
+                        <div
+                          key={vs.requestId}
+                          className={`p-3 rounded-lg border ${
+                            vs.status === 'completed'
+                              ? 'bg-green-500/10 border-green-500/30'
+                              : vs.status === 'failed'
+                              ? 'bg-red-500/10 border-red-500/30'
+                              : 'bg-secondary/30 border-border'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            {vs.status === 'generating' && (
+                              <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                            )}
+                            {vs.status === 'completed' && (
+                              <CheckCircle2 className="w-4 h-4 text-green-500" />
+                            )}
+                            {vs.status === 'failed' && (
+                              <AlertCircle className="w-4 h-4 text-red-500" />
+                            )}
+                            <span className="text-sm font-medium">{t.productAdWizard?.step5?.video || 'Video'} {index + 1}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-center gap-3 py-8">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    <div className="text-center">
+                      <p className="font-medium text-foreground">
+                        {t.productAdWizard?.step5?.generatingVideos?.replace('{count}', String(videoCount)) || `Generating ${videoCount > 1 ? videoCount + ' videos' : 'video'}...`}
+                      </p>
+                      <p className="text-sm text-muted-foreground">{t.productAdWizard?.step5?.estimatedTime || 'Takes about 1-3 minutes'}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* 생성 버튼 */
+                <button
+                  onClick={startVideoGeneration}
+                  disabled={!selectedScene?.imageUrl}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  <Video className="w-5 h-5" />
+                  {videoCount > 1 ? (t.productAdWizard?.step5?.generateMultiple?.replace('{count}', String(videoCount)) || `Generate ${videoCount} Ad Videos`) : (t.productAdWizard?.step5?.generateSingle || 'Generate Ad Video')}
+                </button>
+              )}
+
+              {/* 에러 메시지 */}
+              {error && (
+                <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+
+              {/* 이전 버튼 */}
+              {!isGeneratingVideo && !isMergingVideos && regeneratingSceneIndex === null && (
+                <button
+                  onClick={goToPrevStep}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  {t.productAdWizard?.step5?.prevStep || 'Previous Step'}
+                </button>
+              )}
+            </>
+          )}
+        </>
       )}
 
       {/* 영상 재생성 모달 */}
@@ -1586,7 +2154,7 @@ export function WizardStep5() {
         onClose={() => setShowInsufficientCreditsModal(false)}
         requiredCredits={estimatedCredits}
         availableCredits={credits ?? 0}
-        featureName="제품 광고 영상 생성"
+        featureName={t.productAdWizard?.step5?.featureName || 'Product Ad Video Generation'}
       />
     </div>
   )

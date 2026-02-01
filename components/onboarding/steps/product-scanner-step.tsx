@@ -60,7 +60,7 @@ export function ProductScannerStep() {
         const { product } = data
 
         if (product.status === 'FAILED') {
-          setError(product.error_message || '배경 제거에 실패했습니다')
+          setError(product.error_message || 'Background removal failed')
           goToStep('product')
           return
         }
@@ -82,7 +82,7 @@ export function ProductScannerStep() {
 
         // 완료되지 않았으면 계속 폴링
       } catch (err) {
-        console.error('상태 폴링 오류:', err)
+        console.error('Status polling error:', err)
       }
     }
 

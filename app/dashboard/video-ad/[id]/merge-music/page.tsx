@@ -8,30 +8,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { Music, Loader2, CheckCircle, XCircle, ArrowLeft } from 'lucide-react'
+import { Music, Loader2, CheckCircle, XCircle, ArrowLeft, Volume2 } from 'lucide-react'
 import Image from 'next/image'
 import { useLanguage } from '@/contexts/language-context'
-
-type MergeMusicT = {
-  selectedMusic?: string
-  merging?: string
-  completed?: string
-  error?: string
-  invalidMusicInfo?: string
-  mergeFailed?: string
-  unknownError?: string
-  redirecting?: string
-  goBack?: string
-  retry?: string
-  doNotClose?: string
-  steps?: {
-    downloading?: string
-    downloadingProgress?: string
-    processing?: string
-    uploading?: string
-    completed?: string
-  }
-}
 
 interface MergeStatus {
   step: 'downloading' | 'processing' | 'uploading' | 'completed' | 'failed'
@@ -39,17 +18,38 @@ interface MergeStatus {
   message: string
 }
 
+interface MergeMusicTranslation {
+  preparingFiles?: string
+  downloadingFiles?: string
+  processingMusic?: string
+  savingVideo?: string
+  completed?: string
+  invalidMusicInfo?: string
+  mergeFailed?: string
+  unknownError?: string
+  errorOccurred?: string
+  music?: string
+  selectedMusic?: string
+  mergeCompleted?: string
+  mergingMusic?: string
+  redirecting?: string
+  goBack?: string
+  retry?: string
+  doNotCloseWindow?: string
+}
+
 export default function MergeMusicPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { t } = useLanguage()
-  const mergeT = t.mergeMusic as MergeMusicT | undefined
+
+  const mergeMusicT = (t.videoAd as { mergeMusic?: MergeMusicTranslation } | undefined)?.mergeMusic
 
   const [status, setStatus] = useState<MergeStatus>({
     step: 'downloading',
     progress: 0,
-    message: mergeT?.steps?.downloading || 'Preparing music and video files...',
+    message: mergeMusicT?.preparingFiles || 'Preparing music and video files...',
   })
   const [error, setError] = useState<string | null>(null)
   const [isStarted, setIsStarted] = useState(false)
@@ -94,26 +94,26 @@ export default function MergeMusicPage() {
     setIsStarted(true)
 
     if (!musicId || !startTime || !endTime) {
-      setError(mergeT?.invalidMusicInfo || 'Invalid music information.')
-      setStatus({ step: 'failed', progress: 0, message: mergeT?.error || 'Error' })
+      setError(mergeMusicT?.invalidMusicInfo || 'Invalid music information.')
+      setStatus({ step: 'failed', progress: 0, message: mergeMusicT?.errorOccurred || 'Error occurred' })
       return
     }
 
     try {
-      // Step 1: Download
+      // 단계 1: 다운로드
       setStatus({
         step: 'downloading',
         progress: 10,
-        message: mergeT?.steps?.downloadingProgress || 'Downloading music and video files...',
+        message: mergeMusicT?.downloadingFiles || 'Downloading music and video files...',
       })
 
       await new Promise((r) => setTimeout(r, 800))
 
-      // Step 2: Processing
+      // 단계 2: 처리
       setStatus({
         step: 'processing',
         progress: 30,
-        message: mergeT?.steps?.processing || 'Merging music with video...',
+        message: mergeMusicT?.processingMusic || 'Merging music with video...',
       })
 
       // API 호출
@@ -125,29 +125,29 @@ export default function MergeMusicPage() {
           trackIndex: Number(trackIndex) || 0,
           startTime: Number(startTime),
           endTime: Number(endTime),
-          musicVolume: Number(musicVolume) || 0.4,
+          musicVolume: Number(musicVolume) || 0.3,
         }),
       })
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || mergeT?.mergeFailed || 'Music merge failed.')
+        throw new Error(data.error || (mergeMusicT?.mergeFailed || 'Music merge failed.'))
       }
 
-      // Step 3: Upload
+      // 단계 3: 업로드
       setStatus({
         step: 'uploading',
         progress: 85,
-        message: mergeT?.steps?.uploading || 'Saving merged video...',
+        message: mergeMusicT?.savingVideo || 'Saving merged video...',
       })
 
       await new Promise((r) => setTimeout(r, 500))
 
-      // Complete
+      // 완료
       setStatus({
         step: 'completed',
         progress: 100,
-        message: mergeT?.steps?.completed || 'Music merge completed!',
+        message: mergeMusicT?.completed || 'Music merge completed!',
       })
 
       // 3초 후 상세 페이지로 이동
@@ -156,11 +156,11 @@ export default function MergeMusicPage() {
       }, 2000)
     } catch (err) {
       console.error('Music merge error:', err)
-      setError(err instanceof Error ? err.message : (mergeT?.unknownError || 'An unknown error occurred.'))
+      setError(err instanceof Error ? err.message : (mergeMusicT?.unknownError || 'An unknown error occurred.'))
       setStatus({
         step: 'failed',
         progress: 0,
-        message: mergeT?.error || 'Error',
+        message: mergeMusicT?.errorOccurred || 'Error occurred',
       })
     }
   }, [params.id, musicId, trackIndex, startTime, endTime, musicVolume, router])
@@ -208,7 +208,7 @@ export default function MergeMusicPage() {
               {imageUrl ? (
                 <Image
                   src={decodeURIComponent(imageUrl)}
-                  alt={musicName || 'Music'}
+                  alt={musicName || (mergeMusicT?.music || 'Music')}
                   fill
                   className="object-cover"
                 />
@@ -220,11 +220,17 @@ export default function MergeMusicPage() {
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-medium text-foreground truncate">
-                {musicName ? decodeURIComponent(musicName) : (mergeT?.selectedMusic || 'Selected Music')}
+                {musicName ? decodeURIComponent(musicName) : (mergeMusicT?.selectedMusic || 'Selected music')}
               </h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                {formatTime(Number(startTime))} - {formatTime(Number(endTime))}
-              </p>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                <span>
+                  {formatTime(Number(startTime))} - {formatTime(Number(endTime))}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Volume2 className="w-3 h-3" />
+                  {Math.round(Number(musicVolume) * 100)}%
+                </span>
+              </div>
             </div>
           </div>
 
@@ -236,10 +242,10 @@ export default function MergeMusicPage() {
             {/* 메시지 */}
             <h2 className="text-xl font-semibold text-foreground mb-2">
               {status.step === 'completed'
-                ? (mergeT?.completed || 'Merge Complete!')
+                ? (mergeMusicT?.mergeCompleted || 'Merge completed!')
                 : status.step === 'failed'
-                  ? (mergeT?.error || 'Error')
-                  : (mergeT?.merging || 'Merging music...')}
+                  ? (mergeMusicT?.errorOccurred || 'Error occurred')
+                  : (mergeMusicT?.mergingMusic || 'Merging music...')}
             </h2>
             <p className="text-muted-foreground mb-6">{status.message}</p>
 
@@ -252,6 +258,7 @@ export default function MergeMusicPage() {
                     style={{ width: `${status.progress}%` }}
                   />
                 </div>
+                <p className="text-sm text-muted-foreground mt-2">{status.progress}%</p>
               </div>
             )}
 
@@ -262,14 +269,14 @@ export default function MergeMusicPage() {
               </div>
             )}
 
-            {/* Redirect notice on complete */}
+            {/* 완료 시 안내 */}
             {status.step === 'completed' && (
               <p className="text-sm text-muted-foreground">
-                {mergeT?.redirecting || 'Redirecting to video page shortly...'}
+                {mergeMusicT?.redirecting || 'Redirecting to video page...'}
               </p>
             )}
 
-            {/* Buttons on failure */}
+            {/* 실패 시 버튼 */}
             {status.step === 'failed' && (
               <div className="flex gap-3">
                 <button
@@ -277,7 +284,7 @@ export default function MergeMusicPage() {
                   className="flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-lg hover:bg-secondary/80 transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  {mergeT?.goBack || 'Go Back'}
+                  {mergeMusicT?.goBack || 'Go back'}
                 </button>
                 <button
                   onClick={() => {
@@ -287,17 +294,17 @@ export default function MergeMusicPage() {
                   }}
                   className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                 >
-                  {mergeT?.retry || 'Retry'}
+                  {mergeMusicT?.retry || 'Retry'}
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Bottom tip */}
+        {/* 하단 팁 */}
         {status.step !== 'completed' && status.step !== 'failed' && (
           <p className="text-center text-sm text-muted-foreground mt-6">
-            {mergeT?.doNotClose || 'Do not close this window. Merge is in progress.'}
+            {mergeMusicT?.doNotCloseWindow || 'Do not close this window. Merge in progress.'}
           </p>
         )}
       </div>

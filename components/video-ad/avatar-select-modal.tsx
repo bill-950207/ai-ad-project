@@ -7,9 +7,10 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { X, Loader2, Check, Shirt, Sparkles, ChevronDown } from 'lucide-react'
+import { useLanguage } from '@/contexts/language-context'
 
 /** 아바타 스타일 옵션 */
 export interface AvatarStyleOptions {
@@ -69,7 +70,7 @@ interface AvatarSelectModalProps {
   selectedType?: 'avatar' | 'outfit' | 'ai-generated'
 }
 
-// AI avatar option labels (fallback)
+// AI avatar option labels (English defaults)
 const DEFAULT_GENDER_OPTIONS = [
   { value: 'any', label: 'Any Gender' },
   { value: 'female', label: 'Female' },
@@ -114,9 +115,50 @@ export function AvatarSelectModal({
   selectedOutfitId,
   selectedType,
 }: AvatarSelectModalProps) {
+  const { t } = useLanguage()
   const [avatarsWithOutfits, setAvatarsWithOutfits] = useState<AvatarWithOutfits[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [expandedAvatarId, setExpandedAvatarId] = useState<string | null>(null)
+
+  // Get avatar options from translations
+  const avatarT = (t as Record<string, unknown>).avatar as Record<string, unknown> | undefined
+  const optionsT = avatarT?.options as Record<string, string> | undefined
+
+  const GENDER_OPTIONS = useMemo(() => optionsT ? [
+    { value: 'any', label: optionsT.anyGender || 'Any Gender' },
+    { value: 'female', label: optionsT.female || 'Female' },
+    { value: 'male', label: optionsT.male || 'Male' },
+  ] : DEFAULT_GENDER_OPTIONS, [optionsT])
+
+  const AGE_OPTIONS = useMemo(() => optionsT ? [
+    { value: 'any', label: optionsT.anyAge || 'Any Age' },
+    { value: 'young', label: optionsT['20s'] || '20-30s' },
+    { value: 'middle', label: optionsT['30s'] || '30-40s' },
+    { value: 'mature', label: optionsT['40s'] || '40-50s' },
+  ] : DEFAULT_AGE_OPTIONS, [optionsT])
+
+  const STYLE_OPTIONS = useMemo(() => optionsT ? [
+    { value: 'any', label: optionsT.any || 'Any' },
+    { value: 'natural', label: optionsT.natural || 'Natural' },
+    { value: 'professional', label: optionsT.professional || 'Professional' },
+    { value: 'casual', label: optionsT.casual || 'Casual' },
+    { value: 'elegant', label: optionsT.elegant || 'Elegant' },
+  ] : DEFAULT_STYLE_OPTIONS, [optionsT])
+
+  const ETHNICITY_OPTIONS = useMemo(() => optionsT ? [
+    { value: 'any', label: optionsT.any || 'Any' },
+    { value: 'korean', label: optionsT.korean || 'Korean' },
+    { value: 'asian', label: optionsT.asian || 'Asian' },
+    { value: 'western', label: optionsT.western || 'Western' },
+  ] : DEFAULT_ETHNICITY_OPTIONS, [optionsT])
+
+  const BODY_TYPE_OPTIONS = useMemo(() => optionsT ? [
+    { value: 'any', label: optionsT.aiRecommend || 'AI Recommend' },
+    { value: 'slim', label: optionsT.slim || 'Slim' },
+    { value: 'average', label: optionsT.average || 'Average' },
+    { value: 'athletic', label: optionsT.athletic || 'Athletic' },
+    { value: 'curvy', label: optionsT.curvy || 'Curvy' },
+  ] : DEFAULT_BODY_TYPE_OPTIONS, [optionsT])
 
   // AI 아바타 옵션 상태
   const [showAiOptions, setShowAiOptions] = useState(selectedType === 'ai-generated')
@@ -153,7 +195,7 @@ export function AvatarSelectModal({
         setExpandedAvatarId(selectedAvatarId)
       }
     } catch (error) {
-      console.error('데이터 로드 오류:', error)
+      console.error('Failed to load data:', error)
     } finally {
       setIsLoading(false)
     }
@@ -213,10 +255,10 @@ export function AvatarSelectModal({
         <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
           <div>
             <h2 className="text-lg font-semibold text-foreground">
-              아바타 선택
+              {t.avatarSelect?.title || 'Select Avatar'}
             </h2>
             <p className="text-sm text-muted-foreground">
-              기본 아바타 또는 의상 교체된 아바타를 선택하세요
+              {t.avatarSelect?.subtitle || 'Select a base avatar or outfit-swapped avatar'}
             </p>
           </div>
           <button
@@ -244,8 +286,8 @@ export function AvatarSelectModal({
                   <Sparkles className="w-6 h-6 text-white" />
                 </div>
                 <div className="text-left">
-                  <h3 className="font-medium text-foreground">AI가 제품에 맞는 아바타 생성</h3>
-                  <p className="text-xs text-muted-foreground">제품 정보를 분석하여 어울리는 가상 아바타을 자동 생성합니다</p>
+                  <h3 className="font-medium text-foreground">{t.avatarSelect?.aiGenerate || 'AI generates product-matching avatar'}</h3>
+                  <p className="text-xs text-muted-foreground">{t.avatarSelect?.aiGenerateDesc || 'Analyzes product info to auto-generate a matching virtual avatar'}</p>
                 </div>
               </div>
               <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${showAiOptions ? 'rotate-180' : ''}`} />
@@ -254,11 +296,11 @@ export function AvatarSelectModal({
             {/* AI 옵션 펼침 */}
             {showAiOptions && (
               <div className="mt-3 p-4 bg-secondary/30 rounded-xl border border-border space-y-4">
-                <p className="text-sm text-muted-foreground">생성할 아바타의 특성을 선택하세요</p>
+                <p className="text-sm text-muted-foreground">{t.avatarSelect?.selectCharacteristics || 'Select avatar characteristics'}</p>
 
                 {/* 성별 선택 */}
                 <div>
-                  <label className="text-xs font-medium text-foreground mb-2 block">성별</label>
+                  <label className="text-xs font-medium text-foreground mb-2 block">{t.avatarSelect?.gender || 'Gender'}</label>
                   <div className="flex gap-2">
                     {GENDER_OPTIONS.map((option) => (
                       <button
@@ -278,7 +320,7 @@ export function AvatarSelectModal({
 
                 {/* 연령대 선택 */}
                 <div>
-                  <label className="text-xs font-medium text-foreground mb-2 block">연령대</label>
+                  <label className="text-xs font-medium text-foreground mb-2 block">{t.avatarSelect?.ageRange || 'Age Range'}</label>
                   <div className="flex gap-2">
                     {AGE_OPTIONS.map((option) => (
                       <button
@@ -298,7 +340,7 @@ export function AvatarSelectModal({
 
                 {/* 스타일 선택 */}
                 <div>
-                  <label className="text-xs font-medium text-foreground mb-2 block">스타일</label>
+                  <label className="text-xs font-medium text-foreground mb-2 block">{t.avatarSelect?.style || 'Style'}</label>
                   <div className="grid grid-cols-3 gap-2">
                     {STYLE_OPTIONS.map((option) => (
                       <button
@@ -318,7 +360,7 @@ export function AvatarSelectModal({
 
                 {/* 인종 선택 */}
                 <div>
-                  <label className="text-xs font-medium text-foreground mb-2 block">인종</label>
+                  <label className="text-xs font-medium text-foreground mb-2 block">{t.avatarSelect?.ethnicity || 'Ethnicity'}</label>
                   <div className="flex gap-2">
                     {ETHNICITY_OPTIONS.map((option) => (
                       <button
@@ -338,7 +380,7 @@ export function AvatarSelectModal({
 
                 {/* 체형 선택 */}
                 <div>
-                  <label className="text-xs font-medium text-foreground mb-2 block">체형</label>
+                  <label className="text-xs font-medium text-foreground mb-2 block">{t.avatarSelect?.bodyType || 'Body Type'}</label>
                   <div className="grid grid-cols-3 gap-2">
                     {BODY_TYPE_OPTIONS.map((option) => (
                       <button
@@ -362,9 +404,9 @@ export function AvatarSelectModal({
                     onSelect({
                       type: 'ai-generated',
                       avatarId: 'ai-generated',
-                      avatarName: 'AI 생성 모델',
+                      avatarName: t.avatarSelect?.aiModel || 'AI Generated Model',
                       imageUrl: '',  // AI 생성은 이미지 URL이 없음
-                      displayName: 'AI 자동 생성',
+                      displayName: t.avatarSelect?.aiAutoGenerate || 'AI Auto Generate',
                       aiOptions: {
                         targetGender: aiGender,
                         targetAge: aiAge,
@@ -377,7 +419,7 @@ export function AvatarSelectModal({
                   className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
                 >
                   <Sparkles className="w-4 h-4" />
-                  AI 모델로 선택하기
+                  {t.avatarSelect?.selectAsAiModel || 'Select as AI Model'}
                 </button>
               </div>
             )}
@@ -386,7 +428,7 @@ export function AvatarSelectModal({
           {/* 구분선 */}
           <div className="flex items-center gap-3 my-4">
             <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground">또는 기존 아바타 선택</span>
+            <span className="text-xs text-muted-foreground">{t.avatarSelect?.orSelectExisting || 'or select existing avatar'}</span>
             <div className="flex-1 h-px bg-border" />
           </div>
 
@@ -396,16 +438,16 @@ export function AvatarSelectModal({
             </div>
           ) : avatarsWithOutfits.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">생성된 아바타가 없습니다</p>
+              <p className="text-muted-foreground">{t.avatarSelect?.noAvatars || 'No avatars created'}</p>
               <p className="text-sm text-muted-foreground mt-1 mb-4">
-                위의 &apos;AI 자동 생성&apos; 옵션을 사용하거나 새 아바타를 생성해주세요
+                {t.avatarSelect?.useAiOrCreate || "Use the 'AI Auto Generate' option above or create a new avatar"}
               </p>
               <Link
                 href="/dashboard/avatar/new"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-lg text-sm hover:bg-secondary/80 transition-colors"
               >
                 <Sparkles className="w-4 h-4" />
-                새 아바타 생성하기
+                {t.avatarSelect?.createNewAvatar || 'Create New Avatar'}
               </Link>
             </div>
           ) : (
@@ -445,7 +487,7 @@ export function AvatarSelectModal({
                         )}
                         {/* 기본 아바타 라벨 */}
                         <div className="absolute bottom-0 left-0 right-0 bg-black/60 py-0.5 px-1">
-                          <span className="text-[10px] text-white">기본</span>
+                          <span className="text-[10px] text-white">{t.avatarSelect?.base || 'Base'}</span>
                         </div>
                       </button>
 
@@ -460,7 +502,7 @@ export function AvatarSelectModal({
                             className="flex items-center gap-1 mt-1 text-xs text-primary hover:text-primary/80 transition-colors"
                           >
                             <Shirt className="w-3 h-3" />
-                            <span>의상 {avatar.outfits.length}개</span>
+                            <span>{(t.avatarSelect?.outfitsCount || '{{count}} outfits').replace('{{count}}', String(avatar.outfits.length))}</span>
                             <svg
                               className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                               fill="none"
@@ -473,7 +515,7 @@ export function AvatarSelectModal({
                         )}
                         {!hasOutfits && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            등록된 의상이 없습니다
+                            {t.avatarSelect?.noOutfits || 'No outfits registered'}
                           </p>
                         )}
                       </div>
@@ -482,7 +524,7 @@ export function AvatarSelectModal({
                     {/* 의상 목록 (확장 시) */}
                     {isExpanded && hasOutfits && (
                       <div className="border-t border-border bg-secondary/20 p-3">
-                        <p className="text-xs text-muted-foreground mb-2">의상 교체 목록</p>
+                        <p className="text-xs text-muted-foreground mb-2">{t.avatarSelect?.outfitsList || 'Outfit variations'}</p>
                         <div className="flex gap-2 overflow-x-auto pb-2">
                           {avatar.outfits.map((outfit) => {
                             const isOutfitSelected = selectedOutfitId === outfit.id

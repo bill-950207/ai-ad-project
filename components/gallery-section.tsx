@@ -43,7 +43,7 @@ export function GallerySection() {
           setShowcases(data.data || [])
         }
       } catch (error) {
-        console.error('쇼케이스 로드 오류:', error)
+        console.error('Failed to load showcases:', error)
       } finally {
         setIsLoading(false)
       }
@@ -104,7 +104,7 @@ export function GallerySection() {
           </div>
         ) : filteredShowcases.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-muted-foreground">{t.landing.noShowcases || '쇼케이스가 없습니다'}</p>
+            <p className="text-muted-foreground">{t.landing.noShowcases || 'No showcases available'}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:gap-6">

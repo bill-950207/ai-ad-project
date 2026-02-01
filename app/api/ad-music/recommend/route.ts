@@ -39,13 +39,25 @@ interface MusicRecommendation {
   suggestedName: string
 }
 
+// Language display names for prompts
+const LANGUAGE_NAMES: Record<string, string> = {
+  ko: 'Korean',
+  en: 'English',
+  ja: 'Japanese',
+  zh: 'Chinese',
+}
+
 async function recommendMusicSettings(
   productName: string,
   productDescription: string,
-  productCategory?: string
+  productCategory?: string,
+  language: string = 'en'
 ): Promise<MusicRecommendation> {
+  const outputLanguage = LANGUAGE_NAMES[language] || 'English'
 
   const prompt = `You are an expert music director for advertising. Analyze the product information and recommend the best music settings for creating an advertisement background music.
+
+IMPORTANT: All reasoning text and suggested music name MUST be written in ${outputLanguage}.
 
 === PRODUCT INFORMATION ===
 Product Name: ${productName}
@@ -131,26 +143,26 @@ Provide reasoning for each choice.`
         },
         reasoning: {
           type: Type.OBJECT,
-          description: 'Reasoning for each recommendation',
+          description: 'Reasoning for each recommendation (in the language specified in the prompt)',
           required: ['mood', 'genre', 'productType'],
           properties: {
             mood: {
               type: Type.STRING,
-              description: 'Why this mood was chosen (1-2 sentences, in Korean)',
+              description: 'Why this mood was chosen (1-2 sentences)',
             },
             genre: {
               type: Type.STRING,
-              description: 'Why this genre was chosen (1-2 sentences, in Korean)',
+              description: 'Why this genre was chosen (1-2 sentences)',
             },
             productType: {
               type: Type.STRING,
-              description: 'Why this product type was chosen (1-2 sentences, in Korean)',
+              description: 'Why this product type was chosen (1-2 sentences)',
             },
           },
         },
         suggestedName: {
           type: Type.STRING,
-          description: 'Suggested music name based on the product (in Korean, e.g., "봄향기 화장품 광고 음악")',
+          description: 'Suggested music name based on the product (in the language specified in the prompt)',
         },
       },
     },
@@ -190,7 +202,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { productId } = body
+    const { productId, language = 'en' } = body
 
     if (!productId) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 })
@@ -211,7 +223,9 @@ export async function POST(request: NextRequest) {
     // LLM으로 음악 설정 추천
     const recommendation = await recommendMusicSettings(
       product.name,
-      product.description || ''
+      product.description || '',
+      undefined,
+      language
     )
 
     return NextResponse.json({
@@ -222,7 +236,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('음악 설정 추천 오류:', error)
+    console.error('Music recommendation error:', error)
     return NextResponse.json(
       { error: 'Failed to recommend music settings' },
       { status: 500 }

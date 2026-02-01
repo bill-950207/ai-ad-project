@@ -3,14 +3,15 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { X, AlertTriangle, ArrowUpRight, Coins, Loader2, Save } from 'lucide-react'
+import { useLanguage } from '@/contexts/language-context'
 
 interface InsufficientCreditsModalProps {
   isOpen: boolean
   onClose: () => void
   requiredCredits: number
   availableCredits: number
-  featureName?: string // 예: "제품 설명 영상", "아바타 모션 영상"
-  onSaveDraft?: () => Promise<string | null>  // Draft 저장 함수 (옵션)
+  featureName?: string
+  onSaveDraft?: () => Promise<string | null>
 }
 
 export function InsufficientCreditsModal({
@@ -18,9 +19,10 @@ export function InsufficientCreditsModal({
   onClose,
   requiredCredits,
   availableCredits,
-  featureName = '이 기능',
+  featureName,
   onSaveDraft,
 }: InsufficientCreditsModalProps) {
+  const { t } = useLanguage()
   const router = useRouter()
   const [isSaving, setIsSaving] = useState(false)
 
@@ -43,7 +45,7 @@ export function InsufficientCreditsModal({
           router.push('/dashboard/pricing')
         }
       } catch (error) {
-        console.error('Draft 저장 오류:', error)
+        console.error('Draft save error:', error)
         router.push('/dashboard/pricing')
       } finally {
         setIsSaving(false)
@@ -70,7 +72,7 @@ export function InsufficientCreditsModal({
             <div className="w-10 h-10 rounded-xl bg-yellow-500/15 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-yellow-500" />
             </div>
-            <h2 className="text-xl font-bold text-foreground">크레딧이 부족합니다</h2>
+            <h2 className="text-xl font-bold text-foreground">{t.modal.insufficientCredits.title}</h2>
           </div>
           <button
             onClick={onClose}
@@ -86,21 +88,21 @@ export function InsufficientCreditsModal({
           <div className="bg-secondary/50 rounded-xl p-4 mb-6">
             <div className="flex items-center gap-2 mb-4">
               <Coins className="w-5 h-5 text-primary" />
-              <span className="font-medium text-foreground">크레딧 현황</span>
+              <span className="font-medium text-foreground">{t.modal.insufficientCredits.creditStatus}</span>
             </div>
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">필요 크레딧</span>
+                <span className="text-muted-foreground">{t.modal.insufficientCredits.required}</span>
                 <span className="text-lg font-bold text-foreground">{requiredCredits}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">보유 크레딧</span>
+                <span className="text-muted-foreground">{t.modal.insufficientCredits.available}</span>
                 <span className="text-lg font-bold text-red-500">{availableCredits}</span>
               </div>
               <div className="border-t border-border pt-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">부족한 크레딧</span>
+                  <span className="text-muted-foreground">{t.modal.insufficientCredits.shortfall}</span>
                   <span className="text-lg font-bold text-yellow-500">-{shortfall}</span>
                 </div>
               </div>
@@ -109,15 +111,14 @@ export function InsufficientCreditsModal({
 
           {/* Message */}
           <p className="text-muted-foreground text-center mb-6">
-            {featureName}을(를) 사용하려면 <span className="text-foreground font-medium">{shortfall}크레딧</span>이 더 필요합니다.
-            플랜을 업그레이드하면 더 많은 크레딧을 받을 수 있습니다.
+            {featureName || t.common.thisFeature} {t.modal.insufficientCredits.message}
           </p>
 
           {/* Save Notice */}
           {onSaveDraft && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4 p-3 bg-primary/5 rounded-lg">
               <Save className="w-4 h-4 text-primary" />
-              <span>현재 작업 내용이 자동 저장됩니다</span>
+              <span>{t.modal.insufficientCredits.autoSave}</span>
             </div>
           )}
 
@@ -132,12 +133,12 @@ export function InsufficientCreditsModal({
               {isSaving ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  저장 중...
+                  {t.common.saving}
                 </>
               ) : (
                 <>
                   <ArrowUpRight className="w-4 h-4" />
-                  플랜 업그레이드
+                  {t.modal.insufficientCredits.upgrade}
                 </>
               )}
             </button>
@@ -148,7 +149,7 @@ export function InsufficientCreditsModal({
               disabled={isSaving}
               className="w-full py-3 text-muted-foreground hover:text-foreground transition-colors font-medium disabled:opacity-50"
             >
-              닫기
+              {t.common.close}
             </button>
           </div>
         </div>

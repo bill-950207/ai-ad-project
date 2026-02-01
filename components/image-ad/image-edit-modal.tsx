@@ -20,6 +20,7 @@ import {
 import { IMAGE_EDIT_CREDIT_COST } from '@/lib/credits'
 import { useCredits } from '@/contexts/credit-context'
 import { InsufficientCreditsModal } from '@/components/ui/insufficient-credits-modal'
+import { useLanguage } from '@/contexts/language-context'
 
 interface ImageEditModalProps {
   isOpen: boolean
@@ -40,6 +41,7 @@ export function ImageEditModal({
   quality = 'medium',
   onEditComplete,
 }: ImageEditModalProps) {
+  const { t } = useLanguage()
   const { refreshCredits } = useCredits()
   const [editPrompt, setEditPrompt] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -76,19 +78,19 @@ export function ImageEditModal({
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || '업데이트 실패')
+        throw new Error(data.error || 'Update failed')
       }
 
       const data = await res.json()
-      console.log('이미지 광고 편집 완료 (원본 유지):', {
+      console.log('Image ad edit complete (original preserved):', {
         imageAdId,
         originalIndex: currentImageIndex,
         newImageIndex: data.newImageIndex,
       })
       return data.newImageIndex as number
     } catch (err) {
-      console.error('업데이트 오류:', err)
-      setError(err instanceof Error ? err.message : '업데이트 중 오류 발생')
+      console.error('Update error:', err)
+      setError(err instanceof Error ? err.message : t.imageEdit?.updateError || 'Error during update')
       return null
     } finally {
       setIsUpdating(false)
@@ -106,7 +108,7 @@ export function ImageEditModal({
       try {
         const res = await fetch(`/api/image-ads/status/${reqId}`)
         if (!res.ok) {
-          throw new Error('상태 확인 실패')
+          throw new Error('Status check failed')
         }
 
         const status = await res.json()
@@ -116,12 +118,12 @@ export function ImageEditModal({
             imageUrl: status.imageUrl,
           }
         } else if (status.status === 'FAILED') {
-          throw new Error(status.error || '이미지 생성 실패')
+          throw new Error(status.error || 'Image generation failed')
         }
 
         attempts++
         if (attempts >= maxAttempts) {
-          throw new Error('이미지 생성 시간 초과')
+          throw new Error('Image generation timed out')
         }
 
         // 60초 기준으로 진행률 업데이트
@@ -141,7 +143,7 @@ export function ImageEditModal({
   // 편집 요청 제출
   const handleSubmit = async () => {
     if (!editPrompt.trim()) {
-      setError('수정 내용을 입력해주세요')
+      setError(t.imageEdit?.enterEditContent || 'Please enter edit content')
       return
     }
 
@@ -171,7 +173,7 @@ export function ImageEditModal({
           setIsSubmitting(false)
           return
         }
-        throw new Error(data.error || '편집 요청 실패')
+        throw new Error(data.error || 'Edit request failed')
       }
 
       const result = await res.json()
@@ -202,8 +204,8 @@ export function ImageEditModal({
 
       setIsPolling(false)
     } catch (err) {
-      console.error('편집 오류:', err)
-      setError(err instanceof Error ? err.message : '편집 중 오류 발생')
+      console.error('Edit error:', err)
+      setError(err instanceof Error ? err.message : t.imageEdit?.editError || 'Error during edit')
       setIsSubmitting(false)
       setIsPolling(false)
     }
@@ -217,7 +219,7 @@ export function ImageEditModal({
   // 모달 닫기
   const handleClose = () => {
     if (isSubmitting || isPolling || isUpdating) {
-      if (!confirm('편집이 진행 중입니다. 정말 닫으시겠습니까?')) {
+      if (!confirm(t.imageEdit?.confirmClose || 'Edit is in progress. Are you sure you want to close?')) {
         return
       }
     }
@@ -261,8 +263,8 @@ export function ImageEditModal({
               <Wand2 className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-foreground">이미지 편집</h2>
-              <p className="text-sm text-muted-foreground">AI로 이미지를 수정합니다</p>
+              <h2 className="text-lg font-semibold text-foreground">{t.imageEdit?.title || 'Edit Image'}</h2>
+              <p className="text-sm text-muted-foreground">{t.imageEdit?.subtitle || 'Edit image with AI'}</p>
             </div>
           </div>
           <button
@@ -279,24 +281,24 @@ export function ImageEditModal({
           {/* 현재 이미지 & 결과 이미지 */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">원본 이미지</p>
+              <p className="text-sm font-medium text-muted-foreground">{t.imageEdit?.originalImage || 'Original Image'}</p>
               <div className="aspect-square bg-secondary/30 rounded-xl overflow-hidden">
                 <img
                   src={imageUrl}
-                  alt="원본 이미지"
+                  alt={t.imageEdit?.originalImage || 'Original Image'}
                   className="w-full h-full object-contain"
                 />
               </div>
             </div>
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">
-                {resultImageUrl ? '편집된 이미지' : '편집 결과'}
+                {resultImageUrl ? t.imageEdit?.editedImage || 'Edited Image' : t.imageEdit?.editResult || 'Edit Result'}
               </p>
               <div className="aspect-square bg-secondary/30 rounded-xl overflow-hidden relative">
                 {resultImageUrl ? (
                   <img
                     src={resultImageUrl}
-                    alt="편집된 이미지"
+                    alt={t.imageEdit?.editedImage || 'Edited Image'}
                     className="w-full h-full object-contain"
                   />
                 ) : isPolling || isUpdating ? (
@@ -304,7 +306,7 @@ export function ImageEditModal({
                     <Loader2 className="w-8 h-8 text-primary animate-spin" />
                     <div className="text-center">
                       <p className="text-sm text-foreground">
-                        {isUpdating ? '저장 중...' : '이미지 생성 중...'}
+                        {isUpdating ? t.imageEdit?.saving || 'Saving...' : t.imageEdit?.generating || 'Generating image...'}
                       </p>
                       {!isUpdating && (
                         <p className="text-xs text-muted-foreground mt-1">{Math.round(progress)}%</p>
@@ -334,7 +336,7 @@ export function ImageEditModal({
             <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-1">
                 <CheckCircle2 className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-primary">수정 내용</span>
+                <span className="text-sm font-medium text-primary">{t.imageEdit?.editSummary || 'Edit Summary'}</span>
               </div>
               <p className="text-sm text-foreground">{editSummary}</p>
             </div>
@@ -354,12 +356,12 @@ export function ImageEditModal({
           {!resultImageUrl && (
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">
-                수정하고 싶은 내용을 입력하세요
+                {t.imageEdit?.promptLabel || 'Enter what you want to edit'}
               </label>
               <textarea
                 value={editPrompt}
                 onChange={(e) => setEditPrompt(e.target.value)}
-                placeholder="예: 배경을 해변으로 변경해줘 / 표정을 더 밝게 해줘 / 조명을 따뜻하게 해줘"
+                placeholder={t.imageEdit?.promptPlaceholder || 'e.g., Change background to beach / Make expression brighter / Make lighting warmer'}
                 disabled={isSubmitting || isPolling || isUpdating}
                 className="w-full h-24 px-4 py-3 bg-secondary/30 border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none disabled:opacity-50"
               />
@@ -372,8 +374,8 @@ export function ImageEditModal({
           {/* 크레딧 정보 */}
           <div className="flex items-center gap-2 text-sm">
             <Coins className="w-4 h-4 text-primary" />
-            <span className="text-muted-foreground">예상 비용:</span>
-            <span className="font-medium text-primary">{creditCost} 크레딧</span>
+            <span className="text-muted-foreground">{t.imageEdit?.estimatedCost || 'Estimated cost:'}</span>
+            <span className="font-medium text-primary">{creditCost} {t.common?.credits || 'credits'}</span>
           </div>
 
           {/* 버튼 */}
@@ -385,7 +387,7 @@ export function ImageEditModal({
                   className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  완료
+                  {t.common?.complete || 'Complete'}
                 </button>
               </>
             ) : (
@@ -395,7 +397,7 @@ export function ImageEditModal({
                   disabled={isSubmitting || isPolling || isUpdating}
                   className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:bg-secondary/50 transition-colors disabled:opacity-50"
                 >
-                  취소
+                  {t.common?.cancel || 'Cancel'}
                 </button>
                 <button
                   onClick={handleSubmit}
@@ -405,12 +407,12 @@ export function ImageEditModal({
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      처리 중...
+                      {t.imageEdit?.processing || 'Processing...'}
                     </>
                   ) : (
                     <>
                       <Wand2 className="w-4 h-4" />
-                      편집 시작
+                      {t.imageEdit?.startEdit || 'Start Edit'}
                     </>
                   )}
                 </button>
@@ -427,7 +429,7 @@ export function ImageEditModal({
           onClose={() => setShowInsufficientCreditsModal(false)}
           requiredCredits={creditsInfo.required}
           availableCredits={creditsInfo.available}
-          featureName="이미지 편집"
+          featureName={t.imageEdit?.title || 'Edit Image'}
         />
       )}
     </div>

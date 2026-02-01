@@ -12,25 +12,9 @@ import { Check, Package, User, Sparkles, ArrowRight, Image, Video, Loader2 } fro
 import { useOnboarding } from '../onboarding-context'
 import { useLanguage } from '@/contexts/language-context'
 
-type OnboardingT = {
-  completion?: {
-    title?: string
-    videoReady?: string
-    imageReady?: string
-    startButton?: string
-    navigating?: string
-  }
-  steps?: {
-    product?: string
-    avatar?: string
-    complete?: string
-  }
-}
-
 export function CompletionStep() {
   const router = useRouter()
   const { t } = useLanguage()
-  const onboardingT = (t.onboarding as OnboardingT | undefined)
   const {
     targetType,
     videoAdType,
@@ -67,29 +51,28 @@ export function CompletionStep() {
     return types[imageAdType]?.title || imageAdType
   }
 
-  // 영상 광고 유형 번역 가져오기
-  const getVideoTypeTitle = () => {
-    const types = t.videoAdTypes as unknown as Record<string, { title: string }>
-    return videoAdType === 'productDescription'
-      ? types?.productDescription?.title || 'Product Description Video'
-      : types?.productAd?.title || 'Product Ad Video'
+  // Translation type
+  type OnboardingT = {
+    readyTitle?: string
+    readyToCreateVideo?: string
+    readyToCreateImage?: string
+    navigating?: string
+    startCreatingAd?: string
+    videoTypes?: {
+      productDescription?: string
+      productAd?: string
+    }
   }
+  const onbT = t.onboarding as OnboardingT | undefined
 
-  const videoTypeText = getVideoTypeTitle()
+  // 대상 타입 텍스트
+  const videoTypeText = videoAdType === 'productDescription'
+    ? (onbT?.videoTypes?.productDescription || 'Product Description Video')
+    : (onbT?.videoTypes?.productAd || 'Product Ad Video')
   const imageTypeText = getImageTypeTitle()
 
   // productOnly 타입은 아바타가 필요 없음
   const showAvatarSection = imageAdType !== 'productOnly'
-
-  // 준비 완료 메시지
-  const getReadyMessage = () => {
-    if (targetType === 'video') {
-      const template = onboardingT?.completion?.videoReady || 'Ready to create {{type}}'
-      return template.replace('{{type}}', videoTypeText)
-    }
-    const template = onboardingT?.completion?.imageReady || 'Ready to create {{type}} image'
-    return template.replace('{{type}}', imageTypeText)
-  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[400px] py-8">
@@ -102,7 +85,7 @@ export function CompletionStep() {
         <div
           className="relative w-20 h-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30"
           role="img"
-          aria-label="Complete"
+          aria-label={t.common?.complete || 'Complete'}
         >
           <Check className="w-10 h-10 text-white" strokeWidth={3} aria-hidden="true" />
         </div>
@@ -111,10 +94,13 @@ export function CompletionStep() {
       {/* 완료 메시지 */}
       <div className="text-center mt-6 animate-[fadeIn_0.5s_ease-out_0.2s_backwards]">
         <h3 className="text-2xl font-bold text-foreground tracking-tight">
-          {onboardingT?.completion?.title || 'Ready!'}
+          {onbT?.readyTitle || 'Ready!'}
         </h3>
         <p className="text-muted-foreground mt-2">
-          {getReadyMessage()}
+          {targetType === 'video'
+            ? (onbT?.readyToCreateVideo || 'Ready to create {type}').replace('{type}', videoTypeText)
+            : (onbT?.readyToCreateImage || 'Ready to create {type} image').replace('{type}', imageTypeText)
+          }
         </p>
       </div>
 
@@ -138,11 +124,9 @@ export function CompletionStep() {
                 )}
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  {onboardingT?.steps?.product || 'Product'}
-                </p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{onbT?.product || t.common?.product || 'Product'}</p>
                 <p className="text-sm font-semibold text-foreground truncate max-w-[100px]">
-                  {selectedProduct?.name || 'None'}
+                  {selectedProduct?.name || (t.common?.none || 'None')}
                 </p>
               </div>
             </div>
@@ -170,13 +154,11 @@ export function CompletionStep() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      {onboardingT?.steps?.avatar || 'Avatar'}
-                    </p>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{onbT?.avatar || t.common?.avatar || 'Avatar'}</p>
                     <p className="text-sm font-semibold text-foreground truncate max-w-[100px]">
                       {selectedAvatarInfo?.type === 'ai-generated'
-                        ? 'AI Auto'
-                        : selectedAvatarInfo?.displayName || 'None'}
+                        ? (onbT?.aiGenerated || 'AI Auto')
+                        : selectedAvatarInfo?.displayName || (t.common?.none || 'None')}
                     </p>
                   </div>
                 </div>
@@ -194,9 +176,7 @@ export function CompletionStep() {
                 )}
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  {t.common?.type || 'Type'}
-                </p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t.common?.type || 'Type'}</p>
                 <p className="text-sm font-semibold text-foreground truncate max-w-[100px]">
                   {targetType === 'video' ? videoTypeText : imageTypeText}
                 </p>
@@ -216,11 +196,11 @@ export function CompletionStep() {
           {isNavigating ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
-              <span>{onboardingT?.completion?.navigating || 'Navigating...'}</span>
+              <span>{onbT?.navigating || 'Navigating...'}</span>
             </>
           ) : (
             <>
-              <span>{onboardingT?.completion?.startButton || 'Start Creating Ad'}</span>
+              <span>{onbT?.startCreatingAd || 'Start Creating Ad'}</span>
               <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
             </>
           )}

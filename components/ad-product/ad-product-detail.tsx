@@ -71,7 +71,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
         router.push('/dashboard/ad-products')
       }
     } catch (error) {
-      console.error('제품 조회 오류:', error)
+      console.error('Product fetch error:', error)
       router.push('/dashboard/ad-products')
     } finally {
       setIsLoading(false)
@@ -86,7 +86,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
         setProductAds(data.ads || [])
       }
     } catch (error) {
-      console.error('제품 광고 조회 오류:', error)
+      console.error('Product ads fetch error:', error)
     } finally {
       setIsAdsLoading(false)
     }
@@ -162,7 +162,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
         setIsEditing(false)
       }
     } catch (error) {
-      console.error('저장 오류:', error)
+      console.error('Save error:', error)
     } finally {
       setIsSaving(false)
     }
@@ -189,7 +189,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
           }
         }
       } catch (error) {
-        console.error('상태 폴링 오류:', error)
+        console.error('Status polling error:', error)
       }
     }
 
@@ -211,7 +211,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
         setProduct(data.product)
       }
     } catch (error) {
-      console.error('재시도 오류:', error)
+      console.error('Retry error:', error)
     } finally {
       setIsRetrying(false)
     }
@@ -230,7 +230,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
         router.push('/dashboard/ad-products')
       }
     } catch (error) {
-      console.error('삭제 오류:', error)
+      console.error('Delete error:', error)
     } finally {
       setIsDeleting(false)
     }
@@ -329,7 +329,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
                   ) : (
                     <RefreshCw className="w-4 h-4" />
                   )}
-                  {t.adProduct.retryRembg || '누끼따기 재시도'}
+                  {t.adProduct.retryRembg || 'Retry Background Removal'}
                 </button>
               </div>
             )}
@@ -340,7 +340,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                 <FileText className="w-5 h-5 text-primary" />
-                {t.adProduct.productInfo || '제품 정보'}
+                {t.adProduct.productInfo || 'Product Info'}
               </h3>
               {!isEditing && (
                 <button
@@ -377,7 +377,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
                       type="text"
                       value={editForm.brand}
                       onChange={(e) => setEditForm(prev => ({ ...prev, brand: e.target.value }))}
-                      placeholder={t.adProduct.brandPlaceholder || '예: 나이키, 애플'}
+                      placeholder={t.adProduct.brandPlaceholder || 'e.g., Nike, Apple'}
                       className="w-full px-3 py-2 bg-secondary/30 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                     />
                   </div>
@@ -389,7 +389,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
                       type="text"
                       value={editForm.price}
                       onChange={(e) => setEditForm(prev => ({ ...prev, price: e.target.value }))}
-                      placeholder={t.adProduct.pricePlaceholder || '예: 29,900원'}
+                      placeholder={t.adProduct.pricePlaceholder || 'e.g., $29.99'}
                       className="w-full px-3 py-2 bg-secondary/30 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                     />
                   </div>
@@ -398,12 +398,12 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
                 {/* 설명 */}
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">
-                    {t.adProduct.description || '제품 설명'}
+                    {t.adProduct.description || 'Product Description'}
                   </label>
                   <textarea
                     value={editForm.description}
                     onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder={t.adProduct.descriptionPlaceholder || '제품에 대한 간단한 설명을 입력하세요'}
+                    placeholder={t.adProduct.descriptionPlaceholder || 'Enter a brief description of the product'}
                     rows={3}
                     className="w-full px-3 py-2 bg-secondary/30 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
                   />
@@ -412,7 +412,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
                 {/* 셀링 포인트 */}
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">
-                    {t.adProduct.sellingPoints || '셀링 포인트'}
+                    {t.adProduct.sellingPoints || 'Selling Points'}
                   </label>
                   <div className="space-y-2">
                     {editForm.selling_points.map((sp, index) => (
@@ -421,7 +421,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
                           type="text"
                           value={sp}
                           onChange={(e) => handleChangeSellingPoint(index, e.target.value)}
-                          placeholder={t.adProduct.sellingPointPlaceholder || '예: 100% 천연 소재'}
+                          placeholder={t.adProduct.sellingPointPlaceholder || 'e.g., 100% Natural Materials'}
                           className="flex-1 px-3 py-2 bg-secondary/30 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                         />
                         {editForm.selling_points.length > 1 && (
@@ -438,7 +438,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
                       onClick={handleAddSellingPoint}
                       className="w-full py-2 text-xs text-primary hover:bg-primary/10 rounded-lg transition-colors border border-dashed border-primary/30"
                     >
-                      + {t.adProduct.addSellingPoint || '셀링 포인트 추가'}
+                      + {t.adProduct.addSellingPoint || 'Add Selling Point'}
                     </button>
                   </div>
                 </div>
@@ -499,7 +499,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
                 <div className="flex items-start gap-3">
                   <Sparkles className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
                   <div className="flex-1">
-                    <p className="text-xs text-muted-foreground">{t.adProduct.sellingPoints || '셀링 포인트'}</p>
+                    <p className="text-xs text-muted-foreground">{t.adProduct.sellingPoints || 'Selling Points'}</p>
                     {product.selling_points && product.selling_points.length > 0 ? (
                       <ul className="mt-1 space-y-1">
                         {product.selling_points.map((sp, index) => (

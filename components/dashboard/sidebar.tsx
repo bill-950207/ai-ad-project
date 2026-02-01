@@ -191,7 +191,7 @@ export function Sidebar() {
       {/* 모바일 햄버거 버튼 */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        aria-label="메뉴 열기"
+        aria-label={t.common?.openMenu || 'Open menu'}
         className={cn(
           "fixed top-4 left-4 z-50 p-2.5 rounded-xl",
           "bg-card/80 backdrop-blur-sm border border-white/10",
@@ -229,7 +229,7 @@ export function Sidebar() {
         {/* 모바일 닫기 버튼 */}
         <button
           onClick={() => setIsMobileOpen(false)}
-          aria-label="메뉴 닫기"
+          aria-label={t.common?.closeMenu || 'Close menu'}
           className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-white/10 transition-colors md:hidden"
         >
           <X className="w-5 h-5" />
@@ -238,7 +238,7 @@ export function Sidebar() {
         {/* 접기/펼치기 버튼 (데스크톱) */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          aria-label={isCollapsed ? "사이드바 펼치기" : "사이드바 접기"}
+          aria-label={isCollapsed ? (t.common?.expandSidebar || 'Expand sidebar') : (t.common?.collapseSidebar || 'Collapse sidebar')}
           className={cn(
             "hidden md:flex absolute -right-3 top-20 z-10",
             "w-6 h-6 items-center justify-center",
@@ -262,7 +262,7 @@ export function Sidebar() {
             href="/dashboard"
             className="flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card rounded-lg"
             onClick={handleNavClick}
-            aria-label="ADAI 대시보드 홈"
+            aria-label={t.common?.dashboardHome || 'ADAI Dashboard Home'}
           >
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-primary via-purple-500 to-pink-500 rounded-xl opacity-50 blur-md group-hover:opacity-75 transition-opacity" />
@@ -520,7 +520,7 @@ export function Sidebar() {
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               aria-expanded={showProfileMenu}
               aria-haspopup="menu"
-              aria-label={`${getUserDisplayName()} 프로필 메뉴`}
+              aria-label={`${getUserDisplayName()} ${t.common?.profileMenu || 'Profile menu'}`}
               className={cn(
                 "w-full flex items-center rounded-xl",
                 "bg-white/5 hover:bg-white/10 transition-all duration-200",
@@ -569,7 +569,7 @@ export function Sidebar() {
             {showProfileMenu && (
               <div
                 role="menu"
-                aria-label="프로필 메뉴"
+                aria-label={t.common?.profileMenu || 'Profile menu'}
                 className={cn(
                   "absolute bottom-full mb-2 bg-card/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-xl overflow-hidden z-50",
                   isCollapsed ? "left-full ml-2 bottom-0 mb-0" : "left-0 right-0"
@@ -623,7 +623,7 @@ export function Sidebar() {
                     </button>
 
                     {showLanguageMenu && (
-                      <div role="menu" aria-label="언어 선택" className="border-t border-white/10 bg-white/5">
+                      <div role="menu" aria-label={t.common?.selectLanguage || 'Select language'} className="border-t border-white/10 bg-white/5">
                         {languages.map((lang) => (
                           <button
                             key={lang.code}

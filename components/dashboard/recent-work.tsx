@@ -72,7 +72,7 @@ function WorkCard({ item, onClick }: WorkCardProps) {
   const getStatusLabel = () => {
     if (item.status === 'COMPLETED') return null
     if (item.status === 'FAILED') return t.videoAd?.status?.failed || 'Failed'
-    return t.videoAd?.status?.inProgress || 'Generating'
+    return t.videoAd?.status?.inProgress || 'In Progress'
   }
 
   const statusLabel = getStatusLabel()
@@ -167,7 +167,7 @@ export function RecentWork(_props: RecentWorkProps) {
       const imageItems: RecentItem[] = ((imageData.ads || []) as ImageAdResponse[]).map((ad) => ({
         id: ad.id,
         type: 'image' as const,
-        name: ad.name || ad.product?.name || '이미지 광고',
+        name: ad.name || ad.product?.name || 'Image Ad',
         thumbnail: ad.images?.[0]?.image_url || ad.image_url || null,
         status: ad.status,
         createdAt: ad.created_at,
@@ -177,7 +177,7 @@ export function RecentWork(_props: RecentWorkProps) {
       const videoItems: RecentItem[] = ((videoData.ads || []) as VideoAdResponse[]).map((ad) => ({
         id: ad.id,
         type: 'video' as const,
-        name: ad.name || ad.product?.name || '영상 광고',
+        name: ad.name || ad.product?.name || 'Video Ad',
         thumbnail: ad.thumbnail_url || null,
         status: ad.status,
         createdAt: ad.created_at,
@@ -194,7 +194,7 @@ export function RecentWork(_props: RecentWorkProps) {
       const processingExists = combined.some(item => PROCESSING_STATUSES.includes(item.status))
       setHasProcessing(processingExists)
     } catch (error) {
-      console.error('최근 작업 로드 오류:', error)
+      console.error('Failed to load recent work:', error)
     } finally {
       setIsLoading(false)
     }
@@ -238,7 +238,7 @@ export function RecentWork(_props: RecentWorkProps) {
         <div className="flex items-center gap-2">
           <div className="w-1 h-5 bg-primary rounded-full" />
           <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-            {t.dashboard?.recentWork?.title || '최근 작업'}
+            {t.dashboard?.recentWork?.title || 'Recent Work'}
           </h2>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -262,12 +262,12 @@ export function RecentWork(_props: RecentWorkProps) {
         <div className="flex items-center gap-2">
           <div className="w-1 h-5 bg-primary rounded-full" />
           <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-            {t.dashboard?.recentWork?.title || '최근 작업'}
+            {t.dashboard?.recentWork?.title || 'Recent Work'}
           </h2>
           {hasProcessing && (
             <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary">
               <Loader2 className="w-3 h-3 animate-spin" />
-              <span className="text-xs">{t.dashboard?.recentWork?.processing || '생성 중'}</span>
+              <span className="text-xs">{t.dashboard?.recentWork?.processing || 'In Progress'}</span>
             </div>
           )}
         </div>
@@ -275,7 +275,7 @@ export function RecentWork(_props: RecentWorkProps) {
           onClick={handleViewAll}
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          <span>{t.dashboard?.recentWork?.viewAll || '전체 보기'}</span>
+          <span>{t.dashboard?.recentWork?.viewAll || 'View All'}</span>
           <ArrowRight className="w-3 h-3" />
         </button>
       </div>

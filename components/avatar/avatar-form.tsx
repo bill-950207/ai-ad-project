@@ -216,45 +216,47 @@ interface SelectedOptionsSummaryProps {
 }
 
 function SelectedOptionsSummary({ options, t }: SelectedOptionsSummaryProps) {
-  const avatarOptions = (t.avatar as Record<string, unknown>).options as Record<string, string>
+  const avatarT = t.avatar as Record<string, unknown>
+  const avatarOptions = avatarT.options as Record<string, string>
+  const avatarLabels = avatarT as { gender?: string; age?: string; ethnicity?: string; bodyType?: string; hairStyle?: string; outfitStyle?: string; background?: string; selectedOptions?: string }
 
   const selectedItems = useMemo(() => {
     const items: { key: string; label: string; value: string }[] = []
 
-    if (options.gender) items.push({ key: 'gender', label: 'Gender', value: avatarOptions[options.gender] || options.gender })
-    if (options.age) items.push({ key: 'age', label: 'Age', value: avatarOptions[options.age] || options.age })
-    if (options.ethnicity) items.push({ key: 'ethnicity', label: 'Ethnicity', value: avatarOptions[options.ethnicity] || options.ethnicity })
+    if (options.gender) items.push({ key: 'gender', label: avatarLabels.gender || 'Gender', value: avatarOptions[options.gender] || options.gender })
+    if (options.age) items.push({ key: 'age', label: avatarLabels.age || 'Age', value: avatarOptions[options.age] || options.age })
+    if (options.ethnicity) items.push({ key: 'ethnicity', label: avatarLabels.ethnicity || 'Ethnicity', value: avatarOptions[options.ethnicity] || options.ethnicity })
     if (options.bodyType) {
       const bodyKey = options.bodyType === 'muscular' ? 'bodyMuscular' :
                       options.bodyType === 'curvy' ? 'bodyCurvy' :
                       options.bodyType === 'athletic' ? 'bodyAthletic' :
                       options.bodyType === 'average' ? 'bodyAverage' : 'bodySlim'
-      items.push({ key: 'bodyType', label: 'Body Type', value: avatarOptions[bodyKey] || options.bodyType })
+      items.push({ key: 'bodyType', label: avatarLabels.bodyType || 'Body Type', value: avatarOptions[bodyKey] || options.bodyType })
     }
     if (options.hairStyle) {
       const hairKey = options.hairStyle === 'short' ? 'hairShort' :
                       options.hairStyle === 'medium' ? 'hairMedium' : 'hairLong'
-      items.push({ key: 'hairStyle', label: 'Hair', value: avatarOptions[hairKey] || options.hairStyle })
+      items.push({ key: 'hairStyle', label: avatarLabels.hairStyle || 'Hair', value: avatarOptions[hairKey] || options.hairStyle })
     }
     if (options.outfitStyle) {
       const outfitKey = `outfit${options.outfitStyle.charAt(0).toUpperCase() + options.outfitStyle.slice(1)}`
-      items.push({ key: 'outfitStyle', label: 'Outfit', value: avatarOptions[outfitKey] || options.outfitStyle })
+      items.push({ key: 'outfitStyle', label: avatarLabels.outfitStyle || 'Outfit', value: avatarOptions[outfitKey] || options.outfitStyle })
     }
     if (options.background) {
       const bgKey = options.background === 'studioWhite' ? 'bgStudioWhite' :
                     options.background === 'studioGray' ? 'bgStudioGray' :
                     `bg${options.background.charAt(0).toUpperCase() + options.background.slice(1)}`
-      items.push({ key: 'background', label: 'Background', value: avatarOptions[bgKey] || options.background })
+      items.push({ key: 'background', label: avatarLabels.background || 'Background', value: avatarOptions[bgKey] || options.background })
     }
 
     return items
-  }, [options, avatarOptions])
+  }, [options, avatarOptions, avatarLabels])
 
   if (selectedItems.length === 0) return null
 
   return (
     <div className="mb-6 p-4 bg-secondary/30 rounded-xl border border-border">
-      <p className="text-xs text-muted-foreground mb-2 font-medium">Selected Options</p>
+      <p className="text-xs text-muted-foreground mb-2 font-medium">{avatarLabels.selectedOptions || 'Selected Options'}</p>
       <div className="flex flex-wrap gap-2">
         {selectedItems.map((item) => (
           <span
@@ -276,7 +278,19 @@ function SelectedOptionsSummary({ options, t }: SelectedOptionsSummaryProps) {
 
 export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
   const { t } = useLanguage()
-  const avatarOptions = (t.avatar as Record<string, unknown>).options as Record<string, string>
+  const avatarT = t.avatar as Record<string, unknown>
+  const avatarOptions = avatarT.options as Record<string, string>
+  const formLabels = avatarT as {
+    optional?: string
+    autoGeneratePlaceholder?: string
+    englishTip?: string
+    selectColor?: string
+    stepBasicInfo?: string
+    stepAppearance?: string
+    stepStyle?: string
+    previous?: string
+    next?: string
+  }
 
   const [name, setName] = useState('')
   const [inputMethod, setInputMethod] = useState<InputMethod>('options')
@@ -285,7 +299,11 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
 
-  const stepLabels = ['Basic Info', 'Appearance', 'Style']
+  const stepLabels = [
+    formLabels.stepBasicInfo || 'Basic Info',
+    formLabels.stepAppearance || 'Appearance',
+    formLabels.stepStyle || 'Style'
+  ]
   const totalSteps = 3
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -337,13 +355,13 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
       {/* 아바타 이름 입력 (선택사항) */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
-          {t.avatar.name} <span className="text-muted-foreground font-normal">(선택)</span>
+          {t.avatar.name} <span className="text-muted-foreground font-normal">({formLabels.optional || 'optional'})</span>
         </label>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="입력하지 않으면 자동 생성됩니다"
+          placeholder={formLabels.autoGeneratePlaceholder || 'Leave blank to auto-generate'}
           className="w-full px-4 py-3 bg-secondary/50 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-foreground placeholder:text-muted-foreground transition-all"
         />
       </div>
@@ -395,7 +413,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
             className="w-full px-4 py-3 bg-secondary/50 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-foreground placeholder:text-muted-foreground resize-none transition-all"
           />
           <p className="mt-2 text-xs text-muted-foreground">
-            영어로 작성하면 더 정확한 결과를 얻을 수 있습니다.
+            {formLabels.englishTip || 'Writing in English can yield more accurate results.'}
           </p>
         </div>
       ) : (
@@ -561,7 +579,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
                       />
                     </label>
                     <span className="text-sm text-foreground">
-                      {options.customHairColor || '색상을 선택하세요'}
+                      {options.customHairColor || (formLabels.selectColor || 'Select a color')}
                     </span>
                   </div>
                 )}
@@ -620,7 +638,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
               className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-0 transition-all"
             >
               <ChevronLeft className="w-4 h-4" />
-              이전
+              {formLabels.previous || 'Previous'}
             </button>
 
             {currentStep < totalSteps - 1 ? (
@@ -630,7 +648,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
                 disabled={!canProceed() || isTransitioning}
                 className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
-                다음
+                {formLabels.next || 'Next'}
                 <ChevronRight className="w-4 h-4" />
               </button>
             ) : (

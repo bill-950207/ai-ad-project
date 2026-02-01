@@ -26,7 +26,7 @@ export default async function FullscreenLayout({
       redirect('/onboarding')
     }
   } catch (error) {
-    console.error('프로필 확인 오류:', error)
+    console.error('Profile check error:', error)
   }
 
   return (

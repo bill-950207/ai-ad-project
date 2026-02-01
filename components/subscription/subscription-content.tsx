@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { SubscriptionManageModal } from './subscription-manage-modal'
+import { useLanguage } from '@/contexts/language-context'
 
 interface SubscriptionData {
   subscription: {
@@ -58,12 +59,53 @@ interface SubscriptionData {
 }
 
 export function SubscriptionContent() {
+  const { t } = useLanguage()
   const searchParams = useSearchParams()
   const [data, setData] = useState<SubscriptionData | null>(null)
   const [loading, setLoading] = useState(true)
   const [showSuccess, setShowSuccess] = useState(false)
   const [showManageModal, setShowManageModal] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Translation type
+  type SubscriptionPageT = {
+    title?: string
+    subtitle?: string
+    loadError?: string
+    subscriptionSuccess?: string
+    currentPlan?: string
+    paid?: string
+    free?: string
+    manage?: string
+    nextPayment?: string
+    cancelScheduled?: string
+    monthlyCredits?: string
+    credits?: string
+    cancelWarning?: string
+    cancelWarningDesc?: string
+    keyframe?: string
+    keyframeGenerate?: string
+    hdUpscale?: string
+    available?: string
+    notSupported?: string
+    watermark?: string
+    removed?: string
+    included?: string
+    upgradePlan?: string
+    yourCredits?: string
+    availableCredits?: string
+    monthlyUsage?: string
+    monthlyCreditsInfo?: string
+    freeGenerationLimits?: string
+    freeGenerationDesc?: string
+    avatarGeneration?: string
+    musicGeneration?: string
+    productRegistration?: string
+    unlimited?: string
+    usageInfo?: string
+    upgradePlanLink?: string
+  }
+  const subT = t.subscriptionPage as SubscriptionPageT | undefined
 
   useEffect(() => {
     // 성공 메시지 표시
@@ -89,7 +131,7 @@ export function SubscriptionContent() {
       setData(result)
     } catch (err) {
       console.error('Failed to fetch subscription:', err)
-      setError('구독 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.')
+      setError(subT?.loadError || 'Unable to load subscription info. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -107,7 +149,7 @@ export function SubscriptionContent() {
     return (
       <div className="text-center py-12">
         <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-        <p className="text-muted-foreground">구독 정보를 불러올 수 없습니다.</p>
+        <p className="text-muted-foreground">{subT?.loadError || 'Unable to load subscription info.'}</p>
       </div>
     )
   }
@@ -171,7 +213,7 @@ export function SubscriptionContent() {
       {showSuccess && (
         <div className="mb-6 bg-green-500/10 border border-green-500/20 rounded-xl p-4 flex items-center gap-3">
           <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-          <p className="text-green-500 font-medium">구독이 성공적으로 시작되었습니다!</p>
+          <p className="text-green-500 font-medium">{subT?.subscriptionSuccess || 'Your subscription has started successfully!'}</p>
         </div>
       )}
 
@@ -193,9 +235,9 @@ export function SubscriptionContent() {
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">구독 관리</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">{subT?.title || 'Subscription Management'}</h1>
         <p className="text-muted-foreground">
-          현재 플랜과 사용량을 확인하고 관리하세요.
+          {subT?.subtitle || 'Check and manage your current plan and usage.'}
         </p>
       </div>
 
@@ -211,13 +253,13 @@ export function SubscriptionContent() {
               {/* Header with Manage Button */}
               <div className="flex items-start justify-between mb-6">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">현재 플랜</p>
+                  <p className="text-sm text-muted-foreground mb-1">{subT?.currentPlan || 'Current Plan'}</p>
                   <div className="flex items-center gap-3">
                     <h2 className="text-3xl font-bold text-foreground">
                       {subscription.displayName}
                     </h2>
                     <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getPlanBadgeColor(subscription.planType)}`}>
-                      {isPaid ? 'Paid' : 'Free'}
+                      {isPaid ? (subT?.paid || 'Paid') : (subT?.free || 'Free')}
                     </span>
                   </div>
                 </div>
@@ -227,7 +269,7 @@ export function SubscriptionContent() {
                     className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-medium text-foreground transition-colors"
                   >
                     <Settings className="w-4 h-4" />
-                    관리
+                    {subT?.manage || 'Manage'}
                   </button>
                 )}
               </div>
@@ -239,21 +281,21 @@ export function SubscriptionContent() {
                     <div className="bg-white/10 rounded-xl p-4">
                       <div className="flex items-center gap-2 text-muted-foreground mb-1">
                         <Calendar className="w-4 h-4" />
-                        <span className="text-sm">다음 결제일</span>
+                        <span className="text-sm">{subT?.nextPayment || 'Next Payment'}</span>
                       </div>
                       <p className="text-lg font-semibold text-foreground">
                         {subscription.cancelAtPeriodEnd
-                          ? '취소 예정'
+                          ? (subT?.cancelScheduled || 'Cancellation Scheduled')
                           : formatDate(subscription.currentPeriodEnd)}
                       </p>
                     </div>
                     <div className="bg-white/10 rounded-xl p-4">
                       <div className="flex items-center gap-2 text-muted-foreground mb-1">
                         <Coins className="w-4 h-4" />
-                        <span className="text-sm">월 크레딧</span>
+                        <span className="text-sm">{subT?.monthlyCredits || 'Monthly Credits'}</span>
                       </div>
                       <p className="text-lg font-semibold text-foreground">
-                        {subscription.monthlyCredits} 크레딧
+                        {subscription.monthlyCredits} {subT?.credits || 'credits'}
                       </p>
                     </div>
                   </>
@@ -266,9 +308,9 @@ export function SubscriptionContent() {
                   <div className="flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-medium text-yellow-500">구독 취소 예정</p>
+                      <p className="font-medium text-yellow-500">{subT?.cancelWarning || 'Cancellation Scheduled'}</p>
                       <p className="text-sm text-yellow-500/80">
-                        {formatDate(subscription.currentPeriodEnd)}에 Free 플랜으로 전환됩니다.
+                        {(subT?.cancelWarningDesc || 'Your plan will switch to Free on {date}.').replace('{date}', formatDate(subscription.currentPeriodEnd))}
                       </p>
                     </div>
                   </div>
@@ -282,8 +324,8 @@ export function SubscriptionContent() {
                     <Sparkles className={`w-4 h-4 ${features.keyframeCount > 1 ? 'text-green-500' : 'text-muted-foreground'}`} />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">키프레임</p>
-                    <p className="text-xs text-muted-foreground">{features.keyframeCount}개 생성</p>
+                    <p className="text-sm font-medium text-foreground">{subT?.keyframe || 'Keyframes'}</p>
+                    <p className="text-xs text-muted-foreground">{(subT?.keyframeGenerate || '{count} generated').replace('{count}', String(features.keyframeCount))}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 bg-white/10 rounded-xl p-3">
@@ -291,8 +333,8 @@ export function SubscriptionContent() {
                     <TrendingUp className={`w-4 h-4 ${features.hdUpscale ? 'text-green-500' : 'text-muted-foreground'}`} />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">HD 업스케일</p>
-                    <p className="text-xs text-muted-foreground">{features.hdUpscale ? 'Available' : 'Not available'}</p>
+                    <p className="text-sm font-medium text-foreground">{subT?.hdUpscale || 'HD Upscale'}</p>
+                    <p className="text-xs text-muted-foreground">{features.hdUpscale ? (subT?.available || 'Available') : (subT?.notSupported || 'Not Supported')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 bg-white/10 rounded-xl p-3">
@@ -300,8 +342,8 @@ export function SubscriptionContent() {
                     <CheckCircle className={`w-4 h-4 ${features.watermarkFree ? 'text-green-500' : 'text-muted-foreground'}`} />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">워터마크</p>
-                    <p className="text-xs text-muted-foreground">{features.watermarkFree ? 'Removed' : 'Included'}</p>
+                    <p className="text-sm font-medium text-foreground">{subT?.watermark || 'Watermark'}</p>
+                    <p className="text-xs text-muted-foreground">{features.watermarkFree ? (subT?.removed || 'Removed') : (subT?.included || 'Included')}</p>
                   </div>
                 </div>
               </div>
@@ -313,7 +355,7 @@ export function SubscriptionContent() {
                   className="mt-6 w-full py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
                 >
                   <Zap className="w-4 h-4" />
-                  플랜 업그레이드
+                  {subT?.upgradePlan || 'Upgrade Plan'}
                 </Link>
               )}
             </div>
@@ -323,7 +365,7 @@ export function SubscriptionContent() {
         {/* Credits Card */}
         <div className="bg-card border border-border rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-foreground">보유 크레딧</h3>
+            <h3 className="text-lg font-semibold text-foreground">{subT?.yourCredits || 'Your Credits'}</h3>
             <CreditCard className="w-5 h-5 text-muted-foreground" />
           </div>
 
@@ -331,13 +373,13 @@ export function SubscriptionContent() {
             <p className="text-5xl font-bold text-primary mb-2">
               {profile?.credits || 0}
             </p>
-            <p className="text-sm text-muted-foreground">사용 가능한 크레딧</p>
+            <p className="text-sm text-muted-foreground">{subT?.availableCredits || 'Available credits'}</p>
           </div>
 
           {isPaid && monthlyCreditsLimit > 0 && (
             <div className="bg-secondary/50 rounded-xl p-4">
               <div className="flex justify-between text-sm mb-2">
-                <span className="text-muted-foreground">이번 달 크레딧 사용</span>
+                <span className="text-muted-foreground">{subT?.monthlyUsage || "This month's credit usage"}</span>
                 <span className="font-medium text-foreground">
                   {creditsUsed} / {monthlyCreditsLimit}
                 </span>
@@ -353,7 +395,7 @@ export function SubscriptionContent() {
                 />
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                매월 1일에 {monthlyCreditsLimit} 크레딧이 지급됩니다
+                {(subT?.monthlyCreditsInfo || '{credits} credits are provided on the 1st of each month').replace('{credits}', String(monthlyCreditsLimit))}
               </p>
             </div>
           )}
@@ -365,8 +407,8 @@ export function SubscriptionContent() {
         <div className="bg-card border border-border rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-lg font-semibold text-foreground">무료 생성 한도</h3>
-              <p className="text-sm text-muted-foreground">플랜에 포함된 무료 생성량</p>
+              <h3 className="text-lg font-semibold text-foreground">{subT?.freeGenerationLimits || 'Free Generation Limits'}</h3>
+              <p className="text-sm text-muted-foreground">{subT?.freeGenerationDesc || 'Free generation included in your plan'}</p>
             </div>
           </div>
 
@@ -378,9 +420,9 @@ export function SubscriptionContent() {
                   <Users className="w-5 h-5 text-blue-500" />
                 </div>
                 <div>
-                  <p className="font-medium text-foreground">아바타 생성</p>
+                  <p className="font-medium text-foreground">{subT?.avatarGeneration || 'Avatar Generation'}</p>
                   <p className="text-sm text-muted-foreground">
-                    {usage.avatars.used} / {usage.avatars.limit === -1 ? 'Unlimited' : usage.avatars.limit}
+                    {usage.avatars.used} / {usage.avatars.limit === -1 ? (subT?.unlimited || 'Unlimited') : usage.avatars.limit}
                   </p>
                 </div>
               </div>
@@ -405,9 +447,9 @@ export function SubscriptionContent() {
                   <Music className="w-5 h-5 text-purple-500" />
                 </div>
                 <div>
-                  <p className="font-medium text-foreground">음악 생성</p>
+                  <p className="font-medium text-foreground">{subT?.musicGeneration || 'Music Generation'}</p>
                   <p className="text-sm text-muted-foreground">
-                    {usage.music.used} / {usage.music.limit === -1 ? 'Unlimited' : usage.music.limit}
+                    {usage.music.used} / {usage.music.limit === -1 ? (subT?.unlimited || 'Unlimited') : usage.music.limit}
                   </p>
                 </div>
               </div>
@@ -432,9 +474,9 @@ export function SubscriptionContent() {
                   <Package className="w-5 h-5 text-green-500" />
                 </div>
                 <div>
-                  <p className="font-medium text-foreground">제품 등록</p>
+                  <p className="font-medium text-foreground">{subT?.productRegistration || 'Product Registration'}</p>
                   <p className="text-sm text-muted-foreground">
-                    {usage.products.used} / {usage.products.limit === -1 ? 'Unlimited' : usage.products.limit}
+                    {usage.products.used} / {usage.products.limit === -1 ? (subT?.unlimited || 'Unlimited') : usage.products.limit}
                   </p>
                 </div>
               </div>
@@ -456,11 +498,10 @@ export function SubscriptionContent() {
           {/* Usage Info */}
           <div className="mt-6 pt-6 border-t border-border">
             <p className="text-sm text-muted-foreground">
-              제한을 초과하면 크레딧이 차감됩니다. 더 많은 생성이 필요하시면{' '}
+              {subT?.usageInfo || 'Credits are deducted when limits are exceeded. Need more?'}{' '}
               <Link href="/dashboard/pricing" className="text-primary hover:underline font-medium">
-                플랜을 업그레이드
+                {subT?.upgradePlanLink || 'Upgrade your plan'}
               </Link>
-              하세요.
             </p>
           </div>
         </div>

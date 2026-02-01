@@ -28,7 +28,7 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ rainShowcases }: HeroSectionProps) {
-  const { language } = useLanguage();
+  const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const supabase = createClient();
 
@@ -61,25 +61,23 @@ export function HeroSection({ rainShowcases }: HeroSectionProps) {
         {/* 배지 - AI 대신 기능 강조 */}
         <div className="mb-6 inline-flex items-center gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-1.5 text-sm text-muted-foreground animate-fade-in-up">
           <CheckCircle className="h-3.5 w-3.5 text-green-500" aria-hidden="true" />
-          <span>{language === 'ko' ? '전문가 없이 직접 만드세요' : 'Create it yourself, no experts needed'}</span>
+          <span>{t.hero.tagline}</span>
         </div>
 
         {/* 메인 헤드라인 - 단순한 그라데이션 */}
         <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl animate-fade-in-up animation-delay-100">
           <span className="text-foreground">
-            {language === 'ko' ? '광고,' : 'Create ads'}
+            {t.hero.headlinePart1}
           </span>
           <br />
           <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            {language === 'ko' ? '3분이면 완성' : 'in 3 minutes'}
+            {t.hero.headlinePart2}
           </span>
         </h1>
 
         {/* 서브 헤드라인 */}
         <p className="mx-auto mb-10 max-w-lg text-lg text-muted-foreground sm:text-xl leading-relaxed animate-fade-in-up animation-delay-200">
-          {language === 'ko'
-            ? '이미지, 영상, 아바타까지. 클릭 몇 번으로 전문가 수준의 광고를 만들어 보세요.'
-            : 'Images, videos, avatars. Create professional ads with just a few clicks.'}
+          {t.hero.description}
         </p>
 
         {/* CTA 버튼 - rounded-xl로 변경 */}
@@ -88,7 +86,7 @@ export function HeroSection({ rainShowcases }: HeroSectionProps) {
             href={user ? "/dashboard" : "/login"}
             className="group inline-flex items-center justify-center gap-2 h-12 rounded-xl px-6 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            {language === 'ko' ? '무료로 시작하기' : 'Start Free'}
+            {t.hero.ctaStart}
             <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
           </Link>
           <Link
@@ -96,7 +94,7 @@ export function HeroSection({ rainShowcases }: HeroSectionProps) {
             className="inline-flex items-center justify-center gap-2 h-12 rounded-xl px-6 text-base font-medium text-muted-foreground hover:text-foreground border border-border hover:border-foreground/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             <Play className="h-4 w-4" aria-hidden="true" />
-            {language === 'ko' ? '샘플 보기' : 'View Samples'}
+            {t.hero.ctaSamples}
           </Link>
         </div>
 
@@ -104,10 +102,10 @@ export function HeroSection({ rainShowcases }: HeroSectionProps) {
         <div className="mt-12 flex items-center justify-center gap-6 text-sm text-muted-foreground animate-fade-in-up animation-delay-400">
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-            {language === 'ko' ? '신용카드 불필요' : 'No credit card'}
+            {t.hero.noCreditCard}
           </span>
           <span className="hidden sm:block w-px h-4 bg-border" />
-          <span>{language === 'ko' ? '무료 크레딧 제공' : 'Free credits included'}</span>
+          <span>{t.hero.freeCredits}</span>
         </div>
       </div>
     </section>

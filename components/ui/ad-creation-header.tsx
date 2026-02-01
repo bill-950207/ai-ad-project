@@ -11,6 +11,7 @@
 import { ArrowLeft, Package, User, Sparkles } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useLanguage } from '@/contexts/language-context'
 
 interface SelectedProduct {
   name: string
@@ -49,6 +50,7 @@ export function AdCreationHeader({
   sticky = false,
   rightContent,
 }: AdCreationHeaderProps) {
+  const { t } = useLanguage()
   const hasSelectedItems = selectedProduct || selectedAvatar
 
   return (
@@ -100,7 +102,7 @@ export function AdCreationHeader({
                     )}
                   </div>
                   <div className="hidden sm:block">
-                    <p className="text-xs text-muted-foreground">제품</p>
+                    <p className="text-xs text-muted-foreground">{t.common?.product || 'Product'}</p>
                     <p className="text-sm font-medium text-foreground truncate max-w-[80px]">
                       {selectedProduct.name}
                     </p>
@@ -135,7 +137,7 @@ export function AdCreationHeader({
                     )}
                   </div>
                   <div className="hidden sm:block">
-                    <p className="text-xs text-muted-foreground">아바타</p>
+                    <p className="text-xs text-muted-foreground">{t.common?.avatar || 'Avatar'}</p>
                     <p className="text-sm font-medium text-foreground truncate max-w-[80px]">
                       {selectedAvatar.name}
                     </p>

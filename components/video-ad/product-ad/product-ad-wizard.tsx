@@ -8,15 +8,19 @@ import { WizardStep2 } from './wizard-step-2'
 import { WizardStep3 } from './wizard-step-3'
 import { WizardStep4 } from './wizard-step-4'
 import { WizardStep5 } from './wizard-step-5'
+import { useLanguage } from '@/contexts/language-context'
 
-// 단계 정보
-const STEPS = [
-  { step: 1 as WizardStep, title: '제품 선택' },
-  { step: 2 as WizardStep, title: '설정 방식' },
-  { step: 3 as WizardStep, title: '시나리오 및 설정' },
-  { step: 4 as WizardStep, title: '첫 씬' },
-  { step: 5 as WizardStep, title: '영상 생성' },
-]
+// Step titles will be translated in the component
+function useStepTitles() {
+  const { t } = useLanguage()
+  return [
+    { step: 1 as WizardStep, title: t.productAdWizard?.steps?.selectProduct || 'Select Product' },
+    { step: 2 as WizardStep, title: t.productAdWizard?.steps?.configMethod || 'Config Method' },
+    { step: 3 as WizardStep, title: t.productAdWizard?.steps?.scenarioSettings || 'Scenario & Settings' },
+    { step: 4 as WizardStep, title: t.productAdWizard?.steps?.firstScene || 'First Scene' },
+    { step: 5 as WizardStep, title: t.productAdWizard?.steps?.generateVideo || 'Generate Video' },
+  ]
+}
 
 interface WizardHeaderProps {
   onBack?: () => void
@@ -24,6 +28,8 @@ interface WizardHeaderProps {
 
 function WizardHeader({ onBack }: WizardHeaderProps) {
   const { step } = useProductAdWizard()
+  const { t } = useLanguage()
+  const STEPS = useStepTitles()
 
   return (
     <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
@@ -39,8 +45,8 @@ function WizardHeader({ onBack }: WizardHeaderProps) {
             </button>
           )}
           <div>
-            <h1 className="text-lg font-bold text-foreground">제품 광고 영상 만들기</h1>
-            <p className="text-xs text-muted-foreground">제품의 매력을 담은 시네마틱 광고 영상</p>
+            <h1 className="text-lg font-bold text-foreground">{t.productAdWizard?.header?.title || 'Create Product Ad Video'}</h1>
+            <p className="text-xs text-muted-foreground">{t.productAdWizard?.header?.subtitle || 'Cinematic ad video showcasing your product'}</p>
           </div>
         </div>
 
@@ -118,6 +124,7 @@ interface WizardInnerProps {
 
 function WizardInner({ onBack, videoAdId }: WizardInnerProps) {
   const { loadDraft, isSaving, pendingSave } = useProductAdWizard()
+  const { t } = useLanguage()
   const [isLoadingDraft, setIsLoadingDraft] = useState(!!videoAdId)
   const loadAttemptedRef = useRef(false)
 
@@ -136,13 +143,13 @@ function WizardInner({ onBack, videoAdId }: WizardInnerProps) {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (pendingSave || isSaving) {
         e.preventDefault()
-        e.returnValue = '저장되지 않은 변경사항이 있습니다.'
+        e.returnValue = t.common?.unsavedChanges || 'You have unsaved changes.'
       }
     }
 
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [pendingSave, isSaving])
+  }, [pendingSave, isSaving, t])
 
   if (isLoadingDraft) {
     return (
@@ -150,7 +157,7 @@ function WizardInner({ onBack, videoAdId }: WizardInnerProps) {
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">진행 상태를 불러오는 중...</p>
+            <p className="text-sm text-muted-foreground">{t.productAdWizard?.loading || 'Loading progress...'}</p>
           </div>
         </div>
       </div>

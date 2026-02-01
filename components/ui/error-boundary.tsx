@@ -16,6 +16,7 @@
 import { Component, ReactNode } from 'react'
 import { AlertTriangle, RefreshCw, ArrowLeft, Home } from 'lucide-react'
 import { Button } from './button'
+import { useLanguage } from '@/contexts/language-context'
 
 // ============================================================
 // 타입 정의
@@ -59,6 +60,8 @@ function DefaultErrorFallback({
   showGoBack,
   showGoHome,
 }: DefaultErrorFallbackProps) {
+  const { t } = useLanguage()
+
   const handleGoBack = () => {
     if (typeof window !== 'undefined') {
       window.history.back()
@@ -87,17 +90,17 @@ function DefaultErrorFallback({
 
       {/* 에러 메시지 */}
       <h2 className="text-xl font-bold text-foreground mb-2">
-        오류가 발생했습니다
+        {t.common.error}
       </h2>
       <p className="text-muted-foreground mb-6 max-w-md">
-        예기치 않은 문제가 발생했습니다. 다시 시도해 주세요.
+        {t.common.errorDescription}
       </p>
 
       {/* 개발 환경에서만 에러 상세 표시 */}
       {process.env.NODE_ENV === 'development' && error && (
         <details className="mb-6 w-full max-w-lg text-left">
           <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
-            에러 상세 정보 (개발 모드)
+            {t.common.errorDetails} ({t.common.devMode})
           </summary>
           <pre className="mt-2 p-4 bg-secondary/50 rounded-lg text-xs text-red-400 overflow-auto max-h-40">
             {error.message}
@@ -116,19 +119,19 @@ function DefaultErrorFallback({
         {showRetry && (
           <Button onClick={onRetry} variant="default" className="gap-2">
             <RefreshCw className="w-4 h-4" aria-hidden="true" />
-            다시 시도
+            {t.common.retry}
           </Button>
         )}
         {showGoBack && (
           <Button onClick={handleGoBack} variant="outline" className="gap-2">
             <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-            뒤로 가기
+            {t.common.goBack}
           </Button>
         )}
         {showGoHome && (
           <Button onClick={handleGoHome} variant="ghost" className="gap-2">
             <Home className="w-4 h-4" aria-hidden="true" />
-            홈으로
+            {t.common.goHome}
           </Button>
         )}
       </div>

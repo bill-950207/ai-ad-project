@@ -21,35 +21,16 @@ interface SlotLimitModalProps {
   onManageItems?: () => void
 }
 
-const SLOT_TYPE_CONFIG: Record<SlotType, {
-  titleKey: string
-  icon: string
-  managePath: string
-}> = {
-  avatar: {
-    titleKey: 'Avatar',
-    icon: '👤',
-    managePath: '/dashboard/avatar',
-  },
-  music: {
-    titleKey: 'Music',
-    icon: '🎵',
-    managePath: '/dashboard/music',
-  },
-  product: {
-    titleKey: 'Product',
-    icon: '📦',
-    managePath: '/dashboard/ad-products',
-  },
+const SLOT_TYPE_PATHS: Record<SlotType, string> = {
+  avatar: '/dashboard/avatar',
+  music: '/dashboard/music',
+  product: '/dashboard/ad-products',
 }
 
-type SlotLimitT = {
-  title?: string
-  slot?: string
-  message?: string
-  upgrade?: string
-  deleteExisting?: string
-  close?: string
+const SLOT_TYPE_ICONS: Record<SlotType, string> = {
+  avatar: '👤',
+  music: '🎵',
+  product: '📦',
 }
 
 export function SlotLimitModal({
@@ -60,24 +41,12 @@ export function SlotLimitModal({
   onManageItems,
 }: SlotLimitModalProps) {
   const { t } = useLanguage()
-  const slotLimitT = t.slotLimit as SlotLimitT | undefined
 
   if (!isOpen) return null
 
-  const config = SLOT_TYPE_CONFIG[slotType]
-  const typeTitle = config.titleKey
-
-  // 메시지 템플릿 처리
-  const getMessage = () => {
-    if (slotInfo.message) return slotInfo.message
-    const template = slotLimitT?.message || '{{type}} slots are currently full. To create a new one, delete existing items or upgrade your plan.'
-    return template.replace('{{type}}', typeTitle)
-  }
-
-  const getDeleteLabel = () => {
-    const template = slotLimitT?.deleteExisting || 'Delete existing {{type}}'
-    return template.replace('{{type}}', typeTitle)
-  }
+  const slotTitle = t.slotTypes[slotType]
+  const managePath = SLOT_TYPE_PATHS[slotType]
+  const icon = SLOT_TYPE_ICONS[slotType]
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center animate-in fade-in duration-200">
@@ -95,9 +64,7 @@ export function SlotLimitModal({
             <div className="w-10 h-10 rounded-xl bg-yellow-500/15 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-yellow-500" />
             </div>
-            <h2 className="text-xl font-bold text-foreground">
-              {slotLimitT?.title || 'Slots are full'}
-            </h2>
+            <h2 className="text-xl font-bold text-foreground">{t.modal.slotLimit.title}</h2>
           </div>
           <button
             onClick={onClose}
@@ -112,10 +79,8 @@ export function SlotLimitModal({
           {/* Usage Display */}
           <div className="bg-secondary/50 rounded-xl p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-lg">{config.icon}</span>
-              <span className="text-sm text-muted-foreground">
-                {typeTitle} {slotLimitT?.slot || 'Slot'}
-              </span>
+              <span className="text-lg">{icon}</span>
+              <span className="text-sm text-muted-foreground">{slotTitle} {t.modal.slotLimit.slot}</span>
             </div>
             <div className="flex items-baseline justify-between mb-2">
               <span className="text-3xl font-bold text-foreground">{slotInfo.used}</span>
@@ -131,7 +96,7 @@ export function SlotLimitModal({
 
           {/* Message */}
           <p className="text-muted-foreground text-center mb-6">
-            {getMessage()}
+            {slotInfo.message || t.modal.slotLimit.defaultMessage}
           </p>
 
           {/* Actions */}
@@ -143,12 +108,12 @@ export function SlotLimitModal({
               onClick={onClose}
             >
               <ArrowUpRight className="w-4 h-4" />
-              {slotLimitT?.upgrade || 'Upgrade Plan'}
+              {t.modal.slotLimit.upgrade}
             </Link>
 
             {/* Manage Items Button */}
             <Link
-              href={config.managePath}
+              href={managePath}
               onClick={(e) => {
                 if (onManageItems) {
                   e.preventDefault()
@@ -159,7 +124,7 @@ export function SlotLimitModal({
               className="w-full py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-colors flex items-center justify-center gap-2"
             >
               <Trash2 className="w-4 h-4" />
-              {getDeleteLabel()}
+              {t.modal.slotLimit.deleteExisting}
             </Link>
 
             {/* Close Button */}
@@ -167,7 +132,7 @@ export function SlotLimitModal({
               onClick={onClose}
               className="w-full py-3 text-muted-foreground hover:text-foreground transition-colors font-medium"
             >
-              {slotLimitT?.close || 'Close'}
+              {t.common.close}
             </button>
           </div>
         </div>

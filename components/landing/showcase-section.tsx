@@ -242,7 +242,7 @@ interface ShowcaseLightboxProps {
 }
 
 function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
-  const { language, t } = useLanguage()
+  const { t } = useLanguage()
   const router = useRouter()
   const [isCheckingAuth, setIsCheckingAuth] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -301,12 +301,12 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
   // 광고 타입 레이블
   const getAdTypeLabel = () => {
     if (item.type === 'image') {
-      return language === 'ko' ? '이미지 광고' : 'Image Ad'
+      return t.showcase.imageAd
     }
     if (item.ad_type === 'productDescription') {
-      return language === 'ko' ? '제품 설명 영상' : 'Product Description Video'
+      return t.showcase.productDescription
     }
-    return language === 'ko' ? '제품 광고 영상' : 'Product Ad Video'
+    return t.showcase.productAd
   }
 
   return (
@@ -382,7 +382,7 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
             {(item.product_image_url || item.avatar_image_url) && (
               <div className="mb-4">
                 <p className="text-xs text-muted-foreground mb-2">
-                  {language === 'ko' ? '사용된 에셋' : 'Assets Used'}
+                  {t.showcase.assetsUsed}
                 </p>
                 <div className="flex items-center gap-2">
                   {item.product_image_url && (
@@ -395,7 +395,7 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
                         />
                       </div>
                       <span className="text-[10px] text-muted-foreground">
-                        {t.landing?.product || 'Product'}
+                        {t.showcase.product}
                       </span>
                     </div>
                   )}
@@ -412,7 +412,7 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
                         />
                       </div>
                       <span className="text-[10px] text-muted-foreground">
-                        {t.landing?.avatar || 'Avatar'}
+                        {t.showcase.avatar}
                       </span>
                     </div>
                   )}
@@ -442,16 +442,14 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
                 <>
                   <Plus className="w-4 h-4" aria-hidden="true" />
                   <span className="text-sm">
-                    {language === 'ko' ? '이런 광고 만들기' : 'Create This Ad'}
+                    {t.showcase.createThisAd}
                   </span>
                 </>
               )}
             </button>
 
             <p className="text-[10px] text-muted-foreground text-center mt-2">
-              {language === 'ko'
-                ? '비슷한 스타일의 광고를 만들어 보세요'
-                : 'Create a similar style ad'}
+              {t.showcase.createSimilar}
             </p>
           </div>
       </div>
@@ -468,7 +466,7 @@ interface ShowcaseSectionProps {
 }
 
 export function ShowcaseSection({ initialShowcases = [] }: ShowcaseSectionProps) {
-  const { language, t } = useLanguage()
+  const { t } = useLanguage()
   const [showcases, setShowcases] = useState<ShowcaseItem[]>(initialShowcases)
   const [activeTab, setActiveTab] = useState<'all' | 'image' | 'video'>('all')
   const [isLoading, setIsLoading] = useState(initialShowcases.length === 0)
@@ -536,7 +534,7 @@ export function ShowcaseSection({ initialShowcases = [] }: ShowcaseSectionProps)
         setShowcases(combined)
       }
     } catch (error) {
-      console.error('쇼케이스 로드 오류:', error)
+      console.error('Failed to load showcases:', error)
     } finally {
       setIsLoading(false)
       setIsLoadingMore(false)
@@ -604,12 +602,10 @@ export function ShowcaseSection({ initialShowcases = [] }: ShowcaseSectionProps)
           {/* 섹션 헤더 */}
           <div className="text-center mb-10">
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4 text-foreground">
-              {language === 'ko' ? '제작 사례' : 'Gallery'}
+              {t.showcase.title}
             </h2>
             <p className="mx-auto max-w-xl text-muted-foreground text-lg">
-              {language === 'ko'
-                ? '실제 제작된 광고 콘텐츠를 확인해 보세요'
-                : 'Check out real ad content created with our platform'}
+              {t.showcase.subtitle}
             </p>
           </div>
 
@@ -627,7 +623,7 @@ export function ShowcaseSection({ initialShowcases = [] }: ShowcaseSectionProps)
                       : 'text-muted-foreground hover:text-foreground'
                   } ${isTransitioning ? 'cursor-not-allowed' : ''}`}
                 >
-                  {tab === 'all' ? (t.landing?.filterAll || 'All') : tab === 'image' ? (t.landing?.filterImage || 'Images') : (t.landing?.filterVideo || 'Videos')}
+                  {tab === 'all' ? t.showcase.tabAll : tab === 'image' ? t.showcase.tabImage : t.showcase.tabVideo}
                 </button>
               ))}
             </div>
@@ -662,7 +658,7 @@ export function ShowcaseSection({ initialShowcases = [] }: ShowcaseSectionProps)
                 {isLoadingMore && (
                   <div className="flex justify-center items-center gap-2 text-muted-foreground">
                     <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    <span className="text-sm">{language === 'ko' ? '로딩 중...' : 'Loading...'}</span>
+                    <span className="text-sm">{t.showcase.loading}</span>
                   </div>
                 )}
               </div>

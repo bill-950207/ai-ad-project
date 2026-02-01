@@ -33,6 +33,41 @@ export function AdProductForm() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const additionalPhotosRef = useRef<HTMLInputElement>(null)
 
+  // 번역 타입
+  type AdProductFormT = {
+    fetchFromUrl?: string
+    manualInput?: string
+    productUrl?: string
+    fetchInfo?: string
+    analyzing?: string
+    fetchSuccess?: string
+    productDescription?: string
+    productDescPlaceholder?: string
+    sellingPoints?: string
+    sellingPointExample?: string
+    sellingPointPlaceholder?: string
+    addSellingPoint?: string
+    additionalPhotos?: string
+    maxPhotos?: string
+    processing?: string
+    newProduct?: string
+    validation?: {
+      enterProductName?: string
+      selectProductImage?: string
+      enterUrl?: string
+      invalidFormat?: string
+      fileTooLarge?: string
+      imageTooSmall?: string
+      imageTooLarge?: string
+      resolutionTooHigh?: string
+      cannotReadImage?: string
+      fetchFailed?: string
+      slotFull?: string
+    }
+  }
+  const formT = t.adProductForm as AdProductFormT | undefined
+  const validationT = formT?.validation
+
   // 쿼리 파라미터에서 재시도 데이터 가져오기
   const retryName = searchParams.get('name')
   const retryImageUrl = searchParams.get('imageUrl')
@@ -77,12 +112,13 @@ export function AdProductForm() {
   const validateImage = useCallback((file: File): Promise<string | null> => {
     return new Promise((resolve) => {
       if (!SUPPORTED_FORMATS.includes(file.type)) {
-        resolve('지원되지 않는 형식입니다. PNG, JPG, WEBP만 가능합니다.')
+        resolve(validationT?.invalidFormat || 'Unsupported format. Only PNG, JPG, WEBP are allowed.')
         return
       }
 
       if (file.size > MAX_FILE_SIZE) {
-        resolve(`파일 크기가 너무 큽니다. 최대 5MB까지 가능합니다. (현재: ${(file.size / 1024 / 1024).toFixed(1)}MB)`)
+        const sizeMsg = validationT?.fileTooLarge || 'File size is too large. Maximum 5MB allowed. (Current: {size}MB)'
+        resolve(sizeMsg.replace('{size}', (file.size / 1024 / 1024).toFixed(1)))
         return
       }
 
@@ -92,17 +128,20 @@ export function AdProductForm() {
         const megapixels = width * height
 
         if (width < MIN_DIMENSION || height < MIN_DIMENSION) {
-          resolve(`이미지가 너무 작습니다. 최소 ${MIN_DIMENSION}px 이상이어야 합니다. (현재: ${width}x${height})`)
+          const smallMsg = validationT?.imageTooSmall || 'Image is too small. Minimum {min}px required. (Current: {width}x{height})'
+          resolve(smallMsg.replace('{min}', String(MIN_DIMENSION)).replace('{width}', String(width)).replace('{height}', String(height)))
           return
         }
 
         if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-          resolve(`이미지가 너무 큽니다. 최대 ${MAX_DIMENSION}px 이하여야 합니다. (현재: ${width}x${height})`)
+          const largeMsg = validationT?.imageTooLarge || 'Image is too large. Maximum {max}px allowed. (Current: {width}x{height})'
+          resolve(largeMsg.replace('{max}', String(MAX_DIMENSION)).replace('{width}', String(width)).replace('{height}', String(height)))
           return
         }
 
         if (megapixels > MAX_MEGAPIXELS) {
-          resolve(`이미지 해상도가 너무 높습니다. 최대 16MP까지 가능합니다. (현재: ${(megapixels / 1000000).toFixed(1)}MP)`)
+          const resMsg = validationT?.resolutionTooHigh || 'Image resolution is too high. Maximum 16MP allowed. (Current: {mp}MP)'
+          resolve(resMsg.replace('{mp}', (megapixels / 1000000).toFixed(1)))
           return
         }
 
@@ -110,12 +149,12 @@ export function AdProductForm() {
       }
 
       img.onerror = () => {
-        resolve('이미지를 읽을 수 없습니다.')
+        resolve(validationT?.cannotReadImage || 'Cannot read image.')
       }
 
       img.src = URL.createObjectURL(file)
     })
-  }, [])
+  }, [validationT])
 
   const handleFileSelect = useCallback(async (file: File) => {
     const validationError = await validateImage(file)
@@ -204,7 +243,7 @@ export function AdProductForm() {
   // URL에서 정보 추출
   const handleExtractUrl = async () => {
     if (!productUrl.trim()) {
-      setError('URL을 입력해주세요')
+      setError(validationT?.enterUrl || 'Please enter URL')
       return
     }
 
@@ -220,7 +259,7 @@ export function AdProductForm() {
 
       if (!res.ok) {
         const error = await res.json()
-        throw new Error(error.error || '정보를 가져올 수 없습니다')
+        throw new Error(error.error || (validationT?.fetchFailed || 'Unable to fetch info'))
       }
 
       const data = await res.json()
@@ -239,7 +278,7 @@ export function AdProductForm() {
       setUrlExtracted(true)
     } catch (err) {
       console.error('URL 추출 오류:', err)
-      setError(err instanceof Error ? err.message : '정보를 가져올 수 없습니다')
+      setError(err instanceof Error ? err.message : (validationT?.fetchFailed || 'Unable to fetch info'))
     } finally {
       setIsExtractingUrl(false)
     }
@@ -247,12 +286,12 @@ export function AdProductForm() {
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      setError('제품 이름을 입력해주세요')
+      setError(validationT?.enterProductName || 'Please enter product name')
       return
     }
 
     if (!selectedFile && !previewUrl) {
-      setError('제품 이미지를 선택해주세요')
+      setError(validationT?.selectProductImage || 'Please select product image')
       return
     }
 
@@ -298,7 +337,7 @@ export function AdProductForm() {
           setSlotInfo(errorData.slotInfo)
           setShowSlotLimitModal(true)
         } else {
-          setError(errorData.error || '슬롯이 가득 찼습니다')
+          setError(errorData.error || (validationT?.slotFull || 'Slot is full'))
         }
         return
       }
@@ -318,7 +357,7 @@ export function AdProductForm() {
       setSourceImageUrl(uploadedSourceUrl)
       setScannerMode(true)
     } catch (err) {
-      console.error('등록 오류:', err)
+      console.error('Registration error:', err)
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setIsSubmitting(false)
@@ -349,7 +388,7 @@ export function AdProductForm() {
         backHref="/dashboard/image-ad"
         title={t.adProduct.registerProduct}
         selectedProduct={previewUrl ? {
-          name: name || '새 제품',
+          name: name || (formT?.newProduct || 'New Product'),
           imageUrl: previewUrl,
         } : null}
       />
@@ -366,7 +405,7 @@ export function AdProductForm() {
             }`}
           >
             <LinkIcon className="w-4 h-4" />
-            URL로 가져오기
+            {formT?.fetchFromUrl || 'Fetch from URL'}
           </button>
           <button
             onClick={() => setInputMode('manual')}
@@ -377,7 +416,7 @@ export function AdProductForm() {
             }`}
           >
             <Edit3 className="w-4 h-4" />
-            직접 입력
+            {formT?.manualInput || 'Manual Input'}
           </button>
         </div>
 
@@ -385,7 +424,7 @@ export function AdProductForm() {
         {inputMode === 'url' && (
           <div className="space-y-3">
             <label className="block text-sm font-medium text-foreground">
-              제품 URL
+              {formT?.productUrl || 'Product URL'}
             </label>
             <div className="flex gap-2">
               <input
@@ -403,15 +442,15 @@ export function AdProductForm() {
                 {isExtractingUrl ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>분석 중...</span>
+                    <span>{formT?.analyzing || 'Analyzing...'}</span>
                   </>
                 ) : (
-                  '정보 가져오기'
+                  formT?.fetchInfo || 'Fetch Info'
                 )}
               </button>
             </div>
             {urlExtracted && (
-              <p className="text-sm text-green-500">정보를 성공적으로 가져왔습니다. 아래에서 확인 및 수정하세요.</p>
+              <p className="text-sm text-green-500">{formT?.fetchSuccess || 'Successfully fetched info. Please review and modify below.'}</p>
             )}
           </div>
         )}
@@ -478,12 +517,12 @@ export function AdProductForm() {
         {/* 제품 설명 */}
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">
-            제품 설명
+            {formT?.productDescription || 'Product Description'}
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="제품에 대한 상세 설명을 입력하세요..."
+            placeholder={formT?.productDescPlaceholder || 'Enter a detailed description of your product...'}
             rows={3}
             className="w-full px-4 py-2 bg-secondary/30 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
           />
@@ -492,10 +531,10 @@ export function AdProductForm() {
         {/* 셀링 포인트 */}
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">
-            셀링 포인트
+            {formT?.sellingPoints || 'Selling Points'}
           </label>
           <p className="text-xs text-muted-foreground mb-2">
-            예: "24시간 지속되는 보습력", "피부과 전문의 추천", "무향료/무색소"
+            {formT?.sellingPointExample || 'e.g., "24-hour lasting moisture", "Dermatologist recommended", "Fragrance-free"'}
           </p>
           <div className="space-y-2">
             {sellingPoints.map((point, index) => (
@@ -504,7 +543,7 @@ export function AdProductForm() {
                   type="text"
                   value={point}
                   onChange={(e) => updateSellingPoint(index, e.target.value)}
-                  placeholder={`제품의 장점이나 특징을 입력하세요`}
+                  placeholder={formT?.sellingPointPlaceholder || 'Enter product advantages or features'}
                   className="flex-1 px-4 py-2 bg-secondary/30 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
                 {sellingPoints.length > 1 && (
@@ -523,7 +562,7 @@ export function AdProductForm() {
                 className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors"
               >
                 <Plus className="w-4 h-4" />
-                셀링 포인트 추가
+                {formT?.addSellingPoint || 'Add Selling Point'}
               </button>
             )}
           </div>
@@ -532,7 +571,7 @@ export function AdProductForm() {
         {/* 추가 사진 */}
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">
-            추가 사진 <span className="text-muted-foreground text-xs">(최대 5장)</span>
+            {formT?.additionalPhotos || 'Additional Photos'} <span className="text-muted-foreground text-xs">({formT?.maxPhotos || 'Max 5'})</span>
           </label>
           <div className="flex flex-wrap gap-2">
             {additionalPhotoFiles.map((file, index) => (
@@ -583,7 +622,7 @@ export function AdProductForm() {
           {isSubmitting ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>처리 중...</span>
+              <span>{formT?.processing || 'Processing...'}</span>
             </>
           ) : (
             t.adProduct.register

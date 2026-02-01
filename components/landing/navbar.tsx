@@ -8,11 +8,10 @@ import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
 
 export function Navbar() {
-  const { t, language } = useLanguage()
+  const { t } = useLanguage()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const supabase = createClient()
-  const isKo = language === 'ko'
 
   useEffect(() => {
     const getUser = async () => {
@@ -29,9 +28,9 @@ export function Navbar() {
   }, [supabase.auth])
 
   const navLinks = [
-    { label: t.landing?.nav?.features || 'Features', href: '#features' },
-    { label: t.landing?.nav?.howItWorks || 'How it works', href: '#workflow' },
-    { label: t.landing?.nav?.gallery || 'Gallery', href: '#gallery' },
+    { label: t.landing.features, href: '#features' },
+    { label: t.landing.howItWorks, href: '#workflow' },
+    { label: t.landing.gallery, href: '#gallery' },
   ]
 
   return (
@@ -69,7 +68,7 @@ export function Navbar() {
                 href="/dashboard"
                 className="px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
-                {t.landing?.nav?.dashboard || 'Dashboard'}
+                {t.landing.dashboard}
               </Link>
             ) : (
               <>
@@ -77,13 +76,13 @@ export function Navbar() {
                   href="/login"
                   className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
-                  {t.landing?.nav?.login || 'Login'}
+                  {t.landing.login}
                 </Link>
                 <Link
                   href="/signup"
                   className="px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
-                  {isKo ? '무료로 시작' : 'Start Free'}
+                  {t.landing.startFree}
                 </Link>
               </>
             )}
@@ -93,7 +92,7 @@ export function Navbar() {
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="md:hidden p-2 rounded-lg hover:bg-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            aria-label={isMobileMenuOpen ? (isKo ? '메뉴 닫기' : 'Close menu') : (isKo ? '메뉴 열기' : 'Open menu')}
+            aria-label={isMobileMenuOpen ? t.landing.closeMenu : t.landing.openMenu}
             aria-expanded={isMobileMenuOpen}
           >
             {isMobileMenuOpen ? (
@@ -124,7 +123,7 @@ export function Navbar() {
                     href="/dashboard"
                     className="w-full px-4 py-2.5 rounded-lg text-sm font-medium text-center bg-primary text-primary-foreground"
                   >
-                    {t.landing?.nav?.dashboard || 'Dashboard'}
+                    {t.landing.dashboard}
                   </Link>
                 ) : (
                   <>
@@ -132,13 +131,13 @@ export function Navbar() {
                       href="/login"
                       className="w-full px-4 py-2.5 rounded-lg text-sm font-medium text-center border border-border hover:bg-secondary transition-colors"
                     >
-                      {t.landing?.nav?.login || 'Login'}
+                      {t.landing.login}
                     </Link>
                     <Link
                       href="/signup"
                       className="w-full px-4 py-2.5 rounded-lg text-sm font-medium text-center bg-primary text-primary-foreground"
                     >
-                      {isKo ? '무료로 시작' : 'Start Free'}
+                      {t.landing.startFree}
                     </Link>
                   </>
                 )}

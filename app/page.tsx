@@ -68,7 +68,7 @@ async function getShowcases(): Promise<{
 
     return { rainShowcases, galleryShowcases };
   } catch (error) {
-    console.error('쇼케이스 로드 오류:', error);
+    console.error('Failed to load showcases:', error);
     return { rainShowcases: [], galleryShowcases: [] };
   }
 }

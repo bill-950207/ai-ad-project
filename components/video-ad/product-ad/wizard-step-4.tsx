@@ -18,6 +18,7 @@ import Image from 'next/image'
 import { useProductAdWizard, SceneKeyframe, SceneInfo } from './wizard-context'
 import { uploadSceneKeyframeImage } from '@/lib/client/image-upload'
 import { useCredits } from '@/contexts/credit-context'
+import { useLanguage } from '@/contexts/language-context'
 import { KEYFRAME_CREDIT_COST } from '@/lib/credits'
 import { InsufficientCreditsModal } from '@/components/ui/insufficient-credits-modal'
 import {
@@ -53,6 +54,7 @@ function RegenerateModal({
   scenePrompt: string
   isLoading: boolean
 }) {
+  const { t } = useLanguage()
   const [additionalPrompt, setAdditionalPrompt] = useState('')
 
   useEffect(() => {
@@ -77,15 +79,15 @@ function RegenerateModal({
 
         <div className="space-y-4">
           <div>
-            <h3 className="text-lg font-bold text-foreground">씬 {sceneIndex + 1} 다시 생성</h3>
+            <h3 className="text-lg font-bold text-foreground">{t.productAdWizard?.step4?.regenerateScene || 'Regenerate Scene'} {sceneIndex + 1}</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              추가 프롬프트를 입력하면 기존 시나리오와 함께 반영됩니다
+              {t.productAdWizard?.step4?.regenerateDesc || 'Additional prompts will be combined with the existing scenario'}
             </p>
           </div>
 
           {/* 현재 씬 프롬프트 미리보기 */}
           <div className="p-3 bg-secondary/30 rounded-lg">
-            <p className="text-xs text-muted-foreground mb-1">현재 씬 프롬프트</p>
+            <p className="text-xs text-muted-foreground mb-1">{t.productAdWizard?.step4?.currentPrompt || 'Current Scene Prompt'}</p>
             <p className="text-sm text-foreground line-clamp-3">{scenePrompt}</p>
           </div>
 
@@ -93,13 +95,13 @@ function RegenerateModal({
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm font-medium text-foreground">
               <MessageSquarePlus className="w-4 h-4 text-muted-foreground" />
-              추가 프롬프트
-              <span className="text-xs text-muted-foreground font-normal">(선택)</span>
+              {t.productAdWizard?.step4?.additionalPrompt || 'Additional Prompt'}
+              <span className="text-xs text-muted-foreground font-normal">({t.common?.optional || 'Optional'})</span>
             </label>
             <textarea
               value={additionalPrompt}
               onChange={(e) => setAdditionalPrompt(e.target.value)}
-              placeholder="예: 더 밝은 조명으로, 배경을 심플하게..."
+              placeholder={t.productAdWizard?.step4?.additionalPromptPlaceholder || 'E.g., brighter lighting, simpler background...'}
               className="w-full px-3 py-2 text-sm bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
               rows={3}
               disabled={isLoading}
@@ -113,7 +115,7 @@ function RegenerateModal({
               disabled={isLoading}
               className="flex-1 px-4 py-2.5 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
             >
-              취소
+              {t.common?.cancel || 'Cancel'}
             </button>
             <button
               onClick={() => onConfirm(additionalPrompt)}
@@ -123,12 +125,12 @@ function RegenerateModal({
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  처리 중...
+                  {t.common?.processing || 'Processing...'}
                 </>
               ) : (
                 <>
                   <RefreshCw className="w-4 h-4" />
-                  다시 생성
+                  {t.productAdWizard?.step4?.regenerate || 'Regenerate'}
                 </>
               )}
             </button>
@@ -163,6 +165,7 @@ function SortableKeyframeCard({
   isGeneratingKeyframes: boolean
   aspectRatio: string | null
 }) {
+  const { t } = useLanguage()
   const {
     attributes,
     listeners,
@@ -213,14 +216,14 @@ function SortableKeyframeCard({
               kf.status === 'failed' ? 'bg-red-500' :
               'bg-primary animate-pulse'
             }`} />
-            <span className="text-sm font-medium text-foreground">씬 {kf.sceneIndex + 1}</span>
+            <span className="text-sm font-medium text-foreground">{t.productAdWizard?.step4?.scene || 'Scene'} {kf.sceneIndex + 1}</span>
           </div>
           {(kf.status === 'completed' || kf.status === 'failed') && (
             <button
               onClick={() => onRegenerate(kf.sceneIndex)}
               disabled={isRegenerating || isGeneratingKeyframes}
               className="p-1.5 bg-secondary/50 text-muted-foreground rounded hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50"
-              title="다시 생성"
+              title={t.productAdWizard?.step4?.regenerate || 'Regenerate'}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
             </button>
@@ -232,19 +235,19 @@ function SortableKeyframeCard({
           {kf.status === 'completed' && kf.imageUrl ? (
             <Image
               src={kf.imageUrl}
-              alt={`씬 ${kf.sceneIndex + 1}`}
+              alt={`${t.productAdWizard?.step4?.scene || 'Scene'} ${kf.sceneIndex + 1}`}
               fill
               className="object-contain"
             />
           ) : kf.status === 'failed' ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-destructive/5 to-destructive/10">
               <AlertCircle className="w-10 h-10 text-destructive mb-2" />
-              <span className="text-sm text-destructive">생성 실패</span>
+              <span className="text-sm text-destructive">{t.productAdWizard?.step4?.generationFailed || 'Generation Failed'}</span>
               <button
                 onClick={() => onRegenerate(kf.sceneIndex)}
                 className="mt-2 px-3 py-1.5 text-xs bg-destructive/20 text-destructive rounded-lg hover:bg-destructive/30 transition-colors"
               >
-                다시 시도
+                {t.common?.retry || 'Retry'}
               </button>
             </div>
           ) : (
@@ -255,7 +258,7 @@ function SortableKeyframeCard({
                   <ImageIcon className="w-4 h-4 text-primary/50" />
                 </div>
               </div>
-              <span className="text-sm text-muted-foreground mt-3">생성 중...</span>
+              <span className="text-sm text-muted-foreground mt-3">{t.productAdWizard?.step4?.generating || 'Generating...'}</span>
             </div>
           )}
         </div>
@@ -266,6 +269,7 @@ function SortableKeyframeCard({
 }
 
 export function WizardStep4() {
+  const { t } = useLanguage()
   const {
     aspectRatio,
     sceneCount,
@@ -370,7 +374,7 @@ export function WizardStep4() {
         }),
       })
 
-      if (!multiSceneRes.ok) throw new Error('멀티씬 시나리오 생성 실패')
+      if (!multiSceneRes.ok) throw new Error('Failed to generate multi-scene scenario')
 
       const multiSceneData = await multiSceneRes.json()
       const scenes: SceneInfo[] = multiSceneData.scenes
@@ -407,7 +411,7 @@ export function WizardStep4() {
         return
       }
 
-      if (!keyframeRes.ok) throw new Error('키프레임 생성 요청 실패')
+      if (!keyframeRes.ok) throw new Error('Failed to request keyframe generation')
 
       const keyframeData = await keyframeRes.json()
 
@@ -429,8 +433,8 @@ export function WizardStep4() {
       // 폴링 시작
       startKeyframePolling(initialKeyframes)
     } catch (err) {
-      console.error('멀티씬 키프레임 생성 오류:', err)
-      setError('멀티씬 키프레임 생성에 실패했습니다. 다시 시도해주세요.')
+      console.error('Error generating multi-scene keyframes:', err)
+      setError(t.productAdWizard?.step4?.errorGeneration || 'Failed to generate keyframes. Please try again.')
       setIsGeneratingKeyframes(false)
     }
   }
@@ -484,7 +488,7 @@ export function WizardStep4() {
         }),
       })
 
-      if (!keyframeRes.ok) throw new Error('키프레임 재생성 요청 실패')
+      if (!keyframeRes.ok) throw new Error('Failed to request keyframe regeneration')
 
       const keyframeData = await keyframeRes.json()
       const request = keyframeData.requests[0]
@@ -497,12 +501,12 @@ export function WizardStep4() {
       // 단일 씬 폴링 시작
       startSingleKeyframePolling(sceneIndex, request.requestId)
     } catch (err) {
-      console.error('키프레임 재생성 오류:', err)
+      console.error('Error regenerating keyframe:', err)
       updateSceneKeyframe(sceneIndex, { status: 'failed' })
       setRegeneratingSceneIndex(null)
       setIsMergingPrompt(false)
       setModalSceneIndex(null)
-      setError('키프레임 재생성에 실패했습니다.')
+      setError(t.productAdWizard?.step4?.errorRegeneration || 'Failed to regenerate keyframe.')
     }
   }
 
@@ -568,7 +572,7 @@ export function WizardStep4() {
               imageUrl: uploadResult.compressedUrl,  // WebP 이미지 표시
             })
           } catch (uploadError) {
-            console.error('이미지 R2 업로드 오류:', uploadError)
+            console.error('Error uploading image to R2:', uploadError)
             // 업로드 실패 시 원본 URL 사용
             updateSceneKeyframe(kf.sceneIndex, {
               status: 'completed',
@@ -586,7 +590,7 @@ export function WizardStep4() {
       } catch (error) {
         // 타임아웃 오류는 무시 (다음 폴링에서 재시도)
         if (error instanceof Error && error.name !== 'AbortError') {
-          console.error('키프레임 상태 폴링 오류:', error)
+          console.error('Error polling keyframe status:', error)
         }
         return { sceneIndex: kf.sceneIndex, completed: false, failed: false }
       } finally {
@@ -613,7 +617,7 @@ export function WizardStep4() {
         // 키프레임 완료 시 저장은 useEffect에서 처리 (최신 상태 보장)
 
         if (hasError) {
-          setError('일부 키프레임 생성에 실패했습니다. 실패한 씬은 다시 생성할 수 있습니다.')
+          setError(t.productAdWizard?.step4?.errorPartialFailed || 'Some keyframes failed to generate. You can regenerate failed scenes.')
         }
       }
     }
@@ -669,7 +673,7 @@ export function WizardStep4() {
               imageUrl: uploadResult.compressedUrl,  // WebP 이미지 표시
             })
           } catch (uploadError) {
-            console.error('이미지 R2 업로드 오류:', uploadError)
+            console.error('Error uploading image to R2:', uploadError)
             // 업로드 실패 시 원본 URL 사용
             updateSceneKeyframe(sceneIndex, {
               status: 'completed',
@@ -681,7 +685,7 @@ export function WizardStep4() {
           isCancelled = true
           updateSceneKeyframe(sceneIndex, { status: 'failed' })
           setRegeneratingSceneIndex(null)
-          setError('키프레임 재생성에 실패했습니다.')
+          setError(t.productAdWizard?.step4?.errorRegeneration || 'Failed to regenerate keyframe.')
         } else {
           isPollingInProgress = false
           if (!isCancelled) {
@@ -691,7 +695,7 @@ export function WizardStep4() {
       } catch (error) {
         // 타임아웃 오류는 무시 (다음 폴링에서 재시도)
         if (error instanceof Error && error.name !== 'AbortError') {
-          console.error('키프레임 재생성 폴링 오류:', error)
+          console.error('Error polling keyframe regeneration status:', error)
         }
         isPollingInProgress = false
         if (!isCancelled) {
@@ -746,9 +750,9 @@ export function WizardStep4() {
     <div className="max-w-3xl mx-auto space-y-6">
       {/* 헤더 */}
       <div className="text-center">
-        <h2 className="text-xl font-bold text-foreground">씬 키프레임 생성</h2>
+        <h2 className="text-xl font-bold text-foreground">{t.productAdWizard?.step4?.title || 'Scene Keyframe Generation'}</h2>
         <p className="text-muted-foreground mt-2">
-          각 씬의 키프레임 이미지를 생성합니다
+          {t.productAdWizard?.step4?.subtitle || 'Generate keyframe images for each scene'}
         </p>
       </div>
 
@@ -764,14 +768,14 @@ export function WizardStep4() {
             </div>
             <div className="text-center">
               <h4 className="font-medium text-foreground">
-                {sceneCount}개 씬 키프레임 생성하기
+                {t.productAdWizard?.step4?.generateKeyframes?.replace('{count}', String(sceneCount)) || `Generate ${sceneCount} Scene Keyframes`}
               </h4>
               <p className="text-sm text-muted-foreground mt-1">
-                AI가 {sceneCount}개 씬의 키프레임 이미지를 생성합니다
+                {t.productAdWizard?.step4?.generateKeyframesDesc?.replace('{count}', String(sceneCount)) || `AI will generate keyframe images for ${sceneCount} scenes`}
               </p>
               <div className="flex items-center justify-center gap-1.5 mt-2 text-sm text-primary">
                 <Coins className="w-4 h-4" />
-                <span className="font-medium">{sceneCount * KEYFRAME_CREDIT_COST} 크레딧</span>
+                <span className="font-medium">{sceneCount * KEYFRAME_CREDIT_COST} {t.common?.credits || 'Credits'}</span>
               </div>
             </div>
           </div>
@@ -786,8 +790,8 @@ export function WizardStep4() {
               <Loader2 className="w-7 h-7 text-primary animate-spin" />
             </div>
             <div className="text-center">
-              <h4 className="font-medium text-foreground mb-1">씬 키프레임 생성 중</h4>
-              <p className="text-sm text-muted-foreground">AI가 {sceneCount}개 씬의 키프레임을 생성하고 있습니다...</p>
+              <h4 className="font-medium text-foreground mb-1">{t.productAdWizard?.step4?.generatingKeyframes || 'Generating Scene Keyframes'}</h4>
+              <p className="text-sm text-muted-foreground">{t.productAdWizard?.step4?.generatingKeyframesDesc?.replace('{count}', String(sceneCount)) || `AI is generating keyframes for ${sceneCount} scenes...`}</p>
             </div>
           </div>
         </div>
@@ -799,7 +803,7 @@ export function WizardStep4() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ImageIcon className="w-4 h-4 text-muted-foreground" />
-              <h3 className="text-sm font-medium text-foreground">생성된 키프레임</h3>
+              <h3 className="text-sm font-medium text-foreground">{t.productAdWizard?.step4?.generatedKeyframes || 'Generated Keyframes'}</h3>
               <span className="text-xs text-muted-foreground">
                 ({sceneKeyframes.filter(k => k.status === 'completed').length}/{sceneKeyframes.length})
               </span>
@@ -811,7 +815,7 @@ export function WizardStep4() {
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isGeneratingKeyframes ? 'animate-spin' : ''}`} />
-                전체 다시 생성
+                {t.productAdWizard?.step4?.regenerateAll || 'Regenerate All'}
               </button>
             )}
           </div>
@@ -888,7 +892,7 @@ export function WizardStep4() {
             className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            이전
+            {t.common?.prev || 'Previous'}
           </button>
         )}
         <button
@@ -896,7 +900,7 @@ export function WizardStep4() {
           disabled={!canProceedToStep5()}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          다음
+          {t.common?.next || 'Next'}
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
@@ -904,7 +908,7 @@ export function WizardStep4() {
       {/* 안내 메시지 */}
       {hasKeyframes && !allKeyframesCompleted && !isGeneratingKeyframes && (
         <p className="text-center text-sm text-muted-foreground">
-          모든 씬 키프레임이 완료되면 다음 단계로 진행할 수 있습니다
+          {t.productAdWizard?.step4?.waitForCompletion || 'You can proceed to the next step once all scene keyframes are completed'}
         </p>
       )}
 
@@ -925,7 +929,7 @@ export function WizardStep4() {
           onClose={() => setShowInsufficientCreditsModal(false)}
           requiredCredits={creditsInfo.required}
           availableCredits={creditsInfo.available}
-          featureName="씬 키프레임 생성"
+          featureName={t.productAdWizard?.step4?.featureName || 'Scene Keyframe Generation'}
         />
       )}
     </div>

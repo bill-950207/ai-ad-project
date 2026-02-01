@@ -27,18 +27,6 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { AvatarOptions } from '@/lib/avatar/prompt-builder'
-import {
-  genderLabels,
-  ageLabels,
-  ethnicityLabels,
-  heightLabels,
-  bodyTypeLabels,
-  hairStyleLabels,
-  hairColorLabels,
-  outfitStyleLabels,
-  backgroundLabels,
-  poseLabels,
-} from '@/lib/avatar/option-labels'
 
 // ============================================================
 // 타입 정의
@@ -82,17 +70,51 @@ interface ImageAd {
 interface GeneratingAnimationProps {
   isUploading?: boolean
   avatarName?: string
+  detailT: AvatarDetailTranslation | undefined
 }
 
-function GeneratingAnimation({ isUploading = false, avatarName }: GeneratingAnimationProps) {
+interface AvatarDetailTranslation {
+  notFound?: string
+  notFoundDesc?: string
+  backToList?: string
+  generatingTitle?: string
+  uploadingTitle?: string
+  pleaseWait?: string
+  complete?: string
+  generatingSteps?: {
+    analyzingPrompt?: string
+    preparingModel?: string
+    generatingImage?: string
+    refiningDetails?: string
+  }
+  failedTitle?: string
+  unknownError?: string
+  regenerate?: string
+  downloadOriginal?: string
+  imageAd?: string
+  videoAd?: string
+  adsWithAvatar?: string
+  noAdsYet?: string
+  createFirstAd?: string
+  createFirst?: string
+  createNewAd?: string
+  waiting?: string
+  generating?: string
+  failed?: string
+  adImage?: string
+  noProduct?: string
+}
+
+function GeneratingAnimation({ isUploading = false, avatarName, detailT }: GeneratingAnimationProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [progress, setProgress] = useState(0)
 
+  const stepsT = detailT?.generatingSteps
   const steps = [
-    { icon: Sparkles, text: '프롬프트 분석 중', color: 'text-violet-400' },
-    { icon: Wand2, text: 'AI 모델 준비 중', color: 'text-blue-400' },
-    { icon: Palette, text: '이미지 생성 중', color: 'text-cyan-400' },
-    { icon: Layers, text: '디테일 다듬는 중', color: 'text-emerald-400' },
+    { icon: Sparkles, text: stepsT?.analyzingPrompt || 'Analyzing prompt', color: 'text-violet-400' },
+    { icon: Wand2, text: stepsT?.preparingModel || 'Preparing AI model', color: 'text-blue-400' },
+    { icon: Palette, text: stepsT?.generatingImage || 'Generating image', color: 'text-cyan-400' },
+    { icon: Layers, text: stepsT?.refiningDetails || 'Refining details', color: 'text-emerald-400' },
   ]
 
   useEffect(() => {
@@ -205,10 +227,10 @@ function GeneratingAnimation({ isUploading = false, avatarName }: GeneratingAnim
             </p>
           )}
           <h2 className="text-2xl font-bold text-foreground">
-            {isUploading ? '고품질 이미지 저장 중' : 'AI가 아바타를 생성하고 있어요'}
+            {isUploading ? (detailT?.uploadingTitle || 'Saving high quality image') : (detailT?.generatingTitle || 'AI is generating your avatar')}
           </h2>
           <p className={`text-base ${steps[currentStep].color} font-medium transition-all duration-300`}>
-            {isUploading ? '잠시만 기다려주세요...' : steps[currentStep].text}
+            {isUploading ? (detailT?.pleaseWait || 'Please wait...') : steps[currentStep].text}
           </p>
         </div>
 
@@ -221,7 +243,7 @@ function GeneratingAnimation({ isUploading = false, avatarName }: GeneratingAnim
             />
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            {Math.round(progress)}% 완료
+            {Math.round(progress)}% {detailT?.complete || 'complete'}
           </p>
         </div>
       </div>
@@ -233,25 +255,38 @@ function GeneratingAnimation({ isUploading = false, avatarName }: GeneratingAnim
 // 옵션 표시 컴포넌트
 // ============================================================
 
-function OptionTags({ options }: { options: AvatarOptions }) {
+interface AvatarTranslation {
+  options?: Record<string, string>
+  optionLabels?: Record<string, string>
+  generationOptions?: string
+  prompt?: string
+  myAvatars?: string
+  detail?: AvatarDetailTranslation
+  [key: string]: unknown
+}
+
+function OptionTags({ options, avatarT }: { options: AvatarOptions; avatarT: AvatarTranslation | undefined }) {
   const tags: { label: string; value: string }[] = []
 
-  if (options.gender) tags.push({ label: 'Gender', value: genderLabels[options.gender] || options.gender })
-  if (options.age) tags.push({ label: 'Age', value: ageLabels[options.age] || options.age })
-  if (options.ethnicity) tags.push({ label: 'Ethnicity', value: ethnicityLabels[options.ethnicity] || options.ethnicity })
-  if (options.height) tags.push({ label: 'Height', value: heightLabels[options.height] || options.height })
-  if (options.bodyType) tags.push({ label: 'Body Type', value: bodyTypeLabels[options.bodyType] || options.bodyType })
-  if (options.hairStyle) tags.push({ label: 'Hair', value: hairStyleLabels[options.hairStyle] || options.hairStyle })
+  const optionsT = avatarT?.options || {}
+  const labelsT = avatarT?.optionLabels || {}
+
+  if (options.gender) tags.push({ label: labelsT.gender || 'Gender', value: optionsT[options.gender] || options.gender })
+  if (options.age) tags.push({ label: labelsT.age || 'Age', value: optionsT[options.age] || options.age })
+  if (options.ethnicity) tags.push({ label: labelsT.ethnicity || 'Ethnicity', value: optionsT[options.ethnicity] || options.ethnicity })
+  if (options.height) tags.push({ label: labelsT.height || 'Height', value: optionsT[`height${options.height.charAt(0).toUpperCase() + options.height.slice(1)}`] || options.height })
+  if (options.bodyType) tags.push({ label: labelsT.bodyType || 'Body Type', value: optionsT[`body${options.bodyType.charAt(0).toUpperCase() + options.bodyType.slice(1)}`] || options.bodyType })
+  if (options.hairStyle) tags.push({ label: labelsT.hairStyle || 'Hair', value: optionsT[`hair${options.hairStyle.charAt(0).toUpperCase() + options.hairStyle.slice(1)}`] || options.hairStyle })
   if (options.hairColor) {
     if (options.hairColor === 'custom' && options.customHairColor) {
-      tags.push({ label: 'Hair Color', value: options.customHairColor })
+      tags.push({ label: labelsT.hairColor || 'Hair Color', value: options.customHairColor })
     } else {
-      tags.push({ label: 'Hair Color', value: hairColorLabels[options.hairColor] || options.hairColor })
+      tags.push({ label: labelsT.hairColor || 'Hair Color', value: optionsT[options.hairColor] || options.hairColor })
     }
   }
-  if (options.outfitStyle) tags.push({ label: 'Outfit', value: outfitStyleLabels[options.outfitStyle] || options.outfitStyle })
-  if (options.background) tags.push({ label: 'Background', value: backgroundLabels[options.background] || options.background })
-  if (options.pose) tags.push({ label: 'Pose', value: poseLabels[options.pose] || options.pose })
+  if (options.outfitStyle) tags.push({ label: labelsT.outfitStyle || 'Outfit', value: optionsT[`outfit${options.outfitStyle.charAt(0).toUpperCase() + options.outfitStyle.slice(1)}`] || options.outfitStyle })
+  if (options.background) tags.push({ label: labelsT.background || 'Background', value: optionsT[`bg${options.background.charAt(0).toUpperCase() + options.background.slice(1)}`] || options.background })
+  if (options.pose) tags.push({ label: labelsT.pose || 'Pose', value: options.pose })
 
   if (tags.length === 0) return null
 
@@ -274,10 +309,21 @@ function OptionTags({ options }: { options: AvatarOptions }) {
 // 메인 컴포넌트
 // ============================================================
 
+// Language to locale mapping
+const LANGUAGE_LOCALE_MAP: Record<string, string> = {
+  ko: 'ko-KR',
+  en: 'en-US',
+  ja: 'ja-JP',
+  zh: 'zh-CN',
+}
+
 export default function AvatarDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const router = useRouter()
+
+  const avatarT = t.avatar as AvatarTranslation | undefined
+  const detailT = avatarT?.detail
   const [avatar, setAvatar] = useState<Avatar | null>(null)
   const [imageAds, setImageAds] = useState<ImageAd[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -296,7 +342,7 @@ export default function AvatarDetailPage() {
         router.push('/dashboard/avatar')
       }
     } catch (error) {
-      console.error('아바타 조회 오류:', error)
+      console.error('Avatar fetch error:', error)
     } finally {
       setIsLoading(false)
     }
@@ -310,7 +356,7 @@ export default function AvatarDetailPage() {
         setImageAds(data.ads || [])
       }
     } catch (error) {
-      console.error('이미지 광고 조회 오류:', error)
+      console.error('Image ads fetch error:', error)
     }
   }
 
@@ -332,7 +378,7 @@ export default function AvatarDetailPage() {
         setAvatar(data.avatar)
       }
     } catch (error) {
-      console.error('클라이언트 업로드 오류:', error)
+      console.error('Client upload error:', error)
     } finally {
       setIsUploading(false)
       uploadingRef.current = false
@@ -361,7 +407,7 @@ export default function AvatarDetailPage() {
           setAvatar(data.avatar)
         }
       } catch (error) {
-        console.error('상태 폴링 오류:', error)
+        console.error('Status polling error:', error)
       }
     }
 
@@ -379,7 +425,7 @@ export default function AvatarDetailPage() {
         router.push('/dashboard/avatar')
       }
     } catch (error) {
-      console.error('삭제 오류:', error)
+      console.error('Delete error:', error)
     } finally {
       setIsDeleting(false)
     }
@@ -400,7 +446,7 @@ export default function AvatarDetailPage() {
       document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
     } catch (error) {
-      console.error('다운로드 오류:', error)
+      console.error('Download error:', error)
     }
   }
 
@@ -424,14 +470,14 @@ export default function AvatarDetailPage() {
           <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-secondary/50 flex items-center justify-center">
             <ImageIcon className="w-10 h-10 text-muted-foreground" />
           </div>
-          <h2 className="text-xl font-semibold text-foreground mb-2">아바타를 찾을 수 없습니다</h2>
-          <p className="text-muted-foreground mb-6">삭제되었거나 존재하지 않는 아바타입니다.</p>
+          <h2 className="text-xl font-semibold text-foreground mb-2">{detailT?.notFound || 'Avatar not found'}</h2>
+          <p className="text-muted-foreground mb-6">{detailT?.notFoundDesc || 'This avatar has been deleted or does not exist.'}</p>
           <Link
             href="/dashboard/avatar"
             className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            목록으로 돌아가기
+            {detailT?.backToList || 'Back to list'}
           </Link>
         </div>
       </div>
@@ -452,6 +498,7 @@ export default function AvatarDetailPage() {
         <GeneratingAnimation
           isUploading={avatar.status === 'UPLOADING' || isUploading}
           avatarName={avatar.name}
+          detailT={detailT}
         />
       </div>
     )
@@ -474,9 +521,9 @@ export default function AvatarDetailPage() {
               <AlertCircle className="w-10 h-10 text-destructive" />
             </div>
             <h2 className="text-xl font-semibold text-foreground mb-2">{avatar.name}</h2>
-            <p className="text-destructive font-medium mb-2">생성에 실패했습니다</p>
+            <p className="text-destructive font-medium mb-2">{detailT?.failedTitle || 'Generation failed'}</p>
             <p className="text-sm text-muted-foreground mb-8">
-              {avatar.error_message || '알 수 없는 오류가 발생했습니다. 다시 시도해 주세요.'}
+              {avatar.error_message || (detailT?.unknownError || 'An unknown error occurred. Please try again.')}
             </p>
             <div className="flex items-center justify-center gap-3">
               <Link
@@ -484,7 +531,7 @@ export default function AvatarDetailPage() {
                 className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors"
               >
                 <Sparkles className="w-4 h-4" />
-                다시 생성하기
+                {detailT?.regenerate || 'Regenerate'}
               </Link>
               <button
                 onClick={handleDelete}
@@ -492,7 +539,7 @@ export default function AvatarDetailPage() {
                 className="inline-flex items-center gap-2 px-6 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-destructive/20 hover:text-destructive transition-colors disabled:opacity-50"
               >
                 <Trash2 className="w-4 h-4" />
-                삭제
+                {t.common?.delete || 'Delete'}
               </button>
             </div>
           </div>
@@ -543,7 +590,7 @@ export default function AvatarDetailPage() {
                       className="flex items-center gap-2 px-4 py-2.5 bg-white/10 backdrop-blur-sm text-white rounded-xl font-medium hover:bg-white/20 transition-colors"
                     >
                       <Download className="w-4 h-4" />
-                      원본 다운로드
+                      {detailT?.downloadOriginal || 'Download Original'}
                     </button>
                     <button
                       onClick={handleDelete}
@@ -551,7 +598,7 @@ export default function AvatarDetailPage() {
                       className="flex items-center gap-2 px-4 py-2.5 bg-white/10 backdrop-blur-sm text-white rounded-xl font-medium hover:bg-red-500/50 transition-colors disabled:opacity-50"
                     >
                       <Trash2 className="w-4 h-4" />
-                      삭제
+                      {t.common?.delete || 'Delete'}
                     </button>
                   </div>
                 </div>
@@ -571,7 +618,7 @@ export default function AvatarDetailPage() {
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
               <Calendar className="w-4 h-4" />
               <span>
-                {new Date(avatar.created_at).toLocaleDateString('ko-KR', {
+                {new Date(avatar.created_at).toLocaleDateString(LANGUAGE_LOCALE_MAP[language] || 'en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
@@ -586,10 +633,10 @@ export default function AvatarDetailPage() {
               <>
                 <div className="border-t border-border pt-5">
                   <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                    {avatar.options ? 'Generation Options' : 'Prompt'}
+                    {avatar.options ? (avatarT?.generationOptions || 'Generation Options') : (avatarT?.prompt || 'Prompt')}
                   </h3>
                   {avatar.options ? (
-                    <OptionTags options={avatar.options} />
+                    <OptionTags options={avatar.options} avatarT={avatarT} />
                   ) : (
                     <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
                       {avatar.prompt}
@@ -607,14 +654,14 @@ export default function AvatarDetailPage() {
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground border border-border rounded-xl font-medium hover:bg-muted transition-colors"
             >
               <ImageIcon className="w-4 h-4" />
-              이미지 광고
+              {detailT?.imageAd || 'Image Ad'}
             </Link>
             <Link
               href={`/video-ad-create?avatar=${avatar.id}`}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground border border-border rounded-xl font-medium hover:bg-muted transition-colors"
             >
               <Video className="w-4 h-4" />
-              영상 광고
+              {detailT?.videoAd || 'Video Ad'}
             </Link>
           </div>
         </div>
@@ -627,10 +674,10 @@ export default function AvatarDetailPage() {
             <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
               <ImageIcon className="w-5 h-5 text-primary" />
             </div>
-            이 아바타로 제작된 광고
+            {detailT?.adsWithAvatar || 'Ads created with this avatar'}
             {imageAds.length > 0 && (
               <span className="text-sm font-normal text-muted-foreground">
-                ({imageAds.length}개)
+                ({imageAds.length})
               </span>
             )}
           </h2>
@@ -639,7 +686,7 @@ export default function AvatarDetailPage() {
               href={`/dashboard/image-ad?avatar=${avatar.id}`}
               className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
             >
-              새 광고 만들기 →
+              {detailT?.createNewAd || 'Create New Ad'} →
             </Link>
           )}
         </div>
@@ -649,14 +696,14 @@ export default function AvatarDetailPage() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-secondary/50 flex items-center justify-center">
               <ImageIcon className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-foreground mb-2">아직 제작된 광고가 없어요</h3>
-            <p className="text-muted-foreground mb-6">이 아바타로 첫 번째 광고를 만들어 보세요.</p>
+            <h3 className="text-lg font-medium text-foreground mb-2">{detailT?.noAdsYet || 'No ads created yet'}</h3>
+            <p className="text-muted-foreground mb-6">{detailT?.createFirstAd || 'Create your first ad with this avatar.'}</p>
             <Link
               href={`/dashboard/image-ad?avatar=${avatar.id}`}
               className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors"
             >
               <Sparkles className="w-4 h-4" />
-              첫 광고 만들기
+              {detailT?.createFirst || 'Create First Ad'}
             </Link>
           </div>
         ) : (
@@ -671,7 +718,7 @@ export default function AvatarDetailPage() {
                 {ad.status === 'COMPLETED' && (ad.image_urls?.[0] || ad.image_url) ? (
                   <img
                     src={ad.image_urls?.[0] || ad.image_url || ''}
-                    alt={ad.ad_products?.name || '광고 이미지'}
+                    alt={ad.ad_products?.name || (detailT?.adImage || 'Ad image')}
                     className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 ) : (
@@ -680,13 +727,13 @@ export default function AvatarDetailPage() {
                       <>
                         <Loader2 className="w-6 h-6 text-primary animate-spin" />
                         <span className="mt-2 text-xs text-muted-foreground">
-                          {ad.status === 'IN_QUEUE' ? '대기 중' : '생성 중'}
+                          {ad.status === 'IN_QUEUE' ? (detailT?.waiting || 'Waiting') : (detailT?.generating || 'Generating')}
                         </span>
                       </>
                     ) : (
                       <>
                         <AlertCircle className="w-6 h-6 text-destructive" />
-                        <span className="mt-2 text-xs text-destructive">실패</span>
+                        <span className="mt-2 text-xs text-destructive">{detailT?.failed || 'Failed'}</span>
                       </>
                     )}
                   </div>
@@ -696,7 +743,7 @@ export default function AvatarDetailPage() {
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <div className="absolute bottom-0 left-0 right-0 p-3">
                     <p className="text-sm text-white font-medium truncate">
-                      {ad.ad_products?.name || '제품 없음'}
+                      {ad.ad_products?.name || (detailT?.noProduct || 'No product')}
                     </p>
                     <p className="text-xs text-white/60">
                       {new Date(ad.created_at).toLocaleDateString()}

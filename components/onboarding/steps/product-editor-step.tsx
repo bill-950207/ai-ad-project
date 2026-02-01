@@ -12,6 +12,19 @@ import { Loader2, ZoomIn, ZoomOut, RotateCcw, Check } from 'lucide-react'
 import { useOnboarding, OnboardingProduct } from '../onboarding-context'
 import { useLanguage } from '@/contexts/language-context'
 
+// Translation type for product editor step
+type ProductEditorStepT = {
+  loadingImage?: string
+  compareAndAdjust?: string
+  reset?: string
+  saving?: string
+  complete?: string
+  imageLoadFailed?: string
+  imageProcessingFailed?: string
+  cannotFetchProduct?: string
+  errorOccurred?: string
+}
+
 // 기본값
 const DEFAULT_SCALE = 1.0
 const MIN_SCALE = 0.1
@@ -21,21 +34,9 @@ const SCALE_STEP = 0.05
 // 참조 아바타 이미지
 const REFERENCE_AVATAR_URL = 'https://pub-ec68419ff8bc464ca734a0ddb80a2823.r2.dev/avatars/compressed/5e0f3953-0983-492c-9f47-0410e584849e_1767873505794.webp'
 
-type ProductEditorT = {
-  loadError?: string
-  instruction?: string
-  loading?: string
-  saveError?: string
-  processingFailed?: string
-  fetchError?: string
-  genericError?: string
-  saving?: string
-  complete?: string
-}
-
 export function ProductEditorStep() {
   const { t } = useLanguage()
-  const editorT = (t.onboarding as { productEditor?: ProductEditorT } | undefined)?.productEditor
+  const editorT = t.onboarding?.productEditorStep as ProductEditorStepT | undefined
 
   const {
     newProductId,
@@ -65,11 +66,11 @@ export function ProductEditorStep() {
       setIsLoading(false)
     }
     img.onerror = () => {
-      setEditorError(editorT?.loadError || 'Image load failed')
+      setEditorError(editorT?.imageLoadFailed || 'Image load failed')
       setIsLoading(false)
     }
     img.src = productRembgTempUrl
-  }, [productRembgTempUrl, editorT?.loadError])
+  }, [productRembgTempUrl])
 
   // 캔버스 표시 크기 계산
   const getDisplaySize = useCallback(() => {
@@ -146,20 +147,20 @@ export function ProductEditorStep() {
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || editorT?.processingFailed || 'Image processing failed')
+        throw new Error(data.error || (editorT?.imageProcessingFailed || 'Image processing failed'))
       }
 
       // 완료된 제품 정보 가져오기
       const productRes = await fetch(`/api/ad-products/${newProductId}`)
-      if (!productRes.ok) throw new Error(editorT?.fetchError || 'Cannot fetch product info')
+      if (!productRes.ok) throw new Error(editorT?.cannotFetchProduct || 'Cannot fetch product info')
 
       const productData = await productRes.json()
       const product: OnboardingProduct = productData.product
 
       onProductEditingComplete(product)
     } catch (err) {
-      console.error(editorT?.saveError || 'Save error:', err)
-      setEditorError(err instanceof Error ? err.message : editorT?.genericError || 'An error occurred')
+      console.error('Save error:', err)
+      setEditorError(err instanceof Error ? err.message : (editorT?.errorOccurred || 'An error occurred'))
     } finally {
       setIsSaving(false)
     }
@@ -172,9 +173,7 @@ export function ProductEditorStep() {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
-        <p className="text-sm text-muted-foreground">
-          {editorT?.loading || 'Loading image...'}
-        </p>
+        <p className="text-sm text-muted-foreground">{editorT?.loadingImage || 'Loading image...'}</p>
       </div>
     )
   }
@@ -183,7 +182,7 @@ export function ProductEditorStep() {
     <div className="space-y-4">
       {/* 안내 메시지 */}
       <p className="text-sm text-muted-foreground text-center">
-        {editorT?.instruction || 'Adjust product size while comparing with avatar'}
+        {editorT?.compareAndAdjust || 'Adjust product size while comparing with avatar'}
       </p>
 
       {/* 편집 영역 */}
@@ -249,7 +248,7 @@ export function ProductEditorStep() {
           <button
             onClick={handleReset}
             className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors ml-1"
-            title="Reset"
+            title={editorT?.reset || 'Reset'}
           >
             <RotateCcw className="w-4 h-4 text-foreground" />
           </button>

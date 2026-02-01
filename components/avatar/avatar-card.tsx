@@ -86,7 +86,7 @@ export function AvatarCard({ avatar, onDelete, onStatusUpdate }: AvatarCardProps
         onStatusUpdate(data.avatar)
       }
     } catch (error) {
-      console.error('클라이언트 업로드 오류:', error)
+      console.error('Client upload error:', error)
     } finally {
       setIsUploading(false)
       uploadingRef.current = false
@@ -124,7 +124,7 @@ export function AvatarCard({ avatar, onDelete, onStatusUpdate }: AvatarCardProps
       PENDING: t.avatar.status.pending,
       IN_QUEUE: t.avatar.status.inQueue,
       IN_PROGRESS: t.avatar.status.inProgress,
-      UPLOADING: t.avatar.status.uploading || '업로드 중',
+      UPLOADING: t.avatar.status.uploading || 'Uploading',
       COMPLETED: t.avatar.status.completed,
       FAILED: t.avatar.status.failed,
       CANCELLED: t.avatar.status.cancelled,
@@ -220,7 +220,7 @@ export function AvatarCard({ avatar, onDelete, onStatusUpdate }: AvatarCardProps
                   <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto mb-2 relative" />
                 </div>
                 {isUploading && (
-                  <p className="text-xs text-muted-foreground">{t.avatar.status.uploading || '업로드 중...'}</p>
+                  <p className="text-xs text-muted-foreground">{t.avatar.status.uploading || 'Uploading...'}</p>
                 )}
               </div>
             ) : (

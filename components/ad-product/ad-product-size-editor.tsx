@@ -57,7 +57,7 @@ export function AdProductSizeEditor({ productId, rembgImageUrl, onComplete }: Ad
       setIsLoading(false)
     }
     img.onerror = () => {
-      setError('이미지 로드 실패')
+      setError(t.adProduct?.imageLoadFailed || 'Image load failed')
       setIsLoading(false)
     }
     img.src = rembgImageUrl
@@ -147,8 +147,8 @@ export function AdProductSizeEditor({ productId, rembgImageUrl, onComplete }: Ad
 
       onComplete()
     } catch (err) {
-      console.error('저장 오류:', err)
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      console.error('Save error:', err)
+      setError(err instanceof Error ? err.message : (t.common?.error || 'An error occurred'))
     } finally {
       setIsSaving(false)
     }
@@ -171,10 +171,10 @@ export function AdProductSizeEditor({ productId, rembgImageUrl, onComplete }: Ad
         {/* 헤더 */}
         <div className="p-4 border-b border-border">
           <h2 className="text-lg font-semibold text-foreground">
-            {t.adProduct?.adjustSize || '제품 크기 조절'}
+            {t.adProduct?.adjustSize || 'Adjust Product Size'}
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            {t.adProduct?.adjustSizeDesc || '아바타와 비교하면서 제품 크기를 조절하세요'}
+            {t.adProduct?.adjustSizeDesc || 'Adjust product size while comparing with avatar'}
           </p>
         </div>
 
@@ -183,7 +183,7 @@ export function AdProductSizeEditor({ productId, rembgImageUrl, onComplete }: Ad
           <div className="flex justify-center">
             {/* 아바타 위에 제품 오버레이 */}
             <div className="relative max-w-md w-full">
-              <p className="text-xs text-muted-foreground mb-2 text-center">아바타 위에 제품 크기 비교</p>
+              <p className="text-xs text-muted-foreground mb-2 text-center">{t.adProduct?.compareProductSize || 'Compare product size with avatar'}</p>
               <div
                 ref={canvasRef}
                 className="relative aspect-[1024/1536] bg-[#1a1a2e] rounded-lg overflow-hidden"
@@ -279,7 +279,7 @@ export function AdProductSizeEditor({ productId, rembgImageUrl, onComplete }: Ad
             {isSaving ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>저장 중...</span>
+                <span>{t.common?.saving || 'Saving...'}</span>
               </>
             ) : (
               <>

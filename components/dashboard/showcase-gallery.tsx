@@ -289,7 +289,7 @@ export function ShowcaseGallery() {
         setHasMore(nextImageOffset < imageCount || nextVideoOffset < videoCount)
       }
     } catch (error) {
-      console.error('쇼케이스 로드 오류:', error)
+      console.error('Failed to load showcases:', error)
     } finally {
       setIsLoading(false)
       setIsLoadingMore(false)
@@ -335,7 +335,7 @@ export function ShowcaseGallery() {
         <div className="flex items-center gap-2">
           <div className="w-1 h-4 bg-primary rounded-full" />
           <h2 className="text-sm font-semibold text-foreground">
-            {t.dashboard?.showcase?.browse || '광고 둘러보기'}
+            {t.dashboard?.showcase?.browse || 'Browse Ads'}
           </h2>
         </div>
         <div className="flex items-center justify-center py-12">
@@ -356,7 +356,7 @@ export function ShowcaseGallery() {
       <div className="flex items-center gap-2">
         <div className="w-1 h-4 bg-primary rounded-full" />
         <h2 className="text-sm font-semibold text-foreground">
-          {t.dashboard?.showcase?.browse || '광고 둘러보기'}
+          {t.dashboard?.showcase?.browse || 'Browse Ads'}
         </h2>
       </div>
 

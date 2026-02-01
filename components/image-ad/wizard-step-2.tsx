@@ -15,36 +15,10 @@ import {
 } from 'lucide-react'
 import { useImageAdWizard, SettingMethod } from './wizard-context'
 import { compressImage } from '@/lib/image/compress-client'
-
-const METHOD_OPTIONS: {
-  method: SettingMethod
-  icon: typeof Edit3
-  title: string
-  description: string
-  badge?: string
-}[] = [
-  {
-    method: 'direct',
-    icon: Edit3,
-    title: 'Direct Input',
-    description: 'Manually select all options like pose, background, and lighting',
-  },
-  {
-    method: 'ai-auto',
-    icon: Bot,
-    title: 'AI Auto Settings',
-    description: 'AI analyzes product and avatar to recommend optimal settings',
-    badge: 'Recommended',
-  },
-  {
-    method: 'reference',
-    icon: ImageIcon,
-    title: 'Reference Image',
-    description: 'Upload an existing ad image and AI will analyze its style',
-  },
-]
+import { useLanguage } from '@/contexts/language-context'
 
 export function WizardStep2() {
+  const { t } = useLanguage()
   const {
     settingMethod,
     setSettingMethod,
@@ -59,6 +33,35 @@ export function WizardStep2() {
     goToNextStep,
     goToPrevStep,
   } = useImageAdWizard()
+
+  // Method options with i18n
+  const methodOptions: {
+    method: SettingMethod
+    icon: typeof Edit3
+    title: string
+    description: string
+    badge?: string
+  }[] = [
+    {
+      method: 'direct',
+      icon: Edit3,
+      title: t.imageAd?.method?.manual || 'Manual Input',
+      description: t.imageAd?.method?.manualDesc || 'Select all options manually: pose, background, lighting, etc.',
+    },
+    {
+      method: 'ai-auto',
+      icon: Bot,
+      title: t.imageAd?.method?.ai || 'AI Auto Settings',
+      description: t.imageAd?.method?.aiDesc || 'AI analyzes product and avatar to recommend optimal settings',
+      badge: t.imageAd?.method?.recommended || 'Recommended',
+    },
+    {
+      method: 'reference',
+      icon: ImageIcon,
+      title: t.imageAd?.method?.reference || 'Reference Image',
+      description: t.imageAd?.method?.referenceDesc || 'Upload an existing ad image for AI to analyze the style',
+    },
+  ]
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
@@ -95,7 +98,7 @@ export function WizardStep2() {
       })
 
       if (!uploadRes.ok) {
-        throw new Error('업로드 실패')
+        throw new Error('Upload failed')
       }
 
       const { url } = await uploadRes.json()
@@ -104,8 +107,8 @@ export function WizardStep2() {
       // 업로드 성공 후 자동 분석
       await analyzeReference(url)
     } catch (error) {
-      console.error('참조 이미지 업로드 오류:', error)
-      alert('이미지 업로드 중 오류가 발생했습니다')
+      console.error('Reference image upload error:', error)
+      alert(t.imageAd?.method?.uploadError || 'An error occurred while uploading the image')
       clearReference()
     } finally {
       setIsUploading(false)
@@ -126,7 +129,7 @@ export function WizardStep2() {
       })
 
       if (!res.ok) {
-        throw new Error('분석 실패')
+        throw new Error('Analysis failed')
       }
 
       const result = await res.json()
@@ -136,8 +139,8 @@ export function WizardStep2() {
         analyzedOptions: result.analyzedOptions,
       })
     } catch (error) {
-      console.error('참조 이미지 분석 오류:', error)
-      alert('이미지 분석 중 오류가 발생했습니다')
+      console.error('Reference image analysis error:', error)
+      alert(t.imageAd?.method?.analysisError || 'An error occurred while analyzing the image')
     } finally {
       setIsAnalyzingReference(false)
     }
@@ -178,14 +181,14 @@ export function WizardStep2() {
       {/* 설정 방식 선택 */}
       <div className="bg-card border border-border rounded-xl p-6">
         <h2 className="text-lg font-semibold text-foreground mb-2">
-          광고 설정 방식 선택
+          {t.imageAd?.method?.title || 'Select Setting Method'}
         </h2>
         <p className="text-sm text-muted-foreground mb-6">
-          광고의 상세 옵션을 어떤 방식으로 설정할지 선택하세요
+          {t.imageAd?.method?.subtitle || 'Choose how to configure detailed options for your ad'}
         </p>
 
         <div className="space-y-4">
-          {METHOD_OPTIONS.map(({ method, icon: Icon, title, description, badge }) => {
+          {methodOptions.map(({ method, icon: Icon, title, description, badge }) => {
             const isSelected = settingMethod === method
             return (
               <button
@@ -233,10 +236,10 @@ export function WizardStep2() {
         <div className="bg-card border border-border rounded-xl p-6">
           <h2 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
             <ImageIcon className="w-5 h-5" />
-            참조 광고 이미지
+            {t.imageAd?.method?.referenceTitle || 'Reference Ad Image'}
           </h2>
           <p className="text-sm text-muted-foreground mb-4">
-            참조할 광고 이미지를 업로드하면 AI가 스타일을 분석합니다
+            {t.imageAd?.method?.referenceSubtitle || 'Upload a reference ad image for AI to analyze the style'}
           </p>
 
           {/* 숨겨진 파일 입력 */}
@@ -254,14 +257,14 @@ export function WizardStep2() {
                 <div className="w-full aspect-video bg-secondary/30 rounded-xl overflow-hidden">
                   <img
                     src={localPreview || referenceUrl || ''}
-                    alt="참조 이미지"
+                    alt={t.imageAd?.method?.referenceAlt || 'Reference image'}
                     className="w-full h-full object-contain"
                   />
                   {(isUploading || isAnalyzingReference) && (
                     <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-2">
                       <Loader2 className="w-8 h-8 text-white animate-spin" />
                       <span className="text-sm text-white">
-                        {isUploading ? '업로드 중...' : '스타일 분석 중...'}
+                        {isUploading ? t.imageAd?.method?.uploading || 'Uploading...' : t.imageAd?.method?.analyzing || 'Analyzing style...'}
                       </span>
                     </div>
                   )}
@@ -280,12 +283,12 @@ export function WizardStep2() {
                 <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Sparkles className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium text-primary">AI 분석 결과</span>
+                    <span className="text-sm font-medium text-primary">{t.imageAd?.method?.aiAnalysis || 'AI Analysis Results'}</span>
                   </div>
                   <p className="text-sm text-foreground">{analysisResult.overallStyle}</p>
                   {analysisResult.suggestedPrompt && (
                     <p className="text-xs text-muted-foreground mt-2">
-                      추천 스타일: {analysisResult.suggestedPrompt}
+                      {t.imageAd?.method?.recommendedStyle || 'Recommended Style:'} {analysisResult.suggestedPrompt}
                     </p>
                   )}
                 </div>
@@ -300,9 +303,9 @@ export function WizardStep2() {
                 <Upload className="w-8 h-8 text-muted-foreground" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium text-foreground">이미지 업로드</p>
+                <p className="text-sm font-medium text-foreground">{t.imageAd?.method?.uploadImage || 'Upload Image'}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  참조할 광고 이미지를 업로드하세요
+                  {t.imageAd?.method?.uploadImageDesc || 'Upload a reference ad image'}
                 </p>
               </div>
             </button>
@@ -318,11 +321,9 @@ export function WizardStep2() {
               <Bot className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h3 className="font-medium text-foreground mb-1">AI가 최적의 설정을 추천합니다</h3>
+              <h3 className="font-medium text-foreground mb-1">{t.imageAd?.method?.aiWillRecommend || 'AI will recommend optimal settings'}</h3>
               <p className="text-sm text-muted-foreground">
-                선택한 제품{selectedProduct ? ` "${selectedProduct.name}"` : ''}과 광고 유형을 분석하여
-                포즈, 배경, 조명, 분위기, 의상 등을 자동으로 설정합니다.
-                다음 단계에서 AI 추천을 확인하고 필요시 수정할 수 있습니다.
+                {(t.imageAd?.method?.aiWillAnalyze || 'Based on {product} product, AI will recommend the best ad settings.').replace('{product}', selectedProduct?.name || '')}
               </p>
             </div>
           </div>
@@ -336,7 +337,7 @@ export function WizardStep2() {
           className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium border border-border hover:bg-secondary/50 transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
-          이전 단계
+          {t.imageAd?.wizard?.prevStep || 'Previous Step'}
         </button>
 
         <button
@@ -348,7 +349,7 @@ export function WizardStep2() {
               : 'bg-secondary text-muted-foreground cursor-not-allowed'
           }`}
         >
-          다음 단계
+          {t.imageAd?.wizard?.nextStep || 'Next Step'}
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>
@@ -356,9 +357,9 @@ export function WizardStep2() {
       {/* 유효성 메시지 */}
       {!canProceed() && settingMethod && (
         <p className="text-center text-sm text-muted-foreground">
-          {settingMethod === 'reference' && !referenceUrl && '참조 이미지를 업로드해주세요'}
-          {settingMethod === 'reference' && isAnalyzingReference && '이미지 분석 중입니다...'}
-          {!settingMethod && '설정 방식을 선택해주세요'}
+          {settingMethod === 'reference' && !referenceUrl && (t.imageAd?.method?.uploadRequired || 'Please upload a reference image')}
+          {settingMethod === 'reference' && isAnalyzingReference && (t.imageAd?.method?.analyzingImage || 'Analyzing image...')}
+          {!settingMethod && (t.imageAd?.method?.selectMethod || 'Please select a setting method')}
         </p>
       )}
     </div>

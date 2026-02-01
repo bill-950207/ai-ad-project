@@ -50,7 +50,7 @@ function RecentAdCard({ item, onClick }: RecentAdCardProps) {
   const getStatusLabel = () => {
     if (item.status === 'COMPLETED') return null
     if (item.status === 'FAILED') return t.videoAd?.status?.failed || 'Failed'
-    return t.videoAd?.status?.inProgress || 'Generating'
+    return t.videoAd?.status?.inProgress || 'In Progress'
   }
 
   const statusLabel = getStatusLabel()
@@ -150,7 +150,7 @@ export function RecentAdsSection() {
         }) => ({
           id: ad.id,
           type: 'image' as const,
-          name: ad.name || ad.product?.name || '이미지 광고',
+          name: ad.name || ad.product?.name || 'Image Ad',
           thumbnail: ad.images?.[0]?.image_url || ad.image_url || null,
           status: ad.status,
           createdAt: ad.created_at,
@@ -170,7 +170,7 @@ export function RecentAdsSection() {
         }) => ({
           id: ad.id,
           type: 'video' as const,
-          name: ad.name || ad.product?.name || '영상 광고',
+          name: ad.name || ad.product?.name || 'Video Ad',
           thumbnail: ad.thumbnail_url || null,
           status: ad.status,
           createdAt: ad.created_at,
@@ -189,7 +189,7 @@ export function RecentAdsSection() {
       const processingExists = sortedAds.some(item => PROCESSING_STATUSES.includes(item.status))
       setHasProcessing(processingExists)
     } catch (error) {
-      console.error('최근 광고 목록 로드 오류:', error)
+      console.error('Failed to load recent ads:', error)
     } finally {
       setIsLoading(false)
     }
@@ -239,7 +239,7 @@ export function RecentAdsSection() {
         <div className="flex items-center gap-2">
           <div className="w-1 h-4 bg-primary rounded-full" />
           <h2 className="text-sm font-semibold text-foreground">
-            {t.dashboard?.recentWork?.title || '최근 생성 광고'}
+            {t.dashboard?.recentWork?.title || 'Recent Ads'}
           </h2>
         </div>
         <div className="grid grid-cols-5 gap-3">
@@ -263,12 +263,12 @@ export function RecentAdsSection() {
         <div className="flex items-center gap-2">
           <div className="w-1 h-4 bg-primary rounded-full" />
           <h2 className="text-sm font-semibold text-foreground">
-            {t.dashboard?.recentWork?.title || '최근 생성 광고'}
+            {t.dashboard?.recentWork?.title || 'Recent Ads'}
           </h2>
           {hasProcessing && (
             <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary">
               <Loader2 className="w-3 h-3 animate-spin" />
-              <span className="text-[10px]">{t.dashboard?.recentWork?.processing || '생성 중'}</span>
+              <span className="text-[10px]">{t.dashboard?.recentWork?.processing || 'In Progress'}</span>
             </div>
           )}
         </div>
@@ -276,7 +276,7 @@ export function RecentAdsSection() {
           onClick={() => router.push('/dashboard/image-ad')}
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          <span>{t.dashboard?.recentWork?.viewAll || '전체 보기'}</span>
+          <span>{t.dashboard?.recentWork?.viewAll || 'View All'}</span>
           <ArrowRight className="w-3 h-3" />
         </button>
       </div>

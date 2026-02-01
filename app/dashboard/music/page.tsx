@@ -115,7 +115,7 @@ const PRODUCT_TYPE_OPTIONS = [
 ]
 
 export default function MusicPage() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const { refreshCredits } = useCredits()
   const [musicList, setMusicList] = useState<AdMusic[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -152,6 +152,7 @@ export default function MusicPage() {
 
   // 번역 헬퍼
   const musicT = (t as Record<string, unknown>).adMusic as Record<string, unknown> | undefined
+  const alertsT = musicT?.alerts as { selectProductFirst?: string; fillAllFields?: string; slotFull?: string; generationFailed?: string; confirmDelete?: string; credits?: string; aiRecommendFailed?: string } | undefined
 
   // 음악 목록 조회
   const fetchMusicList = useCallback(async () => {
@@ -162,7 +163,7 @@ export default function MusicPage() {
         setMusicList(data.musicList || [])
       }
     } catch (error) {
-      console.error('음악 목록 조회 오류:', error)
+      console.error('Failed to fetch music list:', error)
     } finally {
       setIsLoading(false)
     }
@@ -182,7 +183,7 @@ export default function MusicPage() {
         setProducts(data.products?.filter((p: AdProduct & { status: string }) => p.status === 'COMPLETED') || [])
       }
     } catch (error) {
-      console.error('제품 목록 조회 오류:', error)
+      console.error('Failed to fetch product list:', error)
     } finally {
       setIsLoadingProducts(false)
     }
@@ -198,7 +199,7 @@ export default function MusicPage() {
   // AI 음악 설정 추천
   const handleAiRecommend = async () => {
     if (!selectedProductId) {
-      alert('제품을 먼저 선택해주세요.')
+      alert(alertsT?.selectProductFirst || 'Please select a product first.')
       return
     }
 
@@ -207,7 +208,7 @@ export default function MusicPage() {
       const res = await fetch('/api/ad-music/recommend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: selectedProductId }),
+        body: JSON.stringify({ productId: selectedProductId, language }),
       })
 
       if (res.ok) {
@@ -223,11 +224,11 @@ export default function MusicPage() {
         setUseAiRecommendation(true)
       } else {
         const error = await res.json()
-        alert(error.error || 'AI 추천에 실패했습니다.')
+        alert(error.error || (alertsT?.aiRecommendFailed || 'AI recommendation failed.'))
       }
     } catch (error) {
-      console.error('AI 추천 오류:', error)
-      alert('AI 추천에 실패했습니다.')
+      console.error('AI recommendation error:', error)
+      alert(alertsT?.aiRecommendFailed || 'AI recommendation failed.')
     } finally {
       setIsRecommending(false)
     }
@@ -277,7 +278,7 @@ export default function MusicPage() {
             )
           }
         } catch (error) {
-          console.error('상태 폴링 오류:', error)
+          console.error('Status polling error:', error)
         }
       }
     }
@@ -289,7 +290,7 @@ export default function MusicPage() {
   // 음악 생성
   const handleCreate = async () => {
     if (!formData.name || !formData.mood || !formData.genre || !formData.productType) {
-      alert('모든 필드를 선택해주세요.')
+      alert(alertsT?.fillAllFields || 'Please fill in all fields.')
       return
     }
 
@@ -327,7 +328,7 @@ export default function MusicPage() {
           setShowSlotLimitModal(true)
           setShowCreateModal(false)
         } else {
-          alert(errorData.error || '슬롯이 가득 찼습니다')
+          alert(errorData.error || (alertsT?.slotFull || 'Slot is full'))
         }
         return
       }
@@ -352,11 +353,11 @@ export default function MusicPage() {
         refreshCredits()
       } else {
         const errorData = await res.json()
-        alert(errorData.error || '음악 생성에 실패했습니다.')
+        alert(errorData.error || (alertsT?.generationFailed || 'Music generation failed.'))
       }
     } catch (error) {
-      console.error('음악 생성 오류:', error)
-      alert('음악 생성에 실패했습니다.')
+      console.error('Music generation error:', error)
+      alert(alertsT?.generationFailed || 'Music generation failed.')
     } finally {
       setIsCreating(false)
     }
@@ -364,7 +365,7 @@ export default function MusicPage() {
 
   // 음악 삭제
   const handleDelete = async (id: string, music: AdMusic) => {
-    if (!confirm('이 음악을 삭제하시겠습니까?')) return
+    if (!confirm(alertsT?.confirmDelete || 'Are you sure you want to delete this music?')) return
 
     try {
       const res = await fetch(`/api/ad-music/${id}`, { method: 'DELETE' })
@@ -378,7 +379,7 @@ export default function MusicPage() {
         }
       }
     } catch (error) {
-      console.error('삭제 오류:', error)
+      console.error('Delete error:', error)
     }
   }
 
@@ -443,10 +444,10 @@ export default function MusicPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground mb-2">
-            {(musicT?.title as string) || '광고 음악 관리'}
+            {(musicT?.title as string) || 'Ad Music Management'}
           </h1>
           <p className="text-muted-foreground">
-            {(musicT?.subtitle as string) || '광고에 사용할 배경 음악을 생성하세요'}
+            {(musicT?.subtitle as string) || 'Create background music for your ads'}
           </p>
         </div>
         <button
@@ -454,7 +455,7 @@ export default function MusicPage() {
           className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
         >
           <Plus className="w-4 h-4" />
-          {(musicT?.createNew as string) || '새 음악 생성'}
+          {(musicT?.createNew as string) || 'Create New Music'}
         </button>
       </div>
 
@@ -471,16 +472,16 @@ export default function MusicPage() {
             <Music className="w-10 h-10 text-muted-foreground" />
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">
-            {(musicT?.emptyList as string) || '생성된 음악이 없습니다'}
+            {(musicT?.emptyList as string) || 'No music created yet'}
           </h3>
           <p className="text-muted-foreground mb-6">
-            {(musicT?.emptyDescription as string) || '새 음악을 생성하여 광고에 활용하세요'}
+            {(musicT?.emptyDescription as string) || 'Create new music to use in your ads'}
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
             className="px-5 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
           >
-            {(musicT?.createNew as string) || '새 음악 생성'}
+            {(musicT?.createNew as string) || 'Create New Music'}
           </button>
         </div>
       ) : (
@@ -563,7 +564,7 @@ export default function MusicPage() {
                     {/* 실패 상태 */}
                     {music.status === 'FAILED' && (
                       <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center">
-                        <p className="text-red-500 font-medium">{(musicT?.failed as string) || '생성 실패'}</p>
+                        <p className="text-red-500 font-medium">{(musicT?.failed as string) || 'Generation Failed'}</p>
                       </div>
                     )}
                   </div>
@@ -644,7 +645,7 @@ export default function MusicPage() {
           />
           <div className="relative bg-card/95 backdrop-blur-xl border border-white/10 rounded-2xl p-6 w-full max-w-lg mx-4 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-200">
             <h2 className="text-xl font-bold text-foreground mb-6">
-              {(musicT?.createNew as string) || '새 음악 생성'}
+              {(musicT?.createNew as string) || 'Create New Music'}
             </h2>
 
             <div className="space-y-4">
@@ -655,9 +656,9 @@ export default function MusicPage() {
                     <Sparkles className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <span className="font-semibold text-foreground">AI 자동 설정</span>
+                    <span className="font-semibold text-foreground">{(musicT?.aiAutoSetting as string) || 'AI Auto Setting'}</span>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      제품에 맞는 최적의 음악을 추천받으세요
+                      {(musicT?.aiAutoSettingDesc as string) || 'Get optimal music recommendations for your product'}
                     </p>
                   </div>
                 </div>
@@ -685,7 +686,7 @@ export default function MusicPage() {
                     ) : (
                       <span className="text-muted-foreground flex items-center gap-2">
                         <Package className="w-4 h-4" />
-                        제품 선택 (선택사항)
+                        {(musicT?.selectProduct as string) || 'Select Product (Optional)'}
                       </span>
                     )}
                     <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showProductDropdown ? 'rotate-180' : ''}`} />
@@ -699,7 +700,7 @@ export default function MusicPage() {
                         </div>
                       ) : products.length === 0 ? (
                         <div className="py-4 text-center text-muted-foreground text-sm">
-                          등록된 제품이 없습니다
+                          {(musicT?.noProducts as string) || 'No products registered'}
                         </div>
                       ) : (
                         products.map(product => (
@@ -747,12 +748,12 @@ export default function MusicPage() {
                   {isRecommending ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      AI 분석 중...
+                      {(musicT?.aiAnalyzing as string) || 'AI Analyzing...'}
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      AI 추천 받기
+                      {(musicT?.getAiRecommend as string) || 'Get AI Recommendation'}
                     </>
                   )}
                 </button>
@@ -764,12 +765,12 @@ export default function MusicPage() {
                       <div className="p-1.5 bg-success/20 rounded-lg">
                         <Info className="w-4 h-4 text-success" />
                       </div>
-                      <span className="text-sm font-semibold text-success">AI 추천 완료</span>
+                      <span className="text-sm font-semibold text-success">{(musicT?.aiRecommendComplete as string) || 'AI Recommendation Complete'}</span>
                     </div>
                     <div className="space-y-2 text-sm text-muted-foreground">
-                      <p><span className="text-foreground font-medium">분위기:</span> {recommendation.reasoning.mood}</p>
-                      <p><span className="text-foreground font-medium">장르:</span> {recommendation.reasoning.genre}</p>
-                      <p><span className="text-foreground font-medium">제품 유형:</span> {recommendation.reasoning.productType}</p>
+                      <p><span className="text-foreground font-medium">{(musicT?.moodLabel as string) || 'Mood:'}</span> {recommendation.reasoning.mood}</p>
+                      <p><span className="text-foreground font-medium">{(musicT?.genreLabel as string) || 'Genre:'}</span> {recommendation.reasoning.genre}</p>
+                      <p><span className="text-foreground font-medium">{(musicT?.productTypeLabel as string) || 'Product Type:'}</span> {recommendation.reasoning.productType}</p>
                     </div>
                   </div>
                 )}
@@ -779,13 +780,13 @@ export default function MusicPage() {
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-border" />
                 </div>
-                <span className="relative px-3 bg-card text-sm text-muted-foreground">또는 직접 설정</span>
+                <span className="relative px-3 bg-card text-sm text-muted-foreground">{(musicT?.orManualSetting as string) || 'or set manually'}</span>
               </div>
 
               {/* 이름 */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  {(musicT?.name as string) || '음악 이름'}
+                  {(musicT?.name as string) || 'Music Name'}
                 </label>
                 <input
                   type="text"
@@ -794,7 +795,7 @@ export default function MusicPage() {
                     setFormData(prev => ({ ...prev, name: e.target.value }))
                     setUseAiRecommendation(false)
                   }}
-                  placeholder={(musicT?.namePlaceholder as string) || '예: 봄 시즌 광고 음악'}
+                  placeholder={(musicT?.namePlaceholder as string) || 'e.g., Spring Season Ad Music'}
                   className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
@@ -858,7 +859,7 @@ export default function MusicPage() {
               {/* 제품 유형 */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
-                  {(musicT?.productType as string) || '제품 유형'}
+                  {(musicT?.productType as string) || 'Product Type'}
                   {useAiRecommendation && formData.productType && (
                     <span className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded">AI</span>
                   )}
@@ -910,7 +911,7 @@ export default function MusicPage() {
                 ) : (
                   <>
                     <Coins className="w-4 h-4" />
-                    {(musicT?.generate as string) || 'Generate'} ({MUSIC_CREDIT_COST} Credits)
+                    {(musicT?.generate as string) || 'Generate'} ({MUSIC_CREDIT_COST} {alertsT?.credits || 'credits'})
                   </>
                 )}
               </button>
@@ -935,7 +936,7 @@ export default function MusicPage() {
         onClose={() => setShowCreditsModal(false)}
         requiredCredits={creditsInfo?.required ?? 0}
         availableCredits={creditsInfo?.available ?? 0}
-        featureName="음악 생성"
+        featureName={(musicT?.featureName as string) || 'Music Generation'}
       />
     </div>
   )

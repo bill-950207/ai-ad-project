@@ -10,6 +10,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Package, Plus, Check, Loader2, Upload, X, Link as LinkIcon, Edit3, Minus, ImagePlus, ChevronLeft } from 'lucide-react'
 import { useOnboarding, OnboardingProduct } from '../onboarding-context'
+import { useLanguage } from '@/contexts/language-context'
 
 // 이미지 유효성 검사 상수
 const SUPPORTED_FORMATS = ['image/png', 'image/jpeg', 'image/webp']
@@ -21,7 +22,54 @@ const MIN_DIMENSION = 256 // 256px
 type InputMode = 'url' | 'manual'
 type ViewMode = 'list' | 'form'
 
+// Translation type for product step
+type ProductStepT = {
+  loadingProducts?: string
+  registerNewProduct?: string
+  orSelectExisting?: string
+  backToProductList?: string
+  importFromUrl?: string
+  enterManually?: string
+  productUrl?: string
+  analyzing?: string
+  getInfo?: string
+  urlExtractSuccess?: string
+  productName?: string
+  productNamePlaceholder?: string
+  productImage?: string
+  clickOrDrag?: string
+  imageSpec?: string
+  productDescription?: string
+  productDescriptionPlaceholder?: string
+  sellingPoints?: string
+  sellingPointPlaceholder?: string
+  addSellingPoint?: string
+  additionalPhotos?: string
+  maxPhotos?: string
+  additionalPhoto?: string
+  registering?: string
+  registerProduct?: string
+  required?: string
+  // Validation messages
+  unsupportedFormat?: string
+  fileTooLarge?: string
+  imageTooSmall?: string
+  imageTooLarge?: string
+  resolutionTooHigh?: string
+  cannotReadImage?: string
+  enterUrl?: string
+  cannotFetchInfo?: string
+  enterProductName?: string
+  selectProductImage?: string
+  registrationFailed?: string
+  errorOccurred?: string
+  failedToLoadProducts?: string
+}
+
 export function ProductStep() {
+  const { t } = useLanguage()
+  const prodT = t.onboarding?.productStep as ProductStepT | undefined
+
   const {
     products,
     selectedProduct,
@@ -71,8 +119,8 @@ export function ProductStep() {
           setViewMode('form')
         }
       } catch (err) {
-        console.error('제품 로드 오류:', err)
-        setError('제품 목록을 불러올 수 없습니다')
+        console.error('Product load error:', err)
+        setError(prodT?.failedToLoadProducts || 'Failed to load products')
       } finally {
         setIsLoadingProducts(false)
       }
@@ -84,12 +132,12 @@ export function ProductStep() {
   const validateImage = useCallback((file: File): Promise<string | null> => {
     return new Promise((resolve) => {
       if (!SUPPORTED_FORMATS.includes(file.type)) {
-        resolve('지원되지 않는 형식입니다. PNG, JPG, WEBP만 가능합니다.')
+        resolve(prodT?.unsupportedFormat || 'Unsupported format. Only PNG, JPG, WEBP are allowed.')
         return
       }
 
       if (file.size > MAX_FILE_SIZE) {
-        resolve(`파일 크기가 너무 큽니다. 최대 5MB까지 가능합니다.`)
+        resolve(prodT?.fileTooLarge || 'File is too large. Maximum 5MB allowed.')
         return
       }
 
@@ -99,17 +147,17 @@ export function ProductStep() {
         const megapixels = width * height
 
         if (width < MIN_DIMENSION || height < MIN_DIMENSION) {
-          resolve(`이미지가 너무 작습니다. 최소 ${MIN_DIMENSION}px 이상이어야 합니다.`)
+          resolve((prodT?.imageTooSmall || 'Image is too small. Minimum {min}px required.').replace('{min}', String(MIN_DIMENSION)))
           return
         }
 
         if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-          resolve(`이미지가 너무 큽니다. 최대 ${MAX_DIMENSION}px 이하여야 합니다.`)
+          resolve((prodT?.imageTooLarge || 'Image is too large. Maximum {max}px allowed.').replace('{max}', String(MAX_DIMENSION)))
           return
         }
 
         if (megapixels > MAX_MEGAPIXELS) {
-          resolve(`이미지 해상도가 너무 높습니다. 최대 16MP까지 가능합니다.`)
+          resolve(prodT?.resolutionTooHigh || 'Image resolution is too high. Maximum 16MP allowed.')
           return
         }
 
@@ -117,12 +165,12 @@ export function ProductStep() {
       }
 
       img.onerror = () => {
-        resolve('이미지를 읽을 수 없습니다.')
+        resolve(prodT?.cannotReadImage || 'Cannot read image.')
       }
 
       img.src = URL.createObjectURL(file)
     })
-  }, [])
+  }, [prodT])
 
   // 파일 선택 핸들러
   const handleFileSelect = useCallback(async (file: File) => {
@@ -207,7 +255,7 @@ export function ProductStep() {
   // URL에서 정보 추출
   const handleExtractUrl = async () => {
     if (!productUrl.trim()) {
-      setFormError('URL을 입력해주세요')
+      setFormError(prodT?.enterUrl || 'Please enter a URL')
       return
     }
 
@@ -223,7 +271,7 @@ export function ProductStep() {
 
       if (!res.ok) {
         const error = await res.json()
-        throw new Error(error.error || '정보를 가져올 수 없습니다')
+        throw new Error(error.error || (prodT?.cannotFetchInfo || 'Cannot fetch information'))
       }
 
       const data = await res.json()
@@ -240,8 +288,8 @@ export function ProductStep() {
 
       setUrlExtracted(true)
     } catch (err) {
-      console.error('URL 추출 오류:', err)
-      setFormError(err instanceof Error ? err.message : '정보를 가져올 수 없습니다')
+      console.error('URL extraction error:', err)
+      setFormError(err instanceof Error ? err.message : (prodT?.cannotFetchInfo || 'Cannot fetch information'))
     } finally {
       setIsExtractingUrl(false)
     }
@@ -250,12 +298,12 @@ export function ProductStep() {
   // 제품 등록 제출
   const handleSubmit = async () => {
     if (!name.trim()) {
-      setFormError('제품 이름을 입력해주세요')
+      setFormError(prodT?.enterProductName || 'Please enter a product name')
       return
     }
 
     if (!selectedFile && !previewUrl) {
-      setFormError('제품 이미지를 선택해주세요')
+      setFormError(prodT?.selectProductImage || 'Please select a product image')
       return
     }
 
@@ -293,14 +341,14 @@ export function ProductStep() {
 
       if (!createRes.ok) {
         const error = await createRes.json()
-        throw new Error(error.error || '제품 등록에 실패했습니다')
+        throw new Error(error.error || (prodT?.registrationFailed || 'Failed to register product'))
       }
 
       const { product, sourceImageUrl } = await createRes.json()
       onProductCreated(product.id, sourceImageUrl)
     } catch (err) {
-      console.error('등록 오류:', err)
-      setFormError(err instanceof Error ? err.message : '오류가 발생했습니다')
+      console.error('Registration error:', err)
+      setFormError(err instanceof Error ? err.message : (prodT?.errorOccurred || 'An error occurred'))
       setIsRegisteringProduct(false)
     }
   }
@@ -315,7 +363,7 @@ export function ProductStep() {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
-        <p className="text-sm text-muted-foreground">제품 목록을 불러오는 중...</p>
+        <p className="text-sm text-muted-foreground">{prodT?.loadingProducts || 'Loading products...'}</p>
       </div>
     )
   }
@@ -330,7 +378,7 @@ export function ProductStep() {
           className="w-full flex items-center justify-center gap-2 p-4 border-2 border-dashed border-primary/50 rounded-xl text-primary hover:border-primary hover:bg-primary/5 transition-colors"
         >
           <Plus className="w-5 h-5" />
-          <span className="font-medium">새 제품 등록하기</span>
+          <span className="font-medium">{prodT?.registerNewProduct || 'Register New Product'}</span>
         </button>
 
         {/* 기존 제품 목록 */}
@@ -338,7 +386,7 @@ export function ProductStep() {
           <>
             <div className="flex items-center gap-3 my-4">
               <div className="flex-1 h-px bg-border" />
-              <span className="text-xs text-muted-foreground">또는 기존 제품 선택</span>
+              <span className="text-xs text-muted-foreground">{prodT?.orSelectExisting || 'or select existing product'}</span>
               <div className="flex-1 h-px bg-border" />
             </div>
 
@@ -402,7 +450,7 @@ export function ProductStep() {
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
-          제품 목록으로 돌아가기
+          {prodT?.backToProductList || 'Back to product list'}
         </button>
       )}
 
@@ -417,7 +465,7 @@ export function ProductStep() {
           }`}
         >
           <LinkIcon className="w-4 h-4" />
-          URL로 가져오기
+          {prodT?.importFromUrl || 'Import from URL'}
         </button>
         <button
           onClick={() => setInputMode('manual')}
@@ -428,7 +476,7 @@ export function ProductStep() {
           }`}
         >
           <Edit3 className="w-4 h-4" />
-          직접 입력
+          {prodT?.enterManually || 'Enter Manually'}
         </button>
       </div>
 
@@ -436,7 +484,7 @@ export function ProductStep() {
       {inputMode === 'url' && (
         <div className="space-y-3">
           <label className="block text-sm font-medium text-foreground">
-            제품 URL
+            {prodT?.productUrl || 'Product URL'}
           </label>
           <div className="flex gap-2">
             <input
@@ -454,15 +502,15 @@ export function ProductStep() {
               {isExtractingUrl ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>분석 중...</span>
+                  <span>{prodT?.analyzing || 'Analyzing...'}</span>
                 </>
               ) : (
-                '정보 가져오기'
+                prodT?.getInfo || 'Get Info'
               )}
             </button>
           </div>
           {urlExtracted && (
-            <p className="text-sm text-green-500">정보를 성공적으로 가져왔습니다. 아래에서 확인 및 수정하세요.</p>
+            <p className="text-sm text-green-500">{prodT?.urlExtractSuccess || 'Successfully retrieved information. Review and edit below.'}</p>
           )}
         </div>
       )}
@@ -470,13 +518,13 @@ export function ProductStep() {
       {/* 제품 이름 */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
-          제품 이름 <span className="text-red-500">*</span>
+          {prodT?.productName || 'Product Name'} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="예: 프리미엄 보습 크림"
+          placeholder={prodT?.productNamePlaceholder || 'e.g., Premium Moisturizing Cream'}
           className="w-full px-4 py-2 bg-secondary/30 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
         />
       </div>
@@ -484,7 +532,7 @@ export function ProductStep() {
       {/* 제품 이미지 */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
-          제품 이미지 <span className="text-red-500">*</span>
+          {prodT?.productImage || 'Product Image'} <span className="text-red-500">*</span>
         </label>
 
         {previewUrl ? (
@@ -509,7 +557,7 @@ export function ProductStep() {
             className="aspect-square max-w-[200px] border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-secondary/20 transition-colors"
           >
             <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground">클릭 또는 드래그</p>
+            <p className="text-sm text-muted-foreground">{prodT?.clickOrDrag || 'Click or drag'}</p>
           </div>
         )}
 
@@ -522,19 +570,19 @@ export function ProductStep() {
         />
 
         <p className="text-xs text-muted-foreground mt-2">
-          PNG, JPG, WEBP / 최대 5MB / 256~4096px
+          {prodT?.imageSpec || 'PNG, JPG, WEBP / Max 5MB / 256~4096px'}
         </p>
       </div>
 
       {/* 제품 설명 */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
-          제품 설명
+          {prodT?.productDescription || 'Product Description'}
         </label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="제품에 대한 상세 설명을 입력하세요..."
+          placeholder={prodT?.productDescriptionPlaceholder || 'Enter a detailed description of your product...'}
           rows={2}
           className="w-full px-4 py-2 bg-secondary/30 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
         />
@@ -543,7 +591,7 @@ export function ProductStep() {
       {/* 셀링 포인트 */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
-          셀링 포인트
+          {prodT?.sellingPoints || 'Selling Points'}
         </label>
         <div className="space-y-2">
           {sellingPoints.map((point, index) => (
@@ -552,7 +600,7 @@ export function ProductStep() {
                 type="text"
                 value={point}
                 onChange={(e) => updateSellingPoint(index, e.target.value)}
-                placeholder="예: 24시간 지속되는 보습력"
+                placeholder={prodT?.sellingPointPlaceholder || 'e.g., 24-hour lasting moisturization'}
                 className="flex-1 px-4 py-2 bg-secondary/30 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
               {sellingPoints.length > 1 && (
@@ -571,7 +619,7 @@ export function ProductStep() {
               className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors"
             >
               <Plus className="w-4 h-4" />
-              셀링 포인트 추가
+              {prodT?.addSellingPoint || 'Add Selling Point'}
             </button>
           )}
         </div>
@@ -580,14 +628,14 @@ export function ProductStep() {
       {/* 추가 사진 */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
-          추가 사진 <span className="text-muted-foreground text-xs">(최대 5장)</span>
+          {prodT?.additionalPhotos || 'Additional Photos'} <span className="text-muted-foreground text-xs">({prodT?.maxPhotos || 'max 5'})</span>
         </label>
         <div className="flex flex-wrap gap-2">
           {additionalPhotoFiles.map((file, index) => (
             <div key={index} className="relative w-16 h-16 rounded-lg overflow-hidden">
               <img
                 src={URL.createObjectURL(file)}
-                alt={`추가 사진 ${index + 1}`}
+                alt={`${prodT?.additionalPhoto || 'Additional photo'} ${index + 1}`}
                 className="w-full h-full object-cover"
               />
               <button
@@ -631,10 +679,10 @@ export function ProductStep() {
         {isRegisteringProduct ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span>등록 중...</span>
+            <span>{prodT?.registering || 'Registering...'}</span>
           </>
         ) : (
-          '제품 등록하기'
+          prodT?.registerProduct || 'Register Product'
         )}
       </button>
     </div>

@@ -38,35 +38,28 @@ interface WorkflowStep {
 // ============================================================
 
 export function WorkflowSection() {
-  const { language } = useLanguage()
+  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState<'image' | 'video'>('image')
-  const isKo = language === 'ko'
 
   // 이미지 광고 워크플로우
   const imageWorkflow: WorkflowStep[] = [
     {
       icon: <Upload className="w-5 h-5" />,
-      title: isKo ? '제품 등록' : 'Upload Product',
-      description: isKo
-        ? '제품 이미지나 URL을 입력하세요. 배경 제거와 크기 조절이 자동으로 처리됩니다.'
-        : 'Enter product image or URL. Background removal and resizing are handled automatically.',
-      time: isKo ? '30초' : '30 sec',
+      title: t.workflow.imageSteps.step1Title,
+      description: t.workflow.imageSteps.step1Desc,
+      time: t.workflow.imageSteps.step1Time,
     },
     {
       icon: <MousePointerClick className="w-5 h-5" />,
-      title: isKo ? '스타일 선택' : 'Choose Style',
-      description: isKo
-        ? '추천 스타일 중 원하는 광고 스타일을 선택하세요. 클릭 한 번으로 끝입니다.'
-        : 'Select your desired ad style from recommendations. One click is all it takes.',
-      time: isKo ? '10초' : '10 sec',
+      title: t.workflow.imageSteps.step2Title,
+      description: t.workflow.imageSteps.step2Desc,
+      time: t.workflow.imageSteps.step2Time,
     },
     {
       icon: <Download className="w-5 h-5" />,
-      title: isKo ? '광고 완성' : 'Download',
-      description: isKo
-        ? '전문가 수준의 고품질 광고 이미지가 생성됩니다. 바로 다운로드하세요.'
-        : 'Professional-quality ad images are generated. Download them right away.',
-      time: isKo ? '30초' : '30 sec',
+      title: t.workflow.imageSteps.step3Title,
+      description: t.workflow.imageSteps.step3Desc,
+      time: t.workflow.imageSteps.step3Time,
     },
   ]
 
@@ -74,34 +67,26 @@ export function WorkflowSection() {
   const videoWorkflow: WorkflowStep[] = [
     {
       icon: <Upload className="w-5 h-5" />,
-      title: isKo ? '제품 & 아바타' : 'Product & Avatar',
-      description: isKo
-        ? '제품을 등록하고 아바타를 선택하세요. 사진 한 장으로 나만의 아바타도 만들 수 있습니다.'
-        : 'Register your product and select an avatar. You can also create your own avatar from a single photo.',
-      time: isKo ? '1분' : '1 min',
+      title: t.workflow.videoSteps.step1Title,
+      description: t.workflow.videoSteps.step1Desc,
+      time: t.workflow.videoSteps.step1Time,
     },
     {
       icon: <FileText className="w-5 h-5" />,
-      title: isKo ? '대본 입력' : 'Enter Script',
-      description: isKo
-        ? '광고 문구를 입력하세요. 자연스러운 목소리와 립싱크가 자동으로 생성됩니다.'
-        : 'Enter your ad text. Natural voice and lip sync are generated automatically.',
-      time: isKo ? '30초' : '30 sec',
+      title: t.workflow.videoSteps.step2Title,
+      description: t.workflow.videoSteps.step2Desc,
+      time: t.workflow.videoSteps.step2Time,
     },
     {
       icon: <Video className="w-5 h-5" />,
-      title: isKo ? '영상 완성' : 'Video Ready',
-      description: isKo
-        ? '아바타가 말하는 고품질 영상이 완성됩니다. 편집 없이 바로 사용하세요.'
-        : 'High-quality video with talking avatar is ready. Use it right away without editing.',
-      time: isKo ? '2-3분' : '2-3 min',
+      title: t.workflow.videoSteps.step3Title,
+      description: t.workflow.videoSteps.step3Desc,
+      time: t.workflow.videoSteps.step3Time,
     },
   ]
 
   const currentWorkflow = activeTab === 'image' ? imageWorkflow : videoWorkflow
-  const totalTime = activeTab === 'image'
-    ? (isKo ? '약 2분' : '~2 minutes')
-    : (isKo ? '약 5분' : '~5 minutes')
+  const totalTime = activeTab === 'image' ? t.workflow.imageTime : t.workflow.videoTime
 
   return (
     <section id="workflow" className="px-4 py-20 sm:py-24 bg-secondary/30">
@@ -109,12 +94,10 @@ export function WorkflowSection() {
         {/* 섹션 헤더 - AI 강조 제거 */}
         <div className="text-center mb-10">
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4 text-foreground">
-            {isKo ? '간단한 3단계' : 'Simple 3 Steps'}
+            {t.workflow.title}
           </h2>
           <p className="mx-auto max-w-xl text-muted-foreground text-lg">
-            {isKo
-              ? '복잡한 작업 없이, 클릭 몇 번이면 광고가 완성됩니다'
-              : 'No complicated work. Just a few clicks and your ad is ready'}
+            {t.workflow.subtitle}
           </p>
         </div>
 
@@ -130,7 +113,7 @@ export function WorkflowSection() {
               }`}
             >
               <ImageIcon className="w-4 h-4" />
-              {isKo ? '이미지 광고' : 'Image Ad'}
+              {t.workflow.imageAd}
             </button>
             <button
               onClick={() => setActiveTab('video')}
@@ -141,7 +124,7 @@ export function WorkflowSection() {
               }`}
             >
               <Video className="w-4 h-4" />
-              {isKo ? '영상 광고' : 'Video Ad'}
+              {t.workflow.videoAd}
             </button>
           </div>
         </div>
@@ -199,7 +182,7 @@ export function WorkflowSection() {
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary/50 border border-border">
             <CheckCircle className="w-4 h-4 text-green-500" />
             <span className="text-sm text-muted-foreground">
-              {isKo ? '총 소요 시간:' : 'Total time:'}
+              {t.workflow.totalTime}
             </span>
             <span className="text-sm font-semibold text-foreground">{totalTime}</span>
           </div>

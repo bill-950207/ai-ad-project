@@ -27,7 +27,7 @@ export default async function DashboardLayout({
       redirect('/onboarding')
     }
   } catch (error) {
-    console.error('프로필 확인 오류:', error)
+    console.error('Profile check error:', error)
     // 오류 발생 시에도 대시보드 접근 허용 (graceful degradation)
   }
 

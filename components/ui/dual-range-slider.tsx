@@ -9,6 +9,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 
+interface DualRangeSliderLabels {
+  selected?: string
+  start?: string
+  end?: string
+}
+
 interface DualRangeSliderProps {
   min: number
   max: number
@@ -18,6 +24,7 @@ interface DualRangeSliderProps {
   formatLabel?: (value: number) => string
   className?: string
   disabled?: boolean
+  labels?: DualRangeSliderLabels
 }
 
 export function DualRangeSlider({
@@ -29,7 +36,9 @@ export function DualRangeSlider({
   formatLabel = (v) => v.toString(),
   className,
   disabled = false,
+  labels = {},
 }: DualRangeSliderProps) {
+  const { selected = 'selected', start = 'Start', end = 'End' } = labels
   const trackRef = useRef<HTMLDivElement>(null)
   const [dragging, setDragging] = useState<'start' | 'end' | null>(null)
 
@@ -136,7 +145,7 @@ export function DualRangeSlider({
       <div className="flex justify-between mb-2 text-sm text-muted-foreground">
         <span>{formatLabel(value[0])}</span>
         <span className="text-foreground font-medium">
-          {formatTime(value[1] - value[0])} 선택됨
+          {formatTime(value[1] - value[0])} {selected}
         </span>
         <span>{formatLabel(value[1])}</span>
       </div>
@@ -211,7 +220,7 @@ export function DualRangeSlider({
       {/* 시간 입력 필드 */}
       <div className="flex items-center gap-4 mt-3">
         <div className="flex-1">
-          <label className="block text-xs text-muted-foreground mb-1">시작</label>
+          <label className="block text-xs text-muted-foreground mb-1">{start}</label>
           <input
             type="number"
             min={min}
@@ -227,7 +236,7 @@ export function DualRangeSlider({
           />
         </div>
         <div className="flex-1">
-          <label className="block text-xs text-muted-foreground mb-1">끝</label>
+          <label className="block text-xs text-muted-foreground mb-1">{end}</label>
           <input
             type="number"
             min={value[0] + step}

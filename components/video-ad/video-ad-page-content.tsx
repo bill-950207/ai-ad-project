@@ -81,7 +81,7 @@ export function VideoAdPageContent() {
         setPagination(data.pagination || null)
       }
     } catch (error) {
-      console.error('영상 광고 목록 조회 오류:', error)
+      console.error('Failed to fetch video ads:', error)
     } finally {
       if (!isPolling) {
         setIsAdsLoading(false)
@@ -95,7 +95,7 @@ export function VideoAdPageContent() {
       await fetch(`/api/video-ads/status/${videoId}`)
       // 응답 무시 - 상태 API가 DB를 업데이트함
     } catch (error) {
-      console.error('영상 상태 확인 오류:', error)
+      console.error('Failed to check video status:', error)
     }
   }, [])
 
@@ -166,10 +166,10 @@ export function VideoAdPageContent() {
         // 현재 페이지 새로고침
         await fetchVideoAds(currentPage)
       } else {
-        console.error('영상 삭제 실패')
+        console.error('Failed to delete video')
       }
     } catch (error) {
-      console.error('영상 삭제 오류:', error)
+      console.error('Video deletion error:', error)
     } finally {
       setIsDeleting(false)
       setDeleteModalOpen(false)
@@ -246,15 +246,15 @@ export function VideoAdPageContent() {
       'IN_PROGRESS': { label: t.videoAd?.status?.inProgress || 'In Progress', className: 'bg-purple-500/80 text-white animate-pulse' },
       'COMPLETED': { label: t.videoAd?.status?.completed || 'Completed', className: 'bg-green-500/80 text-white' },
       'FAILED': { label: t.videoAd?.status?.failed || 'Failed', className: 'bg-red-500/80 text-white' },
-      // Avatar Motion status
+      // Avatar Motion statuses
       'GENERATING_STORY': { label: t.videoAd?.status?.generatingStory || 'Generating Story', className: 'bg-cyan-500/80 text-white animate-pulse' },
       'GENERATING_FRAMES': { label: t.videoAd?.status?.generatingFrames || 'Generating Frames', className: 'bg-teal-500/80 text-white animate-pulse' },
       'GENERATING_AVATAR': { label: t.videoAd?.status?.generatingAvatar || 'Generating Avatar', className: 'bg-violet-500/80 text-white animate-pulse' },
       'FRAMES_COMPLETED': { label: t.videoAd?.status?.framesCompleted || 'Frames Completed', className: 'bg-emerald-500/80 text-white' },
-      // Product Ad status
+      // Product Ad statuses
       'GENERATING_SCENARIO': { label: t.videoAd?.status?.generatingScenario || 'Generating Scenario', className: 'bg-cyan-500/80 text-white animate-pulse' },
-      'GENERATING_SCENES': { label: t.videoAd?.status?.generatingScenes || 'Generating Scenes', className: 'bg-teal-500/80 text-white animate-pulse' },
-      'SCENES_COMPLETED': { label: t.videoAd?.status?.scenesCompleted || 'Scenes Completed', className: 'bg-emerald-500/80 text-white' },
+      'GENERATING_SCENES': { label: t.videoAd?.status?.generatingScenes || 'Generating First Scene', className: 'bg-teal-500/80 text-white animate-pulse' },
+      'SCENES_COMPLETED': { label: t.videoAd?.status?.scenesCompleted || 'First Scene Completed', className: 'bg-emerald-500/80 text-white' },
       'GENERATING_VIDEO': { label: t.videoAd?.status?.generatingVideo || 'Generating Video', className: 'bg-violet-500/80 text-white animate-pulse' },
     }
     const config = statusConfig[status] || { label: status, className: 'bg-gray-500/80 text-white' }
@@ -267,17 +267,17 @@ export function VideoAdPageContent() {
 
   const getCategoryLabel = (category: string | null) => {
     const categoryLabels: Record<string, string> = {
-      'productDescription': t.videoAd?.category?.productDescription || 'Product Description',
-      'avatarMotion': t.videoAd?.category?.avatarMotion || 'Avatar Motion',
-      'productAd': t.videoAd?.category?.productAd || 'Product Ad',
-      'productShowcase': t.videoAd?.category?.productShowcase || 'Product Showcase',
-      'lifestyle': t.videoAd?.category?.lifestyle || 'Lifestyle',
-      'testimonial': t.videoAd?.category?.testimonial || 'Testimonial',
+      'productDescription': t.videoAd?.categories?.productDescription || 'Product Description',
+      'avatarMotion': t.videoAd?.categories?.avatarMotion || 'Avatar Motion',
+      'productAd': t.videoAd?.categories?.productAd || 'Product Ad',
+      'productShowcase': t.videoAd?.categories?.productShowcase || 'Product Showcase',
+      'lifestyle': t.videoAd?.categories?.lifestyle || 'Lifestyle',
+      'testimonial': t.videoAd?.categories?.testimonial || 'Testimonial',
     }
-    return categoryLabels[category || ''] || t.videoAd?.title || 'Video Ad'
+    return categoryLabels[category || ''] || (t.videoAd?.title || 'Video Ad')
   }
 
-  // Get step name based on category and step number
+  // 카테고리와 단계 번호에 따른 단계 이름 반환
   const getStepName = (category: string | null | undefined, step: number | null | undefined): string => {
     const stepNumber = step || 1
 
@@ -287,7 +287,7 @@ export function VideoAdPageContent() {
       // avatarMotion: 6 steps
       'avatarMotion': ['Avatar/Product', 'Story Mode', 'Scenario', 'Settings', 'Frame Gen', 'Video Gen'],
       // productAd: 6 steps
-      'productAd': ['Product', 'Settings', 'Scenario', 'Config', 'First Scene', 'Video Gen'],
+      'productAd': ['Product', 'Mode', 'Scenario', 'Settings', 'First Scene', 'Video Gen'],
     }
 
     const steps = stepNames[category || '']
@@ -303,15 +303,15 @@ export function VideoAdPageContent() {
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">{t.videoAd?.title || '영상 광고'}</h1>
-          <p className="text-muted-foreground">{t.videoAd?.subtitle || 'AI로 영상 광고를 제작하세요'}</p>
+          <h1 className="text-2xl font-bold text-foreground mb-2">{t.videoAd?.title || 'Video Ad'}</h1>
+          <p className="text-muted-foreground">{t.videoAd?.subtitle || 'Create video ads with AI'}</p>
         </div>
         <button
           onClick={handleCreateVideoAd}
           className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
         >
           <Plus className="w-4 h-4" />
-          {t.videoAd?.createAd || '영상 광고 생성'}
+          {t.videoAd?.createAd || 'Create Video Ad'}
         </button>
       </div>
 
@@ -328,13 +328,13 @@ export function VideoAdPageContent() {
             <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
               <Video className="w-10 h-10 text-primary" />
             </div>
-            <h3 className="text-xl font-semibold text-foreground mb-3">{t.videoAd?.emptyAds || '생성된 영상 광고가 없습니다'}</h3>
-            <p className="text-muted-foreground mb-6">영상 광고를 생성해보세요</p>
+            <h3 className="text-xl font-semibold text-foreground mb-3">{t.videoAd?.emptyAds || 'No video ads yet'}</h3>
+            <p className="text-muted-foreground mb-6">{t.videoAd?.emptyAdsDescription || 'Create your first video ad'}</p>
             <button
               onClick={handleCreateVideoAd}
               className="px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors font-medium"
             >
-              {t.videoAd?.createAd || '영상 광고 생성'}
+              {t.videoAd?.createAd || 'Create Video Ad'}
             </button>
           </div>
         ) : (
@@ -379,7 +379,7 @@ export function VideoAdPageContent() {
                         <>
                           <img
                             src={video.first_scene_image_url}
-                            alt="첫 프레임"
+                            alt={t.videoAd?.firstFrame || 'First frame'}
                             className="w-full h-full object-contain"
                           />
                           {/* 호버 시 액션 버튼 표시 */}
@@ -389,7 +389,7 @@ export function VideoAdPageContent() {
                               className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors text-sm"
                             >
                               <Edit3 className="w-4 h-4" />
-                              <span className="hidden sm:inline">{t.videoAd?.continueEdit || '이어서 작성'}</span>
+                              <span className="hidden sm:inline">{t.videoAd?.continueEdit || 'Continue'}</span>
                             </button>
                             <button
                               onClick={(e) => handleDeleteClick(e, video)}
@@ -403,7 +403,7 @@ export function VideoAdPageContent() {
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center relative">
                           <Edit3 className="w-8 h-8 text-orange-500 mb-2" />
-                          <span className="text-sm text-orange-500 font-medium">{t.videoAd?.inProgress || '작성 중'}</span>
+                          <span className="text-sm text-orange-500 font-medium">{t.videoAd?.inProgress || 'In Progress'}</span>
                           {/* 호버 시 액션 버튼 표시 */}
                           <div className="absolute inset-0 flex items-center justify-center gap-2 sm:gap-3 bg-black/50 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                             <button
@@ -411,7 +411,7 @@ export function VideoAdPageContent() {
                               className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors text-sm"
                             >
                               <Edit3 className="w-4 h-4" />
-                              <span className="hidden sm:inline">{t.videoAd?.continueEdit || '이어서 작성'}</span>
+                              <span className="hidden sm:inline">{t.videoAd?.continueEdit || 'Continue'}</span>
                             </button>
                             <button
                               onClick={(e) => handleDeleteClick(e, video)}
@@ -429,7 +429,7 @@ export function VideoAdPageContent() {
                     <div className="w-full h-full relative flex items-center justify-center bg-indigo-500/10">
                       <div className="flex flex-col items-center">
                         <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-2" />
-                        <span className="text-sm text-indigo-500 font-medium">대본 생성 중...</span>
+                        <span className="text-sm text-indigo-500 font-medium">{t.videoAd?.generatingScripts || 'Generating scripts...'}</span>
                       </div>
                     </div>
                   ) : video.status === 'GENERATING_AUDIO' ? (
@@ -439,18 +439,18 @@ export function VideoAdPageContent() {
                         <>
                           <img
                             src={video.first_scene_image_url}
-                            alt="첫 프레임"
+                            alt={t.videoAd?.firstFrame || 'First frame'}
                             className="w-full h-full object-contain opacity-50"
                           />
                           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
                             <Loader2 className="w-8 h-8 text-pink-500 animate-spin mb-2" />
-                            <span className="text-sm text-pink-500 font-medium">음성 생성 중...</span>
+                            <span className="text-sm text-pink-500 font-medium">{t.videoAd?.generatingAudio || 'Generating audio...'}</span>
                           </div>
                         </>
                       ) : (
                         <div className="flex flex-col items-center justify-center h-full bg-pink-500/10">
                           <Loader2 className="w-8 h-8 text-pink-500 animate-spin mb-2" />
-                          <span className="text-sm text-pink-500 font-medium">음성 생성 중...</span>
+                          <span className="text-sm text-pink-500 font-medium">{t.videoAd?.generatingAudio || 'Generating audio...'}</span>
                         </div>
                       )}
                     </div>
@@ -462,7 +462,7 @@ export function VideoAdPageContent() {
                             <>
                               <img
                                 src={video.first_scene_image_url}
-                                alt="첫 프레임"
+                                alt={t.videoAd?.firstFrame || 'First frame'}
                                 className="w-full h-full object-contain opacity-50"
                               />
                               <div className="absolute inset-0 flex items-center justify-center">
@@ -525,8 +525,8 @@ export function VideoAdPageContent() {
                     {(video.video_duration || video.duration) && (
                       <span className="px-2 py-1 text-xs font-medium bg-black/60 text-white rounded-lg backdrop-blur-sm">
                         {video.video_duration
-                          ? `${Math.round(video.video_duration)}초`
-                          : `${video.duration}초`}
+                          ? `${Math.round(video.video_duration)}${t.videoAd?.seconds || 's'}`
+                          : `${video.duration}${t.videoAd?.seconds || 's'}`}
                       </span>
                     )}
                     {video.bgm_info && (
@@ -596,7 +596,7 @@ export function VideoAdPageContent() {
 
             {/* 총 개수 표시 */}
             <span className="ml-4 text-sm text-muted-foreground font-medium">
-              총 {pagination.totalCount}개
+              {(t.videoAd?.totalCount || 'Total {{count}}').replace('{{count}}', String(pagination.totalCount))}
             </span>
           </div>
         )}
@@ -630,13 +630,13 @@ export function VideoAdPageContent() {
               <div className="w-18 h-18 mx-auto mb-5 rounded-2xl bg-destructive/10 flex items-center justify-center border border-destructive/20">
                 <Trash2 className="w-9 h-9 text-destructive" />
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">{t.videoAd?.deleteModal?.title || '영상 삭제'}</h3>
+              <h3 className="text-xl font-semibold text-foreground mb-2">{t.videoAd?.deleteModal?.title || 'Delete Video'}</h3>
               <p className="text-muted-foreground mb-6">
                 {videoToDelete?.ad_products?.name || videoToDelete?.avatars?.name
-                  ? (t.videoAd?.deleteModal?.confirmWithName || '"{{name}}" 영상을 삭제하시겠습니까?').replace('{{name}}', videoToDelete?.ad_products?.name || videoToDelete?.avatars?.name || '')
-                  : (t.videoAd?.deleteModal?.confirm || '이 영상을 삭제하시겠습니까?')}
+                  ? (t.videoAd?.deleteModal?.confirmWithName || 'Delete "{{name}}"?').replace('{{name}}', videoToDelete?.ad_products?.name || videoToDelete?.avatars?.name || '')
+                  : (t.videoAd?.deleteModal?.confirm || 'Delete this video?')}
                 <br />
-                <span className="text-sm text-destructive font-medium">{t.videoAd?.deleteModal?.warning || '삭제된 영상은 복구할 수 없습니다.'}</span>
+                <span className="text-sm text-destructive font-medium">{t.videoAd?.deleteModal?.warning || 'Deleted videos cannot be recovered.'}</span>
               </p>
 
               <div className="flex gap-3">
