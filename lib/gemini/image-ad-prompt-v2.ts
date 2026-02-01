@@ -350,8 +350,15 @@ function postProcessPrompt(prompt: string, hasLogo: boolean | undefined, adType:
   const lowerPrompt = prompt.toLowerCase()
   const wordCount = prompt.split(/\s+/).length
 
+  // 광고 이미지임을 명시적으로 프롬프트 시작에 추가
+  // 이미지 모델에 상업 광고 사진이라는 맥락을 제공
+  let processedPrompt = prompt
+  if (!lowerPrompt.includes('advertisement') && !lowerPrompt.includes('commercial ad')) {
+    processedPrompt = `Commercial product advertisement photograph. ${prompt}`
+  }
+
   // 이미 충분히 길면 추가하지 않음 (Seedream 4.5 권장: 60-80 words)
-  if (wordCount > 80) return prompt
+  if (wordCount > 80) return processedPrompt
 
   const additions: string[] = []
 
@@ -409,7 +416,7 @@ function postProcessPrompt(prompt: string, hasLogo: boolean | undefined, adType:
     additions.push('Only the final photograph - no lighting fixtures, no light stands, no tripods, no camera equipment visible in frame.')
   }
 
-  return additions.length > 0 ? `${prompt} ${additions.join(' ')}` : prompt
+  return additions.length > 0 ? `${processedPrompt} ${additions.join(' ')}` : processedPrompt
 }
 
 // ============================================================
