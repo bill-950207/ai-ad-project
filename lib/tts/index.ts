@@ -9,6 +9,7 @@
 export {
   // 타입
   type TTSLanguage,
+  type LocalizedDescription,
   type VoiceInfo,
   type KieTTSInput,
   type KieTTSOutput,
@@ -23,6 +24,7 @@ export {
   getVoicesByLanguage,
   getAllVoices,
   findVoiceById,
+  getVoiceDescription,  // 다국어 설명 가져오기
   detectLanguage,
   estimateAudioDuration,
   getRecommendedCharCount,

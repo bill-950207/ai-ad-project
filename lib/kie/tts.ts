@@ -84,15 +84,37 @@ export type TTSLanguage =
   | 'sd' | 'sk' | 'sl' | 'so' | 'es' | 'sw' | 'sv' | 'ta' | 'te' | 'th'
   | 'tr' | 'uk' | 'ur' | 'vi' | 'cy'
 
+/** 다국어 설명 인터페이스 */
+export interface LocalizedDescription {
+  en: string
+  ko: string
+  ja: string
+  zh: string
+}
+
 /** 음성 정보 인터페이스 */
 export interface VoiceInfo {
   id: string
   name: string
   description: string
+  descriptions: LocalizedDescription  // 다국어 설명
   gender: 'male' | 'female' | 'unknown'
   style: string
   language: TTSLanguage
   previewUrl?: string
+}
+
+/**
+ * 선택한 언어에 맞는 음성 설명 가져오기
+ */
+export function getVoiceDescription(voice: VoiceInfo, lang: string): string {
+  const descriptions = voice.descriptions
+  switch (lang) {
+    case 'ko': return descriptions.ko
+    case 'ja': return descriptions.ja
+    case 'zh': return descriptions.zh
+    default: return descriptions.en
+  }
 }
 
 /** TTS 입력 타입 */
@@ -119,140 +141,322 @@ export interface KieTTSResult {
 // ============================================================
 
 /**
- * ElevenLabs Voice IDs
+ * ElevenLabs Voice IDs (여성 10명 + 남성 10명)
  * NOTE: ElevenLabs는 모든 음성이 모든 언어를 지원합니다.
- * TODO: 실제 테스트 후 name, gender 등 업데이트 필요
  */
 export const VOICE_IDS = [
-  'BIvP0GN1cAtSRTxNHnWS',
-  'aMSt68OGf4xUZAnLpTU8',
-  'RILOU7YmBhvwJGDGjNmP',
-  'EkK5I93UQWFDigLMpZcX',
-  'Z3R5wn05IrDiVCyEkUrK',
-  'tnSpp4vdxKPjI9w0GnoV',
-  'NNl6r8mD7vthiJatiJt1',
-  'YOq2y2Up4RgXP2HyXjE5',
-  'Bj9UqZbhQsanLzgalpEG',
-  'c6SfcYrb2t09NHXiT80T',
-  'B8gJV1IhpuegLxdpXFOE',
-  'exsUS4vynmxd379XN4yO',
-  'BpjGufoPiobT79j2vtj4',
-  '2zRM7PkgwBPiau2jvVXc',
-  '1SM7GgM6IMuvQlz2BwM3',
-  'ouL9IsyrSnUkCmfnD02u',
-  '5l5f8iK3YPeGga21rQIX',
-  'scOwDtmlUjD3prqpp97I',
-  'NOpBlnGInO9m6vDvFkFC',
-  'BZgkqPqms7Kj9ulSkVzn',
-  'wo6udizrrtpIxWGp2qJk',
-  'yjJ45q8TVCrtMhEKurxY',
-  'gU0LNdkMOQCOrPrwtbee',
-  'DGzg6RaUqxGRTHSBjfgF',
-  'DGTOOUoGpoP6UZ9uSWfA',
-  'x70vRnQBMBu4FAYhjJbO',
-  'Sm1seazb4gs7RSlUVw7c',
-  'P1bg08DkjqiVEzOn76yG',
-  'qDuRKMlYmrm8trt5QyBn',
-  'kUUTqKQ05NMGulF08DDf',
-  'qXpMhyvQqiRxWQs4qSSB',
-  'TX3LPaxmHKxFdv7VOQHJ',
-  'iP95p4xoKVk53GoZ742B',
-  'SOYHLrjzK2X1ezoPC6cr',
-  'N2lVS1w4EtoT3dr4eOWO',
-  'FGY2WhTYpPnrIDTdsKH5',
-  'XB0fDUnXU5powFXDhCwa',
-  'cgSgspJ2msm6clMCkdW9',
-  'MnUw1cSnpiLoLhpd3Hqp',
-  'kPzsL2i3teMYv0FxEYQ6',
-  'UgBBYS2sOqTuMpoF3BR0',
-  'IjnA9kwZJHJ20Fp7Vmy6',
-  'KoQQbl9zjAdLgKZjm8Ol',
-  'hpp4J3VqNfWAUOO0d1Us',
-  'pNInz6obpgDQGcFmaJgB',
-  'nPczCjzI2devNBz1zQrb',
-  'L0Dsvb3SLTyegXwtm47J',
-  'uYXf8XasLslADfZ2MB4u',
-  'gs0tAILXbY5DNrJrsM6F',
-  'DTKMou8ccj1ZaWGBiotd',
-  'vBKc2FfBKJfcZNyEt1n6',
-  'TmNe0cCqkZBMwPWOd3RD',
-  'DYkrAHD8iwork3YSUBbs',
-  '56AoDkrOh6qfVPDXZ7Pt',
-  'eR40ATw9ArzDf9h3v7t7',
-  'g6xIsTj2HwM6VR4iXFCw',
-  'lcMyyd2HUfFzxdCaC4Ta',
-  '6aDn1KB0hjpdcocrUkmq',
-  'Sq93GQT4X1lKDXsQcixO',
-  'vfaqCOvlrKi4Zp7C2IAm',
-  'piI8Kku0DcvcL6TTSeQt',
-  'KTPVrSVAEUSJRClDzBw7',
-  'flHkNRp1BlvT73UL6gyz',
-  '9yzdeviXkFddZ4Oz8Mok',
-  'pPdl9cQBQq4p6mRkZy2Z',
-  '0SpgpJ4D3MpHCiWdyTg3',
-  'UFO0Yv86wqRxAt1DmXUu',
-  'oR4uRy4fHDUGGISL0Rev',
-  'zYcjlYFOd3taleS0gkk3',
-  'nzeAacJi50IvxcyDnMXa',
-  'ruirxsoakN0GWmGNIo04',
-  '1KFdM0QCwQn4rmn5nn9C',
-  'TC0Zp7WVFzhA8zpTlRqV',
-  'ljo9gAlSqKOvF6D8sOsX',
-  'PPzYpIqttlTYA83688JI',
-  'ZF6FPAbjXT4488VcRRnw',
-  '8JVbfL6oEdmuxKn5DK2C',
-  'iCrDUkL56s3C8sCRl7wb',
-  '1hlpeD1ydbI2ow0Tt3EW',
-  'wJqPPQ618aTW29mptyoc',
-  'EiNlNiXeDU1pqqOPrYMO',
-  'FUfBrNit0NNZAwb58KWH',
-  '4YYIPFl9wE5c4L2eu2Gb',
-  'OYWwCdDHouzDwiZJWOOu',
-  '6F5Zhi321D3Oq7v1oNT4',
-  'qNkzaJoHLLdpvgh5tISm',
-  'YXpFCvM1S3JbWEJhoskW',
-  '9PVP7ENhDskL0KYHAKtD',
-  'LG95yZDEHg6fCZdQjLqj',
-  'CeNX9CMwmxDxUF5Q2Inm',
-  'st7NwhTPEzqo2riw7qWC',
-  'aD6riP1btT197c6dACmy',
-  'FF7KdobWPaiR0vkcALHF',
-  'mtrellq69YZsNwzUSyXh',
-  'dHd5gvgSOzSfduK4CvEg',
-  'cTNP6ZM2mLTKj2BFhxEh',
-  'eVItLK1UvXctxuaRV2Oq',
-  'U1Vk2oyatMdYs096Ety7',
-  'esy0r39YPLQjOczyOib8',
-  'bwCXcoVxWNYMlC6Esa8u',
-  'D2jw4N9m4xePLTQ3IHjU',
-  'Tsns2HvNFKfGiNjllgqo',
-  'Atp5cNFg1Wj5gyKD7HWV',
-  '1cxc5c3E9K6F1wlqOJGV',
-  '1U02n4nD6AdIZ9CjF053',
-  'HgyIHe81F3nXywNwkraY',
-  'AeRdCCKzvd23BpJoofzx',
-  'LruHrtVF6PSyGItzMNHS',
-  'Qggl4b0xRMiqOwhPtVWT',
-  'zA6D7RyKdc2EClouEMkP',
-  '1wGbFxmAM3Fgw63G1zZJ',
-  'hqfrgApggtO1785R4Fsn',
-  'sH0WdfE5fsKuM2otdQZr',
-  'MJ0RnG71ty4LH3dvNfSd',
+  // 여성 (10명)
+  'BIvP0GN1cAtSRTxNHnWS',  // Ellen
+  'aMSt68OGf4xUZAnLpTU8',  // Juniper
+  'RILOU7YmBhvwJGDGjNmP',  // Jane
+  'Z3R5wn05IrDiVCyEkUrK',  // Arabella
+  'tnSpp4vdxKPjI9w0GnoV',  // Hope
+  'B8gJV1IhpuegLxdpXFOE',  // Kuon
+  'exsUS4vynmxd379XN4yO',  // Blondie
+  'BpjGufoPiobT79j2vtj4',  // Priyanka
+  '2zRM7PkgwBPiau2jvVXc',  // Monika Sogam
+  '5l5f8iK3YPeGga21rQIX',  // Adeline
+  // 남성 (10명)
+  'EkK5I93UQWFDigLMpZcX',  // James
+  'NNl6r8mD7vthiJatiJt1',  // Bradford
+  'YOq2y2Up4RgXP2HyXjE5',  // Xavier
+  'Bj9UqZbhQsanLzgalpEG',  // Austin
+  'c6SfcYrb2t09NHXiT80T',  // Jarnathan
+  '1SM7GgM6IMuvQlz2BwM3',  // Mark
+  'scOwDtmlUjD3prqpp97I',  // Sam
+  'NOpBlnGInO9m6vDvFkFC',  // Spuds Oxley
+  'DGTOOUoGpoP6UZ9uSWfA',  // Célian
+  'x70vRnQBMBu4FAYhjJbO',  // Nathan
 ] as const
 
 /**
- * 전체 음성 목록
+ * 전체 음성 목록 (여성 10명 + 남성 10명)
  * ElevenLabs 음성은 모든 언어를 지원하므로 언어 구분 없이 단일 목록으로 관리합니다.
- * TODO: 실제 테스트 후 name, gender, style 등 업데이트 필요
  */
-export const VOICES: VoiceInfo[] = VOICE_IDS.map((id, index) => ({
-  id,
-  name: `Voice ${index + 1}`,
-  description: 'ElevenLabs multilingual voice',
-  gender: 'unknown' as const,
-  style: 'neutral',
-  language: 'auto' as TTSLanguage,
-}))
+export const VOICES: VoiceInfo[] = [
+  // ========== 여성 (10명) ==========
+  {
+    id: 'BIvP0GN1cAtSRTxNHnWS',
+    name: 'Ellen',
+    description: 'Serious, Direct and Confident / Conversational',
+    descriptions: {
+      en: 'Serious, Direct and Confident / Conversational',
+      ko: '진지하고 직접적이며 자신감 있는 / 대화형',
+      ja: '真剣で直接的、自信に満ちた / 会話型',
+      zh: '严肃、直接且自信 / 对话式',
+    },
+    gender: 'female',
+    style: 'conversational',
+    language: 'auto' as TTSLanguage,
+  },
+  {
+    id: 'aMSt68OGf4xUZAnLpTU8',
+    name: 'Juniper',
+    description: 'Grounded and Professional / Conversational',
+    descriptions: {
+      en: 'Grounded and Professional / Conversational',
+      ko: '차분하고 전문적인 / 대화형',
+      ja: '落ち着いてプロフェッショナル / 会話型',
+      zh: '沉稳且专业 / 对话式',
+    },
+    gender: 'female',
+    style: 'conversational',
+    language: 'auto' as TTSLanguage,
+  },
+  {
+    id: 'RILOU7YmBhvwJGDGjNmP',
+    name: 'Jane',
+    description: 'Professional Audiobook Reader / Narration',
+    descriptions: {
+      en: 'Professional Audiobook Reader / Narration',
+      ko: '전문 오디오북 리더 / 나레이션',
+      ja: 'プロのオーディオブックリーダー / ナレーション',
+      zh: '专业有声书朗读者 / 旁白',
+    },
+    gender: 'female',
+    style: 'narration',
+    language: 'auto' as TTSLanguage,
+  },
+  {
+    id: 'Z3R5wn05IrDiVCyEkUrK',
+    name: 'Arabella',
+    description: 'Mysterious and Emotive / Narration',
+    descriptions: {
+      en: 'Mysterious and Emotive / Narration',
+      ko: '신비롭고 감성적인 / 나레이션',
+      ja: '神秘的で感情豊か / ナレーション',
+      zh: '神秘且富有情感 / 旁白',
+    },
+    gender: 'female',
+    style: 'narration',
+    language: 'auto' as TTSLanguage,
+  },
+  {
+    id: 'tnSpp4vdxKPjI9w0GnoV',
+    name: 'Hope',
+    description: 'Upbeat and Clear / Social Media',
+    descriptions: {
+      en: 'Upbeat and Clear / Social Media',
+      ko: '밝고 명확한 / 소셜 미디어',
+      ja: '明るくクリア / ソーシャルメディア',
+      zh: '活泼清晰 / 社交媒体',
+    },
+    gender: 'female',
+    style: 'social-media',
+    language: 'auto' as TTSLanguage,
+  },
+  {
+    id: 'B8gJV1IhpuegLxdpXFOE',
+    name: 'Kuon',
+    description: 'Cheerful, Clear and Steady / Characters',
+    descriptions: {
+      en: 'Cheerful, Clear and Steady / Characters',
+      ko: '쾌활하고 명확하며 안정적인 / 캐릭터',
+      ja: '陽気で明瞭、安定感のある / キャラクター',
+      zh: '开朗、清晰且稳定 / 角色',
+    },
+    gender: 'female',
+    style: 'characters',
+    language: 'auto' as TTSLanguage,
+  },
+  {
+    id: 'exsUS4vynmxd379XN4yO',
+    name: 'Blondie',
+    description: 'Conversational / Conversational',
+    descriptions: {
+      en: 'Conversational / Conversational',
+      ko: '대화체 / 대화형',
+      ja: '会話的 / 会話型',
+      zh: '对话式 / 对话式',
+    },
+    gender: 'female',
+    style: 'conversational',
+    language: 'auto' as TTSLanguage,
+  },
+  {
+    id: 'BpjGufoPiobT79j2vtj4',
+    name: 'Priyanka',
+    description: 'Calm, Neutral and Relaxed / Narration',
+    descriptions: {
+      en: 'Calm, Neutral and Relaxed / Narration',
+      ko: '차분하고 중립적이며 편안한 / 나레이션',
+      ja: '穏やかでニュートラル、リラックス / ナレーション',
+      zh: '平静、中性且放松 / 旁白',
+    },
+    gender: 'female',
+    style: 'narration',
+    language: 'auto' as TTSLanguage,
+  },
+  {
+    id: '2zRM7PkgwBPiau2jvVXc',
+    name: 'Monika Sogam',
+    description: 'Deep and Natural / Social Media',
+    descriptions: {
+      en: 'Deep and Natural / Social Media',
+      ko: '깊고 자연스러운 / 소셜 미디어',
+      ja: '深みがあり自然 / ソーシャルメディア',
+      zh: '深沉自然 / 社交媒体',
+    },
+    gender: 'female',
+    style: 'social-media',
+    language: 'auto' as TTSLanguage,
+  },
+  {
+    id: '5l5f8iK3YPeGga21rQIX',
+    name: 'Adeline',
+    description: 'Feminine and Conversational / Narration',
+    descriptions: {
+      en: 'Feminine and Conversational / Narration',
+      ko: '여성스럽고 대화체인 / 나레이션',
+      ja: 'フェミニンで会話的 / ナレーション',
+      zh: '女性化且对话式 / 旁白',
+    },
+    gender: 'female',
+    style: 'narration',
+    language: 'auto' as TTSLanguage,
+  },
+  // ========== 남성 (10명) ==========
+  {
+    id: 'EkK5I93UQWFDigLMpZcX',
+    name: 'James',
+    description: 'Husky, Engaging and Bold / Narration',
+    descriptions: {
+      en: 'Husky, Engaging and Bold / Narration',
+      ko: '허스키하고 매력적이며 대담한 / 나레이션',
+      ja: 'ハスキーで魅力的、大胆 / ナレーション',
+      zh: '沙哑、吸引人且大胆 / 旁白',
+    },
+    gender: 'male',
+    style: 'narration',
+    language: 'auto' as TTSLanguage,
+  },
+  {
+    id: 'NNl6r8mD7vthiJatiJt1',
+    name: 'Bradford',
+    description: 'Expressive and Articulate / Narration',
+    descriptions: {
+      en: 'Expressive and Articulate / Narration',
+      ko: '표현력이 풍부하고 명료한 / 나레이션',
+      ja: '表現力豊かで明瞭 / ナレーション',
+      zh: '富有表现力且清晰 / 旁白',
+    },
+    gender: 'male',
+    style: 'narration',
+    language: 'auto' as TTSLanguage,
+  },
+  {
+    id: 'YOq2y2Up4RgXP2HyXjE5',
+    name: 'Xavier',
+    description: 'Dominating, Metallic Announcer / Characters',
+    descriptions: {
+      en: 'Dominating, Metallic Announcer / Characters',
+      ko: '압도적이고 금속성 아나운서 / 캐릭터',
+      ja: '支配的でメタリックなアナウンサー / キャラクター',
+      zh: '霸气、金属感播音员 / 角色',
+    },
+    gender: 'male',
+    style: 'characters',
+    language: 'auto' as TTSLanguage,
+  },
+  {
+    id: 'Bj9UqZbhQsanLzgalpEG',
+    name: 'Austin',
+    description: 'Deep, Raspy and Authentic / Characters',
+    descriptions: {
+      en: 'Deep, Raspy and Authentic / Characters',
+      ko: '깊고 거친 진정성 있는 / 캐릭터',
+      ja: '深くハスキーで本物感のある / キャラクター',
+      zh: '低沉、沙哑且真实 / 角色',
+    },
+    gender: 'male',
+    style: 'characters',
+    language: 'auto' as TTSLanguage,
+  },
+  {
+    id: 'c6SfcYrb2t09NHXiT80T',
+    name: 'Jarnathan',
+    description: 'Confident and Versatile / Conversational',
+    descriptions: {
+      en: 'Confident and Versatile / Conversational',
+      ko: '자신감 있고 다재다능한 / 대화형',
+      ja: '自信に満ちて多才 / 会話型',
+      zh: '自信且多才多艺 / 对话式',
+    },
+    gender: 'male',
+    style: 'conversational',
+    language: 'auto' as TTSLanguage,
+  },
+  {
+    id: '1SM7GgM6IMuvQlz2BwM3',
+    name: 'Mark',
+    description: 'Casual, Relaxed and Light / Conversational',
+    descriptions: {
+      en: 'Casual, Relaxed and Light / Conversational',
+      ko: '캐주얼하고 편안하며 가벼운 / 대화형',
+      ja: 'カジュアルでリラックス、軽やか / 会話型',
+      zh: '休闲、放松且轻松 / 对话式',
+    },
+    gender: 'male',
+    style: 'conversational',
+    language: 'auto' as TTSLanguage,
+  },
+  {
+    id: 'scOwDtmlUjD3prqpp97I',
+    name: 'Sam',
+    description: 'Support Agent / Conversational',
+    descriptions: {
+      en: 'Support Agent / Conversational',
+      ko: '고객 지원 상담원 / 대화형',
+      ja: 'サポートエージェント / 会話型',
+      zh: '客服代表 / 对话式',
+    },
+    gender: 'male',
+    style: 'conversational',
+    language: 'auto' as TTSLanguage,
+  },
+  {
+    id: 'NOpBlnGInO9m6vDvFkFC',
+    name: 'Spuds Oxley',
+    description: 'Wise and Approachable / Conversational',
+    descriptions: {
+      en: 'Wise and Approachable / Conversational',
+      ko: '현명하고 친근한 / 대화형',
+      ja: '賢明で親しみやすい / 会話型',
+      zh: '睿智且平易近人 / 对话式',
+    },
+    gender: 'male',
+    style: 'conversational',
+    language: 'auto' as TTSLanguage,
+  },
+  {
+    id: 'DGTOOUoGpoP6UZ9uSWfA',
+    name: 'Célian',
+    description: 'Documentary Narrator / Narration',
+    descriptions: {
+      en: 'Documentary Narrator / Narration',
+      ko: '다큐멘터리 나레이터 / 나레이션',
+      ja: 'ドキュメンタリーナレーター / ナレーション',
+      zh: '纪录片旁白 / 旁白',
+    },
+    gender: 'male',
+    style: 'narration',
+    language: 'auto' as TTSLanguage,
+  },
+  {
+    id: 'x70vRnQBMBu4FAYhjJbO',
+    name: 'Nathan',
+    description: 'Virtual Radio Host / Narration',
+    descriptions: {
+      en: 'Virtual Radio Host / Narration',
+      ko: '버추얼 라디오 호스트 / 나레이션',
+      ja: 'バーチャルラジオホスト / ナレーション',
+      zh: '虚拟电台主持人 / 旁白',
+    },
+    gender: 'male',
+    style: 'narration',
+    language: 'auto' as TTSLanguage,
+  },
+]
 
 /** 언어 라벨 */
 export const LANGUAGE_LABELS: Record<string, string> = {
