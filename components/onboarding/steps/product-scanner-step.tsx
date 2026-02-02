@@ -10,8 +10,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { useOnboarding } from '../onboarding-context'
+import { useLanguage } from '@/contexts/language-context'
 
 export function ProductScannerStep() {
+  const { t } = useLanguage()
+  const scannerT = t.onboarding?.productScanner || {}
   const {
     newProductId,
     productSourceImageUrl,
@@ -152,12 +155,12 @@ export function ProductScannerStep() {
       <div className="flex items-center gap-2 mt-6">
         <Loader2 className="w-5 h-5 animate-spin text-primary" />
         <p className="text-sm text-muted-foreground">
-          제품 이미지를 분석하고 배경을 제거하고 있습니다...
+          {scannerT.analyzing || 'Analyzing product image and removing background...'}
         </p>
       </div>
 
       <p className="text-xs text-muted-foreground mt-2">
-        잠시만 기다려주세요
+        {scannerT.pleaseWait || 'Please wait'}
       </p>
     </div>
   )

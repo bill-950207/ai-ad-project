@@ -194,108 +194,34 @@
     }
   },
   "pricingPage": {
-    "badge": "シンプルな料金",
-    "title": "最適なプランを選択",
-    "subtitle": "いつでもアップグレードまたはキャンセル可能。隠れた費用なしで透明に。",
-    "monthly": "月払い",
-    "yearly": "年払い",
-    "popular": "人気",
+    "title": "プラン選択",
+    "subtitle": "ニーズに合ったプランを選択してください。いつでもアップグレードできます。",
+    "loadError": "プラン情報を読み込めません。",
+    "checkoutError": "決済ページを開けません。",
+    "processingError": "決済処理中にエラーが発生しました。しばらくしてからお試しください。",
+    "monthlyBilling": "月額課金",
+    "yearlyBilling": "年額課金",
+    "save": "節約",
     "free": "無料",
-    "perMonth": "月",
-    "yearlySavings": "年${{amount}}節約！",
+    "perMonth": "/月",
+    "yearlySavings": "年間${amount}お得！",
     "avatars": "アバター",
     "music": "音楽",
-    "products": "製品",
+    "products": "商品",
     "credits": "クレジット",
-    "getStarted": "始める",
-    "cancelAnytime": "いつでもキャンセル可能",
-    "keepContent": "コンテンツ永久保存",
-    "creditsRollOver": "クレジット繰越",
-    "ctaText": "すべてのプランで無料スタート。今すぐ最初の広告を作成！",
-    "startFree": "無料で始める",
-    "plans": {
-      "free": {
-        "description": "始めるのに最適な無料プラン",
-        "valueHighlight": "",
-        "features": [
-          "AIアバター生成",
-          "AI BGM生成",
-          "自動背景除去",
-          "画像1枚ずつ生成",
-          "最短動画のみ",
-          "透かし付き"
-        ],
-        "limits": {
-          "avatars": "最大3個",
-          "music": "最大5個",
-          "products": "最大3個",
-          "credits": "15クレジット（1回）",
-          "imageEstimate": "～7枚の広告画像",
-          "videoEstimate": ""
-        }
-      },
-      "starter": {
-        "description": "個人クリエイター向けプラン",
-        "valueHighlight": "他社より4倍お得",
-        "features": [
-          "全Free機能含む",
-          "透かしなし",
-          "HD高画質アップスケール",
-          "画像最大5枚同時生成",
-          "動画長さ選択可能",
-          "優先生成キュー"
-        ],
-        "limits": {
-          "avatars": "最大9個",
-          "music": "最大15個",
-          "products": "最大9個",
-          "credits": "120クレジット/月",
-          "imageEstimate": "～60枚の広告画像",
-          "videoEstimate": "～12本の広告動画"
-        }
-      },
-      "pro": {
-        "description": "プロフェッショナル向けプラン",
-        "valueHighlight": "画像1枚$0.14",
-        "features": [
-          "全Starter機能含む",
-          "最優先生成処理",
-          "高品質画像生成",
-          "動画3本同時生成",
-          "プロ用テンプレート",
-          "プレミアムサポート"
-        ],
-        "limits": {
-          "avatars": "最大30個",
-          "music": "最大50個",
-          "products": "最大30個",
-          "credits": "420クレジット/月",
-          "imageEstimate": "～210枚の広告画像",
-          "videoEstimate": "～42本の広告動画"
-        }
-      },
-      "business": {
-        "description": "チームと企業向けプラン",
-        "valueHighlight": "画像1枚$0.12",
-        "features": [
-          "全Pro機能含む",
-          "無制限コンテンツ生成",
-          "専用サポート",
-          "APIアクセス",
-          "チームコラボ機能",
-          "カスタムブランディング",
-          "優先機能アップデート"
-        ],
-        "limits": {
-          "avatars": "無制限",
-          "music": "無制限",
-          "products": "無制限",
-          "credits": "1,600クレジット/月",
-          "imageEstimate": "～800枚の広告画像",
-          "videoEstimate": "～160本の広告動画"
-        }
-      }
-    }
+    "currentPlan": "現在のプラン",
+    "popular": "人気",
+    "bestValue": "Best Value",
+    "cannotDowngrade": "ダウングレード不可",
+    "upgrade": "アップグレード",
+    "subscribe": "購読する",
+    "processing": "処理中...",
+    "cancelAnytime": "いつでも解約可能",
+    "keepContent": "生成コンテンツを永久保存",
+    "creditsRollOver": "クレジット翌月繰越",
+    "allPlansCancelable": "すべての有料プランはいつでも解約できます。解約後も次回請求日までサービスをご利用いただけ、生成したコンテンツは保存されます。",
+    "watermarkIncluded": "ウォーターマーク付き",
+    "unlimited": "無制限"
   },
   "showcase": {
     "title": "制作事例",
@@ -713,10 +639,22 @@
     "pleaseWait": "しばらくお待ちください",
     "wizard": {
       "steps": {
-        "step1": { "title": "基本情報", "description": "タイプ、商品、アバター" },
-        "step2": { "title": "設定方法", "description": "手動/AI/参照" },
-        "step3": { "title": "詳細オプション", "description": "ポーズ、背景、照明" },
-        "step4": { "title": "生成", "description": "比率、品質、価格" }
+        "step1": {
+          "title": "基本情報",
+          "description": "タイプ、商品、アバター"
+        },
+        "step2": {
+          "title": "設定方法",
+          "description": "手動/AI/参照"
+        },
+        "step3": {
+          "title": "詳細オプション",
+          "description": "ポーズ、背景、照明"
+        },
+        "step4": {
+          "title": "生成",
+          "description": "比率、品質、価格"
+        }
       },
       "selectAdType": "広告タイプを選択",
       "optional": "(オプション)",
@@ -1042,7 +980,6 @@
       "localImage": "ローカル画像"
     },
     "scriptStyle": "スクリプトスタイル",
-    "productInfo": "製品情報",
     "styleLabels": {
       "formal": "フォーマル",
       "casual": "カジュアル",
@@ -1075,6 +1012,29 @@
       "goBack": "戻る",
       "retry": "再試行",
       "doNotCloseWindow": "ウィンドウを閉じないでください。合成中です。"
+    },
+    "legacyCreate": {
+      "selectFileImage": "画像ファイルを選択",
+      "noProductsRegistered": "登録された製品がありません",
+      "preview": "プレビュー",
+      "firstSceneComplete": "最初のシーン画像生成完了",
+      "localImageLabel": "ローカル画像",
+      "productLabel": "製品",
+      "avatarLabel": "アバター",
+      "selectProductOrAvatar": "製品またはアバターを選択してください",
+      "generationProgress": "生成進捗",
+      "progressSteps": {
+        "script": "台本",
+        "firstScene": "最初のシーン",
+        "video": "動画"
+      },
+      "productAnalysisResult": "製品分析結果",
+      "generationGuide": {
+        "title": "動画生成ガイド",
+        "step1": "製品情報をもとにAIが広告台本を作成します",
+        "step2": "製品とアバターが一緒にいる最初のシーン画像を生成します",
+        "step3": "最初のシーン画像をもとに動画を生成します（約2-5分）"
+      }
     }
   },
   "imageEdit": {
@@ -1132,7 +1092,15 @@
     "fitToVideo": "動画に合わせる",
     "stop": "停止",
     "preview": "プレビュー",
-    "apply": "適用"
+    "apply": "適用",
+    "track": "トラック",
+    "trackSelect": {
+      "title": "トラック選択",
+      "description": "生成された2つのトラックから1つを選択してください。各トラックを試聴できます。",
+      "track": "トラック",
+      "confirm": "選択完了",
+      "cancel": "キャンセル"
+    }
   },
   "productCreate": {
     "title": "新規製品登録",
@@ -1319,7 +1287,37 @@
       "selectRatio": "動画比率を選択してください",
       "setAllScenes": "すべてのシーンの背景と雰囲気を設定してください",
       "overallMood": "全体の雰囲気",
-      "selectMoodPlaceholder": "動画の全体的な雰囲気を選択してください"
+      "selectMoodPlaceholder": "動画の全体的な雰囲気を選択してください",
+      "aspectRatios": {
+        "landscape": "横向き",
+        "landscapeDesc": "YouTube、ウェブサイト",
+        "portrait": "縦向き",
+        "portraitDesc": "リール、ショート、TikTok",
+        "square": "正方形",
+        "squareDesc": "Instagramフィード"
+      },
+      "moodOptions": {
+        "luxuryElegant": "高級でエレガント",
+        "warmFriendly": "暖かく親しみやすい",
+        "modernSophisticated": "モダンで洗練された",
+        "dynamicEnergetic": "ダイナミックでエネルギッシュ",
+        "calmRelaxed": "穏やかでリラックス",
+        "trendyYoung": "トレンディで若々しい",
+        "classicTraditional": "クラシックで伝統的"
+      },
+      "adElements": {
+        "backgroundLabel": "背景/場所",
+        "moodLabel": "雰囲気/トーン",
+        "backgrounds": {
+          "minimalStudio": "ミニマルスタジオ",
+          "luxuryInterior": "高級インテリア",
+          "naturalBackground": "自然な背景",
+          "cityscape": "都市風景",
+          "abstractBackground": "抽象的な背景",
+          "gradientBackground": "グラデーション背景",
+          "textureBackground": "テクスチャ背景"
+        }
+      }
     },
     "step4": {
       "title": "シーンキーフレーム生成",
@@ -1399,11 +1397,23 @@
       "errorKeyframeNotFound": "該当シーンのキーフレームが見つかりません。",
       "errorSceneRegeneration": "シーン動画の再生成に失敗しました。",
       "errorVideoGeneration": "動画生成に失敗しました。",
-      "errorMergeVideo": "動画の結合に失敗しました。"
+      "errorMergeVideo": "動画の結合に失敗しました。",
+      "resolutionOptions": {
+        "sdDesc": "高速生成",
+        "hdDesc": "標準画質",
+        "fhdDesc": "高画質"
+      }
     }
   },
   "productDescWizard": {
-    "loadingDraft": "保存されたデータを読み込み中..."
+    "loadingDraft": "保存されたデータを読み込み中...",
+    "placeholders": {
+      "productDescription": "製品についての説明...",
+      "sellingPoint": "製品のメリットや特徴",
+      "locationDescription": "ご希望の場所を説明してください... (例: 日差しが差し込む明るいリビング)",
+      "outfitDescription": "ご希望の衣装を説明してください... (例: 白いリネンシャツとベージュのスラックス)"
+    },
+    "firstFrame": "最初のフレーム"
   },
   "imageAdDetail": {
     "title": "画像広告詳細",
@@ -1431,7 +1441,8 @@
     "registerFailed": "登録に失敗しました。",
     "registerError": "登録中にエラーが発生しました。",
     "deleteSingleFailed": "画像の削除に失敗しました。",
-    "deleteImage": "画像を削除"
+    "deleteImage": "画像を削除",
+    "registerShowcase": "ショーケースに登録"
   },
   "imageAdCreate": {
     "title": "画像広告作成",
@@ -2110,6 +2121,46 @@
       "imageProcessingFailed": "画像処理に失敗しました",
       "cannotFetchProduct": "商品情報を取得できません",
       "errorOccurred": "エラーが発生しました"
+    },
+    "avatarProcessing": {
+      "generating": "アバターを生成しています...",
+      "processing": "リクエストを処理しています...",
+      "inQueue": "キューで待機中...",
+      "aiGenerating": "AIがアバターを生成しています...",
+      "saving": "画像を保存しています...",
+      "completeFailed": "完了処理に失敗しました",
+      "saveFailed": "画像の保存に失敗しました",
+      "pleaseWait": "しばらくお待ちください"
+    },
+    "productScanner": {
+      "analyzing": "商品画像を分析し、背景を削除しています...",
+      "pleaseWait": "しばらくお待ちください"
+    },
+    "imageType": {
+      "selectPrompt": "作成したい画像広告のタイプを選択してください",
+      "withModel": "モデル付き",
+      "productOnly": "商品のみ"
+    },
+    "videoType": {
+      "selectPrompt": "作成したい動画広告のタイプを選択してください",
+      "productDescription": {
+        "title": "商品説明動画",
+        "description": "アバターが商品を紹介するトーキング動画",
+        "features": [
+          "アバターが直接商品説明",
+          "AI音声とリップシンク",
+          "インフルエンサースタイル動画"
+        ]
+      },
+      "productAd": {
+        "title": "商品広告動画",
+        "description": "商品中心のシネマティック広告動画",
+        "features": [
+          "商品中心のビジュアル",
+          "多様なシーン構成",
+          "BGM自動生成"
+        ]
+      }
     }
   },
   "auth": {
@@ -2242,35 +2293,6 @@
     "usageInfo": "制限を超えるとクレジットが消費されます。もっと生成したい場合は",
     "upgradePlanLink": "プランをアップグレード"
   },
-  "pricingPage": {
-    "title": "プラン選択",
-    "subtitle": "ニーズに合ったプランを選択してください。いつでもアップグレードできます。",
-    "loadError": "プラン情報を読み込めません。",
-    "checkoutError": "決済ページを開けません。",
-    "processingError": "決済処理中にエラーが発生しました。しばらくしてからお試しください。",
-    "monthlyBilling": "月額課金",
-    "yearlyBilling": "年額課金",
-    "save": "節約",
-    "free": "無料",
-    "perMonth": "/月",
-    "yearlySavings": "年間${amount}お得！",
-    "avatars": "アバター",
-    "music": "音楽",
-    "products": "商品",
-    "credits": "クレジット",
-    "currentPlan": "現在のプラン",
-    "popular": "人気",
-    "bestValue": "Best Value",
-    "cannotDowngrade": "ダウングレード不可",
-    "upgrade": "アップグレード",
-    "subscribe": "購読する",
-    "processing": "処理中...",
-    "cancelAnytime": "いつでも解約可能",
-    "keepContent": "生成コンテンツを永久保存",
-    "creditsRollOver": "クレジット翌月繰越",
-    "allPlansCancelable": "すべての有料プランはいつでも解約できます。解約後も次回請求日までサービスをご利用いただけ、生成したコンテンツは保存されます。",
-    "watermarkIncluded": "ウォーターマーク付き"
-  },
   "onboardingModal": {
     "videoTypeTitle": "動画広告タイプを選択",
     "videoTypeSubtitle": "作成したい動画広告のタイプを選択してください",
@@ -2317,5 +2339,10 @@
       "fetchFailed": "情報を取得できません",
       "slotFull": "スロットがいっぱいです"
     }
+  },
+  "globalError": {
+    "title": "問題が発生しました",
+    "description": "予期しないエラーが発生しました。しばらくしてからもう一度お試しください。",
+    "retry": "もう一度試す"
   }
 }

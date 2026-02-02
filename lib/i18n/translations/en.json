@@ -194,108 +194,34 @@
     }
   },
   "pricingPage": {
-    "badge": "Simple Pricing",
-    "title": "Choose the Right Plan for You",
-    "subtitle": "Upgrade or cancel anytime. Transparent pricing with no hidden fees.",
-    "monthly": "Monthly",
-    "yearly": "Yearly",
-    "popular": "Popular",
+    "title": "Choose a Plan",
+    "subtitle": "Select the plan that fits your needs. You can upgrade anytime.",
+    "loadError": "Unable to load plan info.",
+    "checkoutError": "Unable to open checkout page.",
+    "processingError": "An error occurred during checkout. Please try again.",
+    "monthlyBilling": "Monthly",
+    "yearlyBilling": "Yearly",
+    "save": "Save",
     "free": "Free",
-    "perMonth": "mo",
-    "yearlySavings": "Save ${{amount}}/year",
+    "perMonth": "/mo",
+    "yearlySavings": "Save ${amount}/year!",
     "avatars": "Avatars",
     "music": "Music",
     "products": "Products",
     "credits": "Credits",
-    "getStarted": "Get Started",
-    "cancelAnytime": "Cancel Anytime",
-    "keepContent": "Keep Your Content Forever",
-    "creditsRollOver": "Credits Roll Over",
-    "ctaText": "Start free on any plan. Create your first ad today!",
-    "startFree": "Start Free",
-    "plans": {
-      "free": {
-        "description": "Perfect to get started",
-        "valueHighlight": "",
-        "features": [
-          "AI Avatar Generation",
-          "AI Background Music",
-          "Auto Background Removal",
-          "1 Image at a Time",
-          "Shortest Video Only",
-          "Watermark Included"
-        ],
-        "limits": {
-          "avatars": "Up to 3",
-          "music": "Up to 5",
-          "products": "Up to 3",
-          "credits": "15 Credits (One-time)",
-          "imageEstimate": "~7 Ad Images",
-          "videoEstimate": ""
-        }
-      },
-      "starter": {
-        "description": "For individual creators",
-        "valueHighlight": "4x More Affordable",
-        "features": [
-          "All Free Features",
-          "No Watermark",
-          "HD Upscaling",
-          "Up to 5 Images at Once",
-          "Custom Video Length",
-          "Priority Queue"
-        ],
-        "limits": {
-          "avatars": "Up to 9",
-          "music": "Up to 15",
-          "products": "Up to 9",
-          "credits": "120 Credits/mo",
-          "imageEstimate": "~60 Ad Images",
-          "videoEstimate": "~12 Ad Videos"
-        }
-      },
-      "pro": {
-        "description": "For professionals",
-        "valueHighlight": "$0.14 per Image",
-        "features": [
-          "All Starter Features",
-          "Top Priority Processing",
-          "High Quality Images",
-          "3 Videos at Once",
-          "Pro Templates",
-          "Premium Support"
-        ],
-        "limits": {
-          "avatars": "Up to 30",
-          "music": "Up to 50",
-          "products": "Up to 30",
-          "credits": "420 Credits/mo",
-          "imageEstimate": "~210 Ad Images",
-          "videoEstimate": "~42 Ad Videos"
-        }
-      },
-      "business": {
-        "description": "For teams and enterprises",
-        "valueHighlight": "$0.12 per Image",
-        "features": [
-          "All Pro Features",
-          "Unlimited Content",
-          "Dedicated Support",
-          "API Access",
-          "Team Collaboration",
-          "Custom Branding",
-          "Priority Updates"
-        ],
-        "limits": {
-          "avatars": "Unlimited",
-          "music": "Unlimited",
-          "products": "Unlimited",
-          "credits": "1,600 Credits/mo",
-          "imageEstimate": "~800 Ad Images",
-          "videoEstimate": "~160 Ad Videos"
-        }
-      }
-    }
+    "currentPlan": "Current Plan",
+    "popular": "Popular",
+    "bestValue": "Best Value",
+    "cannotDowngrade": "Cannot Downgrade",
+    "upgrade": "Upgrade",
+    "subscribe": "Subscribe",
+    "processing": "Processing...",
+    "cancelAnytime": "Cancel anytime",
+    "keepContent": "Keep your content forever",
+    "creditsRollOver": "Credits roll over",
+    "allPlansCancelable": "All paid plans can be cancelled anytime. After cancellation, you can use the service until the next billing date, and your content will be preserved.",
+    "watermarkIncluded": "Watermark included",
+    "unlimited": "Unlimited"
   },
   "showcase": {
     "title": "Gallery",
@@ -587,9 +513,9 @@
     "moods": {
       "bright": "Bright",
       "calm": "Calm",
-      "exciting": "Exciting",
       "emotional": "Emotional",
       "professional": "Professional",
+      "exciting": "Exciting",
       "trendy": "Trendy",
       "playful": "Playful",
       "romantic": "Romantic",
@@ -713,10 +639,22 @@
     "pleaseWait": "Please wait",
     "wizard": {
       "steps": {
-        "step1": { "title": "Basic Info", "description": "Type, Product, Avatar" },
-        "step2": { "title": "Settings", "description": "Manual/AI/Reference" },
-        "step3": { "title": "Options", "description": "Pose, Background, Lighting" },
-        "step4": { "title": "Generate", "description": "Ratio, Quality, Price" }
+        "step1": {
+          "title": "Basic Info",
+          "description": "Type, Product, Avatar"
+        },
+        "step2": {
+          "title": "Settings",
+          "description": "Manual/AI/Reference"
+        },
+        "step3": {
+          "title": "Options",
+          "description": "Pose, Background, Lighting"
+        },
+        "step4": {
+          "title": "Generate",
+          "description": "Ratio, Quality, Price"
+        }
       },
       "selectAdType": "Select Ad Type",
       "optional": "(Optional)",
@@ -1042,7 +980,6 @@
       "localImage": "Local image"
     },
     "scriptStyle": "Script Style",
-    "productInfo": "Product Info",
     "styleLabels": {
       "formal": "Formal",
       "casual": "Casual",
@@ -1075,6 +1012,29 @@
       "goBack": "Go back",
       "retry": "Retry",
       "doNotCloseWindow": "Do not close this window. Merge in progress."
+    },
+    "legacyCreate": {
+      "selectFileImage": "Select image file",
+      "noProductsRegistered": "No products registered",
+      "preview": "Preview",
+      "firstSceneComplete": "First scene image generated",
+      "localImageLabel": "Local image",
+      "productLabel": "Product",
+      "avatarLabel": "Avatar",
+      "selectProductOrAvatar": "Select a product or avatar",
+      "generationProgress": "Generation Progress",
+      "progressSteps": {
+        "script": "Script",
+        "firstScene": "First Scene",
+        "video": "Video"
+      },
+      "productAnalysisResult": "Product Analysis Result",
+      "generationGuide": {
+        "title": "Video Generation Guide",
+        "step1": "AI writes an ad script based on product information",
+        "step2": "Generate first scene image with product and avatar",
+        "step3": "Generate video based on first scene image (about 2-5 min)"
+      }
     }
   },
   "imageEdit": {
@@ -1132,7 +1092,15 @@
     "fitToVideo": "Fit to video",
     "stop": "Stop",
     "preview": "Preview",
-    "apply": "Apply"
+    "apply": "Apply",
+    "track": "Track",
+    "trackSelect": {
+      "title": "Select Track",
+      "description": "Please select one of the two generated tracks. You can preview each track.",
+      "track": "Track",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    }
   },
   "productCreate": {
     "title": "Register New Product",
@@ -1319,7 +1287,37 @@
       "selectRatio": "Please select the aspect ratio",
       "setAllScenes": "Please set background and mood for all scenes",
       "overallMood": "Overall Mood",
-      "selectMoodPlaceholder": "Select the overall mood for the video"
+      "selectMoodPlaceholder": "Select the overall mood for the video",
+      "aspectRatios": {
+        "landscape": "Landscape",
+        "landscapeDesc": "YouTube, Websites",
+        "portrait": "Portrait",
+        "portraitDesc": "Reels, Shorts, TikTok",
+        "square": "Square",
+        "squareDesc": "Instagram Feed"
+      },
+      "moodOptions": {
+        "luxuryElegant": "Luxurious & Elegant",
+        "warmFriendly": "Warm & Friendly",
+        "modernSophisticated": "Modern & Sophisticated",
+        "dynamicEnergetic": "Dynamic & Energetic",
+        "calmRelaxed": "Calm & Relaxed",
+        "trendyYoung": "Trendy & Young",
+        "classicTraditional": "Classic & Traditional"
+      },
+      "adElements": {
+        "backgroundLabel": "Background/Location",
+        "moodLabel": "Mood/Tone",
+        "backgrounds": {
+          "minimalStudio": "Minimal Studio",
+          "luxuryInterior": "Luxury Interior",
+          "naturalBackground": "Natural Background",
+          "cityscape": "Cityscape",
+          "abstractBackground": "Abstract Background",
+          "gradientBackground": "Gradient Background",
+          "textureBackground": "Texture Background"
+        }
+      }
     },
     "step4": {
       "title": "Scene Keyframe Generation",
@@ -1399,11 +1397,23 @@
       "errorKeyframeNotFound": "Keyframe not found for this scene.",
       "errorSceneRegeneration": "Failed to regenerate scene video.",
       "errorVideoGeneration": "Failed to generate video.",
-      "errorMergeVideo": "Failed to merge videos."
+      "errorMergeVideo": "Failed to merge videos.",
+      "resolutionOptions": {
+        "sdDesc": "Fast generation",
+        "hdDesc": "Standard quality",
+        "fhdDesc": "High quality"
+      }
     }
   },
   "productDescWizard": {
-    "loadingDraft": "Loading saved data..."
+    "loadingDraft": "Loading saved data...",
+    "placeholders": {
+      "productDescription": "Product description...",
+      "sellingPoint": "Product advantages or features",
+      "locationDescription": "Describe your desired location... (e.g., a bright living room with sunlight)",
+      "outfitDescription": "Describe your desired outfit... (e.g., white linen shirt and beige slacks)"
+    },
+    "firstFrame": "First Frame"
   },
   "imageAdDetail": {
     "title": "Image Ad Details",
@@ -1431,7 +1441,8 @@
     "registerFailed": "Failed to register.",
     "registerError": "An error occurred during registration.",
     "deleteSingleFailed": "Failed to delete image.",
-    "deleteImage": "Delete image"
+    "deleteImage": "Delete image",
+    "registerShowcase": "Register to Showcase"
   },
   "imageAdCreate": {
     "title": "Create Image Ad",
@@ -2110,6 +2121,46 @@
       "imageProcessingFailed": "Image processing failed",
       "cannotFetchProduct": "Cannot fetch product info",
       "errorOccurred": "An error occurred"
+    },
+    "avatarProcessing": {
+      "generating": "Generating avatar...",
+      "processing": "Processing request...",
+      "inQueue": "Waiting in queue...",
+      "aiGenerating": "AI is generating your avatar...",
+      "saving": "Saving image...",
+      "completeFailed": "Completion failed",
+      "saveFailed": "Failed to save image",
+      "pleaseWait": "Please wait"
+    },
+    "productScanner": {
+      "analyzing": "Analyzing product image and removing background...",
+      "pleaseWait": "Please wait"
+    },
+    "imageType": {
+      "selectPrompt": "Select the type of image ad you want to create",
+      "withModel": "With Model",
+      "productOnly": "Product Only"
+    },
+    "videoType": {
+      "selectPrompt": "Select the type of video ad you want to create",
+      "productDescription": {
+        "title": "Product Description Video",
+        "description": "Avatar introduces your product in a talking video",
+        "features": [
+          "Avatar explains the product",
+          "AI voice and lip-sync",
+          "Influencer-style video"
+        ]
+      },
+      "productAd": {
+        "title": "Product Ad Video",
+        "description": "Cinematic ad video focused on the product",
+        "features": [
+          "Product-focused visuals",
+          "Multiple scene composition",
+          "Auto-generated background music"
+        ]
+      }
     }
   },
   "auth": {
@@ -2242,35 +2293,6 @@
     "usageInfo": "Credits are deducted when limits are exceeded. Need more?",
     "upgradePlanLink": "Upgrade your plan"
   },
-  "pricingPage": {
-    "title": "Choose a Plan",
-    "subtitle": "Select the plan that fits your needs. You can upgrade anytime.",
-    "loadError": "Unable to load plan info.",
-    "checkoutError": "Unable to open checkout page.",
-    "processingError": "An error occurred during checkout. Please try again.",
-    "monthlyBilling": "Monthly",
-    "yearlyBilling": "Yearly",
-    "save": "Save",
-    "free": "Free",
-    "perMonth": "/mo",
-    "yearlySavings": "Save ${amount}/year!",
-    "avatars": "Avatars",
-    "music": "Music",
-    "products": "Products",
-    "credits": "Credits",
-    "currentPlan": "Current Plan",
-    "popular": "Popular",
-    "bestValue": "Best Value",
-    "cannotDowngrade": "Cannot Downgrade",
-    "upgrade": "Upgrade",
-    "subscribe": "Subscribe",
-    "processing": "Processing...",
-    "cancelAnytime": "Cancel anytime",
-    "keepContent": "Keep your content forever",
-    "creditsRollOver": "Credits roll over",
-    "allPlansCancelable": "All paid plans can be cancelled anytime. After cancellation, you can use the service until the next billing date, and your content will be preserved.",
-    "watermarkIncluded": "Watermark included"
-  },
   "onboardingModal": {
     "videoTypeTitle": "Select Video Ad Type",
     "videoTypeSubtitle": "Select the type of video ad you want to create",
@@ -2317,5 +2339,10 @@
       "fetchFailed": "Unable to fetch info",
       "slotFull": "Slot is full"
     }
+  },
+  "globalError": {
+    "title": "Something went wrong",
+    "description": "An unexpected error occurred. Please try again later.",
+    "retry": "Try again"
   }
 }

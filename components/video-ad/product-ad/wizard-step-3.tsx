@@ -35,42 +35,55 @@ const FREE_USER_LIMITS = {
   maxSceneCount: 3,
 }
 
-// 비율 옵션
-const ASPECT_RATIO_OPTIONS: { value: AspectRatio; label: string; icon: string; desc: string }[] = [
-  { value: '16:9', label: '가로형', icon: '▬', desc: '유튜브, 웹사이트' },
-  { value: '9:16', label: '세로형', icon: '▮', desc: '릴스, 숏츠, 틱톡' },
-  { value: '1:1', label: '정방형', icon: '■', desc: '인스타그램 피드' },
-]
+// 번역된 옵션을 가져오는 헬퍼 함수
+function getAspectRatioOptions(t: Record<string, unknown>) {
+  const step3T = (t.productAdWizard as Record<string, unknown>)?.step3 as Record<string, unknown> || {}
+  const aspectRatiosT = step3T.aspectRatios as Record<string, string> || {}
+  return [
+    { value: '16:9' as AspectRatio, label: aspectRatiosT.landscape || 'Landscape', icon: '▬', desc: aspectRatiosT.landscapeDesc || 'YouTube, Websites' },
+    { value: '9:16' as AspectRatio, label: aspectRatiosT.portrait || 'Portrait', icon: '▮', desc: aspectRatiosT.portraitDesc || 'Reels, Shorts, TikTok' },
+    { value: '1:1' as AspectRatio, label: aspectRatiosT.square || 'Square', icon: '■', desc: aspectRatiosT.squareDesc || 'Instagram Feed' },
+  ]
+}
 
-// 전체 분위기 옵션
-const MOOD_OPTIONS = [
-  '고급스럽고 우아한',
-  '따뜻하고 친근한',
-  '모던하고 세련된',
-  '역동적이고 에너지틱한',
-  '차분하고 편안한',
-  '트렌디하고 젊은',
-  '클래식하고 전통적인',
-]
+function getMoodOptions(t: Record<string, unknown>) {
+  const step3T = (t.productAdWizard as Record<string, unknown>)?.step3 as Record<string, unknown> || {}
+  const moodT = step3T.moodOptions as Record<string, string> || {}
+  return [
+    moodT.luxuryElegant || 'Luxurious & Elegant',
+    moodT.warmFriendly || 'Warm & Friendly',
+    moodT.modernSophisticated || 'Modern & Sophisticated',
+    moodT.dynamicEnergetic || 'Dynamic & Energetic',
+    moodT.calmRelaxed || 'Calm & Relaxed',
+    moodT.trendyYoung || 'Trendy & Young',
+    moodT.classicTraditional || 'Classic & Traditional',
+  ]
+}
 
-// 광고 요소 옵션 정의 (간소화: 배경, 분위기만)
-const AD_ELEMENT_OPTIONS = {
-  background: {
-    label: '배경/장소',
-    options: [
-      '미니멀 스튜디오',
-      '고급 인테리어',
-      '자연 배경',
-      '도시 풍경',
-      '추상적 배경',
-      '그라데이션 배경',
-      '텍스처 배경',
-    ],
-  },
-  mood: {
-    label: '분위기/톤',
-    options: MOOD_OPTIONS,
-  },
+function getAdElementOptions(t: Record<string, unknown>) {
+  const step3T = (t.productAdWizard as Record<string, unknown>)?.step3 as Record<string, unknown> || {}
+  const adElementsT = step3T.adElements as Record<string, unknown> || {}
+  const backgroundsT = adElementsT.backgrounds as Record<string, string> || {}
+  const moodOptions = getMoodOptions(t)
+
+  return {
+    background: {
+      label: (adElementsT.backgroundLabel as string) || 'Background/Location',
+      options: [
+        backgroundsT.minimalStudio || 'Minimal Studio',
+        backgroundsT.luxuryInterior || 'Luxury Interior',
+        backgroundsT.naturalBackground || 'Natural Background',
+        backgroundsT.cityscape || 'Cityscape',
+        backgroundsT.abstractBackground || 'Abstract Background',
+        backgroundsT.gradientBackground || 'Gradient Background',
+        backgroundsT.textureBackground || 'Texture Background',
+      ],
+    },
+    mood: {
+      label: (adElementsT.moodLabel as string) || 'Mood/Tone',
+      options: moodOptions,
+    },
+  }
 }
 
 // 분위기 선택 컴포넌트
@@ -84,6 +97,7 @@ function MoodSelector({ value, onChange, isAiRecommended }: MoodSelectorProps) {
   const { t } = useLanguage()
   const [isExpanded, setIsExpanded] = useState(false)
   const [customValue, setCustomValue] = useState('')
+  const moodOptions = getMoodOptions(t)
 
   const handleCustomSubmit = () => {
     if (customValue.trim()) {
@@ -130,7 +144,7 @@ function MoodSelector({ value, onChange, isAiRecommended }: MoodSelectorProps) {
       {isExpanded && (
         <div className="p-2 bg-secondary/30 rounded-lg space-y-2">
           <div className="grid grid-cols-2 gap-1.5">
-            {MOOD_OPTIONS.map((option) => (
+            {moodOptions.map((option) => (
               <button
                 key={option}
                 onClick={() => {
@@ -190,7 +204,8 @@ function CompactElementSelector({
   const { t } = useLanguage()
   const [isExpanded, setIsExpanded] = useState(false)
   const [customValue, setCustomValue] = useState('')
-  const element = AD_ELEMENT_OPTIONS[elementKey]
+  const adElementOptions = getAdElementOptions(t)
+  const element = adElementOptions[elementKey]
 
   const handleCustomSubmit = () => {
     if (customValue.trim()) {
@@ -315,6 +330,7 @@ export function WizardStep3() {
 
   // i18n
   const { language, t } = useLanguage()
+  const aspectRatioOptions = getAspectRatioOptions(t)
 
   // 중복 호출 방지를 위한 ref
   const isGeneratingRef = useRef(false)
@@ -650,7 +666,7 @@ export function WizardStep3() {
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            {ASPECT_RATIO_OPTIONS.map((option) => (
+            {aspectRatioOptions.map((option) => (
               <button
                 key={option.value}
                 onClick={() => setAspectRatio(option.value)}
