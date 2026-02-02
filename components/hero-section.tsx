@@ -17,7 +17,7 @@ import { useLanguage } from "@/contexts/language-context";
 import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { ShowcaseRain } from "./landing/showcase-rain";
-import type { ShowcaseData } from "@/app/page";
+import type { ShowcaseData } from "@/types/showcase";
 
 // ============================================================
 // 메인 컴포넌트
