@@ -20,7 +20,7 @@ export type WizardStep = 1 | 2 | 3 | 4 | 5
 export type ScenarioMethod = 'direct' | 'ai-auto' | 'reference'
 export type AspectRatio = '16:9' | '9:16' | '1:1' | null
 export type VideoModel = 'vidu'
-export type VideoResolution = '540p' | '720p' | '1080p'
+export type VideoResolution = '720p' | '1080p'  // Vidu Q2 Turbo는 540p 미지원
 
 // 광고 요소 옵션들 (전체 영상용 - 레거시)
 export interface AdElementOptions {

@@ -1,5 +1,5 @@
 /**
- * 멀티씬 영상 생성 API (Vidu Q3)
+ * 멀티씬 영상 생성 API (Vidu Q2 Turbo)
  *
  * POST: 각 씬 키프레임 이미지로 개별 영상을 생성합니다.
  * - 씬1 이미지 → 씬1 영상
@@ -7,10 +7,10 @@
  * - ...
  *
  * 지원 모델:
- * - vidu: WaveSpeed Vidu Q3
+ * - vidu: FAL.ai Vidu Q2 Turbo
  *
- * 해상도: 540p, 720p, 1080p
- * 영상 길이: 1-16초
+ * 해상도: 720p, 1080p
+ * 영상 길이: 2-8초
  *
  * 전환 방식: 컷 전환 (하드컷)
  */
@@ -21,16 +21,16 @@ import { prisma } from '@/lib/db'
 import { getUserPlan } from '@/lib/subscription/queries'
 import { plan_type } from '@/lib/generated/prisma/client'
 import {
-  submitViduToQueue,
-  type ViduResolution,
-  type ViduDuration,
-} from '@/lib/wavespeed/client'
+  submitViduQ2ToQueue,
+  type ViduQ2Resolution,
+  type ViduQ2Duration,
+} from '@/lib/fal/client'
 import { VIDU_CREDIT_COST_PER_SECOND } from '@/lib/credits'
 import { recordCreditUse, recordCreditRefund } from '@/lib/credits/history'
 
 // FREE 사용자 제한
 const FREE_USER_LIMITS = {
-  maxResolution: '540p' as ViduResolution,
+  maxResolution: '720p' as ViduQ2Resolution,  // Q2는 720p가 최소 해상도
   maxDuration: 4,
   maxSceneCount: 3,
 }
@@ -39,31 +39,30 @@ interface SceneKeyframe {
   sceneIndex: number
   imageUrl: string
   scenePrompt?: string  // 씬 영상 프롬프트
-  duration?: number     // 씬별 영상 길이 (1-16초)
+  duration?: number     // 씬별 영상 길이 (2-8초)
   movementAmplitude?: 'auto' | 'small' | 'medium' | 'large'  // 카메라/모션 강도
 }
 
 interface GenerateSceneVideosRequest {
   keyframes: SceneKeyframe[]
-  duration?: number        // 씬당 영상 길이 (1-16초, 기본 4)
-  resolution?: ViduResolution  // 해상도 (540p, 720p, 1080p, 기본 720p)
-  audioEnabled?: boolean   // 배경 음악 (기본 false)
-  generateAudio?: boolean  // 오디오 자동 생성 (Q3 신규)
+  duration?: number           // 씬당 영상 길이 (2-8초, 기본 4)
+  resolution?: ViduQ2Resolution  // 해상도 (720p, 1080p, 기본 720p)
+  audioEnabled?: boolean      // 배경 음악 (4초 영상에만 적용)
 }
 
 interface SceneVideoRequest {
   sceneIndex: number
   requestId: string
   prompt: string
-  provider: 'wavespeed' | 'fal'
+  provider: 'fal'
 }
 
 /**
- * 안전하게 duration을 ViduDuration으로 변환 (1-16초)
+ * 안전하게 duration을 ViduQ2Duration으로 변환 (2-8초)
  */
-function toViduDuration(d: number): ViduDuration {
-  const clamped = Math.min(Math.max(Math.round(d), 1), 16)
-  return clamped as ViduDuration
+function toViduQ2Duration(d: number): ViduQ2Duration {
+  const clamped = Math.min(Math.max(Math.round(d), 2), 8)
+  return clamped as ViduQ2Duration
 }
 
 export async function POST(request: NextRequest) {
@@ -103,7 +102,7 @@ export async function POST(request: NextRequest) {
     let effectiveKeyframes = keyframes
 
     if (isFreeUser) {
-      // 해상도 제한: 540p만 허용
+      // 해상도 제한: 720p만 허용 (Q2는 540p 미지원)
       effectiveResolution = FREE_USER_LIMITS.maxResolution
       // 씬 영상 길이 제한: 최대 4초
       effectiveDuration = Math.min(duration, FREE_USER_LIMITS.maxDuration)
@@ -162,7 +161,7 @@ export async function POST(request: NextRequest) {
           featureType: 'VIDU_SCENE',
           amount: totalCreditCost,
           balanceAfter,
-          description: `Vidu Q3 씬 영상 생성 (${sortedKeyframes.length}개 씬, ${totalSeconds}초, ${effectiveResolution})`,
+          description: `Vidu Q2 씬 영상 생성 (${sortedKeyframes.length}개 씬, ${totalSeconds}초, ${effectiveResolution})`,
         }, tx)
       }, { timeout: 10000 })
     } catch (error) {
@@ -204,23 +203,23 @@ export async function POST(request: NextRequest) {
       const sceneMovementAmplitude = keyframe.movementAmplitude ?? 'auto'
 
       try {
-        // WaveSpeed Vidu Q3
-        const result = await submitViduToQueue({
+        // FAL.ai Vidu Q2 Turbo
+        const result = await submitViduQ2ToQueue({
           prompt: scenePrompt,
-          image: keyframe.imageUrl,
-          duration: toViduDuration(sceneDuration),
+          image_url: keyframe.imageUrl,
+          duration: toViduQ2Duration(sceneDuration),
           resolution: effectiveResolution,
-          bgm: audioEnabled,
           movement_amplitude: sceneMovementAmplitude,
-          generate_audio: body.generateAudio ?? false,  // Q3 신규 파라미터
+          // bgm은 4초 영상에만 적용됨
+          bgm: audioEnabled && sceneDuration === 4 ? true : undefined,
         })
-        const requestId = `wavespeed-vidu:${result.request_id}`
+        const requestId = `fal-vidu-q2:${result.request_id}`
 
         sceneVideoRequests.push({
           sceneIndex: keyframe.sceneIndex,
           requestId,
           prompt: scenePrompt,
-          provider: 'wavespeed',
+          provider: 'fal',
         })
       } catch (sceneError) {
         // 개별 씬 요청 실패 기록
@@ -251,7 +250,7 @@ export async function POST(request: NextRequest) {
             featureType: 'VIDU_SCENE',
             amount: refundAmount,
             balanceAfter: balanceAfterRefund,
-            description: `Vidu Q3 씬 영상 생성 실패 환불 (${failedSceneIndices.length}개 씬)`,
+            description: `Vidu Q2 씬 영상 생성 실패 환불 (${failedSceneIndices.length}개 씬)`,
           }, tx)
         })
         console.log(`${failedSceneIndices.length}개 씬 실패, ${refundAmount} 크레딧 환불`)

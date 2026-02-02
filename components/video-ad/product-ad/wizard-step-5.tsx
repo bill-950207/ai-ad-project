@@ -37,17 +37,16 @@ interface UserPlan {
   displayName: string
 }
 
-// FREE 사용자 제한
+// FREE 사용자 제한 (Vidu Q2 Turbo는 540p 미지원)
 const FREE_USER_LIMITS = {
-  maxResolution: '540p' as VideoResolution,
+  maxResolution: '720p' as VideoResolution,
 }
 
-// 번역된 해상도 옵션을 가져오는 함수
+// 번역된 해상도 옵션을 가져오는 함수 (Vidu Q2: 720p, 1080p만 지원)
 function getResolutionOptions(t: Record<string, unknown>) {
   const step5T = (t.productAdWizard as Record<string, unknown>)?.step5 as Record<string, unknown> || {}
   const resT = step5T.resolutionOptions as Record<string, string> || {}
   return [
-    { value: '540p' as VideoResolution, label: 'SD (540p)', desc: resT.sdDesc || 'Fast generation', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['540p'] },
     { value: '720p' as VideoResolution, label: 'HD (720p)', desc: resT.hdDesc || 'Standard quality', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['720p'] },
     { value: '1080p' as VideoResolution, label: 'FHD (1080p)', desc: resT.fhdDesc || 'High quality', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['1080p'] },
   ]
@@ -1460,16 +1459,16 @@ export function WizardStep5() {
         // 크레딧 갱신
         refreshCredits()
 
-        // 상세 페이지로 이동
-        router.push(`/dashboard/video-ad/${draftId}`)
+        // 상세 페이지로 이동 (replace로 히스토리 교체 - 뒤로가기 시 영상 리스트로 이동)
+        router.replace(`/dashboard/video-ad/${draftId}`)
       } catch (err) {
         console.error('Error merging videos:', err)
         setError(err instanceof Error ? err.message : (t.productAdWizard?.step5?.errorMergeVideo || 'Failed to merge videos.'))
         setIsMergingVideos(false)
       }
     } else {
-      // 이미 합쳐졌거나 일반 모드면 바로 이동
-      router.push(`/dashboard/video-ad/${draftId}`)
+      // 이미 합쳐졌거나 일반 모드면 바로 이동 (replace로 히스토리 교체)
+      router.replace(`/dashboard/video-ad/${draftId}`)
     }
   }
 
@@ -1905,7 +1904,7 @@ export function WizardStep5() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
                     {resolutionOptions.map((option) => {
                       const isLocked = isFreeUser && option.value !== FREE_USER_LIMITS.maxResolution
                       return (
