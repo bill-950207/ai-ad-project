@@ -220,7 +220,8 @@
     "keepContent": "内容永久保存",
     "creditsRollOver": "积分可累积",
     "allPlansCancelable": "所有付费方案均可随时取消。取消后可继续使用至下一个账单日期，您创建的内容将继续保留。",
-    "watermarkIncluded": "含水印"
+    "watermarkIncluded": "含水印",
+    "unlimited": "无限"
   },
   "showcase": {
     "title": "作品展示",
@@ -1068,7 +1069,15 @@
     "fitToVideo": "适应视频",
     "stop": "停止",
     "preview": "预览",
-    "apply": "应用"
+    "apply": "应用",
+    "track": "曲目",
+    "trackSelect": {
+      "title": "选择曲目",
+      "description": "请选择生成的两个曲目之一。您可以预览每个曲目。",
+      "track": "曲目",
+      "confirm": "确认选择",
+      "cancel": "取消"
+    }
   },
   "productCreate": {
     "title": "注册新产品",
@@ -2054,6 +2063,46 @@
       "imageProcessingFailed": "图片处理失败",
       "cannotFetchProduct": "无法获取产品信息",
       "errorOccurred": "发生错误"
+    },
+    "avatarProcessing": {
+      "generating": "正在生成头像...",
+      "processing": "正在处理请求...",
+      "inQueue": "正在排队等待...",
+      "aiGenerating": "AI正在生成您的头像...",
+      "saving": "正在保存图片...",
+      "completeFailed": "完成处理失败",
+      "saveFailed": "图片保存失败",
+      "pleaseWait": "请稍候"
+    },
+    "productScanner": {
+      "analyzing": "正在分析产品图片并移除背景...",
+      "pleaseWait": "请稍候"
+    },
+    "imageType": {
+      "selectPrompt": "请选择您想创建的图片广告类型",
+      "withModel": "包含模特",
+      "productOnly": "仅产品"
+    },
+    "videoType": {
+      "selectPrompt": "请选择您想创建的视频广告类型",
+      "productDescription": {
+        "title": "产品说明视频",
+        "description": "虚拟形象介绍产品的说话视频",
+        "features": [
+          "虚拟形象直接说明产品",
+          "AI语音和唇形同步",
+          "网红风格视频"
+        ]
+      },
+      "productAd": {
+        "title": "产品广告视频",
+        "description": "以产品为中心的电影级广告视频",
+        "features": [
+          "产品为中心的视觉",
+          "多场景构成",
+          "自动生成背景音乐"
+        ]
+      }
     }
   },
   "auth": {
@@ -2232,5 +2281,10 @@
       "fetchFailed": "无法获取信息",
       "slotFull": "槽位已满"
     }
+  },
+  "globalError": {
+    "title": "出现问题",
+    "description": "发生了意外错误。请稍后重试。",
+    "retry": "重试"
   }
 }

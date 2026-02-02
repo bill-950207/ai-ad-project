@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Loader2, User } from 'lucide-react'
 import { useOnboarding } from '../onboarding-context'
 import { uploadAvatarImage } from '@/lib/client/image-upload'
+import { useLanguage } from '@/contexts/language-context'
 
 export function AvatarProcessingStep() {
   const {
@@ -19,8 +20,10 @@ export function AvatarProcessingStep() {
     setError,
     goToStep,
   } = useOnboarding()
+  const { t } = useLanguage()
+  const avatarProcessingT = t.onboarding?.avatarProcessing || {}
 
-  const [statusMessage, setStatusMessage] = useState('아바타를 생성하고 있습니다...')
+  const [statusMessage, setStatusMessage] = useState(avatarProcessingT.generating || 'Generating avatar...')
   const [isUploading, setIsUploading] = useState(false)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
   const hasUploadedRef = useRef(false)
@@ -51,19 +54,19 @@ export function AvatarProcessingStep() {
         // 상태별 메시지
         switch (avatar.status) {
           case 'PENDING':
-            setStatusMessage('요청을 처리 중입니다...')
+            setStatusMessage(avatarProcessingT.processing || 'Processing request...')
             break
           case 'IN_QUEUE':
-            setStatusMessage('대기열에서 처리를 기다리고 있습니다...')
+            setStatusMessage(avatarProcessingT.inQueue || 'Waiting in queue...')
             break
           case 'IN_PROGRESS':
-            setStatusMessage('AI가 아바타를 생성하고 있습니다...')
+            setStatusMessage(avatarProcessingT.aiGenerating || 'AI is generating your avatar...')
             break
           case 'UPLOADING':
             if (!hasUploadedRef.current && tempImageUrl) {
               hasUploadedRef.current = true
               setIsUploading(true)
-              setStatusMessage('이미지를 저장하고 있습니다...')
+              setStatusMessage(avatarProcessingT.saving || 'Saving image...')
 
               try {
                 // 클라이언트에서 이미지 다운로드 + 압축 + R2 업로드
@@ -76,13 +79,13 @@ export function AvatarProcessingStep() {
                   body: JSON.stringify({ originalUrl, compressedUrl }),
                 })
 
-                if (!completeRes.ok) throw new Error('완료 처리 실패')
+                if (!completeRes.ok) throw new Error(avatarProcessingT.completeFailed || 'Completion failed')
 
                 const completeData = await completeRes.json()
                 onAvatarProcessingComplete(completeData.avatar)
               } catch (uploadErr) {
                 console.error('Upload error:', uploadErr)
-                setError('이미지 저장에 실패했습니다')
+                setError(avatarProcessingT.saveFailed || 'Failed to save image')
                 goToStep('avatar')
               }
             }
@@ -157,7 +160,7 @@ export function AvatarProcessingStep() {
       </div>
 
       <p className="text-xs text-muted-foreground mt-2">
-        잠시만 기다려주세요
+        {avatarProcessingT.pleaseWait || 'Please wait'}
       </p>
 
       {/* 진행 단계 표시 */}

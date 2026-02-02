@@ -10,45 +10,35 @@
 
 import { Package, User, ArrowRight, LucideIcon } from 'lucide-react'
 import { useOnboarding, VideoAdType } from '../onboarding-context'
+import { useLanguage } from '@/contexts/language-context'
 
 interface VideoTypeOption {
   type: VideoAdType
-  title: string
-  description: string
   icon: LucideIcon
-  features: string[]
 }
 
 const VIDEO_TYPE_OPTIONS: VideoTypeOption[] = [
-  {
-    type: 'productDescription',
-    title: '제품 설명 영상',
-    description: '아바타가 제품을 소개하는 토킹 영상',
-    icon: User,
-    features: [
-      '아바타가 직접 제품 설명',
-      'AI 음성 및 립싱크',
-      '인플루언서 스타일 영상',
-    ],
-  },
-  {
-    type: 'productAd',
-    title: '제품 광고 영상',
-    description: '제품 중심의 시네마틱 광고 영상',
-    icon: Package,
-    features: [
-      '제품 중심 비주얼',
-      '다양한 씬 구성',
-      '배경 음악 자동 생성',
-    ],
-  },
+  { type: 'productDescription', icon: User },
+  { type: 'productAd', icon: Package },
 ]
 
 export function VideoTypeStep() {
   const { setVideoAdType } = useOnboarding()
+  const { t } = useLanguage()
+  const videoTypeT = t.onboarding?.videoType || {}
 
   const handleSelectType = (type: VideoAdType) => {
     setVideoAdType(type)
+  }
+
+  // Get translation for video type
+  const getTypeTranslation = (type: VideoAdType) => {
+    const typeData = videoTypeT[type] as { title?: string; description?: string; features?: string[] } | undefined
+    const fallback = {
+      productDescription: { title: 'Product Description Video', description: 'Avatar introduces your product', features: ['Avatar explains product', 'AI voice', 'Influencer style'] },
+      productAd: { title: 'Product Ad Video', description: 'Cinematic ad video', features: ['Product visuals', 'Multiple scenes', 'Auto music'] }
+    }
+    return typeData || fallback[type]
   }
 
   return (
@@ -56,7 +46,7 @@ export function VideoTypeStep() {
       {/* 안내 텍스트 */}
       <div className="text-center animate-[fadeIn_0.3s_ease-out]">
         <p className="text-muted-foreground">
-          만들고 싶은 영상 광고 유형을 선택하세요
+          {videoTypeT.selectPrompt || 'Select the type of video ad you want to create'}
         </p>
       </div>
 
@@ -64,6 +54,7 @@ export function VideoTypeStep() {
       <div className="space-y-3 max-w-2xl mx-auto">
         {VIDEO_TYPE_OPTIONS.map((option, index) => {
           const Icon = option.icon
+          const typeTranslation = getTypeTranslation(option.type)
 
           return (
             <button
@@ -85,7 +76,7 @@ export function VideoTypeStep() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="text-lg font-semibold text-foreground tracking-tight">
-                      {option.title}
+                      {typeTranslation.title}
                     </h3>
                     <ArrowRight
                       className="w-5 h-5 text-muted-foreground/50 group-hover:text-primary group-hover:translate-x-0.5 transition-[color,transform] duration-200 flex-shrink-0"
@@ -93,12 +84,12 @@ export function VideoTypeStep() {
                     />
                   </div>
                   <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                    {option.description}
+                    {typeTranslation.description}
                   </p>
 
                   {/* 특징 태그 */}
                   <div className="flex flex-wrap gap-2 mt-3">
-                    {option.features.map((feature, featureIndex) => (
+                    {typeTranslation.features?.map((feature, featureIndex) => (
                       <span
                         key={featureIndex}
                         className="text-xs px-2.5 py-1 bg-secondary/80 rounded-lg text-muted-foreground font-medium"

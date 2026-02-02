@@ -220,7 +220,8 @@
     "keepContent": "Keep your content forever",
     "creditsRollOver": "Credits roll over",
     "allPlansCancelable": "All paid plans can be cancelled anytime. After cancellation, you can use the service until the next billing date, and your content will be preserved.",
-    "watermarkIncluded": "Watermark included"
+    "watermarkIncluded": "Watermark included",
+    "unlimited": "Unlimited"
   },
   "showcase": {
     "title": "Gallery",
@@ -1068,7 +1069,15 @@
     "fitToVideo": "Fit to video",
     "stop": "Stop",
     "preview": "Preview",
-    "apply": "Apply"
+    "apply": "Apply",
+    "track": "Track",
+    "trackSelect": {
+      "title": "Select Track",
+      "description": "Please select one of the two generated tracks. You can preview each track.",
+      "track": "Track",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    }
   },
   "productCreate": {
     "title": "Register New Product",
@@ -2054,6 +2063,46 @@
       "imageProcessingFailed": "Image processing failed",
       "cannotFetchProduct": "Cannot fetch product info",
       "errorOccurred": "An error occurred"
+    },
+    "avatarProcessing": {
+      "generating": "Generating avatar...",
+      "processing": "Processing request...",
+      "inQueue": "Waiting in queue...",
+      "aiGenerating": "AI is generating your avatar...",
+      "saving": "Saving image...",
+      "completeFailed": "Completion failed",
+      "saveFailed": "Failed to save image",
+      "pleaseWait": "Please wait"
+    },
+    "productScanner": {
+      "analyzing": "Analyzing product image and removing background...",
+      "pleaseWait": "Please wait"
+    },
+    "imageType": {
+      "selectPrompt": "Select the type of image ad you want to create",
+      "withModel": "With Model",
+      "productOnly": "Product Only"
+    },
+    "videoType": {
+      "selectPrompt": "Select the type of video ad you want to create",
+      "productDescription": {
+        "title": "Product Description Video",
+        "description": "Avatar introduces your product in a talking video",
+        "features": [
+          "Avatar explains the product",
+          "AI voice and lip-sync",
+          "Influencer-style video"
+        ]
+      },
+      "productAd": {
+        "title": "Product Ad Video",
+        "description": "Cinematic ad video focused on the product",
+        "features": [
+          "Product-focused visuals",
+          "Multiple scene composition",
+          "Auto-generated background music"
+        ]
+      }
     }
   },
   "auth": {
@@ -2232,5 +2281,10 @@
       "fetchFailed": "Unable to fetch info",
       "slotFull": "Slot is full"
     }
+  },
+  "globalError": {
+    "title": "Something went wrong",
+    "description": "An unexpected error occurred. Please try again later.",
+    "retry": "Try again"
   }
 }

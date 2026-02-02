@@ -220,7 +220,8 @@
     "keepContent": "生成コンテンツを永久保存",
     "creditsRollOver": "クレジット翌月繰越",
     "allPlansCancelable": "すべての有料プランはいつでも解約できます。解約後も次回請求日までサービスをご利用いただけ、生成したコンテンツは保存されます。",
-    "watermarkIncluded": "ウォーターマーク付き"
+    "watermarkIncluded": "ウォーターマーク付き",
+    "unlimited": "無制限"
   },
   "showcase": {
     "title": "制作事例",
@@ -1068,7 +1069,15 @@
     "fitToVideo": "動画に合わせる",
     "stop": "停止",
     "preview": "プレビュー",
-    "apply": "適用"
+    "apply": "適用",
+    "track": "トラック",
+    "trackSelect": {
+      "title": "トラック選択",
+      "description": "生成された2つのトラックから1つを選択してください。各トラックを試聴できます。",
+      "track": "トラック",
+      "confirm": "選択完了",
+      "cancel": "キャンセル"
+    }
   },
   "productCreate": {
     "title": "新規製品登録",
@@ -2054,6 +2063,46 @@
       "imageProcessingFailed": "画像処理に失敗しました",
       "cannotFetchProduct": "商品情報を取得できません",
       "errorOccurred": "エラーが発生しました"
+    },
+    "avatarProcessing": {
+      "generating": "アバターを生成しています...",
+      "processing": "リクエストを処理しています...",
+      "inQueue": "キューで待機中...",
+      "aiGenerating": "AIがアバターを生成しています...",
+      "saving": "画像を保存しています...",
+      "completeFailed": "完了処理に失敗しました",
+      "saveFailed": "画像の保存に失敗しました",
+      "pleaseWait": "しばらくお待ちください"
+    },
+    "productScanner": {
+      "analyzing": "商品画像を分析し、背景を削除しています...",
+      "pleaseWait": "しばらくお待ちください"
+    },
+    "imageType": {
+      "selectPrompt": "作成したい画像広告のタイプを選択してください",
+      "withModel": "モデル付き",
+      "productOnly": "商品のみ"
+    },
+    "videoType": {
+      "selectPrompt": "作成したい動画広告のタイプを選択してください",
+      "productDescription": {
+        "title": "商品説明動画",
+        "description": "アバターが商品を紹介するトーキング動画",
+        "features": [
+          "アバターが直接商品説明",
+          "AI音声とリップシンク",
+          "インフルエンサースタイル動画"
+        ]
+      },
+      "productAd": {
+        "title": "商品広告動画",
+        "description": "商品中心のシネマティック広告動画",
+        "features": [
+          "商品中心のビジュアル",
+          "多様なシーン構成",
+          "BGM自動生成"
+        ]
+      }
     }
   },
   "auth": {
@@ -2232,5 +2281,10 @@
       "fetchFailed": "情報を取得できません",
       "slotFull": "スロットがいっぱいです"
     }
+  },
+  "globalError": {
+    "title": "問題が発生しました",
+    "description": "予期しないエラーが発生しました。しばらくしてからもう一度お試しください。",
+    "retry": "もう一度試す"
   }
 }

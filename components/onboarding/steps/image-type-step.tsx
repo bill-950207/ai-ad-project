@@ -43,6 +43,8 @@ export function ImageTypeStep() {
     return types[type] || { title: type, description: '' }
   }
 
+  const imageTypeT = t.onboarding?.imageType || {}
+
   const handleSelectType = (type: ImageAdType) => {
     setImageAdType(type)
   }
@@ -52,7 +54,7 @@ export function ImageTypeStep() {
       {/* 안내 텍스트 */}
       <div className="text-center animate-[fadeIn_0.3s_ease-out]">
         <p className="text-muted-foreground">
-          만들고 싶은 이미지 광고 유형을 선택하세요
+          {imageTypeT.selectPrompt || 'Select the type of image ad you want to create'}
         </p>
       </div>
 
@@ -98,11 +100,11 @@ export function ImageTypeStep() {
                     {option.needsModel ? (
                       <span className="inline-flex items-center gap-1.5 text-xs px-2 py-1 bg-secondary/80 rounded-lg text-muted-foreground font-medium">
                         <User className="w-3 h-3" aria-hidden="true" />
-                        모델 포함
+                        {imageTypeT.withModel || 'With Model'}
                       </span>
                     ) : (
                       <span className="inline-flex items-center text-xs px-2 py-1 bg-primary/10 rounded-lg text-primary font-medium">
-                        제품만
+                        {imageTypeT.productOnly || 'Product Only'}
                       </span>
                     )}
                   </div>

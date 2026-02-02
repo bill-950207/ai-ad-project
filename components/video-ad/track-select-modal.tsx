@@ -10,6 +10,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { X, Music, Play, Pause, Check, Clock } from 'lucide-react'
 import Image from 'next/image'
+import { useLanguage } from '@/contexts/language-context'
 
 interface MusicTrack {
   id: string
@@ -36,6 +37,8 @@ export function TrackSelectModal({
   musicName,
   tracks,
 }: TrackSelectModalProps) {
+  const { t } = useLanguage()
+  const trackT = t.musicSelect?.trackSelect || {}
   const [playingTrackIndex, setPlayingTrackIndex] = useState<number | null>(null)
   const [selectedTrackIndex, setSelectedTrackIndex] = useState<number | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -110,7 +113,7 @@ export function TrackSelectModal({
           <div>
             <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
               <Music className="w-5 h-5" />
-              트랙 선택
+              {trackT.title || 'Select Track'}
             </h2>
             <p className="text-sm text-muted-foreground mt-0.5">{musicName}</p>
           </div>
@@ -128,7 +131,7 @@ export function TrackSelectModal({
         {/* 본문 */}
         <div className="p-4">
           <p className="text-sm text-muted-foreground mb-4">
-            생성된 두 개의 트랙 중 하나를 선택해주세요. 각 트랙을 미리 들어볼 수 있습니다.
+            {trackT.description || 'Please select one of the two generated tracks. You can preview each track.'}
           </p>
 
           <div className="space-y-3">
@@ -151,7 +154,7 @@ export function TrackSelectModal({
                     {track.imageUrl ? (
                       <Image
                         src={track.imageUrl}
-                        alt={`트랙 ${index + 1}`}
+                        alt={`${trackT.track || 'Track'} ${index + 1}`}
                         fill
                         className="object-cover"
                       />
@@ -164,7 +167,7 @@ export function TrackSelectModal({
 
                   {/* 정보 */}
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-foreground">트랙 {index + 1}</p>
+                    <p className="font-semibold text-foreground">{trackT.track || 'Track'} {index + 1}</p>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                       <Clock className="w-3.5 h-3.5" />
                       <span>{formatTime(track.duration)}</span>
