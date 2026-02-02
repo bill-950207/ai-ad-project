@@ -284,6 +284,18 @@ export async function POST(
         avatarParts.push(`${styleMap[aiAvatarOptions.style]} appearance`)
       }
 
+      // 의상 지정이 없는 경우 기본 완전한 의상 추가
+      const hasOutfitSpecified = aiAvatarOptions.outfitStyle && aiAvatarOptions.outfitStyle !== 'any'
+      if (!hasOutfitSpecified) {
+        if (adType === 'wearing') {
+          // 착용샷: 제품이 의상이므로 제품 제외한 코디 의상 추천
+          avatarParts.push('wearing a complete coordinated outfit that complements the advertised product (select appropriate top/bottom/accessories EXCLUDING the product being worn)')
+        } else {
+          // 그 외: 제품에 어울리는 완전한 의상 추천
+          avatarParts.push('wearing a stylish complete outfit appropriate for the scene (including both top and bottom clothing that complements the product)')
+        }
+      }
+
       // 모든 옵션이 '무관'이거나 설정되지 않은 경우
       if (avatarParts.length === 0) {
         avatarParts.push('person suitable for this product advertisement')

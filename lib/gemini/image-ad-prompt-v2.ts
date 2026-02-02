@@ -444,7 +444,14 @@ Body type: ${bodyHint}
   // AI 아바타 지시 (모델이 필요한 광고이고 AI 생성 아바타일 때만)
   const aiAvatarInstruction = (figureInfo.needsModel && input.aiAvatarDescription)
     ? `\n=== AI MODEL ===
-Generate photorealistic model: ${input.aiAvatarDescription}`
+Generate photorealistic model: ${input.aiAvatarDescription}
+
+CRITICAL OUTFIT RULE:
+- The model MUST be wearing a COMPLETE outfit (both upper body AND lower body clothing)
+- NEVER describe only upper body clothing (e.g., "jacket" alone) - ALWAYS include pants/skirt/bottom
+- For WEARING ad type: The product is the main clothing item; describe COORDINATING pieces (e.g., if product is jacket, specify what pants/shoes to pair with it)
+- Example GOOD: "wearing a navy puffer jacket with dark jeans and white sneakers"
+- Example BAD: "wearing a navy puffer jacket" (missing bottom clothing)`
     : ''
 
   // 의상 지시 (모델이 필요한 광고이고, 의상 이미지가 없고, 의상 옵션이 선택된 경우)

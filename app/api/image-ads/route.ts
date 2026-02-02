@@ -584,6 +584,18 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // 의상 지정이 없는 경우 기본 완전한 의상 추가 (productOnly 제외)
+      const hasOutfitSpecified = aiAvatarOptions?.outfitStyle && aiAvatarOptions.outfitStyle !== 'any'
+      if (!hasOutfitSpecified && adType !== 'productOnly') {
+        if (adType === 'wearing') {
+          // 착용샷: 제품이 의상이므로 제품 제외한 코디 의상 추천
+          avatarParts.push('wearing a complete coordinated outfit that complements the advertised product (select appropriate top/bottom/accessories EXCLUDING the product being worn)')
+        } else {
+          // 그 외: 제품에 어울리는 완전한 의상 추천
+          avatarParts.push('wearing a stylish complete outfit appropriate for the scene (including both top and bottom clothing that complements the product)')
+        }
+      }
+
       // 모든 옵션이 '무관'이거나 설정되지 않은 경우 - Gemini가 제품에 맞게 자동 선택
       if (avatarParts.length === 0) {
         // 기본 설명을 제공하되, Gemini에게 제품에 맞게 구체화하도록 요청
