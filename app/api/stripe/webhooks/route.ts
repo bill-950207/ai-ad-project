@@ -16,6 +16,7 @@ import { headers } from 'next/headers'
 import { prisma } from '@/lib/db'
 import { stripe, getPlanFromPriceId } from '@/lib/stripe'
 import { plan_type, subscription_status } from '@/lib/generated/prisma/client'
+import { recordSubscriptionCredit } from '@/lib/credits/history'
 import Stripe from 'stripe'
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
@@ -217,12 +218,28 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     },
   })
 
-  // 첫 결제 시 월 크레딧 지급
-  await prisma.profiles.update({
-    where: { id: userId },
-    data: {
-      credits: { increment: planRecord.monthly_credits },
-    },
+  // 첫 결제 시 월 크레딧 지급 (트랜잭션으로 히스토리 기록)
+  await prisma.$transaction(async (tx) => {
+    const currentProfile = await tx.profiles.findUnique({
+      where: { id: userId },
+      select: { credits: true },
+    })
+
+    const currentCredits = currentProfile?.credits ?? 0
+    const balanceAfter = currentCredits + planRecord.monthly_credits
+
+    await tx.profiles.update({
+      where: { id: userId },
+      data: { credits: { increment: planRecord.monthly_credits } },
+    })
+
+    // 구독 크레딧 히스토리 기록
+    await recordSubscriptionCredit({
+      userId,
+      amount: planRecord.monthly_credits,
+      balanceAfter,
+      description: `${planRecord.display_name || planInfo.plan} 구독 시작 크레딧`,
+    }, tx)
   })
 
   console.log(`Subscription created for user ${userId}, plan: ${planInfo.plan}`)
@@ -370,10 +387,28 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
 
       const creditsToGrant = subscription.plan.monthly_credits
 
-      // 크레딧 지급
-      await prisma.profiles.update({
-        where: { id: subscription.user_id },
-        data: { credits: { increment: creditsToGrant } },
+      // 크레딧 지급 (트랜잭션으로 히스토리 기록)
+      await prisma.$transaction(async (tx) => {
+        const currentProfile = await tx.profiles.findUnique({
+          where: { id: subscription.user_id },
+          select: { credits: true },
+        })
+
+        const currentCredits = currentProfile?.credits ?? 0
+        const balanceAfter = currentCredits + creditsToGrant
+
+        await tx.profiles.update({
+          where: { id: subscription.user_id },
+          data: { credits: { increment: creditsToGrant } },
+        })
+
+        // 구독 갱신 크레딧 히스토리 기록
+        await recordSubscriptionCredit({
+          userId: subscription.user_id,
+          amount: creditsToGrant,
+          balanceAfter,
+          description: `${subscription.plan.display_name} 월간 구독 크레딧 갱신`,
+        }, tx)
       })
 
       console.log(

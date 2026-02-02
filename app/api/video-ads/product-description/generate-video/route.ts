@@ -12,6 +12,7 @@ import { prisma } from '@/lib/db'
 import { submitTalkingVideoToQueue } from '@/lib/kie/client'
 import { submitInfiniteTalkToQueue } from '@/lib/wavespeed/client'
 import { PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST } from '@/lib/credits'
+import { recordCreditUse } from '@/lib/credits/history'
 import { uploadExternalImageToR2 } from '@/lib/image/compress'
 
 /** 카메라 구도별 프롬프트 설명 */
@@ -238,7 +239,8 @@ export async function POST(request: NextRequest) {
       console.log('Kie.ai fallback 성공:', requestId)
     }
 
-    // 크레딧 차감 (트랜잭션으로 재확인 후 원자적 차감 - Race Condition 방지)
+    // 크레딧 차감 및 요청 ID 저장 (트랜잭션으로 원자적 처리 + 히스토리 기록)
+    // provider 정보를 kie_request_id 필드에 prefix로 저장 (wavespeed: 또는 kie:)
     try {
       await prisma.$transaction(async (tx) => {
         const currentProfile = await tx.profiles.findUnique({
@@ -250,10 +252,30 @@ export async function POST(request: NextRequest) {
           throw new Error('INSUFFICIENT_CREDITS')
         }
 
+        const balanceAfter = (currentProfile.credits ?? 0) - creditCost
+
+        await tx.video_ads.update({
+          where: { id: videoAd.id },
+          data: {
+            kie_request_id: `${provider}:${requestId}`,
+            status: 'IN_PROGRESS',
+          },
+        })
+
         await tx.profiles.update({
           where: { id: user.id },
           data: { credits: { decrement: creditCost } },
         })
+
+        // 크레딧 히스토리 기록
+        await recordCreditUse({
+          userId: user.id,
+          featureType: 'VIDEO_PRODUCT_DESC',
+          amount: creditCost,
+          balanceAfter,
+          relatedEntityId: videoAd.id,
+          description: `제품설명 영상 생성 (${resolution})`,
+        }, tx)
       }, { timeout: 10000 })
     } catch (creditError) {
       // 크레딧 부족 시 생성된 레코드 실패 처리
@@ -269,16 +291,6 @@ export async function POST(request: NextRequest) {
       }
       throw creditError
     }
-
-    // 요청 ID 저장
-    // provider 정보를 kie_request_id 필드에 prefix로 저장 (wavespeed: 또는 kie:)
-    await prisma.video_ads.update({
-      where: { id: videoAd.id },
-      data: {
-        kie_request_id: `${provider}:${requestId}`,
-        status: 'IN_PROGRESS',
-      },
-    })
 
     return NextResponse.json({
       videoAdId: videoAd.id,

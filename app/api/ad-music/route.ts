@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { submitAdMusicToQueue } from '@/lib/kie/client'
 import { MUSIC_CREDIT_COST } from '@/lib/credits'
+import { recordCreditUse } from '@/lib/credits/history'
 import { checkUsageLimit } from '@/lib/subscription'
 
 // 요청 바디 타입
@@ -156,7 +157,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 크레딧 차감 (트랜잭션으로 재확인 후 원자적 차감)
+    // 크레딧 차감 (트랜잭션으로 재확인 후 원자적 차감 + 히스토리 기록)
     try {
       await prisma.$transaction(async (tx) => {
         const currentProfile = await tx.profiles.findUnique({
@@ -168,10 +169,22 @@ export async function POST(request: NextRequest) {
           throw new Error('INSUFFICIENT_CREDITS')
         }
 
+        const balanceAfter = (currentProfile.credits ?? 0) - MUSIC_CREDIT_COST
+
         await tx.profiles.update({
           where: { id: user.id },
           data: { credits: { decrement: MUSIC_CREDIT_COST } },
         })
+
+        // 크레딧 히스토리 기록
+        await recordCreditUse({
+          userId: user.id,
+          featureType: 'MUSIC',
+          amount: MUSIC_CREDIT_COST,
+          balanceAfter,
+          relatedEntityId: music.id,
+          description: `음악 생성 (${mood}, ${genre})`,
+        }, tx)
       }, { timeout: 10000 })
     } catch (txError) {
       // 크레딧 차감 실패 시 생성된 음악 레코드 정리

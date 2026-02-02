@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { DEFAULT_SIGNUP_CREDITS } from '@/lib/credits/constants'
+import { recordSignupCredit } from '@/lib/credits/history'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -48,20 +49,34 @@ export async function GET(request: Request) {
 
       // 프로필이 없으면 생성 (이메일만 저장, 온보딩 미완료 상태)
       if (!profile) {
-        profile = await prisma.profiles.create({
-          data: {
-            id: user.id,
-            email: user.email,
-            is_onboarded: false,
-            credits: DEFAULT_SIGNUP_CREDITS,
-          },
-          select: {
-            id: true,
-            email: true,
-            is_onboarded: true,
-            name: true,
-            credits: true,
-          },
+        // 트랜잭션으로 프로필 생성 + 크레딧 히스토리 기록
+        profile = await prisma.$transaction(async (tx) => {
+          const newProfile = await tx.profiles.create({
+            data: {
+              id: user.id,
+              email: user.email,
+              is_onboarded: false,
+              credits: DEFAULT_SIGNUP_CREDITS,
+            },
+            select: {
+              id: true,
+              email: true,
+              is_onboarded: true,
+              name: true,
+              credits: true,
+            },
+          })
+
+          // 회원가입 크레딧 히스토리 기록
+          if (DEFAULT_SIGNUP_CREDITS > 0) {
+            await recordSignupCredit({
+              userId: user.id,
+              amount: DEFAULT_SIGNUP_CREDITS,
+              balanceAfter: DEFAULT_SIGNUP_CREDITS,
+            }, tx)
+          }
+
+          return newProfile
         })
       }
 

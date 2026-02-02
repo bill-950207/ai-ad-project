@@ -26,6 +26,7 @@ import {
   type ViduDuration,
 } from '@/lib/wavespeed/client'
 import { VIDU_CREDIT_COST_PER_SECOND } from '@/lib/credits'
+import { recordCreditUse, recordCreditRefund } from '@/lib/credits/history'
 
 // FREE 사용자 제한
 const FREE_USER_LIMITS = {
@@ -128,7 +129,7 @@ export async function POST(request: NextRequest) {
       totalCreditCost += sceneCost
     }
 
-    // 트랜잭션으로 크레딧 확인 및 차감 (원자적 처리)
+    // 트랜잭션으로 크레딧 확인 및 차감 (원자적 처리 + 히스토리 기록)
     try {
       await prisma.$transaction(async (tx) => {
         const profile = await tx.profiles.findUnique({
@@ -140,10 +141,29 @@ export async function POST(request: NextRequest) {
           throw new Error('INSUFFICIENT_CREDITS')
         }
 
+        const balanceAfter = (profile.credits ?? 0) - totalCreditCost
+
         await tx.profiles.update({
           where: { id: user.id },
           data: { credits: { decrement: totalCreditCost } },
         })
+
+        // 총 씬 영상 시간 계산
+        let totalSeconds = 0
+        for (const keyframe of sortedKeyframes) {
+          const sceneDuration = keyframe.duration ?? effectiveDuration
+          const adjustedDuration = isFreeUser ? Math.min(sceneDuration, FREE_USER_LIMITS.maxDuration) : sceneDuration
+          totalSeconds += adjustedDuration
+        }
+
+        // 크레딧 사용 히스토리 기록
+        await recordCreditUse({
+          userId: user.id,
+          featureType: 'VIDU_SCENE',
+          amount: totalCreditCost,
+          balanceAfter,
+          description: `Vidu Q3 씬 영상 생성 (${sortedKeyframes.length}개 씬, ${totalSeconds}초, ${effectiveResolution})`,
+        }, tx)
       }, { timeout: 10000 })
     } catch (error) {
       if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
@@ -209,16 +229,30 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 실패한 씬이 있으면 해당 크레딧 환불
+    // 실패한 씬이 있으면 해당 크레딧 환불 + 환불 히스토리 기록
     if (failedSceneIndices.length > 0) {
       const refundAmount = failedSceneIndices.reduce((sum, sceneIndex) => {
         return sum + (sceneCreditCosts.get(sceneIndex) ?? 0)
       }, 0)
 
       if (refundAmount > 0) {
-        await prisma.profiles.update({
-          where: { id: user.id },
-          data: { credits: { increment: refundAmount } },
+        await prisma.$transaction(async (tx) => {
+          const profile = await tx.profiles.findUnique({
+            where: { id: user.id },
+            select: { credits: true },
+          })
+          const balanceAfterRefund = (profile?.credits ?? 0) + refundAmount
+          await tx.profiles.update({
+            where: { id: user.id },
+            data: { credits: { increment: refundAmount } },
+          })
+          await recordCreditRefund({
+            userId: user.id,
+            featureType: 'VIDU_SCENE',
+            amount: refundAmount,
+            balanceAfter: balanceAfterRefund,
+            description: `Vidu Q3 씬 영상 생성 실패 환불 (${failedSceneIndices.length}개 씬)`,
+          }, tx)
         })
         console.log(`${failedSceneIndices.length}개 씬 실패, ${refundAmount} 크레딧 환불`)
       }
