@@ -3,9 +3,9 @@
  *
  * 히어로 섹션 배경에 쇼케이스 썸네일이 대각선으로 흐르는 효과
  *
- * 성능 최적화 v7:
- * - LCP 개선: 이미지 1.5초 지연 로드 (텍스트가 LCP 요소가 되도록)
- * - 초기에는 스켈레톤만 표시
+ * 성능 최적화 v8:
+ * - 썸네일 이미지는 바로 표시
+ * - 영상만 1초 후 재생 (LCP 개선)
  * - next/image로 자동 WebP 변환
  */
 
@@ -14,8 +14,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 
-/** 이미지 로드 지연 시간 (ms) - LCP가 텍스트 기준으로 측정되도록 */
-const IMAGE_LOAD_DELAY = 1500
+/** 영상 재생 지연 시간 (ms) */
+const VIDEO_PLAY_DELAY = 1000
 
 interface ShowcaseItem {
   id: string
@@ -52,8 +52,8 @@ function SkeletonCard() {
   )
 }
 
-// 개별 카드 컴포넌트 - 이미지 또는 영상 (지연 로드됨)
-function RainCard({ item }: { item: ShowcaseItem }) {
+// 개별 카드 컴포넌트 - 이미지 또는 영상
+function RainCard({ item, canPlayVideo }: { item: ShowcaseItem; canPlayVideo: boolean }) {
   const [isLoaded, setIsLoaded] = useState(false)
   const isVideo = item.type === 'video' && item.media_url
 
@@ -66,7 +66,7 @@ function RainCard({ item }: { item: ShowcaseItem }) {
         transform: 'translate3d(0,0,0)',
       }}
     >
-      {/* 썸네일 이미지 (기본 배경) */}
+      {/* 썸네일 이미지 (항상 표시) */}
       <Image
         src={item.thumbnail_url}
         alt=""
@@ -80,8 +80,8 @@ function RainCard({ item }: { item: ShowcaseItem }) {
         loading="lazy"
         onLoad={() => setIsLoaded(true)}
       />
-      {/* 영상인 경우 비디오 오버레이 */}
-      {isVideo && (
+      {/* 영상인 경우 비디오 오버레이 (지연 후 재생) */}
+      {isVideo && canPlayVideo && (
         <video
           src={item.media_url!}
           className="absolute inset-0 w-full h-full object-cover object-top"
@@ -104,20 +104,19 @@ function RainCard({ item }: { item: ShowcaseItem }) {
 }
 
 export function ShowcaseRain({ showcases = [] }: ShowcaseRainProps) {
-  // 지연 로드 상태 - LCP 개선을 위해 이미지는 나중에 로드
-  const [shouldLoadImages, setShouldLoadImages] = useState(false)
+  // 영상 재생 지연 상태 - 썸네일은 바로 보이고, 영상만 1초 후 재생
+  const [canPlayVideo, setCanPlayVideo] = useState(false)
 
-  // 1.5초 후 이미지 로드 시작
+  // 1초 후 영상 재생 시작
   useEffect(() => {
     const timer = setTimeout(() => {
-      setShouldLoadImages(true)
-    }, IMAGE_LOAD_DELAY)
+      setCanPlayVideo(true)
+    }, VIDEO_PLAY_DELAY)
 
     return () => clearTimeout(timer)
   }, [])
 
   const hasData = showcases.length > 0
-  const isLoaded = hasData && shouldLoadImages
 
   // 열별로 쇼케이스 분배 (4열, 2배 복제로 무한 스크롤 효과)
   const columns = useMemo(() => {
@@ -153,7 +152,7 @@ export function ShowcaseRain({ showcases = [] }: ShowcaseRainProps) {
         }}
       >
         {/* 스켈레톤 - 데이터 없을 때만 표시 */}
-        {!isLoaded && (
+        {!hasData && (
           <>
             {skeletonColumns.map((column, colIndex) => (
               <div
@@ -173,8 +172,8 @@ export function ShowcaseRain({ showcases = [] }: ShowcaseRainProps) {
           </>
         )}
 
-        {/* 실제 쇼케이스 - 열별 스태거드 페이드인 */}
-        {isLoaded && columns.map((column, colIndex) => (
+        {/* 실제 쇼케이스 - 바로 표시 */}
+        {hasData && columns.map((column, colIndex) => (
           <div
             key={colIndex}
             className="flex flex-col gap-5 w-[150px] sm:w-[180px] flex-shrink-0 animate-fade-in"
@@ -188,6 +187,7 @@ export function ShowcaseRain({ showcases = [] }: ShowcaseRainProps) {
               <RainCard
                 key={`${item.id}-${itemIndex}`}
                 item={item}
+                canPlayVideo={canPlayVideo}
               />
             ))}
           </div>
