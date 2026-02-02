@@ -101,6 +101,26 @@ export default function LoginPage() {
       return
     }
 
+    // 프로필/온보딩 상태 확인
+    try {
+      const res = await fetch('/api/me')
+      if (res.ok) {
+        const { data: profile } = await res.json()
+        if (!profile?.is_onboarded) {
+          router.push('/onboarding')
+          router.refresh()
+          return
+        }
+      } else if (res.status === 404) {
+        // 프로필이 없는 경우 온보딩으로
+        router.push('/onboarding')
+        router.refresh()
+        return
+      }
+    } catch {
+      // API 오류 시 대시보드로 (layout에서 체크)
+    }
+
     router.push('/dashboard')
     router.refresh()
   }

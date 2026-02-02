@@ -40,14 +40,6 @@ interface OnboardingTranslation {
   start: string
   onboardingFailed: string
   errorOccurred: string
-  decorTitle1: string
-  decorTitle2: string
-  decorTitle3: string
-  decorTitle4: string
-  decorSubtitle1: string
-  decorSubtitle2: string
-  decorSubtitle3: string
-  decorSubtitle4: string
   jobTitles: Record<string, string>
   industries: Record<string, string>
   teamSizes: Record<string, string>
@@ -144,33 +136,13 @@ export default function OnboardingPage() {
     )
   }
 
-  const getDecorTitle = () => {
-    switch (step) {
-      case 1: return onboardingT?.decorTitle1 || 'Answer a few questions'
-      case 2: return onboardingT?.decorTitle2 || 'Preparing your experience'
-      case 3: return onboardingT?.decorTitle3 || 'Almost done!'
-      case 4: return onboardingT?.decorTitle4 || 'Ready to start!'
-      default: return ''
-    }
-  }
-
-  const getDecorSubtitle = () => {
-    switch (step) {
-      case 1: return onboardingT?.decorSubtitle1 || 'Simple setup for a better experience'
-      case 2: return onboardingT?.decorSubtitle2 || 'We\'ll recommend features for your role'
-      case 3: return onboardingT?.decorSubtitle3 || 'We\'ll prepare templates for your industry'
-      case 4: return onboardingT?.decorSubtitle4 || '5 free credits are waiting!'
-      default: return ''
-    }
-  }
-
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 lg:px-24 py-12 bg-background">
-        <div className="max-w-md w-full mx-auto">
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      {/* Centered Form */}
+      <div className="w-full max-w-md px-8 py-12">
+        <div className="w-full">
           {/* Logo */}
-          <div className="flex items-center space-x-2 mb-8">
+          <div className="flex items-center justify-center space-x-2 mb-8">
             <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-400 rounded-xl flex items-center justify-center">
               <span className="text-white font-bold">AD</span>
             </div>
@@ -394,32 +366,6 @@ export default function OnboardingPage() {
                 )}
               </Button>
             )}
-          </div>
-        </div>
-      </div>
-
-      {/* Right Side - Decoration */}
-      <div className="hidden lg:block lg:w-1/2 relative bg-gradient-to-br from-primary/20 to-purple-900/30">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="relative w-full h-full overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-background/40 z-10" />
-
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center z-20 max-w-lg px-8">
-                <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-primary/20 flex items-center justify-center backdrop-blur-sm border border-primary/30">
-                  <Sparkles className="w-12 h-12 text-primary" />
-                </div>
-                <h3 className="text-2xl font-bold text-foreground mb-4">
-                  {getDecorTitle()}
-                </h3>
-                <p className="text-muted-foreground">
-                  {getDecorSubtitle()}
-                </p>
-              </div>
-            </div>
-
-            <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
           </div>
         </div>
       </div>

@@ -117,7 +117,7 @@ export function Navbar() {
   ]
 
   // 대시보드 및 인증 페이지에서는 Navbar 숨김
-  if (pathname?.startsWith('/dashboard') || pathname === '/login' || pathname === '/signup') {
+  if (pathname?.startsWith('/dashboard') || pathname === '/login' || pathname === '/signup' || pathname === '/onboarding' || pathname === '/verify-email') {
     return null
   }
 
