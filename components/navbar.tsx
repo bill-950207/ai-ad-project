@@ -20,7 +20,8 @@ import { User } from '@supabase/supabase-js'
 import { Button } from './ui/button'
 import { useLanguage } from '@/contexts/language-context'
 import { Language } from '@/lib/i18n'
-import { LayoutDashboard, LogOut, ChevronDown, Menu, X, Globe, Sparkles, Image, Video, CreditCard } from 'lucide-react'
+import { LayoutDashboard, LogOut, ChevronDown, Menu, X, Globe, Image, Video, CreditCard } from 'lucide-react'
+import NextImage from 'next/image'
 
 // ============================================================
 // 언어 옵션
@@ -131,16 +132,15 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* 로고 */}
-            <Link href="/" className="flex items-center space-x-2.5 group">
-              <div className="relative w-9 h-9">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary via-purple-500 to-pink-500 rounded-xl rotate-3 group-hover:rotate-6 transition-transform duration-300" />
-                <div className="absolute inset-0 bg-gradient-to-br from-primary to-purple-500 rounded-xl flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                AIAD
-              </span>
+            <Link href="/" className="flex items-center group">
+              <NextImage
+                src="/logo-full-dark-lg.png"
+                alt="gwanggo"
+                width={120}
+                height={36}
+                className="h-9 w-auto"
+                priority
+              />
             </Link>
 
             {/* 데스크톱 네비게이션 */}

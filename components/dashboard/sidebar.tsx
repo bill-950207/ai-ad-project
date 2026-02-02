@@ -7,6 +7,7 @@
 'use client'
 
 import Link from 'next/link'
+import NextImage from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
@@ -260,23 +261,26 @@ export function Sidebar() {
         )}>
           <Link
             href="/dashboard"
-            className="flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card rounded-lg"
+            className="flex items-center group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card rounded-lg"
             onClick={handleNavClick}
-            aria-label={t.common?.dashboardHome || 'ADAI Dashboard Home'}
+            aria-label={t.common?.dashboardHome || 'gwanggo Dashboard Home'}
           >
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary via-purple-500 to-pink-500 rounded-xl opacity-50 blur-md group-hover:opacity-75 transition-opacity" />
-              <div className="relative w-9 h-9 bg-gradient-to-br from-primary to-purple-400 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-sm">AD</span>
-              </div>
-            </div>
-            {!isCollapsed && (
-              <span className={cn(
-                "text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent",
-                "group-hover:from-primary group-hover:to-purple-400 transition-all duration-300"
-              )}>
-                ADAI
-              </span>
+            {isCollapsed ? (
+              <NextImage
+                src="/icon-512.png"
+                alt="gwanggo"
+                width={36}
+                height={36}
+                className="w-9 h-9"
+              />
+            ) : (
+              <NextImage
+                src="/logo-full-dark-lg.png"
+                alt="gwanggo"
+                width={120}
+                height={36}
+                className="h-9 w-auto"
+              />
             )}
           </Link>
         </div>
