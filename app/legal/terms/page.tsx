@@ -19,7 +19,7 @@ export default function TermsPage() {
       sections: [
         {
           title: '제1조 (목적)',
-          content: `이 약관은 조코딩(이하 "회사")이 제공하는 AI 광고 콘텐츠 생성 서비스 AIAD(이하 "서비스")의 이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.`,
+          content: `이 약관은 조코딩(이하 "회사")이 제공하는 AI 광고 콘텐츠 생성 서비스 gwanggo(이하 "서비스")의 이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.`,
         },
         {
           title: '제2조 (용어의 정의)',
@@ -94,7 +94,7 @@ export default function TermsPage() {
       sections: [
         {
           title: 'Article 1 (Purpose)',
-          content: `These Terms of Service govern the use of AI advertising content generation service AIAD (the "Service") provided by Jocoding (the "Company") and define the rights, obligations, and responsibilities between the Company and users.`,
+          content: `These Terms of Service govern the use of AI advertising content generation service gwanggo (the "Service") provided by Jocoding (the "Company") and define the rights, obligations, and responsibilities between the Company and users.`,
         },
         {
           title: 'Article 2 (Definitions)',
@@ -169,7 +169,7 @@ export default function TermsPage() {
       sections: [
         {
           title: '第1条（目的）',
-          content: `本規約は、Jocoding（以下「当社」）が提供するAI広告コンテンツ生成サービスAIAD（以下「本サービス」）の利用に関し、当社と利用者間の権利、義務及び責任事項を定めることを目的とします。`,
+          content: `本規約は、Jocoding（以下「当社」）が提供するAI広告コンテンツ生成サービスgwanggo（以下「本サービス」）の利用に関し、当社と利用者間の権利、義務及び責任事項を定めることを目的とします。`,
         },
         {
           title: '第2条（用語の定義）',
@@ -244,7 +244,7 @@ export default function TermsPage() {
       sections: [
         {
           title: '第一条（目的）',
-          content: `本条款旨在规定Jocoding（以下简称"公司"）提供的AI广告内容生成服务AIAD（以下简称"服务"）的使用，以及公司与用户之间的权利、义务和责任。`,
+          content: `本条款旨在规定Jocoding（以下简称"公司"）提供的AI广告内容生成服务gwanggo（以下简称"服务"）的使用，以及公司与用户之间的权利、义务和责任。`,
         },
         {
           title: '第二条（术语定义）',
@@ -353,7 +353,7 @@ export default function TermsPage() {
       {/* 푸터 */}
       <footer className="border-t border-border mt-16">
         <div className="mx-auto max-w-4xl px-4 py-8 text-center text-muted-foreground text-sm">
-          <p>&copy; {new Date().getFullYear()} AIAD. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} gwanggo. All rights reserved.</p>
         </div>
       </footer>
     </div>

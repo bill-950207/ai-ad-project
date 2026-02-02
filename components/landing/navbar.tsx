@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import NextImage from 'next/image'
 import { Menu, X } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 import { createClient } from '@/lib/supabase/client'
@@ -37,15 +38,18 @@ export function Navbar() {
     <header className="w-full bg-background/80 backdrop-blur-sm border-b border-border/50 sticky top-0 z-50">
       <nav className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-14 items-center justify-between">
-          {/* Logo - 단순화 */}
+          {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg"
+            className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg"
           >
-            <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">A</span>
-            </div>
-            <span className="text-lg font-bold text-foreground">AIAD</span>
+            <NextImage
+              src="/logo-full-dark-lg.png"
+              alt="gwanggo"
+              width={100}
+              height={30}
+              className="h-7 w-auto"
+            />
           </Link>
 
           {/* Desktop Navigation */}

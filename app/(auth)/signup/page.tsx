@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
+import NextImage from 'next/image'
 
 interface VideoShowcase {
   id: string
@@ -156,11 +157,14 @@ export default function SignupPage() {
         <div className="w-full max-w-md">
           <div className="bg-card border border-border rounded-2xl p-8 text-center">
             {/* Logo */}
-            <Link href="/" className="inline-flex items-center space-x-2 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-400 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold">AD</span>
-              </div>
-              <span className="text-2xl font-bold text-foreground">ADAI</span>
+            <Link href="/" className="inline-flex items-center mb-6">
+              <NextImage
+                src="/logo-full-dark-lg.png"
+                alt="gwanggo"
+                width={120}
+                height={36}
+                className="h-9 w-auto"
+              />
             </Link>
 
             <h1 className="text-2xl font-bold text-foreground mb-3">
@@ -202,11 +206,14 @@ export default function SignupPage() {
       <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 lg:px-24 py-12 bg-background">
         <div className="max-w-md w-full mx-auto">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 mb-8">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-400 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold">AD</span>
-            </div>
-            <span className="text-2xl font-bold text-foreground">ADAI</span>
+          <Link href="/" className="flex items-center mb-8">
+            <NextImage
+              src="/logo-full-dark-lg.png"
+              alt="gwanggo"
+              width={120}
+              height={36}
+              className="h-9 w-auto"
+            />
           </Link>
 
           <h1 className="text-3xl font-bold text-foreground mb-2">Create an account</h1>

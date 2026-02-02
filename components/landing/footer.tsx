@@ -9,6 +9,7 @@
 'use client'
 
 import Link from 'next/link'
+import NextImage from 'next/image'
 import { useLanguage } from '@/contexts/language-context'
 import { ArrowUpRight } from 'lucide-react'
 
@@ -50,10 +51,13 @@ export function Footer() {
               href="/"
               className="inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg"
             >
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">A</span>
-              </div>
-              <span className="text-xl font-bold text-foreground">AIAD</span>
+              <NextImage
+                src="/logo-full-dark-lg.png"
+                alt="gwanggo"
+                width={100}
+                height={30}
+                className="h-7 w-auto"
+              />
             </Link>
 
             {/* 설명 */}
@@ -91,7 +95,7 @@ export function Footer() {
         <div className="mt-10 pt-6 border-t border-border flex items-center justify-center">
           {/* 저작권 */}
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} AIAD. {t.footer.copyright}
+            © {new Date().getFullYear()} gwanggo. {t.footer.copyright}
           </p>
         </div>
       </div>

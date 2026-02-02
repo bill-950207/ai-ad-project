@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Loader2, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
+import NextImage from 'next/image'
 
 // 직책 키 목록
 const JOB_TITLE_KEYS = ['ceo', 'marketer', 'designer', 'developer', 'pm', 'freelancer', 'student', 'other'] as const
@@ -142,11 +143,14 @@ export default function OnboardingPage() {
       <div className="w-full max-w-md px-8 py-12">
         <div className="w-full">
           {/* Logo */}
-          <div className="flex items-center justify-center space-x-2 mb-8">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-400 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold">AD</span>
-            </div>
-            <span className="text-2xl font-bold text-foreground">ADAI</span>
+          <div className="flex items-center justify-center mb-8">
+            <NextImage
+              src="/logo-full-dark-lg.png"
+              alt="gwanggo"
+              width={120}
+              height={36}
+              className="h-9 w-auto"
+            />
           </div>
 
           {/* Progress Bar */}
@@ -299,7 +303,7 @@ export default function OnboardingPage() {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-3">
-                  {onboardingT?.referralLabel || 'How did you hear about AIAD?'}
+                  {onboardingT?.referralLabel || 'How did you hear about gwanggo?'}
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {REFERRAL_SOURCE_KEYS.map((key) => (

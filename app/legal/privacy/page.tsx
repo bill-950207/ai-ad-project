@@ -19,7 +19,7 @@ export default function PrivacyPage() {
       sections: [
         {
           title: '1. 개인정보의 수집 항목 및 수집 방법',
-          content: `조코딩(이하 "회사")은 AIAD 서비스 제공을 위해 다음과 같은 개인정보를 수집합니다.
+          content: `조코딩(이하 "회사")은 gwanggo 서비스 제공을 위해 다음과 같은 개인정보를 수집합니다.
 
 수집 항목:
 - 필수: 이메일 주소, 비밀번호(암호화 저장)
@@ -127,7 +127,7 @@ export default function PrivacyPage() {
       sections: [
         {
           title: '1. Collection of Personal Information',
-          content: `Jocoding (the "Company") collects the following personal information to provide the AIAD service.
+          content: `Jocoding (the "Company") collects the following personal information to provide the gwanggo service.
 
 Information Collected:
 - Required: Email address, password (encrypted)
@@ -235,7 +235,7 @@ Users may contact the Privacy Officer for all inquiries, complaints, and remedie
       sections: [
         {
           title: '1. 個人情報の収集項目及び収集方法',
-          content: `Jocoding（以下「当社」）はAIADサービス提供のため、以下の個人情報を収集します。
+          content: `Jocoding（以下「当社」）はgwanggoサービス提供のため、以下の個人情報を収集します。
 
 収集項目：
 - 必須：メールアドレス、パスワード（暗号化保存）
@@ -343,7 +343,7 @@ Users may contact the Privacy Officer for all inquiries, complaints, and remedie
       sections: [
         {
           title: '1. 个人信息的收集项目及收集方式',
-          content: `Jocoding（以下简称"公司"）为提供AIAD服务，收集以下个人信息。
+          content: `Jocoding（以下简称"公司"）为提供gwanggo服务，收集以下个人信息。
 
 收集项目：
 - 必填：电子邮箱、密码（加密存储）
@@ -485,7 +485,7 @@ Cookie使用目的：
       {/* 푸터 */}
       <footer className="border-t border-border mt-16">
         <div className="mx-auto max-w-4xl px-4 py-8 text-center text-muted-foreground text-sm">
-          <p>&copy; {new Date().getFullYear()} AIAD. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} gwanggo. All rights reserved.</p>
         </div>
       </footer>
     </div>

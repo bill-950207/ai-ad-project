@@ -13,8 +13,8 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://aiad.kr";
 
 export const metadata: Metadata = {
   title: {
-    default: "AIAD - AI 광고 콘텐츠 생성 플랫폼 | 이미지, 영상, 아바타 광고 제작",
-    template: "%s | AIAD",
+    default: "gwanggo - AI 광고 콘텐츠 생성 플랫폼 | 이미지, 영상, 아바타 광고 제작",
+    template: "%s | gwanggo",
   },
   description: "AI로 전문적인 광고 이미지와 영상을 몇 분 만에 생성하세요. AI 아바타, 제품 광고, 배경 음악까지 원클릭으로 제작. 마케터와 크리에이터를 위한 올인원 AI 광고 솔루션.",
   keywords: [
@@ -34,9 +34,9 @@ export const metadata: Metadata = {
     "광고 콘텐츠 생성",
     "이커머스 광고",
   ],
-  authors: [{ name: "AIAD", url: siteUrl }],
-  creator: "AIAD",
-  publisher: "AIAD",
+  authors: [{ name: "gwanggo", url: siteUrl }],
+  creator: "gwanggo",
+  publisher: "gwanggo",
   metadataBase: new URL(siteUrl),
   alternates: {
     canonical: "/",
@@ -51,25 +51,25 @@ export const metadata: Metadata = {
     locale: "ko_KR",
     alternateLocale: ["en_US", "ja_JP"],
     url: siteUrl,
-    title: "AIAD - AI 광고 콘텐츠 생성 플랫폼",
+    title: "gwanggo - AI 광고 콘텐츠 생성 플랫폼",
     description: "AI로 전문적인 광고 이미지와 영상을 몇 분 만에 생성하세요. 마케터와 크리에이터를 위한 올인원 AI 광고 솔루션.",
-    siteName: "AIAD",
+    siteName: "gwanggo",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "AIAD - AI 광고 콘텐츠 생성 플랫폼",
+        alt: "gwanggo - AI 광고 콘텐츠 생성 플랫폼",
         type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AIAD - AI 광고 콘텐츠 생성 플랫폼",
+    title: "gwanggo - AI 광고 콘텐츠 생성 플랫폼",
     description: "AI로 전문적인 광고 이미지와 영상을 몇 분 만에 생성하세요.",
     images: ["/og-image.png"],
-    creator: "@aiad_kr",
+    creator: "@gwanggo_kr",
   },
   robots: {
     index: true,
@@ -97,7 +97,7 @@ export const metadata: Metadata = {
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  name: "AIAD",
+  name: "gwanggo",
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
   description: "AI로 전문적인 광고 이미지와 영상을 몇 분 만에 생성하는 올인원 AI 광고 플랫폼",
