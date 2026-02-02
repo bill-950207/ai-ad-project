@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { X, Loader2, Check, Shirt, Sparkles, ChevronDown, Settings2 } from 'lucide-react'
+import { X, Loader2, Check, Shirt, Sparkles, Settings2 } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 import { AiAvatarOptionsModal, type DetailedAiAvatarOptions } from './ai-avatar-options-modal'
 
@@ -226,7 +226,6 @@ export function AvatarSelectModal({
   const [expandedAvatarId, setExpandedAvatarId] = useState<string | null>(null)
 
   // AI 아바타 옵션 상태
-  const [showAiOptions, setShowAiOptions] = useState(selectedType === 'ai-generated')
   const [showDetailedOptionsModal, setShowDetailedOptionsModal] = useState(false)
   const [detailedAiOptions, setDetailedAiOptions] = useState<DetailedAiAvatarOptions>({
     gender: 'any',
@@ -342,10 +341,10 @@ export function AvatarSelectModal({
 
         {/* 컨텐츠 */}
         <div className="flex-1 overflow-y-auto p-4">
-          {/* AI 아바타 생성 옵션 */}
+          {/* AI 아바타 생성 옵션 - 클릭 시 바로 모달 열림 */}
           <div className="mb-4">
             <button
-              onClick={() => setShowAiOptions(!showAiOptions)}
+              onClick={() => setShowDetailedOptionsModal(true)}
               className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
                 selectedType === 'ai-generated'
                   ? 'border-primary bg-primary/10'
@@ -361,59 +360,33 @@ export function AvatarSelectModal({
                   <p className="text-xs text-muted-foreground">{t.avatarSelect?.aiGenerateDesc || 'Analyzes product info to auto-generate a matching virtual avatar'}</p>
                 </div>
               </div>
-              <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${showAiOptions ? 'rotate-180' : ''}`} />
+              <Settings2 className="w-5 h-5 text-muted-foreground" />
             </button>
 
-            {/* AI 옵션 펼침 */}
-            {showAiOptions && (
-              <div className="mt-3 p-4 bg-secondary/30 rounded-xl border border-border space-y-4">
-                {/* 선택된 옵션 요약 (옵션이 선택된 경우에만 표시) */}
-                {Object.values(detailedAiOptions).some(v => v !== 'any') && (
-                  <SelectedOptionsSummary options={detailedAiOptions} t={t} />
-                )}
-
-                {/* 상세 옵션 설정 버튼 */}
-                <button
-                  onClick={() => setShowDetailedOptionsModal(true)}
-                  className="w-full py-2.5 px-4 bg-secondary hover:bg-secondary/80 rounded-lg text-sm font-medium text-foreground transition-colors flex items-center justify-center gap-2 border border-border"
-                >
-                  <Settings2 className="w-4 h-4" />
-                  {t.avatarSelect?.configureOptions || 'Configure Detailed Options'}
-                </button>
-
-                {/* 선택 버튼 (모든 옵션이 'any'인 경우 설명 포함) */}
-                <button
-                  onClick={() => {
-                    onSelect({
-                      type: 'ai-generated',
-                      avatarId: 'ai-generated',
-                      avatarName: t.avatarSelect?.aiModel || 'AI Generated Model',
-                      imageUrl: '',  // AI 생성은 이미지 URL이 없음
-                      displayName: t.avatarSelect?.aiAutoGenerate || 'AI Auto Generate',
-                      aiOptions: convertToAiAvatarOptions(detailedAiOptions),
-                    })
-                  }}
-                  className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors flex flex-col items-center justify-center gap-1"
-                >
-                  <span className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    {t.avatarSelect?.selectAsAiModel || 'Select as AI Model'}
-                  </span>
-                  {!Object.values(detailedAiOptions).some(v => v !== 'any') && (
-                    <span className="text-xs opacity-80">
-                      {t.avatarSelect?.allAutoDesc || 'All options auto - AI chooses based on product'}
-                    </span>
-                  )}
-                </button>
+            {/* 선택된 옵션 요약 (AI가 선택되어 있고 옵션이 있는 경우) */}
+            {selectedType === 'ai-generated' && Object.values(detailedAiOptions).some(v => v !== 'any') && (
+              <div className="mt-2">
+                <SelectedOptionsSummary options={detailedAiOptions} t={t} />
               </div>
             )}
           </div>
 
-          {/* AI 아바타 상세 옵션 모달 */}
+          {/* AI 아바타 상세 옵션 모달 - 확인 시 바로 선택 완료 */}
           <AiAvatarOptionsModal
             isOpen={showDetailedOptionsModal}
             onClose={() => setShowDetailedOptionsModal(false)}
-            onConfirm={(options) => setDetailedAiOptions(options)}
+            onConfirm={(options) => {
+              setDetailedAiOptions(options)
+              // 모달 확인 시 바로 AI 아바타 선택 완료
+              onSelect({
+                type: 'ai-generated',
+                avatarId: 'ai-generated',
+                avatarName: t.avatarSelect?.aiModel || 'AI Generated Model',
+                imageUrl: '',
+                displayName: t.avatarSelect?.aiAutoGenerate || 'AI Auto Generate',
+                aiOptions: convertToAiAvatarOptions(options),
+              })
+            }}
             initialOptions={detailedAiOptions}
           />
 

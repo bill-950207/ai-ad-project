@@ -261,12 +261,9 @@ function SelectedSummary({ options, labels }: SelectedSummaryProps) {
     return items
   }, [options, labels])
 
+  // 선택된 옵션이 없으면 아무것도 표시하지 않음
   if (selectedItems.length === 0) {
-    return (
-      <div className="mb-4 p-3 bg-secondary/30 rounded-lg border border-border">
-        <p className="text-xs text-muted-foreground text-center">{labels.allAuto || 'All options set to auto (AI will decide based on product)'}</p>
-      </div>
-    )
+    return null
   }
 
   return (
