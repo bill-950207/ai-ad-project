@@ -50,7 +50,6 @@ export interface AiAvatarOptions {
   height?: 'short' | 'average' | 'tall' | 'any'
   hairStyle?: 'short' | 'medium' | 'long' | 'any'
   hairColor?: 'black' | 'brown' | 'blonde' | 'any'
-  outfitStyle?: 'casual' | 'formal' | 'sporty' | 'professional' | 'elegant' | 'any'
 }
 
 export interface SelectedAvatarInfo {
@@ -81,16 +80,12 @@ function convertToAiAvatarOptions(detailed: DetailedAiAvatarOptions): AiAvatarOp
   return {
     targetGender: detailed.gender,
     targetAge: detailed.age,
-    style: detailed.outfitStyle === 'any' ? 'any' :
-           detailed.outfitStyle === 'professional' ? 'professional' :
-           detailed.outfitStyle === 'elegant' ? 'elegant' :
-           detailed.outfitStyle === 'casual' ? 'casual' : 'natural',
+    style: 'any',  // 의상 스타일은 AI가 자동 결정
     ethnicity: detailed.ethnicity,
     bodyType: detailed.bodyType,
     height: detailed.height,
     hairStyle: detailed.hairStyle,
     hairColor: detailed.hairColor,
-    outfitStyle: detailed.outfitStyle,
   }
 }
 
@@ -154,13 +149,6 @@ function SelectedOptionsSummary({ options, t }: SelectedOptionsSummaryProps) {
         brown: optionsT?.brown || 'Brown',
         blonde: optionsT?.blonde || 'Blonde',
       },
-      outfitStyle: {
-        casual: optionsT?.outfitCasual || 'Casual',
-        formal: optionsT?.outfitFormal || 'Formal',
-        sporty: optionsT?.outfitSporty || 'Sporty',
-        professional: aiAvatarT?.outfitProfessional || 'Professional',
-        elegant: aiAvatarT?.outfitElegant || 'Elegant',
-      },
     }
 
     return labelMap[key]?.[value] || value
@@ -175,7 +163,6 @@ function SelectedOptionsSummary({ options, t }: SelectedOptionsSummaryProps) {
   if (options.bodyType !== 'any') selectedItems.push({ key: 'bodyType', value: getLabel('bodyType', options.bodyType) })
   if (options.hairStyle !== 'any') selectedItems.push({ key: 'hairStyle', value: getLabel('hairStyle', options.hairStyle) })
   if (options.hairColor !== 'any') selectedItems.push({ key: 'hairColor', value: getLabel('hairColor', options.hairColor) })
-  if (options.outfitStyle !== 'any') selectedItems.push({ key: 'outfitStyle', value: getLabel('outfitStyle', options.outfitStyle) })
 
   // avatarSelect 번역 타입 캐스팅
   const avatarSelectT = (t as Record<string, unknown>).avatarSelect as Record<string, string> | undefined
@@ -235,7 +222,6 @@ export function AvatarSelectModal({
     bodyType: 'any',
     hairStyle: 'any',
     hairColor: 'any',
-    outfitStyle: 'any',
   })
 
   // 아바타 및 의상 데이터 로드 (N+1 문제 해결: 단일 쿼리로 의상까지 조회)

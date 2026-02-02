@@ -1,10 +1,9 @@
 /**
  * AI 아바타 상세 옵션 선택 모달
  *
- * 아바타 생성 폼과 동일한 3단계 UI로 AI 아바타 옵션을 선택합니다.
+ * 아바타 생성 폼과 동일한 2단계 UI로 AI 아바타 옵션을 선택합니다.
  * Step 1: 기본 정보 (성별, 나이, 인종)
  * Step 2: 외모 (체형, 키, 헤어)
- * Step 3: 스타일 (의상)
  */
 
 'use client'
@@ -14,7 +13,6 @@ import { useLanguage } from '@/contexts/language-context'
 import {
   X,
   User,
-  Shirt,
   ChevronLeft,
   ChevronRight,
   Check,
@@ -37,9 +35,6 @@ export interface DetailedAiAvatarOptions {
   bodyType: 'slim' | 'average' | 'athletic' | 'curvy' | 'muscular' | 'any'
   hairStyle: 'short' | 'medium' | 'long' | 'any'
   hairColor: 'black' | 'brown' | 'blonde' | 'any'
-
-  // 스타일
-  outfitStyle: 'casual' | 'formal' | 'sporty' | 'professional' | 'elegant' | 'any'
 }
 
 interface AiAvatarOptionsModalProps {
@@ -135,15 +130,6 @@ const hairColorOptions: OptionItem[] = [
   { value: 'blonde', labelKey: 'hairBlonde' },
 ]
 
-const outfitStyleOptions: OptionItem[] = [
-  { value: 'any', labelKey: 'anyOutfit' },
-  { value: 'casual', labelKey: 'outfitCasual' },
-  { value: 'formal', labelKey: 'outfitFormal' },
-  { value: 'sporty', labelKey: 'outfitSporty' },
-  { value: 'professional', labelKey: 'outfitProfessional' },
-  { value: 'elegant', labelKey: 'outfitElegant' },
-]
-
 // 기본값
 const defaultOptions: DetailedAiAvatarOptions = {
   gender: 'any',
@@ -153,7 +139,6 @@ const defaultOptions: DetailedAiAvatarOptions = {
   bodyType: 'any',
   hairStyle: 'any',
   hairColor: 'any',
-  outfitStyle: 'any',
 }
 
 // ============================================================
@@ -254,9 +239,6 @@ function SelectedSummary({ options, labels }: SelectedSummaryProps) {
     if (options.hairColor !== 'any') {
       items.push({ key: 'hairColor', label: labels.hairColor || 'Hair Color', value: labels[`hair${options.hairColor.charAt(0).toUpperCase() + options.hairColor.slice(1)}`] || options.hairColor })
     }
-    if (options.outfitStyle !== 'any') {
-      items.push({ key: 'outfitStyle', label: labels.outfit || 'Outfit', value: labels[`outfit${options.outfitStyle.charAt(0).toUpperCase() + options.outfitStyle.slice(1)}`] || options.outfitStyle })
-    }
 
     return items
   }, [options, labels])
@@ -321,7 +303,6 @@ export function AiAvatarOptionsModal({
     bodyType: aiAvatarT?.bodyType || 'Body Type',
     hairStyle: aiAvatarT?.hairStyle || 'Hair Style',
     hairColor: aiAvatarT?.hairColor || 'Hair Color',
-    outfit: aiAvatarT?.outfit || 'Outfit',
     selectedOptions: aiAvatarT?.selectedOptions || 'Selected Options',
     allAuto: aiAvatarT?.allAuto || 'All options set to auto (AI will decide)',
 
@@ -373,22 +354,13 @@ export function AiAvatarOptionsModal({
     hairBlack: avatarOptions.blackhair || 'Black',
     hairBrown: avatarOptions.brown || 'Brown',
     hairBlonde: avatarOptions.blonde || 'Blonde',
-
-    // 의상
-    anyOutfit: aiAvatarT?.anyOutfit || 'Any',
-    outfitCasual: avatarOptions.outfitCasual || 'Casual',
-    outfitFormal: avatarOptions.outfitFormal || 'Formal',
-    outfitSporty: avatarOptions.outfitSporty || 'Sporty',
-    outfitProfessional: aiAvatarT?.outfitProfessional || 'Professional',
-    outfitElegant: aiAvatarT?.outfitElegant || 'Elegant',
   }
 
   const stepLabels = [
     aiAvatarT?.stepBasic || 'Basic',
     aiAvatarT?.stepAppearance || 'Appearance',
-    aiAvatarT?.stepStyle || 'Style'
   ]
-  const totalSteps = 3
+  const totalSteps = 2
 
   const updateOption = <K extends keyof DetailedAiAvatarOptions>(key: K, value: DetailedAiAvatarOptions[K]) => {
     setOptions(prev => ({ ...prev, [key]: value }))
@@ -585,30 +557,6 @@ export function AiAvatarOptionsModal({
                       key={item.value}
                       selected={options.hairColor === item.value}
                       onClick={() => updateOption('hairColor', item.value as DetailedAiAvatarOptions['hairColor'])}
-                    >
-                      {labels[item.labelKey] || item.value}
-                    </OptionButton>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: 스타일 */}
-          {currentStep === 2 && (
-            <div className="space-y-5">
-              {/* 의상 스타일 */}
-              <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
-                  <Shirt className="w-4 h-4 text-primary" />
-                  {labels.outfit}
-                </label>
-                <div className="flex gap-2 flex-wrap">
-                  {outfitStyleOptions.map((item) => (
-                    <OptionButton
-                      key={item.value}
-                      selected={options.outfitStyle === item.value}
-                      onClick={() => updateOption('outfitStyle', item.value as DetailedAiAvatarOptions['outfitStyle'])}
                     >
                       {labels[item.labelKey] || item.value}
                     </OptionButton>

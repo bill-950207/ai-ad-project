@@ -112,7 +112,6 @@ export function WizardStep3() {
         height: 'any' as const,
         hairStyle: 'any' as const,
         hairColor: 'any' as const,
-        outfitStyle: 'any' as const,
       }
 
       // 사용자가 'any'로 설정한 필드만 LLM 추천값으로 업데이트
@@ -131,7 +130,6 @@ export function WizardStep3() {
         height: current.height,
         hairStyle: current.hairStyle,
         hairColor: current.hairColor,
-        outfitStyle: current.outfitStyle,
       }
 
       setSelectedAvatarInfo({
