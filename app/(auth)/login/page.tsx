@@ -85,6 +85,11 @@ export default function LoginPage() {
     })
 
     if (error) {
+      // 이메일 미인증 에러 처리
+      if (error.message.toLowerCase().includes('email not confirmed')) {
+        router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+        return
+      }
       setError(error.message)
       setLoading(false)
       return
