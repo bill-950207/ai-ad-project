@@ -5,6 +5,7 @@ import { Navbar } from "@/components/navbar";
 import { SupabaseProvider } from "@/components/providers/supabase-provider";
 import { LanguageProvider } from "@/contexts/language-context";
 import { ClarityScript } from "@/components/analytics/clarity";
+import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -66,6 +67,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <ClarityScript />
+        <GoogleAnalytics />
         <SupabaseProvider
           supabaseUrl={process.env.SUPABASE_URL!}
           supabaseAnonKey={process.env.SUPABASE_ANON_KEY!}
