@@ -74,9 +74,14 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}${next}`)
 
     } catch (dbError) {
-      console.error('DB 처리 오류:', dbError)
-      // DB 오류가 발생해도 일단 대시보드로 이동
-      return NextResponse.redirect(`${origin}${next}`)
+      console.error('DB 처리 오류:', {
+        error: dbError,
+        userId: user.id,
+        email: user.email,
+        message: dbError instanceof Error ? dbError.message : 'Unknown error',
+      })
+      // DB 오류 시 에러 페이지로 이동 (프로필 생성 실패)
+      return NextResponse.redirect(`${origin}/login?error=profile_creation_failed`)
     }
   }
 
