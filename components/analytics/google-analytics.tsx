@@ -3,9 +3,11 @@
 import Script from 'next/script'
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
+const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 
 export function GoogleAnalytics() {
-  if (!GA_ID) return null
+  // production 환경에서만 로드
+  if (!IS_PRODUCTION || !GA_ID) return null
 
   return (
     <>

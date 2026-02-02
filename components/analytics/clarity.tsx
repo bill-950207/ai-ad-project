@@ -3,9 +3,11 @@
 import Script from 'next/script'
 
 const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID
+const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 
 export function ClarityScript() {
-  if (!CLARITY_ID) return null
+  // production 환경에서만 로드
+  if (!IS_PRODUCTION || !CLARITY_ID) return null
 
   return (
     <Script
