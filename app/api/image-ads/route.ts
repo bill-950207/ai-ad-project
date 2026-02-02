@@ -67,6 +67,7 @@ interface ImageAdRequestBody {
     mood?: string
     angle?: string
     outfit?: string  // 의상 옵션 (카테고리 옵션으로 포함)
+    outfitCustom?: string  // 커스텀 의상 텍스트
   }
   // AI 아바타 옵션 (avatarIds[0]이 'ai-generated'일 때)
   aiAvatarOptions?: {
@@ -595,6 +596,33 @@ export async function POST(request: NextRequest) {
 
         if (optionParts.length > 0) {
           finalPrompt = `${prompt}. Style: ${optionParts.join(', ')}.`
+        }
+      }
+
+      // 아바타 포함 광고에서 outfit 옵션 반영 (제품단독 제외)
+      if (adType !== 'productOnly' && options?.outfit && options.outfit !== 'keep_original') {
+        const outfitPrompts: Record<string, string> = {
+          casual_everyday: 'Model wearing casual everyday outfit: comfortable t-shirt or blouse with jeans or casual pants, relaxed and approachable style.',
+          formal_elegant: 'Model wearing formal elegant outfit: sophisticated dress or tailored suit, refined and polished appearance.',
+          professional_business: 'Model wearing professional business attire: crisp blazer with dress shirt, polished and authoritative look.',
+          sporty_athletic: 'Model wearing sporty athletic wear: comfortable activewear or athleisure, energetic and dynamic style.',
+          cozy_comfortable: 'Model wearing cozy comfortable clothing: soft knit sweater or cardigan, warm and inviting appearance.',
+          trendy_fashion: 'Model wearing trendy fashion-forward outfit: current season styles, stylish and on-trend look.',
+          minimal_simple: 'Model wearing minimal simple outfit: clean solid-colored clothing without busy patterns, understated elegance.',
+        }
+
+        const outfitKey = options.outfit as string
+        // 커스텀 의상인 경우
+        const outfitText = outfitKey === '__custom__' && options.outfitCustom
+          ? `Model wearing ${options.outfitCustom}.`
+          : outfitPrompts[outfitKey] || ''
+
+        if (outfitText) {
+          // 착용샷의 경우 제품 외 의상임을 명시
+          const outfitSuffix = adType === 'wearing'
+            ? ' (This outfit applies to clothing OTHER than the product being advertised.)'
+            : ''
+          finalPrompt = `${finalPrompt} ${outfitText}${outfitSuffix}`
         }
       }
 
