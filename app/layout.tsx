@@ -13,10 +13,10 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://aiad.kr";
 
 export const metadata: Metadata = {
   title: {
-    default: "gwanggo - AI 광고 콘텐츠 생성 플랫폼 | 이미지, 영상, 아바타 광고 제작",
+    default: "gwanggo - AI 광고 이미지·영상 생성 플랫폼",
     template: "%s | gwanggo",
   },
-  description: "AI로 전문적인 광고 이미지와 영상을 몇 분 만에 생성하세요. AI 아바타, 제품 광고, 배경 음악까지 원클릭으로 제작. 마케터와 크리에이터를 위한 올인원 AI 광고 솔루션.",
+  description: "AI로 광고 이미지와 영상을 몇 분 만에 생성. 아바타, 제품 광고, 음악까지 원클릭 제작.",
   keywords: [
     "AI 광고",
     "AI 광고 제작",
