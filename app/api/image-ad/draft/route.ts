@@ -34,13 +34,16 @@ export async function POST(request: NextRequest) {
       // 기본 필드들
       adType,
       productId,
-      avatarId,
+      avatarId: rawAvatarId,
       outfitId,
       imageSize,
       quality,
       numImages,
       forceNew,  // true면 항상 새 draft 생성
     } = body
+
+    // AI 생성 아바타의 경우 avatar_id는 null로 저장 (UUID가 아니므로)
+    const avatarId = rawAvatarId === 'ai-generated' ? null : rawAvatarId
 
     // 기존 초안 업데이트 (id가 있고 forceNew가 아닐 때)
     if (id && !forceNew) {
