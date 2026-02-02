@@ -538,7 +538,14 @@ export async function POST(request: NextRequest) {
         western: 'Western/Caucasian',
         any: ''
       }
-      const bodyTypeMap: Record<string, string> = { slim: 'slim build', average: 'average build', athletic: 'athletic build', curvy: 'curvy figure', muscular: 'muscular build', any: '' }
+      const bodyTypeMap: Record<string, string> = {
+        slim: 'slim slender body with thin waist and lean figure',
+        average: 'average body build',
+        athletic: 'athletic toned body with defined muscles and fit physique',
+        curvy: 'curvy voluptuous figure with prominent curves, full hips and bust',
+        muscular: 'muscular well-built physique with strong defined muscles',
+        any: ''
+      }
       const heightMap: Record<string, string> = { short: 'petite/short', average: 'average height', tall: 'tall', any: '' }
       const hairStyleMap: Record<string, string> = { short: 'short hair', medium: 'medium-length hair', long: 'long hair', any: '' }
       const hairColorMap: Record<string, string> = { black: 'black hair', brown: 'brown hair', blonde: 'blonde hair', any: '' }

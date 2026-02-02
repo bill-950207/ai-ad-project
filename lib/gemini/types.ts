@@ -344,6 +344,18 @@ export type AiAvatarBodyType = 'slim' | 'average' | 'athletic' | 'curvy' | 'any'
 /** AI 아바타 인종 타입 */
 export type AiAvatarEthnicity = 'korean' | 'asian' | 'western' | 'japanese' | 'chinese' | 'any'
 
+/** AI 아바타 키 타입 */
+export type AiAvatarHeight = 'short' | 'average' | 'tall' | 'any'
+
+/** AI 아바타 헤어스타일 타입 */
+export type AiAvatarHairStyle = 'short' | 'medium' | 'long' | 'any'
+
+/** AI 아바타 헤어컬러 타입 */
+export type AiAvatarHairColor = 'black' | 'brown' | 'blonde' | 'any'
+
+/** AI 아바타 의상스타일 타입 */
+export type AiAvatarOutfitStyle = 'casual' | 'formal' | 'sporty' | 'professional' | 'elegant' | 'any'
+
 /** AI 아바타 프롬프트 생성 입력 */
 export interface AiAvatarPromptInput {
   productInfo: string
@@ -363,6 +375,14 @@ export interface AiAvatarPromptInput {
   videoType?: VideoType
   /** 대본 언어 (인종 자동 설정용) */
   language?: 'ko' | 'en' | 'ja' | 'zh'
+  /** 키 */
+  height?: AiAvatarHeight
+  /** 헤어스타일 */
+  hairStyle?: AiAvatarHairStyle
+  /** 헤어컬러 */
+  hairColor?: AiAvatarHairColor
+  /** 의상스타일 */
+  outfitStyle?: AiAvatarOutfitStyle
 }
 
 /** AI 아바타 프롬프트 생성 결과 */
