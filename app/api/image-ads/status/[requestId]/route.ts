@@ -90,23 +90,45 @@ export async function GET(
         if (isNsfwError) {
           try {
             // 해당 이미지 광고의 품질 정보 조회
-            const imageAd = await prisma.image_ads.findFirst({
+            // 1. fal_request_id로 먼저 검색
+            let imageAd = await prisma.image_ads.findFirst({
               where: {
-                OR: [
-                  { fal_request_id: rawRequestId },
-                  // batch_request_ids는 JSON이므로 별도 처리 필요
-                ],
+                fal_request_id: rawRequestId,
                 user_id: user.id,
               },
-              select: { quality: true, num_images: true },
+              select: { quality: true, num_images: true, batch_request_ids: true },
             })
+
+            let isBatchImage = false
+
+            // 2. 찾지 못하면 batch_request_ids에서 검색 (Supabase 사용)
+            if (!imageAd) {
+              const { data: batchAds } = await supabase
+                .from('image_ads')
+                .select('quality, num_images, batch_request_ids')
+                .eq('user_id', user.id)
+                .not('batch_request_ids', 'is', null)
+
+              if (batchAds) {
+                for (const ad of batchAds) {
+                  const batchIds = ad.batch_request_ids as Array<{ provider: string; requestId: string }> | null
+                  if (batchIds?.some(b => b.requestId === actualId || `${b.provider}:${b.requestId}` === rawRequestId)) {
+                    imageAd = { quality: ad.quality, num_images: ad.num_images, batch_request_ids: ad.batch_request_ids }
+                    isBatchImage = true
+                    break
+                  }
+                }
+              }
+            }
 
             if (imageAd) {
               // 품질에 따른 크레딧 비용 계산
               const quality = (imageAd.quality as 'medium' | 'high') || 'medium'
               const creditCost = IMAGE_AD_CREDIT_COST[quality] || IMAGE_AD_CREDIT_COST.medium
-              const numImages = imageAd.num_images || 1
-              const refundAmount = creditCost * numImages
+
+              // 배치 이미지인 경우 1장분만 환불 (개별 이미지 NSFW)
+              // 단일 이미지인 경우 전체 환불
+              const refundAmount = isBatchImage ? creditCost : creditCost * (imageAd.num_images || 1)
 
               // 크레딧 환불
               await prisma.profiles.update({
@@ -114,7 +136,13 @@ export async function GET(
                 data: { credits: { increment: refundAmount } },
               })
 
-              console.log('NSFW 에러로 크레딧 환불:', { userId: user.id, refundAmount, quality, numImages })
+              console.log('NSFW 에러로 크레딧 환불:', {
+                userId: user.id,
+                refundAmount,
+                quality,
+                isBatchImage,
+                numImages: imageAd.num_images
+              })
             }
           } catch (refundError) {
             console.error('NSFW 크레딧 환불 실패:', refundError)
