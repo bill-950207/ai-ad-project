@@ -12,7 +12,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { optimizeRainUrl } from '@/lib/image/optimize'
+import Image from 'next/image'
 
 interface ShowcaseItem {
   id: string
@@ -50,7 +50,7 @@ function SkeletonCard() {
 }
 
 // 개별 카드 컴포넌트 - 이미지 또는 영상
-function RainCard({ item }: { item: ShowcaseItem }) {
+function RainCard({ item, priority = false }: { item: ShowcaseItem; priority?: boolean }) {
   const [isLoaded, setIsLoaded] = useState(false)
   const isVideo = item.type === 'video' && item.media_url
 
@@ -64,30 +64,28 @@ function RainCard({ item }: { item: ShowcaseItem }) {
       }}
     >
       {/* 썸네일 이미지 (기본 배경) */}
-      <img
-        src={optimizeRainUrl(item.thumbnail_url)}
+      <Image
+        src={item.thumbnail_url}
         alt=""
-        width={120}
-        height={160}
-        className="w-full h-full object-cover object-top"
+        fill
+        sizes="180px"
+        className="object-cover object-top"
         style={{
           opacity: isLoaded ? 1 : 0,
           transition: 'opacity 0.5s ease-out',
         }}
-        loading="lazy"
-        decoding="async"
+        priority={priority}
         onLoad={() => setIsLoaded(true)}
       />
-      {/* 영상인 경우 비디오 오버레이 */}
+      {/* 영상인 경우 썸네일만 표시 (영상 자동재생 제거로 LCP 개선) */}
       {isVideo && (
-        <video
-          src={item.media_url!}
-          className="absolute inset-0 w-full h-full object-cover object-top"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
+        <Image
+          src={item.thumbnail_url}
+          alt=""
+          fill
+          sizes="180px"
+          className="object-cover object-top"
+          priority={priority}
         />
       )}
       <div
@@ -170,7 +168,11 @@ export function ShowcaseRain({ showcases = [] }: ShowcaseRainProps) {
             }}
           >
             {column.map((item, itemIndex) => (
-              <RainCard key={`${item.id}-${itemIndex}`} item={item} />
+              <RainCard
+                key={`${item.id}-${itemIndex}`}
+                item={item}
+                priority={itemIndex < 2}
+              />
             ))}
           </div>
         ))}
