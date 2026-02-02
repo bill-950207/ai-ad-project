@@ -98,7 +98,7 @@ export default function SignupPage() {
       return
     }
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -109,10 +109,18 @@ export default function SignupPage() {
     if (error) {
       setError(error.message)
       setLoading(false)
-    } else {
-      // 이메일 인증 페이지로 리다이렉트
-      router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+      return
     }
+
+    // 이미 가입된 이메일인 경우 (Supabase는 보안상 identities가 빈 배열로 반환)
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      setError('This email is already registered. Please log in instead.')
+      setLoading(false)
+      return
+    }
+
+    // 이메일 인증 페이지로 리다이렉트
+    router.push(`/verify-email?email=${encodeURIComponent(email)}`)
   }
 
   const handleGoogleSignup = async () => {
