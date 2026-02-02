@@ -314,10 +314,15 @@ export function validateAvatarOptions(options: unknown): options is AvatarOption
 /** AI 아바타 옵션 타입 (이미지/영상 광고에서 사용) */
 export interface AiAvatarOptions {
   targetGender?: 'male' | 'female' | 'any'
-  targetAge?: 'young' | 'middle' | 'mature' | 'any'
+  targetAge?: 'teen' | 'early20s' | 'late20s' | '30s' | '40plus' | 'young' | 'middle' | 'mature' | 'any'
   style?: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
-  ethnicity?: 'korean' | 'asian' | 'western' | 'japanese' | 'chinese' | 'any'
-  bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'any'
+  ethnicity?: 'eastAsian' | 'southeastAsian' | 'southAsian' | 'caucasian' | 'black' | 'hispanic' | 'middleEastern' | 'korean' | 'asian' | 'western' | 'japanese' | 'chinese' | 'any'
+  bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'muscular' | 'any'
+  // 상세 옵션 (새로 추가)
+  height?: 'short' | 'average' | 'tall' | 'any'
+  hairStyle?: 'short' | 'medium' | 'long' | 'any'
+  hairColor?: 'black' | 'brown' | 'blonde' | 'any'
+  outfitStyle?: 'casual' | 'formal' | 'sporty' | 'professional' | 'elegant' | 'any'
 }
 
 /** AI 아바타 옵션을 AvatarOptions로 변환 */
@@ -332,6 +337,11 @@ export function convertAiAvatarOptionsToAvatarOptions(aiOptions: AiAvatarOptions
   // 나이 변환
   if (aiOptions.targetAge && aiOptions.targetAge !== 'any') {
     const ageConvertMap: Record<string, AvatarOptions['age']> = {
+      teen: 'teen',
+      early20s: 'early20s',
+      late20s: 'late20s',
+      '30s': '30s',
+      '40plus': '40plus',
       young: 'early20s',
       middle: '30s',
       mature: '40plus',
@@ -342,6 +352,13 @@ export function convertAiAvatarOptionsToAvatarOptions(aiOptions: AiAvatarOptions
   // 인종 변환
   if (aiOptions.ethnicity && aiOptions.ethnicity !== 'any') {
     const ethnicityConvertMap: Record<string, AvatarOptions['ethnicity']> = {
+      eastAsian: 'eastAsian',
+      southeastAsian: 'southeastAsian',
+      southAsian: 'southAsian',
+      caucasian: 'caucasian',
+      black: 'black',
+      hispanic: 'hispanic',
+      middleEastern: 'middleEastern',
       korean: 'eastAsian',
       asian: 'eastAsian',
       western: 'caucasian',
@@ -349,9 +366,41 @@ export function convertAiAvatarOptionsToAvatarOptions(aiOptions: AiAvatarOptions
     options.ethnicity = ethnicityConvertMap[aiOptions.ethnicity]
   }
 
+  // 키 변환
+  if (aiOptions.height && aiOptions.height !== 'any') {
+    options.height = aiOptions.height as AvatarOptions['height']
+  }
+
   // 체형 변환
   if (aiOptions.bodyType && aiOptions.bodyType !== 'any') {
     options.bodyType = aiOptions.bodyType as AvatarOptions['bodyType']
+  }
+
+  // 헤어스타일 변환
+  if (aiOptions.hairStyle && aiOptions.hairStyle !== 'any') {
+    options.hairStyle = aiOptions.hairStyle as AvatarOptions['hairStyle']
+  }
+
+  // 헤어컬러 변환
+  if (aiOptions.hairColor && aiOptions.hairColor !== 'any') {
+    const hairColorMap: Record<string, AvatarOptions['hairColor']> = {
+      black: 'blackhair',
+      brown: 'brown',
+      blonde: 'blonde',
+    }
+    options.hairColor = hairColorMap[aiOptions.hairColor]
+  }
+
+  // 의상 스타일 변환
+  if (aiOptions.outfitStyle && aiOptions.outfitStyle !== 'any') {
+    const outfitMap: Record<string, AvatarOptions['outfitStyle']> = {
+      casual: 'casual',
+      formal: 'formal',
+      sporty: 'sporty',
+      professional: 'formal',
+      elegant: 'formal',
+    }
+    options.outfitStyle = outfitMap[aiOptions.outfitStyle]
   }
 
   // 기본값: 스튜디오 배경

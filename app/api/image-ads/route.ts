@@ -92,10 +92,15 @@ interface ImageAdRequestBody {
   // AI 아바타 옵션 (avatarIds[0]이 'ai-generated'일 때)
   aiAvatarOptions?: {
     targetGender?: 'male' | 'female' | 'any'
-    targetAge?: 'young' | 'middle' | 'mature' | 'any'
+    targetAge?: 'teen' | 'early20s' | 'late20s' | '30s' | '40plus' | 'young' | 'middle' | 'mature' | 'any'
     style?: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
-    ethnicity?: 'korean' | 'asian' | 'western' | 'any'
-    bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'any'
+    ethnicity?: 'eastAsian' | 'southeastAsian' | 'southAsian' | 'caucasian' | 'black' | 'hispanic' | 'middleEastern' | 'korean' | 'asian' | 'western' | 'any'
+    bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'muscular' | 'any'
+    // 상세 옵션 (새로 추가)
+    height?: 'short' | 'average' | 'tall' | 'any'
+    hairStyle?: 'short' | 'medium' | 'long' | 'any'
+    hairColor?: 'black' | 'brown' | 'blonde' | 'any'
+    outfitStyle?: 'casual' | 'formal' | 'sporty' | 'professional' | 'elegant' | 'any'
   }
   draftId?: string  // 기존 DRAFT 업데이트용
 }
@@ -547,10 +552,36 @@ export async function POST(request: NextRequest) {
     let aiAvatarDescription: string | undefined
     if (isAiGeneratedAvatar) {
       const genderMap: Record<string, string> = { male: 'male', female: 'female', any: '' }
-      const ageMap: Record<string, string> = { young: 'in their 20s-30s', middle: 'in their 30s-40s', mature: 'in their 40s-50s', any: '' }
+      const ageMap: Record<string, string> = {
+        teen: 'teenage',
+        early20s: 'in their early 20s',
+        late20s: 'in their late 20s',
+        '30s': 'in their 30s',
+        '40plus': 'in their 40s or older',
+        young: 'in their 20s-30s',
+        middle: 'in their 30s-40s',
+        mature: 'in their 40s-50s',
+        any: ''
+      }
       const styleMap: Record<string, string> = { natural: 'natural and friendly', professional: 'professional and sophisticated', casual: 'casual and relaxed', elegant: 'elegant and luxurious', any: '' }
-      const ethnicityMap: Record<string, string> = { korean: 'Korean', asian: 'Asian', western: 'Western/Caucasian', any: '' }
-      const bodyTypeMap: Record<string, string> = { slim: 'slim build', average: 'average build', athletic: 'athletic build', curvy: 'curvy figure', any: '' }
+      const ethnicityMap: Record<string, string> = {
+        eastAsian: 'East Asian',
+        southeastAsian: 'Southeast Asian',
+        southAsian: 'South Asian',
+        caucasian: 'Caucasian',
+        black: 'Black/African',
+        hispanic: 'Hispanic/Latino',
+        middleEastern: 'Middle Eastern',
+        korean: 'Korean',
+        asian: 'Asian',
+        western: 'Western/Caucasian',
+        any: ''
+      }
+      const bodyTypeMap: Record<string, string> = { slim: 'slim build', average: 'average build', athletic: 'athletic build', curvy: 'curvy figure', muscular: 'muscular build', any: '' }
+      const heightMap: Record<string, string> = { short: 'petite/short', average: 'average height', tall: 'tall', any: '' }
+      const hairStyleMap: Record<string, string> = { short: 'short hair', medium: 'medium-length hair', long: 'long hair', any: '' }
+      const hairColorMap: Record<string, string> = { black: 'black hair', brown: 'brown hair', blonde: 'blonde hair', any: '' }
+      const outfitStyleMap: Record<string, string> = { casual: 'casual outfit', formal: 'formal attire', sporty: 'sporty/athletic wear', professional: 'professional business attire', elegant: 'elegant outfit', any: '' }
 
       const avatarParts: string[] = []
 
@@ -565,8 +596,20 @@ export async function POST(request: NextRequest) {
         if (aiAvatarOptions.targetAge && aiAvatarOptions.targetAge !== 'any' && ageMap[aiAvatarOptions.targetAge]) {
           avatarParts.push(`person ${ageMap[aiAvatarOptions.targetAge]}`)
         }
+        if (aiAvatarOptions.height && aiAvatarOptions.height !== 'any' && heightMap[aiAvatarOptions.height]) {
+          avatarParts.push(heightMap[aiAvatarOptions.height])
+        }
         if (aiAvatarOptions.bodyType && aiAvatarOptions.bodyType !== 'any' && bodyTypeMap[aiAvatarOptions.bodyType]) {
           avatarParts.push(`with ${bodyTypeMap[aiAvatarOptions.bodyType]}`)
+        }
+        if (aiAvatarOptions.hairStyle && aiAvatarOptions.hairStyle !== 'any' && hairStyleMap[aiAvatarOptions.hairStyle]) {
+          avatarParts.push(hairStyleMap[aiAvatarOptions.hairStyle])
+        }
+        if (aiAvatarOptions.hairColor && aiAvatarOptions.hairColor !== 'any' && hairColorMap[aiAvatarOptions.hairColor]) {
+          avatarParts.push(hairColorMap[aiAvatarOptions.hairColor])
+        }
+        if (aiAvatarOptions.outfitStyle && aiAvatarOptions.outfitStyle !== 'any' && outfitStyleMap[aiAvatarOptions.outfitStyle]) {
+          avatarParts.push(`wearing ${outfitStyleMap[aiAvatarOptions.outfitStyle]}`)
         }
         if (aiAvatarOptions.style && aiAvatarOptions.style !== 'any' && styleMap[aiAvatarOptions.style]) {
           avatarParts.push(`${styleMap[aiAvatarOptions.style]} appearance`)
@@ -576,7 +619,7 @@ export async function POST(request: NextRequest) {
       // 모든 옵션이 '무관'이거나 설정되지 않은 경우 - Gemini가 제품에 맞게 자동 선택
       if (avatarParts.length === 0) {
         // 기본 설명을 제공하되, Gemini에게 제품에 맞게 구체화하도록 요청
-        aiAvatarDescription = 'a person suitable for this product advertisement (automatically select ethnicity, gender, age, body type, and style based on the product and target market)'
+        aiAvatarDescription = 'a person suitable for this product advertisement (automatically select ethnicity, gender, age, body type, height, hair, outfit, and style based on the product and target market)'
       } else {
         // 'person'이 없으면 추가
         if (!avatarParts.some(p => p.includes('person'))) {
