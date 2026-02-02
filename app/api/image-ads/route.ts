@@ -350,6 +350,13 @@ export async function POST(request: NextRequest) {
 
     // AI 생성 아바타 여부 확인
     const isAiGeneratedAvatar = avatarIds.length > 0 && avatarIds[0] === 'ai-generated'
+    console.log('=== AI 아바타 디버그 ===', {
+      isAiGeneratedAvatar,
+      avatarIds,
+      aiAvatarOptions,
+      hasTargetGender: aiAvatarOptions?.targetGender,
+      hasBodyType: aiAvatarOptions?.bodyType,
+    })
 
     // 아바타가 필요한 유형인지 확인 (productOnly, seasonal은 아바타 선택사항)
     const requiresAvatar = !isProductOnlyType && !isSeasonalType
