@@ -294,7 +294,6 @@ export async function POST(request: NextRequest) {
         height: aiAvatarOptions?.height,
         hairStyle: aiAvatarOptions?.hairStyle,
         hairColor: aiAvatarOptions?.hairColor,
-        outfitStyle: aiAvatarOptions?.outfitStyle,
         videoType,  // 비디오 타입 (UGC, podcast, expert)
         language,  // 대본 언어 (인종 자동 설정용)
       })
