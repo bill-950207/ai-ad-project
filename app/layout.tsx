@@ -86,8 +86,7 @@ export const metadata: Metadata = {
   },
   category: "technology",
   verification: {
-    // Google Search Console 등록 시 추가
-    // google: "your-google-verification-code",
+    google: "AFp7Yd97bOBEafFj1s7Def5JpcDUV8AXvaLdNidfO0U",
     // Naver 웹마스터 도구 등록 시 추가
     // other: { "naver-site-verification": "your-naver-verification-code" },
   },
