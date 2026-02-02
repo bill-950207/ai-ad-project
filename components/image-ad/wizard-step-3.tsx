@@ -388,7 +388,15 @@ export function WizardStep3() {
             )}
           </div>
 
-          {categoryConfig.groups.map((group) => {
+          {categoryConfig.groups
+            // seasonal + 아바타 없음일 때 outfit 그룹 숨기기 (모델이 없으면 의상 옵션 불필요)
+            .filter((group) => {
+              if (group.key === 'outfit' && adType === 'seasonal' && !selectedAvatarInfo) {
+                return false
+              }
+              return true
+            })
+            .map((group) => {
             const groupLabel = imageAdCreate.categoryOptions?.groups?.[group.key] || group.labelKey
             const isCustomActive = customInputActive[group.key] || categoryOptions[group.key] === '__custom__'
 

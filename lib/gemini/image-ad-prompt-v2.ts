@@ -259,6 +259,7 @@ interface FigureInfo {
   productRef: string
   modelFigureNum: number | null
   productFigureNum: number | null
+  needsModel: boolean  // 모델이 필요한 광고인지 여부
 }
 
 function buildFigureInfo(input: ImageAdPromptInput, avatarGender: string, productCategory: string): FigureInfo {
@@ -268,13 +269,20 @@ function buildFigureInfo(input: ImageAdPromptInput, avatarGender: string, produc
   const hasProduct = !!input.productImageUrl
   const hasStyle = !!input.referenceStyleImageUrl
 
+  // 모델이 필요한 광고인지 확인
+  // - productOnly: 모델 불필요
+  // - seasonal + 아바타 없음: 모델 불필요 (제품만 나옴)
+  // - 그 외: 모델 필요
+  const isSeasonalWithoutAvatar = input.adType === 'seasonal' && !hasAvatar && !hasAiAvatar
+  const needsModel = input.adType !== 'productOnly' && !isSeasonalWithoutAvatar
+
   let figNum = 1
   const descriptions: string[] = []
   const rules: string[] = []
 
   let modelFigureNum: number | null = null
   let productFigureNum: number | null = null
-  let modelRef = 'the model'
+  let modelRef = ''
   let productRef = 'the product'
 
   if (hasAvatar) {
@@ -288,7 +296,11 @@ function buildFigureInfo(input: ImageAdPromptInput, avatarGender: string, produc
     // AI 생성 아바타 - Figure 참조 없이 텍스트 설명 사용
     modelRef = `a photorealistic ${input.aiAvatarDescription}`
     rules.push(`- Model = AI-generated (described in AI MODEL section)`)
+  } else if (needsModel) {
+    // 아바타 없지만 모델이 필요한 경우 (holding, using 등) - 기본값
+    modelRef = 'the model'
   }
+  // seasonal + 아바타 없음: modelRef는 빈 문자열 (제품만 나옴)
 
   if (hasOutfit) {
     descriptions.push(`- Figure ${figNum}: Outfit reference`)
@@ -317,7 +329,7 @@ REFERENCE RULES:
 ${rules.join('\n')}`
     : ''
 
-  return { guide, modelRef, productRef, modelFigureNum, productFigureNum }
+  return { guide, modelRef, productRef, modelFigureNum, productFigureNum, needsModel }
 }
 
 /**
@@ -420,8 +432,8 @@ export async function generateImageAdPromptV2(input: ImageAdPromptInput): Promis
   const bodyHint = formatBodyType(input.avatarCharacteristics)
   const figureInfo = buildFigureInfo(input, avatarGender, productCategory)
 
-  // 체형 보존 지시 (모델이 있는 광고 유형이고 체형 정보가 있을 때만)
-  const bodyInstruction = (input.adType !== 'productOnly' && bodyHint)
+  // 체형 보존 지시 (모델이 필요한 광고이고 체형 정보가 있을 때만)
+  const bodyInstruction = (figureInfo.needsModel && bodyHint)
     ? `\n=== BODY PRESERVATION ===
 Body type: ${bodyHint}
 - Preserve EXACT proportions from avatar reference
@@ -429,16 +441,16 @@ Body type: ${bodyHint}
 - Keep proportions IDENTICAL to reference`
     : ''
 
-  // AI 아바타 지시 (모델이 있는 광고 유형이고 AI 생성 아바타일 때만)
-  const aiAvatarInstruction = (input.adType !== 'productOnly' && input.aiAvatarDescription)
+  // AI 아바타 지시 (모델이 필요한 광고이고 AI 생성 아바타일 때만)
+  const aiAvatarInstruction = (figureInfo.needsModel && input.aiAvatarDescription)
     ? `\n=== AI MODEL ===
 Generate photorealistic model: ${input.aiAvatarDescription}`
     : ''
 
-  // 의상 지시 (모델이 있는 광고 유형이고, 의상 이미지가 없고, 의상 옵션이 선택된 경우)
+  // 의상 지시 (모델이 필요한 광고이고, 의상 이미지가 없고, 의상 옵션이 선택된 경우)
   // wearing 타입에서는 제품 자체가 착용 아이템이므로 outfit 옵션은 코디네이팅 의상을 의미
   const outfitText = getOutfitInstruction(input.selectedOptions)
-  const outfitInstruction = (input.adType !== 'productOnly' && !input.outfitImageUrl && outfitText)
+  const outfitInstruction = (figureInfo.needsModel && !input.outfitImageUrl && outfitText)
     ? `\n=== OUTFIT ===
 Model ${outfitText}.
 - Apply this outfit style naturally
@@ -463,7 +475,7 @@ Additional: ${input.additionalPrompt}` : ''}${bodyInstruction}${aiAvatarInstruct
 === CORE RULES (ALL REQUIRED) ===
 
 ${LIGHTING_RULES}
-${input.adType !== 'productOnly' ? `
+${figureInfo.needsModel ? `
 ${EXPRESSION_GUIDE}
 ` : ''}
 ${PRODUCT_PRESERVATION}
@@ -480,7 +492,7 @@ ${NO_OVERLAYS}
 - NEVER use "studio" word - use "plain solid color background" for clean backdrops
 
 === SEEDREAM 4.5 QUALITY REQUIREMENTS ===
-${input.adType === 'productOnly' ? `For PRODUCT ONLY shots:
+${!figureInfo.needsModel ? `For PRODUCT ONLY shots:
 - Camera: "shot on 50mm macro lens at f/8" or "shot on 85mm at f/11" for full sharpness
 - Quality: "photorealistic, 8K RAW quality, product photography"
 - Focus: "focus stacking, every detail crisp"` : `For MODEL shots:
@@ -491,7 +503,7 @@ ${input.adType === 'productOnly' ? `For PRODUCT ONLY shots:
 === OUTPUT FORMAT ===
 {
   "productHasLogo": true/false (based on product image analysis),
-  "optimizedPrompt": "60-80 words. ${input.adType === 'productOnly'
+  "optimizedPrompt": "60-80 words. ${!figureInfo.needsModel
     ? `Structure: [${figureInfo.productRef}] [as hero subject] [on/against background surface or setting] [dramatic lighting from angle] [camera: f/8-f/11 for sharpness] [quality: product photography, every detail crisp]. NO model, NO hands unless specified.`
     : `Structure: [${figureInfo.modelRef}] ${outfitText ? '[outfit description] ' : ''}[pose/action] [with ${figureInfo.productRef}] [in CLEAN environment] [natural light from direction] [SPECIFIC expression] [camera specs] [quality]. NO studio equipment.`}",
   "koreanDescription": "한국어 요약 (15-20자)"
