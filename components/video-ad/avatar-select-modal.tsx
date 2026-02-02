@@ -367,8 +367,10 @@ export function AvatarSelectModal({
             {/* AI 옵션 펼침 */}
             {showAiOptions && (
               <div className="mt-3 p-4 bg-secondary/30 rounded-xl border border-border space-y-4">
-                {/* 선택된 옵션 요약 */}
-                <SelectedOptionsSummary options={detailedAiOptions} t={t} />
+                {/* 선택된 옵션 요약 (옵션이 선택된 경우에만 표시) */}
+                {Object.values(detailedAiOptions).some(v => v !== 'any') && (
+                  <SelectedOptionsSummary options={detailedAiOptions} t={t} />
+                )}
 
                 {/* 상세 옵션 설정 버튼 */}
                 <button
@@ -379,7 +381,7 @@ export function AvatarSelectModal({
                   {t.avatarSelect?.configureOptions || 'Configure Detailed Options'}
                 </button>
 
-                {/* 선택 버튼 */}
+                {/* 선택 버튼 (모든 옵션이 'any'인 경우 설명 포함) */}
                 <button
                   onClick={() => {
                     onSelect({
@@ -391,10 +393,17 @@ export function AvatarSelectModal({
                       aiOptions: convertToAiAvatarOptions(detailedAiOptions),
                     })
                   }}
-                  className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors flex flex-col items-center justify-center gap-1"
                 >
-                  <Sparkles className="w-4 h-4" />
-                  {t.avatarSelect?.selectAsAiModel || 'Select as AI Model'}
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    {t.avatarSelect?.selectAsAiModel || 'Select as AI Model'}
+                  </span>
+                  {!Object.values(detailedAiOptions).some(v => v !== 'any') && (
+                    <span className="text-xs opacity-80">
+                      {t.avatarSelect?.allAutoDesc || 'All options auto - AI chooses based on product'}
+                    </span>
+                  )}
                 </button>
               </div>
             )}
