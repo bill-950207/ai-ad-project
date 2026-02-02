@@ -12,10 +12,11 @@
 
 import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react'
 import { Play, Image as ImageIcon, Video, Volume2, VolumeX, X, Plus } from 'lucide-react'
+import Image from 'next/image'
 
 // 메모리 최적화: 비디오 요소 제거, 썸네일만 표시
 import { useLanguage } from '@/contexts/language-context'
-import { optimizeGalleryUrl, optimizeThumbnailUrl, optimizeLightboxUrl } from '@/lib/image/optimize'
+import { optimizeThumbnailUrl, optimizeLightboxUrl } from '@/lib/image/optimize'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -132,20 +133,20 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
     >
       {/* 미디어 컨테이너 */}
       <div className="relative w-full">
-        {/* 썸네일 이미지 */}
-        <img
-          src={optimizeGalleryUrl(item.thumbnail_url)}
+        {/* 썸네일 이미지 - next/image로 자동 리사이징 */}
+        <Image
+          src={item.thumbnail_url}
           alt={item.title}
           width={320}
           height={400}
-          className="w-full h-auto block object-top"
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 280px"
+          className="w-full h-auto block"
           style={{
             opacity: imageLoaded ? 1 : 0,
             transition: 'opacity 0.3s ease-out',
             objectPosition: 'top'
           }}
           loading="lazy"
-          decoding="async"
           onLoad={() => setImageLoaded(true)}
         />
 
