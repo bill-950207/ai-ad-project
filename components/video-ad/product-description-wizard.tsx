@@ -626,6 +626,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
   const [imageRequests, setImageRequests] = useState<ImageRequest[]>([])  // 이미지 생성 요청 정보
   const [isLoadingImages, setIsLoadingImages] = useState(false)  // 이미지 로딩 중 여부
   const imagePollingRef = useRef<NodeJS.Timeout | null>(null)  // 폴링 타이머 ref
+  const isImagePollingInProgressRef = useRef(false)  // 중복 요청 방지
   // startImagePolling 함수 참조 (restoreDraftData에서 사용)
   type StartImagePollingFn = (
     requests: ImageRequest[],
@@ -1386,6 +1387,10 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     let attempts = 0
 
     const pollImages = async () => {
+      // 이전 요청이 진행 중이면 스킵
+      if (isImagePollingInProgressRef.current) return
+
+      isImagePollingInProgressRef.current = true
       attempts++
       console.log(`[이미지 폴링] 시도 ${attempts}/${maxAttempts}`)
 
@@ -1472,6 +1477,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         }
       } catch (error) {
         console.error('[이미지 폴링] 오류:', error)
+      } finally {
+        isImagePollingInProgressRef.current = false
       }
     }
 

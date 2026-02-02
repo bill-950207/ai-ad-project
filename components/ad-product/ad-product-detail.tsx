@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
 import { Trash2, Plus, Image as ImageIcon, Loader2, RefreshCw, Edit3, X, Check, Tag, DollarSign, Building2, FileText, Sparkles } from 'lucide-react'
@@ -51,6 +51,7 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const [isRetrying, setIsRetrying] = useState(false)
   const [isPolling, setIsPolling] = useState(false)
+  const isPollingRef = useRef(false)  // 중복 요청 방지
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [editForm, setEditForm] = useState({
@@ -179,6 +180,10 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
     setIsPolling(true)
 
     const pollStatus = async () => {
+      // 이전 요청이 진행 중이면 스킵
+      if (isPollingRef.current) return
+
+      isPollingRef.current = true
       try {
         const res = await fetch(`/api/ad-products/${productId}/status`)
         if (res.ok) {
@@ -190,11 +195,16 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
         }
       } catch (error) {
         console.error('Status polling error:', error)
+      } finally {
+        isPollingRef.current = false
       }
     }
 
     const interval = setInterval(pollStatus, 1000)
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+      isPollingRef.current = false
+    }
   }, [product?.status, productId])
 
   const handleRetry = async () => {

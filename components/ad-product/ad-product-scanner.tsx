@@ -8,7 +8,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLanguage } from '@/contexts/language-context'
 import { AdProductSizeEditor } from './ad-product-size-editor'
 
@@ -22,12 +22,17 @@ export function AdProductScanner({ productId, sourceImageUrl, onComplete }: AdPr
   const { t } = useLanguage()
   const [status, setStatus] = useState<'scanning' | 'editing'>('scanning')
   const [rembgTempUrl, setRembgTempUrl] = useState<string | null>(null)
+  const isPollingRef = useRef(false)  // 중복 요청 방지
 
   useEffect(() => {
     // 이미 편집 중이면 폴링 안함
     if (status === 'editing') return
 
     const pollStatus = async () => {
+      // 이전 요청이 진행 중이면 스킵
+      if (isPollingRef.current) return false
+
+      isPollingRef.current = true
       try {
         const res = await fetch(`/api/ad-products/${productId}/status`)
         if (res.ok) {
@@ -52,6 +57,8 @@ export function AdProductScanner({ productId, sourceImageUrl, onComplete }: AdPr
         }
       } catch (error) {
         console.error('Status polling error:', error)
+      } finally {
+        isPollingRef.current = false
       }
       return false
     }
@@ -66,7 +73,10 @@ export function AdProductScanner({ productId, sourceImageUrl, onComplete }: AdPr
     // 초기 폴링
     pollStatus()
 
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+      isPollingRef.current = false
+    }
   }, [productId, status, onComplete])
 
   const handleEditComplete = () => {

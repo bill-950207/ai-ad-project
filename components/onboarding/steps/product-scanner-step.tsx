@@ -23,6 +23,7 @@ export function ProductScannerStep() {
   const [scanPosition, setScanPosition] = useState(0)
   const [scanDirection, setScanDirection] = useState<'down' | 'up'>('down')
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
+  const isPollingRef = useRef(false)  // 중복 요청 방지
 
   // 스캔 라인 애니메이션
   useEffect(() => {
@@ -52,6 +53,10 @@ export function ProductScannerStep() {
     if (!newProductId) return
 
     const pollStatus = async () => {
+      // 이전 요청이 진행 중이면 스킵
+      if (isPollingRef.current) return
+
+      isPollingRef.current = true
       try {
         const res = await fetch(`/api/ad-products/${newProductId}/status`)
         if (!res.ok) throw new Error('Failed to fetch status')
@@ -83,6 +88,8 @@ export function ProductScannerStep() {
         // 완료되지 않았으면 계속 폴링
       } catch (err) {
         console.error('Status polling error:', err)
+      } finally {
+        isPollingRef.current = false
       }
     }
 
@@ -96,6 +103,7 @@ export function ProductScannerStep() {
       if (pollingRef.current) {
         clearInterval(pollingRef.current)
       }
+      isPollingRef.current = false
     }
   }, [newProductId, onProductEditingComplete, setError, goToStep])
 

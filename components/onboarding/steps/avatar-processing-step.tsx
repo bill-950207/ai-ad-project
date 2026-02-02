@@ -24,12 +24,17 @@ export function AvatarProcessingStep() {
   const [isUploading, setIsUploading] = useState(false)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
   const hasUploadedRef = useRef(false)
+  const isPollingRef = useRef(false)  // 중복 요청 방지
 
   // 상태 폴링
   useEffect(() => {
     if (!newAvatarId) return
 
     const pollStatus = async () => {
+      // 이전 요청이 진행 중이면 스킵
+      if (isPollingRef.current) return
+
+      isPollingRef.current = true
       try {
         const res = await fetch(`/api/avatars/${newAvatarId}/status`)
         if (!res.ok) throw new Error('Failed to fetch status')
@@ -93,6 +98,8 @@ export function AvatarProcessingStep() {
         }
       } catch (err) {
         console.error('Status polling error:', err)
+      } finally {
+        isPollingRef.current = false
       }
     }
 
@@ -106,6 +113,7 @@ export function AvatarProcessingStep() {
       if (pollingRef.current) {
         clearInterval(pollingRef.current)
       }
+      isPollingRef.current = false
     }
   }, [newAvatarId, onAvatarProcessingComplete, setError, goToStep])
 

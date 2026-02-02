@@ -53,6 +53,7 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
   const [slotInfo, setSlotInfo] = useState<{ used: number; limit: number } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
+  const isPollingInProgressRef = useRef(false)  // 중복 요청 방지
 
   // 모달이 닫힐 때 폼 초기화
   useEffect(() => {
@@ -255,6 +256,10 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
 
   // 제품 상태 폴링
   const pollProductStatus = async (productId: string) => {
+    // 이전 요청이 진행 중이면 스킵
+    if (isPollingInProgressRef.current) return
+
+    isPollingInProgressRef.current = true
     try {
       const res = await fetch(`/api/ad-products/${productId}/status`)
       if (!res.ok) return
@@ -284,6 +289,8 @@ export function ProductCreateModal({ isOpen, onClose, onProductCreated }: Produc
       }
     } catch (err) {
       console.error('Product status check failed:', err)
+    } finally {
+      isPollingInProgressRef.current = false
     }
   }
 
