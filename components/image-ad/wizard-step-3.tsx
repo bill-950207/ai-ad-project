@@ -109,6 +109,10 @@ export function WizardStep3() {
         style: 'any' as const,
         ethnicity: 'any' as const,
         bodyType: 'any' as const,
+        height: 'any' as const,
+        hairStyle: 'any' as const,
+        hairColor: 'any' as const,
+        outfitStyle: 'any' as const,
       }
 
       // 사용자가 'any'로 설정한 필드만 LLM 추천값으로 업데이트
@@ -123,6 +127,11 @@ export function WizardStep3() {
           ? (style.ethnicity as 'korean' | 'asian' | 'western' | 'any') : current.ethnicity,
         bodyType: (current.bodyType === 'any' && style.bodyType && style.bodyType !== 'any')
           ? (style.bodyType as 'slim' | 'average' | 'athletic' | 'curvy' | 'any') : current.bodyType,
+        // 상세 옵션은 사용자가 직접 설정한 값 유지
+        height: current.height,
+        hairStyle: current.hairStyle,
+        hairColor: current.hairColor,
+        outfitStyle: current.outfitStyle,
       }
 
       setSelectedAvatarInfo({
