@@ -609,14 +609,18 @@ export async function POST(request: NextRequest) {
       if (options) {
         const optionParts: string[] = []
 
+        // 모델이 필요한 광고인지 확인 (productOnly 또는 seasonal+아바타없음은 모델 불필요)
+        const isSeasonalWithoutAvatar = isSeasonalType && !hasAvatar
+        const needsModelInFallback = !isProductOnlyType && !isSeasonalWithoutAvatar
+
         // 공통 옵션들
         if (options.background) optionParts.push(`${options.background} background`)
         if (options.lighting) optionParts.push(`${options.lighting} lighting`)
         if (options.mood) optionParts.push(`${options.mood} mood`)
         if (options.angle) optionParts.push(`${options.angle} angle`)
 
-        // 아바타 포함 광고에서 사용되는 옵션들
-        if (adType !== 'productOnly') {
+        // 모델이 필요한 광고에서 사용되는 옵션들
+        if (needsModelInFallback) {
           if (options.pose) optionParts.push(`${options.pose} pose`)
           if (options.gaze) optionParts.push(`${options.gaze} gaze direction`)
           if (options.expression) optionParts.push(`${options.expression} expression`)
@@ -631,8 +635,10 @@ export async function POST(request: NextRequest) {
           if (options.colorTone) optionParts.push(`${options.colorTone} color tone`)
           if (options.composition) optionParts.push(`${options.composition} composition`)
           if (options.productPlacement) optionParts.push(`${options.productPlacement} product placement`)
+        }
 
-          // 시즌/테마 옵션
+        // 시즌/테마 옵션 (seasonal은 아바타 없어도 테마 옵션 적용)
+        if (isSeasonalType || needsModelInFallback) {
           if (options.season) optionParts.push(`${options.season} season`)
           if (options.theme) optionParts.push(`${options.theme} theme`)
           if (options.atmosphere) optionParts.push(`${options.atmosphere} atmosphere`)
@@ -642,8 +648,8 @@ export async function POST(request: NextRequest) {
           finalPrompt = `${prompt}. Style: ${optionParts.join(', ')}.`
         }
 
-        // 아바타 포함 광고에서 outfit 옵션 반영 (제품단독 제외)
-        if (adType !== 'productOnly' && options.outfit && options.outfit !== 'keep_original') {
+        // 모델이 필요한 광고에서 outfit 옵션 반영
+        if (needsModelInFallback && options.outfit && options.outfit !== 'keep_original') {
           const outfitPrompts: Record<string, string> = {
             casual_everyday: 'Model wearing casual everyday outfit: comfortable t-shirt or blouse with jeans or casual pants, relaxed and approachable style.',
             formal_elegant: 'Model wearing formal elegant outfit: sophisticated dress or tailored suit, refined and polished appearance.',
@@ -673,7 +679,7 @@ export async function POST(request: NextRequest) {
       }
 
       // 광고 유형별 프롬프트 보강 (AI 아바타 고려)
-      const typePromptPrefix = getTypePromptPrefix(adType, isAiGeneratedAvatar, aiAvatarDescription)
+      const typePromptPrefix = getTypePromptPrefix(adType, isAiGeneratedAvatar, aiAvatarDescription, hasAvatar)
       if (typePromptPrefix) {
         finalPrompt = `${typePromptPrefix} ${finalPrompt}`
       }
@@ -915,7 +921,7 @@ export async function POST(request: NextRequest) {
 }
 
 // 광고 유형별 프롬프트 접두사 (AI 아바타 지원)
-function getTypePromptPrefix(adType: ImageAdType, isAiAvatar = false, avatarDescription?: string): string {
+function getTypePromptPrefix(adType: ImageAdType, isAiAvatar = false, avatarDescription?: string, hasAvatar = false): string {
   // AI 아바타인 경우 모델 설명을 텍스트로 대체
   const modelRef = isAiAvatar && avatarDescription
     ? `a ${avatarDescription}`
@@ -935,7 +941,11 @@ function getTypePromptPrefix(adType: ImageAdType, isAiAvatar = false, avatarDesc
     case 'unboxing':
       return `Create an unboxing/review style advertisement with ${modelRef} opening or presenting the product from Figure 1.`
     case 'seasonal':
-      return 'Create a seasonal/themed advertisement with festive atmosphere.'
+      // seasonal + 아바타 있음: 모델 포함, seasonal + 아바타 없음: 제품만
+      if (hasAvatar || isAiAvatar) {
+        return `Create a seasonal/themed advertisement with ${modelRef} and the product from Figure 1 in festive atmosphere.`
+      }
+      return 'Create a seasonal/themed product advertisement with festive atmosphere showcasing the product from Figure 1.'
     default:
       return ''
   }
