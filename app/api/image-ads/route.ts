@@ -62,12 +62,32 @@ interface ImageAdRequestBody {
   numImages?: number
   referenceStyleImageUrl?: string  // 참조 스타일 이미지 URL (분위기/스타일만 참조)
   options?: {
+    // 공통 옵션
     background?: string
     lighting?: string
     mood?: string
     angle?: string
+    style?: string
+    colorTone?: string
+    composition?: string
+    // 아바타 포함 광고 옵션
     outfit?: string  // 의상 옵션 (카테고리 옵션으로 포함)
     outfitCustom?: string  // 커스텀 의상 텍스트
+    pose?: string
+    gaze?: string
+    expression?: string
+    framing?: string
+    setting?: string
+    scene?: string
+    location?: string
+    time?: string
+    action?: string
+    focus?: string
+    productPlacement?: string
+    // 시즌/테마 옵션
+    season?: string
+    theme?: string
+    atmosphere?: string
   }
   // AI 아바타 옵션 (avatarIds[0]이 'ai-generated'일 때)
   aiAvatarOptions?: {
@@ -585,44 +605,68 @@ export async function POST(request: NextRequest) {
     } catch (geminiError) {
       console.error('Gemini 프롬프트 생성 실패, 기본 프롬프트 사용:', geminiError)
 
-      // Gemini 실패 시 기존 방식으로 폴백
-      // 제품 단독일 경우 옵션 반영
-      if (adType === 'productOnly' && options) {
+      // Gemini 실패 시 기존 방식으로 폴백 - 모든 옵션을 프롬프트에 반영
+      if (options) {
         const optionParts: string[] = []
+
+        // 공통 옵션들
         if (options.background) optionParts.push(`${options.background} background`)
         if (options.lighting) optionParts.push(`${options.lighting} lighting`)
         if (options.mood) optionParts.push(`${options.mood} mood`)
         if (options.angle) optionParts.push(`${options.angle} angle`)
 
+        // 아바타 포함 광고에서 사용되는 옵션들
+        if (adType !== 'productOnly') {
+          if (options.pose) optionParts.push(`${options.pose} pose`)
+          if (options.gaze) optionParts.push(`${options.gaze} gaze direction`)
+          if (options.expression) optionParts.push(`${options.expression} expression`)
+          if (options.framing) optionParts.push(`${options.framing} framing`)
+          if (options.setting) optionParts.push(`${options.setting} setting`)
+          if (options.scene) optionParts.push(`${options.scene} scene`)
+          if (options.location) optionParts.push(`${options.location} location`)
+          if (options.time) optionParts.push(`${options.time} time`)
+          if (options.action) optionParts.push(`${options.action} action`)
+          if (options.focus) optionParts.push(`${options.focus} focus`)
+          if (options.style) optionParts.push(`${options.style} style`)
+          if (options.colorTone) optionParts.push(`${options.colorTone} color tone`)
+          if (options.composition) optionParts.push(`${options.composition} composition`)
+          if (options.productPlacement) optionParts.push(`${options.productPlacement} product placement`)
+
+          // 시즌/테마 옵션
+          if (options.season) optionParts.push(`${options.season} season`)
+          if (options.theme) optionParts.push(`${options.theme} theme`)
+          if (options.atmosphere) optionParts.push(`${options.atmosphere} atmosphere`)
+        }
+
         if (optionParts.length > 0) {
           finalPrompt = `${prompt}. Style: ${optionParts.join(', ')}.`
         }
-      }
 
-      // 아바타 포함 광고에서 outfit 옵션 반영 (제품단독 제외)
-      if (adType !== 'productOnly' && options?.outfit && options.outfit !== 'keep_original') {
-        const outfitPrompts: Record<string, string> = {
-          casual_everyday: 'Model wearing casual everyday outfit: comfortable t-shirt or blouse with jeans or casual pants, relaxed and approachable style.',
-          formal_elegant: 'Model wearing formal elegant outfit: sophisticated dress or tailored suit, refined and polished appearance.',
-          professional_business: 'Model wearing professional business attire: crisp blazer with dress shirt, polished and authoritative look.',
-          sporty_athletic: 'Model wearing sporty athletic wear: comfortable activewear or athleisure, energetic and dynamic style.',
-          cozy_comfortable: 'Model wearing cozy comfortable clothing: soft knit sweater or cardigan, warm and inviting appearance.',
-          trendy_fashion: 'Model wearing trendy fashion-forward outfit: current season styles, stylish and on-trend look.',
-          minimal_simple: 'Model wearing minimal simple outfit: clean solid-colored clothing without busy patterns, understated elegance.',
-        }
+        // 아바타 포함 광고에서 outfit 옵션 반영 (제품단독 제외)
+        if (adType !== 'productOnly' && options.outfit && options.outfit !== 'keep_original') {
+          const outfitPrompts: Record<string, string> = {
+            casual_everyday: 'Model wearing casual everyday outfit: comfortable t-shirt or blouse with jeans or casual pants, relaxed and approachable style.',
+            formal_elegant: 'Model wearing formal elegant outfit: sophisticated dress or tailored suit, refined and polished appearance.',
+            professional_business: 'Model wearing professional business attire: crisp blazer with dress shirt, polished and authoritative look.',
+            sporty_athletic: 'Model wearing sporty athletic wear: comfortable activewear or athleisure, energetic and dynamic style.',
+            cozy_comfortable: 'Model wearing cozy comfortable clothing: soft knit sweater or cardigan, warm and inviting appearance.',
+            trendy_fashion: 'Model wearing trendy fashion-forward outfit: current season styles, stylish and on-trend look.',
+            minimal_simple: 'Model wearing minimal simple outfit: clean solid-colored clothing without busy patterns, understated elegance.',
+          }
 
-        const outfitKey = options.outfit as string
-        // 커스텀 의상인 경우
-        const outfitText = outfitKey === '__custom__' && options.outfitCustom
-          ? `Model wearing ${options.outfitCustom}.`
-          : outfitPrompts[outfitKey] || ''
+          const outfitKey = options.outfit as string
+          // 커스텀 의상인 경우
+          const outfitText = outfitKey === '__custom__' && options.outfitCustom
+            ? `Model wearing ${options.outfitCustom}.`
+            : outfitPrompts[outfitKey] || ''
 
-        if (outfitText) {
-          // 착용샷의 경우 제품 외 의상임을 명시
-          const outfitSuffix = adType === 'wearing'
-            ? ' (This outfit applies to clothing OTHER than the product being advertised.)'
-            : ''
-          finalPrompt = `${finalPrompt} ${outfitText}${outfitSuffix}`
+          if (outfitText) {
+            // 착용샷의 경우 제품 외 의상임을 명시
+            const outfitSuffix = adType === 'wearing'
+              ? ' (This outfit applies to clothing OTHER than the product being advertised.)'
+              : ''
+            finalPrompt = `${finalPrompt} ${outfitText}${outfitSuffix}`
+          }
         }
       }
 
