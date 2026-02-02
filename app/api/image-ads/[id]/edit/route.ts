@@ -118,16 +118,35 @@ export async function POST(
     const quality = (originalAd.quality as 'medium' | 'high') || 'medium'
     const creditCost = IMAGE_EDIT_CREDIT_COST[quality] || IMAGE_EDIT_CREDIT_COST.medium
 
-    // 크레딧 확인
-    const profile = await prisma.profiles.findUnique({
-      where: { id: user.id },
-    })
+    // 트랜잭션으로 크레딧 확인 및 차감 (원자적 처리)
+    try {
+      await prisma.$transaction(async (tx) => {
+        const profile = await tx.profiles.findUnique({
+          where: { id: user.id },
+          select: { credits: true },
+        })
 
-    if (!profile || (profile.credits ?? 0) < creditCost) {
-      return NextResponse.json(
-        { error: 'Insufficient credits', required: creditCost, available: profile?.credits ?? 0 },
-        { status: 402 }
-      )
+        if (!profile || (profile.credits ?? 0) < creditCost) {
+          throw new Error('INSUFFICIENT_CREDITS')
+        }
+
+        await tx.profiles.update({
+          where: { id: user.id },
+          data: { credits: { decrement: creditCost } },
+        })
+      }, { timeout: 10000 })
+    } catch (error) {
+      if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
+        const profile = await prisma.profiles.findUnique({
+          where: { id: user.id },
+          select: { credits: true },
+        })
+        return NextResponse.json(
+          { error: 'Insufficient credits', required: creditCost, available: profile?.credits ?? 0 },
+          { status: 402 }
+        )
+      }
+      throw error
     }
 
     // 현재 이미지 URL 결정 (편집할 이미지)
@@ -135,6 +154,11 @@ export async function POST(
     const currentImageUrl = imageUrls[imageIndex] || imageUrls[0]
 
     if (!currentImageUrl) {
+      // 이미지 없으면 크레딧 환불
+      await prisma.profiles.update({
+        where: { id: user.id },
+        data: { credits: { increment: creditCost } },
+      })
       return NextResponse.json(
         { error: 'No image found to edit' },
         { status: 400 }
@@ -144,11 +168,22 @@ export async function POST(
     // LLM으로 프롬프트 합성
     console.log('프롬프트 합성 시작:', { originalPrompt: originalAd.prompt.slice(0, 100), editPrompt })
 
-    const mergedResult = await mergeEditPrompt({
-      originalPrompt: originalAd.prompt,
-      userEditRequest: editPrompt,
-      currentImageUrl,
-    })
+    let mergedResult: { mergedPrompt: string; editSummary: string }
+    try {
+      mergedResult = await mergeEditPrompt({
+        originalPrompt: originalAd.prompt,
+        userEditRequest: editPrompt,
+        currentImageUrl,
+      })
+    } catch (mergeError) {
+      // 프롬프트 합성 실패 시 크레딧 환불
+      console.error('프롬프트 합성 실패, 크레딧 환불:', mergeError)
+      await prisma.profiles.update({
+        where: { id: user.id },
+        data: { credits: { increment: creditCost } },
+      })
+      throw mergeError
+    }
 
     console.log('프롬프트 합성 완료:', { mergedPrompt: mergedResult.mergedPrompt.slice(0, 100), editSummary: mergedResult.editSummary })
 
@@ -159,20 +194,23 @@ export async function POST(
     const aspectRatio = imageSizeToAspectRatio(originalAd.image_size)
     const seedreamQuality = quality === 'high' ? 'high' : 'basic'
 
-    const queueResponse = await submitSeedreamEditToQueue({
-      prompt: mergedResult.mergedPrompt,
-      image_urls: inputImageUrls,
-      aspect_ratio: aspectRatio,
-      quality: seedreamQuality,
-    })
-
-    // 크레딧 차감
-    await prisma.profiles.update({
-      where: { id: user.id },
-      data: {
-        credits: { decrement: creditCost },
-      },
-    })
+    let queueResponse: { request_id: string }
+    try {
+      queueResponse = await submitSeedreamEditToQueue({
+        prompt: mergedResult.mergedPrompt,
+        image_urls: inputImageUrls,
+        aspect_ratio: aspectRatio,
+        quality: seedreamQuality,
+      })
+    } catch (requestError) {
+      // 이미지 생성 요청 실패 시 크레딧 환불
+      console.error('이미지 편집 요청 실패, 크레딧 환불:', requestError)
+      await prisma.profiles.update({
+        where: { id: user.id },
+        data: { credits: { increment: creditCost } },
+      })
+      throw requestError
+    }
 
     console.log('이미지 편집 크레딧 차감:', { userId: user.id, cost: creditCost })
 
