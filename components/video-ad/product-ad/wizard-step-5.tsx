@@ -37,17 +37,16 @@ interface UserPlan {
   displayName: string
 }
 
-// FREE 사용자 제한
+// FREE 사용자 제한 (Vidu Q2 Turbo는 540p 미지원)
 const FREE_USER_LIMITS = {
-  maxResolution: '540p' as VideoResolution,
+  maxResolution: '720p' as VideoResolution,
 }
 
-// 번역된 해상도 옵션을 가져오는 함수
+// 번역된 해상도 옵션을 가져오는 함수 (Vidu Q2: 720p, 1080p만 지원)
 function getResolutionOptions(t: Record<string, unknown>) {
   const step5T = (t.productAdWizard as Record<string, unknown>)?.step5 as Record<string, unknown> || {}
   const resT = step5T.resolutionOptions as Record<string, string> || {}
   return [
-    { value: '540p' as VideoResolution, label: 'SD (540p)', desc: resT.sdDesc || 'Fast generation', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['540p'] },
     { value: '720p' as VideoResolution, label: 'HD (720p)', desc: resT.hdDesc || 'Standard quality', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['720p'] },
     { value: '1080p' as VideoResolution, label: 'FHD (1080p)', desc: resT.fhdDesc || 'High quality', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['1080p'] },
   ]
