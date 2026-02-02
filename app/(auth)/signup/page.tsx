@@ -17,7 +17,7 @@ interface VideoShowcase {
 const FALLBACK_VIDEO_URL = '/examples/video-ad-example.mp4'
 
 export default function SignupPage() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const authT = t.auth as {
     passwordMismatch: string
     passwordTooShort: string
@@ -104,6 +104,9 @@ export default function SignupPage() {
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: {
+          language: language,
+        },
       },
     })
 
@@ -120,8 +123,8 @@ export default function SignupPage() {
       return
     }
 
-    // 이메일 인증 페이지로 리다이렉트
-    router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+    // 이메일 인증 페이지로 리다이렉트 (언어 정보 포함)
+    router.push(`/verify-email?email=${encodeURIComponent(email)}&lang=${language}`)
   }
 
   const handleGoogleSignup = async () => {
