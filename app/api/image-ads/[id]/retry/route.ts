@@ -158,6 +158,11 @@ export async function POST(
       style?: string
       ethnicity?: string
       bodyType?: string
+      // 상세 옵션
+      height?: string
+      hairStyle?: string
+      hairColor?: string
+      outfitStyle?: string
     } | undefined
 
     // _aiAvatarOptions 제외한 일반 옵션
@@ -212,28 +217,71 @@ export async function POST(
     let promptToSave = finalPrompt
     if (isAiGeneratedAvatar && aiAvatarOptions) {
       const genderMap: Record<string, string> = { male: 'male', female: 'female', any: '' }
-      const ageMap: Record<string, string> = { young: 'in their 20s-30s', middle: 'in their 30s-40s', mature: 'in their 40s-50s', any: '' }
+      const ageMap: Record<string, string> = {
+        teen: 'teenage',
+        early20s: 'in their early 20s',
+        late20s: 'in their late 20s',
+        '30s': 'in their 30s',
+        '40plus': 'in their 40s or older',
+        young: 'in their 20s-30s',
+        middle: 'in their 30s-40s',
+        mature: 'in their 40s-50s',
+        any: ''
+      }
       const styleMap: Record<string, string> = { natural: 'natural and friendly', professional: 'professional and sophisticated', casual: 'casual and relaxed', elegant: 'elegant and luxurious', any: '' }
-      const ethnicityMap: Record<string, string> = { korean: 'Korean', asian: 'Asian', western: 'Western/Caucasian', any: '' }
-      const bodyTypeMap: Record<string, string> = { slim: 'slim build', average: 'average build', athletic: 'athletic build', curvy: 'curvy figure', any: '' }
+      const ethnicityMap: Record<string, string> = {
+        eastAsian: 'East Asian',
+        southeastAsian: 'Southeast Asian',
+        southAsian: 'South Asian',
+        caucasian: 'Caucasian',
+        black: 'Black/African',
+        hispanic: 'Hispanic/Latino',
+        middleEastern: 'Middle Eastern',
+        korean: 'Korean',
+        asian: 'Asian',
+        western: 'Western/Caucasian',
+        any: ''
+      }
+      const bodyTypeMap: Record<string, string> = { slim: 'slim build', average: 'average build', athletic: 'athletic build', curvy: 'curvy figure', muscular: 'muscular build', any: '' }
+      const heightMap: Record<string, string> = { short: 'petite/short', average: 'average height', tall: 'tall', any: '' }
+      const hairStyleMap: Record<string, string> = { short: 'short hair', medium: 'medium-length hair', long: 'long hair', any: '' }
+      const hairColorMap: Record<string, string> = { black: 'black hair', brown: 'brown hair', blonde: 'blonde hair', any: '' }
+      const outfitStyleMap: Record<string, string> = { casual: 'casual outfit', formal: 'formal attire', sporty: 'sporty/athletic wear', professional: 'professional business attire', elegant: 'elegant outfit', any: '' }
 
       const avatarParts: string[] = []
-      if (aiAvatarOptions.ethnicity && ethnicityMap[aiAvatarOptions.ethnicity]) {
+      if (aiAvatarOptions.ethnicity && aiAvatarOptions.ethnicity !== 'any' && ethnicityMap[aiAvatarOptions.ethnicity]) {
         avatarParts.push(ethnicityMap[aiAvatarOptions.ethnicity])
       }
-      if (aiAvatarOptions.targetGender && genderMap[aiAvatarOptions.targetGender]) {
+      if (aiAvatarOptions.targetGender && aiAvatarOptions.targetGender !== 'any' && genderMap[aiAvatarOptions.targetGender]) {
         avatarParts.push(genderMap[aiAvatarOptions.targetGender])
       }
-      if (aiAvatarOptions.targetAge && ageMap[aiAvatarOptions.targetAge]) {
+      if (aiAvatarOptions.targetAge && aiAvatarOptions.targetAge !== 'any' && ageMap[aiAvatarOptions.targetAge]) {
         avatarParts.push(`person ${ageMap[aiAvatarOptions.targetAge]}`)
-      } else {
-        avatarParts.push('person')
       }
-      if (aiAvatarOptions.bodyType && bodyTypeMap[aiAvatarOptions.bodyType]) {
+      if (aiAvatarOptions.height && aiAvatarOptions.height !== 'any' && heightMap[aiAvatarOptions.height]) {
+        avatarParts.push(heightMap[aiAvatarOptions.height])
+      }
+      if (aiAvatarOptions.bodyType && aiAvatarOptions.bodyType !== 'any' && bodyTypeMap[aiAvatarOptions.bodyType]) {
         avatarParts.push(`with ${bodyTypeMap[aiAvatarOptions.bodyType]}`)
       }
-      if (aiAvatarOptions.style && styleMap[aiAvatarOptions.style]) {
+      if (aiAvatarOptions.hairStyle && aiAvatarOptions.hairStyle !== 'any' && hairStyleMap[aiAvatarOptions.hairStyle]) {
+        avatarParts.push(hairStyleMap[aiAvatarOptions.hairStyle])
+      }
+      if (aiAvatarOptions.hairColor && aiAvatarOptions.hairColor !== 'any' && hairColorMap[aiAvatarOptions.hairColor]) {
+        avatarParts.push(hairColorMap[aiAvatarOptions.hairColor])
+      }
+      if (aiAvatarOptions.outfitStyle && aiAvatarOptions.outfitStyle !== 'any' && outfitStyleMap[aiAvatarOptions.outfitStyle]) {
+        avatarParts.push(`wearing ${outfitStyleMap[aiAvatarOptions.outfitStyle]}`)
+      }
+      if (aiAvatarOptions.style && aiAvatarOptions.style !== 'any' && styleMap[aiAvatarOptions.style]) {
         avatarParts.push(`${styleMap[aiAvatarOptions.style]} appearance`)
+      }
+
+      // 모든 옵션이 '무관'이거나 설정되지 않은 경우
+      if (avatarParts.length === 0) {
+        avatarParts.push('person suitable for this product advertisement')
+      } else if (!avatarParts.some(p => p.includes('person'))) {
+        avatarParts.push('person')
       }
 
       const avatarDescription = avatarParts.join(' ')
