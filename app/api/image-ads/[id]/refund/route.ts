@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { IMAGE_AD_CREDIT_COST } from '@/lib/credits'
+import { recordCreditRefund } from '@/lib/credits/history'
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -57,20 +58,36 @@ export async function POST(
     const quality = (imageAd.quality || 'medium') as keyof typeof IMAGE_AD_CREDIT_COST
     const refundCredits = IMAGE_AD_CREDIT_COST[quality] || IMAGE_AD_CREDIT_COST.medium
 
-    // 트랜잭션: 크레딧 환불 + 이미지 광고 삭제
-    await prisma.$transaction([
-      // 크레딧 환불
-      prisma.profiles.update({
+    // 트랜잭션: 크레딧 환불 + 히스토리 기록 + 이미지 광고 삭제
+    await prisma.$transaction(async (tx) => {
+      // 현재 잔액 조회
+      const profile = await tx.profiles.findUnique({
         where: { id: user.id },
-        data: {
-          credits: { increment: refundCredits },
-        },
-      }),
+        select: { credits: true },
+      })
+      const balanceAfterRefund = (profile?.credits ?? 0) + refundCredits
+
+      // 크레딧 환불
+      await tx.profiles.update({
+        where: { id: user.id },
+        data: { credits: { increment: refundCredits } },
+      })
+
+      // 환불 히스토리 기록
+      await recordCreditRefund({
+        userId: user.id,
+        featureType: 'IMAGE_AD',
+        amount: refundCredits,
+        balanceAfter: balanceAfterRefund,
+        relatedEntityId: id,
+        description: '이미지 광고 실패 환불 (수동)',
+      }, tx)
+
       // 이미지 광고 삭제
-      prisma.image_ads.delete({
+      await tx.image_ads.delete({
         where: { id },
-      }),
-    ])
+      })
+    })
 
     console.log('이미지 광고 환불 완료:', { userId: user.id, imageAdId: id, refundCredits })
 

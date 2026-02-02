@@ -17,6 +17,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { subscription_status } from '@/lib/generated/prisma/client'
+import { recordSubscriptionCredit } from '@/lib/credits/history'
 
 export async function GET(request: NextRequest) {
   try {
@@ -69,17 +70,35 @@ export async function GET(request: NextRequest) {
     let errorCount = 0
 
     try {
-      // 모든 업데이트를 단일 트랜잭션으로 실행 (타임아웃 30초)
+      // 모든 업데이트를 단일 트랜잭션으로 실행 (타임아웃 60초 - 히스토리 기록 포함)
       await prisma.$transaction(
         async (tx) => {
           for (const subscription of activeSubscriptions) {
+            // 현재 잔액 조회
+            const currentProfile = await tx.profiles.findUnique({
+              where: { id: subscription.user_id },
+              select: { credits: true },
+            })
+
+            const currentCredits = currentProfile?.credits ?? 0
+            const balanceAfter = currentCredits + subscription.plan.monthly_credits
+
+            // 크레딧 지급
             await tx.profiles.update({
               where: { id: subscription.user_id },
               data: { credits: { increment: subscription.plan.monthly_credits } },
             })
+
+            // 크레딧 히스토리 기록
+            await recordSubscriptionCredit({
+              userId: subscription.user_id,
+              amount: subscription.plan.monthly_credits,
+              balanceAfter,
+              description: `${subscription.plan.display_name} 월간 구독 크레딧 (수동 복구)`,
+            }, tx)
           }
         },
-        { timeout: 30000 }
+        { timeout: 60000 }
       )
       processedCount = activeSubscriptions.length
 

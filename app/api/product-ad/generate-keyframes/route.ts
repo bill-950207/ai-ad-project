@@ -13,6 +13,7 @@ import {
   type EditAspectRatio,
 } from '@/lib/kie/client'
 import { KEYFRAME_CREDIT_COST } from '@/lib/credits'
+import { recordCreditUse, recordCreditRefund } from '@/lib/credits/history'
 import { sanitizePrompt } from '@/lib/prompts/sanitize'
 
 interface SceneInput {
@@ -65,7 +66,8 @@ export async function POST(request: NextRequest) {
     // 크레딧 계산 (씬 개수 × 키프레임당 비용)
     const totalCreditCost = scenes.length * KEYFRAME_CREDIT_COST
 
-    // 트랜잭션으로 크레딧 확인 및 차감 (원자적 처리)
+    // 트랜잭션으로 크레딧 확인 및 차감 (원자적 처리 + 히스토리 기록)
+    let balanceAfterDeduction = 0
     try {
       await prisma.$transaction(async (tx) => {
         const profile = await tx.profiles.findUnique({
@@ -77,10 +79,21 @@ export async function POST(request: NextRequest) {
           throw new Error('INSUFFICIENT_CREDITS')
         }
 
+        balanceAfterDeduction = (profile.credits ?? 0) - totalCreditCost
+
         await tx.profiles.update({
           where: { id: user.id },
           data: { credits: { decrement: totalCreditCost } },
         })
+
+        // 크레딧 사용 히스토리 기록
+        await recordCreditUse({
+          userId: user.id,
+          featureType: 'KEYFRAME',
+          amount: totalCreditCost,
+          balanceAfter: balanceAfterDeduction,
+          description: `키프레임 이미지 생성 (${scenes.length}장)`,
+        }, tx)
       }, { timeout: 10000 })
     } catch (error) {
       if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
@@ -123,12 +136,30 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 실패한 씬이 있으면 해당 크레딧 환불
+    // 실패한 씬이 있으면 해당 크레딧 환불 + 환불 히스토리 기록
     if (failedSceneIndices.length > 0) {
       const refundAmount = failedSceneIndices.length * KEYFRAME_CREDIT_COST
-      await prisma.profiles.update({
-        where: { id: user.id },
-        data: { credits: { increment: refundAmount } },
+      await prisma.$transaction(async (tx) => {
+        const currentProfile = await tx.profiles.findUnique({
+          where: { id: user.id },
+          select: { credits: true },
+        })
+
+        const balanceAfterRefund = (currentProfile?.credits ?? 0) + refundAmount
+
+        await tx.profiles.update({
+          where: { id: user.id },
+          data: { credits: { increment: refundAmount } },
+        })
+
+        // 환불 히스토리 기록
+        await recordCreditRefund({
+          userId: user.id,
+          featureType: 'KEYFRAME',
+          amount: refundAmount,
+          balanceAfter: balanceAfterRefund,
+          description: `키프레임 생성 실패 환불 (${failedSceneIndices.length}장)`,
+        }, tx)
       })
       console.log(`${failedSceneIndices.length}개 키프레임 실패, ${refundAmount} 크레딧 환불`)
     }

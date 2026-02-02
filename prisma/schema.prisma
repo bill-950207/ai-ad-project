@@ -458,6 +458,8 @@ model profiles {
   // 구독 시스템
   subscription    subscriptions?
   usage_tracking  usage_tracking[]
+  // 크레딧 히스토리
+  credit_history  credit_history[]
 
   @@schema("public")
 }
@@ -1117,5 +1119,56 @@ model webhook_events {
   processed_at DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([processed_at], map: "idx_webhook_events_processed_at")
+  @@schema("public")
+}
+
+// ============================================================
+// 크레딧 히스토리 시스템
+// ============================================================
+
+enum credit_transaction_type {
+  USE           // 크레딧 사용
+  REFUND        // 환불 (생성 실패, NSFW 등)
+  SUBSCRIPTION  // 구독 크레딧 지급
+  SIGNUP        // 가입 크레딧
+  ADMIN         // 관리자 조정
+
+  @@schema("public")
+}
+
+enum credit_feature_type {
+  IMAGE_AD              // 이미지 광고 생성
+  IMAGE_EDIT            // 이미지 편집
+  VIDEO_PRODUCT_DESC    // 제품 설명 영상
+  VIDEO_PRODUCT_AD      // 제품 광고 영상
+  KEYFRAME              // 키프레임 생성
+  TRANSITION            // 전환 영상
+  VIDU_SCENE            // Vidu Q3 씬 영상
+  MUSIC                 // 음악 생성
+  OUTFIT                // 의상 교체
+  BACKGROUND            // 배경 생성
+
+  @@schema("public")
+}
+
+/// 크레딧 사용/획득 히스토리
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model credit_history {
+  id                  String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id             String                   @db.Uuid
+  transaction_type    credit_transaction_type
+  feature_type        credit_feature_type?     // USE/REFUND 시 필수
+  amount              Int                      // 양수: 획득, 음수: 사용
+  balance_after       Int                      // 트랜잭션 후 잔액
+  related_entity_id   String?                  @db.Uuid  // 관련 리소스 ID
+  description         String?                  // 상세 설명 (옵션)
+  created_at          DateTime                 @default(now()) @db.Timestamptz(6)
+
+  profiles            profiles                 @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_credit_history_user_id")
+  @@index([user_id, created_at(sort: Desc)], map: "idx_credit_history_user_created")
+  @@index([transaction_type], map: "idx_credit_history_type")
+  @@index([feature_type], map: "idx_credit_history_feature")
   @@schema("public")
 }

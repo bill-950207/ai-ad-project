@@ -18,6 +18,7 @@ import { generateImageAdPrompt, type ImageAdType as GeminiImageAdType } from '@/
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { IMAGE_AD_CREDIT_COST } from '@/lib/credits'
+import { recordCreditUse } from '@/lib/credits/history'
 import { getUserPlan } from '@/lib/subscription/queries'
 import { plan_type } from '@/lib/generated/prisma/client'
 
@@ -787,10 +788,22 @@ export async function POST(request: NextRequest) {
           throw new Error('INSUFFICIENT_CREDITS')
         }
 
+        const balanceAfter = (currentProfile.credits ?? 0) - totalCreditCost
+
         await tx.profiles.update({
           where: { id: user.id },
           data: { credits: { decrement: totalCreditCost } },
         })
+
+        // 크레딧 히스토리 기록
+        await recordCreditUse({
+          userId: user.id,
+          featureType: 'IMAGE_AD',
+          amount: totalCreditCost,
+          balanceAfter,
+          relatedEntityId: imageAdRecords[0],  // 첫 번째 이미지 광고 ID
+          description: `이미지 광고 생성 (${validNumImages}장, ${effectiveQuality === 'high' ? '고화질' : '중화질'})`,
+        }, tx)
       }, { timeout: 10000 })
     } catch (creditError) {
       // 크레딧 부족 시 생성된 레코드 실패 처리

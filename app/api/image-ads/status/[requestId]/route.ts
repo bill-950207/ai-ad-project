@@ -17,6 +17,7 @@ import {
 } from '@/lib/kie/client'
 import { uploadExternalImageToR2 } from '@/lib/image/compress'
 import { IMAGE_AD_CREDIT_COST } from '@/lib/credits'
+import { recordCreditRefund } from '@/lib/credits/history'
 
 /** requestId에서 provider와 실제 ID 파싱 */
 function parseRequestId(requestId: string): { provider: 'fal' | 'kie'; actualId: string } {
@@ -96,7 +97,7 @@ export async function GET(
                 fal_request_id: rawRequestId,
                 user_id: user.id,
               },
-              select: { quality: true, num_images: true, batch_request_ids: true },
+              select: { id: true, quality: true, num_images: true, batch_request_ids: true },
             })
 
             let isBatchImage = false
@@ -105,7 +106,7 @@ export async function GET(
             if (!imageAd) {
               const { data: batchAds } = await supabase
                 .from('image_ads')
-                .select('quality, num_images, batch_request_ids')
+                .select('id, quality, num_images, batch_request_ids')
                 .eq('user_id', user.id)
                 .not('batch_request_ids', 'is', null)
 
@@ -113,7 +114,7 @@ export async function GET(
                 for (const ad of batchAds) {
                   const batchIds = ad.batch_request_ids as Array<{ provider: string; requestId: string }> | null
                   if (batchIds?.some(b => b.requestId === actualId || `${b.provider}:${b.requestId}` === rawRequestId)) {
-                    imageAd = { quality: ad.quality, num_images: ad.num_images, batch_request_ids: ad.batch_request_ids }
+                    imageAd = { id: ad.id, quality: ad.quality, num_images: ad.num_images, batch_request_ids: ad.batch_request_ids }
                     isBatchImage = true
                     break
                   }
@@ -130,10 +131,27 @@ export async function GET(
               // 단일 이미지인 경우 전체 환불
               const refundAmount = isBatchImage ? creditCost : creditCost * (imageAd.num_images || 1)
 
-              // 크레딧 환불
-              await prisma.profiles.update({
-                where: { id: user.id },
-                data: { credits: { increment: refundAmount } },
+              // 크레딧 환불 + 히스토리 기록 (트랜잭션)
+              await prisma.$transaction(async (tx) => {
+                const profile = await tx.profiles.findUnique({
+                  where: { id: user.id },
+                  select: { credits: true },
+                })
+                const balanceAfterRefund = (profile?.credits ?? 0) + refundAmount
+
+                await tx.profiles.update({
+                  where: { id: user.id },
+                  data: { credits: { increment: refundAmount } },
+                })
+
+                await recordCreditRefund({
+                  userId: user.id,
+                  featureType: 'IMAGE_AD',
+                  amount: refundAmount,
+                  balanceAfter: balanceAfterRefund,
+                  relatedEntityId: imageAd.id,
+                  description: `이미지 광고 NSFW 환불 (${isBatchImage ? '1장' : `${imageAd.num_images || 1}장`})`,
+                }, tx)
               })
 
               console.log('NSFW 에러로 크레딧 환불:', {
