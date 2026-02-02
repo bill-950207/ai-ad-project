@@ -27,6 +27,7 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(true)
+  const [existingUser, setExistingUser] = useState<{ email: string } | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -68,18 +69,17 @@ export default function SignupPage() {
     fetchVideoShowcases()
   }, [])
 
-  // 이미 로그인된 사용자는 대시보드로 리다이렉트
+  // 이미 로그인된 사용자 확인
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        router.replace('/dashboard')
-      } else {
-        setCheckingAuth(false)
+        setExistingUser({ email: user.email || '' })
       }
+      setCheckingAuth(false)
     }
     checkUser()
-  }, [supabase.auth, router])
+  }, [supabase.auth])
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -137,6 +137,53 @@ export default function SignupPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  // 이미 로그인된 사용자
+  if (existingUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 bg-background">
+        <div className="w-full max-w-md">
+          <div className="bg-card border border-border rounded-2xl p-8 text-center">
+            {/* Logo */}
+            <Link href="/" className="inline-flex items-center space-x-2 mb-6">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-400 rounded-xl flex items-center justify-center">
+                <span className="text-white font-bold">AD</span>
+              </div>
+              <span className="text-2xl font-bold text-foreground">ADAI</span>
+            </Link>
+
+            <h1 className="text-2xl font-bold text-foreground mb-3">
+              Already signed in
+            </h1>
+            <p className="text-muted-foreground mb-2">
+              You are already logged in as
+            </p>
+            <p className="text-sm text-primary font-medium mb-6">
+              {existingUser.email}
+            </p>
+
+            <div className="space-y-3">
+              <Button
+                onClick={() => router.push('/dashboard')}
+                className="w-full"
+              >
+                Go to Dashboard
+              </Button>
+              <button
+                onClick={async () => {
+                  await supabase.auth.signOut()
+                  setExistingUser(null)
+                }}
+                className="w-full h-10 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+              >
+                Sign out and create new account
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
