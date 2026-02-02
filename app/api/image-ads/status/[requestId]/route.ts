@@ -9,12 +9,14 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/db'
 import { getSeedreamEditQueueStatus, getSeedreamEditQueueResponse } from '@/lib/fal/client'
 import {
   getGPTImageQueueStatus as getKieGptImageStatus,
   getGPTImageQueueResponse as getKieGptImageResponse,
 } from '@/lib/kie/client'
 import { uploadExternalImageToR2 } from '@/lib/image/compress'
+import { IMAGE_AD_CREDIT_COST } from '@/lib/credits'
 
 /** requestId에서 provider와 실제 ID 파싱 */
 function parseRequestId(requestId: string): { provider: 'fal' | 'kie'; actualId: string } {
@@ -84,6 +86,69 @@ export async function GET(
 
         console.error('이미지 생성 결과 조회 오류:', { provider, errorMessage, isNsfwError })
 
+        // NSFW 에러 시 크레딧 환불
+        if (isNsfwError) {
+          try {
+            // 해당 이미지 광고의 품질 정보 조회
+            // 1. fal_request_id로 먼저 검색
+            let imageAd = await prisma.image_ads.findFirst({
+              where: {
+                fal_request_id: rawRequestId,
+                user_id: user.id,
+              },
+              select: { quality: true, num_images: true, batch_request_ids: true },
+            })
+
+            let isBatchImage = false
+
+            // 2. 찾지 못하면 batch_request_ids에서 검색 (Supabase 사용)
+            if (!imageAd) {
+              const { data: batchAds } = await supabase
+                .from('image_ads')
+                .select('quality, num_images, batch_request_ids')
+                .eq('user_id', user.id)
+                .not('batch_request_ids', 'is', null)
+
+              if (batchAds) {
+                for (const ad of batchAds) {
+                  const batchIds = ad.batch_request_ids as Array<{ provider: string; requestId: string }> | null
+                  if (batchIds?.some(b => b.requestId === actualId || `${b.provider}:${b.requestId}` === rawRequestId)) {
+                    imageAd = { quality: ad.quality, num_images: ad.num_images, batch_request_ids: ad.batch_request_ids }
+                    isBatchImage = true
+                    break
+                  }
+                }
+              }
+            }
+
+            if (imageAd) {
+              // 품질에 따른 크레딧 비용 계산
+              const quality = (imageAd.quality as 'medium' | 'high') || 'medium'
+              const creditCost = IMAGE_AD_CREDIT_COST[quality] || IMAGE_AD_CREDIT_COST.medium
+
+              // 배치 이미지인 경우 1장분만 환불 (개별 이미지 NSFW)
+              // 단일 이미지인 경우 전체 환불
+              const refundAmount = isBatchImage ? creditCost : creditCost * (imageAd.num_images || 1)
+
+              // 크레딧 환불
+              await prisma.profiles.update({
+                where: { id: user.id },
+                data: { credits: { increment: refundAmount } },
+              })
+
+              console.log('NSFW 에러로 크레딧 환불:', {
+                userId: user.id,
+                refundAmount,
+                quality,
+                isBatchImage,
+                numImages: imageAd.num_images
+              })
+            }
+          } catch (refundError) {
+            console.error('NSFW 크레딧 환불 실패:', refundError)
+          }
+        }
+
         // DB에 실패 상태 업데이트
         await supabase
           .from('image_ads')
@@ -102,6 +167,7 @@ export async function GET(
             ? 'NSFW_CONTENT_DETECTED'
             : 'Image generation failed',
           errorCode: isNsfwError ? 'NSFW' : 'GENERATION_FAILED',
+          ...(isNsfwError && { creditsRefunded: true }),
         })
       }
 
