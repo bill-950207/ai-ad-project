@@ -52,9 +52,10 @@ function SkeletonCard() {
   )
 }
 
-// 개별 카드 컴포넌트 - 이미지 (지연 로드됨)
+// 개별 카드 컴포넌트 - 이미지 또는 영상 (지연 로드됨)
 function RainCard({ item }: { item: ShowcaseItem }) {
   const [isLoaded, setIsLoaded] = useState(false)
+  const isVideo = item.type === 'video' && item.media_url
 
   return (
     <div
@@ -65,6 +66,7 @@ function RainCard({ item }: { item: ShowcaseItem }) {
         transform: 'translate3d(0,0,0)',
       }}
     >
+      {/* 썸네일 이미지 (기본 배경) */}
       <Image
         src={item.thumbnail_url}
         alt=""
@@ -78,6 +80,18 @@ function RainCard({ item }: { item: ShowcaseItem }) {
         loading="lazy"
         onLoad={() => setIsLoaded(true)}
       />
+      {/* 영상인 경우 비디오 오버레이 */}
+      {isVideo && (
+        <video
+          src={item.media_url!}
+          className="absolute inset-0 w-full h-full object-cover object-top"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+        />
+      )}
       <div
         className="absolute inset-0 bg-background/40"
         style={{
