@@ -51,6 +51,35 @@ export async function compressToWebp(
     .toBuffer()
 }
 
+/** 리사이징 및 압축 옵션 */
+interface ResizeAndCompressOptions {
+  maxWidth?: number   // 최대 너비 (기본: 400)
+  maxHeight?: number  // 최대 높이 (기본: 600)
+  quality?: number    // WebP 품질 (0-100, 기본: 85)
+}
+
+/**
+ * 이미지를 리사이징하고 WebP로 압축
+ *
+ * @param buffer - 이미지 Buffer
+ * @param options - 리사이징 및 압축 옵션
+ * @returns 리사이징 및 압축된 WebP Buffer
+ */
+export async function resizeAndCompressToWebp(
+  buffer: Buffer,
+  options: ResizeAndCompressOptions = {}
+): Promise<Buffer> {
+  const { maxWidth = 400, maxHeight = 600, quality = 85 } = options
+
+  return sharp(buffer)
+    .resize(maxWidth, maxHeight, {
+      fit: 'inside',           // 비율 유지하며 맞추기
+      withoutEnlargement: true // 원본보다 크게 확대하지 않음
+    })
+    .webp({ quality })
+    .toBuffer()
+}
+
 /**
  * 이미지를 PNG로 변환 (원본 보존용)
  *

@@ -253,7 +253,7 @@ export function AdminContent() {
 
   // WebP 변환 핸들러
   const handleConvertToWebp = async () => {
-    if (!confirm('webp가 아닌 모든 썸네일을 webp로 변환하시겠습니까?')) {
+    if (!confirm('모든 썸네일을 400x533 WebP로 최적화하시겠습니까? (이미 최적화된 것 제외)')) {
       return
     }
 
@@ -334,7 +334,7 @@ export function AdminContent() {
             ) : (
               <Image className="w-4 h-4" />
             )}
-            {isConverting ? 'Converting...' : 'Convert to WebP'}
+            {isConverting ? 'Optimizing...' : 'Optimize Images'}
           </button>
           <button
             onClick={openCreateModal}
