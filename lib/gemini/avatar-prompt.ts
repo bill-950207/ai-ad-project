@@ -216,12 +216,50 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
     ? `사용자가 지정한 장소: ${input.locationPrompt}`
     : `장소: ${videoTypeGuide.environmentPrompt} (${videoTypeStyle.korean} 스타일)`
 
+  // 키 매핑
+  const heightMap: Record<string, string> = {
+    short: 'petite/short stature',
+    average: 'average height',
+    tall: 'tall stature',
+    any: '',
+  }
+
+  // 헤어스타일 매핑
+  const hairStyleMap: Record<string, string> = {
+    short: 'short hair',
+    medium: 'medium-length hair',
+    long: 'long flowing hair',
+    any: '',
+  }
+
+  // 헤어컬러 매핑
+  const hairColorMap: Record<string, string> = {
+    black: 'black hair',
+    brown: 'brown hair',
+    blonde: 'blonde hair',
+    any: '',
+  }
+
+  // 의상스타일 매핑 (outfitPreset/outfitCustom과 별개로 기본 의상 스타일)
+  const outfitStyleMap: Record<string, string> = {
+    casual: 'casual relaxed outfit',
+    formal: 'formal elegant attire',
+    sporty: 'sporty athletic wear',
+    professional: 'professional business attire',
+    elegant: 'elegant sophisticated outfit',
+    any: '',
+  }
+
   const targetGenderText = genderMap[input.targetGender || 'any']
   const targetAgeText = ageMap[input.targetAge || 'any']
   const styleText = styleMap[input.style || 'any']
   const ethnicityText = ethnicityMap[resolvedEthnicity]
   const ethnicityEnglish = ethnicityEnglishMap[resolvedEthnicity] || ''
   const bodyTypeText = getBodyTypeDescription(input.bodyType || 'any', input.targetGender)
+  const heightText = heightMap[input.height || 'any'] || ''
+  const hairStyleText = hairStyleMap[input.hairStyle || 'any'] || ''
+  const hairColorText = hairColorMap[input.hairColor || 'any'] || ''
+  const outfitStyleText = outfitStyleMap[input.outfitStyle || 'any'] || ''
 
   const cameraConfig = input.cameraComposition
     ? cameraCompositionDescriptions[input.cameraComposition]
@@ -283,7 +321,7 @@ ${input.productImageUrl ? '제품 이미지가 Figure 1로 첨부되어 있습�
 - 연령대: ${targetAgeText}
 - 스타일: ${styleText}
 - 인종/민족: ${ethnicityText} (⚠️ 프롬프트에 반드시 "${ethnicityEnglish}" 키워드 포함 필수)
-- Body type (use this exact English phrase in prompt): ${bodyTypeText}
+- Body type (use this exact English phrase in prompt): ${bodyTypeText}${heightText ? `\n- Height: ${heightText}` : ''}${hairStyleText ? `\n- Hair style: ${hairStyleText}` : ''}${hairColorText ? `\n- Hair color: ${hairColorText}` : ''}${outfitStyleText ? `\n- Outfit style: ${outfitStyleText}` : ''}
 
 === 장소/배경 ===
 ${locationSection}
