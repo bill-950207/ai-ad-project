@@ -65,43 +65,67 @@ export async function POST(request: NextRequest) {
     // 크레딧 계산 (씬 개수 × 키프레임당 비용)
     const totalCreditCost = scenes.length * KEYFRAME_CREDIT_COST
 
-    // 크레딧 확인
-    const profile = await prisma.profiles.findUnique({
-      where: { id: user.id },
-    })
+    // 트랜잭션으로 크레딧 확인 및 차감 (원자적 처리)
+    try {
+      await prisma.$transaction(async (tx) => {
+        const profile = await tx.profiles.findUnique({
+          where: { id: user.id },
+          select: { credits: true },
+        })
 
-    if (!profile || (profile.credits ?? 0) < totalCreditCost) {
-      return NextResponse.json(
-        { error: 'Insufficient credits', required: totalCreditCost, available: profile?.credits ?? 0 },
-        { status: 402 }
-      )
+        if (!profile || (profile.credits ?? 0) < totalCreditCost) {
+          throw new Error('INSUFFICIENT_CREDITS')
+        }
+
+        await tx.profiles.update({
+          where: { id: user.id },
+          data: { credits: { decrement: totalCreditCost } },
+        })
+      }, { timeout: 10000 })
+    } catch (error) {
+      if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
+        const profile = await prisma.profiles.findUnique({
+          where: { id: user.id },
+          select: { credits: true },
+        })
+        return NextResponse.json(
+          { error: 'Insufficient credits', required: totalCreditCost, available: profile?.credits ?? 0 },
+          { status: 402 }
+        )
+      }
+      throw error
     }
 
     // 각 씬에 대해 Seedream 4.5로 이미지 생성 요청
-    const requests = await Promise.all(
-      scenes.map(async (scene) => {
-        // 프롬프트에서 금지 단어 제거 (카메라/촬영장비 등장 방지)
-        const sanitizedPrompt = sanitizePrompt(scene.scenePrompt)
+    let requests: { sceneIndex: number; requestId: string; prompt: string }[] = []
+    try {
+      requests = await Promise.all(
+        scenes.map(async (scene) => {
+          // 프롬프트에서 금지 단어 제거 (카메라/촬영장비 등장 방지)
+          const sanitizedPrompt = sanitizePrompt(scene.scenePrompt)
 
-        const result = await createEditTask({
-          prompt: sanitizedPrompt,
-          image_urls: [productImageUrl],
-          aspect_ratio: mapAspectRatio(aspectRatio),
-          quality: 'high',
+          const result = await createEditTask({
+            prompt: sanitizedPrompt,
+            image_urls: [productImageUrl],
+            aspect_ratio: mapAspectRatio(aspectRatio),
+            quality: 'high',
+          })
+          return {
+            sceneIndex: scene.index,
+            requestId: `kie:${result.taskId}`,
+            prompt: sanitizedPrompt,  // 정제된 프롬프트 반환
+          }
         })
-        return {
-          sceneIndex: scene.index,
-          requestId: `kie:${result.taskId}`,
-          prompt: sanitizedPrompt,  // 정제된 프롬프트 반환
-        }
+      )
+    } catch (requestError) {
+      // 이미지 생성 요청 실패 시 크레딧 환불
+      console.error('키프레임 생성 요청 실패, 크레딧 환불:', requestError)
+      await prisma.profiles.update({
+        where: { id: user.id },
+        data: { credits: { increment: totalCreditCost } },
       })
-    )
-
-    // 크레딧 차감
-    await prisma.profiles.update({
-      where: { id: user.id },
-      data: { credits: { decrement: totalCreditCost } },
-    })
+      throw requestError
+    }
 
     return NextResponse.json({
       requests,

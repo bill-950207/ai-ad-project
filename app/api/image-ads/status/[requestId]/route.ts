@@ -9,12 +9,14 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/db'
 import { getSeedreamEditQueueStatus, getSeedreamEditQueueResponse } from '@/lib/fal/client'
 import {
   getGPTImageQueueStatus as getKieGptImageStatus,
   getGPTImageQueueResponse as getKieGptImageResponse,
 } from '@/lib/kie/client'
 import { uploadExternalImageToR2 } from '@/lib/image/compress'
+import { IMAGE_AD_CREDIT_COST } from '@/lib/credits'
 
 /** requestId에서 provider와 실제 ID 파싱 */
 function parseRequestId(requestId: string): { provider: 'fal' | 'kie'; actualId: string } {
@@ -84,6 +86,41 @@ export async function GET(
 
         console.error('이미지 생성 결과 조회 오류:', { provider, errorMessage, isNsfwError })
 
+        // NSFW 에러 시 크레딧 환불
+        if (isNsfwError) {
+          try {
+            // 해당 이미지 광고의 품질 정보 조회
+            const imageAd = await prisma.image_ads.findFirst({
+              where: {
+                OR: [
+                  { fal_request_id: rawRequestId },
+                  // batch_request_ids는 JSON이므로 별도 처리 필요
+                ],
+                user_id: user.id,
+              },
+              select: { quality: true, num_images: true },
+            })
+
+            if (imageAd) {
+              // 품질에 따른 크레딧 비용 계산
+              const quality = (imageAd.quality as 'medium' | 'high') || 'medium'
+              const creditCost = IMAGE_AD_CREDIT_COST[quality] || IMAGE_AD_CREDIT_COST.medium
+              const numImages = imageAd.num_images || 1
+              const refundAmount = creditCost * numImages
+
+              // 크레딧 환불
+              await prisma.profiles.update({
+                where: { id: user.id },
+                data: { credits: { increment: refundAmount } },
+              })
+
+              console.log('NSFW 에러로 크레딧 환불:', { userId: user.id, refundAmount, quality, numImages })
+            }
+          } catch (refundError) {
+            console.error('NSFW 크레딧 환불 실패:', refundError)
+          }
+        }
+
         // DB에 실패 상태 업데이트
         await supabase
           .from('image_ads')
@@ -102,6 +139,7 @@ export async function GET(
             ? 'NSFW_CONTENT_DETECTED'
             : 'Image generation failed',
           errorCode: isNsfwError ? 'NSFW' : 'GENERATION_FAILED',
+          ...(isNsfwError && { creditsRefunded: true }),
         })
       }
 

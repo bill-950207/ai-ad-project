@@ -60,16 +60,35 @@ export async function POST(request: NextRequest) {
     const transitionCount = keyframes.length - 1
     const totalCreditCost = transitionCount * TRANSITION_CREDIT_COST
 
-    // 크레딧 확인
-    const profile = await prisma.profiles.findUnique({
-      where: { id: user.id },
-    })
+    // 트랜잭션으로 크레딧 확인 및 차감 (원자적 처리)
+    try {
+      await prisma.$transaction(async (tx) => {
+        const profile = await tx.profiles.findUnique({
+          where: { id: user.id },
+          select: { credits: true },
+        })
 
-    if (!profile || (profile.credits ?? 0) < totalCreditCost) {
-      return NextResponse.json(
-        { error: 'Insufficient credits', required: totalCreditCost, available: profile?.credits ?? 0 },
-        { status: 402 }
-      )
+        if (!profile || (profile.credits ?? 0) < totalCreditCost) {
+          throw new Error('INSUFFICIENT_CREDITS')
+        }
+
+        await tx.profiles.update({
+          where: { id: user.id },
+          data: { credits: { decrement: totalCreditCost } },
+        })
+      }, { timeout: 10000 })
+    } catch (error) {
+      if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
+        const profile = await prisma.profiles.findUnique({
+          where: { id: user.id },
+          select: { credits: true },
+        })
+        return NextResponse.json(
+          { error: 'Insufficient credits', required: totalCreditCost, available: profile?.credits ?? 0 },
+          { status: 402 }
+        )
+      }
+      throw error
     }
 
     // 키프레임 인덱스 순으로 정렬
@@ -78,38 +97,42 @@ export async function POST(request: NextRequest) {
     // 각 연속 키프레임 쌍에 대해 Kling O1 전환 영상 생성 요청
     const transitionRequests: TransitionRequest[] = []
 
-    for (let i = 0; i < sortedKeyframes.length - 1; i++) {
-      const fromKeyframe = sortedKeyframes[i]
-      const toKeyframe = sortedKeyframes[i + 1]
+    try {
+      for (let i = 0; i < sortedKeyframes.length - 1; i++) {
+        const fromKeyframe = sortedKeyframes[i]
+        const toKeyframe = sortedKeyframes[i + 1]
 
-      // 전환 프롬프트 (없으면 기본값)
-      const transitionPrompt = fromKeyframe.transitionPrompt ||
-        `Professional gimbal-stabilized smooth transition from scene ${i + 1} to scene ${i + 2}. Steady camera glide with no handheld shakiness. The scene transforms naturally with elegant, controlled motion. Soft professional lighting effect, broadcast quality stability.`
+        // 전환 프롬프트 (없으면 기본값)
+        const transitionPrompt = fromKeyframe.transitionPrompt ||
+          `Professional gimbal-stabilized smooth transition from scene ${i + 1} to scene ${i + 2}. Steady camera glide with no handheld shakiness. The scene transforms naturally with elegant, controlled motion. Soft professional lighting effect, broadcast quality stability.`
 
-      // 전환 영상 길이 (기본 5초)
-      const duration = String(Math.min(10, Math.max(3, fromKeyframe.duration || 5))) as KlingO1Duration
+        // 전환 영상 길이 (기본 5초)
+        const duration = String(Math.min(10, Math.max(3, fromKeyframe.duration || 5))) as KlingO1Duration
 
-      // Kling O1 요청 제출
-      const result = await submitKlingO1ToQueue({
-        prompt: transitionPrompt,
-        start_image_url: fromKeyframe.imageUrl,
-        end_image_url: toKeyframe.imageUrl,
-        duration,
+        // Kling O1 요청 제출
+        const result = await submitKlingO1ToQueue({
+          prompt: transitionPrompt,
+          start_image_url: fromKeyframe.imageUrl,
+          end_image_url: toKeyframe.imageUrl,
+          duration,
+        })
+
+        transitionRequests.push({
+          fromSceneIndex: fromKeyframe.sceneIndex,
+          toSceneIndex: toKeyframe.sceneIndex,
+          requestId: `fal:${result.request_id}`,
+          prompt: transitionPrompt,
+        })
+      }
+    } catch (requestError) {
+      // 전환 영상 생성 요청 실패 시 크레딧 환불
+      console.error('전환 영상 생성 요청 실패, 크레딧 환불:', requestError)
+      await prisma.profiles.update({
+        where: { id: user.id },
+        data: { credits: { increment: totalCreditCost } },
       })
-
-      transitionRequests.push({
-        fromSceneIndex: fromKeyframe.sceneIndex,
-        toSceneIndex: toKeyframe.sceneIndex,
-        requestId: `fal:${result.request_id}`,
-        prompt: transitionPrompt,
-      })
+      throw requestError
     }
-
-    // 크레딧 차감
-    await prisma.profiles.update({
-      where: { id: user.id },
-      data: { credits: { decrement: totalCreditCost } },
-    })
 
     return NextResponse.json({
       transitions: transitionRequests,
