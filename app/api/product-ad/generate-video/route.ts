@@ -120,64 +120,108 @@ export async function POST(request: NextRequest) {
     const creditCostPerVideo = getVideoCreditCost()
     const totalCreditCost = creditCostPerVideo * count
 
-    // 크레딧 확인
-    const profile = await prisma.profiles.findUnique({
-      where: { id: user.id },
-    })
+    // 트랜잭션으로 크레딧 확인 및 차감 (원자적 처리)
+    try {
+      await prisma.$transaction(async (tx) => {
+        const profile = await tx.profiles.findUnique({
+          where: { id: user.id },
+          select: { credits: true },
+        })
 
-    if (!profile || (profile.credits ?? 0) < totalCreditCost) {
-      return NextResponse.json(
-        { error: 'Insufficient credits', required: totalCreditCost, available: profile?.credits ?? 0 },
-        { status: 402 }
-      )
+        if (!profile || (profile.credits ?? 0) < totalCreditCost) {
+          throw new Error('INSUFFICIENT_CREDITS')
+        }
+
+        await tx.profiles.update({
+          where: { id: user.id },
+          data: { credits: { decrement: totalCreditCost } },
+        })
+      }, { timeout: 10000 })
+    } catch (error) {
+      if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
+        const profile = await prisma.profiles.findUnique({
+          where: { id: user.id },
+          select: { credits: true },
+        })
+        return NextResponse.json(
+          { error: 'Insufficient credits', required: totalCreditCost, available: profile?.credits ?? 0 },
+          { status: 402 }
+        )
+      }
+      throw error
     }
 
-    // 각 영상에 대해 프롬프트 생성 및 요청
+    // 각 영상에 대해 프롬프트 생성 및 요청 (부분 실패 처리)
     const requests: { requestId: string; prompt: string }[] = []
+    let failedCount = 0
 
     for (let i = 0; i < count; i++) {
-      // 모델별 최적화된 프롬프트 생성
-      const videoPrompt = multiShot
-        ? await generateMultiShotPrompt(productName, scenarioElements, duration, videoModel, i)
-        : await generateVideoPrompt(productName, scenarioElements, duration, videoModel, i)
+      try {
+        // 모델별 최적화된 프롬프트 생성
+        const videoPrompt = multiShot
+          ? await generateMultiShotPrompt(productName, scenarioElements, duration, videoModel, i)
+          : await generateVideoPrompt(productName, scenarioElements, duration, videoModel, i)
 
-      let result: { request_id: string }
+        let result: { request_id: string }
 
-      // 모델에 따라 다른 API 호출
-      switch (videoModel) {
-        case 'wan2.6':
-          result = await submitWan26ToQueue(
-            startFrameUrl,
-            videoPrompt,
-            {
-              duration: mapDurationForWan26(duration),
-              resolution: '720p' as Wan26Resolution,
-              multiShots: multiShot,  // 멀티샷 프롬프트 + API 멀티샷 옵션 함께 사용
-            }
-          )
-          break
+        // 모델에 따라 다른 API 호출
+        switch (videoModel) {
+          case 'wan2.6':
+            result = await submitWan26ToQueue(
+              startFrameUrl,
+              videoPrompt,
+              {
+                duration: mapDurationForWan26(duration),
+                resolution: '720p' as Wan26Resolution,
+                multiShots: multiShot,  // 멀티샷 프롬프트 + API 멀티샷 옵션 함께 사용
+              }
+            )
+            break
 
-        case 'seedance':
-        default:
-          result = await submitSeedanceToQueue(
-            startFrameUrl,
-            null, // 끝 프레임 없음
-            videoPrompt,
-            {
-              aspectRatio: mapAspectRatioForSeedance(aspectRatio),
-              resolution: '720p',
-              duration: mapDurationForSeedance(duration),
-              fixedLens: false,
-              generateAudio: false,
-            }
-          )
-          break
+          case 'seedance':
+          default:
+            result = await submitSeedanceToQueue(
+              startFrameUrl,
+              null, // 끝 프레임 없음
+              videoPrompt,
+              {
+                aspectRatio: mapAspectRatioForSeedance(aspectRatio),
+                resolution: '720p',
+                duration: mapDurationForSeedance(duration),
+                fixedLens: false,
+                generateAudio: false,
+              }
+            )
+            break
+        }
+
+        requests.push({
+          requestId: `kie:${result.request_id}`,
+          prompt: videoPrompt,
+        })
+      } catch (requestError) {
+        // 개별 영상 요청 실패 기록
+        console.error(`영상 ${i + 1}/${count} 생성 요청 실패:`, requestError)
+        failedCount++
       }
+    }
 
-      requests.push({
-        requestId: `kie:${result.request_id}`,
-        prompt: videoPrompt,
+    // 실패한 영상이 있으면 해당 크레딧 환불
+    if (failedCount > 0) {
+      const refundAmount = failedCount * creditCostPerVideo
+      await prisma.profiles.update({
+        where: { id: user.id },
+        data: { credits: { increment: refundAmount } },
       })
+      console.log(`${failedCount}개 영상 실패, ${refundAmount} 크레딧 환불`)
+    }
+
+    // 모든 영상이 실패한 경우
+    if (requests.length === 0) {
+      return NextResponse.json(
+        { error: 'All video generation requests failed' },
+        { status: 500 }
+      )
     }
 
     // Draft가 있으면 상태 업데이트 (첫 번째 요청 ID 저장)
@@ -192,18 +236,20 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // 크레딧 차감
-    await prisma.profiles.update({
-      where: { id: user.id },
-      data: { credits: { decrement: totalCreditCost } },
-    })
+    // 실제 사용된 크레딧 계산 (성공한 영상만)
+    const actualCreditUsed = requests.length * creditCostPerVideo
 
     return NextResponse.json({
       requests,
       // 하위 호환성을 위해 단일 requestId도 반환
       requestId: requests[0]?.requestId,
       prompt: requests[0]?.prompt,
-      creditUsed: totalCreditCost,
+      creditUsed: actualCreditUsed,
+      // 부분 실패 정보
+      ...(failedCount > 0 && {
+        failedCount,
+        refundedCredits: failedCount * creditCostPerVideo,
+      }),
     })
   } catch (error) {
     console.error('영상 생성 오류:', error)

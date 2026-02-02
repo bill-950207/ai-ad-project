@@ -238,23 +238,47 @@ export async function POST(request: NextRequest) {
       console.log('Kie.ai fallback 성공:', requestId)
     }
 
-    // 요청 ID 저장 및 크레딧 차감
+    // 크레딧 차감 (트랜잭션으로 재확인 후 원자적 차감 - Race Condition 방지)
+    try {
+      await prisma.$transaction(async (tx) => {
+        const currentProfile = await tx.profiles.findUnique({
+          where: { id: user.id },
+          select: { credits: true },
+        })
+
+        if (!currentProfile || (currentProfile.credits ?? 0) < creditCost) {
+          throw new Error('INSUFFICIENT_CREDITS')
+        }
+
+        await tx.profiles.update({
+          where: { id: user.id },
+          data: { credits: { decrement: creditCost } },
+        })
+      }, { timeout: 10000 })
+    } catch (creditError) {
+      // 크레딧 부족 시 생성된 레코드 실패 처리
+      if (creditError instanceof Error && creditError.message === 'INSUFFICIENT_CREDITS') {
+        await prisma.video_ads.update({
+          where: { id: videoAd.id },
+          data: { status: 'FAILED', error_message: 'Insufficient credits' },
+        })
+        return NextResponse.json(
+          { error: 'Insufficient credits (concurrent request detected)' },
+          { status: 402 }
+        )
+      }
+      throw creditError
+    }
+
+    // 요청 ID 저장
     // provider 정보를 kie_request_id 필드에 prefix로 저장 (wavespeed: 또는 kie:)
-    await prisma.$transaction([
-      prisma.video_ads.update({
-        where: { id: videoAd.id },
-        data: {
-          kie_request_id: `${provider}:${requestId}`,
-          status: 'IN_PROGRESS',
-        },
-      }),
-      prisma.profiles.update({
-        where: { id: user.id },
-        data: {
-          credits: { decrement: creditCost },
-        },
-      }),
-    ])
+    await prisma.video_ads.update({
+      where: { id: videoAd.id },
+      data: {
+        kie_request_id: `${provider}:${requestId}`,
+        status: 'IN_PROGRESS',
+      },
+    })
 
     return NextResponse.json({
       videoAdId: videoAd.id,
