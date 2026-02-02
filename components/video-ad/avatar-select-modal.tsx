@@ -7,10 +7,11 @@
 
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { X, Loader2, Check, Shirt, Sparkles, ChevronDown } from 'lucide-react'
+import { X, Loader2, Check, Shirt, Sparkles, ChevronDown, Settings2 } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
+import { AiAvatarOptionsModal, type DetailedAiAvatarOptions } from './ai-avatar-options-modal'
 
 /** 아바타 스타일 옵션 */
 export interface AvatarStyleOptions {
@@ -38,13 +39,18 @@ interface AvatarWithOutfits extends Avatar {
   outfits: AvatarOutfit[]
 }
 
-/** AI 아바타 생성 옵션 */
+/** AI 아바타 생성 옵션 (상세 옵션 포함) */
 export interface AiAvatarOptions {
   targetGender: 'male' | 'female' | 'any'
-  targetAge: 'young' | 'middle' | 'mature' | 'any'
+  targetAge: 'teen' | 'early20s' | 'late20s' | '30s' | '40plus' | 'young' | 'middle' | 'mature' | 'any'
   style: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
-  ethnicity: 'korean' | 'asian' | 'western' | 'any'
-  bodyType: 'slim' | 'average' | 'athletic' | 'curvy' | 'any'
+  ethnicity: 'eastAsian' | 'southeastAsian' | 'southAsian' | 'caucasian' | 'black' | 'hispanic' | 'middleEastern' | 'korean' | 'asian' | 'western' | 'any'
+  bodyType: 'slim' | 'average' | 'athletic' | 'curvy' | 'muscular' | 'any'
+  // 상세 옵션 (선택사항)
+  height?: 'short' | 'average' | 'tall' | 'any'
+  hairStyle?: 'short' | 'medium' | 'long' | 'any'
+  hairColor?: 'black' | 'brown' | 'blonde' | 'any'
+  outfitStyle?: 'casual' | 'formal' | 'sporty' | 'professional' | 'elegant' | 'any'
 }
 
 export interface SelectedAvatarInfo {
@@ -70,42 +76,141 @@ interface AvatarSelectModalProps {
   selectedType?: 'avatar' | 'outfit' | 'ai-generated'
 }
 
-// AI avatar option labels (English defaults)
-const DEFAULT_GENDER_OPTIONS = [
-  { value: 'any', label: 'Any Gender' },
-  { value: 'female', label: 'Female' },
-  { value: 'male', label: 'Male' },
-] as const
+// AI 아바타 옵션을 AiAvatarOptions로 변환하는 헬퍼 함수
+function convertToAiAvatarOptions(detailed: DetailedAiAvatarOptions): AiAvatarOptions {
+  return {
+    targetGender: detailed.gender,
+    targetAge: detailed.age,
+    style: detailed.outfitStyle === 'any' ? 'any' :
+           detailed.outfitStyle === 'professional' ? 'professional' :
+           detailed.outfitStyle === 'elegant' ? 'elegant' :
+           detailed.outfitStyle === 'casual' ? 'casual' : 'natural',
+    ethnicity: detailed.ethnicity,
+    bodyType: detailed.bodyType,
+    height: detailed.height,
+    hairStyle: detailed.hairStyle,
+    hairColor: detailed.hairColor,
+    outfitStyle: detailed.outfitStyle,
+  }
+}
 
-const DEFAULT_AGE_OPTIONS = [
-  { value: 'any', label: 'Any Age' },
-  { value: 'young', label: '20-30s' },
-  { value: 'middle', label: '30-40s' },
-  { value: 'mature', label: '40-50s' },
-] as const
+// 선택된 옵션 요약 표시 컴포넌트
+interface SelectedOptionsSummaryProps {
+  options: DetailedAiAvatarOptions
+  t: Record<string, unknown>
+}
 
-const DEFAULT_STYLE_OPTIONS = [
-  { value: 'any', label: 'Any' },
-  { value: 'natural', label: 'Natural' },
-  { value: 'professional', label: 'Professional' },
-  { value: 'casual', label: 'Casual' },
-  { value: 'elegant', label: 'Elegant' },
-] as const
+function SelectedOptionsSummary({ options, t }: SelectedOptionsSummaryProps) {
+  const avatarT = t.avatar as Record<string, unknown> | undefined
+  const optionsT = avatarT?.options as Record<string, string> | undefined
+  const aiAvatarT = t.aiAvatarOptions as Record<string, string> | undefined
 
-const DEFAULT_ETHNICITY_OPTIONS = [
-  { value: 'any', label: 'Any' },
-  { value: 'korean', label: 'Korean' },
-  { value: 'asian', label: 'Asian' },
-  { value: 'western', label: 'Western' },
-] as const
+  // 선택된 옵션 수 계산
+  const selectedCount = Object.values(options).filter(v => v !== 'any').length
+  const totalOptions = Object.keys(options).length
 
-const DEFAULT_BODY_TYPE_OPTIONS = [
-  { value: 'any', label: 'AI Recommend' },
-  { value: 'slim', label: 'Slim' },
-  { value: 'average', label: 'Average' },
-  { value: 'athletic', label: 'Athletic' },
-  { value: 'curvy', label: 'Curvy' },
-] as const
+  // 라벨 매핑
+  const getLabel = (key: string, value: string): string => {
+    if (value === 'any') return ''
+
+    // 번역에서 찾기
+    const labelMap: Record<string, Record<string, string>> = {
+      gender: { male: optionsT?.male || 'Male', female: optionsT?.female || 'Female' },
+      age: {
+        teen: optionsT?.teen || '10s',
+        early20s: optionsT?.early20s || 'Early 20s',
+        late20s: optionsT?.late20s || 'Late 20s',
+        '30s': optionsT?.['30s'] || '30s',
+        '40plus': optionsT?.['40plus'] || '40+',
+      },
+      ethnicity: {
+        eastAsian: optionsT?.eastAsian || 'East Asian',
+        southeastAsian: optionsT?.southeastAsian || 'SE Asian',
+        southAsian: optionsT?.southAsian || 'S Asian',
+        caucasian: optionsT?.caucasian || 'Caucasian',
+        black: optionsT?.black || 'Black',
+        hispanic: optionsT?.hispanic || 'Hispanic',
+        middleEastern: optionsT?.middleEastern || 'Middle Eastern',
+      },
+      height: {
+        short: optionsT?.heightShort || 'Short',
+        average: optionsT?.heightAverage || 'Average',
+        tall: optionsT?.heightTall || 'Tall',
+      },
+      bodyType: {
+        slim: optionsT?.bodySlim || 'Slim',
+        average: optionsT?.bodyAverage || 'Average',
+        athletic: optionsT?.bodyAthletic || 'Athletic',
+        curvy: optionsT?.bodyCurvy || 'Curvy',
+        muscular: optionsT?.bodyMuscular || 'Muscular',
+      },
+      hairStyle: {
+        short: optionsT?.hairShort || 'Short',
+        medium: optionsT?.hairMedium || 'Medium',
+        long: optionsT?.hairLong || 'Long',
+      },
+      hairColor: {
+        black: optionsT?.blackhair || 'Black',
+        brown: optionsT?.brown || 'Brown',
+        blonde: optionsT?.blonde || 'Blonde',
+      },
+      outfitStyle: {
+        casual: optionsT?.outfitCasual || 'Casual',
+        formal: optionsT?.outfitFormal || 'Formal',
+        sporty: optionsT?.outfitSporty || 'Sporty',
+        professional: aiAvatarT?.outfitProfessional || 'Professional',
+        elegant: aiAvatarT?.outfitElegant || 'Elegant',
+      },
+    }
+
+    return labelMap[key]?.[value] || value
+  }
+
+  // 선택된 항목들 수집
+  const selectedItems: { key: string; value: string }[] = []
+  if (options.gender !== 'any') selectedItems.push({ key: 'gender', value: getLabel('gender', options.gender) })
+  if (options.age !== 'any') selectedItems.push({ key: 'age', value: getLabel('age', options.age) })
+  if (options.ethnicity !== 'any') selectedItems.push({ key: 'ethnicity', value: getLabel('ethnicity', options.ethnicity) })
+  if (options.height !== 'any') selectedItems.push({ key: 'height', value: getLabel('height', options.height) })
+  if (options.bodyType !== 'any') selectedItems.push({ key: 'bodyType', value: getLabel('bodyType', options.bodyType) })
+  if (options.hairStyle !== 'any') selectedItems.push({ key: 'hairStyle', value: getLabel('hairStyle', options.hairStyle) })
+  if (options.hairColor !== 'any') selectedItems.push({ key: 'hairColor', value: getLabel('hairColor', options.hairColor) })
+  if (options.outfitStyle !== 'any') selectedItems.push({ key: 'outfitStyle', value: getLabel('outfitStyle', options.outfitStyle) })
+
+  // avatarSelect 번역 타입 캐스팅
+  const avatarSelectT = (t as Record<string, unknown>).avatarSelect as Record<string, string> | undefined
+
+  if (selectedCount === 0) {
+    return (
+      <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+        <p className="text-xs text-muted-foreground text-center">
+          {aiAvatarT?.allAuto || avatarSelectT?.allAutoDesc || 'All options set to auto - AI will choose based on product'}
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="p-3 bg-secondary/50 rounded-lg border border-border">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-[10px] text-muted-foreground font-medium">
+          {aiAvatarT?.selectedOptions || avatarSelectT?.selectedOptions || 'Selected Options'}
+        </p>
+        <span className="text-[10px] text-primary font-medium">{selectedCount}/{totalOptions}</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {selectedItems.map((item) => (
+          <span
+            key={item.key}
+            className="inline-flex items-center px-2 py-0.5 bg-primary/10 text-primary text-[10px] rounded-full font-medium"
+          >
+            {item.value}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export function AvatarSelectModal({
   isOpen,
@@ -120,53 +225,19 @@ export function AvatarSelectModal({
   const [isLoading, setIsLoading] = useState(true)
   const [expandedAvatarId, setExpandedAvatarId] = useState<string | null>(null)
 
-  // Get avatar options from translations
-  const avatarT = (t as Record<string, unknown>).avatar as Record<string, unknown> | undefined
-  const optionsT = avatarT?.options as Record<string, string> | undefined
-
-  const GENDER_OPTIONS = useMemo(() => optionsT ? [
-    { value: 'any' as const, label: optionsT.anyGender || 'Any Gender' },
-    { value: 'female' as const, label: optionsT.female || 'Female' },
-    { value: 'male' as const, label: optionsT.male || 'Male' },
-  ] : DEFAULT_GENDER_OPTIONS, [optionsT])
-
-  const AGE_OPTIONS = useMemo(() => optionsT ? [
-    { value: 'any' as const, label: optionsT.anyAge || 'Any Age' },
-    { value: 'young' as const, label: optionsT['20s'] || '20-30s' },
-    { value: 'middle' as const, label: optionsT['30s'] || '30-40s' },
-    { value: 'mature' as const, label: optionsT['40s'] || '40-50s' },
-  ] : DEFAULT_AGE_OPTIONS, [optionsT])
-
-  const STYLE_OPTIONS = useMemo(() => optionsT ? [
-    { value: 'any' as const, label: optionsT.any || 'Any' },
-    { value: 'natural' as const, label: optionsT.natural || 'Natural' },
-    { value: 'professional' as const, label: optionsT.professional || 'Professional' },
-    { value: 'casual' as const, label: optionsT.casual || 'Casual' },
-    { value: 'elegant' as const, label: optionsT.elegant || 'Elegant' },
-  ] : DEFAULT_STYLE_OPTIONS, [optionsT])
-
-  const ETHNICITY_OPTIONS = useMemo(() => optionsT ? [
-    { value: 'any' as const, label: optionsT.any || 'Any' },
-    { value: 'korean' as const, label: optionsT.korean || 'Korean' },
-    { value: 'asian' as const, label: optionsT.asian || 'Asian' },
-    { value: 'western' as const, label: optionsT.western || 'Western' },
-  ] : DEFAULT_ETHNICITY_OPTIONS, [optionsT])
-
-  const BODY_TYPE_OPTIONS = useMemo(() => optionsT ? [
-    { value: 'any' as const, label: optionsT.aiRecommend || 'AI Recommend' },
-    { value: 'slim' as const, label: optionsT.slim || 'Slim' },
-    { value: 'average' as const, label: optionsT.average || 'Average' },
-    { value: 'athletic' as const, label: optionsT.athletic || 'Athletic' },
-    { value: 'curvy' as const, label: optionsT.curvy || 'Curvy' },
-  ] : DEFAULT_BODY_TYPE_OPTIONS, [optionsT])
-
   // AI 아바타 옵션 상태
   const [showAiOptions, setShowAiOptions] = useState(selectedType === 'ai-generated')
-  const [aiGender, setAiGender] = useState<'male' | 'female' | 'any'>('any')
-  const [aiAge, setAiAge] = useState<'young' | 'middle' | 'mature' | 'any'>('any')
-  const [aiStyle, setAiStyle] = useState<'natural' | 'professional' | 'casual' | 'elegant' | 'any'>('any')
-  const [aiEthnicity, setAiEthnicity] = useState<'korean' | 'asian' | 'western' | 'any'>('any')
-  const [aiBodyType, setAiBodyType] = useState<'slim' | 'average' | 'athletic' | 'curvy' | 'any'>('any')
+  const [showDetailedOptionsModal, setShowDetailedOptionsModal] = useState(false)
+  const [detailedAiOptions, setDetailedAiOptions] = useState<DetailedAiAvatarOptions>({
+    gender: 'any',
+    age: 'any',
+    ethnicity: 'any',
+    height: 'any',
+    bodyType: 'any',
+    hairStyle: 'any',
+    hairColor: 'any',
+    outfitStyle: 'any',
+  })
 
   // 아바타 및 의상 데이터 로드 (N+1 문제 해결: 단일 쿼리로 의상까지 조회)
   const fetchData = useCallback(async () => {
@@ -296,107 +367,17 @@ export function AvatarSelectModal({
             {/* AI 옵션 펼침 */}
             {showAiOptions && (
               <div className="mt-3 p-4 bg-secondary/30 rounded-xl border border-border space-y-4">
-                <p className="text-sm text-muted-foreground">{t.avatarSelect?.selectCharacteristics || 'Select avatar characteristics'}</p>
+                {/* 선택된 옵션 요약 */}
+                <SelectedOptionsSummary options={detailedAiOptions} t={t} />
 
-                {/* 성별 선택 */}
-                <div>
-                  <label className="text-xs font-medium text-foreground mb-2 block">{t.avatarSelect?.gender || 'Gender'}</label>
-                  <div className="flex gap-2">
-                    {GENDER_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => setAiGender(option.value)}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                          aiGender === option.value
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary/50 text-foreground hover:bg-secondary'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 연령대 선택 */}
-                <div>
-                  <label className="text-xs font-medium text-foreground mb-2 block">{t.avatarSelect?.ageRange || 'Age Range'}</label>
-                  <div className="flex gap-2">
-                    {AGE_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => setAiAge(option.value)}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                          aiAge === option.value
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary/50 text-foreground hover:bg-secondary'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 스타일 선택 */}
-                <div>
-                  <label className="text-xs font-medium text-foreground mb-2 block">{t.avatarSelect?.style || 'Style'}</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {STYLE_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => setAiStyle(option.value)}
-                        className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                          aiStyle === option.value
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary/50 text-foreground hover:bg-secondary'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 인종 선택 */}
-                <div>
-                  <label className="text-xs font-medium text-foreground mb-2 block">{t.avatarSelect?.ethnicity || 'Ethnicity'}</label>
-                  <div className="flex gap-2">
-                    {ETHNICITY_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => setAiEthnicity(option.value)}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                          aiEthnicity === option.value
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary/50 text-foreground hover:bg-secondary'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 체형 선택 */}
-                <div>
-                  <label className="text-xs font-medium text-foreground mb-2 block">{t.avatarSelect?.bodyType || 'Body Type'}</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {BODY_TYPE_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => setAiBodyType(option.value)}
-                        className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                          aiBodyType === option.value
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary/50 text-foreground hover:bg-secondary'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                {/* 상세 옵션 설정 버튼 */}
+                <button
+                  onClick={() => setShowDetailedOptionsModal(true)}
+                  className="w-full py-2.5 px-4 bg-secondary hover:bg-secondary/80 rounded-lg text-sm font-medium text-foreground transition-colors flex items-center justify-center gap-2 border border-border"
+                >
+                  <Settings2 className="w-4 h-4" />
+                  {t.avatarSelect?.configureOptions || 'Configure Detailed Options'}
+                </button>
 
                 {/* 선택 버튼 */}
                 <button
@@ -407,13 +388,7 @@ export function AvatarSelectModal({
                       avatarName: t.avatarSelect?.aiModel || 'AI Generated Model',
                       imageUrl: '',  // AI 생성은 이미지 URL이 없음
                       displayName: t.avatarSelect?.aiAutoGenerate || 'AI Auto Generate',
-                      aiOptions: {
-                        targetGender: aiGender,
-                        targetAge: aiAge,
-                        style: aiStyle,
-                        ethnicity: aiEthnicity,
-                        bodyType: aiBodyType,
-                      },
+                      aiOptions: convertToAiAvatarOptions(detailedAiOptions),
                     })
                   }}
                   className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
@@ -424,6 +399,14 @@ export function AvatarSelectModal({
               </div>
             )}
           </div>
+
+          {/* AI 아바타 상세 옵션 모달 */}
+          <AiAvatarOptionsModal
+            isOpen={showDetailedOptionsModal}
+            onClose={() => setShowDetailedOptionsModal(false)}
+            onConfirm={(options) => setDetailedAiOptions(options)}
+            initialOptions={detailedAiOptions}
+          />
 
           {/* 구분선 */}
           <div className="flex items-center gap-3 my-4">
