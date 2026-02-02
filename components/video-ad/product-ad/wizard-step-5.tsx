@@ -1904,7 +1904,7 @@ export function WizardStep5() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
                     {resolutionOptions.map((option) => {
                       const isLocked = isFreeUser && option.value !== FREE_USER_LIMITS.maxResolution
                       return (
