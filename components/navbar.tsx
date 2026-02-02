@@ -207,51 +207,48 @@ export function Navbar() {
                 {loading ? (
                   <div className="h-9 w-9 bg-secondary animate-pulse rounded-full" />
                 ) : user ? (
-                  // 로그인 상태 - 아바타 + 드롭다운 메뉴
-                  <div className="relative" ref={menuRef}>
-                    <button
-                      onClick={() => setShowMenu(!showMenu)}
-                      className="flex items-center gap-2 p-1 rounded-full hover:bg-secondary/50 transition-colors"
-                    >
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary via-purple-500 to-pink-500 flex items-center justify-center ring-2 ring-background">
-                        <span className="text-white font-semibold text-sm">
-                          {getUserInitials()}
-                        </span>
-                      </div>
-                      <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showMenu ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {showMenu && (
-                      <div className="absolute right-0 mt-2 w-56 rounded-xl border border-border bg-background/95 backdrop-blur-lg shadow-xl py-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                        <div className="px-4 py-3 border-b border-border">
-                          <p className="text-sm font-medium text-foreground truncate">
-                            {user.email}
-                          </p>
+                  // 로그인 상태 - 대시보드 버튼 + 아바타 드롭다운
+                  <>
+                    <Link href="/dashboard">
+                      <Button size="sm" className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 shadow-lg shadow-primary/25">
+                        <LayoutDashboard className="w-4 h-4 mr-1.5" />
+                        {t.landing?.dashboard || 'Dashboard'}
+                      </Button>
+                    </Link>
+                    <div className="relative" ref={menuRef}>
+                      <button
+                        onClick={() => setShowMenu(!showMenu)}
+                        className="flex items-center gap-1 p-1 rounded-full hover:bg-secondary/50 transition-colors"
+                      >
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary via-purple-500 to-pink-500 flex items-center justify-center ring-2 ring-background">
+                          <span className="text-white font-semibold text-sm">
+                            {getUserInitials()}
+                          </span>
                         </div>
+                        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showMenu ? 'rotate-180' : ''}`} />
+                      </button>
 
-                        <div className="py-1">
-                          <Link
-                            href="/dashboard"
-                            onClick={() => setShowMenu(false)}
-                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary/50 transition-colors"
-                          >
-                            <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
-                            {t.landing?.dashboard || 'Dashboard'}
-                          </Link>
-                        </div>
+                      {showMenu && (
+                        <div className="absolute right-0 mt-2 w-56 rounded-xl border border-border bg-background/95 backdrop-blur-lg shadow-xl py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                          <div className="px-4 py-3 border-b border-border">
+                            <p className="text-sm font-medium text-foreground truncate">
+                              {user.email}
+                            </p>
+                          </div>
 
-                        <div className="border-t border-border pt-1">
-                          <button
-                            onClick={handleLogout}
-                            className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
-                          >
-                            <LogOut className="w-4 h-4" />
-                            {t.common?.logout || 'Logout'}
-                          </button>
+                          <div className="pt-1">
+                            <button
+                              onClick={handleLogout}
+                              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                            >
+                              <LogOut className="w-4 h-4" />
+                              {t.common?.logout || 'Logout'}
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  </>
                 ) : (
                   // 비로그인 상태
                   <>
