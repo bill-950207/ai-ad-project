@@ -85,6 +85,11 @@ export default function LoginPage() {
     })
 
     if (error) {
+      // 이메일 미인증 에러 처리
+      if (error.message.toLowerCase().includes('email not confirmed')) {
+        router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+        return
+      }
       setError(error.message)
       setLoading(false)
       return
@@ -99,6 +104,26 @@ export default function LoginPage() {
       // 이메일 미인증 시 인증 페이지로 리다이렉트
       router.push(`/verify-email?email=${encodeURIComponent(email)}`)
       return
+    }
+
+    // 프로필/온보딩 상태 확인
+    try {
+      const res = await fetch('/api/me')
+      if (res.ok) {
+        const { data: profile } = await res.json()
+        if (!profile?.is_onboarded) {
+          router.push('/onboarding')
+          router.refresh()
+          return
+        }
+      } else if (res.status === 404) {
+        // 프로필이 없는 경우 온보딩으로
+        router.push('/onboarding')
+        router.refresh()
+        return
+      }
+    } catch {
+      // API 오류 시 대시보드로 (layout에서 체크)
     }
 
     router.push('/dashboard')

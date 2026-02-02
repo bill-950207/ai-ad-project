@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { DEFAULT_SIGNUP_CREDITS } from '@/lib/credits/constants'
 
 export async function POST(request: Request) {
   try {
@@ -34,10 +35,22 @@ export async function POST(request: Request) {
       )
     }
 
-    // 프로필 업데이트
-    const profile = await prisma.profiles.update({
+    // 프로필 upsert (없으면 생성, 있으면 업데이트)
+    const profile = await prisma.profiles.upsert({
       where: { id: user.id },
-      data: {
+      create: {
+        id: user.id,
+        email: user.email,
+        name: name.trim(),
+        company: company?.trim() || null,
+        job_title: jobTitle || null,
+        industry: industry || null,
+        team_size: teamSize || null,
+        referral_source: referralSource || null,
+        is_onboarded: true,
+        credits: DEFAULT_SIGNUP_CREDITS,
+      },
+      update: {
         name: name.trim(),
         company: company?.trim() || null,
         job_title: jobTitle || null,
