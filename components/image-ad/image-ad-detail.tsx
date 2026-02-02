@@ -941,7 +941,7 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
               onClick={handleRegisterShowcase}
               disabled={isRegisteringShowcase}
               className="p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-500 transition-all duration-200 disabled:opacity-50"
-              title="쇼케이스 등록"
+              title={t.imageAdDetail?.registerShowcase || 'Register to Showcase'}
             >
               {isRegisteringShowcase ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

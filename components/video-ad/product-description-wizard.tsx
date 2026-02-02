@@ -2282,7 +2282,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   <textarea
                     value={editableDescription}
                     onChange={(e) => setEditableDescription(e.target.value)}
-                    placeholder="제품에 대한 설명..."
+                    placeholder={t.productDescWizard.placeholders.productDescription}
                     rows={2}
                     className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
                   />
@@ -2300,7 +2300,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                           type="text"
                           value={point}
                           onChange={(e) => updateSellingPoint(index, e.target.value)}
-                          placeholder="제품의 장점이나 특징"
+                          placeholder={t.productDescWizard.placeholders.sellingPoint}
                           className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                         />
                         {editableSellingPoints.length > 1 && (
@@ -2512,7 +2512,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                 type="text"
                 value={locationPrompt}
                 onChange={(e) => setLocationPrompt(e.target.value)}
-                placeholder="원하는 장소를 설명해주세요... (예: 햇살이 들어오는 밝은 거실)"
+                placeholder={t.productDescWizard.placeholders.locationDescription}
                 className="mt-3 w-full px-4 py-2.5 text-sm bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
               />
             )}
@@ -2713,7 +2713,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                 type="text"
                 value={outfitCustom}
                 onChange={(e) => setOutfitCustom(e.target.value)}
-                placeholder="원하는 의상을 설명해주세요... (예: 흰색 린넨 셔츠와 베이지 슬랙스)"
+                placeholder={t.productDescWizard.placeholders.outfitDescription}
                 className="w-full px-4 py-2.5 text-sm bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
               />
             )}
@@ -2834,10 +2834,10 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                             window.open(firstFrameOriginalUrls[index] || url, '_blank')
                           }}
                           className="absolute bottom-2 right-2 px-2 py-1 bg-black/60 hover:bg-black/80 rounded text-white text-xs flex items-center gap-1 transition-colors"
-                          title="크게 보기"
+                          title={t.common?.viewLarge || 'View Large'}
                         >
                           <Expand className="w-3 h-3" />
-                          크게 보기
+                          {t.common?.viewLarge || 'View Large'}
                         </button>
                       </div>
                     ))
@@ -2846,17 +2846,17 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                       <div className="aspect-[2/3] w-[180px] rounded-lg overflow-hidden border border-border">
                         <img
                           src={firstFrameUrl}
-                          alt="첫 프레임"
+                          alt={t.productDescWizard?.firstFrame || 'First Frame'}
                           className="w-full h-full object-cover"
                         />
                       </div>
                       <button
                         onClick={() => window.open(firstFrameOriginalUrl || firstFrameUrl, '_blank')}
                         className="absolute bottom-2 right-2 px-2 py-1 bg-black/60 hover:bg-black/80 rounded text-white text-xs flex items-center gap-1 transition-colors"
-                        title="크게 보기"
+                        title={t.common?.viewLarge || 'View Large'}
                       >
                         <Expand className="w-3 h-3" />
-                        크게 보기
+                        {t.common?.viewLarge || 'View Large'}
                       </button>
                     </div>
                   ) : (
@@ -3103,7 +3103,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               <div className="mt-6">
                 <img
                   src={firstFrameUrl}
-                  alt="첫 프레임"
+                  alt={t.productDescWizard?.firstFrame || 'First Frame'}
                   className="w-32 h-56 object-cover rounded-lg mx-auto"
                 />
               </div>

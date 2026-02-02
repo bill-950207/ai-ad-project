@@ -194,108 +194,33 @@
     }
   },
   "pricingPage": {
-    "badge": "シンプルな料金",
-    "title": "最適なプランを選択",
-    "subtitle": "いつでもアップグレードまたはキャンセル可能。隠れた費用なしで透明に。",
-    "monthly": "月払い",
-    "yearly": "年払い",
-    "popular": "人気",
+    "title": "プラン選択",
+    "subtitle": "ニーズに合ったプランを選択してください。いつでもアップグレードできます。",
+    "loadError": "プラン情報を読み込めません。",
+    "checkoutError": "決済ページを開けません。",
+    "processingError": "決済処理中にエラーが発生しました。しばらくしてからお試しください。",
+    "monthlyBilling": "月額課金",
+    "yearlyBilling": "年額課金",
+    "save": "節約",
     "free": "無料",
-    "perMonth": "月",
-    "yearlySavings": "年${{amount}}節約！",
+    "perMonth": "/月",
+    "yearlySavings": "年間${amount}お得！",
     "avatars": "アバター",
     "music": "音楽",
-    "products": "製品",
+    "products": "商品",
     "credits": "クレジット",
-    "getStarted": "始める",
-    "cancelAnytime": "いつでもキャンセル可能",
-    "keepContent": "コンテンツ永久保存",
-    "creditsRollOver": "クレジット繰越",
-    "ctaText": "すべてのプランで無料スタート。今すぐ最初の広告を作成！",
-    "startFree": "無料で始める",
-    "plans": {
-      "free": {
-        "description": "始めるのに最適な無料プラン",
-        "valueHighlight": "",
-        "features": [
-          "AIアバター生成",
-          "AI BGM生成",
-          "自動背景除去",
-          "画像1枚ずつ生成",
-          "最短動画のみ",
-          "透かし付き"
-        ],
-        "limits": {
-          "avatars": "最大3個",
-          "music": "最大5個",
-          "products": "最大3個",
-          "credits": "15クレジット（1回）",
-          "imageEstimate": "～7枚の広告画像",
-          "videoEstimate": ""
-        }
-      },
-      "starter": {
-        "description": "個人クリエイター向けプラン",
-        "valueHighlight": "他社より4倍お得",
-        "features": [
-          "全Free機能含む",
-          "透かしなし",
-          "HD高画質アップスケール",
-          "画像最大5枚同時生成",
-          "動画長さ選択可能",
-          "優先生成キュー"
-        ],
-        "limits": {
-          "avatars": "最大9個",
-          "music": "最大15個",
-          "products": "最大9個",
-          "credits": "120クレジット/月",
-          "imageEstimate": "～60枚の広告画像",
-          "videoEstimate": "～12本の広告動画"
-        }
-      },
-      "pro": {
-        "description": "プロフェッショナル向けプラン",
-        "valueHighlight": "画像1枚$0.14",
-        "features": [
-          "全Starter機能含む",
-          "最優先生成処理",
-          "高品質画像生成",
-          "動画3本同時生成",
-          "プロ用テンプレート",
-          "プレミアムサポート"
-        ],
-        "limits": {
-          "avatars": "最大30個",
-          "music": "最大50個",
-          "products": "最大30個",
-          "credits": "420クレジット/月",
-          "imageEstimate": "～210枚の広告画像",
-          "videoEstimate": "～42本の広告動画"
-        }
-      },
-      "business": {
-        "description": "チームと企業向けプラン",
-        "valueHighlight": "画像1枚$0.12",
-        "features": [
-          "全Pro機能含む",
-          "無制限コンテンツ生成",
-          "専用サポート",
-          "APIアクセス",
-          "チームコラボ機能",
-          "カスタムブランディング",
-          "優先機能アップデート"
-        ],
-        "limits": {
-          "avatars": "無制限",
-          "music": "無制限",
-          "products": "無制限",
-          "credits": "1,600クレジット/月",
-          "imageEstimate": "～800枚の広告画像",
-          "videoEstimate": "～160本の広告動画"
-        }
-      }
-    }
+    "currentPlan": "現在のプラン",
+    "popular": "人気",
+    "bestValue": "Best Value",
+    "cannotDowngrade": "ダウングレード不可",
+    "upgrade": "アップグレード",
+    "subscribe": "購読する",
+    "processing": "処理中...",
+    "cancelAnytime": "いつでも解約可能",
+    "keepContent": "生成コンテンツを永久保存",
+    "creditsRollOver": "クレジット翌月繰越",
+    "allPlansCancelable": "すべての有料プランはいつでも解約できます。解約後も次回請求日までサービスをご利用いただけ、生成したコンテンツは保存されます。",
+    "watermarkIncluded": "ウォーターマーク付き"
   },
   "showcase": {
     "title": "制作事例",
@@ -713,10 +638,22 @@
     "pleaseWait": "しばらくお待ちください",
     "wizard": {
       "steps": {
-        "step1": { "title": "基本情報", "description": "タイプ、商品、アバター" },
-        "step2": { "title": "設定方法", "description": "手動/AI/参照" },
-        "step3": { "title": "詳細オプション", "description": "ポーズ、背景、照明" },
-        "step4": { "title": "生成", "description": "比率、品質、価格" }
+        "step1": {
+          "title": "基本情報",
+          "description": "タイプ、商品、アバター"
+        },
+        "step2": {
+          "title": "設定方法",
+          "description": "手動/AI/参照"
+        },
+        "step3": {
+          "title": "詳細オプション",
+          "description": "ポーズ、背景、照明"
+        },
+        "step4": {
+          "title": "生成",
+          "description": "比率、品質、価格"
+        }
       },
       "selectAdType": "広告タイプを選択",
       "optional": "(オプション)",
@@ -1042,7 +979,6 @@
       "localImage": "ローカル画像"
     },
     "scriptStyle": "スクリプトスタイル",
-    "productInfo": "製品情報",
     "styleLabels": {
       "formal": "フォーマル",
       "casual": "カジュアル",
@@ -1403,7 +1339,14 @@
     }
   },
   "productDescWizard": {
-    "loadingDraft": "保存されたデータを読み込み中..."
+    "loadingDraft": "保存されたデータを読み込み中...",
+    "placeholders": {
+      "productDescription": "製品についての説明...",
+      "sellingPoint": "製品のメリットや特徴",
+      "locationDescription": "ご希望の場所を説明してください... (例: 日差しが差し込む明るいリビング)",
+      "outfitDescription": "ご希望の衣装を説明してください... (例: 白いリネンシャツとベージュのスラックス)"
+    },
+    "firstFrame": "最初のフレーム"
   },
   "imageAdDetail": {
     "title": "画像広告詳細",
@@ -1431,7 +1374,8 @@
     "registerFailed": "登録に失敗しました。",
     "registerError": "登録中にエラーが発生しました。",
     "deleteSingleFailed": "画像の削除に失敗しました。",
-    "deleteImage": "画像を削除"
+    "deleteImage": "画像を削除",
+    "registerShowcase": "ショーケースに登録"
   },
   "imageAdCreate": {
     "title": "画像広告作成",
@@ -2241,35 +2185,6 @@
     "unlimited": "無制限",
     "usageInfo": "制限を超えるとクレジットが消費されます。もっと生成したい場合は",
     "upgradePlanLink": "プランをアップグレード"
-  },
-  "pricingPage": {
-    "title": "プラン選択",
-    "subtitle": "ニーズに合ったプランを選択してください。いつでもアップグレードできます。",
-    "loadError": "プラン情報を読み込めません。",
-    "checkoutError": "決済ページを開けません。",
-    "processingError": "決済処理中にエラーが発生しました。しばらくしてからお試しください。",
-    "monthlyBilling": "月額課金",
-    "yearlyBilling": "年額課金",
-    "save": "節約",
-    "free": "無料",
-    "perMonth": "/月",
-    "yearlySavings": "年間${amount}お得！",
-    "avatars": "アバター",
-    "music": "音楽",
-    "products": "商品",
-    "credits": "クレジット",
-    "currentPlan": "現在のプラン",
-    "popular": "人気",
-    "bestValue": "Best Value",
-    "cannotDowngrade": "ダウングレード不可",
-    "upgrade": "アップグレード",
-    "subscribe": "購読する",
-    "processing": "処理中...",
-    "cancelAnytime": "いつでも解約可能",
-    "keepContent": "生成コンテンツを永久保存",
-    "creditsRollOver": "クレジット翌月繰越",
-    "allPlansCancelable": "すべての有料プランはいつでも解約できます。解約後も次回請求日までサービスをご利用いただけ、生成したコンテンツは保存されます。",
-    "watermarkIncluded": "ウォーターマーク付き"
   },
   "onboardingModal": {
     "videoTypeTitle": "動画広告タイプを選択",

@@ -194,12 +194,14 @@
     }
   },
   "pricingPage": {
-    "badge": "简单定价",
     "title": "选择适合您的方案",
     "subtitle": "随时升级或取消。透明定价，无隐藏费用。",
-    "monthly": "月付",
-    "yearly": "年付",
-    "popular": "热门",
+    "loadError": "无法加载方案信息。",
+    "checkoutError": "无法打开支付页面。",
+    "processingError": "支付处理中出现错误，请稍后重试。",
+    "monthlyBilling": "月付",
+    "yearlyBilling": "年付",
+    "save": "节省",
     "free": "免费",
     "perMonth": "月",
     "yearlySavings": "年省${{amount}}！",
@@ -207,95 +209,18 @@
     "music": "音乐",
     "products": "产品",
     "credits": "积分",
-    "getStarted": "开始使用",
+    "currentPlan": "当前方案",
+    "popular": "热门",
+    "bestValue": "超值之选",
+    "cannotDowngrade": "无法降级",
+    "upgrade": "升级",
+    "subscribe": "订阅",
+    "processing": "处理中...",
     "cancelAnytime": "随时取消",
     "keepContent": "内容永久保存",
     "creditsRollOver": "积分可累积",
-    "ctaText": "所有方案免费开始。立即创建您的第一个广告！",
-    "startFree": "免费开始",
-    "plans": {
-      "free": {
-        "description": "适合入门的免费方案",
-        "valueHighlight": "",
-        "features": [
-          "AI虚拟形象生成",
-          "AI背景音乐生成",
-          "自动移除背景",
-          "每次1张图片",
-          "仅最短视频",
-          "含水印"
-        ],
-        "limits": {
-          "avatars": "最多3个",
-          "music": "最多5个",
-          "products": "最多3个",
-          "credits": "15积分（一次性）",
-          "imageEstimate": "约7张广告图片",
-          "videoEstimate": ""
-        }
-      },
-      "starter": {
-        "description": "个人创作者专属方案",
-        "valueHighlight": "比同行便宜4倍",
-        "features": [
-          "包含所有Free功能",
-          "无水印",
-          "HD高清放大",
-          "最多5张图片同时生成",
-          "可选视频长度",
-          "优先生成队列"
-        ],
-        "limits": {
-          "avatars": "最多9个",
-          "music": "最多15个",
-          "products": "最多9个",
-          "credits": "120积分/月",
-          "imageEstimate": "约60张广告图片",
-          "videoEstimate": "约12个广告视频"
-        }
-      },
-      "pro": {
-        "description": "专业人士专属方案",
-        "valueHighlight": "每张$0.14",
-        "features": [
-          "包含所有Starter功能",
-          "最高优先级处理",
-          "高质量图片生成",
-          "3个视频同时生成",
-          "专业模板",
-          "高级客户支持"
-        ],
-        "limits": {
-          "avatars": "最多30个",
-          "music": "最多50个",
-          "products": "最多30个",
-          "credits": "420积分/月",
-          "imageEstimate": "约210张广告图片",
-          "videoEstimate": "约42个广告视频"
-        }
-      },
-      "business": {
-        "description": "团队和企业专属方案",
-        "valueHighlight": "每张$0.12",
-        "features": [
-          "包含所有Pro功能",
-          "无限内容生成",
-          "专属客户支持",
-          "API访问",
-          "团队协作功能",
-          "自定义品牌",
-          "优先功能更新"
-        ],
-        "limits": {
-          "avatars": "无限",
-          "music": "无限",
-          "products": "无限",
-          "credits": "1,600积分/月",
-          "imageEstimate": "约800张广告图片",
-          "videoEstimate": "约160个广告视频"
-        }
-      }
-    }
+    "allPlansCancelable": "所有付费方案均可随时取消。取消后可继续使用至下一个账单日期，您创建的内容将继续保留。",
+    "watermarkIncluded": "含水印"
   },
   "showcase": {
     "title": "作品展示",
@@ -587,9 +512,9 @@
     "moods": {
       "bright": "明亮",
       "calm": "平静",
-      "exciting": "激动",
       "emotional": "感性",
       "professional": "专业",
+      "exciting": "激动",
       "trendy": "潮流",
       "playful": "俏皮",
       "romantic": "浪漫",
@@ -713,10 +638,22 @@
     "pleaseWait": "请稍候",
     "wizard": {
       "steps": {
-        "step1": { "title": "基本信息", "description": "类型、产品、虚拟形象" },
-        "step2": { "title": "设置方式", "description": "手动/AI/参考" },
-        "step3": { "title": "详细选项", "description": "姿势、背景、灯光" },
-        "step4": { "title": "生成", "description": "比例、质量、价格" }
+        "step1": {
+          "title": "基本信息",
+          "description": "类型、产品、虚拟形象"
+        },
+        "step2": {
+          "title": "设置方式",
+          "description": "手动/AI/参考"
+        },
+        "step3": {
+          "title": "详细选项",
+          "description": "姿势、背景、灯光"
+        },
+        "step4": {
+          "title": "生成",
+          "description": "比例、质量、价格"
+        }
       },
       "selectAdType": "选择广告类型",
       "optional": "(可选)",
@@ -1042,7 +979,6 @@
       "localImage": "本地图片"
     },
     "scriptStyle": "脚本风格",
-    "productInfo": "产品信息",
     "styleLabels": {
       "formal": "正式",
       "casual": "休闲",
@@ -1400,10 +1336,17 @@
       "errorSceneRegeneration": "场景视频重新生成失败。",
       "errorVideoGeneration": "视频生成失败。",
       "errorMergeVideo": "视频合并失败。"
-    },
-    "productDescWizard": {
-      "loadingDraft": "正在加载保存的数据..."
     }
+  },
+  "productDescWizard": {
+    "loadingDraft": "正在加载临时保存的数据...",
+    "placeholders": {
+      "productDescription": "产品描述...",
+      "sellingPoint": "产品优势或特点",
+      "locationDescription": "描述您想要的场景... (例如: 阳光洒进的明亮客厅)",
+      "outfitDescription": "描述您想要的服装... (例如: 白色亚麻衬衫和米色休闲裤)"
+    },
+    "firstFrame": "首帧"
   },
   "imageAdDetail": {
     "title": "图片广告详情",
@@ -1431,7 +1374,8 @@
     "registerFailed": "注册失败。",
     "registerError": "注册过程中发生错误。",
     "deleteSingleFailed": "图片删除失败。",
-    "deleteImage": "删除图片"
+    "deleteImage": "删除图片",
+    "registerShowcase": "添加到展示"
   },
   "imageAdCreate": {
     "title": "创建图片广告",
@@ -2242,34 +2186,21 @@
     "usageInfo": "超过限额时将扣除积分。需要更多？",
     "upgradePlanLink": "升级您的套餐"
   },
-  "pricingPageDashboard": {
-    "title": "选择套餐",
-    "subtitle": "选择适合您需求的套餐。随时可升级。",
-    "loadError": "无法加载套餐信息。",
-    "checkoutError": "无法打开结账页面。",
-    "processingError": "结账过程中发生错误，请稍后重试。",
-    "monthlyBilling": "月付",
-    "yearlyBilling": "年付",
-    "save": "节省",
-    "free": "免费",
-    "perMonth": "/月",
-    "yearlySavings": "年省${amount}！",
-    "avatars": "虚拟形象",
-    "music": "音乐",
-    "products": "产品",
-    "credits": "积分",
-    "currentPlan": "当前套餐",
-    "popular": "热门",
-    "bestValue": "超值",
-    "cannotDowngrade": "无法降级",
-    "upgrade": "升级",
-    "subscribe": "订阅",
-    "processing": "处理中...",
-    "cancelAnytime": "随时取消",
-    "keepContent": "内容永久保存",
-    "creditsRollOver": "积分可累积",
-    "allPlansCancelable": "所有付费套餐均可随时取消。取消后您可继续使用到下个付款日，生成的内容将永久保存。",
-    "watermarkIncluded": "含水印"
+  "onboardingModal": {
+    "videoTypeTitle": "选择视频广告类型",
+    "videoTypeSubtitle": "选择您想创建的视频广告类型",
+    "imageTypeTitle": "选择图片广告类型",
+    "imageTypeSubtitle": "选择您想创建的图片广告类型",
+    "videoAdPrepare": "准备视频广告",
+    "imageAdPrepare": "准备图片广告",
+    "productSubtitle": "选择或注册广告产品",
+    "productProcessingSubtitle": "正在分析产品图片",
+    "productEditingSubtitle": "调整产品尺寸",
+    "avatarSubtitle": "选择广告虚拟形象",
+    "avatarProcessingSubtitle": "正在生成虚拟形象",
+    "completeSubtitle": "所有准备工作已完成",
+    "close": "关闭",
+    "nextStep": "下一步"
   },
   "adProductForm": {
     "fetchFromUrl": "从URL获取",
@@ -2301,21 +2232,5 @@
       "fetchFailed": "无法获取信息",
       "slotFull": "槽位已满"
     }
-  },
-  "onboardingModal": {
-    "videoTypeTitle": "选择视频广告类型",
-    "videoTypeSubtitle": "选择您想创建的视频广告类型",
-    "imageTypeTitle": "选择图片广告类型",
-    "imageTypeSubtitle": "选择您想创建的图片广告类型",
-    "videoAdPrepare": "准备视频广告",
-    "imageAdPrepare": "准备图片广告",
-    "productSubtitle": "选择或注册广告产品",
-    "productProcessingSubtitle": "正在分析产品图片",
-    "productEditingSubtitle": "调整产品尺寸",
-    "avatarSubtitle": "选择广告虚拟形象",
-    "avatarProcessingSubtitle": "正在生成虚拟形象",
-    "completeSubtitle": "所有准备工作已完成",
-    "close": "关闭",
-    "nextStep": "下一步"
   }
 }
