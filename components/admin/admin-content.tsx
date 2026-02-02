@@ -113,6 +113,14 @@ export function AdminContent() {
   const [isSaving, setIsSaving] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
+  // WebP 변환 상태
+  const [isConverting, setIsConverting] = useState(false)
+  const [convertResult, setConvertResult] = useState<{
+    converted: number
+    failed: number
+    message: string
+  } | null>(null)
+
   // Check admin role and fetch showcases
   const checkAdminAndFetch = useCallback(async () => {
     try {
@@ -243,6 +251,44 @@ export function AdminContent() {
     }
   }
 
+  // WebP 변환 핸들러
+  const handleConvertToWebp = async () => {
+    if (!confirm('webp가 아닌 모든 썸네일을 webp로 변환하시겠습니까?')) {
+      return
+    }
+
+    setIsConverting(true)
+    setConvertResult(null)
+
+    try {
+      const res = await fetch('/api/admin/convert-thumbnails-to-webp', {
+        method: 'POST',
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to convert')
+      }
+
+      setConvertResult({
+        converted: data.converted,
+        failed: data.failed,
+        message: data.message,
+      })
+
+      // 변환 후 목록 새로고침
+      if (data.converted > 0) {
+        checkAdminAndFetch()
+      }
+    } catch (err) {
+      console.error('Convert error:', err)
+      alert(err instanceof Error ? err.message : 'Failed to convert')
+    } finally {
+      setIsConverting(false)
+    }
+  }
+
   // Loading state
   if (isLoading || isAdmin === null) {
     return (
@@ -272,18 +318,52 @@ export function AdminContent() {
             {adminT?.subtitle || 'Manage ad examples displayed on dashboard.'}
           </p>
         </div>
-        <button
-          onClick={openCreateModal}
-          className={cn(
-            "flex items-center gap-2 px-4 py-2.5 rounded-xl",
-            "bg-primary text-primary-foreground",
-            "hover:bg-primary/90 transition-colors"
-          )}
-        >
-          <Plus className="w-4 h-4" />
-          {adminT?.addNew || 'Add New Showcase'}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleConvertToWebp}
+            disabled={isConverting}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2.5 rounded-xl",
+              "bg-orange-500 text-white",
+              "hover:bg-orange-600 transition-colors",
+              "disabled:opacity-50 disabled:cursor-not-allowed"
+            )}
+          >
+            {isConverting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Image className="w-4 h-4" />
+            )}
+            {isConverting ? 'Converting...' : 'Convert to WebP'}
+          </button>
+          <button
+            onClick={openCreateModal}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2.5 rounded-xl",
+              "bg-primary text-primary-foreground",
+              "hover:bg-primary/90 transition-colors"
+            )}
+          >
+            <Plus className="w-4 h-4" />
+            {adminT?.addNew || 'Add New Showcase'}
+          </button>
+        </div>
       </div>
+
+      {/* Convert Result */}
+      {convertResult && (
+        <div className={cn(
+          "mb-6 p-4 rounded-xl border",
+          convertResult.failed > 0
+            ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-400"
+            : "bg-green-500/10 border-green-500/30 text-green-400"
+        )}>
+          <p className="font-medium">{convertResult.message}</p>
+          <p className="text-sm mt-1 opacity-80">
+            성공: {convertResult.converted}개 / 실패: {convertResult.failed}개
+          </p>
+        </div>
+      )}
 
       {/* Showcase Table */}
       <div className="bg-card/50 border border-border rounded-xl overflow-hidden">
