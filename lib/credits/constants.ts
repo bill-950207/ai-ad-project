@@ -96,8 +96,8 @@ export const TTS_CREDIT_COST = 0
 /** 배경 제거 크레딧 (무료 - Kie.ai Recraft: ~$0.01) */
 export const REMBG_CREDIT_COST = 0
 
-/** 제품 등록 크레딧 (한도 초과 시 부과, 배경 제거 포함: ~$0.02) */
-export const PRODUCT_CREDIT_COST = 1
+/** 제품 등록 크레딧 (무료 - 배경 제거 포함) */
+export const PRODUCT_CREDIT_COST = 0
 
 // ============================================================
 // 회원가입 관련

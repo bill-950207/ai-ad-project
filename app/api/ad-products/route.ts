@@ -145,21 +145,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 크레딧 사전 확인 (빠른 실패를 위해)
-    const profile = await prisma.profiles.findUnique({
-      where: { id: user.id },
-      select: { credits: true },
-    })
+    // 크레딧 사전 확인 (무료가 아닌 경우에만)
+    if (PRODUCT_CREDIT_COST > 0) {
+      const profile = await prisma.profiles.findUnique({
+        where: { id: user.id },
+        select: { credits: true },
+      })
 
-    if (!profile || (profile.credits ?? 0) < PRODUCT_CREDIT_COST) {
-      return NextResponse.json(
-        {
-          error: 'Insufficient credits',
-          required: PRODUCT_CREDIT_COST,
-          available: profile?.credits ?? 0,
-        },
-        { status: 402 }
-      )
+      if (!profile || (profile.credits ?? 0) < PRODUCT_CREDIT_COST) {
+        return NextResponse.json(
+          {
+            error: 'Insufficient credits',
+            required: PRODUCT_CREDIT_COST,
+            available: profile?.credits ?? 0,
+          },
+          { status: 402 }
+        )
+      }
     }
 
     // 1. 먼저 제품 레코드 생성 (PENDING 상태)
@@ -208,22 +210,24 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // 5. 크레딧 차감 (트랜잭션으로 재확인 후 원자적 차감)
-      await prisma.$transaction(async (tx) => {
-        const currentProfile = await tx.profiles.findUnique({
-          where: { id: user.id },
-          select: { credits: true },
-        })
+      // 5. 크레딧 차감 (무료가 아닌 경우에만)
+      if (PRODUCT_CREDIT_COST > 0) {
+        await prisma.$transaction(async (tx) => {
+          const currentProfile = await tx.profiles.findUnique({
+            where: { id: user.id },
+            select: { credits: true },
+          })
 
-        if (!currentProfile || (currentProfile.credits ?? 0) < PRODUCT_CREDIT_COST) {
-          throw new Error('INSUFFICIENT_CREDITS')
-        }
+          if (!currentProfile || (currentProfile.credits ?? 0) < PRODUCT_CREDIT_COST) {
+            throw new Error('INSUFFICIENT_CREDITS')
+          }
 
-        await tx.profiles.update({
-          where: { id: user.id },
-          data: { credits: { decrement: PRODUCT_CREDIT_COST } },
-        })
-      }, { timeout: 10000 })
+          await tx.profiles.update({
+            where: { id: user.id },
+            data: { credits: { decrement: PRODUCT_CREDIT_COST } },
+          })
+        }, { timeout: 10000 })
+      }
 
       return NextResponse.json({
         product: updatedProduct,
