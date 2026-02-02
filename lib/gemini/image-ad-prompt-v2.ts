@@ -460,17 +460,46 @@ Model ${outfitText}.
 - Example: If product is a jacket, the outfit option describes what pants/shoes to wear WITH the jacket.` : ''}`
     : ''
 
+  // 모델 불포함 지시 (productOnly 또는 seasonal+아바타없음일 때)
+  const noModelInstruction = !figureInfo.needsModel
+    ? `\n=== CRITICAL: PRODUCT ONLY MODE ===
+⚠️ This is a PRODUCT-ONLY advertisement. DO NOT include:
+- Any human model, person, or human body parts
+- Hands, fingers, arms, or any human limbs
+- Human silhouettes or figures
+- Any suggestion of human presence
+
+The product must be the SOLE subject. Use props, backgrounds, and seasonal elements ONLY.
+Violation of this rule will result in rejection.`
+    : ''
+
+  // seasonal + 아바타 없음일 때는 제품 전용 시즌 광고 설명 사용
+  const adTypeDescription = (input.adType === 'seasonal' && !figureInfo.needsModel)
+    ? `Seasonal/Theme PRODUCT-ONLY Shot (NO HUMAN MODEL):
+- ⚠️ CRITICAL: This is a PRODUCT-ONLY seasonal advertisement. NO human models, NO hands, NO people.
+- Theme elements: Season-appropriate props, decorations, and colors AROUND the product
+  • Spring: Flowers, pastels, fresh greenery surrounding the product
+  • Summer: Bright light, summer props, vibrant colors with product as center
+  • Autumn: Warm tones, leaves, cozy textures framing the product
+  • Winter: Cool tones, holiday decorations, warm lighting on product
+  • Holiday: Festive decorations (Christmas ornaments, Valentine hearts, etc.) with product
+- Product is the SOLE SUBJECT - no human presence whatsoever
+- Color palette: Cohesive with seasonal theme
+- Atmosphere: Strong seasonal mood created by props and lighting, NOT by people
+- Camera: Product-focused, 50mm or macro lens for detail`
+    : AD_TYPE_DESCRIPTIONS[input.adType]
+
   // 시스템 프롬프트 (핵심 보존, 중복 제거)
   const systemPrompt = `You are an expert advertising photographer. Generate a Seedream 4.5 optimized prompt for "${input.adType}" advertisement.
 
 === AD TYPE ===
-${input.adType}: ${AD_TYPE_DESCRIPTIONS[input.adType]}
+${input.adType}: ${adTypeDescription}
 
 ${figureInfo.guide}
 
 Product Category: ${productCategory}
 Options: ${JSON.stringify(input.selectedOptions)}${input.additionalPrompt ? `
-Additional: ${input.additionalPrompt}` : ''}${bodyInstruction}${aiAvatarInstruction}${outfitInstruction}
+Additional: ${input.additionalPrompt}` : ''}${bodyInstruction}${aiAvatarInstruction}${outfitInstruction}${noModelInstruction}
 
 === CORE RULES (ALL REQUIRED) ===
 
