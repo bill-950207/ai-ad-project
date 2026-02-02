@@ -655,10 +655,12 @@ export async function POST(request: NextRequest) {
           }
 
           const outfitKey = options.outfit as string
-          // 커스텀 의상인 경우
-          const outfitText = outfitKey === '__custom__' && options.outfitCustom
-            ? `Model wearing ${options.outfitCustom}.`
-            : outfitPrompts[outfitKey] || ''
+          // 프리셋 의상인지 확인 (프리셋에 없으면 커스텀 텍스트로 간주)
+          // 프론트엔드에서 __custom__ 값을 실제 텍스트로 대체하여 전달하므로
+          // outfitPrompts에 없는 값은 커스텀 텍스트로 처리
+          const outfitText = outfitPrompts[outfitKey]
+            ? outfitPrompts[outfitKey]
+            : `Model wearing ${outfitKey}.`  // 커스텀 텍스트 (프론트엔드에서 이미 대체됨)
 
           if (outfitText) {
             // 착용샷의 경우 제품 외 의상임을 명시
