@@ -1459,16 +1459,16 @@ export function WizardStep5() {
         // 크레딧 갱신
         refreshCredits()
 
-        // 상세 페이지로 이동
-        router.push(`/dashboard/video-ad/${draftId}`)
+        // 상세 페이지로 이동 (replace로 히스토리 교체 - 뒤로가기 시 영상 리스트로 이동)
+        router.replace(`/dashboard/video-ad/${draftId}`)
       } catch (err) {
         console.error('Error merging videos:', err)
         setError(err instanceof Error ? err.message : (t.productAdWizard?.step5?.errorMergeVideo || 'Failed to merge videos.'))
         setIsMergingVideos(false)
       }
     } else {
-      // 이미 합쳐졌거나 일반 모드면 바로 이동
-      router.push(`/dashboard/video-ad/${draftId}`)
+      // 이미 합쳐졌거나 일반 모드면 바로 이동 (replace로 히스토리 교체)
+      router.replace(`/dashboard/video-ad/${draftId}`)
     }
   }
 
