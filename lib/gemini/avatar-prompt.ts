@@ -240,16 +240,6 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
     any: '',
   }
 
-  // 의상스타일 매핑 (outfitPreset/outfitCustom과 별개로 기본 의상 스타일)
-  const outfitStyleMap: Record<string, string> = {
-    casual: 'casual relaxed outfit',
-    formal: 'formal elegant attire',
-    sporty: 'sporty athletic wear',
-    professional: 'professional business attire',
-    elegant: 'elegant sophisticated outfit',
-    any: '',
-  }
-
   const targetGenderText = genderMap[input.targetGender || 'any']
   const targetAgeText = ageMap[input.targetAge || 'any']
   const styleText = styleMap[input.style || 'any']
@@ -259,7 +249,6 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
   const heightText = heightMap[input.height || 'any'] || ''
   const hairStyleText = hairStyleMap[input.hairStyle || 'any'] || ''
   const hairColorText = hairColorMap[input.hairColor || 'any'] || ''
-  const outfitStyleText = outfitStyleMap[input.outfitStyle || 'any'] || ''
 
   const cameraConfig = input.cameraComposition
     ? cameraCompositionDescriptions[input.cameraComposition]
@@ -321,7 +310,7 @@ ${input.productImageUrl ? '제품 이미지가 Figure 1로 첨부되어 있습�
 - 연령대: ${targetAgeText}
 - 스타일: ${styleText}
 - 인종/민족: ${ethnicityText} (⚠️ 프롬프트에 반드시 "${ethnicityEnglish}" 키워드 포함 필수)
-- Body type (use this exact English phrase in prompt): ${bodyTypeText}${heightText ? `\n- Height: ${heightText}` : ''}${hairStyleText ? `\n- Hair style: ${hairStyleText}` : ''}${hairColorText ? `\n- Hair color: ${hairColorText}` : ''}${outfitStyleText ? `\n- Outfit style: ${outfitStyleText}` : ''}
+- Body type (use this exact English phrase in prompt): ${bodyTypeText}${heightText ? `\n- Height: ${heightText}` : ''}${hairStyleText ? `\n- Hair style: ${hairStyleText}` : ''}${hairColorText ? `\n- Hair color: ${hairColorText}` : ''}
 
 === 장소/배경 ===
 ${locationSection}

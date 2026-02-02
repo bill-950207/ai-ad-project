@@ -353,9 +353,6 @@ export type AiAvatarHairStyle = 'short' | 'medium' | 'long' | 'any'
 /** AI 아바타 헤어컬러 타입 */
 export type AiAvatarHairColor = 'black' | 'brown' | 'blonde' | 'any'
 
-/** AI 아바타 의상스타일 타입 */
-export type AiAvatarOutfitStyle = 'casual' | 'formal' | 'sporty' | 'professional' | 'elegant' | 'any'
-
 /** AI 아바타 프롬프트 생성 입력 */
 export interface AiAvatarPromptInput {
   productInfo: string
@@ -381,8 +378,6 @@ export interface AiAvatarPromptInput {
   hairStyle?: AiAvatarHairStyle
   /** 헤어컬러 */
   hairColor?: AiAvatarHairColor
-  /** 의상스타일 */
-  outfitStyle?: AiAvatarOutfitStyle
 }
 
 /** AI 아바타 프롬프트 생성 결과 */
