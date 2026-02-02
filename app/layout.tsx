@@ -9,115 +9,29 @@ import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 
 const inter = Inter({ subsets: ["latin"] });
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://aiad.kr";
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://gwanggo.io";
 
 export const metadata: Metadata = {
-  title: {
-    default: "gwanggo - AI 광고 이미지·영상 생성 플랫폼",
-    template: "%s | gwanggo",
-  },
-  description: "AI로 광고 이미지와 영상을 몇 분 만에 생성. 아바타, 제품 광고, 음악까지 원클릭 제작.",
-  keywords: [
-    "AI 광고",
-    "AI 광고 제작",
-    "AI 이미지 생성",
-    "AI 영상 광고",
-    "AI 아바타",
-    "광고 자동화",
-    "마케팅 AI",
-    "제품 광고",
-    "SNS 광고",
-    "인스타그램 광고",
-    "페이스북 광고",
-    "숏폼 광고",
-    "AI 마케팅 도구",
-    "광고 콘텐츠 생성",
-    "이커머스 광고",
-  ],
-  authors: [{ name: "gwanggo", url: siteUrl }],
-  creator: "gwanggo",
-  publisher: "gwanggo",
   metadataBase: new URL(siteUrl),
-  alternates: {
-    canonical: "/",
-    languages: {
-      "ko-KR": "/",
-      "en-US": "/en",
-      "ja-JP": "/ja",
-    },
-  },
-  openGraph: {
-    type: "website",
-    locale: "ko_KR",
-    alternateLocale: ["en_US", "ja_JP"],
-    url: siteUrl,
-    title: "gwanggo - AI 광고 콘텐츠 생성 플랫폼",
-    description: "AI로 전문적인 광고 이미지와 영상을 몇 분 만에 생성하세요. 마케터와 크리에이터를 위한 올인원 AI 광고 솔루션.",
-    siteName: "gwanggo",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "gwanggo - AI 광고 콘텐츠 생성 플랫폼",
-        type: "image/png",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "gwanggo - AI 광고 콘텐츠 생성 플랫폼",
-    description: "AI로 전문적인 광고 이미지와 영상을 몇 분 만에 생성하세요.",
-    images: ["/og-image.png"],
-    creator: "@gwanggo_kr",
+  title: {
+    default: "gwanggo",
+    template: "%s | gwanggo",
   },
   robots: {
     index: true,
     follow: true,
-    nocache: false,
     googleBot: {
       index: true,
       follow: true,
-      noimageindex: false,
       "max-video-preview": -1,
       "max-image-preview": "large",
       "max-snippet": -1,
     },
   },
-  category: "technology",
   verification: {
     google: "AFp7Yd97bOBEafFj1s7Def5JpcDUV8AXvaLdNidfO0U",
     other: { "naver-site-verification": "8d36a0924d8a9611353f704b0900cb50bbfceb94" },
   },
-};
-
-// JSON-LD 구조화 데이터
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  name: "gwanggo",
-  applicationCategory: "BusinessApplication",
-  operatingSystem: "Web",
-  description: "AI로 전문적인 광고 이미지와 영상을 몇 분 만에 생성하는 올인원 AI 광고 플랫폼",
-  url: siteUrl,
-  offers: {
-    "@type": "Offer",
-    price: "0",
-    priceCurrency: "KRW",
-    description: "무료 체험 제공",
-  },
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.8",
-    ratingCount: "150",
-  },
-  featureList: [
-    "AI 이미지 광고 생성",
-    "AI 영상 광고 생성",
-    "AI 아바타 생성",
-    "AI 배경 음악 생성",
-    "제품 광고 자동화",
-  ],
 };
 
 export default function RootLayout({
@@ -126,13 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
-      <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-      </head>
+    <html lang="ko" suppressHydrationWarning>
       <body className={inter.className}>
         <ClarityScript />
         <GoogleAnalytics />
