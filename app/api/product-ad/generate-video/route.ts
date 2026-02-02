@@ -151,11 +151,12 @@ export async function POST(request: NextRequest) {
       throw error
     }
 
-    // 각 영상에 대해 프롬프트 생성 및 요청
+    // 각 영상에 대해 프롬프트 생성 및 요청 (부분 실패 처리)
     const requests: { requestId: string; prompt: string }[] = []
+    let failedCount = 0
 
-    try {
-      for (let i = 0; i < count; i++) {
+    for (let i = 0; i < count; i++) {
+      try {
         // 모델별 최적화된 프롬프트 생성
         const videoPrompt = multiShot
           ? await generateMultiShotPrompt(productName, scenarioElements, duration, videoModel, i)
@@ -198,15 +199,29 @@ export async function POST(request: NextRequest) {
           requestId: `kie:${result.request_id}`,
           prompt: videoPrompt,
         })
+      } catch (requestError) {
+        // 개별 영상 요청 실패 기록
+        console.error(`영상 ${i + 1}/${count} 생성 요청 실패:`, requestError)
+        failedCount++
       }
-    } catch (requestError) {
-      // 영상 생성 요청 실패 시 크레딧 환불
-      console.error('영상 생성 요청 실패, 크레딧 환불:', requestError)
+    }
+
+    // 실패한 영상이 있으면 해당 크레딧 환불
+    if (failedCount > 0) {
+      const refundAmount = failedCount * creditCostPerVideo
       await prisma.profiles.update({
         where: { id: user.id },
-        data: { credits: { increment: totalCreditCost } },
+        data: { credits: { increment: refundAmount } },
       })
-      throw requestError
+      console.log(`${failedCount}개 영상 실패, ${refundAmount} 크레딧 환불`)
+    }
+
+    // 모든 영상이 실패한 경우
+    if (requests.length === 0) {
+      return NextResponse.json(
+        { error: 'All video generation requests failed' },
+        { status: 500 }
+      )
     }
 
     // Draft가 있으면 상태 업데이트 (첫 번째 요청 ID 저장)
@@ -221,12 +236,20 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // 실제 사용된 크레딧 계산 (성공한 영상만)
+    const actualCreditUsed = requests.length * creditCostPerVideo
+
     return NextResponse.json({
       requests,
       // 하위 호환성을 위해 단일 requestId도 반환
       requestId: requests[0]?.requestId,
       prompt: requests[0]?.prompt,
-      creditUsed: totalCreditCost,
+      creditUsed: actualCreditUsed,
+      // 부분 실패 정보
+      ...(failedCount > 0 && {
+        failedCount,
+        refundedCredits: failedCount * creditCostPerVideo,
+      }),
     })
   } catch (error) {
     console.error('영상 생성 오류:', error)
