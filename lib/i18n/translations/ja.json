@@ -1012,6 +1012,29 @@
       "goBack": "戻る",
       "retry": "再試行",
       "doNotCloseWindow": "ウィンドウを閉じないでください。合成中です。"
+    },
+    "legacyCreate": {
+      "selectFileImage": "画像ファイルを選択",
+      "noProductsRegistered": "登録された製品がありません",
+      "preview": "プレビュー",
+      "firstSceneComplete": "最初のシーン画像生成完了",
+      "localImageLabel": "ローカル画像",
+      "productLabel": "製品",
+      "avatarLabel": "アバター",
+      "selectProductOrAvatar": "製品またはアバターを選択してください",
+      "generationProgress": "生成進捗",
+      "progressSteps": {
+        "script": "台本",
+        "firstScene": "最初のシーン",
+        "video": "動画"
+      },
+      "productAnalysisResult": "製品分析結果",
+      "generationGuide": {
+        "title": "動画生成ガイド",
+        "step1": "製品情報をもとにAIが広告台本を作成します",
+        "step2": "製品とアバターが一緒にいる最初のシーン画像を生成します",
+        "step3": "最初のシーン画像をもとに動画を生成します（約2-5分）"
+      }
     }
   },
   "imageEdit": {
@@ -1264,7 +1287,37 @@
       "selectRatio": "動画比率を選択してください",
       "setAllScenes": "すべてのシーンの背景と雰囲気を設定してください",
       "overallMood": "全体の雰囲気",
-      "selectMoodPlaceholder": "動画の全体的な雰囲気を選択してください"
+      "selectMoodPlaceholder": "動画の全体的な雰囲気を選択してください",
+      "aspectRatios": {
+        "landscape": "横向き",
+        "landscapeDesc": "YouTube、ウェブサイト",
+        "portrait": "縦向き",
+        "portraitDesc": "リール、ショート、TikTok",
+        "square": "正方形",
+        "squareDesc": "Instagramフィード"
+      },
+      "moodOptions": {
+        "luxuryElegant": "高級でエレガント",
+        "warmFriendly": "暖かく親しみやすい",
+        "modernSophisticated": "モダンで洗練された",
+        "dynamicEnergetic": "ダイナミックでエネルギッシュ",
+        "calmRelaxed": "穏やかでリラックス",
+        "trendyYoung": "トレンディで若々しい",
+        "classicTraditional": "クラシックで伝統的"
+      },
+      "adElements": {
+        "backgroundLabel": "背景/場所",
+        "moodLabel": "雰囲気/トーン",
+        "backgrounds": {
+          "minimalStudio": "ミニマルスタジオ",
+          "luxuryInterior": "高級インテリア",
+          "naturalBackground": "自然な背景",
+          "cityscape": "都市風景",
+          "abstractBackground": "抽象的な背景",
+          "gradientBackground": "グラデーション背景",
+          "textureBackground": "テクスチャ背景"
+        }
+      }
     },
     "step4": {
       "title": "シーンキーフレーム生成",
@@ -1344,7 +1397,12 @@
       "errorKeyframeNotFound": "該当シーンのキーフレームが見つかりません。",
       "errorSceneRegeneration": "シーン動画の再生成に失敗しました。",
       "errorVideoGeneration": "動画生成に失敗しました。",
-      "errorMergeVideo": "動画の結合に失敗しました。"
+      "errorMergeVideo": "動画の結合に失敗しました。",
+      "resolutionOptions": {
+        "sdDesc": "高速生成",
+        "hdDesc": "標準画質",
+        "fhdDesc": "高画質"
+      }
     }
   },
   "productDescWizard": {

@@ -1012,6 +1012,29 @@
       "goBack": "돌아가기",
       "retry": "다시 시도",
       "doNotCloseWindow": "창을 닫지 마세요. 합성이 진행 중입니다."
+    },
+    "legacyCreate": {
+      "selectFileImage": "이미지 파일 선택",
+      "noProductsRegistered": "등록된 제품이 없습니다",
+      "preview": "미리보기",
+      "firstSceneComplete": "첫 씬 이미지 생성 완료",
+      "localImageLabel": "로컬 이미지",
+      "productLabel": "제품",
+      "avatarLabel": "아바타",
+      "selectProductOrAvatar": "제품 또는 아바타를 선택하세요",
+      "generationProgress": "생성 진행 상황",
+      "progressSteps": {
+        "script": "대본",
+        "firstScene": "첫 씬",
+        "video": "영상"
+      },
+      "productAnalysisResult": "제품 분석 결과",
+      "generationGuide": {
+        "title": "영상 생성 안내",
+        "step1": "제품 정보를 바탕으로 AI가 광고 대본을 작성합니다",
+        "step2": "제품과 아바타가 함께 있는 첫 씬 이미지를 생성합니다",
+        "step3": "첫 씬 이미지를 바탕으로 영상을 생성합니다 (약 2-5분)"
+      }
     }
   },
   "imageEdit": {
@@ -1264,7 +1287,37 @@
       "selectRatio": "영상 비율을 선택해주세요",
       "setAllScenes": "모든 씬의 배경과 분위기를 설정해주세요",
       "overallMood": "전체 분위기",
-      "selectMoodPlaceholder": "영상의 전체 분위기를 선택해주세요"
+      "selectMoodPlaceholder": "영상의 전체 분위기를 선택해주세요",
+      "aspectRatios": {
+        "landscape": "가로형",
+        "landscapeDesc": "유튜브, 웹사이트",
+        "portrait": "세로형",
+        "portraitDesc": "릴스, 숏츠, 틱톡",
+        "square": "정방형",
+        "squareDesc": "인스타그램 피드"
+      },
+      "moodOptions": {
+        "luxuryElegant": "고급스럽고 우아한",
+        "warmFriendly": "따뜻하고 친근한",
+        "modernSophisticated": "모던하고 세련된",
+        "dynamicEnergetic": "역동적이고 에너지틱한",
+        "calmRelaxed": "차분하고 편안한",
+        "trendyYoung": "트렌디하고 젊은",
+        "classicTraditional": "클래식하고 전통적인"
+      },
+      "adElements": {
+        "backgroundLabel": "배경/장소",
+        "moodLabel": "분위기/톤",
+        "backgrounds": {
+          "minimalStudio": "미니멀 스튜디오",
+          "luxuryInterior": "고급 인테리어",
+          "naturalBackground": "자연 배경",
+          "cityscape": "도시 풍경",
+          "abstractBackground": "추상적 배경",
+          "gradientBackground": "그라데이션 배경",
+          "textureBackground": "텍스처 배경"
+        }
+      }
     },
     "step4": {
       "title": "씬 키프레임 생성",
@@ -1344,7 +1397,12 @@
       "errorKeyframeNotFound": "해당 씬의 키프레임을 찾을 수 없습니다.",
       "errorSceneRegeneration": "씬 영상 재생성에 실패했습니다.",
       "errorVideoGeneration": "영상 생성에 실패했습니다.",
-      "errorMergeVideo": "영상 합치기에 실패했습니다."
+      "errorMergeVideo": "영상 합치기에 실패했습니다.",
+      "resolutionOptions": {
+        "sdDesc": "빠른 생성",
+        "hdDesc": "표준 화질",
+        "fhdDesc": "고품질"
+      }
     }
   },
   "productDescWizard": {

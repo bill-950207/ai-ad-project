@@ -105,6 +105,8 @@ function VideoAdCreateContent() {
 
   const videoAdT = t.videoAd as VideoAdTranslation | undefined
   const statusT = videoAdT?.generationStatus
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const legacyT = (t.videoAd as any)?.legacyCreate || {}
 
   // 파일 입력 ref - hooks는 항상 동일한 순서로 호출되어야 함
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -452,12 +454,12 @@ function VideoAdCreateContent() {
                     <div className="w-10 h-10 flex items-center justify-center rounded bg-primary/10">
                       <Upload className="w-5 h-5 text-primary" />
                     </div>
-                    <span className="text-foreground font-medium">이미지 파일 선택</span>
+                    <span className="text-foreground font-medium">{legacyT.selectFileImage || 'Select image file'}</span>
                   </button>
 
                   {products.length === 0 ? (
                     <div className="p-4 text-center text-muted-foreground text-sm">
-                      등록된 제품이 없습니다
+                      {legacyT.noProductsRegistered || 'No products registered'}
                     </div>
                   ) : (
                     products.map((product) => (
@@ -776,7 +778,7 @@ function VideoAdCreateContent() {
             <div className="p-4 border-b border-border">
               <h3 className="font-medium text-foreground flex items-center gap-2">
                 <Video className="w-4 h-4" />
-                미리보기
+                {legacyT.preview || 'Preview'}
               </h3>
             </div>
             <div className={`${
@@ -791,7 +793,7 @@ function VideoAdCreateContent() {
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-                    <p className="text-white text-sm font-medium">첫 씬 이미지 생성 완료</p>
+                    <p className="text-white text-sm font-medium">{legacyT.firstSceneComplete || 'First scene image generated'}</p>
                   </div>
                 </div>
               ) : (selectedProduct || selectedAvatar || localImagePreview) ? (
@@ -801,10 +803,10 @@ function VideoAdCreateContent() {
                       <div className="text-center">
                         <img
                           src={localImagePreview}
-                          alt="로컬 이미지"
+                          alt={legacyT.localImageLabel || 'Local image'}
                           className="w-20 h-20 object-contain rounded-lg bg-secondary/50"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">로컬 이미지</p>
+                        <p className="text-xs text-muted-foreground mt-1">{legacyT.localImageLabel || 'Local image'}</p>
                       </div>
                     ) : selectedProduct && (selectedProduct.rembg_image_url || selectedProduct.image_url) && (
                       <div className="text-center">
@@ -813,7 +815,7 @@ function VideoAdCreateContent() {
                           alt={selectedProduct.name}
                           className="w-20 h-20 object-contain rounded-lg bg-secondary/50"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">제품</p>
+                        <p className="text-xs text-muted-foreground mt-1">{legacyT.productLabel || 'Product'}</p>
                       </div>
                     )}
                     {selectedAvatar && selectedAvatar.image_url && (
@@ -823,13 +825,13 @@ function VideoAdCreateContent() {
                           alt={selectedAvatar.name}
                           className="w-20 h-20 object-cover rounded-lg"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">아바타</p>
+                        <p className="text-xs text-muted-foreground mt-1">{legacyT.avatarLabel || 'Avatar'}</p>
                       </div>
                     )}
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Clock className="w-4 h-4" />
-                    <span>{duration}초</span>
+                    <span>{duration}{t.common?.secondsShort || 's'}</span>
                     <span className="mx-2">·</span>
                     <Monitor className="w-4 h-4" />
                     <span>{resolution}</span>
@@ -838,7 +840,7 @@ function VideoAdCreateContent() {
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
                   <Video className="w-12 h-12 mb-2 opacity-50" />
-                  <p>제품 또는 아바타를 선택하세요</p>
+                  <p>{legacyT.selectProductOrAvatar || 'Select a product or avatar'}</p>
                 </div>
               )}
             </div>
@@ -847,7 +849,7 @@ function VideoAdCreateContent() {
           {/* 진행 상황 표시 */}
           {isGenerating && (
             <div className="bg-card border border-border rounded-xl p-4 space-y-4">
-              <h4 className="font-medium text-foreground">생성 진행 상황</h4>
+              <h4 className="font-medium text-foreground">{legacyT.generationProgress || 'Generation Progress'}</h4>
 
               {/* 진행 단계 */}
               <div className="flex items-center justify-between gap-2">
@@ -866,7 +868,7 @@ function VideoAdCreateContent() {
                   ) : (
                     <div className="w-4 h-4 rounded-full border-2 border-muted-foreground flex-shrink-0" />
                   )}
-                  <span className="text-xs font-medium truncate">대본</span>
+                  <span className="text-xs font-medium truncate">{legacyT.progressSteps?.script || 'Script'}</span>
                 </div>
 
                 <div className="text-muted-foreground text-xs">→</div>
@@ -886,7 +888,7 @@ function VideoAdCreateContent() {
                   ) : (
                     <div className="w-4 h-4 rounded-full border-2 border-muted-foreground flex-shrink-0" />
                   )}
-                  <span className="text-xs font-medium truncate">첫 씬</span>
+                  <span className="text-xs font-medium truncate">{legacyT.progressSteps?.firstScene || 'First Scene'}</span>
                 </div>
 
                 <div className="text-muted-foreground text-xs">→</div>
@@ -902,7 +904,7 @@ function VideoAdCreateContent() {
                   ) : (
                     <div className="w-4 h-4 rounded-full border-2 border-muted-foreground flex-shrink-0" />
                   )}
-                  <span className="text-xs font-medium truncate">영상</span>
+                  <span className="text-xs font-medium truncate">{legacyT.progressSteps?.video || 'Video'}</span>
                 </div>
               </div>
 
@@ -917,7 +919,7 @@ function VideoAdCreateContent() {
               {/* 제품 요약 */}
               {productSummary && (
                 <div className="p-3 bg-secondary/30 border border-border rounded-lg">
-                  <p className="text-xs text-muted-foreground mb-1">제품 분석 결과</p>
+                  <p className="text-xs text-muted-foreground mb-1">{legacyT.productAnalysisResult || 'Product Analysis Result'}</p>
                   <p className="text-sm text-foreground">{productSummary}</p>
                 </div>
               )}
@@ -927,19 +929,19 @@ function VideoAdCreateContent() {
           {/* 생성 전 안내 */}
           {!isGenerating && (
             <div className="bg-card border border-border rounded-xl p-4">
-              <h4 className="font-medium text-foreground mb-3">영상 생성 안내</h4>
+              <h4 className="font-medium text-foreground mb-3">{legacyT.generationGuide?.title || 'Video Generation Guide'}</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <span className="text-primary">1.</span>
-                  제품 정보를 바탕으로 AI가 광고 대본을 작성합니다
+                  {legacyT.generationGuide?.step1 || 'AI writes an ad script based on product information'}
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary">2.</span>
-                  제품과 아바타가 함께 있는 첫 씬 이미지를 생성합니다
+                  {legacyT.generationGuide?.step2 || 'Generate first scene image with product and avatar'}
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary">3.</span>
-                  첫 씬 이미지를 바탕으로 영상을 생성합니다 (약 2-5분)
+                  {legacyT.generationGuide?.step3 || 'Generate video based on first scene image (about 2-5 min)'}
                 </li>
               </ul>
             </div>

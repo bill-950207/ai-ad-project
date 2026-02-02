@@ -1012,6 +1012,29 @@
       "goBack": "返回",
       "retry": "重试",
       "doNotCloseWindow": "请勿关闭此窗口，正在合成中。"
+    },
+    "legacyCreate": {
+      "selectFileImage": "选择图片文件",
+      "noProductsRegistered": "没有已注册的产品",
+      "preview": "预览",
+      "firstSceneComplete": "首场景图片生成完成",
+      "localImageLabel": "本地图片",
+      "productLabel": "产品",
+      "avatarLabel": "头像",
+      "selectProductOrAvatar": "请选择产品或头像",
+      "generationProgress": "生成进度",
+      "progressSteps": {
+        "script": "脚本",
+        "firstScene": "首场景",
+        "video": "视频"
+      },
+      "productAnalysisResult": "产品分析结果",
+      "generationGuide": {
+        "title": "视频生成指南",
+        "step1": "AI根据产品信息撰写广告脚本",
+        "step2": "生成包含产品和头像的首场景图片",
+        "step3": "根据首场景图片生成视频（约2-5分钟）"
+      }
     }
   },
   "imageEdit": {
@@ -1264,7 +1287,37 @@
       "selectRatio": "请选择视频比例",
       "setAllScenes": "请为所有场景设置背景和氛围",
       "overallMood": "整体氛围",
-      "selectMoodPlaceholder": "选择视频的整体氛围"
+      "selectMoodPlaceholder": "选择视频的整体氛围",
+      "aspectRatios": {
+        "landscape": "横向",
+        "landscapeDesc": "YouTube、网站",
+        "portrait": "纵向",
+        "portraitDesc": "Reels、Shorts、TikTok",
+        "square": "正方形",
+        "squareDesc": "Instagram动态"
+      },
+      "moodOptions": {
+        "luxuryElegant": "奢华优雅",
+        "warmFriendly": "温暖亲切",
+        "modernSophisticated": "现代精致",
+        "dynamicEnergetic": "动感活力",
+        "calmRelaxed": "平静放松",
+        "trendyYoung": "时尚年轻",
+        "classicTraditional": "经典传统"
+      },
+      "adElements": {
+        "backgroundLabel": "背景/场所",
+        "moodLabel": "氛围/调性",
+        "backgrounds": {
+          "minimalStudio": "极简工作室",
+          "luxuryInterior": "豪华内饰",
+          "naturalBackground": "自然背景",
+          "cityscape": "城市风景",
+          "abstractBackground": "抽象背景",
+          "gradientBackground": "渐变背景",
+          "textureBackground": "纹理背景"
+        }
+      }
     },
     "step4": {
       "title": "场景关键帧生成",
@@ -1344,7 +1397,12 @@
       "errorKeyframeNotFound": "找不到该场景的关键帧。",
       "errorSceneRegeneration": "场景视频重新生成失败。",
       "errorVideoGeneration": "视频生成失败。",
-      "errorMergeVideo": "视频合并失败。"
+      "errorMergeVideo": "视频合并失败。",
+      "resolutionOptions": {
+        "sdDesc": "快速生成",
+        "hdDesc": "标准画质",
+        "fhdDesc": "高画质"
+      }
     }
   },
   "productDescWizard": {

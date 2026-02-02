@@ -42,12 +42,16 @@ const FREE_USER_LIMITS = {
   maxResolution: '540p' as VideoResolution,
 }
 
-// Vidu Q2 해상도 옵션 (중앙 상수 사용)
-const RESOLUTION_OPTIONS: { value: VideoResolution; label: string; desc: string; creditsPerSecond: number }[] = [
-  { value: '540p', label: 'SD (540p)', desc: '빠른 생성', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['540p'] },
-  { value: '720p', label: 'HD (720p)', desc: '표준 화질', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['720p'] },
-  { value: '1080p', label: 'FHD (1080p)', desc: '고품질', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['1080p'] },
-]
+// 번역된 해상도 옵션을 가져오는 함수
+function getResolutionOptions(t: Record<string, unknown>) {
+  const step5T = (t.productAdWizard as Record<string, unknown>)?.step5 as Record<string, unknown> || {}
+  const resT = step5T.resolutionOptions as Record<string, string> || {}
+  return [
+    { value: '540p' as VideoResolution, label: 'SD (540p)', desc: resT.sdDesc || 'Fast generation', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['540p'] },
+    { value: '720p' as VideoResolution, label: 'HD (720p)', desc: resT.hdDesc || 'Standard quality', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['720p'] },
+    { value: '1080p' as VideoResolution, label: 'FHD (1080p)', desc: resT.fhdDesc || 'High quality', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['1080p'] },
+  ]
+}
 import {
   DndContext,
   closestCenter,
@@ -98,13 +102,14 @@ function VideoRegenerateModal({
   aspectRatio: string | null
 }) {
   const { t } = useLanguage()
+  const resolutionOptions = getResolutionOptions(t)
   const [additionalPrompt, setAdditionalPrompt] = useState('')
   const [duration, setDuration] = useState(currentDuration)
 
   // 현재 해상도의 크레딧/초 계산
-  const creditsPerSecond = RESOLUTION_OPTIONS.find(o => o.value === resolution)?.creditsPerSecond ?? 8
+  const creditsPerSecond = resolutionOptions.find(o => o.value === resolution)?.creditsPerSecond ?? 8
   const estimatedCredits = duration * creditsPerSecond
-  const resolutionLabel = RESOLUTION_OPTIONS.find(o => o.value === resolution)?.label ?? resolution
+  const resolutionLabel = resolutionOptions.find(o => o.value === resolution)?.label ?? resolution
 
   useEffect(() => {
     if (isOpen) {
@@ -474,6 +479,7 @@ function SortableVideoCard({
 
 export function WizardStep5() {
   const { t } = useLanguage()
+  const resolutionOptions = getResolutionOptions(t)
   const router = useRouter()
   const { credits, refreshCredits } = useCredits()
   const {
@@ -602,7 +608,7 @@ export function WizardStep5() {
   // 총 영상 길이 및 예상 크레딧 계산
   const totalDuration = sceneDurations.slice(0, sceneCount).reduce((sum, d) => sum + d, 0)
   const estimatedCredits = (() => {
-    const option = RESOLUTION_OPTIONS.find(o => o.value === videoResolution)
+    const option = resolutionOptions.find(o => o.value === videoResolution)
     if (!option) return 0
     return option.creditsPerSecond * totalDuration
   })()
@@ -861,7 +867,7 @@ export function WizardStep5() {
     const useDuration = sceneDuration ?? sceneDurations[sceneIndex] ?? 3
 
     // 단일 씬 재생성 크레딧 계산 및 체크
-    const option = RESOLUTION_OPTIONS.find(o => o.value === videoResolution)
+    const option = resolutionOptions.find(o => o.value === videoResolution)
     const singleSceneCredits = option ? option.creditsPerSecond * useDuration : 0
     if (credits !== null && credits < singleSceneCredits) {
       setShowInsufficientCreditsModal(true)
@@ -1900,7 +1906,7 @@ export function WizardStep5() {
                   </div>
 
                   <div className="grid grid-cols-3 gap-3">
-                    {RESOLUTION_OPTIONS.map((option) => {
+                    {resolutionOptions.map((option) => {
                       const isLocked = isFreeUser && option.value !== FREE_USER_LIMITS.maxResolution
                       return (
                         <button

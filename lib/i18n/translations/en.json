@@ -1012,6 +1012,29 @@
       "goBack": "Go back",
       "retry": "Retry",
       "doNotCloseWindow": "Do not close this window. Merge in progress."
+    },
+    "legacyCreate": {
+      "selectFileImage": "Select image file",
+      "noProductsRegistered": "No products registered",
+      "preview": "Preview",
+      "firstSceneComplete": "First scene image generated",
+      "localImageLabel": "Local image",
+      "productLabel": "Product",
+      "avatarLabel": "Avatar",
+      "selectProductOrAvatar": "Select a product or avatar",
+      "generationProgress": "Generation Progress",
+      "progressSteps": {
+        "script": "Script",
+        "firstScene": "First Scene",
+        "video": "Video"
+      },
+      "productAnalysisResult": "Product Analysis Result",
+      "generationGuide": {
+        "title": "Video Generation Guide",
+        "step1": "AI writes an ad script based on product information",
+        "step2": "Generate first scene image with product and avatar",
+        "step3": "Generate video based on first scene image (about 2-5 min)"
+      }
     }
   },
   "imageEdit": {
@@ -1264,7 +1287,37 @@
       "selectRatio": "Please select the aspect ratio",
       "setAllScenes": "Please set background and mood for all scenes",
       "overallMood": "Overall Mood",
-      "selectMoodPlaceholder": "Select the overall mood for the video"
+      "selectMoodPlaceholder": "Select the overall mood for the video",
+      "aspectRatios": {
+        "landscape": "Landscape",
+        "landscapeDesc": "YouTube, Websites",
+        "portrait": "Portrait",
+        "portraitDesc": "Reels, Shorts, TikTok",
+        "square": "Square",
+        "squareDesc": "Instagram Feed"
+      },
+      "moodOptions": {
+        "luxuryElegant": "Luxurious & Elegant",
+        "warmFriendly": "Warm & Friendly",
+        "modernSophisticated": "Modern & Sophisticated",
+        "dynamicEnergetic": "Dynamic & Energetic",
+        "calmRelaxed": "Calm & Relaxed",
+        "trendyYoung": "Trendy & Young",
+        "classicTraditional": "Classic & Traditional"
+      },
+      "adElements": {
+        "backgroundLabel": "Background/Location",
+        "moodLabel": "Mood/Tone",
+        "backgrounds": {
+          "minimalStudio": "Minimal Studio",
+          "luxuryInterior": "Luxury Interior",
+          "naturalBackground": "Natural Background",
+          "cityscape": "Cityscape",
+          "abstractBackground": "Abstract Background",
+          "gradientBackground": "Gradient Background",
+          "textureBackground": "Texture Background"
+        }
+      }
     },
     "step4": {
       "title": "Scene Keyframe Generation",
@@ -1344,7 +1397,12 @@
       "errorKeyframeNotFound": "Keyframe not found for this scene.",
       "errorSceneRegeneration": "Failed to regenerate scene video.",
       "errorVideoGeneration": "Failed to generate video.",
-      "errorMergeVideo": "Failed to merge videos."
+      "errorMergeVideo": "Failed to merge videos.",
+      "resolutionOptions": {
+        "sdDesc": "Fast generation",
+        "hdDesc": "Standard quality",
+        "fhdDesc": "High quality"
+      }
     }
   },
   "productDescWizard": {
