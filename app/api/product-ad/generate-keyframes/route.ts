@@ -96,40 +96,62 @@ export async function POST(request: NextRequest) {
       throw error
     }
 
-    // 각 씬에 대해 Seedream 4.5로 이미지 생성 요청
-    let requests: { sceneIndex: number; requestId: string; prompt: string }[] = []
-    try {
-      requests = await Promise.all(
-        scenes.map(async (scene) => {
-          // 프롬프트에서 금지 단어 제거 (카메라/촬영장비 등장 방지)
-          const sanitizedPrompt = sanitizePrompt(scene.scenePrompt)
+    // 각 씬에 대해 Seedream 4.5로 이미지 생성 요청 (부분 실패 처리)
+    const requests: { sceneIndex: number; requestId: string; prompt: string }[] = []
+    const failedSceneIndices: number[] = []
 
-          const result = await createEditTask({
-            prompt: sanitizedPrompt,
-            image_urls: [productImageUrl],
-            aspect_ratio: mapAspectRatio(aspectRatio),
-            quality: 'high',
-          })
-          return {
-            sceneIndex: scene.index,
-            requestId: `kie:${result.taskId}`,
-            prompt: sanitizedPrompt,  // 정제된 프롬프트 반환
-          }
+    for (const scene of scenes) {
+      try {
+        // 프롬프트에서 금지 단어 제거 (카메라/촬영장비 등장 방지)
+        const sanitizedPrompt = sanitizePrompt(scene.scenePrompt)
+
+        const result = await createEditTask({
+          prompt: sanitizedPrompt,
+          image_urls: [productImageUrl],
+          aspect_ratio: mapAspectRatio(aspectRatio),
+          quality: 'high',
         })
-      )
-    } catch (requestError) {
-      // 이미지 생성 요청 실패 시 크레딧 환불
-      console.error('키프레임 생성 요청 실패, 크레딧 환불:', requestError)
+        requests.push({
+          sceneIndex: scene.index,
+          requestId: `kie:${result.taskId}`,
+          prompt: sanitizedPrompt,  // 정제된 프롬프트 반환
+        })
+      } catch (sceneError) {
+        // 개별 씬 요청 실패 기록
+        console.error(`키프레임 씬 ${scene.index} 생성 요청 실패:`, sceneError)
+        failedSceneIndices.push(scene.index)
+      }
+    }
+
+    // 실패한 씬이 있으면 해당 크레딧 환불
+    if (failedSceneIndices.length > 0) {
+      const refundAmount = failedSceneIndices.length * KEYFRAME_CREDIT_COST
       await prisma.profiles.update({
         where: { id: user.id },
-        data: { credits: { increment: totalCreditCost } },
+        data: { credits: { increment: refundAmount } },
       })
-      throw requestError
+      console.log(`${failedSceneIndices.length}개 키프레임 실패, ${refundAmount} 크레딧 환불`)
     }
+
+    // 모든 씬이 실패한 경우
+    if (requests.length === 0) {
+      return NextResponse.json(
+        { error: 'All keyframe generation requests failed' },
+        { status: 500 }
+      )
+    }
+
+    // 실제 사용된 크레딧 계산 (성공한 씬만)
+    const actualCreditUsed = requests.length * KEYFRAME_CREDIT_COST
 
     return NextResponse.json({
       requests,
-      creditUsed: totalCreditCost,
+      creditUsed: actualCreditUsed,
+      // 부분 실패 정보
+      ...(failedSceneIndices.length > 0 && {
+        failedScenes: failedSceneIndices,
+        refundedCredits: failedSceneIndices.length * KEYFRAME_CREDIT_COST,
+      }),
     })
   } catch (error) {
     console.error('키프레임 생성 오류:', error)

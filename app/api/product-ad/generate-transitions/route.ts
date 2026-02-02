@@ -94,21 +94,22 @@ export async function POST(request: NextRequest) {
     // 키프레임 인덱스 순으로 정렬
     const sortedKeyframes = [...keyframes].sort((a, b) => a.sceneIndex - b.sceneIndex)
 
-    // 각 연속 키프레임 쌍에 대해 Kling O1 전환 영상 생성 요청
+    // 각 연속 키프레임 쌍에 대해 Kling O1 전환 영상 생성 요청 (부분 실패 처리)
     const transitionRequests: TransitionRequest[] = []
+    let failedCount = 0
 
-    try {
-      for (let i = 0; i < sortedKeyframes.length - 1; i++) {
-        const fromKeyframe = sortedKeyframes[i]
-        const toKeyframe = sortedKeyframes[i + 1]
+    for (let i = 0; i < sortedKeyframes.length - 1; i++) {
+      const fromKeyframe = sortedKeyframes[i]
+      const toKeyframe = sortedKeyframes[i + 1]
 
-        // 전환 프롬프트 (없으면 기본값)
-        const transitionPrompt = fromKeyframe.transitionPrompt ||
-          `Professional gimbal-stabilized smooth transition from scene ${i + 1} to scene ${i + 2}. Steady camera glide with no handheld shakiness. The scene transforms naturally with elegant, controlled motion. Soft professional lighting effect, broadcast quality stability.`
+      // 전환 프롬프트 (없으면 기본값)
+      const transitionPrompt = fromKeyframe.transitionPrompt ||
+        `Professional gimbal-stabilized smooth transition from scene ${i + 1} to scene ${i + 2}. Steady camera glide with no handheld shakiness. The scene transforms naturally with elegant, controlled motion. Soft professional lighting effect, broadcast quality stability.`
 
-        // 전환 영상 길이 (기본 5초)
-        const duration = String(Math.min(10, Math.max(3, fromKeyframe.duration || 5))) as KlingO1Duration
+      // 전환 영상 길이 (기본 5초)
+      const duration = String(Math.min(10, Math.max(3, fromKeyframe.duration || 5))) as KlingO1Duration
 
+      try {
         // Kling O1 요청 제출
         const result = await submitKlingO1ToQueue({
           prompt: transitionPrompt,
@@ -123,21 +124,43 @@ export async function POST(request: NextRequest) {
           requestId: `fal:${result.request_id}`,
           prompt: transitionPrompt,
         })
+      } catch (transitionError) {
+        // 개별 전환 요청 실패 기록
+        console.error(`전환 ${fromKeyframe.sceneIndex}→${toKeyframe.sceneIndex} 생성 요청 실패:`, transitionError)
+        failedCount++
       }
-    } catch (requestError) {
-      // 전환 영상 생성 요청 실패 시 크레딧 환불
-      console.error('전환 영상 생성 요청 실패, 크레딧 환불:', requestError)
+    }
+
+    // 실패한 전환이 있으면 해당 크레딧 환불
+    if (failedCount > 0) {
+      const refundAmount = failedCount * TRANSITION_CREDIT_COST
       await prisma.profiles.update({
         where: { id: user.id },
-        data: { credits: { increment: totalCreditCost } },
+        data: { credits: { increment: refundAmount } },
       })
-      throw requestError
+      console.log(`${failedCount}개 전환 실패, ${refundAmount} 크레딧 환불`)
     }
+
+    // 모든 전환이 실패한 경우
+    if (transitionRequests.length === 0) {
+      return NextResponse.json(
+        { error: 'All transition video generation requests failed' },
+        { status: 500 }
+      )
+    }
+
+    // 실제 사용된 크레딧 계산 (성공한 전환만)
+    const actualCreditUsed = transitionRequests.length * TRANSITION_CREDIT_COST
 
     return NextResponse.json({
       transitions: transitionRequests,
       totalTransitions: transitionRequests.length,
-      creditUsed: totalCreditCost,
+      creditUsed: actualCreditUsed,
+      // 부분 실패 정보
+      ...(failedCount > 0 && {
+        failedCount,
+        refundedCredits: failedCount * TRANSITION_CREDIT_COST,
+      }),
     })
   } catch (error) {
     console.error('전환 영상 생성 오류:', error)
