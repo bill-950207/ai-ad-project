@@ -14,8 +14,9 @@
 
 import Link from 'next/link'
 import { useEffect, useState, useRef } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { locales, type Locale } from '@/lib/i18n/seo'
 import { User } from '@supabase/supabase-js'
 import { Button } from './ui/button'
 import { useLanguage } from '@/contexts/language-context'
@@ -40,7 +41,23 @@ const LANGUAGES: { code: Language; label: string; flag: string }[] = [
 
 export function Navbar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { t, language, setLanguage } = useLanguage()
+
+  // 현재 URL이 다국어 랜딩페이지인지 확인
+  const isLocaleLandingPage = pathname ? locales.some(loc => pathname === `/${loc}`) : false
+  const currentLocaleFromUrl = pathname ? locales.find(loc => pathname === `/${loc}`) : null
+
+  // 언어 변경 핸들러
+  const handleLanguageChange = (newLang: Locale) => {
+    setLanguage(newLang)
+    setShowLangMenu(false)
+
+    // 랜딩페이지일 경우 URL도 변경
+    if (isLocaleLandingPage) {
+      router.push(`/${newLang}`)
+    }
+  }
 
   // 상태 관리
   const [user, setUser] = useState<User | null>(null)
@@ -184,10 +201,7 @@ export function Navbar() {
                     {LANGUAGES.map((lang) => (
                       <button
                         key={lang.code}
-                        onClick={() => {
-                          setLanguage(lang.code)
-                          setShowLangMenu(false)
-                        }}
+                        onClick={() => handleLanguageChange(lang.code)}
                         className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm transition-colors ${
                           language === lang.code
                             ? 'bg-primary/10 text-primary'
