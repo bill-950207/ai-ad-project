@@ -4,7 +4,8 @@
  * GET: 이미지/영상 생성 상태 확인
  * - kie:xxx 형식: kie.ai 상태 조회
  * - fal:xxx 형식: fal.ai 상태 조회 (Kling O1)
- * - wavespeed-vidu:xxx 형식: WaveSpeed Vidu Q3 상태 조회
+ * - fal-vidu-q2:xxx 형식: FAL.ai Vidu Q2 Turbo 상태 조회
+ * - wavespeed-vidu:xxx 형식: WaveSpeed Vidu Q3 상태 조회 (레거시)
  * - 이미지 완료 시 AI 서비스 원본 URL 반환 (클라이언트에서 R2 업로드)
  */
 
@@ -19,6 +20,8 @@ import {
 import {
   getKlingO1QueueStatus,
   getKlingO1QueueResponse,
+  getViduQ2QueueStatus,
+  getViduQ2QueueResponse,
 } from '@/lib/fal/client'
 import {
   getViduQueueStatus as getWaveSpeedViduQueueStatus,
@@ -131,8 +134,32 @@ export async function GET(
         // 알 수 없는 상태는 진행 중으로 처리
         status = 'IN_PROGRESS'
       }
+    } else if (provider === 'fal-vidu-q2') {
+      // FAL.ai Vidu Q2 Turbo 상태 조회
+      const statusInfo = await getViduQ2QueueStatus(taskId)
+
+      if (statusInfo.status === 'IN_QUEUE') {
+        status = 'IN_QUEUE'
+      } else if (statusInfo.status === 'IN_PROGRESS') {
+        status = 'IN_PROGRESS'
+      } else if (statusInfo.status === 'COMPLETED') {
+        status = 'COMPLETED'
+
+        // Vidu Q2 결과 조회 (영상)
+        try {
+          const result = await getViduQ2QueueResponse(taskId)
+          resultUrl = result.video?.url || null
+        } catch (resultError) {
+          console.error('Vidu Q2 결과 조회 오류:', resultError)
+          status = 'FAILED'
+          errorMessage = 'Failed to get result'
+        }
+      } else {
+        // 알 수 없는 상태는 진행 중으로 처리
+        status = 'IN_PROGRESS'
+      }
     } else if (provider === 'wavespeed-vidu') {
-      // WaveSpeed Vidu Q3 상태 조회
+      // WaveSpeed Vidu Q3 상태 조회 (레거시 지원)
       const statusInfo = await getWaveSpeedViduQueueStatus(taskId)
 
       if (statusInfo.status === 'IN_QUEUE') {

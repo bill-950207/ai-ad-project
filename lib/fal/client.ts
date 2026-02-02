@@ -1236,3 +1236,129 @@ export async function getZImageI2IQueueResponse(requestId: string): Promise<ZIma
 
   return result.data as ZImageI2IOutput
 }
+
+// ============================================================
+// Vidu Q2 Turbo Image-to-Video (제품 씬 영상 생성)
+// ============================================================
+
+/** Vidu Q2 Turbo 모델 ID */
+const VIDU_Q2_TURBO_MODEL_ID = 'fal-ai/vidu/q2/image-to-video/turbo'
+
+/** Vidu Q2 영상 길이 타입 (초) */
+export type ViduQ2Duration = 2 | 3 | 4 | 5 | 6 | 7 | 8
+
+/** Vidu Q2 해상도 타입 */
+export type ViduQ2Resolution = '720p' | '1080p'
+
+/** Vidu Q2 카메라/모션 강도 타입 */
+export type ViduQ2MovementAmplitude = 'auto' | 'small' | 'medium' | 'large'
+
+/** Vidu Q2 입력 타입 */
+export interface ViduQ2Input {
+  prompt: string                              // 영상 설명 프롬프트 (최대 3000자)
+  image_url: string                           // 시작 프레임 이미지 URL (필수)
+  end_image_url?: string                      // 끝 프레임 이미지 URL (선택, 전환 영상용)
+  duration?: ViduQ2Duration                   // 영상 길이 2-8초 (기본값: 4)
+  resolution?: ViduQ2Resolution               // 해상도 (기본값: '720p')
+  movement_amplitude?: ViduQ2MovementAmplitude  // 카메라/모션 강도 (기본값: 'auto')
+  bgm?: boolean                               // 배경 음악 (4초 영상에만 적용)
+  seed?: number                               // 재현성을 위한 시드값
+}
+
+/** Vidu Q2 영상 출력 정보 */
+export interface ViduQ2VideoOutput {
+  url: string           // 영상 URL
+  content_type?: string // MIME 타입 (video/mp4)
+  file_name?: string    // 파일명
+  file_size?: number    // 파일 크기 (bytes)
+}
+
+/** Vidu Q2 출력 타입 */
+export interface ViduQ2Output {
+  video: ViduQ2VideoOutput  // 생성된 영상
+}
+
+/**
+ * Vidu Q2 Turbo 영상 생성 요청을 fal.ai 큐에 제출
+ *
+ * @param input - 영상 생성 입력 데이터
+ * @returns 큐 제출 응답 (request_id 포함)
+ */
+export async function submitViduQ2ToQueue(input: ViduQ2Input): Promise<FalQueueSubmitResponse> {
+  // 필수 및 기본 파라미터
+  const falInput = {
+    prompt: input.prompt,
+    image_url: input.image_url,
+    duration: input.duration ?? 4,
+    resolution: input.resolution ?? '720p',
+    movement_amplitude: input.movement_amplitude ?? 'auto',
+    // 선택적 파라미터
+    ...(input.end_image_url && { end_image_url: input.end_image_url }),
+    ...(input.bgm !== undefined && { bgm: input.bgm }),
+    ...(input.seed !== undefined && { seed: input.seed }),
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(VIDU_Q2_TURBO_MODEL_ID as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${VIDU_Q2_TURBO_MODEL_ID}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${VIDU_Q2_TURBO_MODEL_ID}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${VIDU_Q2_TURBO_MODEL_ID}/requests/${request_id}/cancel`,
+  }
+}
+
+/**
+ * Vidu Q2 큐 상태 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 현재 상태 정보
+ */
+export async function getViduQ2QueueStatus(requestId: string): Promise<FalQueueStatusResponse> {
+  const status = await fal.queue.status(VIDU_Q2_TURBO_MODEL_ID, {
+    requestId,
+    logs: true,
+  })
+
+  const statusObj = status as unknown as Record<string, unknown>
+
+  return {
+    status: status.status as 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED',
+    queue_position: statusObj.queue_position as number | undefined,
+    logs: statusObj.logs as FalLog[] | undefined,
+  }
+}
+
+/**
+ * Vidu Q2 영상 생성 결과 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 생성된 영상 정보
+ */
+export async function getViduQ2QueueResponse(requestId: string): Promise<ViduQ2Output> {
+  const result = await fal.queue.result(VIDU_Q2_TURBO_MODEL_ID, {
+    requestId,
+  })
+
+  return result.data as ViduQ2Output
+}
+
+/**
+ * Vidu Q2 영상 생성 요청 취소
+ *
+ * @param requestId - 요청 ID
+ * @returns 취소 성공 여부
+ */
+export async function cancelViduQ2QueueRequest(requestId: string): Promise<boolean> {
+  try {
+    await fal.queue.cancel(VIDU_Q2_TURBO_MODEL_ID, {
+      requestId,
+    })
+    return true
+  } catch {
+    return false
+  }
+}
