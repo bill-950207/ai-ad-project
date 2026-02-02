@@ -157,6 +157,7 @@ export async function POST(
       targetAge?: string
       style?: string
       ethnicity?: string
+      bodyType?: string
     } | undefined
 
     // _aiAvatarOptions 제외한 일반 옵션
@@ -214,6 +215,7 @@ export async function POST(
       const ageMap: Record<string, string> = { young: 'in their 20s-30s', middle: 'in their 30s-40s', mature: 'in their 40s-50s', any: '' }
       const styleMap: Record<string, string> = { natural: 'natural and friendly', professional: 'professional and sophisticated', casual: 'casual and relaxed', elegant: 'elegant and luxurious', any: '' }
       const ethnicityMap: Record<string, string> = { korean: 'Korean', asian: 'Asian', western: 'Western/Caucasian', any: '' }
+      const bodyTypeMap: Record<string, string> = { slim: 'slim build', average: 'average build', athletic: 'athletic build', curvy: 'curvy figure', any: '' }
 
       const avatarParts: string[] = []
       if (aiAvatarOptions.ethnicity && ethnicityMap[aiAvatarOptions.ethnicity]) {
@@ -227,8 +229,11 @@ export async function POST(
       } else {
         avatarParts.push('person')
       }
+      if (aiAvatarOptions.bodyType && bodyTypeMap[aiAvatarOptions.bodyType]) {
+        avatarParts.push(`with ${bodyTypeMap[aiAvatarOptions.bodyType]}`)
+      }
       if (aiAvatarOptions.style && styleMap[aiAvatarOptions.style]) {
-        avatarParts.push(`with ${styleMap[aiAvatarOptions.style]} appearance`)
+        avatarParts.push(`${styleMap[aiAvatarOptions.style]} appearance`)
       }
 
       const avatarDescription = avatarParts.join(' ')

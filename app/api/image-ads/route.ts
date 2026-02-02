@@ -95,6 +95,7 @@ interface ImageAdRequestBody {
     targetAge?: 'young' | 'middle' | 'mature' | 'any'
     style?: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
     ethnicity?: 'korean' | 'asian' | 'western' | 'any'
+    bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'any'
   }
   draftId?: string  // 기존 DRAFT 업데이트용
 }
@@ -549,6 +550,7 @@ export async function POST(request: NextRequest) {
       const ageMap: Record<string, string> = { young: 'in their 20s-30s', middle: 'in their 30s-40s', mature: 'in their 40s-50s', any: '' }
       const styleMap: Record<string, string> = { natural: 'natural and friendly', professional: 'professional and sophisticated', casual: 'casual and relaxed', elegant: 'elegant and luxurious', any: '' }
       const ethnicityMap: Record<string, string> = { korean: 'Korean', asian: 'Asian', western: 'Western/Caucasian', any: '' }
+      const bodyTypeMap: Record<string, string> = { slim: 'slim build', average: 'average build', athletic: 'athletic build', curvy: 'curvy figure', any: '' }
 
       const avatarParts: string[] = []
 
@@ -563,15 +565,18 @@ export async function POST(request: NextRequest) {
         if (aiAvatarOptions.targetAge && aiAvatarOptions.targetAge !== 'any' && ageMap[aiAvatarOptions.targetAge]) {
           avatarParts.push(`person ${ageMap[aiAvatarOptions.targetAge]}`)
         }
+        if (aiAvatarOptions.bodyType && aiAvatarOptions.bodyType !== 'any' && bodyTypeMap[aiAvatarOptions.bodyType]) {
+          avatarParts.push(`with ${bodyTypeMap[aiAvatarOptions.bodyType]}`)
+        }
         if (aiAvatarOptions.style && aiAvatarOptions.style !== 'any' && styleMap[aiAvatarOptions.style]) {
-          avatarParts.push(`with ${styleMap[aiAvatarOptions.style]} appearance`)
+          avatarParts.push(`${styleMap[aiAvatarOptions.style]} appearance`)
         }
       }
 
       // 모든 옵션이 '무관'이거나 설정되지 않은 경우 - Gemini가 제품에 맞게 자동 선택
       if (avatarParts.length === 0) {
         // 기본 설명을 제공하되, Gemini에게 제품에 맞게 구체화하도록 요청
-        aiAvatarDescription = 'a person suitable for this product advertisement (automatically select ethnicity, gender, age, and style based on the product and target market)'
+        aiAvatarDescription = 'a person suitable for this product advertisement (automatically select ethnicity, gender, age, body type, and style based on the product and target market)'
       } else {
         // 'person'이 없으면 추가
         if (!avatarParts.some(p => p.includes('person'))) {
