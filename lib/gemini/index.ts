@@ -119,4 +119,4 @@ export {
 // ============================================================
 // 공용 유틸리티 (내부용)
 // ============================================================
-export { genAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
+export { getGenAI, MODEL_NAME, fetchImageAsBase64 } from './shared'

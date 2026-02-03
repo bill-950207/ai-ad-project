@@ -3,7 +3,7 @@
  */
 
 import { GenerateContentConfig, MediaResolution, ThinkingLevel, Type } from '@google/genai'
-import { genAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
+import { getGenAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
 import type {
   ImageAdType,
   RecommendedOptionsInput,
@@ -185,7 +185,7 @@ ${SCENARIO_SELF_VERIFICATION}`
 
   console.log('[generateRecommendedCategoryOptions] 입력 프롬프트:', prompt)
 
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts }],
     config,
@@ -628,7 +628,7 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
 
   let response
   try {
-    response = await genAI.models.generateContent({
+    response = await getGenAI().models.generateContent({
       model: MODEL_NAME,
       contents: [{ role: 'user', parts }],
       config,
@@ -753,7 +753,7 @@ Output JSON with: analyzedOptions, overallStyle, suggestedPrompt, recommendedAdT
 
   parts.push({ text: prompt })
 
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts }],
     config,
@@ -816,7 +816,7 @@ Output JSON: { "optimizedPrompt": "English background prompt", "koreanDescriptio
 
   parts.push({ text: prompt })
 
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts }],
     config,

@@ -17,7 +17,7 @@
  */
 
 import { GenerateContentConfig, MediaResolution, ThinkingLevel } from '@google/genai'
-import { genAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
+import { getGenAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
 import type { ImageAdType, ImageAdPromptInput, ImageAdPromptResult, AvatarCharacteristics } from './types'
 
 // ============================================================
@@ -576,7 +576,7 @@ If any check fails, revise before responding.`
     { text: systemPrompt },
   ]
 
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts }],
     config,

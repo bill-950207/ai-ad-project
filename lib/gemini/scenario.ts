@@ -4,15 +4,9 @@
  * Gemini Structured Output을 사용한 시나리오 생성 함수들
  */
 
-import { GenerateContentConfig, GoogleGenAI, ThinkingLevel } from '@google/genai'
+import { GenerateContentConfig, ThinkingLevel } from '@google/genai'
+import { getGenAI, MODEL_NAME } from './shared'
 import type { GenerateScenariosResult } from './types'
-
-// Gemini 클라이언트 초기화
-const genAI = new GoogleGenAI({
-  apiKey: process.env.GOOGLE_AI_API_KEY!,
-})
-
-const MODEL_NAME = 'gemini-3-flash-preview'
 
 // ============================================================
 // Few-Shot 예시 및 검증 규칙
@@ -85,7 +79,7 @@ ${SCENARIO_SELF_VERIFICATION}`
     responseMimeType: 'application/json',
   }
 
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts: [{ text: enhancedPrompt }] }],
     config,
@@ -135,7 +129,7 @@ ${SCENARIO_SELF_VERIFICATION}`
     responseMimeType: 'application/json',
   }
 
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts: [{ text: enhancedPrompt }] }],
     config,
@@ -169,7 +163,7 @@ ${MOTION_PROMPT_EXAMPLES}
     responseMimeType: 'application/json',
   }
 
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts: [{ text: enhancedPrompt }] }],
     config,

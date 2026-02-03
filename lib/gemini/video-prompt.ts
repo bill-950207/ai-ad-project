@@ -7,7 +7,7 @@
  */
 
 import { GenerateContentConfig, MediaResolution, ThinkingLevel } from '@google/genai'
-import { genAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
+import { getGenAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
 import type {
   VideoPromptInput,
   VideoPromptResult,
@@ -93,7 +93,7 @@ If any check fails, revise before responding.
  * 범용 텍스트 생성 함수
  */
 export async function generateText(prompt: string): Promise<string> {
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
   })
@@ -157,7 +157,7 @@ ${VIDEO_SELF_VERIFICATION}`
 
   parts.push({ text: prompt })
 
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts }],
     config,
@@ -245,7 +245,7 @@ ${VIDEO_SELF_VERIFICATION}`
 
   parts.push({ text: prompt })
 
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts }],
     config,
@@ -321,7 +321,7 @@ ${VIDEO_SELF_VERIFICATION}`
 
   parts.push({ text: prompt })
 
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts }],
     config,
@@ -508,7 +508,7 @@ Before responding, check:
 
   let response
   try {
-    response = await genAI.models.generateContent({
+    response = await getGenAI().models.generateContent({
       model: MODEL_NAME,
       contents: [{ role: 'user', parts }],
       config: genConfig,
@@ -811,7 +811,7 @@ ${VIDEO_SELF_VERIFICATION}`
 
   parts.push({ text: prompt })
 
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts }],
     config,

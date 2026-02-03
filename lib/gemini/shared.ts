@@ -4,10 +4,21 @@
 
 import { GoogleGenAI } from '@google/genai'
 
-// Gemini 클라이언트 초기화
-export const genAI = new GoogleGenAI({
-  apiKey: process.env.GOOGLE_AI_API_KEY!,
-})
+// Gemini 클라이언트 Lazy Initialization (Cold Start 최적화)
+let _genAI: GoogleGenAI | null = null
+
+/**
+ * Gemini 클라이언트를 가져옵니다.
+ * 첫 호출 시에만 인스턴스를 생성합니다 (Lazy Initialization).
+ */
+export function getGenAI(): GoogleGenAI {
+  if (!_genAI) {
+    _genAI = new GoogleGenAI({
+      apiKey: process.env.GOOGLE_AI_API_KEY!,
+    })
+  }
+  return _genAI
+}
 
 // 사용할 모델
 export const MODEL_NAME = 'gemini-3-flash-preview'
