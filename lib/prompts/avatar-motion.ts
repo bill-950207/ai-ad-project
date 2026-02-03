@@ -219,7 +219,7 @@ CRITICAL RULES:
 
 CLOTHING CONSISTENCY (CRITICAL):
 - The avatar MUST wear the EXACT SAME clothing as shown in the reference image
-- Describe the clothing from the reference (e.g., "wearing the same white t-shirt and blue jeans as in reference")
+- Format: "wearing the same [top] and [bottom] as in reference" (describe actual items from reference)
 - Never change or invent new clothing - keep outfit identical across all frames
 
 PHOTOREALISM ESSENTIALS:
@@ -283,8 +283,8 @@ MANDATORY PROMPT REQUIREMENTS:
 8. Include camera specs (e.g., "shot on 35mm lens at f/8.0, crystal sharp background")
 9. End with "${PHOTOREALISM_ESSENTIALS.quality}"
 
-EXAMPLE PROMPT STRUCTURE:
-"The same person from reference image 1, wearing the same outfit as in the reference, a young woman with [hair from reference], [skin tone from reference], [expression as described], holding the exact product from reference image 2 at chest level, in a bright modern living room with white walls and natural plants, soft natural daylight streaming from large window on the left, shot on 35mm lens at f/8.0, crystal sharp background with all details visible, ${PHOTOREALISM_ESSENTIALS.quality}"
+PROMPT STRUCTURE (follow this pattern):
+"The same person from reference image 1, wearing the same outfit as in the reference, [expression as described], holding the exact product from reference image 2 at [position], in [environment type with ambient details], [lighting direction and quality], shot on [lens]mm lens at f/[aperture], crystal sharp background with all details visible, ${PHOTOREALISM_ESSENTIALS.quality}"
 
 OUTPUT FORMAT (JSON):
 {

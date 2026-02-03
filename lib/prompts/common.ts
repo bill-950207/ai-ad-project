@@ -93,6 +93,32 @@ export const UGC_BACKGROUND_STYLE =
 export const PROFESSIONAL_BACKGROUND_STYLE =
   'background with visible environment details, minimal depth separation'
 
+/** 배경 선명도 필수 가이드 (Gemini 프롬프트용) */
+export const SHARP_BACKGROUND_GUIDE = `
+=== CRITICAL: SHARP BACKGROUND REQUIRED ===
+
+⚠️ AI image generators tend to add artificial background blur (bokeh). You MUST explicitly prevent this.
+
+MANDATORY in every prompt:
+1. Camera aperture: "f/11" or "f/16" (NEVER f/1.4, f/1.8, f/2.8 - these cause blur)
+2. Background description: "sharp in-focus background", "every background detail visible"
+3. Anti-blur phrases: "NO bokeh", "NO background blur", "entire scene in sharp focus"
+
+GOOD examples:
+✓ "shot on 35mm at f/11, entire scene razor sharp from foreground to background"
+✓ "deep depth of field, every background detail crystal clear and visible"
+✓ "background completely in focus like a smartphone photo, NO bokeh"
+
+BAD (causes blurry background):
+✗ "shot at f/1.8" (wide aperture = blur)
+✗ "beautiful bokeh" (explicitly requesting blur)
+✗ "subject in focus" without mentioning background (AI assumes blur)
+✗ Just "natural lighting" without aperture spec (AI defaults to shallow DOF)
+
+INCLUDE IN EVERY PROMPT:
+"f/11 aperture, entire background sharp and in focus, NO bokeh, NO blur"
+`.trim()
+
 // ============================================================
 // 네거티브 프롬프트
 // ============================================================
@@ -395,28 +421,16 @@ SEEDREAM 4.5 OPTIMIZED PROMPT STRUCTURE (60-80 words):
 DO NOT describe person's physical appearance (age, ethnicity, facial features, hair color/style, body type).
 ONLY describe pose, action, expression, clothing, and environment.
 
-1. POSE & ACTION (10-15 words):
-   "[Action verb], [body position], [expression/emotion]"
-   Example: "leaning against window frame, gazing outside thoughtfully, serene expression"
+PROMPT STRUCTURE (follow this pattern):
+"[Pose/Action] + [Product interaction] + [Environment] + [Lighting] + [Camera specs] + [Quality tags]"
 
-2. PRODUCT INTERACTION (10-15 words):
-   "[How model interacts with product], [product from reference image 2]"
-   Example: "holding the product from reference image 2 at chest level, examining it closely"
-
-3. ENVIRONMENT (10-15 words):
-   "[Specific location] with [lived-in details]"
-   Example: "in a cozy cafe with warm wooden interior and morning sunlight"
-
-4. LIGHTING - CRITICAL (10-15 words):
-   "[Temperature] light from [specific direction] creating [effect]"
-   Example: "warm golden light from large window on left, creating soft shadows"
-
-5. CAMERA SPECS (10-15 words):
-   "shot on [lens]mm lens at f/[aperture]"
-   Example: "shot on 35mm lens at f/2.8, cinematic composition"
-
-6. QUALITY TAGS (5-10 words):
-   "natural skin texture with visible pores, cinematic atmosphere, 8K RAW quality"
+REQUIRED ELEMENTS:
+1. POSE & ACTION: "[Action verb], [body position], [expression]"
+2. PRODUCT INTERACTION: "[How model interacts with product from Figure 2]"
+3. ENVIRONMENT: "[Location type] with [ambient details]"
+4. LIGHTING: "[Temperature] light from [direction] creating [effect]"
+5. CAMERA SPECS: "shot on [lens]mm lens at f/[aperture]"
+6. QUALITY TAGS: "natural skin texture, 8K RAW quality"
 
 ❌ FORBIDDEN (will cause different person):
 - Age descriptions ("in her 20s", "young", "middle-aged")
@@ -432,30 +446,22 @@ ONLY describe pose, action, expression, clothing, and environment.
 export const VIDU_MOTION_GUIDE = `
 VIDU Q2 OPTIMIZED MOTION PROMPT (50-70 words):
 
-STRUCTURE:
-1. STARTING STATE (10 words):
-   "She sits peacefully, [initial pose and expression]"
+PROMPT STRUCTURE (follow this pattern):
+"[Starting state] + [Camera movement] + [Primary movement] + [Expression transition] + [Micro-expression] + [End state]"
 
-2. CAMERA (optional, 5-10 words):
-   "Camera slowly dollies in" or "Static shot"
-
-3. PRIMARY MOVEMENT (15-20 words):
-   Use timing adverbs: slowly, gently, gracefully, softly
-   "Gently raises the product toward her face, movement unhurried and deliberate"
-
-4. EXPRESSION TRANSITION (10 words):
-   "Expression shifts naturally as she examines the product" (can be curious, thoughtful, engaged - NOT forced smile)
-
-5. MICRO-EXPRESSION (5-10 words):
-   "Natural blink, eyes showing genuine interest"
-
-6. END STATE (10 words):
-   "She brings it closer, settling into natural contemplation"
+REQUIRED ELEMENTS:
+1. STARTING STATE: "[Subject] + [initial pose and expression]"
+2. CAMERA (optional): "Camera slowly dollies in" or "Static shot"
+3. PRIMARY MOVEMENT: Use timing adverbs (slowly, gently, gracefully, softly)
+4. EXPRESSION TRANSITION: Natural shift (curious, thoughtful, engaged - NOT forced smile)
+5. MICRO-EXPRESSION: "Natural blink, eyes showing genuine interest"
+6. END STATE: "[Subject] + [final position and mood]"
 
 IMPORTANT:
 - Do NOT describe motion intensity (use API's movement_amplitude)
 - Use human rhythm descriptions ("natural breath", "unhurried")
 - Include micro-expressions for realism
+- Use gender-neutral terms or match the avatar reference
 `.trim()
 
 // ============================================================
@@ -474,18 +480,21 @@ export const BODY_NEGATIVE_PROMPT =
 export const EXPRESSION_EXAMPLES = `
 EXPRESSION EXAMPLES (use these patterns):
 
-GOOD (natural, relatable):
-✓ "gentle closed-lip smile with relaxed eye contact"
-✓ "soft confident gaze, natural resting expression"
+GOOD (natural, relatable - NO forced smile):
+✓ "calm natural expression with relaxed eye contact"
+✓ "soft confident gaze, neutral resting expression"
 ✓ "looking at product with genuine curiosity"
 ✓ "candid moment, caught mid-thought"
+✓ "relaxed approachable look"
 
-BAD (exaggerated, artificial):
+BAD (exaggerated, artificial, forced):
 ✗ "big smile", "wide grin", "teeth showing", "beaming"
 ✗ "excited expression", "enthusiastic smile", "overly cheerful"
 ✗ "perfect smile", "dramatic reaction"
+✗ "friendly smile" (too forced)
 
-Use words: gentle, soft, subtle, relaxed, natural, candid
+Use words: calm, soft, subtle, relaxed, natural, candid, neutral
+AVOID: smile, grin, cheerful (unless specifically requested)
 `.trim()
 
 /** 조명 예시 (Few-Shot) - 공용 */
@@ -532,77 +541,72 @@ CRITICAL - PRODUCT NAME PROHIBITION:
 // 손+제품 자연스러움 가이드 (Few-Shot)
 // ============================================================
 
-/** 손 묘사 가이드 (Few-Shot) */
+/** 손 묘사 가이드 (Few-Shot) - 자연스러운 그립 중심 */
 export const HAND_DESCRIPTION_GUIDE = `
-=== ANATOMICALLY CORRECT HANDS GUIDE ===
+=== NATURAL HAND POSITIONING GUIDE ===
 
-CRITICAL RULES FOR NATURAL HANDS:
-1. FIVE FINGERS ONLY - exactly 5 fingers per hand, no extra or missing
-2. NATURAL FINGER SPACING - fingers slightly apart, not merged or spread too wide
-3. RELAXED GRIP - fingers gently curved, not stiff or clenched
-4. VISIBLE KNUCKLES - natural bends at joints
-5. PROPER THUMB POSITION - thumb opposing fingers naturally
+FOCUS ON GRIP TYPE, NOT ANATOMY:
+- "naturally holding" or "casually holding"
+- "gentle grip on the product"
+- "product resting in hand"
+- "relaxed hold at chest level"
 
 GOOD HAND DESCRIPTIONS:
-✓ "relaxed hand with fingers gently curved around product, thumb naturally supporting from opposite side"
-✓ "natural grip with all five fingers visible, palm facing slightly toward camera"
-✓ "casual hold with index finger and thumb pinching product edge, other fingers relaxed"
-✓ "both hands cradling product with fingers interlaced naturally underneath"
+✓ "naturally holding the product"
+✓ "casual grip, product visible"
+✓ "relaxed hold presenting the product"
+✓ "gently cradling the product"
 
-BAD HAND DESCRIPTIONS:
-✗ "holding product" (too vague - AI may generate distorted hands)
-✗ "gripping tightly" (causes unnatural tension)
-✗ "hand on product" (ambiguous positioning)
-✗ Any description missing finger count or grip type
+AVOID (causes AI to force unnatural poses):
+✗ Counting fingers (no "five fingers", "all fingers visible")
+✗ Specific finger positions (no "thumb on front", "index finger on side")
+✗ Anatomical details (no "knuckles", "palm facing", "fingertips")
+✗ Overly precise grip descriptions
 `.trim()
 
-/** 제품 유형별 그립 가이드 */
+/** 제품 유형별 그립 가이드 - 제품 가시성 중심 */
 export const PRODUCT_GRIP_GUIDE = `
-=== PRODUCT-SPECIFIC GRIP GUIDE ===
+=== PRODUCT PRESENTATION GUIDE ===
 
 SMALL PRODUCTS (cosmetics, skincare bottles, phones):
-- "delicate pinch grip between thumb and first two fingers"
-- "cradled in palm with fingers gently curved over top"
-- "held at base with thumb and fingers forming C-shape"
+- "held delicately near face"
+- "presented at eye level"
+- "showing product label to camera"
 
 MEDIUM PRODUCTS (boxes, jars, devices):
-- "wrapped grip with all fingers around product body"
-- "supported from bottom with one hand, other hand presenting top"
-- "natural two-hand hold at product sides"
+- "cradling naturally"
+- "held forward for visibility"
+- "presenting with both hands"
 
 LARGE PRODUCTS (bags, equipment):
-- "handle grip with relaxed wrist angle"
-- "supporting weight from bottom with arm slightly bent"
-- "casual carry position at hip level"
+- "carried naturally"
+- "casual hold"
+- "displayed at comfortable height"
 
 BOTTLES/TUBES:
-- "wrapped around body with thumb on front label area"
-- "held at neck/cap area with fingertips"
-- "pump bottle: one hand on body, finger on pump"
+- "holding naturally"
+- "label facing camera"
+- "product clearly visible"
 `.trim()
 
-/** 손-제품 접촉면 묘사 */
+/** 손-제품 접촉면 묘사 - 제품 가시성 우선 */
 export const HAND_PRODUCT_CONTACT_GUIDE = `
-=== HAND-PRODUCT CONTACT REALISM ===
+=== PRODUCT VISIBILITY PRIORITY ===
 
-CONTACT POINTS - Always specify:
-1. Which fingers touch the product
-2. Where on the product they touch
-3. Pressure level (light touch, gentle grip, secure hold)
+FOCUS ON PRODUCT VISIBILITY:
+- "product clearly visible, natural hold"
+- "gentle grip allowing full product visibility"
+- "product positioned for clear view"
 
-GOOD CONTACT DESCRIPTIONS:
-✓ "fingertips resting lightly on product surface, thumb supporting from behind"
-✓ "palm pressed gently against product back, fingers wrapped around sides"
-✓ "product nestled in curved palm, fingers naturally draped over edge"
-
-SHADOW CONSISTENCY:
-✓ "consistent shadow under hand where it contacts product"
-✓ "fingers casting small natural shadows on product surface"
+GOOD DESCRIPTIONS:
+✓ "naturally holding product with label visible"
+✓ "product prominently displayed in hands"
+✓ "relaxed grip showcasing the product"
 
 AVOID:
-✗ Product appearing to float near hand
-✗ Fingers merging into or through product
-✗ Unnatural gap between palm and product
+✗ Detailed finger/contact descriptions (causes AI issues)
+✗ Anatomical hand specifications
+✗ Pressure or grip intensity descriptions
 `.trim()
 
 /** 조명 일관성 가이드 */
@@ -632,14 +636,14 @@ export const GAZE_EXPRESSION_MATRIX = `
 === GAZE + EXPRESSION COMBINATIONS ===
 
 LOOKING AT CAMERA:
-- "direct eye contact with gentle closed-lip smile, confident and approachable"
+- "direct eye contact with calm natural expression, confident and approachable"
 - "eyes meeting camera with soft curious expression, slightly raised eyebrow"
-- "warm friendly gaze into camera, relaxed natural expression"
+- "relaxed gaze into camera, neutral resting expression"
 
 LOOKING AT PRODUCT:
 - "eyes focused on product with genuine curiosity, slight head tilt"
 - "examining product closely with thoughtful engaged expression"
-- "admiring product with soft appreciative look, subtle smile forming"
+- "admiring product with soft appreciative look"
 
 LOOKING AWAY (CANDID):
 - "gazing to side with relaxed contemplative expression"
@@ -649,31 +653,36 @@ LOOKING AWAY (CANDID):
 AVOID COMBINATIONS:
 ✗ Looking at camera + examining product expression (conflicting focus)
 ✗ Looking at product + direct eye contact (impossible)
-✗ Any gaze + exaggerated smile (unnatural)
+✗ Any gaze + forced smile (unnatural)
+✗ "friendly smile", "warm smile" (too forced - use neutral expressions)
 `.trim()
 
-/** 손+제품 Few-Shot 종합 예시 */
+/** 손+제품 가이드라인 */
 export const HAND_PRODUCT_EXAMPLES = `
-=== HAND + PRODUCT NATURAL EXAMPLES (Few-Shot) ===
+=== HAND + PRODUCT GUIDELINES ===
 
-GOOD EXAMPLES (photorealistic, natural):
-✓ "Woman holding skincare bottle with relaxed right hand, all five fingers visible - thumb on front, four fingers wrapped around back, product at chest level, eyes looking at camera with gentle smile, soft window light from left illuminating both face and product consistently"
+PROMPT STRUCTURE (follow this pattern):
+"[Person] + [natural grip verb] + [product position] + [product visibility] + [expression] + [lighting]"
 
-✓ "Man presenting smartphone in open palm, fingers slightly curved supporting device from below, thumb resting naturally on side edge, product angled 15 degrees toward camera, matching warm ambient light on both skin and device surface"
+NATURAL GRIP VERBS (choose one):
+- naturally holding, casually holding, gently cradling
+- presenting, displaying, showcasing
 
-✓ "Close-up of hands cradling cosmetic jar, thumbs on lid, fingers interlaced underneath supporting base, natural skin texture with visible pores, consistent soft overhead lighting creating matching shadows under chin and under jar"
+PRODUCT POSITIONS:
+- at chest level, at eye level, forward toward camera
 
-BAD EXAMPLES (avoid these patterns):
-✗ "Person holding product happily" (too vague, no hand details, no lighting)
-✗ "Hand gripping bottle tightly" (tense, unnatural)
-✗ "Model with product" (no grip description, no spatial relationship)
-✗ "Showing product to camera with big smile" (exaggerated expression)
-✗ "Professional photo of person with item" (no specific details)
+PRODUCT VISIBILITY PHRASES:
+- product clearly visible, product label facing camera
+- product prominently displayed, product angled for viewing
+
+AVOID (causes AI hand distortion):
+✗ Finger counting or specific finger positions
+✗ Anatomical hand details
+✗ Complex hand poses or interlocking
 
 SELF-CHECK BEFORE OUTPUT:
-□ Hand description includes finger count/position?
-□ Grip type matches product size/shape?
-□ Contact points specified?
-□ Lighting direction consistent for avatar and product?
-□ Expression natural and matching gaze direction?
+□ Natural grip verb used (not anatomical)?
+□ Product visibility described?
+□ Lighting consistent for face and product?
+□ Expression natural and neutral (NO forced smile)?
 `.trim()

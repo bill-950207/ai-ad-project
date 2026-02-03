@@ -19,6 +19,7 @@ import {
   LIGHTING_CONSISTENCY_GUIDE,
   GAZE_EXPRESSION_MATRIX,
   HAND_PRODUCT_EXAMPLES,
+  SHARP_BACKGROUND_GUIDE,
 } from '@/lib/prompts/common'
 import { VIDEO_TYPE_SCRIPT_STYLES } from '@/lib/prompts/scripts'
 import { VIDEO_TYPE_FIRST_FRAME_GUIDES } from '@/lib/prompts/first-frame'
@@ -27,34 +28,42 @@ import { VIDEO_TYPE_FIRST_FRAME_GUIDES } from '@/lib/prompts/first-frame'
 // Few-Shot 예시 및 검증 규칙
 // ============================================================
 
-/** 아바타 외모 묘사 예시 (Few-Shot) */
+/** 아바타 외모 묘사 가이드라인 */
 const AVATAR_APPEARANCE_EXAMPLES = `
-AVATAR DESCRIPTION EXAMPLES:
+AVATAR DESCRIPTION GUIDELINES:
 
-GOOD (specific, natural):
-✓ "Korean woman in her late 20s with soft natural makeup, shoulder-length dark brown hair"
-✓ "Athletic East Asian man, early 30s, clean-shaven with natural skin texture"
-✓ "Japanese woman with warm skin tone, gentle features, hair in loose waves"
+PROMPT STRUCTURE (follow this pattern):
+"[Ethnicity] [gender] in [age range] with [skin description], [hair description]"
 
-BAD (vague, stereotypical):
-✗ "Beautiful Asian woman" (too generic)
-✗ "Perfect skin, flawless features" (unrealistic)
-✗ "Model-like appearance" (vague)
+REQUIRED ELEMENTS:
+- Ethnicity: Use the ethnicity specified in input
+- Age range: Match the target age group
+- Skin: "natural skin texture", "healthy skin tone", "soft natural makeup"
+- Hair: Describe length and style naturally
+
+AVOID:
+✗ Generic phrases: "beautiful", "perfect skin", "flawless"
+✗ Stereotypical descriptions
+✗ Vague terms: "model-like", "attractive"
+
+The avatar should feel authentic and relatable, not idealized.
 `.trim()
 
 /** 표정 예시 (Few-Shot) */
 const AVATAR_EXPRESSION_EXAMPLES = `
 EXPRESSION EXAMPLES:
 
-GOOD (natural, relatable):
-✓ "gentle closed-lip smile with relaxed eye contact"
-✓ "soft confident gaze, natural resting expression"
-✓ "approachable expression with subtle warmth"
+GOOD (natural, neutral - NO forced smile):
+✓ "calm natural expression with relaxed eye contact"
+✓ "soft confident gaze, neutral resting expression"
+✓ "approachable look with subtle warmth"
+✓ "relaxed candid expression"
 
-BAD (exaggerated, artificial):
+BAD (exaggerated, artificial, forced):
 ✗ "big smile", "wide grin", "teeth showing"
 ✗ "excited expression", "overly enthusiastic"
 ✗ "perfect smile", "beaming at camera"
+✗ "friendly smile", "warm smile" (too forced)
 `.trim()
 
 /** 조명 예시 (Few-Shot) */
@@ -82,11 +91,14 @@ Check your prompt:
 ✓ Body type matches input specification?
 ✓ Has camera specs (lens, f/stop)?
 ✓ 50-100 words?
+✓ BACKGROUND SHARPNESS CHECK (CRITICAL):
+  - Aperture f/11 or higher specified? (NOT f/1.4, f/1.8, f/2.8)
+  - "sharp background" or "deep depth of field" included?
+  - "NO bokeh" or "NO blur" mentioned?
 ✓ HAND CHECK (if product present):
-  - Finger count specified? (five fingers per hand)
-  - Grip type described? (wrapped, pinch, palm, etc.)
-  - Contact points mentioned? (thumb position, fingertips)
-  - No extra or missing fingers?
+  - Product visibility prioritized?
+  - Natural grip description (avoid finger details)?
+  - Consistent lighting between avatar and product?
 If any check fails, revise before responding.
 `.trim()
 
@@ -110,22 +122,22 @@ const cameraCompositionDescriptions: Record<CameraCompositionType, { description
   presenter: { description: 'professional presenter framing, confident stance, authoritative composition', aperture: 'f/16', lens: '50mm' },
 }
 
-// 모델 포즈 설명 (영상 스타일별로 확장 + 손 묘사 강화)
+// 모델 포즈 설명 (영상 스타일별로 확장 - 자연스러운 표현)
 const modelPoseDescriptions: Record<ModelPoseType, string> = {
   // 공통
-  'talking-only': '⚠️ NO PRODUCT! Avatar only, natural conversational pose with EMPTY HANDS relaxed at sides or gesturing, all five fingers visible and anatomically correct',
-  'showing-product': 'Model presenting product towards camera - ONE hand wrapped around product with thumb on front, four fingers behind, product angled toward camera',
-  // UGC용 (손 묘사 강화)
-  'holding-product': 'Model holding product at chest level - relaxed grip with all five fingers gently curved around product, thumb visible on front, fingertips making natural contact',
-  'using-product': 'Model actively using the product - fingers interacting naturally (pressing, applying, opening), anatomically correct hand positioning',
-  reaction: 'Model showing genuine reaction - product held loosely in one hand, other hand may gesture, expressive face, relaxed finger positioning',
-  // Podcast용 (손 묘사 강화)
-  'desk-presenter': 'Model seated at desk - product on desk within reach, one hand resting near product with relaxed fingers, other hand gesturing, casual professional',
-  'casual-chat': 'Model in relaxed pose - if holding product, loose one-hand grip at table level, fingers naturally wrapped, other hand gesturing openly',
-  // Expert용 (손 묘사 강화)
-  demonstrating: 'Model demonstrating product - secure two-hand hold with fingers NOT obscuring product features, thumbs on top, palms supporting from sides/below',
-  presenting: 'Model in presenter stance - product held at optimal viewing angle, four fingers wrapped behind, thumb in front, arm extended toward camera',
-  explaining: 'Model in explanation pose - product cradled in open palm or held loosely, occasional gestures toward product features, knowledgeable expression',
+  'talking-only': '⚠️ NO PRODUCT! Avatar only, natural conversational pose with empty hands relaxed at sides or gesturing naturally',
+  'showing-product': 'Model presenting product toward camera, demonstrative pose, product prominently featured',
+  // UGC용
+  'holding-product': 'Model naturally holding product at chest level, relaxed authentic pose, product clearly visible',
+  'using-product': 'Model demonstrating product use, natural interaction',
+  reaction: 'Model showing genuine reaction, product held casually, expressive authentic enthusiasm',
+  // Podcast용
+  'desk-presenter': 'Model seated at desk, product on desk or held casually, conversational demeanor',
+  'casual-chat': 'Model in relaxed pose, product held casually if present, friendly approachable vibe',
+  // Expert용
+  demonstrating: 'Model displaying product features, product-focused composition, educational presentation',
+  presenting: 'Model in presenter stance, product held for optimal viewing, professional display',
+  explaining: 'Model in explanation pose, product presented clearly, knowledgeable expression',
 }
 
 // 의상 프리셋 설명
@@ -323,17 +335,19 @@ ${ugcSelfieProductInstruction}
 ${outfitSection ? `=== 의상 설정 ===\n${outfitSection}` : ''}
 
 === 작성 지침 ===
-1. ⚠️ 아바타 인종 필수: 프롬프트 첫 부분에 반드시 "${ethnicityEnglish}" 키워드를 포함하세요. 예: "A ${ethnicityEnglish} woman in her 20s..."
+1. ⚠️ 아바타 인종 필수: 프롬프트 첫 부분에 반드시 "${ethnicityEnglish}" 키워드를 포함하세요. 형식: "A ${ethnicityEnglish} [gender] in [age range]..."
 2. 아바타: 성별, 나이대, 피부톤, 머리카락, 표정, 의상 상세 묘사
-3. 배경: 선명한 배경 (블러 금지), 자연광 - "${videoTypeStyle.korean}" 스타일에 맞는 배경
-4. 카메라: Shot on Sony A7IV, 35mm f/8, deep depth of field
+3. ⚠️ 배경 선명도 필수: 배경이 흐리면 안 됩니다! "sharp in-focus background", "NO bokeh", "NO blur" 반드시 포함
+4. 카메라: Shot on Sony A7IV, 35mm f/11, deep depth of field, entire background sharp (NOT f/1.8 or f/2.8!)
 5. 품질: ultra-realistic cinematic editorial photography, 8K quality
 6. 중요: 이미지는 "${videoTypeStyle.korean}" 영상 스타일의 분위기를 반영해야 합니다
 7. 중요: 생성된 프롬프트에 제품명, 브랜드명을 절대 포함하지 마세요. 제품은 "the product"로만 지칭하세요.
-${input.productImageUrl ? '8. 손+제품: 손가락 위치, 그립 방식, 접촉면을 구체적으로 묘사하세요. 아바타와 제품의 조명이 일치해야 합니다.' : ''}
+${input.productImageUrl ? '8. 손+제품: 자연스러운 그립으로 묘사하고 (손가락 상세 설명 금지), 제품 가시성을 우선하세요. 아바타와 제품의 조명이 일치해야 합니다.' : ''}
 
 === 중요: 오버레이 요소 금지 ===
 ${NO_OVERLAY_ELEMENTS}
+
+${SHARP_BACKGROUND_GUIDE}
 
 ${input.productImageUrl ? `
 === 자연스러운 손+제품 가이드 (핵심 - 리얼리즘) ===
@@ -394,9 +408,9 @@ ${AVATAR_SELF_VERIFICATION}`
     return JSON.parse(responseText) as AiAvatarPromptResult
   } catch {
     return {
-      prompt: 'A person seated comfortably in a modern living room, naturally holding a product. Full body visible. Calm, confident expression. Soft natural daylight. Sharp in-focus background. Shot on Sony A7IV, 35mm f/8, deep depth of field. Ultra-realistic cinematic editorial photography, 8K quality.',
+      prompt: 'A person seated comfortably in a natural indoor setting, naturally holding a product. Full body visible. Calm, confident expression. Soft natural daylight. Sharp in-focus background with every detail visible, NO bokeh, NO blur. Shot on Sony A7IV, 35mm f/11, deep depth of field, entire scene razor sharp. Ultra-realistic cinematic editorial photography, 8K quality.',
       avatarDescription: '자연스러운 느낌의 모델',
-      locationDescription: '모던한 거실 배경',
+      locationDescription: '자연스러운 실내 배경',
     }
   }
 }

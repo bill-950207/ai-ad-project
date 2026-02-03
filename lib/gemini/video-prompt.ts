@@ -33,6 +33,7 @@ import {
   LIGHTING_CONSISTENCY_GUIDE,
   GAZE_EXPRESSION_MATRIX,
   HAND_PRODUCT_EXAMPLES,
+  SHARP_BACKGROUND_GUIDE,
 } from '@/lib/prompts/common'
 import { VIDEO_TYPE_FIRST_FRAME_GUIDES } from '@/lib/prompts/first-frame'
 
@@ -44,16 +45,18 @@ import { VIDEO_TYPE_FIRST_FRAME_GUIDES } from '@/lib/prompts/first-frame'
 const VIDEO_EXPRESSION_EXAMPLES = `
 EXPRESSION/MOOD EXAMPLES:
 
-GOOD (natural, subtle):
-✓ "gentle smile with relaxed eye contact"
-✓ "soft confident gaze, natural expression"
+GOOD (natural, neutral - NO forced smile):
+✓ "calm natural expression with relaxed eye contact"
+✓ "soft confident gaze, neutral resting expression"
 ✓ "looking at product with genuine curiosity"
 ✓ "candid moment, caught mid-thought"
+✓ "relaxed approachable look"
 
-BAD (exaggerated, artificial):
+BAD (exaggerated, artificial, forced):
 ✗ "big smile", "wide grin", "teeth showing"
 ✗ "excited expression", "enthusiastic pose"
 ✗ "overly cheerful", "dramatic reaction"
+✗ "friendly smile", "warm smile" (too forced)
 `.trim()
 
 /** 영상 조명 예시 (Few-Shot) */
@@ -81,10 +84,13 @@ Check your prompts:
 ✓ No "studio" word? (use "plain solid color background" or specific location instead)
 ✓ Has camera specs (lens, f/stop)?
 ✓ Word count appropriate (50-80 for image, max 800 for video)?
+✓ BACKGROUND SHARPNESS CHECK (CRITICAL):
+  - Aperture f/11 or f/16 specified? (NOT f/1.4, f/1.8, f/2.8)
+  - "sharp background" or "in focus background" included?
+  - "NO bokeh" or "NO blur" included?
 ✓ HAND CHECK (if product present):
-  - Finger count specified? (five fingers per hand)
-  - Grip type described? (wrapped, pinch, palm, etc.)
-  - Contact points mentioned? (thumb position, fingertips, palm)
+  - Product visibility prioritized?
+  - Natural grip description (avoid finger details)?
   - Lighting consistent between avatar and product?
 If any check fails, revise before responding.
 `.trim()
@@ -379,8 +385,8 @@ ${input.avatarDescription ? `The avatar is: ${input.avatarDescription}` : ''}
 ${input.productImageUrl ? 'A product image is attached for reference.' : ''}
 
 Add "recommendedOutfit" field to your JSON response with:
-- description: English outfit description (e.g., "casual white cotton t-shirt with light blue jeans")
-- localizedDescription: Outfit description in ${config_lang.name} (e.g., for Korean: "캐주얼한 흰색 티셔츠와 라이트 블루 청바지")
+- description: English outfit description (format: "[style] [top item] with [bottom item]")
+- localizedDescription: Outfit description in ${config_lang.name} for user display
 - reason: Why this outfit suits the product and video style in ${config_lang.name}`
     : ''
 
@@ -419,7 +425,7 @@ The outfit should complement the product without overshadowing it.
 Outfit must be described in ENGLISH for image generation.
 
 Include in your response:
-- "recommendedOutfit.description": Detailed English description of the outfit (e.g., "casual white cotton t-shirt with light blue slim-fit jeans")
+- "recommendedOutfit.description": Detailed English description (format: "[style] [top] with [bottom] and [optional accessories]")
 - "recommendedOutfit.localizedDescription": Outfit description in ${config_lang.name} for user display
 - "recommendedOutfit.reason": Brief explanation in ${config_lang.name} of why this outfit fits the product/video style
 `
@@ -590,22 +596,22 @@ const cameraCompositionDescriptions: Record<CameraCompositionType, string> = {
   presenter: 'professional presenter framing, confident stance, TED-talk style composition, authority position',
 }
 
-// 모델 포즈 설명 (영상 스타일별로 최적화 + 손 묘사 강화)
+// 모델 포즈 설명 (영상 스타일별로 최적화 - 자연스러운 표현)
 const modelPoseDescriptions: Record<ModelPoseType, string> = {
   // 공통
-  'talking-only': '⚠️ NO PRODUCT IN IMAGE! Model only, natural conversational pose with EMPTY HANDS relaxed at sides or gesturing naturally, all five fingers visible and anatomically correct, no objects held',
-  'showing-product': 'Model presenting product towards camera - ONE hand wrapped around product with thumb on front and four fingers behind, product angled 15° toward camera, other hand may support from below with open palm',
-  // UGC용 - 자연스럽고 진정성 있는 포즈 (손 묘사 강화)
-  'holding-product': 'Model holding product naturally at chest level - relaxed grip with all five fingers gently curved around product, thumb visible on front surface, fingertips making natural contact, casual authentic vibe',
-  'using-product': 'Model actively demonstrating product use - fingers interacting naturally with product (pressing, applying, opening), anatomically correct hand positioning, genuine engagement shown through hand movement',
-  reaction: 'Model showing genuine reaction to product - product held loosely in one hand at mid-chest, other hand may touch face or gesture, expressive authentic enthusiasm, relaxed finger positioning',
-  // Podcast용 - 대화형 프레젠터 스타일 (손 묘사 강화)
-  'desk-presenter': 'Model seated at desk - product placed on desk surface within reach, one hand resting near product with fingers relaxed, other hand may gesture while speaking, casual professional demeanor',
-  'casual-chat': 'Model in relaxed conversational pose - if holding product, loose one-hand grip at table level, fingers naturally wrapped, other hand gesturing openly, friendly approachable vibe',
-  // Expert용 - 권위있는 전문가 스타일 (손 묘사 강화)
-  demonstrating: 'Model professionally demonstrating product - secure two-hand hold with fingers positioned to NOT obscure product features, thumbs on top, palms supporting from sides/below, educational pointing gestures',
-  presenting: 'Model in confident presenter stance - product held at optimal viewing angle with deliberate grip, four fingers wrapped behind and thumb in front, arm slightly extended toward camera, authoritative yet approachable',
-  explaining: 'Model in thoughtful explanation pose - product cradled in open palm or held loosely, occasional hand gestures toward product features, engaged knowledgeable expression, trustworthy demeanor',
+  'talking-only': '⚠️ NO PRODUCT IN IMAGE! Model only, natural conversational pose with empty hands relaxed at sides or gesturing naturally, no objects held',
+  'showing-product': 'Model presenting product toward camera, demonstrative pose, product prominently featured',
+  // UGC용 - 자연스럽고 진정성 있는 포즈
+  'holding-product': 'Model naturally holding product at chest level, relaxed authentic pose, product clearly visible',
+  'using-product': 'Model demonstrating product use, natural interaction',
+  reaction: 'Model showing genuine reaction to product, product held casually, expressive authentic enthusiasm',
+  // Podcast용 - 대화형 프레젠터 스타일
+  'desk-presenter': 'Model seated at desk, product on desk or held casually, conversational demeanor',
+  'casual-chat': 'Model in relaxed conversational pose, product held casually if present, friendly approachable vibe',
+  // Expert용 - 권위있는 전문가 스타일
+  demonstrating: 'Model displaying product features, product-focused composition, educational presentation',
+  presenting: 'Model in confident presenter stance, product held for optimal viewing, professional display',
+  explaining: 'Model in explanation pose, product presented clearly, knowledgeable expression',
 }
 
 // 의상 프리셋 설명
@@ -768,6 +774,8 @@ ${expressionSection}
 ${lightingSection}
 
 ${NO_OVERLAY_ELEMENTS}
+
+${SHARP_BACKGROUND_GUIDE}
 ${handProductGuideSection}
 CRITICAL RULES:
 1. For AVATAR: ONLY use "the model from Figure 1". Do NOT describe facial features, hair, skin tone, or ethnicity.
@@ -776,7 +784,7 @@ CRITICAL RULES:
 4. The image should reflect the "${VIDEO_TYPE_SCRIPT_STYLES[videoType]?.korean || 'UGC'}" video style atmosphere.
 ${bodyTypeDescription ? `5. Maintain ${bodyTypeDescription} body type consistently.` : ''}
 ${input.productImageUrl
-    ? `6. HAND REALISM: Describe hand grip with specific finger positions, contact points, and consistent lighting between avatar and product.
+    ? `6. HAND REALISM: Use natural grip descriptions (avoid finger details), prioritize product visibility, ensure consistent lighting between avatar and product.
 Create photorealistic prompt using "the model from Figure 1" for avatar, "the product from Figure 2" for product.`
     : 'Create photorealistic prompt using "the model from Figure 1" for avatar. ⚠️ NO PRODUCT should appear - avatar only with empty hands.'}
 
@@ -784,7 +792,7 @@ ${VIDEO_EXPRESSION_EXAMPLES}
 
 ${VIDEO_LIGHTING_EXAMPLES}
 
-Include: camera specs, lighting direction, quality tags, AND detailed hand grip description if product is present.
+Include: camera specs, lighting direction, quality tags, AND natural grip description (avoid finger details) if product is present.
 Output JSON: { "prompt": "English 50-80 words", "locationDescription": "Korean location description" }
 
 ${VIDEO_SELF_VERIFICATION}`
@@ -821,8 +829,8 @@ ${VIDEO_SELF_VERIFICATION}`
     return JSON.parse(response.text || '') as FirstFramePromptResult
   } catch {
     return {
-      prompt: 'Place the model from Figure 1 in a modern living room. Soft natural daylight. Shot on Sony A7IV, 35mm f/8. Hyperrealistic photograph, 8K quality.',
-      locationDescription: '모던한 거실',
+      prompt: 'The model from Figure 1 in a natural indoor setting. Soft natural daylight. Sharp in-focus background with every detail visible, NO bokeh, NO blur. Shot on Sony A7IV, 35mm f/11, entire scene razor sharp. Hyperrealistic photograph, 8K quality.',
+      locationDescription: '자연스러운 실내',
     }
   }
 }

@@ -21,20 +21,29 @@ import { VideoType } from './scripts'
 // Few-Shot 예시 및 검증 규칙
 // ============================================================
 
-/** 첫 프레임 프롬프트 Few-Shot 예시 */
+/** 첫 프레임 프롬프트 가이드라인 */
 const FIRST_FRAME_EXAMPLES = `
-=== FIRST FRAME PROMPT EXAMPLES ===
+=== FIRST FRAME PROMPT GUIDELINES ===
 
-GOOD (specific, UGC-authentic):
-✓ "Young woman in casual cream sweater, sitting comfortably on grey sofa, holding skincare product at chest level, looking at camera with gentle smile, cozy modern living room with soft morning light from window, shot on 35mm f/11, natural skin texture, 8K quality"
+PROMPT STRUCTURE (follow this pattern):
+"[Person description] + [outfit] + [pose/action] + [product interaction] + [expression] + [environment] + [lighting] + [camera specs] + [quality tags]"
 
-✓ "Man in his 30s, relaxed expression, presenting fitness supplement naturally, standing in bright home gym with natural daylight, POV selfie perspective, shot on 28mm f/11, authentic UGC style"
+REQUIRED ELEMENTS:
+1. Person: Use avatar reference or describe naturally
+2. Outfit: Casual/appropriate for video type
+3. Pose: Sitting, standing, or natural position
+4. Product: "holding product at chest level" or appropriate interaction
+5. Expression: "natural relaxed expression" or "calm neutral expression"
+6. Environment: Match video type (home for UGC, desk for podcast, etc.)
+7. Lighting: "soft natural light from window" or similar
+8. Camera: "shot on 35mm f/11" (UGC) or "shot on 50mm f/16" (professional)
+9. Quality: "natural skin texture, 8K quality"
 
-BAD (equipment visible, unnatural):
-✗ "Model with ring light illuminating her face" (equipment visible)
-✗ "Big smile showing teeth, excited expression" (unnatural)
-✗ "Perfect studio setup with softbox" (behind-the-scenes)
-✗ "Blurred background with bokeh" (not UGC-style)
+AVOID (causes issues):
+✗ Lighting equipment words (ring light, softbox, LED)
+✗ Forced expressions (big smile, excited, teeth showing)
+✗ "Studio" word (use "plain solid color background" instead)
+✗ Shallow depth of field (f/1.8, f/2.8 - causes bokeh)
 `.trim()
 
 /** 카메라 선택 Chain-of-Thought */
@@ -200,30 +209,30 @@ export const VIDEO_TYPE_FIRST_FRAME_GUIDES: Record<VideoType, {
 }> = {
   UGC: {
     environmentPrompt: 'casual home setting, cozy living room or bedroom, natural lived-in environment with personal touches',
-    posePrompt: 'relaxed natural pose, holding product casually at chest level with relaxed grip - all five fingers visible, thumb supporting from behind, authentic genuine expression (NOT forced smile)',
+    posePrompt: 'relaxed natural pose, casually holding product at chest level, authentic genuine expression (NOT forced smile)',
     atmospherePrompt: 'candid authentic vibe, real influencer sharing discovery, warm personal connection with viewer',
     recommendedCompositions: ['ugc-selfie', 'ugc-closeup', 'selfie-front', 'selfie-high', 'selfie-side'],
     expressionGuide: 'natural relaxed expression, can be neutral/curious/subtly engaged - avoid big smiles or exaggerated reactions',
     cameraMovementHint: 'handheld selfie feel, slight natural movement okay, POV perspective',
-    handProductGuide: 'casual one-hand grip with fingers gently curved around product, palm visible, product angled slightly toward camera, fingertips resting naturally on surface',
+    handProductGuide: 'casual natural grip, product visible and angled toward camera',
   },
   podcast: {
     environmentPrompt: 'intimate podcast setting atmosphere, clean organized desk setup, warm ambient lighting, comfortable professional space with minimal distractions, no visible equipment',
-    posePrompt: 'seated comfortably at desk or couch, conversational leaning posture, engaged attentive expression, hands visible - one hand gesturing naturally, other hand may rest on product on table or hold product loosely',
+    posePrompt: 'seated comfortably, conversational posture, engaged expression',
     atmospherePrompt: 'intimate one-on-one conversation feel, warm inviting setting, like chatting with a trusted friend who happens to be knowledgeable',
     recommendedCompositions: ['webcam', 'medium-shot', 'closeup', 'three-quarter'],
     expressionGuide: 'warm engaged expression, attentive listener/speaker vibe, occasional thoughtful pauses',
     cameraMovementHint: 'stable webcam or tripod feel, minimal movement, focus on connection',
-    handProductGuide: 'product placed on desk within easy reach, or held casually in one hand at table level, relaxed open hand posture with fingers naturally spread, occasional demonstrative touch',
+    handProductGuide: 'product on desk or held casually, natural posture',
   },
   expert: {
     environmentPrompt: 'professional educational setting, modern office or clean minimalist space, seamless backdrop, well-lit presentation area conveying credibility, no visible equipment',
-    posePrompt: 'confident presenter stance, authoritative yet approachable posture, product held in presenting position with clear visibility - fingers wrapped securely but not tightly, palm supporting from below',
+    posePrompt: 'confident presenter stance, product held in presenting position, professional display',
     atmospherePrompt: 'educational authority atmosphere, TED-talk credibility, trustworthy expert sharing valuable knowledge',
     recommendedCompositions: ['tripod', 'presenter', 'medium-shot', 'fullbody'],
-    expressionGuide: 'confident knowledgeable expression, professional demeanor, occasional reassuring smile',
+    expressionGuide: 'confident knowledgeable expression, professional demeanor, calm assured look',
     cameraMovementHint: 'stable professional framing, broadcast quality, authority positioning',
-    handProductGuide: 'deliberate presenter grip - product held at optimal viewing angle, fingers positioned to not obscure key features, secure two-hand hold for larger items, professional display positioning',
+    handProductGuide: 'product held for optimal viewing angle, professional display',
   },
 }
 

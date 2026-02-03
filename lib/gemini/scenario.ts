@@ -27,19 +27,22 @@ BAD (모호, 일반적):
 ✗ title: "끝" / description: "마무리"
 `.trim()
 
-/** 모션 프롬프트 예시 (Few-Shot - 영어) */
+/** 모션 프롬프트 가이드라인 (영어) */
 const MOTION_PROMPT_EXAMPLES = `
-=== MOTION PROMPT EXAMPLES (English) ===
+=== MOTION PROMPT GUIDELINES (English) ===
 
-GOOD (specific, cinematic):
-✓ "Camera slowly dollies in as model gently picks up the product, soft smile forming"
-✓ "Model turns product in hands examining texture, subtle eyebrow raise shows interest"
-✓ "Slow push-in on face as model applies product, expression shifts to satisfaction"
+PROMPT STRUCTURE (follow this pattern):
+"[Camera movement] + [Subject action] + [Expression change]"
 
-BAD (vague, static):
-✗ "Model holds product"
-✗ "Shows the product to camera"
-✗ "Product appears in frame"
+REQUIRED ELEMENTS:
+- Camera: "slowly dollies in", "push-in", "static shot", "tracking"
+- Action: "picks up product", "turns product in hands", "applies product"
+- Expression: "curious look", "subtle eyebrow raise", "thoughtful gaze" (NOT smile)
+
+AVOID:
+✗ Vague descriptions: "holds product", "shows product"
+✗ Static scenes without movement or expression change
+✗ Forced smile expressions
 `.trim()
 
 /** Self-Verification 체크리스트 */

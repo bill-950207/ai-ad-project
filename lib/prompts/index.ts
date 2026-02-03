@@ -141,13 +141,13 @@ export const PROMPTS = {
 export const FALLBACK_PROMPTS = {
   /** 이미지 광고 기본 프롬프트 (UGC 스타일) */
   imageAd: {
-    holding: 'Young woman with natural makeup holding product at chest level, looking at camera with friendly smile, in lived-in modern interior with messy background details, natural light from window with realistic shadows, shot on 35mm lens at f/11, film grain ISO 400, candid off-center composition, entire scene from foreground to background in razor sharp focus, absolutely NO blur NO bokeh NO soft focus anywhere in the image, Hyperrealistic photograph',
+    holding: 'The model from Figure 1 naturally holding the product at chest level, looking at camera with calm natural expression, in lived-in interior with background details visible, natural light from window with realistic shadows, shot on 35mm lens at f/11, film grain ISO 400, candid off-center composition, entire scene from foreground to background in razor sharp focus, absolutely NO blur NO bokeh NO soft focus anywhere in the image, Hyperrealistic photograph',
     productOnly: 'Product on a real surface with everyday background details visible, natural window lighting with realistic shadows, shot on 35mm lens at f/16, entire image in perfect sharp focus including all background details, absolutely NO blur NO bokeh, crystal clear background, Hyperrealistic photograph',
-    lifestyle: 'Person naturally using product in daily life scene with messy lived-in background, authentic candid moment in modern home setting, natural daylight from window with imperfect lighting, shot on 35mm lens at f/11, film grain ISO 400, every element from subject to background in razor sharp focus, absolutely NO blur NO bokeh NO soft background, Hyperrealistic photograph',
+    lifestyle: 'Person naturally using product in daily life scene with lived-in background, authentic candid moment, natural daylight from window, shot on 35mm lens at f/11, film grain ISO 400, every element from subject to background in razor sharp focus, absolutely NO blur NO bokeh NO soft background, Hyperrealistic photograph',
   },
 
   /** 첫 프레임 기본 프롬프트 (UGC 스타일) */
-  firstFrame: 'Young content creator holding product with natural expression, in cozy modern interior with lived-in background details, natural light from window with realistic shadows, eye-level frontal view slightly off-center, shot on 35mm lens at f/11, film grain ISO 400, entire scene in razor sharp focus from foreground to background, absolutely NO blur NO bokeh NO soft focus, Hyperrealistic photograph',
+  firstFrame: 'The model from Figure 1 naturally holding product with calm expression, in lived-in interior with background details visible, natural light from window with realistic shadows, eye-level frontal view slightly off-center, shot on 35mm lens at f/11, film grain ISO 400, entire scene in razor sharp focus from foreground to background, absolutely NO blur NO bokeh NO soft focus, Hyperrealistic photograph',
 
   /** 배경 기본 프롬프트 */
   background: 'Clean minimalist background with soft natural lighting from window, neutral colors, subtle shadows, sharp in-focus details, no people or text, high resolution photograph',

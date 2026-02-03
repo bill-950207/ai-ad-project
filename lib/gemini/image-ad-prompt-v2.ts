@@ -118,18 +118,21 @@ Scene = FINAL PHOTOGRAPH, not behind-the-scenes.
 
 /** 표정 가이드 (구체적 묘사 + Few-Shot 예시) */
 const EXPRESSION_GUIDE = `
-EXPRESSION (CRITICAL - avoid artificial "AI smile"):
+EXPRESSION (CRITICAL - NO forced smile):
 
-GOOD examples:
-✓ "gentle closed-lip smile with relaxed eye contact"
-✓ "soft confident gaze, lips slightly parted"
+GOOD examples (natural, neutral):
+✓ "calm natural expression with relaxed eye contact"
+✓ "soft confident gaze, neutral resting expression"
 ✓ "looking at product with genuine curiosity, candid moment"
+✓ "relaxed approachable look"
 
-BAD examples (NEVER use):
+BAD examples (NEVER use - forced/artificial):
 ✗ "big smile", "wide grin", "teeth showing", "beaming"
 ✗ "excited expression", "overly cheerful", "enthusiastic smile"
+✗ "friendly smile", "warm smile" (too forced)
 
-Use: "relaxed", "gentle", "soft", "subtle", "candid", "natural"
+Use: "calm", "relaxed", "soft", "subtle", "candid", "natural", "neutral"
+AVOID: smile, grin, cheerful (unless user specifically requests)
 `.trim()
 
 /** 제품 보존 규칙 */
@@ -449,9 +452,9 @@ Generate photorealistic model: ${input.aiAvatarDescription}
 CRITICAL OUTFIT RULE:
 - The model MUST be wearing a COMPLETE outfit (both upper body AND lower body clothing)
 - NEVER describe only upper body clothing (e.g., "jacket" alone) - ALWAYS include pants/skirt/bottom
-- For WEARING ad type: The product is the main clothing item; describe COORDINATING pieces (e.g., if product is jacket, specify what pants/shoes to pair with it)
-- Example GOOD: "wearing a navy puffer jacket with dark jeans and white sneakers"
-- Example BAD: "wearing a navy puffer jacket" (missing bottom clothing)`
+- For WEARING ad type: The product is the main clothing item; describe COORDINATING pieces
+- Format: "[upper body item] with [lower body item] and [footwear]"
+- AVOID: Describing only one piece of clothing without full outfit`
     : ''
 
   // 의상 지시 (모델이 필요한 광고이고, 의상 이미지가 없고, 의상 옵션이 선택된 경우)
@@ -557,7 +560,7 @@ ${!figureInfo.needsModel ? `For PRODUCT ONLY shots:
 Check your optimizedPrompt:
 ✓ No lighting EQUIPMENT words (softbox, ring light, LED, reflector)?
 ✓ No "studio" word? (use "plain solid color background" or "clean white/gray background" instead)
-✓ No "big smile", "wide grin", "teeth showing"?
+✓ No forced smile words? ("smile", "grin", "cheerful" - use "calm", "relaxed", "neutral" instead)
 ✓ Has camera specs (lens, f/stop)?
 ✓ 60-80 words?
 ✓ Hand actions are SIMPLE? (max 1 action per hand, no complex multi-gesture poses)?
