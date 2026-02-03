@@ -9,14 +9,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
-import { GoogleGenAI, GenerateContentConfig, ThinkingLevel, Type } from '@google/genai'
-
-// Gemini 클라이언트 (lib/gemini/client.ts와 동일한 설정)
-const genAI = new GoogleGenAI({
-  apiKey: process.env.GOOGLE_AI_API_KEY!,
-})
-
-const MODEL_NAME = 'gemini-3-flash-preview'
+import { GenerateContentConfig, ThinkingLevel, Type } from '@google/genai'
+import { getGenAI, MODEL_NAME } from '@/lib/gemini/shared'
 
 // 분위기 옵션
 const MOOD_OPTIONS = ['bright', 'calm', 'emotional', 'professional', 'exciting', 'trendy', 'playful', 'romantic', 'nostalgic']
@@ -168,7 +162,7 @@ Provide reasoning for each choice.`
     },
   }
 
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     config,

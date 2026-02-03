@@ -9,14 +9,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { GoogleGenAI, GenerateContentConfig, Type, ThinkingLevel } from '@google/genai'
-
-// Gemini 클라이언트 초기화
-const genAI = new GoogleGenAI({
-  apiKey: process.env.GOOGLE_AI_API_KEY!,
-})
-
-const MODEL_NAME = 'gemini-3-flash-preview'
+import { GenerateContentConfig, Type, ThinkingLevel } from '@google/genai'
+import { getGenAI, MODEL_NAME } from '@/lib/gemini/shared'
 
 interface ExtractedProductInfo {
   title?: string
@@ -213,7 +207,7 @@ ${url}
   }
 
   try {
-    const response = await genAI.models.generateContent({
+    const response = await getGenAI().models.generateContent({
       model: MODEL_NAME,
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config,
@@ -269,7 +263,7 @@ URL: ${url}
   }
 
   try {
-    const response = await genAI.models.generateContent({
+    const response = await getGenAI().models.generateContent({
       model: MODEL_NAME,
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config,

@@ -10,14 +10,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { GoogleGenAI, GenerateContentConfig, ThinkingLevel, Type } from '@google/genai'
-
-// Gemini 클라이언트 초기화
-const genAI = new GoogleGenAI({
-  apiKey: process.env.GOOGLE_AI_API_KEY!,
-})
-
-const MODEL_NAME = 'gemini-3-flash-preview'
+import { GenerateContentConfig, ThinkingLevel, Type } from '@google/genai'
+import { getGenAI, MODEL_NAME, fetchImageAsBase64 } from '@/lib/gemini/shared'
 
 // 씬별 광고 요소 (시나리오 API에서 생성한 프롬프트 포함)
 interface SceneElementOptions {
@@ -63,25 +57,6 @@ interface SceneOutput {
   videoPrompt?: string     // 영상 생성용 (Vidu) - 별도 모션 프롬프트
   duration: number
   movementAmplitude: 'auto' | 'small' | 'medium' | 'large'
-}
-
-/**
- * URL에서 이미지를 가져와 base64로 변환합니다.
- */
-async function fetchImageAsBase64(url: string): Promise<{ base64: string; mimeType: string } | null> {
-  try {
-    const response = await fetch(url)
-    if (!response.ok) return null
-
-    const contentType = response.headers.get('content-type') || 'image/jpeg'
-    const buffer = await response.arrayBuffer()
-    const base64 = Buffer.from(buffer).toString('base64')
-
-    return { base64, mimeType: contentType }
-  } catch (error) {
-    console.error('이미지 로드 오류:', error)
-    return null
-  }
 }
 
 export async function POST(request: NextRequest) {
@@ -236,7 +211,7 @@ export async function POST(request: NextRequest) {
 
     parts.push({ text: prompt })
 
-    const response = await genAI.models.generateContent({
+    const response = await getGenAI().models.generateContent({
       model: MODEL_NAME,
       contents: [{ role: 'user', parts }],
       config,

@@ -13,38 +13,13 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { GoogleGenAI, GenerateContentConfig, ThinkingLevel, Type } from '@google/genai'
+import { GenerateContentConfig, ThinkingLevel, Type } from '@google/genai'
+import { getGenAI, MODEL_NAME, fetchImageAsBase64 } from '@/lib/gemini/shared'
 import {
   createEditTask,
   type EditAspectRatio,
 } from '@/lib/kie/client'
 import { sanitizePrompt } from '@/lib/prompts/sanitize'
-
-// Gemini 클라이언트 초기화
-const genAI = new GoogleGenAI({
-  apiKey: process.env.GOOGLE_AI_API_KEY!,
-})
-
-const MODEL_NAME = 'gemini-3-flash-preview'
-
-/**
- * URL에서 이미지를 가져와 base64로 변환합니다.
- */
-async function fetchImageAsBase64(url: string): Promise<{ base64: string; mimeType: string } | null> {
-  try {
-    const response = await fetch(url)
-    if (!response.ok) return null
-
-    const contentType = response.headers.get('content-type') || 'image/jpeg'
-    const buffer = await response.arrayBuffer()
-    const base64 = Buffer.from(buffer).toString('base64')
-
-    return { base64, mimeType: contentType }
-  } catch (error) {
-    console.error('이미지 로드 오류:', error)
-    return null
-  }
-}
 
 interface ScenarioElements {
   background: string
@@ -307,7 +282,7 @@ All prompts must share the SAME tone, color palette, and quality keywords for vi
   parts.push({ text: prompt })
 
   // Gemini에 전달
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [
       {

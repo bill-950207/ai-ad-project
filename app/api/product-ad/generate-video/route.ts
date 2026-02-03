@@ -7,7 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
-import { GoogleGenAI, GenerateContentConfig, ThinkingLevel, Type } from '@google/genai'
+import { GenerateContentConfig, ThinkingLevel, Type } from '@google/genai'
+import { getGenAI, MODEL_NAME } from '@/lib/gemini/shared'
 import {
   submitSeedanceToQueue,
   submitWan26ToQueue,
@@ -17,13 +18,6 @@ import {
   type Wan26Resolution,
 } from '@/lib/kie/client'
 import { PRODUCT_AD_VIDEO_CREDIT_COST } from '@/lib/credits'
-
-// Gemini 클라이언트 초기화
-const genAI = new GoogleGenAI({
-  apiKey: process.env.GOOGLE_AI_API_KEY!,
-})
-
-const MODEL_NAME = 'gemini-3-flash-preview'
 
 interface ScenarioElements {
   background: string
@@ -348,7 +342,7 @@ Create a single, optimized video prompt.`
     },
   }
 
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     config,
@@ -498,7 +492,7 @@ Create a multi-shot prompt that tells a compelling visual story about the produc
     },
   }
 
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     config,

@@ -6,15 +6,9 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { GoogleGenAI, GenerateContentConfig, ThinkingLevel, Type } from '@google/genai'
+import { GenerateContentConfig, ThinkingLevel, Type } from '@google/genai'
+import { getGenAI, MODEL_NAME } from '@/lib/gemini/shared'
 import { uploadBufferToR2 } from '@/lib/storage/r2'
-
-// Gemini 클라이언트 초기화
-const genAI = new GoogleGenAI({
-  apiKey: process.env.GOOGLE_AI_API_KEY!,
-})
-
-const MODEL_NAME = 'gemini-3-flash-preview'
 
 interface AnalyzedElements {
   background: string
@@ -145,7 +139,7 @@ Provide realistic and practical suggestions for each element.`
     responseSchema: getResponseSchema(),
   }
 
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     config,
@@ -181,7 +175,7 @@ Consider what visual styles and techniques would work well for this type of prod
     responseSchema: getResponseSchema(),
   }
 
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     config,
