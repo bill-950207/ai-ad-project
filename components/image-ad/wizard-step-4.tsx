@@ -569,9 +569,8 @@ export function WizardStep4() {
   // 설정 화면
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {/* 미리보기 요약 */}
+      {/* 선택 요약 */}
       <div className="bg-card border border-border rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">{t.imageAd?.generate?.preview || 'Generation Preview'}</h2>
         <div className="grid grid-cols-2 gap-4">
           {/* 제품 */}
           <div className="flex items-center gap-3 p-3 bg-secondary/30 rounded-lg">
@@ -597,7 +596,7 @@ export function WizardStep4() {
           {/* 아바타 */}
           <div className="flex items-center gap-3 p-3 bg-secondary/30 rounded-lg">
             <div className="w-12 h-12 bg-secondary rounded-lg overflow-hidden flex items-center justify-center">
-              {selectedAvatarInfo ? (
+              {selectedAvatarInfo?.imageUrl ? (
                 <img
                   src={selectedAvatarInfo.imageUrl}
                   alt={t.imageAd?.generate?.avatar || 'Avatar'}
