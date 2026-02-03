@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
       'GENERATING_SCENES',
       'SCENES_COMPLETED',
       'GENERATING_VIDEO',
+      'GENERATING_SCENE_VIDEOS',  // 멀티씬 영상 생성 중
       'IN_QUEUE',
       'IN_PROGRESS',
       'COMPLETED',
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
           where: {
             user_id: user.id,
             category: 'productAd',
-            status: { in: ['DRAFT', 'GENERATING_SCENARIO', 'GENERATING_SCENES', 'SCENES_COMPLETED'] },
+            status: { in: ['DRAFT', 'GENERATING_SCENARIO', 'GENERATING_SCENES', 'SCENES_COMPLETED', 'GENERATING_VIDEO', 'GENERATING_SCENE_VIDEOS', 'IN_QUEUE', 'IN_PROGRESS'] },
           },
         })
 
@@ -247,7 +248,7 @@ export async function GET(request: NextRequest) {
       where: {
         user_id: user.id,
         category: 'productAd',
-        status: { in: ['DRAFT', 'GENERATING_SCENARIO', 'GENERATING_SCENES', 'SCENES_COMPLETED'] },
+        status: { in: ['DRAFT', 'GENERATING_SCENARIO', 'GENERATING_SCENES', 'SCENES_COMPLETED', 'GENERATING_VIDEO', 'GENERATING_SCENE_VIDEOS', 'IN_QUEUE', 'IN_PROGRESS'] },
       },
       select: DRAFT_SELECT,
       orderBy: {
@@ -289,7 +290,7 @@ export async function DELETE(request: NextRequest) {
           id,
           user_id: user.id,
           category: 'productAd',
-          status: { in: ['DRAFT', 'GENERATING_SCENARIO', 'GENERATING_SCENES', 'SCENES_COMPLETED'] },
+          status: { in: ['DRAFT', 'GENERATING_SCENARIO', 'GENERATING_SCENES', 'SCENES_COMPLETED', 'GENERATING_VIDEO', 'GENERATING_SCENE_VIDEOS', 'IN_QUEUE', 'IN_PROGRESS'] },
         },
       })
     } else {
@@ -298,7 +299,7 @@ export async function DELETE(request: NextRequest) {
         where: {
           user_id: user.id,
           category: 'productAd',
-          status: { in: ['DRAFT', 'GENERATING_SCENARIO', 'GENERATING_SCENES', 'SCENES_COMPLETED'] },
+          status: { in: ['DRAFT', 'GENERATING_SCENARIO', 'GENERATING_SCENES', 'SCENES_COMPLETED', 'GENERATING_VIDEO', 'GENERATING_SCENE_VIDEOS', 'IN_QUEUE', 'IN_PROGRESS'] },
         },
       })
     }

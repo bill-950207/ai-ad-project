@@ -25,6 +25,8 @@ import {
 import {
   submitFirstFrameToQueue as submitFirstFrameToKieQueue,
 } from '@/lib/kie/client'
+import { KEYFRAME_CREDIT_COST } from '@/lib/credits'
+import { recordCreditUse } from '@/lib/credits/history'
 
 /** 지원되는 민족성 타입 */
 type SupportedEthnicity = 'korean' | 'asian' | 'western' | 'japanese' | 'chinese'
@@ -161,6 +163,38 @@ export async function POST(request: NextRequest) {
     if (!productInfo?.trim()) {
       return NextResponse.json({ error: 'Product info is required' }, { status: 400 })
     }
+
+    // 크레딧 확인 및 차감 (키프레임 이미지 생성 비용)
+    const creditCost = KEYFRAME_CREDIT_COST
+    const profile = await prisma.profiles.findUnique({
+      where: { id: user.id },
+      select: { credits: true },
+    })
+
+    if (!profile || (profile.credits ?? 0) < creditCost) {
+      return NextResponse.json({
+        error: 'Insufficient credits',
+        required: creditCost,
+        available: profile?.credits ?? 0,
+      }, { status: 402 })
+    }
+
+    // 크레딧 차감 (트랜잭션으로 원자적 처리)
+    const balanceAfter = (profile.credits ?? 0) - creditCost
+    await prisma.$transaction(async (tx) => {
+      await tx.profiles.update({
+        where: { id: user.id },
+        data: { credits: { decrement: creditCost } },
+      })
+
+      await recordCreditUse({
+        userId: user.id,
+        featureType: 'KEYFRAME',
+        amount: creditCost,
+        balanceAfter,
+        description: '제품설명 영상 키프레임 생성',
+      }, tx)
+    })
 
     // AI 생성 아바타인지 확인
     const isAiGeneratedAvatar = avatarId === 'ai-generated'

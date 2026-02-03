@@ -75,7 +75,8 @@ export function VideoAdPageContent() {
       setIsAdsLoading(true)
     }
     try {
-      const res = await fetch(`/api/video-ads?page=${page}&pageSize=${PAGE_SIZE}`)
+      // cache: 'no-store'로 항상 최신 데이터 조회 (임시저장 후 목록 갱신 필요)
+      const res = await fetch(`/api/video-ads?page=${page}&pageSize=${PAGE_SIZE}`, { cache: 'no-store' })
       if (res.ok) {
         const data = await res.json()
         setVideoAds(data.videos || [])
@@ -115,11 +116,12 @@ export function VideoAdPageContent() {
   useEffect(() => {
     // 진행 중인 상태인 영상들 필터링 (avatar motion, product ad 상태 포함)
     const inProgressStatuses = [
-      'GENERATING_SCRIPTS', 'GENERATING_AUDIO', 'IN_QUEUE', 'IN_PROGRESS',
+      // Product Description 상태
+      'GENERATING_SCRIPTS', 'GENERATING_IMAGES', 'GENERATING_AUDIO', 'IN_QUEUE', 'IN_PROGRESS',
       // Avatar Motion 상태
       'GENERATING_STORY', 'GENERATING_FRAMES', 'GENERATING_AVATAR', 'FRAMES_COMPLETED',
       // Product Ad 상태
-      'GENERATING_SCENARIO', 'GENERATING_SCENES', 'SCENES_COMPLETED', 'GENERATING_VIDEO'
+      'GENERATING_SCENARIO', 'GENERATING_SCENES', 'SCENES_COMPLETED', 'GENERATING_VIDEO', 'GENERATING_SCENE_VIDEOS'
     ]
     const inProgressVideos = videoAds.filter(v => inProgressStatuses.includes(v.status))
 
@@ -220,7 +222,7 @@ export function VideoAdPageContent() {
     }
 
     // DRAFT 또는 생성 중 상태면 마법사로 이동하여 이어서 진행
-    const draftStatuses = ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO']
+    const draftStatuses = ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_IMAGES', 'GENERATING_AUDIO']
     if (draftStatuses.includes(video.status) && video.category) {
       router.push(`/video-ad-create?category=${video.category}&videoAdId=${video.id}`)
       return
@@ -241,6 +243,7 @@ export function VideoAdPageContent() {
     const statusConfig: Record<string, { label: string; className: string }> = {
       'DRAFT': { label: `${t.videoAd?.status?.draft || 'Draft'} (${stepName})`, className: 'bg-orange-500/80 text-white' },
       'GENERATING_SCRIPTS': { label: t.videoAd?.status?.generatingScripts || 'Generating Scripts', className: 'bg-indigo-500/80 text-white animate-pulse' },
+      'GENERATING_IMAGES': { label: t.videoAd?.status?.generatingImages || 'Generating Images', className: 'bg-cyan-500/80 text-white animate-pulse' },
       'GENERATING_AUDIO': { label: t.videoAd?.status?.generatingAudio || 'Generating Audio', className: 'bg-pink-500/80 text-white animate-pulse' },
       'PENDING': { label: t.videoAd?.status?.pending || 'Pending', className: 'bg-yellow-500/80 text-white' },
       'IN_QUEUE': { label: t.videoAd?.status?.inQueue || 'In Queue', className: 'bg-blue-500/80 text-white animate-pulse' },
