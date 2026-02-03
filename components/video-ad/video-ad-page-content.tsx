@@ -210,7 +210,7 @@ export function VideoAdPageContent() {
     if (video.category === 'productAd') {
       const productAdDraftStatuses = [
         'DRAFT', 'GENERATING_SCENARIO', 'GENERATING_SCENES', 'SCENES_COMPLETED',
-        'GENERATING_VIDEO', 'IN_QUEUE', 'IN_PROGRESS'
+        'GENERATING_VIDEO', 'GENERATING_SCENE_VIDEOS', 'IN_QUEUE', 'IN_PROGRESS'
       ]
       if (productAdDraftStatuses.includes(video.status)) {
         router.push(`/video-ad-create?category=productAd&videoAdId=${video.id}`)
@@ -260,6 +260,7 @@ export function VideoAdPageContent() {
       'GENERATING_SCENES': { label: t.videoAd?.status?.generatingScenes || 'Generating First Scene', className: 'bg-teal-500/80 text-white animate-pulse' },
       'SCENES_COMPLETED': { label: t.videoAd?.status?.scenesCompleted || 'First Scene Completed', className: 'bg-emerald-500/80 text-white' },
       'GENERATING_VIDEO': { label: t.videoAd?.status?.generatingVideo || 'Generating Video', className: 'bg-violet-500/80 text-white animate-pulse' },
+      'GENERATING_SCENE_VIDEOS': { label: t.videoAd?.status?.generatingSceneVideos || 'Generating Scene Videos', className: 'bg-violet-500/80 text-white animate-pulse' },
     }
     const config = statusConfig[status] || { label: status, className: 'bg-gray-500/80 text-white' }
     return (
