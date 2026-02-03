@@ -140,68 +140,24 @@ export async function POST(request: NextRequest) {
       ? { ...DEFAULT_AVATAR_OPTIONS, ...options }
       : (!trimmedPrompt ? DEFAULT_AVATAR_OPTIONS : undefined)
     const rawPrompt = trimmedPrompt || buildPromptFromOptions(effectiveOptions || DEFAULT_AVATAR_OPTIONS)
-    // AI 이미지 생성에 최적화된 프롬프트 (품질 향상 문구 추가)
-    // 배경/포즈 옵션이 있으면 프롬프트 빌더가 처리하므로 기본 배경 문구 제외
+    // AI 이미지 생성에 최적화된 프롬프트
+    // 참고: prompt-builder.ts가 이미 처리하는 항목 (중복 방지)
+    // - 매력도 향상 (attractivenessEnhancerMap)
+    // - 체형 설명 (getBodyTypeDescription)
+    // - 포즈 + 카메라 응시 (poseMap, 기본값 포함)
+    // - 의상 스타일 (outfitStyleMap)
+    // - 배경 (backgroundMap)
+
     const hasBackground = effectiveOptions?.background
-    const hasPose = effectiveOptions?.pose
 
-    // 배경 선명도 강제 문구 + 다큐멘터리 스타일 (배경이 중요한 스타일)
-    const styleAndAntiBlur = 'documentary style environmental portrait, sharp background in focus, NO bokeh, NO blur, NO shallow depth of field, f/11 aperture'
-    // 카메라 응시 강제
-    const gazeDirection = 'looking directly at camera, eye contact with viewer'
-    // 품질 향상 문구
-    const qualityEnhancers = 'high quality photo, realistic, professional photography, sharp focus, detailed skin texture'
+    // 품질 키워드 (중복 제거)
+    const qualityKeywords = 'high quality photo, realistic, detailed skin texture'
+    // 기본 배경 (배경 옵션이 없을 때만)
+    const defaultBackground = hasBackground ? '' : ', against clean white seamless backdrop with soft even lighting'
+    // 촬영 구도 (상체만, 정면 눈높이 앵글)
+    const viewType = 'upper body portrait from chest up, eye level camera angle, straight on view, medium close-up shot'
 
-    // 성별에 따른 매력도 향상 프롬프트 (아바타 관리 전용)
-    // 자연스럽고 극단적이지 않은 수준으로 외모 개선
-    const getAttractivenessEnhancer = (gender?: string): string => {
-      if (gender === 'female') {
-        return ', beautiful attractive face with refined features, clear smooth skin, bright expressive eyes, elegant natural beauty'
-      } else if (gender === 'male') {
-        return ', handsome attractive face with well-defined features, clear healthy skin, confident charming expression, naturally good-looking'
-      }
-      return ''
-    }
-    const attractivenessEnhancer = getAttractivenessEnhancer(effectiveOptions?.gender)
-
-    // 체형 강화 프롬프트 (아바타 관리 전용)
-    // prompt-builder의 기본 설명을 보완하여 더 명확한 체형 표현
-    const getBodyTypeEnhancer = (bodyType?: string, gender?: string): string => {
-      if (!bodyType || bodyType === 'average') return ''
-
-      if (gender === 'female') {
-        switch (bodyType) {
-          case 'slim':
-            return ', slender lean body, thin waist, delicate frame'
-          case 'athletic':
-            return ', fit toned body, visible muscle definition, athletic physique'
-          case 'curvy':
-            return ', voluptuous hourglass figure, full bust, wide hips, narrow waist, glamorous body proportions'
-          default:
-            return ''
-        }
-      } else if (gender === 'male') {
-        switch (bodyType) {
-          case 'slim':
-            return ', lean slender body, thin frame'
-          case 'athletic':
-            return ', fit muscular body, visible abs, athletic V-shaped torso'
-          case 'muscular':
-            return ', very muscular bodybuilder physique, large muscles, powerful build'
-          default:
-            return ''
-        }
-      }
-      return ''
-    }
-    const bodyTypeEnhancer = getBodyTypeEnhancer(effectiveOptions?.bodyType, effectiveOptions?.gender)
-    // 기본 배경: 선명한 배경을 위해 soft 대신 even lighting 사용
-    const defaultBackground = hasBackground ? '' : ', against clean white seamless backdrop with soft even lighting effect, well-lit, sharp clear background, no visible equipment'
-    // 기본 포즈: 자연스러운 포즈와 중립적 표정 + 카메라 응시
-    const defaultPose = hasPose ? '' : ', in a relaxed natural pose, neutral calm expression'
-    const viewType = 'upper body shot'
-
-    const finalPrompt = `${styleAndAntiBlur}, ${rawPrompt}${attractivenessEnhancer}${bodyTypeEnhancer}, ${gazeDirection}, ${qualityEnhancers}${defaultBackground}${defaultPose}, ${viewType}`
+    const finalPrompt = `${rawPrompt}, ${qualityKeywords}${defaultBackground}, ${viewType}`
 
     // 슬롯 제한 확인 (플랜별 최대 보유 가능 개수)
     const slotCheck = await checkUsageLimit(user.id, 'avatar')

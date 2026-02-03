@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
 import { Plus, Image as ImageIcon, Loader2, ChevronLeft, ChevronRight, RefreshCw, CreditCard, FileEdit, Trash2 } from 'lucide-react'
 import { uploadImageAdImage } from '@/lib/client/image-upload'
+import { GridSkeleton } from '@/components/ui/grid-skeleton'
 
 interface AdProduct {
   id: string
@@ -401,11 +402,7 @@ export function ImageAdPageContent() {
       {/* 이미지 광고 섹션 */}
       <section>
         {isAdsLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-              <div key={i} className="aspect-square bg-gradient-to-br from-card to-secondary/30 rounded-2xl animate-pulse border border-border/50" />
-            ))}
-          </div>
+          <GridSkeleton count={8} columns={{ default: 1, sm: 2, md: 3, lg: 4 }} />
         ) : imageAds.length === 0 ? (
           <div className="bg-card border border-border rounded-2xl p-16 text-center">
             <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">

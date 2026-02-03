@@ -14,6 +14,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useLanguage } from '@/contexts/language-context'
 import { AvatarList } from './avatar-list'
+import { GridSkeleton } from '@/components/ui/grid-skeleton'
 import { Plus } from 'lucide-react'
 import Link from 'next/link'
 
@@ -159,10 +160,7 @@ export function AvatarPageContent() {
       {/* 아바타 목록 */}
       {isLoading ? (
         // 로딩 중
-        <div className="bg-card border border-border rounded-xl p-12 text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-muted-foreground">{t.common?.loading || 'Loading...'}</p>
-        </div>
+        <GridSkeleton count={8} columns={{ default: 2, sm: 2, md: 3, lg: 4 }} />
       ) : (
         // 아바타 목록 표시
         <AvatarList

@@ -332,6 +332,7 @@
       "cancelled": "キャンセル済み"
     },
     "options": {
+      "auto": "自動",
       "female": "女性",
       "male": "男性",
       "teen": "10代",
