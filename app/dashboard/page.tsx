@@ -45,7 +45,9 @@ export default async function DashboardPage() {
         thumbnail_url: true,
         media_url: true,
         ad_type: true,
-        category: true
+        category: true,
+        product_image_url: true,
+        avatar_image_url: true
       }
     }),
     prisma.ad_showcases.findMany({
@@ -60,7 +62,9 @@ export default async function DashboardPage() {
         thumbnail_url: true,
         media_url: true,
         ad_type: true,
-        category: true
+        category: true,
+        product_image_url: true,
+        avatar_image_url: true
       }
     }),
     prisma.ad_showcases.count({ where: { is_active: true, type: 'image' } }),
