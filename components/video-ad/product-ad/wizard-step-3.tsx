@@ -795,7 +795,7 @@ export function WizardStep3() {
         </button>
         <button
           onClick={handleNext}
-          disabled={!canProceedToStep4()}
+          disabled={!isPlanLoaded || !canProceedToStep4()}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {t.common?.next || 'Next'}

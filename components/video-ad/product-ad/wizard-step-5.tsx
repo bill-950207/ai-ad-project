@@ -1947,7 +1947,7 @@ export function WizardStep5() {
                   </button>
                   <button
                     onClick={startMultiSceneVideoGeneration}
-                    disabled={sceneKeyframes.filter(kf => kf.status === 'completed').length < 1}
+                    disabled={!isPlanLoaded || sceneKeyframes.filter(kf => kf.status === 'completed').length < 1}
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-4 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                   >
                     <Video className="w-5 h-5" />

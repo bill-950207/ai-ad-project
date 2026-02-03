@@ -730,7 +730,8 @@ export function WizardStep4() {
           </div>
           <button
             onClick={handleGenerate}
-            className="flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl"
+            disabled={!isPlanLoaded}
+            className="flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Sparkles className="w-5 h-5" />
             {t.imageAd?.generate?.generateButton || 'Generate Ad'}
