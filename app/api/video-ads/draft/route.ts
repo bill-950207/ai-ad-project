@@ -60,8 +60,9 @@ export async function POST(request: NextRequest) {
       videoType,
     } = body
 
-    // 허용된 상태값 (DRAFT 계열 상태만 허용)
-    const allowedStatuses = ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_IMAGES', 'GENERATING_AUDIO']
+    // 허용된 상태값 (폴링 가능한 상태만 허용)
+    // GENERATING_SCRIPTS, GENERATING_AUDIO는 동기식 API이므로 저장하지 않음
+    const allowedStatuses = ['DRAFT', 'GENERATING_IMAGES']
     const validStatus = status && allowedStatuses.includes(status) ? status : undefined
 
     // 카테고리 필수
@@ -88,33 +89,33 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
       }
 
-      // 업데이트
+      // 업데이트 (undefined인 필드는 기존 값 유지)
       const updated = await prisma.video_ads.update({
         where: { id },
         data: {
           ...(validStatus && { status: validStatus }),
-          wizard_step: wizardStep,
-          avatar_id: dbAvatarId,
-          outfit_id: isAiGeneratedAvatar ? null : (outfitId || null),  // AI 아바타일 때 outfit도 null
-          avatar_image_url: avatarImageUrl || null,
-          product_id: productId || null,
-          ai_avatar_options: isAiGeneratedAvatar ? (aiAvatarOptions ? JSON.stringify(aiAvatarOptions) : null) : null,
-          product_info: productInfo || null,
-          location_prompt: locationPrompt || null,
-          duration: duration || null,
-          video_background: videoBackground || null,
-          camera_composition: cameraComposition || null,
-          scripts_json: scriptsJson || null,
-          script_style: scriptStyle || null,
-          script: script || null,
-          first_scene_image_url: firstSceneImageUrl || null,
-          first_frame_urls: firstFrameUrls || null,
-          first_frame_original_urls: firstFrameOriginalUrls || null,
-          first_frame_prompt: firstFramePrompt || null,
-          first_scene_options: imageRequests ? JSON.stringify(imageRequests) : null,  // 이미지 폴링 요청 정보
-          voice_id: voiceId || null,
-          voice_name: voiceName || null,
-          video_type: videoType || null,
+          ...(wizardStep !== undefined && { wizard_step: wizardStep }),
+          ...(avatarId !== undefined && { avatar_id: dbAvatarId }),
+          ...(outfitId !== undefined && { outfit_id: isAiGeneratedAvatar ? null : (outfitId || null) }),
+          ...(avatarImageUrl !== undefined && { avatar_image_url: avatarImageUrl || null }),
+          ...(productId !== undefined && { product_id: productId || null }),
+          ...(aiAvatarOptions !== undefined && { ai_avatar_options: isAiGeneratedAvatar ? (aiAvatarOptions ? JSON.stringify(aiAvatarOptions) : null) : null }),
+          ...(productInfo !== undefined && { product_info: productInfo || null }),
+          ...(locationPrompt !== undefined && { location_prompt: locationPrompt || null }),
+          ...(duration !== undefined && { duration: duration || null }),
+          ...(videoBackground !== undefined && { video_background: videoBackground || null }),
+          ...(cameraComposition !== undefined && { camera_composition: cameraComposition || null }),
+          ...(scriptsJson !== undefined && { scripts_json: scriptsJson || null }),
+          ...(scriptStyle !== undefined && { script_style: scriptStyle || null }),
+          ...(script !== undefined && { script: script || null }),
+          ...(firstSceneImageUrl !== undefined && { first_scene_image_url: firstSceneImageUrl || null }),
+          ...(firstFrameUrls !== undefined && { first_frame_urls: firstFrameUrls || null }),
+          ...(firstFrameOriginalUrls !== undefined && { first_frame_original_urls: firstFrameOriginalUrls || null }),
+          ...(firstFramePrompt !== undefined && { first_frame_prompt: firstFramePrompt || null }),
+          ...(imageRequests !== undefined && { first_scene_options: imageRequests ? JSON.stringify(imageRequests) : null }),
+          ...(voiceId !== undefined && { voice_id: voiceId || null }),
+          ...(voiceName !== undefined && { voice_name: voiceName || null }),
+          ...(videoType !== undefined && { video_type: videoType || null }),
           updated_at: new Date(),
         },
       })

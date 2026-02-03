@@ -75,7 +75,8 @@ export function VideoAdPageContent() {
       setIsAdsLoading(true)
     }
     try {
-      const res = await fetch(`/api/video-ads?page=${page}&pageSize=${PAGE_SIZE}`)
+      // cache: 'no-store'로 항상 최신 데이터 조회 (임시저장 후 목록 갱신 필요)
+      const res = await fetch(`/api/video-ads?page=${page}&pageSize=${PAGE_SIZE}`, { cache: 'no-store' })
       if (res.ok) {
         const data = await res.json()
         setVideoAds(data.videos || [])

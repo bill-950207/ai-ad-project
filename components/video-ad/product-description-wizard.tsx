@@ -969,7 +969,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       // URL에서 videoAdId가 있는 경우 해당 데이터 로드
       setIsLoadingDraft(true)
       try {
-        const res = await fetch(`/api/video-ads/status/${resumeVideoAdId}`)
+        const res = await fetch(`/api/video-ads/status/${resumeVideoAdId}`, { cache: 'no-store' })
         if (res.ok) {
           const statusData = await res.json()
 
@@ -1001,7 +1001,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         }
 
         // 초안(DRAFT) 데이터 로드
-        const draftRes = await fetch(`/api/video-ads/draft?id=${resumeVideoAdId}`)
+        const draftRes = await fetch(`/api/video-ads/draft?id=${resumeVideoAdId}`, { cache: 'no-store' })
         if (draftRes.ok) {
           const draftData = await draftRes.json()
           if (draftData.draft) {
@@ -1017,7 +1017,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       // URL에 draftId 쿼리 파라미터가 있으면 해당 드래프트 로드
       setIsLoadingDraft(true)
       try {
-        const res = await fetch(`/api/video-ads/draft?id=${draftIdParam}`)
+        const res = await fetch(`/api/video-ads/draft?id=${draftIdParam}`, { cache: 'no-store' })
         if (res.ok) {
           const data = await res.json()
           if (data.draft) {
@@ -1617,8 +1617,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     setIsGeneratingScripts(true)
     setStep(3)
 
-    // Step 2 데이터 저장 + GENERATING_SCRIPTS 상태로 변경 (백그라운드에서 실행, 에러 무시)
-    saveDraftAsync(2, { status: 'GENERATING_SCRIPTS' })
+    // 참고: GENERATING_SCRIPTS 상태는 저장하지 않음 (Gemini API는 동기식이므로 폴링 불가)
+    // 중간에 페이지를 떠나면 Step 2로 복원됨
     try {
       const res = await fetch('/api/video-ads/product-description/generate-scripts', {
         method: 'POST',
@@ -1755,8 +1755,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     setGenerationStartTime(Date.now())
     setGenerationProgress(0)
 
-    // Step 4 데이터 저장 + GENERATING_AUDIO 상태로 변경
-    saveDraftAsync(4, { status: 'GENERATING_AUDIO' })
+    // 참고: GENERATING_AUDIO 상태는 저장하지 않음 (TTS API는 동기식이므로 폴링 불가)
+    // 중간에 페이지를 떠나면 Step 3으로 복원됨
     try {
       // TTS 생성 요청
       const ttsRes = await fetch('/api/video-ads/product-description/generate-audio', {
