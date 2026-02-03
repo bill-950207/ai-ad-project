@@ -649,15 +649,20 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
   // Step 5: 영상 생성
   const [videoAdId, setVideoAdId] = useState<string | null>(null)
   const [videoRequestId, setVideoRequestId] = useState<string | null>(null)
-  const [videoProvider, setVideoProvider] = useState<'wavespeed' | 'kie' | null>(null)
+  const [videoProvider, setVideoProvider] = useState<'wavespeed' | null>(null)
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false)
   const [generationStatus, setGenerationStatus] = useState('')
   const [generationStartTime, setGenerationStartTime] = useState<number | null>(null)
   const [generationProgress, setGenerationProgress] = useState(0)
   const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false)
+  const [showRegenerateConfirmModal, setShowRegenerateConfirmModal] = useState(false)
+  const [showKeyframeCreditsModal, setShowKeyframeCreditsModal] = useState(false)
 
   // 초안 복원 중 플래그 (useEffect에서 editedScript 덮어쓰기 방지)
   const isRestoringDraft = useRef(false)
+
+  // 복원된 드래프트 데이터 (상태 업데이트 전에 참조용)
+  const restoredDraftRef = useRef<DraftData | null>(null)
 
   // saveDraft 직후 loadExistingData 스킵용 flag (URL 업데이트 후 불필요한 재로드 방지)
   const skipNextLoadRef = useRef(false)
@@ -1043,6 +1048,9 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     // 복원 플래그 설정 (useEffect에서 editedScript 덮어쓰기 방지)
     isRestoringDraft.current = true
 
+    // 복원된 드래프트 저장 (상태 업데이트 전 참조용 - GENERATING_AUDIO 복구 시 사용)
+    restoredDraftRef.current = draft
+
     setDraftId(draft.id)
 
     // Step 1 데이터 - 아바타 복원
@@ -1061,14 +1069,14 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       } catch (e) {
         console.error('AI 아바타 옵션 파싱 오류:', e)
       }
-    } else if (draft.avatar_id && draft.avatar_image_url) {
-      // 기존 아바타/의상 복원
+    } else if (draft.avatar_id) {
+      // 기존 아바타/의상 복원 (avatar_image_url이 없어도 avatar_id만 있으면 복원)
       setSelectedAvatarInfo({
         type: draft.outfit_id ? 'outfit' : 'avatar',
         avatarId: draft.avatar_id,
         avatarName: '',
         outfitId: draft.outfit_id || undefined,
-        imageUrl: draft.avatar_image_url,
+        imageUrl: draft.avatar_image_url || '',  // 없으면 빈 문자열
         displayName: '',
       })
     }
@@ -1289,10 +1297,10 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     }
   }
 
-  // 영상 상태 폴링 (AI 서비스 직접 조회)
+  // 영상 상태 폴링 (WaveSpeed AI 직접 조회)
   const pollVideoStatus = async (
     reqId: string,
-    provider: 'wavespeed' | 'kie',
+    provider: 'wavespeed',
     adId: string
   ): Promise<void> => {
     try {
@@ -1617,9 +1625,23 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
   // Step 2 → Step 3: 대본 및 첫 프레임 생성
   // ============================================================
 
-  const generateScriptsAndImage = async () => {
+  const generateScriptsAndImage = async (forceRegenerate = false) => {
     // 이미 생성 중이면 중복 실행 방지
     if (isGeneratingScripts) return
+
+    // 이미 생성된 데이터가 있고 강제 재생성이 아니면 Step 3으로 바로 이동 (재생성하지 않음)
+    const hasContent = scripts.length > 0 && (firstFrameUrls.length > 0 || firstFrameUrl !== null)
+    if (!forceRegenerate && hasContent) {
+      setStep(3)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+
+    // 크레딧 부족 시 미리 모달 표시 (불필요한 API 호출 방지)
+    if ((credits ?? 0) < 1) {
+      setShowKeyframeCreditsModal(true)
+      return
+    }
 
     // 선택된 제품이 있으면 편집된 정보를 productInfo로 반영
     let currentProductInfo = productInfo
@@ -1671,8 +1693,17 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
 
       if (!res.ok) {
         const error = await res.json()
+        // 크레딧 부족 시 모달 표시
+        if (res.status === 402) {
+          setIsGeneratingScripts(false)
+          setStep(2)
+          setShowKeyframeCreditsModal(true)
+          return
+        }
         throw new Error(error.error || 'Script generation failed')
       }
+      // 성공 시 크레딧 갱신
+      refreshCredits()
 
       const data = await res.json()
 
@@ -1766,27 +1797,41 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     setIsGeneratingAudio(false)
     setGenerationStatus('영상을 생성 중입니다...')
 
+    // 복원된 드래프트에서 fallback 데이터 (상태 업데이트 전 참조용)
+    const draft = restoredDraftRef.current
+
+    // avatarId: 상태 > AI 생성 옵션 > 복원된 드래프트 순서로 fallback
+    const resolvedAvatarId = selectedAvatarInfo?.avatarId
+      || (draft?.ai_avatar_options ? 'ai-generated' : null)
+      || draft?.avatar_id
+      || null
+
+    // 드래프트 ID (서버에서 삭제 처리)
+    const draftIdToDelete = draftId || draft?.id
+
     // 영상 생성 요청 (원본 이미지 URL 사용 - 압축본은 표시용으로만)
     const videoRes = await fetch('/api/video-ads/product-description/generate-video', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        productId: selectedProduct?.id,
-        avatarId: selectedAvatarInfo?.avatarId,
-        firstFrameUrl: firstFrameOriginalUrl || firstFrameUrl,  // 원본 우선, 없으면 압축본 fallback
+        productId: selectedProduct?.id || draft?.product_id,
+        avatarId: resolvedAvatarId,
+        firstFrameUrl: firstFrameOriginalUrl || firstFrameUrl || draft?.first_scene_image_url,  // 원본 우선, 없으면 압축본 fallback
         audioUrl,
-        script: editedScript,
-        scriptStyle: scripts[selectedScriptIndex]?.style || 'custom',
-        voiceId: selectedVoice?.id,
-        voiceName: selectedVoice?.name,
-        locationPrompt: locationPrompt || locationDescription,
-        duration,
-        resolution,
+        script: editedScript || draft?.script,
+        scriptStyle: scripts[selectedScriptIndex]?.style || draft?.script_style || 'custom',
+        voiceId: selectedVoice?.id || draft?.voice_id,
+        voiceName: selectedVoice?.name || draft?.voice_name,
+        locationPrompt: locationPrompt || locationDescription || draft?.location_prompt,
+        duration: duration || draft?.duration,
+        resolution: resolution || draft?.resolution,
         // 영상 프롬프트 생성을 위한 추가 정보
-        cameraComposition: cameraComposition !== 'auto' ? cameraComposition : undefined,
+        cameraComposition: cameraComposition !== 'auto' ? cameraComposition : (draft?.camera_composition || undefined),
         productName: selectedProduct?.name,
-        productDescription: productInfo,
-        videoType,  // 비디오 타입 (UGC, podcast, expert)
+        productDescription: productInfo || draft?.product_info,
+        videoType: videoType || draft?.video_type,  // 비디오 타입 (UGC, podcast, expert)
+        // 드래프트 ID (서버에서 삭제)
+        draftId: draftIdToDelete,
       }),
     })
 
@@ -1800,11 +1845,9 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     setVideoRequestId(videoData.requestId)
     setVideoProvider(videoData.provider)
 
-    // 영상 생성이 시작되면 초안 삭제 (영상 광고 레코드가 생성됨)
-    if (draftId) {
-      fetch(`/api/video-ads/draft?id=${draftId}`, { method: 'DELETE' }).catch(console.error)
-      setDraftId(null)
-    }
+    // 드래프트는 서버 API에서 삭제됨 - 클라이언트 상태만 정리
+    setDraftId(null)
+    restoredDraftRef.current = null
 
     // AI 서비스 직접 상태 폴링
     pollVideoStatus(videoData.requestId, videoData.provider, videoData.videoAdId)
@@ -2048,6 +2091,9 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
   const canProceedStep2 = productInfo.trim().length > 0
   const canProceedStep3 = editedScript.trim().length > 0 && firstFrameUrl !== null && !isLoadingImages
   const canProceedStep4 = selectedVoice !== null
+
+  // 생성 완료 여부 (스크립트 + 이미지 모두 있음)
+  const hasGeneratedContent = scripts.length > 0 && (firstFrameUrls.length > 0 || firstFrameUrl !== null)
 
   // ============================================================
   // 단계 네비게이션 (초안 저장 포함)
@@ -2492,7 +2538,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                 <button
                   key={lang.code}
                   onClick={() => setScriptLanguage(lang.code)}
-                  className={`py-2.5 rounded-lg border text-sm font-medium transition-colors ${scriptLanguage === lang.code
+                  disabled={hasGeneratedContent}
+                  className={`py-2.5 rounded-lg border text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${scriptLanguage === lang.code
                       ? 'border-primary bg-primary/10 text-primary'
                       : 'border-border text-muted-foreground hover:border-primary/50'
                     }`}
@@ -2517,7 +2564,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                 <button
                   key={d}
                   onClick={() => setDuration(d)}
-                  className={`py-3 rounded-lg border text-sm font-medium transition-colors ${duration === d
+                  disabled={hasGeneratedContent}
+                  className={`py-3 rounded-lg border text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${duration === d
                       ? 'border-primary bg-primary/10 text-primary'
                       : 'border-border text-muted-foreground hover:border-primary/50'
                     }`}
@@ -2542,7 +2590,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                 <button
                   key={r.value}
                   onClick={() => setResolution(r.value)}
-                  className={`py-3 rounded-lg border text-sm font-medium transition-colors ${resolution === r.value
+                  disabled={hasGeneratedContent}
+                  className={`py-3 rounded-lg border text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${resolution === r.value
                       ? 'border-primary bg-primary/10 text-primary'
                       : 'border-border text-muted-foreground hover:border-primary/50'
                     }`}
@@ -2568,7 +2617,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   <button
                     key={type}
                     onClick={() => setVideoType(type)}
-                    className={`relative p-4 rounded-xl border text-center transition-colors ${videoType === type
+                    disabled={hasGeneratedContent}
+                    className={`relative p-4 rounded-xl border text-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${videoType === type
                         ? 'border-primary bg-primary/10'
                         : 'border-border hover:border-primary/50'
                       }`}
@@ -2610,7 +2660,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                       setLocationPrompt('')
                     }
                   }}
-                  className={`relative group p-3 rounded-lg border transition-colors text-left ${
+                  disabled={hasGeneratedContent}
+                  className={`relative group p-3 rounded-lg border transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed ${
                     locationPreset === preset
                       ? 'border-primary bg-primary/10'
                       : 'border-border hover:border-primary/50'
@@ -2639,7 +2690,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                 value={locationPrompt}
                 onChange={(e) => setLocationPrompt(e.target.value)}
                 placeholder={t.productDescWizard.placeholders.locationDescription}
-                className="mt-3 w-full px-4 py-2.5 text-sm bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+                disabled={hasGeneratedContent}
+                className="mt-3 w-full px-4 py-2.5 text-sm bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
               />
             )}
           </div>
@@ -2657,7 +2709,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   key={comp}
                   type="button"
                   onClick={() => setCameraComposition(comp)}
-                  className={`relative group flex flex-col items-center p-2 rounded-lg border transition-colors ${cameraComposition === comp
+                  disabled={hasGeneratedContent}
+                  className={`relative group flex flex-col items-center p-2 rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${cameraComposition === comp
                       ? 'border-primary bg-primary/10'
                       : 'border-border hover:border-primary/50'
                     }`}
@@ -2697,7 +2750,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   key={pose}
                   type="button"
                   onClick={() => setModelPose(pose)}
-                  className={`relative group flex flex-col items-center p-2 rounded-lg border transition-colors ${modelPose === pose
+                  disabled={hasGeneratedContent}
+                  className={`relative group flex flex-col items-center p-2 rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${modelPose === pose
                       ? 'border-primary bg-primary/10'
                       : 'border-border hover:border-primary/50'
                     }`}
@@ -2743,7 +2797,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                     setOutfitPreset(null)
                     setOutfitCustom('')
                   }}
-                  className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                  disabled={hasGeneratedContent}
+                  className={`px-3 py-2 text-sm rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                     outfitMode === 'keep_original'
                       ? 'border-primary bg-primary/10 text-primary font-medium'
                       : 'border-border text-muted-foreground hover:border-primary/50'
@@ -2759,7 +2814,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   setOutfitPreset(null)
                   setOutfitCustom('')
                 }}
-                className={`px-3 py-2 text-sm rounded-lg border transition-colors flex items-center justify-center gap-1.5 ${
+                disabled={hasGeneratedContent}
+                className={`px-3 py-2 text-sm rounded-lg border transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${
                   outfitMode === 'ai_recommend'
                     ? 'border-primary bg-primary/10 text-primary font-medium'
                     : 'border-border text-muted-foreground hover:border-primary/50'
@@ -2771,7 +2827,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               <button
                 type="button"
                 onClick={() => setOutfitMode('preset')}
-                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                disabled={hasGeneratedContent}
+                className={`px-3 py-2 text-sm rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                   outfitMode === 'preset'
                     ? 'border-primary bg-primary/10 text-primary font-medium'
                     : 'border-border text-muted-foreground hover:border-primary/50'
@@ -2782,7 +2839,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               <button
                 type="button"
                 onClick={() => setOutfitMode('custom')}
-                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                disabled={hasGeneratedContent}
+                className={`px-3 py-2 text-sm rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                   outfitMode === 'custom'
                     ? 'border-primary bg-primary/10 text-primary font-medium'
                     : 'border-border text-muted-foreground hover:border-primary/50'
@@ -2810,7 +2868,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                     key={preset}
                     type="button"
                     onClick={() => setOutfitPreset(preset)}
-                    className={`relative group p-3 rounded-lg border transition-colors text-left ${
+                    disabled={hasGeneratedContent}
+                    className={`relative group p-3 rounded-lg border transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed ${
                       outfitPreset === preset
                         ? 'border-primary bg-primary/10'
                         : 'border-border hover:border-primary/50'
@@ -2840,7 +2899,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                 value={outfitCustom}
                 onChange={(e) => setOutfitCustom(e.target.value)}
                 placeholder={t.productDescWizard.placeholders.outfitDescription}
-                className="w-full px-4 py-2.5 text-sm bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+                disabled={hasGeneratedContent}
+                className="w-full px-4 py-2.5 text-sm bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
               />
             )}
           </div>
@@ -2855,7 +2915,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               이전
             </button>
             <button
-              onClick={generateScriptsAndImage}
+              onClick={() => generateScriptsAndImage(false)}
               disabled={!canProceedStep2 || isGeneratingScripts}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -2864,9 +2924,14 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   <Loader2 className="w-4 h-4 animate-spin" />
                   생성 중...
                 </>
+              ) : hasGeneratedContent ? (
+                <>
+                  생성된 대본 확인
+                  <ArrowRight className="w-4 h-4" />
+                </>
               ) : (
                 <>
-                  대본 생성하기
+                  대본 생성하기 (1 크레딧)
                   <Sparkles className="w-4 h-4" />
                 </>
               )}
@@ -2899,7 +2964,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                     </p>
                   </div>
                   <button
-                    onClick={generateScriptsAndImage}
+                    onClick={() => setShowRegenerateConfirmModal(true)}
                     disabled={isLoadingImages}
                     className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -3135,7 +3200,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               <div className="flex gap-3 max-w-2xl mx-auto">
                 <button
                   onClick={() => goToStep(2)}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
+                  disabled={isLoadingImages}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   이전
@@ -3238,7 +3304,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         </div>
       )}
 
-      {/* 크레딧 부족 모달 */}
+      {/* 크레딧 부족 모달 (영상 생성용) */}
       <InsufficientCreditsModal
         isOpen={showInsufficientCreditsModal}
         onClose={() => setShowInsufficientCreditsModal(false)}
@@ -3246,6 +3312,67 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         availableCredits={credits ?? 0}
         featureName="제품 설명 영상 생성"
       />
+
+      {/* 크레딧 부족 모달 (키프레임 생성용) */}
+      <InsufficientCreditsModal
+        isOpen={showKeyframeCreditsModal}
+        onClose={() => setShowKeyframeCreditsModal(false)}
+        requiredCredits={1}
+        availableCredits={credits ?? 0}
+        featureName="키프레임 이미지 생성"
+      />
+
+      {/* 재생성 확인 모달 */}
+      {showRegenerateConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowRegenerateConfirmModal(false)} />
+          <div className="relative bg-card border border-border rounded-xl p-6 max-w-sm mx-4 shadow-xl">
+            <h3 className="text-lg font-semibold text-foreground mb-2">대본 및 이미지 재생성</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              다시 생성하면 기존 대본과 이미지가 새로운 내용으로 대체됩니다.
+              <br />
+              <span className="text-primary font-medium">1 크레딧</span>이 사용됩니다.
+            </p>
+            {/* 크레딧 부족 경고 */}
+            {(credits ?? 0) < 1 && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4">
+                <p className="text-sm text-red-500 font-medium">
+                  크레딧이 부족합니다. (보유: {credits ?? 0})
+                </p>
+              </div>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowRegenerateConfirmModal(false)}
+                className="flex-1 px-4 py-2 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
+              >
+                취소
+              </button>
+              {(credits ?? 0) < 1 ? (
+                <button
+                  onClick={() => {
+                    setShowRegenerateConfirmModal(false)
+                    setShowKeyframeCreditsModal(true)
+                  }}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-primary to-purple-500 text-white rounded-lg font-medium hover:opacity-90 transition-colors"
+                >
+                  업그레이드
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setShowRegenerateConfirmModal(false)
+                    generateScriptsAndImage(true)
+                  }}
+                  className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                >
+                  재생성
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   )
