@@ -463,7 +463,7 @@ export default function MusicPage() {
 
       {/* 음악 목록 */}
       {isLoading ? (
-        <GridSkeleton count={8} columns={{ default: 1, sm: 2, md: 3, lg: 4 }} aspectRatio="video" />
+        <GridSkeleton count={8} columns={{ default: 1, sm: 2, md: 3, lg: 4 }} />
       ) : musicList.length === 0 ? (
         <div className="bg-card border border-dashed border-border rounded-2xl p-16 text-center">
           <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-secondary/50 flex items-center justify-center">
