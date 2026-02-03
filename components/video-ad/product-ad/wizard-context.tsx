@@ -319,7 +319,7 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
   const [selectedScenarioIndex, setSelectedScenarioIndex] = useState<number | null>(null)
 
   // Step 4 상태
-  const [aspectRatio, setAspectRatio] = useState<AspectRatio>(null)
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1')
   const [duration, setDuration] = useState(3)  // 기본 3초 (레거시)
   const [sceneDurations, setSceneDurations] = useState<number[]>([3, 3, 3])  // 각 씬별 기본 3초
   const [videoResolution, setVideoResolution] = useState<VideoResolution>('720p')  // 영상 해상도

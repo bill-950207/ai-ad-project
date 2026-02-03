@@ -10,7 +10,6 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  Maximize,
   Film,
   Plus,
   Minus,
@@ -20,7 +19,7 @@ import {
   Palette,
 } from 'lucide-react'
 // Note: Lock is still used for scene count button restrictions
-import { useProductAdWizard, RecommendedVideoSettings, SceneElementOptions, createDefaultSceneElement, AspectRatio } from './wizard-context'
+import { useProductAdWizard, RecommendedVideoSettings, SceneElementOptions, createDefaultSceneElement } from './wizard-context'
 import { useLanguage } from '@/contexts/language-context'
 import { useUserPlan } from '@/lib/hooks/use-user-plan'
 
@@ -31,16 +30,6 @@ const FREE_USER_LIMITS = {
 }
 
 // 번역된 옵션을 가져오는 헬퍼 함수
-function getAspectRatioOptions(t: Record<string, unknown>) {
-  const step3T = (t.productAdWizard as Record<string, unknown>)?.step3 as Record<string, unknown> || {}
-  const aspectRatiosT = step3T.aspectRatios as Record<string, string> || {}
-  return [
-    { value: '16:9' as AspectRatio, label: aspectRatiosT.landscape || 'Landscape', icon: '▬', desc: aspectRatiosT.landscapeDesc || 'YouTube, Websites' },
-    { value: '9:16' as AspectRatio, label: aspectRatiosT.portrait || 'Portrait', icon: '▮', desc: aspectRatiosT.portraitDesc || 'Reels, Shorts, TikTok' },
-    { value: '1:1' as AspectRatio, label: aspectRatiosT.square || 'Square', icon: '■', desc: aspectRatiosT.squareDesc || 'Instagram Feed' },
-  ]
-}
-
 function getMoodOptions(t: Record<string, unknown>) {
   const step3T = (t.productAdWizard as Record<string, unknown>)?.step3 as Record<string, unknown> || {}
   const moodT = step3T.moodOptions as Record<string, string> || {}
@@ -302,8 +291,6 @@ export function WizardStep3() {
     editableDescription,
     editableSellingPoints,
     // Step 4 (설정)
-    aspectRatio,
-    setAspectRatio,
     sceneDurations,
     updateSceneDuration,
     sceneCount,
@@ -325,7 +312,6 @@ export function WizardStep3() {
 
   // i18n
   const { language, t } = useLanguage()
-  const aspectRatioOptions = getAspectRatioOptions(t)
 
   // 중복 호출 방지를 위한 ref
   const isGeneratingRef = useRef(false)
@@ -633,39 +619,8 @@ export function WizardStep3() {
           </div>
         )}
 
-        {/* 비율 선택 */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Maximize className="w-4 h-4 text-muted-foreground" />
-            <h4 className="text-sm font-medium text-foreground">{t.productAdWizard?.step3?.aspectRatio || 'Aspect Ratio'}</h4>
-            {isVideoSettingsFromScenario && (
-              <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded-full flex items-center gap-1">
-                <Sparkles className="w-2.5 h-2.5" />
-                AI
-              </span>
-            )}
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            {aspectRatioOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setAspectRatio(option.value)}
-                className={`p-4 rounded-xl border-2 transition-all ${
-                  aspectRatio === option.value
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/50'
-                }`}
-              >
-                <div className="text-center">
-                  <div className="text-2xl mb-2">{option.icon}</div>
-                  <div className="font-medium text-foreground">{option.label}</div>
-                  <div className="text-xs text-muted-foreground mt-1">{option.desc}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* 비율 선택 - 정방형(1:1) 고정 */}
+        {/* 비율 선택 UI 숨김 - 1:1 고정 */}
 
         {/* 씬 개수 및 씬별 시간 설정 */}
         <div className="space-y-4 mt-6">
@@ -853,9 +808,7 @@ export function WizardStep3() {
         <p className="text-center text-sm text-muted-foreground">
           {!scenarioInfo.elements.mood
             ? (t.productAdWizard?.step3?.selectMood || 'Please select the overall mood')
-            : !aspectRatio
-              ? (t.productAdWizard?.step3?.selectRatio || 'Please select the aspect ratio')
-              : (t.productAdWizard?.step3?.setAllScenes || 'Please set background and mood for all scenes')}
+            : (t.productAdWizard?.step3?.setAllScenes || 'Please set background and mood for all scenes')}
         </p>
       )}
     </div>
