@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { invalidateMusicCache } from '@/lib/cache/user-data'
 
 // GET: 개별 음악 조회
 export async function GET(
@@ -83,6 +84,9 @@ export async function DELETE(
         { status: 500 }
       )
     }
+
+    // 캐시 무효화
+    invalidateMusicCache(user.id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

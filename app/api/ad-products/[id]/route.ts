@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
+import { invalidateProductsCache } from '@/lib/cache/user-data'
 
 /**
  * GET /api/ad-products/[id]
@@ -153,6 +154,9 @@ export async function DELETE(
     await prisma.ad_products.delete({
       where: { id },
     })
+
+    // 캐시 무효화
+    invalidateProductsCache(user.id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

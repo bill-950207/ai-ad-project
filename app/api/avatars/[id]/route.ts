@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { cancelQueueRequest } from '@/lib/fal/client'
+import { invalidateAvatarsCache } from '@/lib/cache/user-data'
 
 /** 라우트 파라미터 타입 */
 interface RouteParams {
@@ -101,6 +102,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     await prisma.avatars.delete({
       where: { id },
     })
+
+    // 캐시 무효화
+    invalidateAvatarsCache(user.id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

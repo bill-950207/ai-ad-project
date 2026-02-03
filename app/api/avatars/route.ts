@@ -5,8 +5,11 @@
  *
  * GET  /api/avatars - 사용자의 아바타 목록 조회
  * POST /api/avatars - 새 아바타 생성 요청
+ *
+ * 캐싱: unstable_cache (5분 TTL) - 사용자별 데이터
  */
 
+import { unstable_cache } from 'next/cache'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
@@ -16,9 +19,46 @@ import { buildPromptFromOptions, validateAvatarOptions, AvatarOptions, DEFAULT_A
 import { AVATAR_CREDIT_COST } from '@/lib/credits'
 import { checkUsageLimit } from '@/lib/subscription'
 import { applyRateLimit, RateLimits, rateLimitExceededResponse } from '@/lib/rate-limit'
+import { getUserCacheTag, invalidateAvatarsCache, DEFAULT_USER_DATA_TTL } from '@/lib/cache/user-data'
 
 // AI 프로바이더 설정 (기본값: kie, fallback: fal)
 const AI_PROVIDER = process.env.AVATAR_AI_PROVIDER || 'kie'
+
+/**
+ * 아바타 목록 조회 함수 (캐싱됨)
+ */
+function getCachedAvatars(userId: string, includeOutfits: boolean) {
+  return unstable_cache(
+    async () => {
+      return prisma.avatars.findMany({
+        where: { user_id: userId },
+        orderBy: { created_at: 'desc' },
+        ...(includeOutfits && {
+          include: {
+            outfits: {
+              where: {
+                status: 'COMPLETED',
+                image_url: { not: null },
+              },
+              orderBy: { created_at: 'desc' },
+              select: {
+                id: true,
+                name: true,
+                image_url: true,
+                status: true,
+              },
+            },
+          },
+        }),
+      })
+    },
+    [`avatars-${userId}-outfits:${includeOutfits}`],
+    {
+      revalidate: DEFAULT_USER_DATA_TTL,
+      tags: [getUserCacheTag('avatars', userId)]
+    }
+  )()
+}
 
 /**
  * GET /api/avatars
@@ -43,28 +83,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const includeOutfits = searchParams.get('includeOutfits') === 'true'
 
-    // 사용자의 아바타 목록 조회 (최신순)
-    const avatars = await prisma.avatars.findMany({
-      where: { user_id: user.id },
-      orderBy: { created_at: 'desc' },
-      ...(includeOutfits && {
-        include: {
-          outfits: {
-            where: {
-              status: 'COMPLETED',
-              image_url: { not: null },
-            },
-            orderBy: { created_at: 'desc' },
-            select: {
-              id: true,
-              name: true,
-              image_url: true,
-              status: true,
-            },
-          },
-        },
-      }),
-    })
+    // 캐시된 아바타 목록 조회
+    const avatars = await getCachedAvatars(user.id, includeOutfits)
 
     return NextResponse.json({ avatars })
   } catch (error) {
@@ -246,6 +266,9 @@ export async function POST(request: NextRequest) {
       timeout: 10000,  // 트랜잭션 타임아웃 10초
     })
 
+
+    // 캐시 무효화
+    invalidateAvatarsCache(user.id)
 
     return NextResponse.json({
       avatar,
