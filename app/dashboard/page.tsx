@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth/cached'
 import { prisma } from '@/lib/db'
 import { DashboardContent } from '@/components/dashboard/dashboard-content'
 
@@ -6,8 +6,7 @@ import { DashboardContent } from '@/components/dashboard/dashboard-content'
 const GALLERY_ITEMS_PER_PAGE = 16
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   // 서버에서 쇼케이스 데이터 미리 조회 (카드 배경 + 갤러리)
   const itemsPerType = Math.ceil(GALLERY_ITEMS_PER_PAGE / 2)
