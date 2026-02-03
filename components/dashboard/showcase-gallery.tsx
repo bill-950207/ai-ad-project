@@ -9,9 +9,9 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Play, Loader2, Volume2, VolumeX } from 'lucide-react'
+import { Play, Loader2, Volume2, VolumeX, X, Plus, Image as ImageIcon, Video } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
-import { useOnboarding } from '@/components/onboarding/onboarding-context'
+import { useOnboarding, VideoAdType } from '@/components/onboarding/onboarding-context'
 
 // ============================================================
 // 타입 정의
@@ -252,12 +252,205 @@ function ShowcaseCard({ item, onClick, getAdTypeLabel }: ShowcaseCardProps) {
 }
 
 // ============================================================
+// 라이트박스 모달 컴포넌트
+// ============================================================
+
+interface ShowcaseLightboxProps {
+  item: ShowcaseItem
+  onClose: () => void
+  onCreateAd: () => void
+  getAdTypeLabel: (adType: string | null) => string
+}
+
+function ShowcaseLightbox({ item, onClose, onCreateAd, getAdTypeLabel }: ShowcaseLightboxProps) {
+  const { t } = useLanguage()
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [isMuted, setIsMuted] = useState(true)
+
+  // ESC 키로 닫기
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
+  // 비디오 자동 재생
+  useEffect(() => {
+    if (item.type === 'video' && videoRef.current) {
+      videoRef.current.play().catch(() => {})
+    }
+  }, [item.type])
+
+  // 광고 타입 레이블
+  const getTypeLabel = () => {
+    if (item.type === 'image') {
+      return t.showcase?.imageAd || 'Image Ad'
+    }
+    if (item.ad_type === 'productDescription') {
+      return t.showcase?.productDescription || 'Product Description'
+    }
+    return t.showcase?.productAd || 'Product Ad'
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-5xl max-h-[90vh] bg-card rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* 닫기 버튼 */}
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-black/50 hover:bg-black/70 text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* 미디어 영역 */}
+        <div className="flex-1 bg-black flex items-center justify-center min-h-[250px] md:min-h-0 md:max-h-[85vh]">
+          {item.type === 'video' && item.media_url ? (
+            <div className="relative w-full h-full flex items-center justify-center">
+              <video
+                ref={videoRef}
+                src={item.media_url}
+                className="w-full h-full object-contain max-h-[50vh] md:max-h-[85vh]"
+                controls
+                autoPlay
+                loop
+                playsInline
+                muted={isMuted}
+              />
+              {/* 음소거 토글 */}
+              <button
+                onClick={() => {
+                  if (videoRef.current) {
+                    videoRef.current.muted = !isMuted
+                    setIsMuted(!isMuted)
+                  }
+                }}
+                aria-label={isMuted ? 'Unmute video' : 'Mute video'}
+                className="absolute bottom-4 right-4 p-2 rounded-lg bg-black/50 hover:bg-black/70 text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+              </button>
+            </div>
+          ) : (
+            <img
+              src={item.thumbnail_url}
+              alt={item.title}
+              className="w-full h-full object-contain max-h-[50vh] md:max-h-[85vh]"
+            />
+          )}
+        </div>
+
+        {/* 정보 영역 */}
+        <div className="w-full md:w-72 p-5 flex flex-col flex-shrink-0 max-h-[40vh] md:max-h-[85vh] overflow-y-auto">
+          {/* 광고 타입 배지 */}
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+              {item.type === 'video' ? (
+                <Video className="w-3.5 h-3.5" aria-hidden="true" />
+              ) : (
+                <ImageIcon className="w-3.5 h-3.5" aria-hidden="true" />
+              )}
+              <span>{getTypeLabel()}</span>
+            </div>
+          </div>
+
+          {/* 광고 서브타입 */}
+          {item.ad_type && (
+            <div className="mb-3">
+              <span className="px-2 py-1 rounded-lg bg-secondary text-xs font-medium text-muted-foreground">
+                {getAdTypeLabel(item.ad_type)}
+              </span>
+            </div>
+          )}
+
+          {/* 제품 & 아바타 정보 */}
+          {(item.product_image_url || item.avatar_image_url) && (
+            <div className="mb-4">
+              <p className="text-xs text-muted-foreground mb-2">
+                {t.showcase?.assetsUsed || 'Assets Used'}
+              </p>
+              <div className="flex items-center gap-2">
+                {item.product_image_url && (
+                  <div className="flex flex-col items-center gap-0.5">
+                    <div className="w-12 h-12 rounded-lg bg-secondary/50 p-0.5 border border-border">
+                      <img
+                        src={item.product_image_url}
+                        alt="Product"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">
+                      {t.showcase?.product || 'Product'}
+                    </span>
+                  </div>
+                )}
+                {item.product_image_url && item.avatar_image_url && (
+                  <div className="text-muted-foreground text-sm">+</div>
+                )}
+                {item.avatar_image_url && (
+                  <div className="flex flex-col items-center gap-0.5">
+                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-border">
+                      <img
+                        src={item.avatar_image_url}
+                        alt="Avatar"
+                        className="w-full h-full object-cover object-top"
+                      />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">
+                      {t.showcase?.avatar || 'Avatar'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 설명 */}
+          {item.description && (
+            <p className="text-xs text-muted-foreground mb-4 line-clamp-2">
+              {item.description}
+            </p>
+          )}
+
+          {/* 스페이서 */}
+          <div className="flex-1 min-h-2" />
+
+          {/* 광고 만들기 버튼 */}
+          <button
+            onClick={onCreateAd}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            <Plus className="w-4 h-4" aria-hidden="true" />
+            <span className="text-sm">
+              {t.showcase?.createThisAd || 'Create This Ad'}
+            </span>
+          </button>
+
+          <p className="text-[10px] text-muted-foreground text-center mt-2">
+            {t.showcase?.createSimilar || 'Create a similar ad with your own assets'}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================================
 // 메인 컴포넌트
 // ============================================================
 
 export function ShowcaseGallery({ initialData, initialMeta }: ShowcaseGalleryProps) {
   const { t, language } = useLanguage()
-  const { startOnboarding } = useOnboarding()
+  const { startOnboarding, setVideoAdType } = useOnboarding()
 
   // 초기 데이터가 있으면 사용, 없으면 빈 배열로 시작
   const hasInitialData = initialData && initialData.length > 0
@@ -275,6 +468,9 @@ export function ShowcaseGallery({ initialData, initialMeta }: ShowcaseGalleryPro
   const [imageOffset, setImageOffset] = useState(initialMeta?.nextImageOffset || 0)
   const [videoOffset, setVideoOffset] = useState(initialMeta?.nextVideoOffset || 0)
   const loadMoreRef = useRef<HTMLDivElement>(null)
+
+  // 라이트박스 상태
+  const [selectedShowcase, setSelectedShowcase] = useState<ShowcaseItem | null>(null)
 
   // ad_type을 현재 언어에 맞게 번역
   const getAdTypeLabel = useCallback((adType: string | null): string => {
@@ -363,10 +559,22 @@ export function ShowcaseGallery({ initialData, initialMeta }: ShowcaseGalleryPro
     return () => observer.disconnect()
   }, [hasMore, isLoadingMore, imageOffset, videoOffset, fetchShowcases])
 
+  // 쇼케이스 클릭 시 라이트박스 열기
   const handleShowcaseClick = (item: ShowcaseItem) => {
-    // 쇼케이스 클릭 시 해당 타입의 광고 생성 온보딩 시작
+    setSelectedShowcase(item)
+  }
+
+  // 라이트박스에서 광고 만들기 클릭
+  const handleCreateAd = (item: ShowcaseItem) => {
+    setSelectedShowcase(null) // 라이트박스 닫기
     if (item.type === 'video') {
       startOnboarding('video')
+      // 영상 타입 자동 설정
+      if (item.ad_type === 'productDescription' || item.ad_type === 'productAd') {
+        setTimeout(() => {
+          setVideoAdType(item.ad_type as VideoAdType)
+        }, 100)
+      }
     } else {
       startOnboarding('image')
     }
@@ -423,6 +631,16 @@ export function ShowcaseGallery({ initialData, initialMeta }: ShowcaseGalleryPro
             <Loader2 className="w-6 h-6 text-primary animate-spin" />
           )}
         </div>
+      )}
+
+      {/* 라이트박스 모달 */}
+      {selectedShowcase && (
+        <ShowcaseLightbox
+          item={selectedShowcase}
+          onClose={() => setSelectedShowcase(null)}
+          onCreateAd={() => handleCreateAd(selectedShowcase)}
+          getAdTypeLabel={getAdTypeLabel}
+        />
       )}
     </div>
   )
