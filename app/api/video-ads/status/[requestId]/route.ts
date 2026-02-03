@@ -11,6 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { invalidateVideoAdsCache } from '@/lib/cache/user-data'
 import {
   getImageAdQueueStatus,
   getImageAdQueueResponse,
@@ -293,6 +294,9 @@ async function handleVideoPhase(
 
       if (updateError) {
         console.error('영상 광고 DB 업데이트 오류:', updateError)
+      } else {
+        // 캐시 무효화
+        invalidateVideoAdsCache(userId)
       }
 
       return NextResponse.json({
@@ -420,6 +424,9 @@ async function handleInfinitalkPhase(
 
     if (updateError) {
       console.error('영상 광고 DB 업데이트 오류:', updateError)
+    } else {
+      // 캐시 무효화
+      invalidateVideoAdsCache(userId)
     }
 
     return NextResponse.json({

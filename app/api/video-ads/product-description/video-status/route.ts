@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
+import { invalidateVideoAdsCache } from '@/lib/cache/user-data'
 import {
   getInfinitalkQueueStatus as getKieInfinitalkQueueStatus,
   getInfinitalkQueueResponse as getKieInfinitalkQueueResponse,
@@ -81,6 +82,9 @@ export async function GET(request: NextRequest) {
           video_url: videoUrl,
           completed_at: new Date(),
         },
+      }).then(() => {
+        // 캐시 무효화
+        invalidateVideoAdsCache(user.id)
       }).catch(err => {
         console.error('DB 업데이트 오류:', err)
       })

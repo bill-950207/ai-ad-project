@@ -152,6 +152,9 @@ export async function PATCH(
         )
       }
 
+      // 캐시 무효화 (상태가 COMPLETED로 변경됨)
+      invalidateImageAdsCache(user.id)
+
       return NextResponse.json({
         success: true,
         imageUrls,

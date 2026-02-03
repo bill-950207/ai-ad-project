@@ -14,6 +14,7 @@ import { prisma } from '@/lib/db'
 import { getRembgQueueStatus, getRembgQueueResponse } from '@/lib/kie/client'
 import { ad_product_status } from '@/lib/generated/prisma/client'
 import { uploadBufferToR2 } from '@/lib/storage/r2'
+import { invalidateProductsCache } from '@/lib/cache/user-data'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -106,6 +107,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
               rembg_image_url: compressedUrl,     // WebP (하위 호환)
             },
           })
+
+          // 캐시 무효화
+          invalidateProductsCache(user.id)
 
           return NextResponse.json({ product: updatedProduct })
         } else {

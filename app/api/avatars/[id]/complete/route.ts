@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
+import { invalidateAvatarsCache } from '@/lib/cache/user-data'
 
 /** 라우트 파라미터 타입 */
 interface RouteParams {
@@ -96,6 +97,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         completed_at: new Date(),                // 완료 시간
       },
     })
+
+    // 캐시 무효화
+    invalidateAvatarsCache(user.id)
 
     return NextResponse.json({ avatar: updatedAvatar })
   } catch (error) {
