@@ -333,7 +333,7 @@ Create a single, optimized video prompt.`
 
   const config: GenerateContentConfig = {
     thinkingConfig: {
-      thinkingLevel: ThinkingLevel.MEDIUM,
+      thinkingLevel: ThinkingLevel.LOW,
     },
     responseMimeType: 'application/json',
     responseSchema: {
@@ -483,7 +483,7 @@ Create a multi-shot prompt that tells a compelling visual story about the produc
 
   const config: GenerateContentConfig = {
     thinkingConfig: {
-      thinkingLevel: ThinkingLevel.MEDIUM,
+      thinkingLevel: ThinkingLevel.LOW,
     },
     responseMimeType: 'application/json',
     responseSchema: {

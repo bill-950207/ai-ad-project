@@ -262,7 +262,7 @@ URL: ${url}
       { googleSearch: {} },
     ],
     thinkingConfig: {
-      thinkingLevel: ThinkingLevel.MEDIUM,
+      thinkingLevel: ThinkingLevel.LOW,
     },
     responseMimeType: 'application/json',
     responseSchema: productInfoSchema,

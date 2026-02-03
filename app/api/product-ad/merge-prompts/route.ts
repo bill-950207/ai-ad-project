@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { GoogleGenAI, GenerateContentConfig, Type } from '@google/genai'
+import { GoogleGenAI, GenerateContentConfig, Type, ThinkingLevel } from '@google/genai'
 
 // Gemini 클라이언트 초기화
 const genAI = new GoogleGenAI({
@@ -62,6 +62,9 @@ ${additionalPrompt}
 Output a single merged prompt that combines both seamlessly.`
 
     const config: GenerateContentConfig = {
+      thinkingConfig: {
+        thinkingLevel: ThinkingLevel.LOW,
+      },
       responseMimeType: 'application/json',
       responseSchema: {
         type: Type.OBJECT,

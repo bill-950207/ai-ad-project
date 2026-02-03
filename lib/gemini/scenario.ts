@@ -81,7 +81,7 @@ ${MOTION_PROMPT_EXAMPLES}
 ${SCENARIO_SELF_VERIFICATION}`
 
   const config: GenerateContentConfig = {
-    thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     responseMimeType: 'application/json',
   }
 
@@ -131,7 +131,7 @@ ${MOTION_PROMPT_EXAMPLES}
 ${SCENARIO_SELF_VERIFICATION}`
 
   const config: GenerateContentConfig = {
-    thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     responseMimeType: 'application/json',
   }
 
