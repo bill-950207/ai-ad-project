@@ -31,6 +31,8 @@ interface ShowcaseItem {
   media_url: string | null
   ad_type: string | null
   category: string | null
+  product_image_url: string | null
+  avatar_image_url: string | null
 }
 
 interface GalleryMeta {

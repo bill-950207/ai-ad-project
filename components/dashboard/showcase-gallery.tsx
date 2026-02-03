@@ -26,6 +26,8 @@ interface ShowcaseItem {
   media_url: string | null
   ad_type: string | null
   category: string | null
+  product_image_url: string | null
+  avatar_image_url: string | null
 }
 
 interface GalleryMeta {
@@ -212,15 +214,41 @@ function ShowcaseCard({ item, onClick, getAdTypeLabel }: ShowcaseCardProps) {
           )}
         </div>
 
-        {/* 하단: 제목 & 설명 */}
-        <div>
-          <h3 className="text-xs font-semibold text-white mb-0.5 line-clamp-1">{item.title}</h3>
-          {item.description && (
-            <p className={`text-[10px] text-white/70 line-clamp-2 transition-opacity duration-300 ${
-              isHovered ? 'opacity-100' : 'opacity-0'
-            }`}>
-              {item.description}
-            </p>
+        {/* 하단: 제목, 설명, 제품/아바타 썸네일 */}
+        <div className="flex items-end justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-xs font-semibold text-white mb-0.5 line-clamp-1">{item.title}</h3>
+            {item.description && (
+              <p className={`text-[10px] text-white/70 line-clamp-2 transition-opacity duration-300 ${
+                isHovered ? 'opacity-100' : 'opacity-0'
+              }`}>
+                {item.description}
+              </p>
+            )}
+          </div>
+
+          {/* 제품/아바타 썸네일 */}
+          {(item.product_image_url || item.avatar_image_url) && (
+            <div className="flex items-center -space-x-2 flex-shrink-0">
+              {item.product_image_url && (
+                <div className="w-8 h-8 rounded-lg bg-white/90 p-0.5 ring-1 ring-white/20 overflow-hidden">
+                  <img
+                    src={item.product_image_url}
+                    alt="Product"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              )}
+              {item.avatar_image_url && (
+                <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/30">
+                  <img
+                    src={item.avatar_image_url}
+                    alt="Avatar"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
