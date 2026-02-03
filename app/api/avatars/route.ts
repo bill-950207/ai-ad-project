@@ -150,16 +150,14 @@ export async function POST(request: NextRequest) {
 
     const hasBackground = effectiveOptions?.background
 
-    // 사진 스타일 (배경 선명도 강제)
-    const photographyStyle = 'documentary style environmental portrait, sharp background in focus, NO bokeh, NO blur, NO shallow depth of field, f/11 aperture'
-    // 품질 키워드
-    const qualityKeywords = 'high quality photo, realistic, professional photography, sharp focus, detailed skin texture'
+    // 품질 키워드 (중복 제거)
+    const qualityKeywords = 'high quality photo, realistic, detailed skin texture'
     // 기본 배경 (배경 옵션이 없을 때만)
-    const defaultBackground = hasBackground ? '' : ', against clean white seamless backdrop with soft even lighting, sharp clear background'
-    // 촬영 구도
-    const viewType = 'upper body shot'
+    const defaultBackground = hasBackground ? '' : ', against clean white seamless backdrop with soft even lighting'
+    // 촬영 구도 (상체만, 정면 눈높이 앵글)
+    const viewType = 'upper body portrait from chest up, eye level camera angle, straight on view, medium close-up shot'
 
-    const finalPrompt = `${photographyStyle}, ${rawPrompt}, ${qualityKeywords}${defaultBackground}, ${viewType}`
+    const finalPrompt = `${rawPrompt}, ${qualityKeywords}${defaultBackground}, ${viewType}`
 
     // 슬롯 제한 확인 (플랜별 최대 보유 가능 개수)
     const slotCheck = await checkUsageLimit(user.id, 'avatar')

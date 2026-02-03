@@ -332,6 +332,7 @@
       "cancelled": "已取消"
     },
     "options": {
+      "auto": "自动",
       "female": "女性",
       "male": "男性",
       "teen": "青少年",

@@ -13,9 +13,7 @@ import { useState, useMemo } from 'react'
 import { useLanguage } from '@/contexts/language-context'
 import { AvatarOptions } from '@/lib/avatar/prompt-builder'
 import {
-  User,
   Palette,
-  Shirt,
   ChevronLeft,
   ChevronRight,
   Check,
@@ -76,12 +74,14 @@ const ethnicityOptionKeys: OptionItem[] = [
 ]
 
 const heightOptionKeys: OptionItem[] = [
+  { value: 'auto', labelKey: 'auto' },
   { value: 'short', labelKey: 'heightShort' },
   { value: 'average', labelKey: 'heightAverage' },
   { value: 'tall', labelKey: 'heightTall' },
 ]
 
 const femaleBodyTypeOptionKeys: OptionItem[] = [
+  { value: 'auto', labelKey: 'auto' },
   { value: 'slim', labelKey: 'bodySlim' },
   { value: 'average', labelKey: 'bodyAverage' },
   { value: 'athletic', labelKey: 'bodyAthletic' },
@@ -89,6 +89,7 @@ const femaleBodyTypeOptionKeys: OptionItem[] = [
 ]
 
 const maleBodyTypeOptionKeys: OptionItem[] = [
+  { value: 'auto', labelKey: 'auto' },
   { value: 'slim', labelKey: 'bodySlim' },
   { value: 'average', labelKey: 'bodyAverage' },
   { value: 'athletic', labelKey: 'bodyAthletic' },
@@ -96,12 +97,14 @@ const maleBodyTypeOptionKeys: OptionItem[] = [
 ]
 
 const hairStyleOptionKeys: OptionItem[] = [
+  { value: 'auto', labelKey: 'auto' },
   { value: 'short', labelKey: 'hairShort' },
   { value: 'medium', labelKey: 'hairMedium' },
   { value: 'long', labelKey: 'hairLong' },
 ]
 
 const hairColorOptionKeys: OptionItem[] = [
+  { value: 'auto', labelKey: 'auto' },
   { value: 'blackhair', labelKey: 'blackhair' },
   { value: 'brown', labelKey: 'brown' },
   { value: 'blonde', labelKey: 'blonde' },
@@ -109,6 +112,7 @@ const hairColorOptionKeys: OptionItem[] = [
 ]
 
 const outfitStyleOptionKeys: OptionItem[] = [
+  { value: 'auto', labelKey: 'auto' },
   { value: 'casual', labelKey: 'outfitCasual' },
   { value: 'formal', labelKey: 'outfitFormal' },
   { value: 'sporty', labelKey: 'outfitSporty' },
@@ -119,6 +123,7 @@ const outfitStyleOptionKeys: OptionItem[] = [
 ]
 
 const backgroundOptionKeys: OptionItem[] = [
+  { value: 'auto', labelKey: 'auto' },
   { value: 'studioWhite', labelKey: 'bgStudioWhite' },
   { value: 'studioGray', labelKey: 'bgStudioGray' },
   { value: 'home', labelKey: 'bgHome' },
@@ -223,26 +228,27 @@ function SelectedOptionsSummary({ options, t }: SelectedOptionsSummaryProps) {
   const selectedItems = useMemo(() => {
     const items: { key: string; label: string; value: string }[] = []
 
+    // 'auto' 값은 요약에서 제외 (사용자가 명시적으로 선택한 옵션만 표시)
     if (options.gender) items.push({ key: 'gender', label: avatarLabels.gender || 'Gender', value: avatarOptions[options.gender] || options.gender })
     if (options.age) items.push({ key: 'age', label: avatarLabels.age || 'Age', value: avatarOptions[options.age] || options.age })
     if (options.ethnicity) items.push({ key: 'ethnicity', label: avatarLabels.ethnicity || 'Ethnicity', value: avatarOptions[options.ethnicity] || options.ethnicity })
-    if (options.bodyType) {
+    if (options.bodyType && options.bodyType !== 'auto') {
       const bodyKey = options.bodyType === 'muscular' ? 'bodyMuscular' :
                       options.bodyType === 'curvy' ? 'bodyCurvy' :
                       options.bodyType === 'athletic' ? 'bodyAthletic' :
                       options.bodyType === 'average' ? 'bodyAverage' : 'bodySlim'
       items.push({ key: 'bodyType', label: avatarLabels.bodyType || 'Body Type', value: avatarOptions[bodyKey] || options.bodyType })
     }
-    if (options.hairStyle) {
+    if (options.hairStyle && options.hairStyle !== 'auto') {
       const hairKey = options.hairStyle === 'short' ? 'hairShort' :
                       options.hairStyle === 'medium' ? 'hairMedium' : 'hairLong'
       items.push({ key: 'hairStyle', label: avatarLabels.hairStyle || 'Hair', value: avatarOptions[hairKey] || options.hairStyle })
     }
-    if (options.outfitStyle) {
+    if (options.outfitStyle && options.outfitStyle !== 'auto') {
       const outfitKey = `outfit${options.outfitStyle.charAt(0).toUpperCase() + options.outfitStyle.slice(1)}`
       items.push({ key: 'outfitStyle', label: avatarLabels.outfitStyle || 'Outfit', value: avatarOptions[outfitKey] || options.outfitStyle })
     }
-    if (options.background) {
+    if (options.background && options.background !== 'auto') {
       const bgKey = options.background === 'studioWhite' ? 'bgStudioWhite' :
                     options.background === 'studioGray' ? 'bgStudioGray' :
                     `bg${options.background.charAt(0).toUpperCase() + options.background.slice(1)}`
@@ -295,7 +301,15 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
   const [name, setName] = useState('')
   const [inputMethod, setInputMethod] = useState<InputMethod>('options')
   const [prompt, setPrompt] = useState('')
-  const [options, setOptions] = useState<AvatarOptions>({})
+  // 성별, 연령대, 인종/외모 제외 나머지는 'auto' 기본 선택
+  const [options, setOptions] = useState<AvatarOptions>({
+    height: 'auto',
+    bodyType: 'auto',
+    hairStyle: 'auto',
+    hairColor: 'auto',
+    outfitStyle: 'auto',
+    background: 'auto',
+  })
   const [currentStep, setCurrentStep] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
 
@@ -430,8 +444,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
             <div className="space-y-6">
               {/* 성별 */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
-                  <User className="w-4 h-4 text-primary" />
+                <label className="text-sm font-medium text-foreground mb-3 block">
                   {t.avatar.gender}
                 </label>
                 <div className="flex gap-2 flex-wrap">
@@ -441,8 +454,8 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
                       selected={options.gender === item.value}
                       onClick={() => {
                         updateOption('gender', item.value as 'female' | 'male')
-                        // 성별 변경 시 체형 초기화 (성별에 따라 옵션이 다르므로)
-                        updateOption('bodyType', undefined)
+                        // 성별 변경 시 체형을 auto로 초기화 (성별에 따라 옵션이 다르므로)
+                        updateOption('bodyType', 'auto')
                       }}
                     >
                       {avatarOptions[item.labelKey] || item.value}
@@ -453,7 +466,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
 
               {/* 나이대 */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
+                <label className="text-sm font-medium text-foreground mb-3 block">
                   {t.avatar.age}
                 </label>
                 <div className="flex gap-2 flex-wrap">
@@ -471,7 +484,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
 
               {/* 인종/외모 */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
+                <label className="text-sm font-medium text-foreground mb-3 block">
                   {t.avatar.ethnicity}
                 </label>
                 <div className="flex gap-2 flex-wrap">
@@ -494,7 +507,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
             <div className="space-y-6">
               {/* 체형 (성별에 따라 다른 옵션) */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
+                <label className="text-sm font-medium text-foreground mb-3 block">
                   {t.avatar.bodyType}
                 </label>
                 <div className="flex gap-2 flex-wrap">
@@ -512,7 +525,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
 
               {/* 키 */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
+                <label className="text-sm font-medium text-foreground mb-3 block">
                   {t.avatar.height}
                 </label>
                 <div className="flex gap-2 flex-wrap">
@@ -530,7 +543,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
 
               {/* 헤어스타일 (간소화: 단발, 중간, 장발) */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
+                <label className="text-sm font-medium text-foreground mb-3 block">
                   {t.avatar.hairStyle}
                 </label>
                 <div className="flex gap-2 flex-wrap">
@@ -548,7 +561,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
 
               {/* 머리 색상 */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
+                <label className="text-sm font-medium text-foreground mb-3 block">
                   {t.avatar.hairColor}
                 </label>
                 <div className="flex gap-2 flex-wrap items-center">
@@ -592,8 +605,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
             <div className="space-y-6">
               {/* 의상 스타일 (직업 기반) */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
-                  <Shirt className="w-4 h-4 text-primary" />
+                <label className="text-sm font-medium text-foreground mb-3 block">
                   {t.avatar.outfitStyle}
                 </label>
                 <div className="flex gap-2 flex-wrap">
@@ -611,7 +623,7 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
 
               {/* 배경 */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
+                <label className="text-sm font-medium text-foreground mb-3 block">
                   {t.avatar.background}
                 </label>
                 <div className="flex gap-2 flex-wrap">

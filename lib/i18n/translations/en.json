@@ -332,6 +332,7 @@
       "cancelled": "Cancelled"
     },
     "options": {
+      "auto": "Auto",
       "female": "Female",
       "male": "Male",
       "teen": "Teen",

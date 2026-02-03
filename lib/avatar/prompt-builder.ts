@@ -16,21 +16,21 @@ export interface AvatarOptions {
   age?: 'teen' | 'early20s' | 'late20s' | '30s' | '40plus'  // 나이대
   ethnicity?: 'caucasian' | 'black' | 'eastAsian' | 'southeastAsian' | 'southAsian' | 'middleEastern' | 'hispanic' | 'nativeAmerican' | 'multiracial'  // 인종
 
-  // 체형
-  height?: 'short' | 'average' | 'tall'  // 키
-  bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'muscular'  // 체형
+  // 체형 ('auto'는 성별/나이에 맞게 자동 추천)
+  height?: 'auto' | 'short' | 'average' | 'tall'  // 키
+  bodyType?: 'auto' | 'slim' | 'average' | 'athletic' | 'curvy' | 'muscular'  // 체형
 
-  // 외모
-  hairStyle?: 'short' | 'medium' | 'long'  // 헤어스타일 (간소화)
-  hairColor?: 'blackhair' | 'brown' | 'blonde' | 'custom'  // 머리 색상
+  // 외모 ('auto'는 성별/나이에 맞게 자동 추천)
+  hairStyle?: 'auto' | 'short' | 'medium' | 'long'  // 헤어스타일 (간소화)
+  hairColor?: 'auto' | 'blackhair' | 'brown' | 'blonde' | 'custom'  // 머리 색상
   customHairColor?: string  // 커스텀 머리 색상 (hairColor가 'custom'일 때)
 
-  // 의상 (직업 기반)
-  outfitStyle?: 'casual' | 'formal' | 'sporty' | 'doctor' | 'nurse' | 'chef' | 'worker'
+  // 의상 (직업 기반, 'auto'는 배경/상황에 맞게 자동 추천)
+  outfitStyle?: 'auto' | 'casual' | 'formal' | 'sporty' | 'doctor' | 'nurse' | 'chef' | 'worker'
 
-  // 배경
+  // 배경 ('auto'는 의상에 맞게 자동 추천)
   background?:
-    | 'studioWhite' | 'studioGray' | 'home' | 'office' | 'cafe'
+    | 'auto' | 'studioWhite' | 'studioGray' | 'home' | 'office' | 'cafe'
     | 'restaurant' | 'street' | 'park' | 'beach' | 'gym'
 
   // 포즈 (내부적으로만 사용, UI에서는 선택 불가)
@@ -44,11 +44,12 @@ export const DEFAULT_AVATAR_OPTIONS: AvatarOptions = {
   gender: 'female',
   age: 'late20s',
   ethnicity: 'eastAsian',
-  bodyType: 'average',
-  hairStyle: 'medium',
-  hairColor: 'blackhair',
-  outfitStyle: 'casual',
-  background: 'studioWhite',
+  height: 'auto',       // 자동 추천
+  bodyType: 'auto',     // 자동 추천
+  hairStyle: 'auto',    // 자동 추천
+  hairColor: 'auto',    // 자동 추천
+  outfitStyle: 'auto',  // 배경에 맞는 의상 자동 추천
+  background: 'auto',   // 자동 추천
 }
 
 // ============================================================
@@ -70,11 +71,11 @@ const ageMap: Record<string, string> = {
   '40plus': 'in their 40s',
 }
 
-/** 인종 매핑 */
+/** 인종 매핑 (동아시아인 선택 시 한국인으로 처리) */
 const ethnicityMap: Record<string, string> = {
   caucasian: 'Caucasian',
   black: 'Black African American',
-  eastAsian: 'East Asian',
+  eastAsian: 'Korean',  // 동아시아인 선택 시 한국인으로 처리
   southeastAsian: 'Southeast Asian',
   southAsian: 'South Asian',
   middleEastern: 'Middle Eastern',
@@ -142,16 +143,16 @@ const hairColorMap: Record<string, string> = {
 
 /** 배경 환경 매핑 */
 const backgroundMap: Record<string, string> = {
-  studioWhite: 'against clean white seamless backdrop, soft even lighting effect, sharp in-focus background, no visible equipment',
-  studioGray: 'against neutral gray seamless backdrop, soft even lighting effect, sharp in-focus background, no visible equipment',
-  home: 'in a cozy modern home interior living room with warm natural light from window, sharp clear background',
-  office: 'in a bright modern office space with large windows and natural daylight, sharp clear background',
-  cafe: 'in a stylish cafe interior with warm ambient light, coffee shop atmosphere, sharp clear background',
-  restaurant: 'in an elegant restaurant interior with sophisticated lighting, fine dining atmosphere',
-  street: 'on a modern city street with urban architecture, natural daylight, sharp in-focus background',
-  park: 'in a beautiful green park with trees and nature, golden hour natural sunlight, sharp background',
-  beach: 'on a beach with ocean view, warm sunlight, clear blue sky, sharp in-focus background',
-  gym: 'in a modern fitness gym with exercise equipment, bright lighting, sharp clear background',
+  studioWhite: 'against clean white seamless backdrop, soft even lighting effect',
+  studioGray: 'against neutral gray seamless backdrop, soft even lighting effect',
+  home: 'in a cozy home interior with modern furniture, warm natural lighting',
+  office: 'in a modern office environment with clean design, professional lighting',
+  cafe: 'in a stylish cafe interior with warm ambient lighting',
+  restaurant: 'in an elegant restaurant interior with sophisticated lighting',
+  street: 'on a modern city street with urban architecture, natural daylight',
+  park: 'in a beautiful green park with trees and nature, golden hour natural sunlight',
+  beach: 'on a beach with ocean view, warm sunlight, clear blue sky',
+  gym: 'in a modern fitness gym with exercise equipment, bright lighting',
 }
 
 /** 성별에 따른 외모 개선 문구 (자연스럽게 매력적으로) */
@@ -172,15 +173,51 @@ const poseMap: Record<string, string> = {
   holding: 'holding an object or product, looking at camera, eye contact, natural pose',
 }
 
-/** 의상 스타일 매핑 (직업 기반) */
+/** 의상 스타일 매핑 (직업 기반, 상체 중심 의상 설명 - 하체/신발 제외) */
 const outfitStyleMap: Record<string, string> = {
-  casual: 'wearing casual everyday clothes, relaxed comfortable style',
-  formal: 'wearing formal business attire, professional elegant style',
-  sporty: 'wearing athletic sportswear, active fitness style',
-  doctor: 'wearing white doctor coat with stethoscope, medical professional attire',
-  nurse: 'wearing nurse uniform scrubs, healthcare professional attire',
-  chef: 'wearing chef uniform with white coat and hat, culinary professional attire',
-  worker: 'wearing work uniform or coveralls, industrial worker attire',
+  casual: 'wearing a fitted white cotton t-shirt, casual relaxed style',
+  formal: 'wearing a tailored navy blue suit jacket with white dress shirt and silk tie, professional elegant style',
+  sporty: 'wearing a performance athletic zip-up track jacket, active fitness style',
+  doctor: 'wearing a crisp white lab coat over light blue scrubs, stethoscope around neck, medical professional attire',
+  nurse: 'wearing clean teal medical scrubs with v-neck top, healthcare professional attire',
+  chef: 'wearing a double-breasted white chef coat with black buttons, traditional white chef hat, culinary professional attire',
+  worker: 'wearing durable navy blue work coveralls with reflective stripes, industrial worker attire',
+}
+
+/** 배경에 따른 자동 의상 추천 (상체 중심 - 하체/신발 제외) */
+function getAutoOutfit(options: AvatarOptions): string {
+  const { background } = options
+
+  // 'auto' 또는 스튜디오 배경인 경우 기본 캐주얼
+  if (!background || background === 'auto' || background === 'studioWhite' || background === 'studioGray') {
+    return outfitStyleMap['casual']
+  }
+
+  // 배경에 따른 의상 추천 (상체만 언급)
+  if (background === 'gym') {
+    return outfitStyleMap['sporty']
+  }
+  if (background === 'office') {
+    return outfitStyleMap['formal']
+  }
+  if (background === 'beach' || background === 'park') {
+    return 'wearing a comfortable linen shirt, relaxed vacation style'
+  }
+  if (background === 'restaurant') {
+    return 'wearing a smart casual blazer over a clean button-up shirt, refined dining attire'
+  }
+  if (background === 'cafe') {
+    return 'wearing a cozy knit sweater, trendy casual style'
+  }
+  if (background === 'home') {
+    return 'wearing a soft cotton hoodie, cozy home style'
+  }
+  if (background === 'street') {
+    return 'wearing a stylish bomber jacket over a plain t-shirt, urban streetwear style'
+  }
+
+  // 기본값: 캐주얼
+  return outfitStyleMap['casual']
 }
 
 // ============================================================
@@ -214,25 +251,26 @@ export function buildPromptFromOptions(options: AvatarOptions): string {
   }
 
   // 체형 (키와 체형) - 성별에 따른 구체적인 신체 비율 사용
+  // 'auto'인 경우 생략하여 AI가 자연스럽게 결정하도록 함
   const bodyDescParts: string[] = []
-  if (options.height) {
+  if (options.height && options.height !== 'auto') {
     bodyDescParts.push(heightMap[options.height])
   }
-  if (options.bodyType) {
+  if (options.bodyType && options.bodyType !== 'auto') {
     bodyDescParts.push(getBodyTypeDescription(options.bodyType, options.gender))
   }
   if (bodyDescParts.length > 0) {
     parts.push(bodyDescParts.join(' with '))
   }
 
-  // 헤어스타일
-  if (options.hairStyle) {
+  // 헤어스타일 ('auto'인 경우 생략)
+  if (options.hairStyle && options.hairStyle !== 'auto') {
     let hair = hairStyleMap[options.hairStyle] || options.hairStyle
 
-    // 머리 색상 적용
+    // 머리 색상 적용 ('auto'인 경우 생략)
     if (options.hairColor === 'custom' && options.customHairColor) {
       hair = `${options.customHairColor} colored ${hair}`
-    } else if (options.hairColor) {
+    } else if (options.hairColor && options.hairColor !== 'auto') {
       const hairColorDesc = hairColorMap[options.hairColor]
       if (hairColorDesc) hair = `${hairColorDesc}, ${hair}`
     }
@@ -240,21 +278,23 @@ export function buildPromptFromOptions(options: AvatarOptions): string {
     parts.push(`with ${hair}`)
   }
 
-  // 의상 스타일
-  if (options.outfitStyle) {
-    parts.push(outfitStyleMap[options.outfitStyle] || options.outfitStyle)
+  // 의상 스타일 ('auto' 또는 미지정 시 배경에 맞는 의상 자동 추천)
+  if (options.outfitStyle === 'auto' || !options.outfitStyle) {
+    parts.push(getAutoOutfit(options))
   } else {
-    // 기본 의상: 캐주얼
-    parts.push(outfitStyleMap['casual'])
+    parts.push(outfitStyleMap[options.outfitStyle] || outfitStyleMap['casual'])
   }
 
-  // 포즈 - 기본값: 정면을 바라보는 자연스러운 포즈
-  const pose = options.pose ? poseMap[options.pose] : 'standing naturally, looking directly at camera, eye contact, relaxed natural pose'
+  // 포즈 - 기본값: 정면을 바라보는 자연스러운 상체 포즈
+  const pose = options.pose ? poseMap[options.pose] : 'looking directly at camera, eye contact, relaxed natural expression'
   parts.push(pose)
 
-  // 배경
-  if (options.background) {
+  // 배경 ('auto'인 경우 기본 스튜디오 화이트 배경 사용)
+  if (options.background && options.background !== 'auto') {
     parts.push(backgroundMap[options.background])
+  } else {
+    // auto 또는 미지정 시 기본 스튜디오 화이트 배경
+    parts.push(backgroundMap['studioWhite'])
   }
 
   return parts.join(', ')
@@ -278,13 +318,13 @@ export function validateAvatarOptions(options: unknown): options is AvatarOption
   const validGenders = ['female', 'male']
   const validAges = ['teen', 'early20s', 'late20s', '30s', '40plus']
   const validEthnicities = ['caucasian', 'black', 'eastAsian', 'southeastAsian', 'southAsian', 'middleEastern', 'hispanic', 'nativeAmerican', 'multiracial']
-  const validHeights = ['short', 'average', 'tall']
-  const validBodyTypes = ['slim', 'average', 'athletic', 'curvy', 'muscular']
-  const validHairStyles = ['short', 'medium', 'long']
-  const validHairColors = ['blackhair', 'brown', 'blonde', 'custom']
-  const validOutfitStyles = ['casual', 'formal', 'sporty', 'doctor', 'nurse', 'chef', 'worker']
+  const validHeights = ['auto', 'short', 'average', 'tall']
+  const validBodyTypes = ['auto', 'slim', 'average', 'athletic', 'curvy', 'muscular']
+  const validHairStyles = ['auto', 'short', 'medium', 'long']
+  const validHairColors = ['auto', 'blackhair', 'brown', 'blonde', 'custom']
+  const validOutfitStyles = ['auto', 'casual', 'formal', 'sporty', 'doctor', 'nurse', 'chef', 'worker']
   const validBackgrounds = [
-    'studioWhite', 'studioGray', 'home', 'office', 'cafe',
+    'auto', 'studioWhite', 'studioGray', 'home', 'office', 'cafe',
     'restaurant', 'street', 'park', 'beach', 'gym',
   ]
   const validPoses = [
@@ -421,14 +461,13 @@ export function buildAiAvatarPrompt(aiOptions: AiAvatarOptions): string {
   // 기본 프롬프트 생성
   const rawPrompt = buildPromptFromOptions(avatarOptions)
 
-  // 품질 향상 문구 추가 (아바타 생성 API와 동일)
+  // 품질 향상 문구 추가 (아바타 생성 API와 동일, 중복 제거)
   const hasBackground = avatarOptions.background
 
-  const styleAndAntiBlur = 'documentary style environmental portrait, sharp background in focus, NO bokeh, NO blur, NO shallow depth of field, f/11 aperture'
   const gazeDirection = 'looking directly at camera, eye contact with viewer'
-  const qualityEnhancers = 'high quality photo, realistic, professional photography, sharp focus, detailed skin texture'
-  const defaultBackground = hasBackground ? '' : ', against clean white seamless backdrop with soft even lighting effect, well-lit, sharp clear background, no visible equipment'
+  const qualityEnhancers = 'high quality photo, realistic, detailed skin texture'
+  const defaultBackground = hasBackground ? '' : ', against clean white seamless backdrop with soft even lighting'
   const viewType = 'upper body shot'
 
-  return `${styleAndAntiBlur}, ${rawPrompt}, ${gazeDirection}, ${qualityEnhancers}${defaultBackground}, ${viewType}`
+  return `${rawPrompt}, ${gazeDirection}, ${qualityEnhancers}${defaultBackground}, ${viewType}`
 }
