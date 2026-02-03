@@ -1,9 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth/cached'
 import { ProfileContent } from '@/components/dashboard/profile-content'
 
 export default async function ProfilePage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   return <ProfileContent user={user} />
 }
