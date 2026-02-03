@@ -22,10 +22,30 @@ import { useSearchParams, useRouter } from 'next/navigation'
 // 타입 정의
 // ============================================================
 
+interface ShowcaseItem {
+  id: string
+  type: string
+  title: string
+  description: string | null
+  thumbnail_url: string
+  media_url: string | null
+  ad_type: string | null
+  category: string | null
+}
+
+interface GalleryMeta {
+  imageCount: number
+  videoCount: number
+  nextImageOffset: number
+  nextVideoOffset: number
+}
+
 interface DashboardContentProps {
   userEmail?: string
   initialImageShowcases?: string[]
   initialVideoShowcases?: string[]
+  initialGalleryShowcases?: ShowcaseItem[]
+  initialGalleryMeta?: GalleryMeta
 }
 
 // ============================================================
@@ -247,7 +267,9 @@ function AdCreationCard({
 export function DashboardContent({
   userEmail: _userEmail,
   initialImageShowcases = [],
-  initialVideoShowcases = []
+  initialVideoShowcases = [],
+  initialGalleryShowcases = [],
+  initialGalleryMeta
 }: DashboardContentProps) {
   const { t } = useLanguage()
   const { startOnboarding, setVideoAdType, isOpen } = useOnboarding()
@@ -324,7 +346,10 @@ export function DashboardContent({
         <RecentAdsSection />
 
         {/* 쇼케이스 갤러리 - 이미지/영상 각각 5x3 그리드 */}
-        <ShowcaseGallery />
+        <ShowcaseGallery
+          initialData={initialGalleryShowcases}
+          initialMeta={initialGalleryMeta}
+        />
       </div>
 
       {/* 온보딩 플로우 모달 */}

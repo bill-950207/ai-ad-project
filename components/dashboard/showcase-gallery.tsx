@@ -19,13 +19,25 @@ import { useOnboarding } from '@/components/onboarding/onboarding-context'
 
 interface ShowcaseItem {
   id: string
-  type: 'image' | 'video'
+  type: 'image' | 'video' | string
   title: string
   description: string | null
   thumbnail_url: string
   media_url: string | null
   ad_type: string | null
   category: string | null
+}
+
+interface GalleryMeta {
+  imageCount: number
+  videoCount: number
+  nextImageOffset: number
+  nextVideoOffset: number
+}
+
+interface ShowcaseGalleryProps {
+  initialData?: ShowcaseItem[]
+  initialMeta?: GalleryMeta
 }
 
 // 페이지당 아이템 수
@@ -223,15 +235,25 @@ function ShowcaseCard({ item, onClick, getAdTypeLabel }: ShowcaseCardProps) {
 // 메인 컴포넌트
 // ============================================================
 
-export function ShowcaseGallery() {
+export function ShowcaseGallery({ initialData, initialMeta }: ShowcaseGalleryProps) {
   const { t, language } = useLanguage()
   const { startOnboarding } = useOnboarding()
-  const [showcases, setShowcases] = useState<ShowcaseItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+
+  // 초기 데이터가 있으면 사용, 없으면 빈 배열로 시작
+  const hasInitialData = initialData && initialData.length > 0
+  const [showcases, setShowcases] = useState<ShowcaseItem[]>(initialData || [])
+  const [isLoading, setIsLoading] = useState(!hasInitialData)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
-  const [imageOffset, setImageOffset] = useState(0)
-  const [videoOffset, setVideoOffset] = useState(0)
+
+  // 초기 메타 정보로 상태 설정
+  const [hasMore, setHasMore] = useState(
+    initialMeta
+      ? initialMeta.nextImageOffset < initialMeta.imageCount ||
+        initialMeta.nextVideoOffset < initialMeta.videoCount
+      : true
+  )
+  const [imageOffset, setImageOffset] = useState(initialMeta?.nextImageOffset || 0)
+  const [videoOffset, setVideoOffset] = useState(initialMeta?.nextVideoOffset || 0)
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
   // ad_type을 현재 언어에 맞게 번역
@@ -296,10 +318,12 @@ export function ShowcaseGallery() {
     }
   }, [])
 
-  // 초기 로드
+  // 초기 로드 (서버에서 프리페칭된 데이터가 없을 때만)
   useEffect(() => {
-    fetchShowcases(0, 0, true)
-  }, [fetchShowcases])
+    if (!hasInitialData) {
+      fetchShowcases(0, 0, true)
+    }
+  }, [fetchShowcases, hasInitialData])
 
   // 무한 스크롤 - Intersection Observer
   useEffect(() => {
