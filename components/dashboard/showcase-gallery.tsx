@@ -204,30 +204,17 @@ function ShowcaseCard({ item, onClick, getAdTypeLabel }: ShowcaseCardProps) {
       }`} />
 
       {/* 콘텐츠 */}
-      <div className="absolute inset-0 p-3 flex flex-col justify-between">
-        {/* 상단: 광고 유형 */}
-        <div className="flex items-start">
+      <div className="absolute inset-0 p-3 flex flex-col justify-end">
+        {/* 하단: 광고 유형 + 제품/아바타 썸네일 */}
+        <div className="flex items-end justify-between gap-2">
+          {/* 좌측: 광고 유형 */}
           {item.ad_type && (
             <span className="px-2 py-1 rounded-lg bg-primary/30 backdrop-blur-sm text-xs font-semibold text-white">
               {getAdTypeLabel(item.ad_type)}
             </span>
           )}
-        </div>
 
-        {/* 하단: 제목, 설명, 제품/아바타 썸네일 */}
-        <div className="flex items-end justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <h3 className="text-xs font-semibold text-white mb-0.5 line-clamp-1">{item.title}</h3>
-            {item.description && (
-              <p className={`text-[10px] text-white/70 line-clamp-2 transition-opacity duration-300 ${
-                isHovered ? 'opacity-100' : 'opacity-0'
-              }`}>
-                {item.description}
-              </p>
-            )}
-          </div>
-
-          {/* 제품/아바타 썸네일 */}
+          {/* 우측: 제품/아바타 썸네일 */}
           {(item.product_image_url || item.avatar_image_url) && (
             <div className="flex items-center -space-x-2 flex-shrink-0">
               {item.product_image_url && (
