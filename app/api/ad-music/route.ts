@@ -3,8 +3,11 @@
  *
  * GET: 광고 음악 목록 조회
  * POST: 광고 음악 생성 요청
+ *
+ * 캐싱: unstable_cache (5분 TTL) - 사용자별 데이터
  */
 
+import { unstable_cache } from 'next/cache'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
@@ -12,6 +15,7 @@ import { submitAdMusicToQueue } from '@/lib/kie/client'
 import { MUSIC_CREDIT_COST } from '@/lib/credits'
 import { recordCreditUse } from '@/lib/credits/history'
 import { checkUsageLimit } from '@/lib/subscription'
+import { getUserCacheTag, invalidateMusicCache, DEFAULT_USER_DATA_TTL } from '@/lib/cache/user-data'
 
 // 요청 바디 타입
 interface AdMusicRequestBody {
@@ -19,6 +23,30 @@ interface AdMusicRequestBody {
   mood: string
   genre: string
   productType: string
+}
+
+/**
+ * 음악 목록 조회 함수 (캐싱됨)
+ */
+function getCachedMusic(userId: string, limit: number) {
+  const cacheKey = `music-${userId}-l${limit}`
+
+  return unstable_cache(
+    async () => {
+      const musicList = await prisma.ad_music.findMany({
+        where: { user_id: userId },
+        orderBy: { created_at: 'desc' },
+        take: limit,
+      })
+
+      return { musicList }
+    },
+    [cacheKey],
+    {
+      revalidate: DEFAULT_USER_DATA_TTL,
+      tags: [getUserCacheTag('music', userId)]
+    }
+  )()
 }
 
 // GET: 광고 음악 목록 조회
@@ -39,21 +67,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '20', 10)
 
-    // 음악 목록 조회
-    const { data: musicList, error } = await supabase
-      .from('ad_music')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(limit)
-
-    if (error) {
-      console.error('광고 음악 조회 오류:', error)
-      return NextResponse.json(
-        { error: 'Failed to fetch ad music' },
-        { status: 500 }
-      )
-    }
+    // 캐시된 데이터 조회
+    const { musicList } = await getCachedMusic(user.id, limit)
 
     return NextResponse.json({ musicList })
   } catch (error) {
@@ -199,6 +214,9 @@ export async function POST(request: NextRequest) {
       await supabase.from('ad_music').update({ status: 'FAILED' }).eq('id', music.id)
       throw txError
     }
+
+    // 캐시 무효화
+    invalidateMusicCache(user.id)
 
     return NextResponse.json({
       music,

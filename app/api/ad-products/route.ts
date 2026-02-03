@@ -5,8 +5,11 @@
  *
  * GET  /api/ad-products - 사용자의 광고 제품 목록 조회
  * POST /api/ad-products - 새 광고 제품 생성 요청 (배경 제거)
+ *
+ * 캐싱: unstable_cache (5분 TTL) - 사용자별 데이터
  */
 
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/db'
 import { submitRembgToQueue } from '@/lib/kie/client'
 import { uploadAdProductSourceFromDataUrl } from '@/lib/storage/r2'
@@ -14,6 +17,37 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { PRODUCT_CREDIT_COST } from '@/lib/credits'
 import { checkUsageLimit } from '@/lib/subscription'
+import { getUserCacheTag, invalidateProductsCache, DEFAULT_USER_DATA_TTL } from '@/lib/cache/user-data'
+
+/**
+ * 제품 목록 조회 함수 (캐싱됨)
+ */
+function getCachedProducts(userId: string, limit: number, offset: number) {
+  const cacheKey = `products-${userId}-l${limit}-o${offset}`
+
+  return unstable_cache(
+    async () => {
+      const [products, totalCount] = await Promise.all([
+        prisma.ad_products.findMany({
+          where: { user_id: userId },
+          orderBy: { created_at: 'desc' },
+          take: limit,
+          skip: offset,
+        }),
+        prisma.ad_products.count({
+          where: { user_id: userId },
+        }),
+      ])
+
+      return { products, totalCount }
+    },
+    [cacheKey],
+    {
+      revalidate: DEFAULT_USER_DATA_TTL,
+      tags: [getUserCacheTag('products', userId)]
+    }
+  )()
+}
 
 /**
  * GET /api/ad-products
@@ -39,17 +73,8 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100)
     const offset = parseInt(searchParams.get('offset') || '0', 10)
 
-    const [products, totalCount] = await Promise.all([
-      prisma.ad_products.findMany({
-        where: { user_id: user.id },
-        orderBy: { created_at: 'desc' },
-        take: limit,
-        skip: offset,
-      }),
-      prisma.ad_products.count({
-        where: { user_id: user.id },
-      }),
-    ])
+    // 캐시된 데이터 조회
+    const { products, totalCount } = await getCachedProducts(user.id, limit, offset)
 
     return NextResponse.json({
       products,
@@ -228,6 +253,9 @@ export async function POST(request: NextRequest) {
           })
         }, { timeout: 10000 })
       }
+
+      // 캐시 무효화
+      invalidateProductsCache(user.id)
 
       return NextResponse.json({
         product: updatedProduct,

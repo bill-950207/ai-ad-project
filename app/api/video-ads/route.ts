@@ -6,12 +6,17 @@
  *   1. Gemini로 프롬프트 생성 (첫 씬 + 영상)
  *   2. gpt-image-1.5로 첫 씬 이미지 생성
  *   3. wan2.6로 영상 생성
+ *
+ * 캐싱: unstable_cache (5분 TTL) - 사용자별 + 페이지별 데이터
  */
 
+import { unstable_cache } from 'next/cache'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/db'
 import { submitImageAdToQueue, type VideoResolution, type VideoDuration, type ImageAdSize } from '@/lib/fal/client'
 import { generateVideoAdPrompts } from '@/lib/gemini/client'
+import { getUserCacheTag, invalidateVideoAdsCache, DEFAULT_USER_DATA_TTL } from '@/lib/cache/user-data'
 
 // 화면 비율 타입
 type AspectRatio = '1:1' | '16:9' | '9:16'
@@ -27,6 +32,76 @@ interface VideoAdRequestBody {
   productUrl?: string
   style?: string
   additionalInstructions?: string
+}
+
+/**
+ * 영상 광고 목록 조회 함수 (캐싱됨)
+ */
+function getCachedVideoAds(
+  userId: string,
+  page: number,
+  pageSize: number,
+  productId: string | null
+) {
+  const cacheKey = `video-ads-${userId}-p${page}-s${pageSize}-prod:${productId || 'all'}`
+
+  return unstable_cache(
+    async () => {
+      const whereClause = {
+        user_id: userId,
+        ...(productId && { product_id: productId }),
+      }
+
+      const [videos, totalCount] = await Promise.all([
+        prisma.video_ads.findMany({
+          where: whereClause,
+          orderBy: { created_at: 'desc' },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          select: {
+            id: true,
+            video_url: true,
+            thumbnail_url: true,
+            first_scene_image_url: true,
+            product_id: true,
+            avatar_id: true,
+            duration: true,
+            video_duration: true,
+            resolution: true,
+            status: true,
+            category: true,
+            wizard_step: true,
+            bgm_info: true,
+            created_at: true,
+            updated_at: true,
+            ad_products: {
+              select: {
+                id: true,
+                name: true,
+                image_url: true,
+                rembg_image_url: true,
+              },
+            },
+            avatars: {
+              select: {
+                id: true,
+                name: true,
+                image_url: true,
+              },
+            },
+          },
+        }),
+        prisma.video_ads.count({ where: whereClause }),
+      ])
+
+      return { videos, totalCount }
+    },
+    [cacheKey],
+    {
+      revalidate: DEFAULT_USER_DATA_TTL,
+      tags: [getUserCacheTag('video-ads', userId)]
+    }
+  )()
 }
 
 // GET: 영상 광고 목록 조회
@@ -53,51 +128,14 @@ export async function GET(request: NextRequest) {
     // 페이지네이션 사용 여부 (page 파라미터가 있으면 페이지네이션 사용)
     const usePagination = searchParams.has('page') || searchParams.has('pageSize')
     const actualPageSize = usePagination ? Math.min(pageSize, 50) : parseInt(limit || '20', 10)
-    const offset = usePagination ? (page - 1) * actualPageSize : 0
 
-    // 총 개수 조회 (페이지네이션 사용 시)
-    let totalCount = 0
-    if (usePagination) {
-      let countQuery = supabase
-        .from('video_ads')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-
-      if (productId) {
-        countQuery = countQuery.eq('product_id', productId)
-      }
-
-      const { count } = await countQuery
-      totalCount = count || 0
-    }
-
-    // 쿼리 빌드 (제품/아바타 정보 포함)
-    let query = supabase
-      .from('video_ads')
-      .select(`
-        id, video_url, thumbnail_url, first_scene_image_url, product_id, avatar_id,
-        duration, video_duration, resolution, status, category, wizard_step, bgm_info,
-        created_at, updated_at,
-        ad_products:product_id (id, name, image_url, rembg_image_url),
-        avatars:avatar_id (id, name, image_url)
-      `)
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + actualPageSize - 1)
-
-    if (productId) {
-      query = query.eq('product_id', productId)
-    }
-
-    const { data: videos, error } = await query
-
-    if (error) {
-      console.error('영상 광고 조회 오류:', error)
-      return NextResponse.json(
-        { error: 'Failed to fetch video ads' },
-        { status: 500 }
-      )
-    }
+    // 캐시된 데이터 조회
+    const { videos, totalCount } = await getCachedVideoAds(
+      user.id,
+      usePagination ? page : 1,
+      actualPageSize,
+      productId
+    )
 
     return NextResponse.json({
       videos,
@@ -335,6 +373,9 @@ export async function POST(request: NextRequest) {
         fal_image_request_id: imageQueueResponse.request_id,
       })
       .eq('id', videoAd.id)
+
+    // 캐시 무효화
+    invalidateVideoAdsCache(user.id)
 
     return NextResponse.json({
       success: true,

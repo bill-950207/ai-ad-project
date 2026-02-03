@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { invalidateVideoAdsCache } from '@/lib/cache/user-data'
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -246,6 +247,9 @@ export async function DELETE(
         { status: 500 }
       )
     }
+
+    // 캐시 무효화
+    invalidateVideoAdsCache(user.id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

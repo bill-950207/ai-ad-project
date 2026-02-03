@@ -3,8 +3,11 @@
  *
  * GET: 이미지 광고 목록 조회 (productId로 필터링 가능)
  * POST: 이미지 광고 생성 요청 (fal.ai Seedream 4.5 Edit)
+ *
+ * 캐싱: unstable_cache (5분 TTL) - 사용자별 + 페이지별 데이터
  */
 
+import { unstable_cache } from 'next/cache'
 import { submitSeedreamEditToQueue, type SeedreamAspectRatio } from '@/lib/fal/client'
 import { type AiAvatarOptions } from '@/lib/avatar/prompt-builder'
 import { createClient } from '@/lib/supabase/server'
@@ -14,7 +17,8 @@ import { prisma } from '@/lib/db'
 import { IMAGE_AD_CREDIT_COST } from '@/lib/credits'
 import { recordCreditUse } from '@/lib/credits/history'
 import { getUserPlan } from '@/lib/subscription/queries'
-import { plan_type } from '@/lib/generated/prisma/client'
+import { plan_type, image_ad_status } from '@/lib/generated/prisma/client'
+import { getUserCacheTag, invalidateImageAdsCache, DEFAULT_USER_DATA_TTL } from '@/lib/cache/user-data'
 
 // 이미지 크기를 Seedream aspect_ratio로 변환
 type ImageAdSize = '1024x1024' | '1536x1024' | '1024x1536'
@@ -99,6 +103,87 @@ interface ImageAdRequestBody {
   draftId?: string  // 기존 DRAFT 업데이트용
 }
 
+// 상태 목록 (Prisma enum 타입)
+const VALID_STATUSES: image_ad_status[] = [
+  image_ad_status.DRAFT,
+  image_ad_status.COMPLETED,
+  image_ad_status.IN_QUEUE,
+  image_ad_status.IN_PROGRESS,
+  image_ad_status.FAILED,
+  image_ad_status.IMAGES_READY,
+]
+
+/**
+ * 이미지 광고 목록 조회 함수 (캐싱됨)
+ */
+function getCachedImageAds(
+  userId: string,
+  page: number,
+  pageSize: number,
+  productId: string | null,
+  avatarId: string | null
+) {
+  const cacheKey = `image-ads-${userId}-p${page}-s${pageSize}-prod:${productId || 'all'}-avatar:${avatarId || 'all'}`
+
+  return unstable_cache(
+    async () => {
+      const whereClause = {
+        user_id: userId,
+        status: { in: VALID_STATUSES },
+        ...(productId && { product_id: productId }),
+        ...(avatarId && { avatar_id: avatarId }),
+      }
+
+      const [ads, totalCount] = await Promise.all([
+        prisma.image_ads.findMany({
+          where: whereClause,
+          orderBy: { created_at: 'desc' },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          select: {
+            id: true,
+            image_url: true,
+            image_urls: true,
+            image_url_originals: true,
+            num_images: true,
+            batch_request_ids: true,
+            product_id: true,
+            avatar_id: true,
+            ad_type: true,
+            status: true,
+            wizard_step: true,
+            fal_request_id: true,
+            created_at: true,
+            ad_products: {
+              select: {
+                id: true,
+                name: true,
+                image_url: true,
+                rembg_image_url: true,
+              },
+            },
+            avatars: {
+              select: {
+                id: true,
+                name: true,
+                image_url: true,
+              },
+            },
+          },
+        }),
+        prisma.image_ads.count({ where: whereClause }),
+      ])
+
+      return { ads, totalCount }
+    },
+    [cacheKey],
+    {
+      revalidate: DEFAULT_USER_DATA_TTL,
+      tags: [getUserCacheTag('image-ads', userId)]
+    }
+  )()
+}
+
 // GET: 이미지 광고 목록 조회 (페이징 지원)
 export async function GET(request: NextRequest) {
   try {
@@ -125,82 +210,14 @@ export async function GET(request: NextRequest) {
     const usePagination = !limit
     const actualPageSize = limit ? parseInt(limit, 10) : pageSize
 
-    // offset 계산 (pagination 모드일 때만)
-    const offset = usePagination ? (page - 1) * actualPageSize : 0
-
-    // 먼저 총 개수 조회
-    let countQuery = supabase
-      .from('image_ads')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .in('status', ['DRAFT', 'COMPLETED', 'IN_QUEUE', 'IN_PROGRESS', 'FAILED', 'IMAGES_READY'])
-
-    if (productId) {
-      countQuery = countQuery.eq('product_id', productId)
-    }
-    if (avatarId) {
-      countQuery = countQuery.eq('avatar_id', avatarId)
-    }
-
-    const { count: totalCount } = await countQuery
-
-    // 쿼리 빌드 - 모든 상태의 광고 반환 (COMPLETED, IN_QUEUE, IN_PROGRESS, FAILED)
-    // 제품 정보도 함께 조회
-    let query = supabase
-      .from('image_ads')
-      .select(`
-        id,
-        image_url,
-        image_urls,
-        image_url_originals,
-        num_images,
-        batch_request_ids,
-        product_id,
-        avatar_id,
-        ad_type,
-        status,
-        wizard_step,
-        fal_request_id,
-        created_at,
-        ad_products (
-          id,
-          name,
-          image_url,
-          rembg_image_url
-        ),
-        avatars (
-          id,
-          name,
-          image_url
-        )
-      `)
-      .eq('user_id', user.id)
-      .in('status', ['DRAFT', 'COMPLETED', 'IN_QUEUE', 'IN_PROGRESS', 'FAILED', 'IMAGES_READY'])
-      .order('created_at', { ascending: false })
-
-    if (productId) {
-      query = query.eq('product_id', productId)
-    }
-    if (avatarId) {
-      query = query.eq('avatar_id', avatarId)
-    }
-
-    // pagination 또는 legacy limit 적용
-    if (usePagination) {
-      query = query.range(offset, offset + actualPageSize - 1)
-    } else {
-      query = query.limit(actualPageSize)
-    }
-
-    const { data: ads, error } = await query
-
-    if (error) {
-      console.error('이미지 광고 조회 오류:', error)
-      return NextResponse.json(
-        { error: 'Failed to fetch image ads' },
-        { status: 500 }
-      )
-    }
+    // 캐시된 데이터 조회
+    const { ads, totalCount } = await getCachedImageAds(
+      user.id,
+      usePagination ? page : 1,
+      actualPageSize,
+      productId,
+      avatarId
+    )
 
     // pagination 정보 포함하여 반환
     return NextResponse.json({
@@ -931,6 +948,9 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('이미지 광고 크레딧 차감:', { userId: user.id, cost: totalCreditCost, numImages: validNumImages })
+
+    // 캐시 무효화
+    invalidateImageAdsCache(user.id)
 
     return NextResponse.json({
       success: true,

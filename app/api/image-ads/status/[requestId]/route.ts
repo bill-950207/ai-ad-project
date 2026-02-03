@@ -18,6 +18,7 @@ import {
 import { uploadExternalImageToR2 } from '@/lib/image/compress'
 import { IMAGE_AD_CREDIT_COST } from '@/lib/credits'
 import { recordCreditRefund } from '@/lib/credits/history'
+import { invalidateImageAdsCache } from '@/lib/cache/user-data'
 
 /** requestId에서 provider와 실제 ID 파싱 */
 function parseRequestId(requestId: string): { provider: 'fal' | 'kie'; actualId: string } {
@@ -284,6 +285,11 @@ export async function GET(
               .eq('id', imageAdData.id)
               .eq('user_id', user.id)
 
+            // 배치 완료 시 캐시 무효화
+            if (isAllCompleted) {
+              invalidateImageAdsCache(user.id)
+            }
+
             console.log('배치 이미지 상태 업데이트:', { id: imageAdData.id, batchIndex, completedCount, numImages, isAllCompleted })
           } else {
             // 단일 레코드인 경우 (기존 로직)
@@ -299,6 +305,9 @@ export async function GET(
               })
               .eq('id', imageAdData.id)
               .eq('user_id', user.id)
+
+            // 단일 이미지 완료 시 캐시 무효화
+            invalidateImageAdsCache(user.id)
           }
         } else {
           // 레코드를 찾지 못한 경우에도 fal_request_id로 업데이트 시도 (하위 호환성)
@@ -315,6 +324,9 @@ export async function GET(
 
           if (updateError) {
             console.error('이미지 광고 DB 업데이트 오류 (레코드 없음):', updateError)
+          } else {
+            // 폴백 업데이트 완료 시 캐시 무효화
+            invalidateImageAdsCache(user.id)
           }
         }
 

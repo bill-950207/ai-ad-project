@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { uploadDataUrlToR2 } from '@/lib/storage/r2'
+import { invalidateProductsCache } from '@/lib/cache/user-data'
 import sharp from 'sharp'
 
 interface RouteParams {
@@ -174,6 +175,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         completed_at: new Date(),
       },
     })
+
+    // 캐시 무효화
+    invalidateProductsCache(user.id)
 
     return NextResponse.json({ product: updatedProduct })
   } catch (error) {

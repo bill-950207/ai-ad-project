@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { invalidateMusicCache } from '@/lib/cache/user-data'
 
 // 콜백 데이터 아이템 타입
 interface MusicCallbackItem {
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
         duration: track.duration,
       }))
 
-      const { error: updateError } = await supabase
+      const { data: updatedMusic, error: updateError } = await supabase
         .from('ad_music')
         .update({
           status: 'COMPLETED',
@@ -94,10 +95,17 @@ export async function POST(request: NextRequest) {
           completed_at: new Date().toISOString(),
         })
         .eq('kie_task_id', task_id)
+        .select('user_id')
+        .single()
 
       if (updateError) {
         console.error('음악 레코드 업데이트 오류:', updateError)
         return NextResponse.json({ success: false, error: updateError.message })
+      }
+
+      // 캐시 무효화
+      if (updatedMusic?.user_id) {
+        invalidateMusicCache(updatedMusic.user_id)
       }
 
       console.log('음악 생성 완료:', task_id, '트랙 수:', data.length)

@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { invalidateImageAdsCache } from '@/lib/cache/user-data'
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -150,6 +151,9 @@ export async function PATCH(
           { status: 500 }
         )
       }
+
+      // 캐시 무효화 (상태가 COMPLETED로 변경됨)
+      invalidateImageAdsCache(user.id)
 
       return NextResponse.json({
         success: true,
@@ -341,6 +345,9 @@ export async function DELETE(
         { status: 500 }
       )
     }
+
+    // 캐시 무효화
+    invalidateImageAdsCache(user.id)
 
     return NextResponse.json({ success: true })
   } catch (error) {
