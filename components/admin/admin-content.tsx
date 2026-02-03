@@ -115,6 +115,7 @@ export function AdminContent() {
 
   // WebP 변환 상태
   const [isConverting, setIsConverting] = useState(false)
+  const [convertingId, setConvertingId] = useState<string | null>(null)  // 개별 최적화 중인 ID
   const [convertResult, setConvertResult] = useState<{
     converted: number
     failed: number
@@ -253,7 +254,7 @@ export function AdminContent() {
 
   // WebP 변환 핸들러
   const handleConvertToWebp = async () => {
-    if (!confirm('모든 썸네일을 400x533 WebP로 최적화하시겠습니까? (이미 최적화된 것 제외)')) {
+    if (!confirm('모든 썸네일을 1024x1024 WebP로 최적화하시겠습니까? (이미 최적화된 것 제외)')) {
       return
     }
 
@@ -288,6 +289,45 @@ export function AdminContent() {
       setIsConverting(false)
     }
   }
+
+  // 개별 이미지 최적화
+  const handleOptimizeSingle = async (showcase: Showcase) => {
+    if (showcase.thumbnail_url.includes('/optimized/')) {
+      alert('이미 최적화된 이미지입니다.')
+      return
+    }
+
+    setConvertingId(showcase.id)
+
+    try {
+      const res = await fetch(`/api/admin/convert-thumbnails-to-webp/${showcase.id}`, {
+        method: 'POST',
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to optimize')
+      }
+
+      if (data.alreadyOptimized) {
+        alert('이미 최적화된 이미지입니다.')
+      } else {
+        // 목록에서 해당 항목 업데이트
+        setShowcases(prev => prev.map(s =>
+          s.id === showcase.id ? { ...s, thumbnail_url: data.thumbnail_url } : s
+        ))
+      }
+    } catch (err) {
+      console.error('Optimize error:', err)
+      alert(err instanceof Error ? err.message : 'Failed to optimize')
+    } finally {
+      setConvertingId(null)
+    }
+  }
+
+  // 이미지가 최적화되었는지 확인
+  const isOptimized = (url: string) => url.includes('/optimized/')
 
   // Loading state
   if (isLoading || isAdmin === null) {
@@ -407,13 +447,21 @@ export function AdminContent() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                    <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={showcase.thumbnail_url}
                         alt={showcase.title}
                         className="max-w-full max-h-full object-contain"
                       />
+                      {/* 최적화 상태 뱃지 */}
+                      {isOptimized(showcase.thumbnail_url) && (
+                        <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center" title="Optimized">
+                          <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -471,6 +519,24 @@ export function AdminContent() {
                         className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-foreground"
                       >
                         <Pencil className="w-4 h-4" />
+                      </button>
+                      {/* 개별 최적화 버튼 */}
+                      <button
+                        onClick={() => handleOptimizeSingle(showcase)}
+                        disabled={convertingId === showcase.id || isOptimized(showcase.thumbnail_url)}
+                        className={cn(
+                          "p-2 rounded-lg transition-colors",
+                          isOptimized(showcase.thumbnail_url)
+                            ? "text-green-400 cursor-default"
+                            : "hover:bg-orange-500/10 text-muted-foreground hover:text-orange-400 disabled:opacity-50"
+                        )}
+                        title={isOptimized(showcase.thumbnail_url) ? 'Optimized' : 'Optimize'}
+                      >
+                        {convertingId === showcase.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Image className="w-4 h-4" />
+                        )}
                       </button>
                       {deleteConfirmId === showcase.id ? (
                         <div className="flex items-center gap-1">

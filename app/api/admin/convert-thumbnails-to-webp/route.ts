@@ -11,9 +11,9 @@ import { prisma } from '@/lib/db'
 import { fetchImageAsBuffer, resizeAndCompressToWebp } from '@/lib/image/compress'
 import { uploadBufferToR2 } from '@/lib/storage/r2'
 
-// 썸네일 최적화 사이즈 (3:4 비율)
-const THUMBNAIL_MAX_WIDTH = 400
-const THUMBNAIL_MAX_HEIGHT = 533
+// 썸네일 최적화 사이즈
+const THUMBNAIL_MAX_WIDTH = 1024
+const THUMBNAIL_MAX_HEIGHT = 1024
 
 export async function POST() {
   try {
