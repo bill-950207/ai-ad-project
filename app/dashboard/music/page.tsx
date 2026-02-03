@@ -10,6 +10,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { useLanguage } from '@/contexts/language-context'
 import { useCredits } from '@/contexts/credit-context'
 import { Plus, Music, Loader2, Play, Pause, Trash2, Download, Sparkles, Package, ChevronDown, Info, Coins } from 'lucide-react'
+import { GridSkeleton } from '@/components/ui/grid-skeleton'
+import { ProcessingOverlay } from '@/components/ui/processing-overlay'
 import Image from 'next/image'
 import { SlotLimitModal } from '@/components/ui/slot-limit-modal'
 import { InsufficientCreditsModal } from '@/components/ui/insufficient-credits-modal'
@@ -461,11 +463,7 @@ export default function MusicPage() {
 
       {/* 음악 목록 */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-            <div key={i} className="h-48 bg-secondary/30 rounded-2xl animate-pulse" />
-          ))}
-        </div>
+        <GridSkeleton count={8} columns={{ default: 1, sm: 2, md: 3, lg: 4 }} aspectRatio="video" />
       ) : musicList.length === 0 ? (
         <div className="bg-card border border-dashed border-border rounded-2xl p-16 text-center">
           <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-secondary/50 flex items-center justify-center">
@@ -511,12 +509,7 @@ export default function MusicPage() {
 
                     {/* 상태 오버레이 */}
                     {['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(music.status) && (
-                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <div className="text-center text-white">
-                          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                          <p className="text-sm">{(musicT?.generating as string) || 'Generating...'}</p>
-                        </div>
-                      </div>
+                      <ProcessingOverlay statusText={(musicT?.generating as string) || 'Generating...'} />
                     )}
 
                     {/* 재생 버튼 (완료된 경우) */}

@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
 import { Plus, Package } from 'lucide-react'
 import { AdProductCard } from '@/components/ad-product/ad-product-card'
+import { GridSkeleton } from '@/components/ui/grid-skeleton'
 
 interface AdProduct {
   id: string
@@ -137,11 +138,7 @@ export default function AdProductsPage() {
 
       {/* 광고 제품 목록 */}
       {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-            <div key={i} className="aspect-square bg-secondary/30 rounded-2xl animate-pulse" />
-          ))}
-        </div>
+        <GridSkeleton count={8} columns={{ default: 2, sm: 3, md: 3, lg: 4 }} />
       ) : products.length === 0 ? (
         <div className="bg-card border border-border rounded-2xl p-16 text-center">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
