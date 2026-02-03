@@ -40,7 +40,6 @@ interface GalleryMeta {
   nextVideoOffset: number
 }
 
-
 interface DashboardContentProps {
   userEmail?: string
   initialImageShowcases?: string[]
