@@ -42,37 +42,41 @@ export const PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST = {
   '720p': 10, // ~$0.30/5초
 } as const
 
-/** 아바타 모션 영상 길이별 크레딧 (Kie.ai Kling 2.6) */
+// ============================================================
+// [DEPRECATED] 아바타 모션 - 현재 미사용
+// ============================================================
+
+/** @deprecated 아바타 모션 영상 - 현재 서비스에서 미사용 */
 export const AVATAR_MOTION_CREDIT_COST = {
-  5: 40, // 5초: ~$0.50
-  10: 60, // 10초: ~$0.80
+  5: 40,
+  10: 60,
 } as const
 
 // ============================================================
 // 제품 광고 영상 관련
 // ============================================================
 
-/** 제품 광고 영상 생성 크레딧 (Seedance/Wan 2.6) */
+/** @deprecated 레거시 영상 모델 (Seedance/Wan 2.6) - Vidu Q3로 대체됨 */
 export const PRODUCT_AD_VIDEO_CREDIT_COST = {
   seedance: {
-    4: 8, // 4초: ~$0.30
-    8: 12, // 8초: ~$0.50
-    12: 16, // 12초: ~$0.70
+    4: 8,
+    8: 12,
+    12: 16,
   },
   'wan2.6': {
-    5: 10, // 5초: ~$0.40
-    10: 15, // 10초: ~$0.60
-    15: 20, // 15초: ~$0.80
+    5: 10,
+    10: 15,
+    15: 20,
   },
 } as const
 
 /** 키프레임 이미지 생성 크레딧 (Seedream 4.5, 이미지당) */
 export const KEYFRAME_CREDIT_COST = 1 // ~$0.03/장
 
-/** 씬 전환 영상 생성 크레딧 (Kling O1, 전환당) */
-export const TRANSITION_CREDIT_COST = 12 // ~$0.50/전환
+/** @deprecated 씬 전환 영상 (Kling O1) - 현재 서비스에서 미사용 */
+export const TRANSITION_CREDIT_COST = 12
 
-/** Vidu Q2 영상 생성 해상도별 초당 크레딧 (WaveSpeed/fal.ai) */
+/** Vidu Q3 영상 생성 해상도별 초당 크레딧 (WaveSpeed) */
 export const VIDU_CREDIT_COST_PER_SECOND = {
   '540p': 1, // SD: ~$0.03/초
   '720p': 2, // HD: ~$0.05/초

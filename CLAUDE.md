@@ -20,6 +20,8 @@ AIAD는 AI 서비스를 활용한 광고 콘텐츠(이미지, 영상, 아바타,
 app/
 ├── (auth)/              # 로그인, 회원가입, 온보딩, 이메일 인증
 ├── (fullscreen)/        # 전체화면 에디터 (image-ad-create, video-ad-create)
+├── [locale]/            # 다국어 라우팅 (ko, en, ja)
+├── auth/                # 인증 콜백 (callback)
 ├── dashboard/           # 보호된 대시보드
 │   ├── avatar/          # 아바타 관리
 │   ├── image-ad/        # 이미지 광고 생성/관리
@@ -31,7 +33,7 @@ app/
 │   ├── settings/        # 설정
 │   ├── subscription/    # 구독 관리
 │   └── pricing/         # 요금제 페이지
-├── api/                 # API 라우트 (96+ 엔드포인트)
+├── api/                 # API 라우트 (84개 엔드포인트)
 ├── pricing/             # 공개 요금제 페이지
 └── legal/               # 약관, 개인정보처리방침
 
@@ -50,21 +52,22 @@ components/
 lib/
 ├── auth/                # 인증 헬퍼
 ├── avatar/              # 아바타 생성 유틸리티
+├── client/              # 클라이언트 업로드 유틸리티
 ├── credits/             # 크레딧 시스템 (constants, utils)
-├── elevenlabs/          # ElevenLabs TTS 클라이언트
 ├── fal/                 # FAL.ai 이미지/영상 클라이언트
 ├── gemini/              # Google Gemini LLM (15+ 프롬프트 빌더)
+├── generated/           # Prisma 생성 파일
 ├── hooks/               # 커스텀 React 훅
 ├── i18n/                # 국제화 (ko, en, ja)
 ├── image/               # 이미지 처리 유틸리티
 ├── image-ad/            # 이미지 광고 생성
-├── kie/                 # Kie.ai API 클라이언트
+├── kie/                 # Kie.ai API 클라이언트 (TTS 포함)
 ├── prompts/             # AI 프롬프트 템플릿
 ├── storage/             # Cloudflare R2 파일 스토리지
 ├── stripe/              # Stripe 결제 통합
-├── subscription/        # 구독 시스템
+├── subscription/        # 구독 시스템 (슬롯 제한)
 ├── supabase/            # Supabase 클라이언트 (client, server, admin)
-├── tts/                 # TTS 통합 서비스
+├── tts/                 # TTS 모듈 (lib/kie/tts re-export)
 ├── video/               # 영상 처리 (FFmpeg)
 └── wavespeed/           # WaveSpeed AI 클라이언트
 
@@ -254,33 +257,43 @@ AI 서비스 비용 × 2.5배 마진 기준 (~$0.07/크레딧, 100원)
 
 ### 크레딧 부족 처리
 ```typescript
-import { CreditUtils } from '@/lib/credits/utils'
+import { hasEnoughCredits, validateCredits } from '@/lib/credits/utils'
 
-// 크레딧 확인
-const hasCredit = await CreditUtils.checkCredits(userId, requiredAmount)
+// 간단한 확인
+const hasCredit = await hasEnoughCredits(userId, requiredAmount)
 if (!hasCredit) {
   return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 })
 }
+
+// 상세 정보 필요 시
+const { isValid, currentCredits, requiredCredits } = await validateCredits(userId, amount)
 ```
 
 ## Subscription System
 
-### 요금제 (`lib/subscription/plans.ts`)
-| 요금제 | 월 크레딧 | 아바타 | 음악 | 제품 | 키프레임 |
-|--------|----------|--------|------|------|----------|
-| FREE | 15 | 1 | 1 | 3 | 1 |
-| STARTER | 100 | 3 | 5 | 10 | 1 |
-| PRO | 300 | -1 (무제한) | -1 | -1 | 2 |
-| BUSINESS | 1000 | -1 | -1 | -1 | 2 |
+### 요금제 (DB `plans` 테이블)
+| 요금제 | 월 크레딧 | 아바타 슬롯 | 음악 슬롯 | 제품 슬롯 |
+|--------|----------|-------------|----------|----------|
+| FREE | 15 | 1 | 1 | 3 |
+| STARTER | 100 | 3 | 5 | 10 |
+| PRO | 300 | -1 (무제한) | -1 | -1 |
+| BUSINESS | 1000 | -1 | -1 | -1 |
 
-### 사용량 추적 (`lib/subscription/usage.ts`)
+**참고:** 슬롯은 동시 보유 가능 개수 제한 (월간 생성 횟수가 아님)
+
+### 슬롯 제한 확인 (`lib/subscription/usage.ts`)
 ```typescript
-import { UsageTracker } from '@/lib/subscription/usage'
+import { checkSlotLimit, getSlotSummary } from '@/lib/subscription/usage'
 
-// 사용량 체크
-const canCreate = await UsageTracker.canCreateAvatar(userId)
-// 사용량 증가
-await UsageTracker.incrementAvatarCount(userId)
+// 슬롯 여유 확인
+const result = await checkSlotLimit(userId, 'avatar') // 'avatar' | 'music' | 'product'
+if (!result.withinLimit) {
+  return NextResponse.json({ error: 'Slot limit reached' }, { status: 403 })
+}
+
+// 전체 슬롯 사용량 조회
+const summary = await getSlotSummary(userId)
+// { avatars: { used, limit }, music: { used, limit }, products: { used, limit } }
 ```
 
 ## AI Services
@@ -321,18 +334,22 @@ await UsageTracker.incrementAvatarCount(userId)
 - 시나리오 생성
 - 추천 엔진
 
-### TTS 통합 (`lib/tts/unified-service.ts`)
+### TTS (`lib/tts/index.ts` → `lib/kie/tts.ts`)
 ```typescript
-// Primary: WaveSpeed Minimax (한국어 최적화)
-// Fallback: ElevenLabs (다국어)
-const audio = await unifiedTTS.generateSpeech(text, {
-  language: 'ko',
+import { textToSpeech, getVoicesByLanguage, VOICES } from '@/lib/tts'
+
+// 음성 목록 조회
+const koreanVoices = getVoicesByLanguage('ko')
+
+// TTS 생성 (Kie.ai ElevenLabs v3)
+const result = await textToSpeech({
+  text: '안녕하세요',
   voiceId: 'voice-id',
-  enableFallback: true
 })
+// { audioUrl: string, duration: number }
 ```
 
-## API Routes Overview (96+)
+## API Routes Overview (84개)
 
 ### 주요 카테고리
 - **사용자 & 인증:** `/api/me`, `/api/onboarding`
@@ -409,13 +426,16 @@ const { t, language, setLanguage } = useLanguage()
 
 주요 환경 변수 (`.env.example` 참조):
 ```bash
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+# Application
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Supabase (NEXT_PUBLIC_ 접두사 없음)
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
 # Database
-DATABASE_URL=           # Prisma 연결
+DATABASE_URL=           # Prisma 연결 (pooled)
 DIRECT_URL=            # 마이그레이션용 직접 연결
 
 # AI Services
@@ -425,7 +445,7 @@ GOOGLE_AI_API_KEY=
 WAVE_SPEED_AI_KEY=
 ELEVENLABS_API_KEY=
 
-# Storage
+# Storage (Cloudflare R2)
 R2_ACCOUNT_ID=
 R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
@@ -438,7 +458,13 @@ STRIPE_WEBHOOK_SECRET=
 STRIPE_*_PRICE_ID=     # 요금제별 가격 ID
 
 # AI Provider 선택
-AVATAR_AI_PROVIDER=kie  # 'kie' | 'fal'
+AVATAR_AI_PROVIDER=kie   # 'kie' | 'fal'
+OUTFIT_AI_PROVIDER=kie   # 'kie' | 'fal'
+
+# Analytics (Optional)
+NEXT_PUBLIC_CLARITY_ID=
+NEXT_PUBLIC_GA_ID=
+NEXT_PUBLIC_SENTRY_DSN=
 ```
 
 ## Storage (Cloudflare R2)
