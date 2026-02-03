@@ -22,26 +22,31 @@ import { useSearchParams, useRouter } from 'next/navigation'
 // 타입 정의
 // ============================================================
 
-interface DashboardContentProps {
-  userEmail?: string
-}
-
-interface Showcase {
+interface ShowcaseItem {
   id: string
-  type: 'image' | 'video'
+  type: string
+  title: string
+  description: string | null
   thumbnail_url: string
   media_url: string | null
+  ad_type: string | null
+  category: string | null
 }
 
-// 폴백용 예시 이미지/영상 URL
-const FALLBACK_IMAGE_EXAMPLES = [
-  '/examples/image-ad-1.webp',
-  '/examples/image-ad-2.webp',
-  '/examples/image-ad-3.webp',
-]
+interface GalleryMeta {
+  imageCount: number
+  videoCount: number
+  nextImageOffset: number
+  nextVideoOffset: number
+}
 
-// 영상 폴백은 빈 배열 (API에서 가져온 데이터 사용, 없으면 그라데이션 배경)
-const FALLBACK_VIDEO_EXAMPLES: string[] = []
+interface DashboardContentProps {
+  userEmail?: string
+  initialImageShowcases?: string[]
+  initialVideoShowcases?: string[]
+  initialGalleryShowcases?: ShowcaseItem[]
+  initialGalleryMeta?: GalleryMeta
+}
 
 // ============================================================
 // 배경 이미지 슬라이더 컴포넌트
@@ -116,18 +121,21 @@ interface VideoSliderProps {
 
 function VideoSlider({ videos }: VideoSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [previousIndex, setPreviousIndex] = useState<number | null>(null)
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([])
 
   const handleVideoEnded = useCallback(() => {
     if (videos.length <= 1) return
 
-    setIsTransitioning(true)
+    // 이전 인덱스 저장 (크로스페이드용)
+    setPreviousIndex(currentIndex)
+    setCurrentIndex((prev) => (prev + 1) % videos.length)
+
+    // 전환 완료 후 이전 인덱스 초기화
     setTimeout(() => {
-      setCurrentIndex((prev) => (prev + 1) % videos.length)
-      setIsTransitioning(false)
-    }, 300)
-  }, [videos.length])
+      setPreviousIndex(null)
+    }, 500) // transition-duration과 동일
+  }, [videos.length, currentIndex])
 
   // 인덱스 변경 시 해당 비디오 재생
   useEffect(() => {
@@ -142,25 +150,32 @@ function VideoSlider({ videos }: VideoSliderProps) {
 
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {videos.map((src, index) => (
-        <video
-          key={src}
-          ref={(el) => { videoRefs.current[index] = el }}
-          src={src}
-          autoPlay={index === 0}
-          loop={videos.length === 1}
-          muted
-          playsInline
-          onEnded={handleVideoEnded}
-          className={`
-            absolute inset-0 w-full h-full object-cover
-            transition-opacity duration-500 ease-in-out
-            ${index === currentIndex && !isTransitioning ? 'opacity-100' : 'opacity-0'}
-          `}
-        />
-      ))}
+      {videos.map((src, index) => {
+        // 현재 비디오 또는 전환 중인 이전 비디오만 표시
+        const isCurrent = index === currentIndex
+        const isPrevious = index === previousIndex
+
+        return (
+          <video
+            key={src}
+            ref={(el) => { videoRefs.current[index] = el }}
+            src={src}
+            autoPlay={index === 0}
+            loop={videos.length === 1}
+            muted
+            playsInline
+            onEnded={handleVideoEnded}
+            className={`
+              absolute inset-0 w-full h-full object-cover
+              transition-opacity duration-500 ease-in-out
+              ${isCurrent ? 'opacity-100' : isPrevious ? 'opacity-100' : 'opacity-0'}
+            `}
+            style={{ zIndex: isCurrent ? 1 : 0 }}
+          />
+        )
+      })}
       {/* 하단 텍스트 가독성을 위한 그라데이션 */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/10 z-10" />
     </div>
   )
 }
@@ -249,53 +264,21 @@ function AdCreationCard({
 // 메인 컴포넌트
 // ============================================================
 
-export function DashboardContent({ userEmail: _userEmail }: DashboardContentProps) {
+export function DashboardContent({
+  userEmail: _userEmail,
+  initialImageShowcases = [],
+  initialVideoShowcases = [],
+  initialGalleryShowcases = [],
+  initialGalleryMeta
+}: DashboardContentProps) {
   const { t } = useLanguage()
   const { startOnboarding, setVideoAdType, isOpen } = useOnboarding()
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  // 쇼케이스 데이터 상태
-  const [imageShowcases, setImageShowcases] = useState<string[]>(FALLBACK_IMAGE_EXAMPLES)
-  const [videoShowcases, setVideoShowcases] = useState<string[]>(FALLBACK_VIDEO_EXAMPLES)
-
-  // 쇼케이스 데이터 로드
-  useEffect(() => {
-    const fetchShowcases = async () => {
-      try {
-        // 이미지와 영상 쇼케이스 병렬 조회
-        const [imageRes, videoRes] = await Promise.all([
-          fetch('/api/showcases?type=image&limit=5&random=true'),
-          fetch('/api/showcases?type=video&limit=3&random=true'),
-        ])
-
-        if (imageRes.ok) {
-          const imageData = await imageRes.json()
-          if (imageData.showcases && imageData.showcases.length > 0) {
-            const imageUrls = imageData.showcases.map((s: Showcase) => s.thumbnail_url)
-            setImageShowcases(imageUrls)
-          }
-        }
-
-        if (videoRes.ok) {
-          const videoData = await videoRes.json()
-          if (videoData.showcases && videoData.showcases.length > 0) {
-            const videoUrls = videoData.showcases
-              .filter((s: Showcase) => s.media_url)
-              .map((s: Showcase) => s.media_url as string)
-            if (videoUrls.length > 0) {
-              setVideoShowcases(videoUrls)
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load showcase data:', error)
-        // 실패 시 폴백 값 유지
-      }
-    }
-
-    fetchShowcases()
-  }, [])
+  // 쇼케이스 데이터 (서버에서 프리페칭)
+  const imageShowcases = initialImageShowcases
+  const videoShowcases = initialVideoShowcases
 
   // URL 쿼리 파라미터로 온보딩 자동 시작
   useEffect(() => {
@@ -363,7 +346,10 @@ export function DashboardContent({ userEmail: _userEmail }: DashboardContentProp
         <RecentAdsSection />
 
         {/* 쇼케이스 갤러리 - 이미지/영상 각각 5x3 그리드 */}
-        <ShowcaseGallery />
+        <ShowcaseGallery
+          initialData={initialGalleryShowcases}
+          initialMeta={initialGalleryMeta}
+        />
       </div>
 
       {/* 온보딩 플로우 모달 */}
