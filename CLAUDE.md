@@ -94,6 +94,8 @@ npm run lint         # ESLint
 
 ## Git Worktree
 
+**중요:** Claude는 코드 수정 작업 시 반드시 새로운 워크트리에서 작업해야 합니다. main 브랜치에서 직접 코드를 수정하지 마세요.
+
 ### 워크트리 관리 스크립트
 ```bash
 ./scripts/worktree.sh create <feature-name>  # 워크트리 + 브랜치 생성 + 초기 설정
@@ -436,6 +438,19 @@ STRIPE_*_PRICE_ID=     # 요금제별 가격 ID
 # AI Provider 선택
 AVATAR_AI_PROVIDER=kie  # 'kie' | 'fal'
 ```
+
+## Storage (Cloudflare R2)
+
+### 이미지 업로드 패턴
+1. **Presigned URL 필수:** 클라이언트에서 직접 R2로 업로드 시 presigned URL 사용
+2. **WebP 압축:** 원본 이미지와 WebP 압축본을 병렬로 업로드
+3. **이중 URL 저장:** DB에 원본 URL과 WebP URL 모두 저장
+4. **프론트엔드 조회:** 이미지 표시 시 WebP 압축본 우선 사용
+
+### 파일 경로 규칙
+- 아바타: `avatars/{userId}/{filename}`
+- 제품: `products/{userId}/{filename}`
+- 광고: `ads/{userId}/{type}/{filename}`
 
 ## Security
 
