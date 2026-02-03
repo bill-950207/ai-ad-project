@@ -207,12 +207,17 @@ function ShowcaseCard({ item, onClick, getAdTypeLabel }: ShowcaseCardProps) {
       <div className="absolute inset-0 p-3 flex flex-col justify-end">
         {/* 하단: 광고 유형 + 제품/아바타 썸네일 */}
         <div className="flex items-end justify-between gap-2">
-          {/* 좌측: 광고 유형 */}
-          {item.ad_type && (
-            <span className="px-2 py-1 rounded-lg bg-primary/30 backdrop-blur-sm text-xs font-semibold text-white">
-              {getAdTypeLabel(item.ad_type)}
+          {/* 좌측: 미디어 타입 + 광고 유형 */}
+          <div className="flex flex-col gap-1 items-start">
+            <span className="px-2 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[10px] font-medium text-white/90">
+              {item.type === 'video' ? 'VIDEO' : 'IMAGE'}
             </span>
-          )}
+            {item.ad_type && (
+              <span className="px-2 py-1 rounded-lg bg-primary/30 backdrop-blur-sm text-xs font-semibold text-white">
+                {getAdTypeLabel(item.ad_type)}
+              </span>
+            )}
+          </div>
 
           {/* 우측: 제품/아바타 썸네일 */}
           {(item.product_image_url || item.avatar_image_url) && (
