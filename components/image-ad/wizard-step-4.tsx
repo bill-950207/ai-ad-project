@@ -11,7 +11,6 @@ import {
   Package,
   User,
   Settings,
-  Image as ImageIcon,
   Download,
   ExternalLink,
   Check,
@@ -27,13 +26,7 @@ import { useImageAdWizard, AspectRatio, Quality } from './wizard-context'
 import { compressImage } from '@/lib/image/compress-client'
 import { uploadImageAdImage } from '@/lib/client/image-upload'
 import { IMAGE_AD_CREDIT_COST } from '@/lib/credits/constants'
-
-// 사용자 플랜 타입
-interface UserPlan {
-  planType: 'FREE' | 'STARTER' | 'PRO' | 'BUSINESS'
-  displayName: string
-  hdUpscale: boolean
-}
+import { useUserPlan } from '@/lib/hooks/use-user-plan'
 
 // 가격 계산 (중앙 상수 사용)
 const calculateCredits = (quality: Quality, numImages: number): number => {
@@ -65,7 +58,6 @@ export function WizardStep4() {
     customOptions,
     additionalPrompt,
     aspectRatio,
-    setAspectRatio,
     quality,
     setQuality,
     numImages,
@@ -98,34 +90,20 @@ export function WizardStep4() {
   // 크레딧 부족 모달 상태
   const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false)
 
-  // 사용자 플랜 정보
-  const [userPlan, setUserPlan] = useState<UserPlan | null>(null)
-  const isFreeUser = userPlan?.planType === 'FREE'
+  // 사용자 플랜 정보 (로딩 중에는 FREE로 가정하여 UX 개선)
+  const { isFreeUser, isLoaded: isPlanLoaded } = useUserPlan()
 
   const isWearingType = adType === 'wearing'
 
-  // 사용자 플랜 정보 로드
+  // 플랜 로드 완료 후 FREE 사용자인 경우 기본값 조정
   useEffect(() => {
-    const fetchUserPlan = async () => {
-      try {
-        const res = await fetch('/api/user/plan')
-        if (res.ok) {
-          const data = await res.json()
-          setUserPlan(data)
-          // FREE 사용자인 경우 기본값 조정
-          if (data.planType === 'FREE') {
-            setQuality('medium')
-            if (numImages > 2) {
-              setNumImages(2)
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Plan info load error:', error)
+    if (isPlanLoaded && isFreeUser) {
+      setQuality('medium')
+      if (numImages > 2) {
+        setNumImages(2)
       }
     }
-    fetchUserPlan()
-  }, [setQuality, setNumImages, numImages])
+  }, [isPlanLoaded, isFreeUser, setQuality, setNumImages, numImages])
 
   // 결과 이미지가 변경되면 로딩 상태 초기화
   useEffect(() => {
@@ -430,13 +408,6 @@ export function WizardStep4() {
     resetWizard()
   }
 
-  // 비율 옵션
-  const ratioOptions: { ratio: AspectRatio; label: string; width: string; height: string }[] = [
-    { ratio: '1:1', label: t.imageAd?.generate?.square || 'Square', width: 'w-8', height: 'h-8' },
-    { ratio: '16:9', label: t.imageAd?.generate?.landscape || 'Landscape', width: 'w-10', height: 'h-6' },
-    { ratio: '9:16', label: t.imageAd?.generate?.portrait || 'Portrait', width: 'w-6', height: 'h-10' },
-  ]
-
   // 퀄리티 옵션
   const qualityOptions: { quality: Quality; label: string; description: string }[] = [
     { quality: 'medium', label: t.imageAd?.generate?.normal || 'Normal', description: t.imageAd?.generate?.normalDesc || 'Fast generation' },
@@ -646,38 +617,8 @@ export function WizardStep4() {
         </div>
       </div>
 
-      {/* 이미지 비율 */}
-      <div className="bg-card border border-border rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-          <ImageIcon className="w-5 h-5" />
-          {t.imageAd?.generate?.aspectRatio || 'Aspect Ratio'}
-        </h2>
-        <div className="grid grid-cols-3 gap-3">
-          {ratioOptions.map(({ ratio, label, width, height }) => (
-            <button
-              key={ratio}
-              onClick={() => setAspectRatio(ratio)}
-              className={`flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all ${
-                aspectRatio === ratio
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <div
-                className={`border-2 rounded ${width} ${height} ${
-                  aspectRatio === ratio ? 'border-primary' : 'border-muted-foreground'
-                }`}
-              />
-              <div className="text-center">
-                <p className={`text-sm font-medium ${aspectRatio === ratio ? 'text-primary' : 'text-foreground'}`}>
-                  {ratio}
-                </p>
-                <p className="text-xs text-muted-foreground">{label}</p>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* 이미지 비율 - 정방형(1:1) 고정 */}
+      {/* 비율 선택 UI 숨김 - 1:1 고정 */}
 
       {/* 퀄리티 & 개수 */}
       <div className="bg-card border border-border rounded-xl p-6">
@@ -686,84 +627,91 @@ export function WizardStep4() {
           {t.imageAd?.generate?.options || 'Generation Options'}
         </h2>
 
-        <div className="space-y-4">
-          {/* 퀄리티 */}
-          <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">{t.imageAd?.generate?.quality || 'Quality'}</label>
-            <div className="grid grid-cols-2 gap-3">
-              {qualityOptions.map(({ quality: q, label, description }) => {
-                const isLocked = isFreeUser && q === 'high'
-                return (
-                  <button
-                    key={q}
-                    onClick={() => !isLocked && setQuality(q)}
-                    disabled={isLocked}
-                    className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all ${
-                      isLocked
-                        ? 'border-border bg-secondary/30 cursor-not-allowed opacity-60'
-                        : quality === q
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-primary/50'
-                    }`}
-                  >
-                    {isLocked && (
-                      <div className="absolute top-2 right-2 flex items-center gap-1 text-xs text-muted-foreground">
-                        <Lock className="w-3 h-3" />
-                        <span>STARTER+</span>
-                      </div>
-                    )}
-                    <p className={`font-medium ${quality === q && !isLocked ? 'text-primary' : 'text-foreground'}`}>
-                      {label}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{description}</p>
-                  </button>
-                )
-              })}
-            </div>
+        {!isPlanLoaded ? (
+          // 플랜 로딩 중
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
+        ) : (
+          <div className="space-y-4">
+            {/* 퀄리티 */}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">{t.imageAd?.generate?.quality || 'Quality'}</label>
+              <div className="grid grid-cols-2 gap-3">
+                {qualityOptions.map(({ quality: q, label, description }) => {
+                  const isLocked = isFreeUser && q === 'high'
+                  return (
+                    <button
+                      key={q}
+                      onClick={() => !isLocked && setQuality(q)}
+                      disabled={isLocked}
+                      className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all ${
+                        isLocked
+                          ? 'border-border bg-secondary/30 cursor-not-allowed opacity-60'
+                          : quality === q
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      {isLocked && (
+                        <div className="absolute top-2 right-2 flex items-center gap-1 text-xs text-muted-foreground">
+                          <Lock className="w-3 h-3" />
+                          <span>STARTER+</span>
+                        </div>
+                      )}
+                      <p className={`font-medium ${quality === q && !isLocked ? 'text-primary' : 'text-foreground'}`}>
+                        {label}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{description}</p>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
 
-          {/* 생성 개수 */}
-          <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">
-              {t.imageAd?.generate?.count || 'Number of Images'}
+            {/* 생성 개수 */}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">
+                {t.imageAd?.generate?.count || 'Number of Images'}
+                {isFreeUser && (
+                  <span className="ml-2 text-xs text-muted-foreground font-normal">
+                    {t.imageAd?.generate?.freeLimit || '(Free: max 2)'}
+                  </span>
+                )}
+              </label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((num) => {
+                  const isLocked = isFreeUser && num > 2
+                  return (
+                    <button
+                      key={num}
+                      onClick={() => !isLocked && setNumImages(num)}
+                      disabled={isLocked}
+                      className={`relative flex-1 py-3 rounded-xl border-2 font-medium transition-all ${
+                        isLocked
+                          ? 'border-border bg-secondary/30 cursor-not-allowed opacity-60 text-muted-foreground'
+                          : numImages === num
+                            ? 'border-primary bg-primary/5 text-primary'
+                            : 'border-border hover:border-primary/50 text-foreground'
+                      }`}
+                    >
+                      {num}
+                      {isLocked && (
+                        <Lock className="absolute top-1 right-1 w-3 h-3 text-muted-foreground" />
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
               {isFreeUser && (
-                <span className="ml-2 text-xs text-muted-foreground font-normal">
-                  {t.imageAd?.generate?.freeLimit || '(Free: max 2)'}
-                </span>
+                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                  <Crown className="w-3 h-3" />
+                  {t.imageAd?.generate?.starterLimit || 'Subscribe to STARTER or higher to generate up to 5 images'}
+                </p>
               )}
-            </label>
-            <div className="flex gap-2">
-              {[1, 2, 3, 4, 5].map((num) => {
-                const isLocked = isFreeUser && num > 2
-                return (
-                  <button
-                    key={num}
-                    onClick={() => !isLocked && setNumImages(num)}
-                    disabled={isLocked}
-                    className={`relative flex-1 py-3 rounded-xl border-2 font-medium transition-all ${
-                      isLocked
-                        ? 'border-border bg-secondary/30 cursor-not-allowed opacity-60 text-muted-foreground'
-                        : numImages === num
-                          ? 'border-primary bg-primary/5 text-primary'
-                          : 'border-border hover:border-primary/50 text-foreground'
-                    }`}
-                  >
-                    {num}
-                    {isLocked && (
-                      <Lock className="absolute top-1 right-1 w-3 h-3 text-muted-foreground" />
-                    )}
-                  </button>
-                )
-              })}
             </div>
-            {isFreeUser && (
-              <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                <Crown className="w-3 h-3" />
-                {t.imageAd?.generate?.starterLimit || 'Subscribe to STARTER or higher to generate up to 5 images'}
-              </p>
-            )}
           </div>
-        </div>
+        )}
       </div>
 
       {/* 가격 및 생성 */}
@@ -782,7 +730,8 @@ export function WizardStep4() {
           </div>
           <button
             onClick={handleGenerate}
-            className="flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl"
+            disabled={!isPlanLoaded}
+            className="flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Sparkles className="w-5 h-5" />
             {t.imageAd?.generate?.generateButton || 'Generate Ad'}

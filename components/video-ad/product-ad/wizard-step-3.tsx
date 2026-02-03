@@ -10,7 +10,6 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  Maximize,
   Film,
   Plus,
   Minus,
@@ -20,14 +19,9 @@ import {
   Palette,
 } from 'lucide-react'
 // Note: Lock is still used for scene count button restrictions
-import { useProductAdWizard, RecommendedVideoSettings, SceneElementOptions, createDefaultSceneElement, AspectRatio } from './wizard-context'
+import { useProductAdWizard, RecommendedVideoSettings, SceneElementOptions, createDefaultSceneElement } from './wizard-context'
 import { useLanguage } from '@/contexts/language-context'
-
-// 사용자 플랜 타입
-interface UserPlan {
-  planType: 'FREE' | 'STARTER' | 'PRO' | 'BUSINESS'
-  displayName: string
-}
+import { useUserPlan } from '@/lib/hooks/use-user-plan'
 
 // FREE 사용자 제한
 const FREE_USER_LIMITS = {
@@ -36,16 +30,6 @@ const FREE_USER_LIMITS = {
 }
 
 // 번역된 옵션을 가져오는 헬퍼 함수
-function getAspectRatioOptions(t: Record<string, unknown>) {
-  const step3T = (t.productAdWizard as Record<string, unknown>)?.step3 as Record<string, unknown> || {}
-  const aspectRatiosT = step3T.aspectRatios as Record<string, string> || {}
-  return [
-    { value: '16:9' as AspectRatio, label: aspectRatiosT.landscape || 'Landscape', icon: '▬', desc: aspectRatiosT.landscapeDesc || 'YouTube, Websites' },
-    { value: '9:16' as AspectRatio, label: aspectRatiosT.portrait || 'Portrait', icon: '▮', desc: aspectRatiosT.portraitDesc || 'Reels, Shorts, TikTok' },
-    { value: '1:1' as AspectRatio, label: aspectRatiosT.square || 'Square', icon: '■', desc: aspectRatiosT.squareDesc || 'Instagram Feed' },
-  ]
-}
-
 function getMoodOptions(t: Record<string, unknown>) {
   const step3T = (t.productAdWizard as Record<string, unknown>)?.step3 as Record<string, unknown> || {}
   const moodT = step3T.moodOptions as Record<string, string> || {}
@@ -307,8 +291,6 @@ export function WizardStep3() {
     editableDescription,
     editableSellingPoints,
     // Step 4 (설정)
-    aspectRatio,
-    setAspectRatio,
     sceneDurations,
     updateSceneDuration,
     sceneCount,
@@ -330,34 +312,19 @@ export function WizardStep3() {
 
   // i18n
   const { language, t } = useLanguage()
-  const aspectRatioOptions = getAspectRatioOptions(t)
 
   // 중복 호출 방지를 위한 ref
   const isGeneratingRef = useRef(false)
 
-  // 사용자 플랜 정보
-  const [userPlan, setUserPlan] = useState<UserPlan | null>(null)
-  const isFreeUser = userPlan?.planType === 'FREE'
+  // 사용자 플랜 정보 (로딩 중에는 FREE로 가정하여 UX 개선)
+  const { isFreeUser, isLoaded: isPlanLoaded } = useUserPlan()
 
-  // 사용자 플랜 정보 로드
+  // 플랜 로드 완료 후 FREE 사용자인 경우 씬 개수 조정
   useEffect(() => {
-    const fetchUserPlan = async () => {
-      try {
-        const res = await fetch('/api/user/plan')
-        if (res.ok) {
-          const data = await res.json()
-          setUserPlan(data)
-          // FREE 사용자인 경우 씬 개수 조정
-          if (data.planType === 'FREE' && sceneCount > FREE_USER_LIMITS.maxSceneCount) {
-            setSceneCount(FREE_USER_LIMITS.maxSceneCount)
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load plan info:', error)
-      }
+    if (isPlanLoaded && isFreeUser && sceneCount > FREE_USER_LIMITS.maxSceneCount) {
+      setSceneCount(FREE_USER_LIMITS.maxSceneCount)
     }
-    fetchUserPlan()
-  }, [setSceneCount, sceneCount])
+  }, [isPlanLoaded, isFreeUser, setSceneCount, sceneCount])
 
   // Vidu Q3 모델 강제 설정
   useEffect(() => {
@@ -652,39 +619,8 @@ export function WizardStep3() {
           </div>
         )}
 
-        {/* 비율 선택 */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Maximize className="w-4 h-4 text-muted-foreground" />
-            <h4 className="text-sm font-medium text-foreground">{t.productAdWizard?.step3?.aspectRatio || 'Aspect Ratio'}</h4>
-            {isVideoSettingsFromScenario && (
-              <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded-full flex items-center gap-1">
-                <Sparkles className="w-2.5 h-2.5" />
-                AI
-              </span>
-            )}
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            {aspectRatioOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setAspectRatio(option.value)}
-                className={`p-4 rounded-xl border-2 transition-all ${
-                  aspectRatio === option.value
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/50'
-                }`}
-              >
-                <div className="text-center">
-                  <div className="text-2xl mb-2">{option.icon}</div>
-                  <div className="font-medium text-foreground">{option.label}</div>
-                  <div className="text-xs text-muted-foreground mt-1">{option.desc}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* 비율 선택 - 정방형(1:1) 고정 */}
+        {/* 비율 선택 UI 숨김 - 1:1 고정 */}
 
         {/* 씬 개수 및 씬별 시간 설정 */}
         <div className="space-y-4 mt-6">
@@ -706,42 +642,51 @@ export function WizardStep3() {
           </p>
 
           {/* 씬 개수 선택 */}
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground w-16">{t.productAdWizard?.step3?.sceneCount || 'Scenes'}</span>
-            <div className="flex gap-1.5 flex-1">
-              {[2, 3, 4, 5, 6, 7, 8].map((count) => {
-                const isLocked = isFreeUser && count > FREE_USER_LIMITS.maxSceneCount
-                return (
-                  <button
-                    key={count}
-                    onClick={() => !isLocked && setSceneCount(count)}
-                    disabled={isLocked}
-                    className={`relative flex-1 h-12 rounded-xl border-2 transition-all font-bold text-lg ${
-                      isLocked
-                        ? 'border-border bg-secondary/30 cursor-not-allowed opacity-60 text-muted-foreground'
-                        : sceneCount === count
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border hover:border-primary/50 text-foreground'
-                    }`}
-                  >
-                    {count}
-                    {isLocked && (
-                      <Lock className="absolute top-1 right-1 w-3 h-3 text-muted-foreground" />
-                    )}
-                  </button>
-                )
-              })}
+          {!isPlanLoaded ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
             </div>
-          </div>
-          {isFreeUser && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Crown className="w-3 h-3" />
-              {t.productAdWizard?.step3?.upgradeHint || 'Subscribe to STARTER or higher for up to 8 scenes and 8 seconds per scene'}
-            </p>
+          ) : (
+            <>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground w-16">{t.productAdWizard?.step3?.sceneCount || 'Scenes'}</span>
+                <div className="flex gap-1.5 flex-1">
+                  {[2, 3, 4, 5, 6, 7, 8].map((count) => {
+                    const isLocked = isFreeUser && count > FREE_USER_LIMITS.maxSceneCount
+                    return (
+                      <button
+                        key={count}
+                        onClick={() => !isLocked && setSceneCount(count)}
+                        disabled={isLocked}
+                        className={`relative flex-1 h-12 rounded-xl border-2 transition-all font-bold text-lg ${
+                          isLocked
+                            ? 'border-border bg-secondary/30 cursor-not-allowed opacity-60 text-muted-foreground'
+                            : sceneCount === count
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-border hover:border-primary/50 text-foreground'
+                        }`}
+                      >
+                        {count}
+                        {isLocked && (
+                          <Lock className="absolute top-1 right-1 w-3 h-3 text-muted-foreground" />
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+              {isFreeUser && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Crown className="w-3 h-3" />
+                  {t.productAdWizard?.step3?.upgradeHint || 'Subscribe to STARTER or higher for up to 8 scenes and 8 seconds per scene'}
+                </p>
+              )}
+            </>
           )}
         </div>
 
         {/* 씬별 광고 요소 설정 (세로 나열) */}
+        {isPlanLoaded && (
         <div className="space-y-4 mt-6">
           <div className="flex items-center gap-2">
             <Palette className="w-4 h-4 text-muted-foreground" />
@@ -832,6 +777,7 @@ export function WizardStep3() {
             })}
           </div>
         </div>
+        )}
 
       </div>
 
@@ -849,7 +795,7 @@ export function WizardStep3() {
         </button>
         <button
           onClick={handleNext}
-          disabled={!canProceedToStep4()}
+          disabled={!isPlanLoaded || !canProceedToStep4()}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {t.common?.next || 'Next'}
@@ -862,9 +808,7 @@ export function WizardStep3() {
         <p className="text-center text-sm text-muted-foreground">
           {!scenarioInfo.elements.mood
             ? (t.productAdWizard?.step3?.selectMood || 'Please select the overall mood')
-            : !aspectRatio
-              ? (t.productAdWizard?.step3?.selectRatio || 'Please select the aspect ratio')
-              : (t.productAdWizard?.step3?.setAllScenes || 'Please set background and mood for all scenes')}
+            : (t.productAdWizard?.step3?.setAllScenes || 'Please set background and mood for all scenes')}
         </p>
       )}
     </div>

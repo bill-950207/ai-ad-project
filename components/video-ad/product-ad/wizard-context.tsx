@@ -319,7 +319,7 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
   const [selectedScenarioIndex, setSelectedScenarioIndex] = useState<number | null>(null)
 
   // Step 4 상태
-  const [aspectRatio, setAspectRatio] = useState<AspectRatio>(null)
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1')
   const [duration, setDuration] = useState(3)  // 기본 3초 (레거시)
   const [sceneDurations, setSceneDurations] = useState<number[]>([3, 3, 3])  // 각 씬별 기본 3초
   const [videoResolution, setVideoResolution] = useState<VideoResolution>('720p')  // 영상 해상도
@@ -465,9 +465,9 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
     })
   }, [])
 
-  // AI 시나리오에서 영상 설정 적용
+  // AI 시나리오에서 영상 설정 적용 (비율은 1:1 고정)
   const applyVideoSettingsFromScenario = useCallback((settings: RecommendedVideoSettings) => {
-    setAspectRatio(settings.aspectRatio)
+    // aspectRatio는 1:1 고정이므로 설정하지 않음
     setSceneCountState(settings.sceneCount)
     setSceneDurations(settings.sceneDurations)
     setIsVideoSettingsFromScenario(true)
@@ -829,7 +829,7 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
         } catch { /* ignore */ }
       }
 
-      if (draft.aspect_ratio) setAspectRatio(draft.aspect_ratio as AspectRatio)
+      // aspectRatio는 1:1 고정이므로 드래프트에서 로드하지 않음
       if (draft.duration) setDuration(draft.duration)
 
       if (draft.first_scene_options) {
@@ -991,7 +991,7 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
     setIsGeneratingScenario(false)
     setGeneratedScenarios([])
     setSelectedScenarioIndex(null)
-    setAspectRatio(null)
+    setAspectRatio('1:1')
     setDuration(3)
     setSceneDurations([3, 3, 3])
     setVideoResolution('720p')
