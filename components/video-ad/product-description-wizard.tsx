@@ -517,6 +517,7 @@ interface DraftData {
   voice_id: string | null
   voice_name: string | null
   video_type: string | null  // 비디오 타입 (UGC, podcast, expert)
+  kie_request_id: string | null  // TTS taskId ('tts:{taskId}' 형식)
   status: string
 }
 
@@ -904,7 +905,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     editedScript?: string
     selectedScriptIndex?: number
     imageRequests?: ImageRequest[]  // 이미지 폴링 요청 정보
-    status?: 'DRAFT' | 'GENERATING_SCRIPTS' | 'GENERATING_IMAGES' | 'GENERATING_AUDIO'
+    ttsTaskId?: string | null  // TTS 폴링용 taskId
+    status?: 'DRAFT' | 'GENERATING_IMAGES' | 'GENERATING_AUDIO'
   }) => {
     const state = stateRef.current
 
@@ -946,6 +948,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       firstFrameOriginalUrls: firstFrameOriginalUrlsToSave.length > 0 ? firstFrameOriginalUrlsToSave : null,
       firstFramePrompt: firstFramePromptToSave,
       imageRequests: imageRequestsToSave.length > 0 ? imageRequestsToSave : null,  // 이미지 폴링 요청 정보
+      ttsTaskId: overrides?.ttsTaskId,  // TTS 폴링용 taskId
       voiceId: state.selectedVoice?.id,
       voiceName: state.selectedVoice?.name,
       videoType: state.videoType,
@@ -1246,22 +1249,43 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     }
 
     // GENERATING_AUDIO 상태 복구 처리
-    // TTS는 동기식이므로 중간에 페이지를 떠나면 복구할 수 없음
-    // Step 3으로 폴백하고 DRAFT 상태로 변경
+    // TTS taskId가 있으면 폴링 재개, 없으면 Step 3으로 폴백
     if (draft.status === 'GENERATING_AUDIO') {
-      console.log('[드래프트 복원] GENERATING_AUDIO 상태 감지 - Step 3으로 폴백')
-      setStep(3)
-      // 백그라운드에서 상태를 DRAFT로 업데이트
-      fetch('/api/video-ads/draft', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: draft.id,
-          category: draft.category,
-          wizardStep: 3,
-          status: 'DRAFT',
-        }),
-      }).catch(console.error)
+      // kie_request_id에서 TTS taskId 추출 (형식: 'tts:{taskId}')
+      const ttsTaskId = draft.kie_request_id?.startsWith('tts:')
+        ? draft.kie_request_id.substring(4)
+        : null
+
+      if (ttsTaskId) {
+        console.log('[드래프트 복원] GENERATING_AUDIO 상태 - TTS 폴링 재개:', ttsTaskId)
+        // Step 4로 이동하고 TTS 폴링 재개
+        setStep(4)
+        setIsGeneratingAudio(true)
+        setIsGeneratingVideo(true)
+        setGenerationStatus('음성을 생성 중입니다...')
+        setGenerationStartTime(Date.now())
+        setGenerationProgress(0)
+
+        // TTS 폴링 재개 (setTimeout으로 상태 업데이트 후 실행)
+        setTimeout(() => {
+          pollTTSStatus(ttsTaskId)
+        }, 500)
+      } else {
+        // TTS taskId가 없으면 Step 3으로 폴백
+        console.log('[드래프트 복원] GENERATING_AUDIO 상태이나 ttsTaskId 없음 - Step 3으로 폴백')
+        setStep(3)
+        // 백그라운드에서 상태를 DRAFT로 업데이트
+        fetch('/api/video-ads/draft', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: draft.id,
+            category: draft.category,
+            wizardStep: 3,
+            status: 'DRAFT',
+          }),
+        }).catch(console.error)
+      }
     }
   }
 
@@ -1737,6 +1761,98 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
   // Step 4 → Step 5: TTS 생성 후 영상 생성
   // ============================================================
 
+  // TTS 완료 후 영상 생성 진행
+  const proceedToVideoGeneration = async (audioUrl: string) => {
+    setIsGeneratingAudio(false)
+    setGenerationStatus('영상을 생성 중입니다...')
+
+    // 영상 생성 요청 (원본 이미지 URL 사용 - 압축본은 표시용으로만)
+    const videoRes = await fetch('/api/video-ads/product-description/generate-video', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        productId: selectedProduct?.id,
+        avatarId: selectedAvatarInfo?.avatarId,
+        firstFrameUrl: firstFrameOriginalUrl || firstFrameUrl,  // 원본 우선, 없으면 압축본 fallback
+        audioUrl,
+        script: editedScript,
+        scriptStyle: scripts[selectedScriptIndex]?.style || 'custom',
+        voiceId: selectedVoice?.id,
+        voiceName: selectedVoice?.name,
+        locationPrompt: locationPrompt || locationDescription,
+        duration,
+        resolution,
+        // 영상 프롬프트 생성을 위한 추가 정보
+        cameraComposition: cameraComposition !== 'auto' ? cameraComposition : undefined,
+        productName: selectedProduct?.name,
+        productDescription: productInfo,
+        videoType,  // 비디오 타입 (UGC, podcast, expert)
+      }),
+    })
+
+    if (!videoRes.ok) {
+      const error = await videoRes.json()
+      throw new Error(error.error || 'Failed to request video generation')
+    }
+
+    const videoData = await videoRes.json()
+    setVideoAdId(videoData.videoAdId)
+    setVideoRequestId(videoData.requestId)
+    setVideoProvider(videoData.provider)
+
+    // 영상 생성이 시작되면 초안 삭제 (영상 광고 레코드가 생성됨)
+    if (draftId) {
+      fetch(`/api/video-ads/draft?id=${draftId}`, { method: 'DELETE' }).catch(console.error)
+      setDraftId(null)
+    }
+
+    // AI 서비스 직접 상태 폴링
+    pollVideoStatus(videoData.requestId, videoData.provider, videoData.videoAdId)
+  }
+
+  // TTS 폴링 함수
+  const pollTTSStatus = async (taskId: string) => {
+    const maxAttempts = 60  // 최대 60회 (2분)
+    let attempts = 0
+
+    const poll = async () => {
+      attempts++
+      try {
+        const res = await fetch(`/api/video-ads/product-description/tts-status?taskId=${taskId}`, { cache: 'no-store' })
+        if (!res.ok) throw new Error('TTS 상태 확인 실패')
+
+        const data = await res.json()
+
+        if (data.status === 'COMPLETED') {
+          console.log('[TTS 폴링] 완료:', data.audioUrl)
+          await proceedToVideoGeneration(data.audioUrl)
+          return
+        }
+
+        if (data.status === 'FAILED') {
+          throw new Error(data.error || 'TTS 생성 실패')
+        }
+
+        // 계속 폴링
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 2000)  // 2초 간격
+        } else {
+          throw new Error('TTS 생성 시간 초과')
+        }
+      } catch (error) {
+        console.error('[TTS 폴링] 오류:', error)
+        setIsGeneratingAudio(false)
+        setIsGeneratingVideo(false)
+        setGenerationError(error instanceof Error ? error.message : '음성 생성 실패')
+        // Step 3으로 폴백
+        setStep(3)
+        saveDraftAsync(3, { status: 'DRAFT', ttsTaskId: null })
+      }
+    }
+
+    poll()
+  }
+
   const generateVideo = async () => {
     if (!selectedVoice || !editedScript.trim() || !selectedAvatarInfo) return
 
@@ -1755,124 +1871,40 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     setGenerationStartTime(Date.now())
     setGenerationProgress(0)
 
-    // 참고: GENERATING_AUDIO 상태는 저장하지 않음 (TTS API는 동기식이므로 폴링 불가)
-    // 중간에 페이지를 떠나면 Step 3으로 복원됨
     try {
-      // TTS 생성 요청
-      const ttsRes = await fetch('/api/video-ads/product-description/generate-audio', {
+      // TTS 작업 제출 (taskId만 반환, 완료 대기 X)
+      const ttsRes = await fetch('/api/video-ads/product-description/tts-submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           script: editedScript,
           voiceId: selectedVoice.id,
           voiceName: selectedVoice.name,
-          languageCode: scriptLanguage,  // 대본 언어 전달 (TTS 발음 품질 향상)
+          languageCode: scriptLanguage,
         }),
       })
 
       if (!ttsRes.ok) {
         const error = await ttsRes.json()
-        throw new Error(error.error || 'Voice generation failed')
+        throw new Error(error.error || 'TTS 작업 제출 실패')
       }
 
       const ttsData = await ttsRes.json()
-      const audioUrl = ttsData.audioUrl
+      const ttsTaskId = ttsData.taskId
 
-      setIsGeneratingAudio(false)
-      setGenerationStatus('영상을 생성 중입니다...')
+      // GENERATING_AUDIO 상태 + ttsTaskId 저장 (복구용)
+      saveDraftAsync(4, { status: 'GENERATING_AUDIO', ttsTaskId })
 
-      // 영상 생성 요청 (원본 이미지 URL 사용 - 압축본은 표시용으로만)
-      const videoRes = await fetch('/api/video-ads/product-description/generate-video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          productId: selectedProduct?.id,
-          avatarId: selectedAvatarInfo.avatarId,
-          firstFrameUrl: firstFrameOriginalUrl || firstFrameUrl,  // 원본 우선, 없으면 압축본 fallback
-          audioUrl,
-          script: editedScript,
-          scriptStyle: scripts[selectedScriptIndex]?.style || 'custom',
-          voiceId: selectedVoice.id,
-          voiceName: selectedVoice.name,
-          locationPrompt: locationPrompt || locationDescription,
-          duration,
-          resolution,
-          // 영상 프롬프트 생성을 위한 추가 정보
-          cameraComposition: cameraComposition !== 'auto' ? cameraComposition : undefined,
-          productName: selectedProduct?.name,
-          productDescription: productInfo,
-          videoType,  // 비디오 타입 (UGC, podcast, expert)
-        }),
-      })
-
-      if (!videoRes.ok) {
-        const error = await videoRes.json()
-        throw new Error(error.error || 'Failed to request video generation')
-      }
-
-      const videoData = await videoRes.json()
-      setVideoAdId(videoData.videoAdId)
-      setVideoRequestId(videoData.requestId)
-      setVideoProvider(videoData.provider)
-
-      // 영상 생성이 시작되면 초안 삭제 (영상 광고 레코드가 생성됨)
-      if (draftId) {
-        fetch(`/api/video-ads/draft?id=${draftId}`, { method: 'DELETE' }).catch(console.error)
-        setDraftId(null)
-      }
-
-      // AI 서비스 직접 상태 폴링 (video_ads 테이블 조회 없이)
-      const pollStatus = async (): Promise<void> => {
-        const statusRes = await fetch(
-          `/api/video-ads/product-description/video-status?requestId=${videoData.requestId}&provider=${videoData.provider}&videoAdId=${videoData.videoAdId}`
-        )
-        if (!statusRes.ok) throw new Error('상태 확인 실패')
-
-        const status = await statusRes.json()
-
-        if (status.status === 'COMPLETED') {
-          setGenerationStatus('완료!')
-          // 크레딧 갱신
-          refreshCredits()
-          setTimeout(() => {
-            // replace 사용: 뒤로가기 시 생성 페이지가 아닌 목록 페이지로 이동
-            router.replace(`/dashboard/video-ad/${videoData.videoAdId}`)
-          }, 1000)
-          return
-        }
-
-        if (status.status === 'FAILED') {
-          throw new Error(status.error || 'Video generation failed')
-        }
-
-        if (status.queuePosition) {
-          setGenerationStatus(`영상 생성 중... (대기열 ${status.queuePosition}번째)`)
-        } else {
-          setGenerationStatus('영상 생성 중...')
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 3000))
-        return pollStatus()
-      }
-
-      await pollStatus()
+      // TTS 폴링 시작 (완료 시 proceedToVideoGeneration 호출)
+      pollTTSStatus(ttsTaskId)
     } catch (error) {
-      console.error('Video generation error:', error)
-      alert(error instanceof Error ? error.message : '영상 생성 중 오류가 발생했습니다')
-      setGenerationStatus('')
-
-      // 영상 생성이 시작된 후 실패한 경우 (드래프트 삭제됨, 크레딧 차감됨)
-      // video_ads 레코드가 이미 생성되었으므로 목록 페이지로 이동
-      if (!draftId) {
-        router.replace('/dashboard/video-ad')
-      } else {
-        // 영상 생성 시작 전 실패 (TTS 실패 등) - Step 3으로 돌아가기
-        setStep(3)
-        saveDraftAsync(3, { status: 'DRAFT' })
-      }
-    } finally {
+      console.error('TTS submit error:', error)
+      setGenerationError(error instanceof Error ? error.message : 'TTS 작업 제출 실패')
       setIsGeneratingAudio(false)
       setIsGeneratingVideo(false)
+      // Step 3으로 돌아가기
+      setStep(3)
+      saveDraftAsync(3, { status: 'DRAFT' })
     }
   }
 

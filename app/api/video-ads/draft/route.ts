@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       id,  // 기존 초안 ID (없으면 새로 생성)
       category,
       wizardStep,
-      status,  // 상태 업데이트 (GENERATING_SCRIPTS, GENERATING_AUDIO, DRAFT 등)
+      status,  // 상태 업데이트 (DRAFT, GENERATING_IMAGES, GENERATING_AUDIO 등)
       // Step 1 데이터
       avatarId,
       outfitId,
@@ -56,13 +56,15 @@ export async function POST(request: NextRequest) {
       // Step 4 데이터
       voiceId,
       voiceName,
+      ttsTaskId,  // TTS 폴링용 taskId
       // 비디오 타입
       videoType,
     } = body
 
     // 허용된 상태값 (폴링 가능한 상태만 허용)
-    // GENERATING_SCRIPTS, GENERATING_AUDIO는 동기식 API이므로 저장하지 않음
-    const allowedStatuses = ['DRAFT', 'GENERATING_IMAGES']
+    // GENERATING_SCRIPTS는 Gemini API 동기식이므로 저장하지 않음
+    // GENERATING_IMAGES, GENERATING_AUDIO는 폴링 가능
+    const allowedStatuses = ['DRAFT', 'GENERATING_IMAGES', 'GENERATING_AUDIO']
     const validStatus = status && allowedStatuses.includes(status) ? status : undefined
 
     // 카테고리 필수
@@ -115,6 +117,7 @@ export async function POST(request: NextRequest) {
           ...(imageRequests !== undefined && { first_scene_options: imageRequests ? JSON.stringify(imageRequests) : null }),
           ...(voiceId !== undefined && { voice_id: voiceId || null }),
           ...(voiceName !== undefined && { voice_name: voiceName || null }),
+          ...(ttsTaskId !== undefined && { kie_request_id: ttsTaskId ? `tts:${ttsTaskId}` : null }),
           ...(videoType !== undefined && { video_type: videoType || null }),
           updated_at: new Date(),
         },
@@ -149,6 +152,7 @@ export async function POST(request: NextRequest) {
           first_scene_options: imageRequests ? JSON.stringify(imageRequests) : null,  // 이미지 폴링 요청 정보
           voice_id: voiceId || null,
           voice_name: voiceName || null,
+          kie_request_id: ttsTaskId ? `tts:${ttsTaskId}` : null,  // TTS 폴링용 taskId
           video_type: videoType || null,
         },
       })
