@@ -22,12 +22,7 @@ import {
 // Note: Lock is still used for scene count button restrictions
 import { useProductAdWizard, RecommendedVideoSettings, SceneElementOptions, createDefaultSceneElement, AspectRatio } from './wizard-context'
 import { useLanguage } from '@/contexts/language-context'
-
-// 사용자 플랜 타입
-interface UserPlan {
-  planType: 'FREE' | 'STARTER' | 'PRO' | 'BUSINESS'
-  displayName: string
-}
+import { useUserPlan } from '@/lib/hooks/use-user-plan'
 
 // FREE 사용자 제한
 const FREE_USER_LIMITS = {
@@ -335,29 +330,15 @@ export function WizardStep3() {
   // 중복 호출 방지를 위한 ref
   const isGeneratingRef = useRef(false)
 
-  // 사용자 플랜 정보
-  const [userPlan, setUserPlan] = useState<UserPlan | null>(null)
-  const isFreeUser = userPlan?.planType === 'FREE'
+  // 사용자 플랜 정보 (로딩 중에는 FREE로 가정하여 UX 개선)
+  const { isFreeUser, isLoaded: isPlanLoaded } = useUserPlan()
 
-  // 사용자 플랜 정보 로드
+  // 플랜 로드 완료 후 FREE 사용자인 경우 씬 개수 조정
   useEffect(() => {
-    const fetchUserPlan = async () => {
-      try {
-        const res = await fetch('/api/user/plan')
-        if (res.ok) {
-          const data = await res.json()
-          setUserPlan(data)
-          // FREE 사용자인 경우 씬 개수 조정
-          if (data.planType === 'FREE' && sceneCount > FREE_USER_LIMITS.maxSceneCount) {
-            setSceneCount(FREE_USER_LIMITS.maxSceneCount)
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load plan info:', error)
-      }
+    if (isPlanLoaded && isFreeUser && sceneCount > FREE_USER_LIMITS.maxSceneCount) {
+      setSceneCount(FREE_USER_LIMITS.maxSceneCount)
     }
-    fetchUserPlan()
-  }, [setSceneCount, sceneCount])
+  }, [isPlanLoaded, isFreeUser, setSceneCount, sceneCount])
 
   // Vidu Q3 모델 강제 설정
   useEffect(() => {
@@ -706,42 +687,51 @@ export function WizardStep3() {
           </p>
 
           {/* 씬 개수 선택 */}
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground w-16">{t.productAdWizard?.step3?.sceneCount || 'Scenes'}</span>
-            <div className="flex gap-1.5 flex-1">
-              {[2, 3, 4, 5, 6, 7, 8].map((count) => {
-                const isLocked = isFreeUser && count > FREE_USER_LIMITS.maxSceneCount
-                return (
-                  <button
-                    key={count}
-                    onClick={() => !isLocked && setSceneCount(count)}
-                    disabled={isLocked}
-                    className={`relative flex-1 h-12 rounded-xl border-2 transition-all font-bold text-lg ${
-                      isLocked
-                        ? 'border-border bg-secondary/30 cursor-not-allowed opacity-60 text-muted-foreground'
-                        : sceneCount === count
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border hover:border-primary/50 text-foreground'
-                    }`}
-                  >
-                    {count}
-                    {isLocked && (
-                      <Lock className="absolute top-1 right-1 w-3 h-3 text-muted-foreground" />
-                    )}
-                  </button>
-                )
-              })}
+          {!isPlanLoaded ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
             </div>
-          </div>
-          {isFreeUser && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Crown className="w-3 h-3" />
-              {t.productAdWizard?.step3?.upgradeHint || 'Subscribe to STARTER or higher for up to 8 scenes and 8 seconds per scene'}
-            </p>
+          ) : (
+            <>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground w-16">{t.productAdWizard?.step3?.sceneCount || 'Scenes'}</span>
+                <div className="flex gap-1.5 flex-1">
+                  {[2, 3, 4, 5, 6, 7, 8].map((count) => {
+                    const isLocked = isFreeUser && count > FREE_USER_LIMITS.maxSceneCount
+                    return (
+                      <button
+                        key={count}
+                        onClick={() => !isLocked && setSceneCount(count)}
+                        disabled={isLocked}
+                        className={`relative flex-1 h-12 rounded-xl border-2 transition-all font-bold text-lg ${
+                          isLocked
+                            ? 'border-border bg-secondary/30 cursor-not-allowed opacity-60 text-muted-foreground'
+                            : sceneCount === count
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-border hover:border-primary/50 text-foreground'
+                        }`}
+                      >
+                        {count}
+                        {isLocked && (
+                          <Lock className="absolute top-1 right-1 w-3 h-3 text-muted-foreground" />
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+              {isFreeUser && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Crown className="w-3 h-3" />
+                  {t.productAdWizard?.step3?.upgradeHint || 'Subscribe to STARTER or higher for up to 8 scenes and 8 seconds per scene'}
+                </p>
+              )}
+            </>
           )}
         </div>
 
         {/* 씬별 광고 요소 설정 (세로 나열) */}
+        {isPlanLoaded && (
         <div className="space-y-4 mt-6">
           <div className="flex items-center gap-2">
             <Palette className="w-4 h-4 text-muted-foreground" />
@@ -832,6 +822,7 @@ export function WizardStep3() {
             })}
           </div>
         </div>
+        )}
 
       </div>
 

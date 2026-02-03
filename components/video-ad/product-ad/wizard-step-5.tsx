@@ -30,12 +30,7 @@ import {
 import Image from 'next/image'
 import { useProductAdWizard, SceneVideoSegment, VideoResolution } from './wizard-context'
 import { VIDU_CREDIT_COST_PER_SECOND } from '@/lib/credits'
-
-// 사용자 플랜 타입
-interface UserPlan {
-  planType: 'FREE' | 'STARTER' | 'PRO' | 'BUSINESS'
-  displayName: string
-}
+import { useUserPlan } from '@/lib/hooks/use-user-plan'
 
 // FREE 사용자 제한 (Vidu Q2 Turbo는 540p 미지원)
 const FREE_USER_LIMITS = {
@@ -517,9 +512,8 @@ export function WizardStep5() {
     saveDraft,
   } = useProductAdWizard()
 
-  // 사용자 플랜 정보
-  const [userPlan, setUserPlan] = useState<UserPlan | null>(null)
-  const isFreeUser = userPlan?.planType === 'FREE'
+  // 사용자 플랜 정보 (로딩 중에는 FREE로 가정하여 UX 개선)
+  const { isFreeUser, isLoaded: isPlanLoaded } = useUserPlan()
 
   const [error, setError] = useState<string | null>(null)
   const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false)
@@ -584,25 +578,12 @@ export function WizardStep5() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
 
-  // 사용자 플랜 정보 로드
+  // 플랜 로드 완료 후 FREE 사용자인 경우 기본값 조정
   useEffect(() => {
-    const fetchUserPlan = async () => {
-      try {
-        const res = await fetch('/api/user/plan')
-        if (res.ok) {
-          const data = await res.json()
-          setUserPlan(data)
-          // FREE 사용자인 경우 기본값 조정
-          if (data.planType === 'FREE' && videoResolution !== FREE_USER_LIMITS.maxResolution) {
-            setVideoResolution(FREE_USER_LIMITS.maxResolution)
-          }
-        }
-      } catch (error) {
-        console.error('Error loading plan info:', error)
-      }
+    if (isPlanLoaded && isFreeUser && videoResolution !== FREE_USER_LIMITS.maxResolution) {
+      setVideoResolution(FREE_USER_LIMITS.maxResolution)
     }
-    fetchUserPlan()
-  }, [videoResolution, setVideoResolution])
+  }, [isPlanLoaded, isFreeUser, videoResolution, setVideoResolution])
 
   // 총 영상 길이 및 예상 크레딧 계산
   const totalDuration = sceneDurations.slice(0, sceneCount).reduce((sum, d) => sum + d, 0)
@@ -1904,44 +1885,52 @@ export function WizardStep5() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
-                    {resolutionOptions.map((option) => {
-                      const isLocked = isFreeUser && option.value !== FREE_USER_LIMITS.maxResolution
-                      return (
-                        <button
-                          key={option.value}
-                          onClick={() => !isLocked && setVideoResolution(option.value)}
-                          disabled={isLocked}
-                          className={`relative p-3 rounded-xl border-2 transition-all ${
-                            isLocked
-                              ? 'border-border bg-secondary/30 cursor-not-allowed opacity-60'
-                              : videoResolution === option.value
-                                ? 'border-primary bg-primary/5'
-                                : 'border-border hover:border-primary/50'
-                          }`}
-                        >
-                          {isLocked && (
-                            <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                              <Lock className="w-2.5 h-2.5" />
-                            </div>
-                          )}
-                          <div className="text-center">
-                            <div className={`font-medium text-sm ${isLocked ? 'text-muted-foreground' : 'text-foreground'}`}>
-                              {option.label}
-                            </div>
-                            <div className="text-[10px] text-muted-foreground mt-0.5">{option.desc}</div>
-                            <div className="text-xs text-primary mt-1">{option.creditsPerSecond} {t.common?.credits || 'Credits'}/{t.common?.secondsShort || 's'}</div>
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
+                  {!isPlanLoaded ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
+                        {resolutionOptions.map((option) => {
+                          const isLocked = isFreeUser && option.value !== FREE_USER_LIMITS.maxResolution
+                          return (
+                            <button
+                              key={option.value}
+                              onClick={() => !isLocked && setVideoResolution(option.value)}
+                              disabled={isLocked}
+                              className={`relative p-3 rounded-xl border-2 transition-all ${
+                                isLocked
+                                  ? 'border-border bg-secondary/30 cursor-not-allowed opacity-60'
+                                  : videoResolution === option.value
+                                    ? 'border-primary bg-primary/5'
+                                    : 'border-border hover:border-primary/50'
+                              }`}
+                            >
+                              {isLocked && (
+                                <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                                  <Lock className="w-2.5 h-2.5" />
+                                </div>
+                              )}
+                              <div className="text-center">
+                                <div className={`font-medium text-sm ${isLocked ? 'text-muted-foreground' : 'text-foreground'}`}>
+                                  {option.label}
+                                </div>
+                                <div className="text-[10px] text-muted-foreground mt-0.5">{option.desc}</div>
+                                <div className="text-xs text-primary mt-1">{option.creditsPerSecond} {t.common?.credits || 'Credits'}/{t.common?.secondsShort || 's'}</div>
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
 
-                  {isFreeUser && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Crown className="w-3 h-3" />
-                      {t.productAdWizard?.step5?.upgradeForQuality || 'Subscribe to STARTER or higher for HD/FHD quality'}
-                    </p>
+                      {isFreeUser && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Crown className="w-3 h-3" />
+                          {t.productAdWizard?.step5?.upgradeForQuality || 'Subscribe to STARTER or higher for HD/FHD quality'}
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
               )}
