@@ -220,7 +220,7 @@ export function VideoAdPageContent() {
     }
 
     // DRAFT 또는 생성 중 상태면 마법사로 이동하여 이어서 진행
-    const draftStatuses = ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_AUDIO']
+    const draftStatuses = ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_IMAGES', 'GENERATING_AUDIO']
     if (draftStatuses.includes(video.status) && video.category) {
       router.push(`/video-ad-create?category=${video.category}&videoAdId=${video.id}`)
       return
@@ -241,6 +241,7 @@ export function VideoAdPageContent() {
     const statusConfig: Record<string, { label: string; className: string }> = {
       'DRAFT': { label: `${t.videoAd?.status?.draft || 'Draft'} (${stepName})`, className: 'bg-orange-500/80 text-white' },
       'GENERATING_SCRIPTS': { label: t.videoAd?.status?.generatingScripts || 'Generating Scripts', className: 'bg-indigo-500/80 text-white animate-pulse' },
+      'GENERATING_IMAGES': { label: t.videoAd?.status?.generatingImages || 'Generating Images', className: 'bg-cyan-500/80 text-white animate-pulse' },
       'GENERATING_AUDIO': { label: t.videoAd?.status?.generatingAudio || 'Generating Audio', className: 'bg-pink-500/80 text-white animate-pulse' },
       'PENDING': { label: t.videoAd?.status?.pending || 'Pending', className: 'bg-yellow-500/80 text-white' },
       'IN_QUEUE': { label: t.videoAd?.status?.inQueue || 'In Queue', className: 'bg-blue-500/80 text-white animate-pulse' },
