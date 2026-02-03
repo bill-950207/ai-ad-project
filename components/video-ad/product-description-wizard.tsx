@@ -489,6 +489,7 @@ const defaultLocationByVideoType: Record<VideoType, LocationPreset> = {
 
 interface DraftData {
   id: string
+  category: string
   wizard_step: number
   avatar_id: string | null
   outfit_id: string | null
@@ -1205,6 +1206,63 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         }
       }, 500)  // ref가 초기화될 시간을 위해 약간 지연
     }
+
+    // GENERATING_SCRIPTS 상태 복구 처리
+    // 스크립트 생성은 동기식이므로 중간에 페이지를 떠나면 복구할 수 없음
+    // Step 2로 폴백하고 DRAFT 상태로 변경
+    if (draft.status === 'GENERATING_SCRIPTS') {
+      console.log('[드래프트 복원] GENERATING_SCRIPTS 상태 감지 - Step 2로 폴백')
+      setStep(2)
+      // 백그라운드에서 상태를 DRAFT로 업데이트
+      fetch('/api/video-ads/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: draft.id,
+          category: draft.category,
+          wizardStep: 2,
+          status: 'DRAFT',
+        }),
+      }).catch(console.error)
+    }
+
+    // GENERATING_IMAGES 상태인데 imageRequests가 없는 경우 처리
+    // 이미지 요청 정보가 손실되어 폴링을 재개할 수 없음
+    // Step 2로 폴백하고 DRAFT 상태로 변경
+    if (draft.status === 'GENERATING_IMAGES' && restoredImageRequests.length === 0) {
+      console.log('[드래프트 복원] GENERATING_IMAGES 상태이나 imageRequests 없음 - Step 2로 폴백')
+      setStep(2)
+      // 백그라운드에서 상태를 DRAFT로 업데이트
+      fetch('/api/video-ads/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: draft.id,
+          category: draft.category,
+          wizardStep: 2,
+          status: 'DRAFT',
+        }),
+      }).catch(console.error)
+    }
+
+    // GENERATING_AUDIO 상태 복구 처리
+    // TTS는 동기식이므로 중간에 페이지를 떠나면 복구할 수 없음
+    // Step 3으로 폴백하고 DRAFT 상태로 변경
+    if (draft.status === 'GENERATING_AUDIO') {
+      console.log('[드래프트 복원] GENERATING_AUDIO 상태 감지 - Step 3으로 폴백')
+      setStep(3)
+      // 백그라운드에서 상태를 DRAFT로 업데이트
+      fetch('/api/video-ads/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: draft.id,
+          category: draft.category,
+          wizardStep: 3,
+          status: 'DRAFT',
+        }),
+      }).catch(console.error)
+    }
   }
 
   // 영상 상태 폴링 (AI 서비스 직접 조회)
@@ -1248,6 +1306,10 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       console.error('Status polling error:', error)
       setGenerationStatus('오류가 발생했습니다')
       setIsGeneratingVideo(false)
+      // 영상 재개 중 에러 발생 시 목록 페이지로 이동
+      setTimeout(() => {
+        router.replace('/dashboard/video-ad')
+      }, 2000)
     }
   }
 
@@ -1459,7 +1521,27 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               setFirstFrameUrl(completedUrls[0] || null)
               setFirstFrameOriginalUrl(completedUrls[0] || null)
               setSelectedFirstFrameIndex(0)
+
+              // R2 업로드 실패해도 원본 URL로 DB 저장
+              saveDraftAsync(3, {
+                scripts: generatedScripts,
+                locationDescription: generatedLocationDesc,
+                firstFrameUrl: completedUrls[0] || null,
+                firstFrameUrls: completedUrls,
+                firstFrameOriginalUrls: completedUrls,
+                firstFramePrompt: generatedFirstFramePrompt,
+                editedScript: generatedEditedScript,
+                selectedScriptIndex: 0,
+                status: 'DRAFT',
+              })
             }
+          } else {
+            // 모든 이미지가 완료되었지만 성공한 것이 없는 경우 (모두 실패)
+            console.error('[이미지 폴링] 모든 이미지 생성 실패')
+            // Step 2로 폴백하여 사용자가 다시 시도할 수 있게 함
+            saveDraftAsync(2, {
+              status: 'DRAFT',
+            })
           }
 
           setIsLoadingImages(false)
@@ -1474,6 +1556,11 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           setIsLoadingImages(false)
           setImageRequests([])
           console.error('[이미지 폴링] 실패 또는 타임아웃')
+
+          // 실패 시에도 DRAFT 상태로 변경하여 사용자가 다시 시도할 수 있게 함
+          saveDraftAsync(2, {
+            status: 'DRAFT',
+          })
         }
       } catch (error) {
         console.error('[이미지 폴링] 오류:', error)
@@ -1773,9 +1860,16 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       console.error('Video generation error:', error)
       alert(error instanceof Error ? error.message : '영상 생성 중 오류가 발생했습니다')
       setGenerationStatus('')
-      // 에러 발생 시 이전 단계(Step 3)로 돌아가기
-      setStep(3)
-      saveDraftAsync(3, { status: 'DRAFT' })
+
+      // 영상 생성이 시작된 후 실패한 경우 (드래프트 삭제됨, 크레딧 차감됨)
+      // video_ads 레코드가 이미 생성되었으므로 목록 페이지로 이동
+      if (!draftId) {
+        router.replace('/dashboard/video-ad')
+      } else {
+        // 영상 생성 시작 전 실패 (TTS 실패 등) - Step 3으로 돌아가기
+        setStep(3)
+        saveDraftAsync(3, { status: 'DRAFT' })
+      }
     } finally {
       setIsGeneratingAudio(false)
       setIsGeneratingVideo(false)

@@ -827,9 +827,15 @@ export function WizardStep5() {
       }))
       setSceneVideoStatuses(initialStatuses)
 
-      // DB 업데이트
+      // DB 업데이트 (초기 상태 포함 - 페이지 이탈 후 복구 지원)
       await saveDraft({
         status: 'GENERATING_SCENE_VIDEOS',
+        sceneVideoUrls: initialStatuses.map(s => ({
+          sceneIndex: s.sceneIndex,
+          requestId: s.requestId,
+          videoUrl: s.videoUrl,
+          status: s.status,
+        })),
       })
 
       // 폴링 시작
@@ -1020,11 +1026,17 @@ export function WizardStep5() {
 
     isTransitionPollingActiveRef.current = true
     const collectedUrls: string[] = []
+    // 폴링 중 수집된 최종 상태 (React 상태 업데이트 타이밍 이슈 해결)
+    const collectedStatuses: Map<string, { sceneIndex: number; requestId: string; videoUrl?: string; status: 'completed' | 'failed' }> = new Map()
 
     const pollStatus = async () => {
       let allCompleted = true
 
       for (const sceneVideo of statuses) {
+        // 이미 수집된 완료/실패 상태는 스킵
+        if (collectedStatuses.has(sceneVideo.requestId)) {
+          continue
+        }
         if (sceneVideo.status === 'completed' || sceneVideo.status === 'failed') {
           continue
         }
@@ -1041,6 +1053,14 @@ export function WizardStep5() {
           if (data.status === 'IN_QUEUE' || data.status === 'IN_PROGRESS') {
             allCompleted = false
           } else if (data.status === 'COMPLETED' && data.resultUrl) {
+            // 폴링 결과 수집 (saveDraft에서 사용)
+            collectedStatuses.set(sceneVideo.requestId, {
+              sceneIndex: sceneVideo.sceneIndex,
+              requestId: sceneVideo.requestId,
+              videoUrl: data.resultUrl,
+              status: 'completed',
+            })
+
             setSceneVideoStatuses(prev => prev.map(s =>
               s.requestId === sceneVideo.requestId
                 ? { ...s, status: 'completed', videoUrl: data.resultUrl }
@@ -1056,6 +1076,13 @@ export function WizardStep5() {
               saveSceneVersion(sceneIndex, data.resultUrl, sceneVideo.requestId, undefined, duration)
             }
           } else if (data.status === 'FAILED') {
+            // 폴링 결과 수집 (saveDraft에서 사용)
+            collectedStatuses.set(sceneVideo.requestId, {
+              sceneIndex: sceneVideo.sceneIndex,
+              requestId: sceneVideo.requestId,
+              status: 'failed',
+            })
+
             setSceneVideoStatuses(prev => prev.map(s =>
               s.requestId === sceneVideo.requestId
                 ? { ...s, status: 'failed', errorMessage: data.errorMessage }
@@ -1086,11 +1113,42 @@ export function WizardStep5() {
         setGenerationProgress(100)
         setIsGeneratingVideo(false)
 
-        // DB 업데이트
+        // DB 업데이트 (폴링 중 수집된 최종 상태 사용 - React 상태 업데이트 타이밍 이슈 해결)
+        // 초기 statuses와 수집된 결과를 병합하여 최종 sceneVideoUrls 구성
+        const finalSceneVideoUrls = statuses.map(s => {
+          const collected = collectedStatuses.get(s.requestId)
+          if (collected) {
+            return {
+              sceneIndex: collected.sceneIndex,
+              requestId: collected.requestId,
+              videoUrl: collected.videoUrl,
+              status: collected.status,
+            }
+          }
+          // 이미 완료된 상태였던 경우
+          return {
+            sceneIndex: s.sceneIndex,
+            requestId: s.requestId,
+            videoUrl: s.videoUrl,
+            status: s.status,
+          }
+        })
+
         if (collectedUrls.length > 0) {
+          // 하나 이상 성공한 경우
           await saveDraft({
             videoUrl: collectedUrls[0],
             status: 'COMPLETED',
+            sceneVideoUrls: finalSceneVideoUrls,
+          })
+          // 크레딧 갱신
+          refreshCredits()
+        } else {
+          // 모든 영상 생성 실패 - 실패 상태도 기록
+          console.error('[씬 영상 폴링] 모든 영상 생성 실패')
+          await saveDraft({
+            status: 'COMPLETED',  // 크레딧이 이미 차감되었으므로 COMPLETED로 기록
+            sceneVideoUrls: finalSceneVideoUrls,
           })
           // 크레딧 갱신
           refreshCredits()
@@ -1266,13 +1324,22 @@ export function WizardStep5() {
 
         setGenerationProgress(100)
         setIsGeneratingVideo(false)
-        setStatusMessage('영상 생성이 완료되었습니다!')
 
         // DB 업데이트 (폴링 중 수집한 URL 사용)
         if (collectedUrls.length > 0) {
+          setStatusMessage('영상 생성이 완료되었습니다!')
           await saveDraft({
             videoUrl: collectedUrls[0],
             status: 'COMPLETED',
+          })
+          // 크레딧 갱신
+          refreshCredits()
+        } else {
+          // 모든 영상 생성 실패
+          console.error('[영상 폴링] 모든 영상 생성 실패')
+          setStatusMessage('영상 생성에 실패했습니다.')
+          await saveDraft({
+            status: 'COMPLETED',  // 크레딧이 이미 차감되었으므로 COMPLETED로 기록
           })
           // 크레딧 갱신
           refreshCredits()

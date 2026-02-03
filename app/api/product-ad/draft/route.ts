@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
       'GENERATING_SCENES',
       'SCENES_COMPLETED',
       'GENERATING_VIDEO',
+      'GENERATING_SCENE_VIDEOS',  // 멀티씬 영상 생성 중
       'IN_QUEUE',
       'IN_PROGRESS',
       'COMPLETED',
