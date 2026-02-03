@@ -116,11 +116,12 @@ export function VideoAdPageContent() {
   useEffect(() => {
     // 진행 중인 상태인 영상들 필터링 (avatar motion, product ad 상태 포함)
     const inProgressStatuses = [
-      'GENERATING_SCRIPTS', 'GENERATING_AUDIO', 'IN_QUEUE', 'IN_PROGRESS',
+      // Product Description 상태
+      'GENERATING_SCRIPTS', 'GENERATING_IMAGES', 'GENERATING_AUDIO', 'IN_QUEUE', 'IN_PROGRESS',
       // Avatar Motion 상태
       'GENERATING_STORY', 'GENERATING_FRAMES', 'GENERATING_AVATAR', 'FRAMES_COMPLETED',
       // Product Ad 상태
-      'GENERATING_SCENARIO', 'GENERATING_SCENES', 'SCENES_COMPLETED', 'GENERATING_VIDEO'
+      'GENERATING_SCENARIO', 'GENERATING_SCENES', 'SCENES_COMPLETED', 'GENERATING_VIDEO', 'GENERATING_SCENE_VIDEOS'
     ]
     const inProgressVideos = videoAds.filter(v => inProgressStatuses.includes(v.status))
 

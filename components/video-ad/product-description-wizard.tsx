@@ -1481,7 +1481,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       console.log(`[이미지 폴링] 시도 ${attempts}/${maxAttempts}`)
 
       try {
-        const res = await fetch(`/api/video-ads/product-description/image-status?requests=${encodeURIComponent(JSON.stringify(requests))}`)
+        const res = await fetch(`/api/video-ads/product-description/image-status?requests=${encodeURIComponent(JSON.stringify(requests))}`, { cache: 'no-store' })
         if (!res.ok) {
           console.error('Failed to check image status:', res.status)
           return
@@ -1843,7 +1843,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         console.error('[TTS 폴링] 오류:', error)
         setIsGeneratingAudio(false)
         setIsGeneratingVideo(false)
-        setGenerationError(error instanceof Error ? error.message : '음성 생성 실패')
+        alert(error instanceof Error ? error.message : '음성 생성 실패')
         // Step 3으로 폴백
         setStep(3)
         saveDraftAsync(3, { status: 'DRAFT', ttsTaskId: null })
@@ -1899,7 +1899,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       pollTTSStatus(ttsTaskId)
     } catch (error) {
       console.error('TTS submit error:', error)
-      setGenerationError(error instanceof Error ? error.message : 'TTS 작업 제출 실패')
+      alert(error instanceof Error ? error.message : 'TTS 작업 제출 실패')
       setIsGeneratingAudio(false)
       setIsGeneratingVideo(false)
       // Step 3으로 돌아가기

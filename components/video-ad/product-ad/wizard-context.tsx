@@ -741,7 +741,7 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
     }
 
     try {
-      const res = await fetch(`/api/product-ad/draft?id=${id}`)
+      const res = await fetch(`/api/product-ad/draft?id=${id}`, { cache: 'no-store' })
       if (!res.ok) return false
 
       const data = await res.json()
