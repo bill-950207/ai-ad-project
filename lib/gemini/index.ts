@@ -117,6 +117,18 @@ export {
 } from './scenario'
 
 // ============================================================
+// InfiniteTalk 프롬프트 생성 함수
+// ============================================================
+export type {
+  InfiniteTalkPromptInput,
+  InfiniteTalkPromptResult,
+} from './infinitetalk-prompt'
+
+export {
+  generateInfiniteTalkPrompt,
+} from './infinitetalk-prompt'
+
+// ============================================================
 // 공용 유틸리티 (내부용)
 // ============================================================
 export { getGenAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
