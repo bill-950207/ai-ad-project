@@ -271,7 +271,7 @@ All prompts must share the SAME tone, color palette, and quality keywords for vi
 
   const config: GenerateContentConfig = {
     thinkingConfig: {
-      thinkingLevel: ThinkingLevel.MEDIUM,
+      thinkingLevel: ThinkingLevel.LOW,
     },
     responseMimeType: 'application/json',
     responseSchema: {
