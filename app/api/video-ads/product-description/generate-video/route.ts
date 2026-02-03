@@ -2,14 +2,13 @@
  * 제품 설명 영상 - 토킹 비디오 생성 API
  *
  * POST /api/video-ads/product-description/generate-video
- * - WaveSpeed InfiniteTalk API (우선) 또는 Kie.ai Kling Avatar API (fallback)으로 토킹 영상 생성
+ * - WaveSpeed InfiniteTalk API로 토킹 영상 생성
  * - video_ads 레코드 생성 및 큐 제출
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
-import { submitTalkingVideoToQueue } from '@/lib/kie/client'
 import { submitInfiniteTalkToQueue } from '@/lib/wavespeed/client'
 import { PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST } from '@/lib/credits'
 import { recordCreditUse } from '@/lib/credits/history'
@@ -47,6 +46,8 @@ export async function POST(request: NextRequest) {
       productName,
       // 비디오 타입 (UGC, podcast, expert)
       videoType = 'UGC',
+      // 드래프트 ID (영상 생성 시작 시 삭제)
+      draftId,
     } = body
 
     if (!avatarId) {
@@ -132,34 +133,17 @@ export async function POST(request: NextRequest) {
     console.log('Generated video prompt:', videoPrompt)
     console.log('Analysis summary:', promptResult.analysisSummary)
 
-    let requestId: string
-    let provider: 'wavespeed' | 'kie' = 'wavespeed'
-
-    // WaveSpeed InfiniteTalk 우선 시도
-    try {
-      console.log('WaveSpeed InfiniteTalk 시도 중...')
-      const queueResponse = await submitInfiniteTalkToQueue(
-        firstFrameUrl,
-        audioUrl,
-        videoPrompt,
-        resolution
-      )
-      requestId = queueResponse.request_id
-      provider = 'wavespeed'
-      console.log('WaveSpeed InfiniteTalk 성공:', requestId)
-    } catch (wavespeedError) {
-      // WaveSpeed 실패 시 Kie.ai fallback
-      console.warn('WaveSpeed InfiniteTalk 실패, Kie.ai로 fallback:', wavespeedError)
-
-      const queueResponse = await submitTalkingVideoToQueue(
-        firstFrameUrl,
-        audioUrl,
-        videoPrompt
-      )
-      requestId = queueResponse.request_id
-      provider = 'kie'
-      console.log('Kie.ai fallback 성공:', requestId)
-    }
+    // WaveSpeed InfiniteTalk로 영상 생성
+    console.log('WaveSpeed InfiniteTalk 시도 중...')
+    const queueResponse = await submitInfiniteTalkToQueue(
+      firstFrameUrl,
+      audioUrl,
+      videoPrompt,
+      resolution
+    )
+    const requestId = queueResponse.request_id
+    const provider = 'wavespeed' as const
+    console.log('WaveSpeed InfiniteTalk 성공:', requestId)
 
     // 크레딧 차감 및 요청 ID 저장 (트랜잭션으로 원자적 처리 + 히스토리 기록)
     // provider 정보를 kie_request_id 필드에 prefix로 저장 (wavespeed: 또는 kie:)
@@ -212,6 +196,22 @@ export async function POST(request: NextRequest) {
         )
       }
       throw creditError
+    }
+
+    // 드래프트 삭제 (서버 측에서 확실하게 처리)
+    if (draftId) {
+      try {
+        await prisma.video_ads.deleteMany({
+          where: {
+            id: draftId,
+            user_id: user.id,
+            category: 'productDescription',
+            status: { in: ['DRAFT', 'GENERATING_SCRIPTS', 'GENERATING_IMAGES', 'GENERATING_AUDIO'] },
+          },
+        })
+      } catch (e) {
+        console.error('드래프트 삭제 오류 (무시됨):', e)
+      }
     }
 
     return NextResponse.json({

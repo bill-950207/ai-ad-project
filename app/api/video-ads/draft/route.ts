@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
+import { invalidateVideoAdsCache } from '@/lib/cache/user-data'
 
 /**
  * POST /api/video-ads/draft
@@ -123,6 +124,9 @@ export async function POST(request: NextRequest) {
         },
       })
 
+      // 캐시 무효화 (목록에 즉시 반영되도록)
+      invalidateVideoAdsCache(user.id)
+
       return NextResponse.json({ draft: updated })
     } else {
       // 새 초안 생성 (기존 드래프트와 무관하게 항상 새로 생성)
@@ -156,6 +160,9 @@ export async function POST(request: NextRequest) {
           video_type: videoType || null,
         },
       })
+
+      // 캐시 무효화 (목록에 즉시 반영되도록)
+      invalidateVideoAdsCache(user.id)
 
       return NextResponse.json({ draft }, { status: 201 })
     }

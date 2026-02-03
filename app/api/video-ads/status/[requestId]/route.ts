@@ -1,12 +1,12 @@
 /**
  * 영상 광고 생성 상태 확인 API
  *
- * GET: fal.ai 또는 WaveSpeed/Kie.ai 큐 상태 확인 및 결과 반환, DB 업데이트
+ * GET: fal.ai 또는 WaveSpeed 큐 상태 확인 및 결과 반환, DB 업데이트
  *
  * 워크플로우:
  * 1. 이미지 생성 단계 (fal_image_request_id 사용)
  * 2. 영상 생성 단계 (fal_request_id 사용)
- * 3. 제품 설명 영상 (kie_request_id 사용, wavespeed: 또는 kie: prefix)
+ * 3. 제품 설명 영상 (kie_request_id 사용, wavespeed: prefix)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -22,10 +22,7 @@ import {
   type VideoDuration
 } from '@/lib/fal/client'
 import { uploadExternalImageToR2 } from '@/lib/image/compress'
-import {
-  getInfinitalkQueueStatus as getKieInfinitalkQueueStatus,
-  getInfinitalkQueueResponse as getKieInfinitalkQueueResponse,
-} from '@/lib/kie/client'
+// Kie.ai Infinitalk는 더 이상 사용하지 않음 (WaveSpeed만 사용)
 import {
   getInfiniteTalkQueueStatus as getWavespeedInfiniteTalkQueueStatus,
   getInfiniteTalkQueueResponse as getWavespeedInfiniteTalkQueueResponse,
@@ -35,24 +32,16 @@ import {
  * kie_request_id에서 provider와 실제 request ID 추출
  * 형식: "wavespeed:abc123" 또는 "kie:def456" 또는 기존 형식 "abc123" (kie로 가정)
  */
-function parseRequestId(kieRequestId: string): { provider: 'wavespeed' | 'kie'; requestId: string } {
+function parseRequestId(kieRequestId: string): { provider: 'wavespeed'; requestId: string } | null {
   if (kieRequestId.startsWith('wavespeed:')) {
     return {
       provider: 'wavespeed',
       requestId: kieRequestId.slice('wavespeed:'.length),
     }
   }
-  if (kieRequestId.startsWith('kie:')) {
-    return {
-      provider: 'kie',
-      requestId: kieRequestId.slice('kie:'.length),
-    }
-  }
-  // 기존 호환성: prefix 없으면 kie로 가정
-  return {
-    provider: 'kie',
-    requestId: kieRequestId,
-  }
+  // wavespeed: prefix가 없으면 null 반환 (지원하지 않는 형식)
+  // kie: prefix는 더 이상 지원하지 않음
+  return null
 }
 
 export async function GET(
@@ -95,8 +84,9 @@ export async function GET(
         .single()
 
       if (videoAd) {
-        // 제품 설명 영상 (Infinitalk) 처리 - WaveSpeed 또는 Kie.ai
-        if (videoAd.category === 'productDescription' && videoAd.kie_request_id) {
+        // 제품 설명 영상 (Infinitalk) 처리 - WaveSpeed만 사용
+        // tts: prefix는 TTS 요청이므로 Infinitalk 처리 건너뛰기
+        if (videoAd.category === 'productDescription' && videoAd.kie_request_id && !videoAd.kie_request_id.startsWith('tts:')) {
           return await handleInfinitalkPhase(supabase, user.id, videoAd)
         }
 
@@ -354,7 +344,7 @@ async function handleVideoPhase(
   })
 }
 
-// Infinitalk (제품 설명 영상) 단계 처리 - WaveSpeed 또는 Kie.ai
+// Infinitalk (제품 설명 영상) 단계 처리 - WaveSpeed만 사용
 async function handleInfinitalkPhase(
   supabase: ReturnType<typeof import('@/lib/supabase/server').createClient> extends Promise<infer T> ? T : never,
   userId: string,
@@ -369,40 +359,30 @@ async function handleInfinitalkPhase(
     return NextResponse.json({ error: 'No Infinitalk request found' }, { status: 400 })
   }
 
-  // provider와 실제 request ID 파싱
-  const { provider, requestId } = parseRequestId(videoAd.kie_request_id)
+  // provider와 실제 request ID 파싱 (WaveSpeed만 지원)
+  const parsed = parseRequestId(videoAd.kie_request_id)
+  if (!parsed) {
+    return NextResponse.json({ error: 'Invalid request ID format (wavespeed: prefix required)' }, { status: 400 })
+  }
+  const { provider, requestId } = parsed
 
-  let status: { status: string; queue_position?: number }
+  let status: { status: string }
   let videoUrl: string | null = null
 
   try {
-    if (provider === 'wavespeed') {
-      // WaveSpeed InfiniteTalk 상태 조회
-      const wavespeedStatus = await getWavespeedInfiniteTalkQueueStatus(requestId)
-      status = { status: wavespeedStatus.status }
+    // WaveSpeed InfiniteTalk 상태 조회
+    const wavespeedStatus = await getWavespeedInfiniteTalkQueueStatus(requestId)
+    status = { status: wavespeedStatus.status }
 
-      // 완료된 경우 결과 가져오기
-      if (wavespeedStatus.status === 'COMPLETED') {
-        const result = await getWavespeedInfiniteTalkQueueResponse(requestId)
-        if (result.videos && result.videos.length > 0) {
-          videoUrl = result.videos[0].url
-        }
-      }
-    } else {
-      // Kie.ai Infinitalk 상태 조회
-      const kieStatus = await getKieInfinitalkQueueStatus(requestId)
-      status = { status: kieStatus.status, queue_position: kieStatus.queue_position }
-
-      // 완료된 경우 결과 가져오기
-      if (kieStatus.status === 'COMPLETED') {
-        const result = await getKieInfinitalkQueueResponse(requestId)
-        if (result.videos && result.videos.length > 0) {
-          videoUrl = result.videos[0].url
-        }
+    // 완료된 경우 결과 가져오기
+    if (wavespeedStatus.status === 'COMPLETED') {
+      const result = await getWavespeedInfiniteTalkQueueResponse(requestId)
+      if (result.videos && result.videos.length > 0) {
+        videoUrl = result.videos[0].url
       }
     }
   } catch (error) {
-    console.error(`${provider} Infinitalk 상태 조회 오류:`, error)
+    console.error('WaveSpeed Infinitalk 상태 조회 오류:', error)
     return NextResponse.json({
       status: 'FAILED',
       error: 'Failed to check video status',

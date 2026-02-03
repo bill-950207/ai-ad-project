@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
+import { invalidateVideoAdsCache } from '@/lib/cache/user-data'
 
 /**
  * POST /api/product-ad/draft
@@ -108,6 +109,9 @@ export async function POST(request: NextRequest) {
         },
       })
 
+      // 캐시 무효화 (목록에 즉시 반영되도록)
+      invalidateVideoAdsCache(user.id)
+
       return NextResponse.json({ draft: updated })
     } else {
       // forceNew가 아닌 경우에만 기존 DRAFT 확인
@@ -146,6 +150,9 @@ export async function POST(request: NextRequest) {
             },
           })
 
+          // 캐시 무효화 (목록에 즉시 반영되도록)
+          invalidateVideoAdsCache(user.id)
+
           return NextResponse.json({ draft: updated })
         }
       }
@@ -174,6 +181,9 @@ export async function POST(request: NextRequest) {
           scene_video_urls: sceneVideoUrls || undefined,
         },
       })
+
+      // 캐시 무효화 (목록에 즉시 반영되도록)
+      invalidateVideoAdsCache(user.id)
 
       return NextResponse.json({ draft }, { status: 201 })
     }
