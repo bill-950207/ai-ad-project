@@ -5,7 +5,7 @@
  */
 
 import { GenerateContentConfig, ThinkingLevel } from '@google/genai'
-import { genAI, MODEL_NAME } from './shared'
+import { getGenAI, MODEL_NAME } from './shared'
 import type { ProductInfoInput, ProductSummary, UrlExtractResult } from './types'
 
 // ============================================================
@@ -72,7 +72,7 @@ ${PRODUCT_SELF_VERIFICATION}`
     responseMimeType: 'application/json',
   }
 
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     config,
@@ -127,7 +127,7 @@ URL: ${url}
       responseMimeType: 'application/json',
     }
 
-    const response = await genAI.models.generateContent({
+    const response = await getGenAI().models.generateContent({
       model: MODEL_NAME,
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config,

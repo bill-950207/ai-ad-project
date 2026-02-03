@@ -17,7 +17,7 @@ import {
   generateAiAvatarPrompt,
   type CameraCompositionType,
 } from '@/lib/gemini/client'
-import { genAI } from '@/lib/gemini'
+import { getGenAI } from '@/lib/gemini'
 import {
   submitSeedreamFirstFrameToQueue,
   type SeedreamAspectRatio,
@@ -95,7 +95,7 @@ Respond with ONLY a JSON object:
 
 Note: You MUST choose either "male" or "female". Do not respond with "any" or "neutral".`
 
-    const response = await genAI.models.generateContent({
+    const response = await getGenAI().models.generateContent({
       model: 'gemini-2.0-flash',
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: { responseMimeType: 'application/json' },

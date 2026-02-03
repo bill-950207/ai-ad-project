@@ -3,7 +3,7 @@
  */
 
 import { GenerateContentConfig, MediaResolution, ThinkingLevel } from '@google/genai'
-import { genAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
+import { getGenAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
 import type {
   AiAvatarPromptInput,
   AiAvatarPromptResult,
@@ -382,7 +382,7 @@ ${AVATAR_SELF_VERIFICATION}`
 
   parts.push({ text: prompt })
 
-  const response = await genAI.models.generateContent({
+  const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
     contents: [{ role: 'user', parts }],
     config,
