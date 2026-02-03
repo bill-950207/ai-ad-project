@@ -737,7 +737,16 @@ export function WizardStep5() {
   // Kling O1 모드: 씬별 영상 생성
   // ============================================================
   const startMultiSceneVideoGeneration = async () => {
-    if (!scenarioInfo?.scenes || sceneKeyframes.length === 0) return
+    // 씬 정보 확인
+    if (!scenarioInfo?.scenes) {
+      setError(t.productAdWizard?.step5?.errorNoScenes || 'Scene information not found. Please go back and regenerate keyframes.')
+      return
+    }
+
+    if (sceneKeyframes.length === 0) {
+      setError(t.productAdWizard?.step5?.errorNoKeyframes || 'No keyframes found. Please go back and generate keyframes.')
+      return
+    }
 
     // 크레딧 체크
     if (credits !== null && credits < estimatedCredits) {
