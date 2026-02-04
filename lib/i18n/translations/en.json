@@ -52,45 +52,7 @@
     "secondsShort": "s",
     "failed": "Failed",
     "all": "All",
-    "processing": "Processing...",
-    "done": "Done",
-    "female": "Female",
-    "male": "Male",
-    "navigationMenu": "Navigation menu",
-    "none": "None",
-    "notSelected": "Not selected",
-    "preview": "Preview",
-    "stop": "Stop",
-    "emptyState": {
-      "noImages": {
-        "title": "No images yet",
-        "description": "Create your first image ad to get started"
-      },
-      "noVideos": {
-        "title": "No videos yet",
-        "description": "Create your first video ad to get started"
-      },
-      "noAvatars": {
-        "title": "No avatars yet",
-        "description": "Create your first avatar to get started"
-      },
-      "noMusic": {
-        "title": "No music yet",
-        "description": "Generate your first music track to get started"
-      },
-      "noProducts": {
-        "title": "No products yet",
-        "description": "Add your first product to get started"
-      },
-      "noResults": {
-        "title": "No results found",
-        "description": "Try adjusting your search or filters"
-      },
-      "error": {
-        "title": "Something went wrong",
-        "description": "An error occurred. Please try again."
-      }
-    }
+    "processing": "Processing..."
   },
   "modal": {
     "insufficientCredits": {
@@ -260,89 +222,6 @@
     "allPlansCancelable": "All paid plans can be cancelled anytime. After cancellation, you can use the service until the next billing date, and your content will be preserved.",
     "watermarkIncluded": "Watermark included",
     "unlimited": "Unlimited"
-  },
-  "pricing": {
-    "plans": {
-      "free": {
-        "description": "Perfect to get started",
-        "features": [
-          "AI Avatar Generation",
-          "AI Background Music",
-          "Auto Background Removal",
-          "1 Image at a Time",
-          "Shortest Video Only",
-          "Watermark Included"
-        ],
-        "limits": {
-          "avatars": "Up to 3",
-          "music": "Up to 5",
-          "products": "Up to 3",
-          "credits": "15 Credits (One-time)",
-          "imageEstimate": "~7 Ad Images"
-        }
-      },
-      "starter": {
-        "description": "For individual creators",
-        "valueHighlight": "4x More Affordable",
-        "features": [
-          "All Free Features",
-          "No Watermark",
-          "HD Upscaling",
-          "Up to 5 Images at Once",
-          "Custom Video Length",
-          "Priority Queue"
-        ],
-        "limits": {
-          "avatars": "Up to 9",
-          "music": "Up to 15",
-          "products": "Up to 9",
-          "credits": "120 Credits/mo",
-          "imageEstimate": "~60 Ad Images",
-          "videoEstimate": "~12 Ad Videos"
-        }
-      },
-      "pro": {
-        "description": "For professionals",
-        "valueHighlight": "$0.14 per Image",
-        "features": [
-          "All Starter Features",
-          "Top Priority Processing",
-          "High Quality Images",
-          "3 Videos at Once",
-          "Pro Templates",
-          "Premium Support"
-        ],
-        "limits": {
-          "avatars": "Up to 30",
-          "music": "Up to 50",
-          "products": "Up to 30",
-          "credits": "420 Credits/mo",
-          "imageEstimate": "~210 Ad Images",
-          "videoEstimate": "~42 Ad Videos"
-        }
-      },
-      "business": {
-        "description": "For teams and enterprises",
-        "valueHighlight": "$0.12 per Image",
-        "features": [
-          "All Pro Features",
-          "Unlimited Content",
-          "Dedicated Support",
-          "API Access",
-          "Team Collaboration",
-          "Custom Branding",
-          "Priority Updates"
-        ],
-        "limits": {
-          "avatars": "Unlimited",
-          "music": "Unlimited",
-          "products": "Unlimited",
-          "credits": "1,600 Credits/mo",
-          "imageEstimate": "~800 Ad Images",
-          "videoEstimate": "~160 Ad Videos"
-        }
-      }
-    }
   },
   "showcase": {
     "title": "Gallery",
@@ -823,11 +702,7 @@
       "analyzingImage": "Analyzing image...",
       "selectMethod": "Please select a setting method",
       "uploadError": "An error occurred while uploading the image",
-      "analysisError": "An error occurred while analyzing the image",
-      "invalidFileType": "Please upload an image file",
-      "dropHere": "Drop image here",
-      "dragOrClick": "Drag & drop or click to select",
-      "willAnalyzeOnNext": "AI will analyze this image with product info when you click Next Step"
+      "analysisError": "An error occurred while analyzing the image"
     },
     "options": {
       "title": "Detailed Options",
@@ -973,22 +848,11 @@
     "sellingPoints": "Selling Points",
     "sellingPointPlaceholder": "e.g., 100% natural materials",
     "addSellingPoint": "Add Selling Point",
-    "noProductInfo": "No product information available",
-    "compareProductSize": "Compare product size with avatar",
-    "imageLoadFailed": "Failed to load image"
+    "noProductInfo": "No product information available"
   },
   "videoAd": {
     "title": "Video Ad",
     "subtitle": "Create video ads with AI",
-    "createTitle": "Create Video Ad",
-    "categories": {
-      "productDescription": "Product Description",
-      "avatarMotion": "Avatar Motion",
-      "productAd": "Product Ad",
-      "productShowcase": "Product Showcase",
-      "lifestyle": "Lifestyle",
-      "testimonial": "Testimonial"
-    },
     "myVideos": "My Video Ads",
     "createAd": "Create Video Ad",
     "emptyAds": "No video ads yet",
@@ -1093,12 +957,6 @@
       "inProgress": "Generating",
       "completed": "Completed",
       "failed": "Failed"
-    },
-    "stepNames": {
-      "productDescription": ["Product/Avatar", "Video Info", "Script/Voice", "Generate"],
-      "avatarMotion": ["Avatar/Product", "Story Mode", "Scenario", "Settings", "Frame Gen", "Video Gen"],
-      "productAd": ["Product", "Mode", "Scenario", "Settings", "First Scene", "Video Gen"],
-      "step": "Step"
     },
     "alerts": {
       "deleteFailed": "Delete failed",
@@ -1681,6 +1539,10 @@
       "studyDesc": "Intellectual space with bookshelves",
       "podcast_studio": "Podcast Studio",
       "podcast_studioDesc": "Professional space with mic/lighting",
+      "podcast_desk": "Podcast (Desk)",
+      "podcast_deskDesc": "Seated at desk with mic setup",
+      "podcast_sofa": "Podcast (Sofa)",
+      "podcast_sofaDesc": "Relaxed on armchair/sofa",
       "studio": "Studio",
       "studioDesc": "Simple solid background",
       "office": "Office",
@@ -1689,34 +1551,46 @@
       "meeting_roomDesc": "Presentation/seminar atmosphere",
       "minimal": "Minimal",
       "minimalDesc": "Clean white/gray background",
+      "lab": "Laboratory",
+      "labDesc": "Scientific research atmosphere",
+      "clinic": "Doctor's Office",
+      "clinicDesc": "Medical consultation setting",
+      "lecture_hall": "Lecture Hall",
+      "lecture_hallDesc": "Educational presenter atmosphere",
+      "broadcast_studio": "Broadcast Studio",
+      "broadcast_studioDesc": "News/interview style",
+      "conference_stage": "Conference Stage",
+      "conference_stageDesc": "TED/keynote presentation style",
       "custom": "Custom",
       "customDesc": "Describe your own location"
     },
     "cameraPresets": {
       "auto": "AI Recommend",
       "autoDesc": "AI recommends the best composition for your video",
-      "closeup": "Close-up",
-      "closeupDesc": "Face-focused close shot",
+      "closeup": "Face Close-up",
+      "closeupDesc": "Face-focused shot",
       "selfie-high": "Selfie (High)",
       "selfie-highDesc": "Looking down from above",
-      "selfie-front": "Selfie (Front)",
-      "selfie-frontDesc": "Eye level front shot",
+      "selfie-front": "Selfie",
+      "selfie-frontDesc": "Phone selfie angle",
       "selfie-side": "Selfie (Side)",
       "selfie-sideDesc": "Slightly from the side",
-      "ugc-closeup": "Influencer",
-      "ugc-closeupDesc": "Chest to face close shot",
-      "ugc-selfie": "UGC Selfie",
-      "ugc-selfieDesc": "Phone selfie composition",
-      "webcam": "Webcam",
-      "webcamDesc": "Standard podcast style",
-      "medium-shot": "Medium Shot",
-      "medium-shotDesc": "Upper body visible",
-      "three-quarter": "3/4 View",
-      "three-quarterDesc": "Slightly angled view",
+      "pov-closeup": "POV (Close-up)",
+      "pov-closeupDesc": "Face close-up, no phone",
+      "pov-upper": "POV (Upper Body)",
+      "pov-upperDesc": "Upper body, no phone",
+      "pov-full": "POV (Full Body)",
+      "pov-fullDesc": "Full body, no phone",
+      "medium-shot": "Upper Body",
+      "medium-shotDesc": "Chest to face",
+      "front": "Front",
+      "frontDesc": "Standard front view",
+      "side": "Side",
+      "sideDesc": "Side angle view",
       "tripod": "Tripod",
       "tripodDesc": "Stable front shot",
       "fullbody": "Full Body",
-      "fullbodyDesc": "Full body visible",
+      "fullbodyDesc": "Head to toe",
       "presenter": "Presenter",
       "presenterDesc": "Speaker/presenter style",
       "custom": "Custom",
@@ -1727,18 +1601,18 @@
       "autoDesc": "AI recommends the best pose for your product",
       "talking-only": "Talking Only",
       "talking-onlyDesc": "Explain without product",
-      "showing-product": "Show Product",
-      "showing-productDesc": "Show product to camera",
-      "holding-product": "Hold Product",
-      "holding-productDesc": "Hold product naturally",
+      "showing-product": "Product Focus",
+      "showing-productDesc": "Close-up on product",
+      "holding-product": "With Product",
+      "holding-productDesc": "Talking while holding product",
       "using-product": "Use Product",
       "using-productDesc": "Demonstrate using product",
       "reaction": "Reaction",
       "reactionDesc": "React to product",
-      "desk-presenter": "At Desk",
-      "desk-presenterDesc": "Present at desk",
-      "casual-chat": "Casual Chat",
-      "casual-chatDesc": "Natural conversation style",
+      "at-desk": "At Desk",
+      "at-deskDesc": "Seated at desk with mic",
+      "on-sofa": "On Sofa",
+      "on-sofaDesc": "Relaxed on armchair/sofa",
       "demonstrating": "Demonstrate",
       "demonstratingDesc": "Demonstrate features",
       "presenting": "Presenter",
@@ -1867,7 +1741,6 @@
     "numImages": "Number of Images",
     "recentAds": "Recent Ads",
     "viewOriginal": "View Original",
-    "directUpload": "Direct Upload",
     "options": {
       "background": "Background Style",
       "lighting": "Lighting",
@@ -2705,7 +2578,6 @@
     "maxPhotos": "Max 5",
     "processing": "Processing...",
     "newProduct": "New Product",
-    "imageSpec": "PNG, JPG, WEBP / Max 5MB / 256~4096px",
     "validation": {
       "enterProductName": "Please enter product name",
       "selectProductImage": "Please select product image",

@@ -106,19 +106,21 @@ If any check fails, revise before responding.
 const cameraCompositionDescriptions: Record<CameraCompositionType, { description: string; aperture: string; lens: string }> = {
   // 공통
   closeup: { description: 'close-up portrait, face and upper body prominent', aperture: 'f/11', lens: '50mm' },
+  'medium-shot': { description: 'medium shot showing upper body from waist up, balanced composition', aperture: 'f/11', lens: '50mm' },
+  fullbody: { description: 'full body shot, entire person visible in frame', aperture: 'f/16', lens: '35mm' },
   // UGC용 (셀카 스타일)
   'selfie-high': { description: 'high angle selfie perspective, camera looking down from above eye level', aperture: 'f/11', lens: '28mm' },
   'selfie-front': { description: 'eye-level frontal view, direct eye contact with camera', aperture: 'f/11', lens: '35mm' },
   'selfie-side': { description: 'three-quarter angle, showing facial contours, slight side view', aperture: 'f/11', lens: '35mm' },
   'ugc-closeup': { description: 'UGC-style intimate medium close-up, chest-up framing, eyes looking DIRECTLY into camera lens', aperture: 'f/11', lens: '35mm' },
   'ugc-selfie': { description: 'POV selfie shot, subject looking at camera, NO phone visible, natural relaxed pose', aperture: 'f/11', lens: '28mm' },
-  // Podcast용 (웹캠/데스크 스타일)
+  // Podcast용
   webcam: { description: 'webcam-style frontal view, desktop setup distance, conversational framing', aperture: 'f/11', lens: '35mm' },
-  'medium-shot': { description: 'medium shot showing upper body from waist up, balanced composition', aperture: 'f/11', lens: '50mm' },
+  front: { description: 'frontal camera view, direct eye contact, professional podcast framing', aperture: 'f/11', lens: '35mm' },
+  side: { description: 'side profile camera angle, camera positioned at 90 degrees to subject, clear side view of face', aperture: 'f/11', lens: '35mm' },
   'three-quarter': { description: 'three-quarter angle view, slight turn adding depth and visual interest', aperture: 'f/11', lens: '35mm' },
-  // Expert용 (전문가 스타일)
+  // Expert용 (레거시 호환)
   tripod: { description: 'stable tripod shot, medium distance, waist to head visible, professional framing', aperture: 'f/16', lens: '50mm' },
-  fullbody: { description: 'full body shot, entire person visible in frame', aperture: 'f/16', lens: '35mm' },
   presenter: { description: 'professional presenter framing, confident stance, authoritative composition', aperture: 'f/16', lens: '50mm' },
 }
 
@@ -126,9 +128,9 @@ const cameraCompositionDescriptions: Record<CameraCompositionType, { description
 const modelPoseDescriptions: Record<ModelPoseType, string> = {
   // 공통
   'talking-only': '⚠️ NO PRODUCT! Avatar only, natural conversational pose with empty hands relaxed at sides or gesturing naturally',
-  'showing-product': 'Model presenting product toward camera, demonstrative pose, product prominently featured',
+  'showing-product': 'Model actively PRESENTING product TOWARD THE CAMERA, arm extended forward, product held UP and FACING the viewer prominently, demonstrating the product to the audience',
   // UGC용
-  'holding-product': 'Model naturally holding product at chest level, relaxed authentic pose, product clearly visible',
+  'holding-product': 'Model casually holding product at chest level, relaxed natural grip, product visible but not emphasized',
   'using-product': 'Model demonstrating product use, natural interaction',
   reaction: 'Model showing genuine reaction, product held casually, expressive authentic enthusiasm',
   // Podcast용
@@ -274,20 +276,24 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
   const hairStyleText = hairStyleMap[input.hairStyle || 'any'] || ''
   const hairColorText = hairColorMap[input.hairColor || 'any'] || ''
 
-  // 카메라 구도: 프리셋 > 직접 입력 > 기본값
-  const cameraConfig = input.cameraComposition
+  // 카메라 구도: 프리셋 > 직접 입력 > 기본값 (안전한 fallback 포함)
+  const defaultCameraConfig = { description: 'natural framing', aperture: 'f/11', lens: '35mm' }
+  const cameraConfig = (input.cameraComposition && cameraCompositionDescriptions[input.cameraComposition])
     ? cameraCompositionDescriptions[input.cameraComposition]
-    : { description: 'natural framing', aperture: 'f/11', lens: '35mm' }
+    : defaultCameraConfig
 
-  const cameraSection = input.cameraComposition
+  const cameraSection = input.cameraComposition && cameraCompositionDescriptions[input.cameraComposition]
     ? `카메라 구도: ${cameraConfig.description}\n카메라 스펙: Shot on Sony A7IV, ${cameraConfig.lens} ${cameraConfig.aperture}, deep depth of field`
     : input.cameraCompositionPrompt
       ? `카메라 구도: ${input.cameraCompositionPrompt}\n카메라 스펙: Shot on Sony A7IV, 35mm f/11, deep depth of field`
-      : `카메라 구도: ${cameraConfig.description}\n카메라 스펙: Shot on Sony A7IV, ${cameraConfig.lens} ${cameraConfig.aperture}, deep depth of field`
+      : `카메라 구도: ${defaultCameraConfig.description}\n카메라 스펙: Shot on Sony A7IV, ${defaultCameraConfig.lens} ${defaultCameraConfig.aperture}, deep depth of field`
 
-  // 포즈: 프리셋 > 직접 입력 > 비디오 타입 기본값
-  const poseSection = input.modelPose
-    ? `모델 포즈: ${modelPoseDescriptions[input.modelPose]}`
+  // 포즈: 프리셋 > 직접 입력 > 비디오 타입 기본값 (안전한 fallback 포함)
+  const poseDescription = input.modelPose && modelPoseDescriptions[input.modelPose]
+    ? modelPoseDescriptions[input.modelPose]
+    : null
+  const poseSection = poseDescription
+    ? `모델 포즈: ${poseDescription}`
     : input.modelPosePrompt
       ? `모델 포즈: ${input.modelPosePrompt}`
       : `모델 포즈: ${videoTypeGuide.posePrompt}`

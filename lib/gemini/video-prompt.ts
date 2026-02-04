@@ -452,26 +452,39 @@ IMPORTANT: All 3 scripts should follow the "${videoTypeStyle.korean}" video styl
     : ''
 
   // AI 의상 추천 섹션 (requestOutfitRecommendation이 true일 때만 추가) - 다국어 지원
+  const locationDescription = input.locationPreset
+    ? (locationPresetDescriptions[input.locationPreset] || input.locationPreset)
+    : null
   const outfitRecommendationSection = input.requestOutfitRecommendation
     ? `
 === OUTFIT RECOMMENDATION (REQUIRED) ===
-Based on the product and video style, recommend an appropriate outfit for the model.
-${input.avatarDescription ? `Model info: ${input.avatarDescription}` : ''}
-${input.productImageUrl ? `Product image is provided for reference.` : ''}
+Creatively recommend an outfit that harmonizes with all the following elements:
+${input.avatarDescription ? `Model: ${input.avatarDescription}` : ''}
+${input.productImageUrl ? `Product: Image provided for reference` : ''}
+${locationDescription ? `Location/Setting: ${locationDescription}` : ''}
+Video Style: ${videoTypeStyle?.korean || 'UGC'}
 
-Consider:
-- Product category and target audience
-- Video style (${videoTypeStyle?.korean || 'UGC'})
-- Overall brand image and mood
-- Natural, authentic appearance that matches the product context
+=== CREATIVE GUIDELINES ===
+Think holistically about the visual scene:
+1. What outfit would a real person wear in this location while presenting this type of product?
+2. How can the outfit complement the product colors/style without competing for attention?
+3. What clothing style matches the video tone (casual UGC vs professional expert)?
 
-The outfit should complement the product without overshadowing it.
-Outfit must be described in ENGLISH for image generation.
+Location-aware styling:
+- Professional settings (clinic, lab, office, studio): Consider appropriate professional attire
+- Casual settings (home, cafe, outdoor): Opt for relaxed, authentic everyday wear
+- Broadcast/conference: Balance authority with approachability
 
-Include in your response:
-- "recommendedOutfit.description": Detailed English description (format: "[style] [top] with [bottom] and [optional accessories]")
+Color harmony:
+- Analyze the product's dominant colors and choose complementary or neutral outfit colors
+- Avoid patterns or colors that clash with the product
+
+Be creative and specific - don't use generic descriptions. The outfit should feel intentional and styled for this exact scene.
+
+=== OUTPUT FORMAT ===
+- "recommendedOutfit.description": Detailed English description for image generation (specific colors, materials, fit)
 - "recommendedOutfit.localizedDescription": Outfit description in ${config_lang.name} for user display
-- "recommendedOutfit.reason": Brief explanation in ${config_lang.name} of why this outfit fits the product/video style
+- "recommendedOutfit.reason": Brief explanation in ${config_lang.name} of why this outfit fits the overall scene
 `
     : ''
 
@@ -620,23 +633,55 @@ Before responding, check:
   }
 }
 
+// 배경/장소 프리셋 설명 (의상 추천용)
+const locationPresetDescriptions: Record<string, string> = {
+  // AI 추천
+  auto: 'AI-selected optimal location',
+  // UGC용
+  living_room: 'cozy living room at home',
+  bedroom: 'comfortable bedroom setting',
+  cafe: 'trendy cafe interior',
+  outdoor: 'bright outdoor natural setting',
+  bathroom: 'clean bathroom/vanity area',
+  // Podcast용
+  home_office: 'clean home office workspace',
+  study: 'intellectual study with bookshelves',
+  podcast_studio: 'professional podcast studio with mic/lighting',
+  podcast_desk: 'podcast setting at desk with microphone',
+  podcast_sofa: 'relaxed podcast setting on sofa/armchair',
+  // Expert용
+  studio: 'professional studio with solid background',
+  office: 'corporate office environment',
+  meeting_room: 'professional meeting/conference room',
+  minimal: 'minimal white/gray background',
+  lab: 'scientific laboratory/research setting',
+  clinic: "professional doctor's office with medical certificates",
+  lecture_hall: 'educational lecture hall/classroom',
+  broadcast_studio: 'TV broadcast/news studio',
+  conference_stage: 'conference/keynote presentation stage',
+  // 직접 입력
+  custom: 'custom user-specified location',
+}
+
 // 카메라 구도 설명 (영상 스타일별로 최적화된 프롬프트)
 const cameraCompositionDescriptions: Record<CameraCompositionType, string> = {
   // 공통
   closeup: 'close-up portrait framing, face and upper chest, intimate conversational distance',
+  'medium-shot': 'medium shot showing upper body from waist up, balanced composition, professional yet casual',
+  fullbody: 'full body shot showing entire person, suitable for demonstrations and presentations',
   // UGC용 (셀카 스타일) - 자연스럽고 친근한 느낌
   'selfie-high': 'high angle selfie perspective, camera looking down from above, flattering casual angle',
   'selfie-front': 'eye-level frontal selfie view, direct eye contact, natural smartphone distance',
   'selfie-side': 'three-quarter selfie angle, showing facial contours, casual authentic vibe',
   'ugc-closeup': 'UGC influencer style medium close-up, chest-up framing, casual and approachable feel',
   'ugc-selfie': 'POV selfie shot, subject looking at camera, NO phone visible, natural relaxed pose, anatomically correct hands',
-  // Podcast용 (웹캠/데스크 스타일) - 대화형, 편안한 전문성
+  // Podcast용
   webcam: 'webcam-style frontal view, desktop setup distance, conversational podcast framing',
-  'medium-shot': 'medium shot showing upper body from waist up, balanced composition, professional yet casual',
+  front: 'frontal camera view, direct eye contact, professional podcast framing',
+  side: 'side profile camera angle, camera positioned at 90 degrees to subject, clear side view of face',
   'three-quarter': 'three-quarter angle view, slight turn adding depth and visual interest, engaging perspective',
-  // Expert용 (전문가 스타일) - 권위있고 신뢰감
+  // Expert용 (레거시 호환)
   tripod: 'stable tripod-mounted frontal shot, professional broadcast quality, authoritative framing',
-  fullbody: 'full body shot showing entire person, suitable for demonstrations and presentations',
   presenter: 'professional presenter framing, confident stance, TED-talk style composition, authority position',
 }
 
@@ -644,9 +689,9 @@ const cameraCompositionDescriptions: Record<CameraCompositionType, string> = {
 const modelPoseDescriptions: Record<ModelPoseType, string> = {
   // 공통
   'talking-only': '⚠️ NO PRODUCT IN IMAGE! Model only, natural conversational pose with empty hands relaxed at sides or gesturing naturally, no objects held',
-  'showing-product': 'Model presenting product toward camera, demonstrative pose, product prominently featured',
+  'showing-product': 'Model actively PRESENTING product TOWARD THE CAMERA, arm extended forward, product held UP and FACING the viewer prominently, demonstrating the product to the audience',
   // UGC용 - 자연스럽고 진정성 있는 포즈
-  'holding-product': 'Model naturally holding product at chest level, relaxed authentic pose, product clearly visible',
+  'holding-product': 'Model casually holding product at chest level, relaxed natural grip, product visible but not emphasized',
   'using-product': 'Model demonstrating product use, natural interaction',
   reaction: 'Model showing genuine reaction to product, product held casually, expressive authentic enthusiasm',
   // Podcast용 - 대화형 프레젠터 스타일
@@ -686,16 +731,22 @@ export async function generateFirstFramePrompt(input: FirstFramePromptInput): Pr
     ? `Location: ${input.locationPrompt}`
     : `Location: ${videoTypeGuide.environmentPrompt}`
 
-  // 카메라 구도: 프리셋 > 직접 입력 > 비디오 타입 기본값
-  const cameraSection = input.cameraComposition
-    ? `Camera: ${cameraCompositionDescriptions[input.cameraComposition]}`
+  // 카메라 구도: 프리셋 > 직접 입력 > 비디오 타입 기본값 (안전한 fallback 포함)
+  const cameraDesc = input.cameraComposition && cameraCompositionDescriptions[input.cameraComposition]
+    ? cameraCompositionDescriptions[input.cameraComposition]
+    : null
+  const cameraSection = cameraDesc
+    ? `Camera: ${cameraDesc}`
     : input.cameraCompositionPrompt
       ? `Camera: ${input.cameraCompositionPrompt}`
       : ''
 
-  // 포즈: 프리셋 > 직접 입력 > 비디오 타입 기본값
-  const poseSection = input.modelPose
-    ? `Pose: ${modelPoseDescriptions[input.modelPose]}`
+  // 포즈: 프리셋 > 직접 입력 > 비디오 타입 기본값 (안전한 fallback 포함)
+  const poseDesc = input.modelPose && modelPoseDescriptions[input.modelPose]
+    ? modelPoseDescriptions[input.modelPose]
+    : null
+  const poseSection = poseDesc
+    ? `Pose: ${poseDesc}`
     : input.modelPosePrompt
       ? `Pose: ${input.modelPosePrompt}`
       : `Pose: ${videoTypeGuide.posePrompt}`

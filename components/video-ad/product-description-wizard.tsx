@@ -144,13 +144,11 @@ type CameraComposition =
   // AI 추천
   | 'auto'
   // 공통
-  | 'closeup'
+  | 'closeup' | 'medium-shot' | 'fullbody'
   // UGC용 (셀카 스타일)
-  | 'selfie-high' | 'selfie-front' | 'selfie-side' | 'ugc-closeup' | 'ugc-selfie'
-  // Podcast용 (웹캠/데스크 스타일)
-  | 'webcam' | 'medium-shot' | 'three-quarter'
-  // Expert용 (전문가 스타일)
-  | 'tripod' | 'fullbody' | 'presenter'
+  | 'selfie-front'
+  // Podcast용
+  | 'front' | 'side'
   // 직접 입력
   | 'custom'
 
@@ -166,71 +164,40 @@ const cameraCompositionLabels: Record<CameraComposition, CameraCompositionInfo> 
   auto: {
     label: 'AI Recommend',
     desc: 'AI selects the best composition for your video',
-    promptValue: '',  // API에서 동적으로 결정
+    promptValue: '',
   },
-  // Common
+  // 공통
   closeup: {
     label: 'Close-up',
     desc: 'Face-focused close shot',
     promptValue: 'close-up portrait framing, face and upper chest, intimate conversational distance',
   },
-  // UGC
-  'selfie-high': {
-    label: 'Selfie (High)',
-    desc: 'Looking down from above',
-    promptValue: 'high angle selfie perspective, camera looking down from above, flattering casual angle',
-  },
-  'selfie-front': {
-    label: 'Selfie (Front)',
-    desc: 'Eye level front shot',
-    promptValue: 'eye-level frontal selfie view, direct eye contact, natural smartphone distance',
-  },
-  'selfie-side': {
-    label: 'Selfie (Side)',
-    desc: 'Slightly from the side',
-    promptValue: 'three-quarter selfie angle, showing facial contours, casual authentic vibe',
-  },
-  'ugc-closeup': {
-    label: 'Influencer',
-    desc: 'Chest to face close shot',
-    promptValue: 'UGC influencer style medium close-up, chest-up framing, casual and approachable feel',
-  },
-  'ugc-selfie': {
-    label: 'UGC Selfie',
-    desc: 'Phone selfie composition',
-    promptValue: 'POV selfie shot, subject looking at camera, NO phone visible, natural relaxed pose',
-  },
-  // Podcast
-  webcam: {
-    label: 'Webcam',
-    desc: 'Standard podcast style',
-    promptValue: 'webcam-style frontal view, desktop setup distance, conversational podcast framing',
-  },
   'medium-shot': {
     label: 'Medium Shot',
     desc: 'Upper body visible',
-    promptValue: 'medium shot showing upper body from waist up, balanced composition, professional yet casual',
-  },
-  'three-quarter': {
-    label: '3/4 View',
-    desc: 'Slightly angled view',
-    promptValue: 'three-quarter angle view, slight turn adding depth and visual interest, engaging perspective',
-  },
-  // Expert
-  tripod: {
-    label: 'Tripod',
-    desc: 'Stable front shot',
-    promptValue: 'stable tripod-mounted frontal shot, professional broadcast quality, authoritative framing',
+    promptValue: 'medium shot showing upper body from waist up, balanced composition',
   },
   fullbody: {
     label: 'Full Body',
     desc: 'Full body visible',
     promptValue: 'full body shot showing entire person, suitable for demonstrations and presentations',
   },
-  presenter: {
-    label: 'Presenter',
-    desc: 'Speaker/presenter style',
-    promptValue: 'professional presenter framing, confident stance, TED-talk style composition, authority position',
+  // UGC용
+  'selfie-front': {
+    label: 'Selfie',
+    desc: 'Phone selfie angle',
+    promptValue: 'eye-level frontal selfie view, direct eye contact, natural smartphone distance',
+  },
+  // Podcast용
+  front: {
+    label: 'Front',
+    desc: 'Standard front view',
+    promptValue: 'frontal camera view, direct eye contact, professional podcast framing',
+  },
+  side: {
+    label: 'Side',
+    desc: 'Side angle view',
+    promptValue: 'side angle camera view, profile or three-quarter view, interview style podcast framing',
   },
   // Custom
   custom: {
@@ -242,30 +209,26 @@ const cameraCompositionLabels: Record<CameraComposition, CameraCompositionInfo> 
 
 // 영상 스타일별 카메라 구도 옵션
 const cameraCompositionsByVideoType: Record<VideoType, CameraComposition[]> = {
-  UGC: ['auto', 'selfie-front', 'selfie-high', 'selfie-side', 'ugc-selfie', 'ugc-closeup', 'custom'],
-  podcast: ['auto', 'webcam', 'medium-shot', 'closeup', 'three-quarter', 'custom'],
-  expert: ['auto', 'tripod', 'medium-shot', 'closeup', 'fullbody', 'presenter', 'custom'],
+  UGC: ['auto', 'selfie-front', 'closeup', 'medium-shot', 'fullbody', 'custom'],
+  podcast: ['auto', 'front', 'side', 'custom'],
+  expert: ['auto', 'closeup', 'medium-shot', 'fullbody', 'custom'],
 }
 
 // 영상 스타일별 기본 카메라 구도
 const defaultCameraByVideoType: Record<VideoType, CameraComposition> = {
   UGC: 'auto',
-  podcast: 'webcam',
-  expert: 'tripod',
+  podcast: 'front',
+  expert: 'auto',
 }
 
 // 모델 포즈 타입 (영상 스타일별로 다른 옵션 제공)
 type ModelPose =
   // AI 추천
   | 'auto'
-  // 공통
-  | 'talking-only' | 'showing-product'
-  // UGC용
-  | 'holding-product' | 'using-product' | 'reaction'
-  // Podcast용
-  | 'desk-presenter' | 'casual-chat'
+  // 공통 (제품 관련)
+  | 'talking-only' | 'showing-product' | 'holding-product'
   // Expert용
-  | 'demonstrating' | 'presenting' | 'explaining'
+  | 'presenting'
   // 직접 입력
   | 'custom'
 
@@ -281,9 +244,9 @@ const modelPoseLabels: Record<ModelPose, ModelPoseInfo> = {
   auto: {
     label: 'AI Recommend',
     desc: 'AI selects the best pose for your product',
-    promptValue: '',  // API에서 동적으로 결정
+    promptValue: '',
   },
-  // Common
+  // 공통
   'talking-only': {
     label: 'Talking Only',
     desc: 'Explain without product',
@@ -294,48 +257,16 @@ const modelPoseLabels: Record<ModelPose, ModelPoseInfo> = {
     desc: 'Show product to camera',
     promptValue: 'presenting product toward camera, demonstrative pose, product prominently featured',
   },
-  // UGC
   'holding-product': {
     label: 'Hold Product',
     desc: 'Hold product naturally',
     promptValue: 'naturally holding product at chest level, relaxed authentic pose, product clearly visible',
   },
-  'using-product': {
-    label: 'Use Product',
-    desc: 'Demonstrate using product',
-    promptValue: 'demonstrating product use, natural interaction with product',
-  },
-  reaction: {
-    label: 'Reaction',
-    desc: 'React to product',
-    promptValue: 'showing genuine reaction to product, product held casually, expressive authentic enthusiasm',
-  },
-  // Podcast
-  'desk-presenter': {
-    label: 'At Desk',
-    desc: 'Present at desk',
-    promptValue: 'seated at desk, product on desk or held casually, conversational demeanor',
-  },
-  'casual-chat': {
-    label: 'Casual Chat',
-    desc: 'Natural conversation style',
-    promptValue: 'relaxed conversational pose, product held casually if present, friendly approachable vibe',
-  },
-  // Expert
-  demonstrating: {
-    label: 'Demonstrate',
-    desc: 'Demonstrate features',
-    promptValue: 'displaying product features, product-focused composition, educational presentation',
-  },
+  // Expert용
   presenting: {
     label: 'Presenter',
     desc: 'Expert presentation pose',
     promptValue: 'confident presenter stance, product held for optimal viewing, professional display',
-  },
-  explaining: {
-    label: 'Explaining',
-    desc: 'Serious explanation',
-    promptValue: 'explanation pose, product presented clearly, knowledgeable expression',
   },
   // Custom
   custom: {
@@ -347,15 +278,15 @@ const modelPoseLabels: Record<ModelPose, ModelPoseInfo> = {
 
 // 영상 스타일별 모델 포즈 옵션
 const modelPosesByVideoType: Record<VideoType, ModelPose[]> = {
-  UGC: ['auto', 'holding-product', 'using-product', 'showing-product', 'reaction', 'custom'],
-  podcast: ['auto', 'desk-presenter', 'casual-chat', 'showing-product', 'talking-only', 'custom'],
-  expert: ['auto', 'presenting', 'explaining', 'demonstrating', 'showing-product', 'talking-only', 'custom'],
+  UGC: ['auto', 'holding-product', 'showing-product', 'talking-only', 'custom'],
+  podcast: ['auto', 'holding-product', 'showing-product', 'talking-only', 'custom'],
+  expert: ['auto', 'presenting', 'showing-product', 'talking-only', 'custom'],
 }
 
 // 영상 스타일별 기본 모델 포즈
 const defaultPoseByVideoType: Record<VideoType, ModelPose> = {
   UGC: 'auto',
-  podcast: 'desk-presenter',
+  podcast: 'auto',
   expert: 'presenting',
 }
 
@@ -421,9 +352,10 @@ type LocationPreset =
   // UGC용 (일상적, 자연스러운)
   | 'living_room' | 'bedroom' | 'cafe' | 'outdoor' | 'bathroom'
   // Podcast용 (전문적이면서 캐주얼)
-  | 'home_office' | 'study' | 'podcast_studio'
+  | 'home_office' | 'study' | 'podcast_studio' | 'podcast_desk' | 'podcast_sofa'
   // Expert용 (권위적, 전문적)
   | 'studio' | 'office' | 'meeting_room' | 'minimal'
+  | 'lab' | 'clinic' | 'lecture_hall' | 'broadcast_studio' | 'conference_stage'
   // 공통
   | 'custom'
 
@@ -482,6 +414,16 @@ const locationPresetLabels: Record<LocationPreset, LocationPresetInfo> = {
     desc: 'Professional space with mic/lighting',
     promptValue: 'professional podcast studio setup with acoustic panels, warm ambient lighting, content creator atmosphere',
   },
+  podcast_desk: {
+    label: 'Podcast (Desk)',
+    desc: 'Seated at desk with mic setup',
+    promptValue: 'seated at desk with microphone setup, professional podcast setting, conversational demeanor, desk visible',
+  },
+  podcast_sofa: {
+    label: 'Podcast (Sofa)',
+    desc: 'Relaxed on armchair/sofa',
+    promptValue: 'seated comfortably on armchair or sofa, casual relaxed podcast pose, intimate conversation setting',
+  },
   // Expert
   studio: {
     label: 'Studio',
@@ -503,6 +445,31 @@ const locationPresetLabels: Record<LocationPreset, LocationPresetInfo> = {
     desc: 'Clean white/gray background',
     promptValue: 'clean minimal white or light gray background, simple and distraction-free',
   },
+  lab: {
+    label: 'Laboratory',
+    desc: 'Scientific research atmosphere',
+    promptValue: 'professional laboratory setting with scientific equipment, clean white lab environment, research atmosphere',
+  },
+  clinic: {
+    label: "Doctor's Office",
+    desc: 'Medical consultation setting',
+    promptValue: 'professional doctors office with medical certificates on wall, clean organized desk, healthcare consultation setting',
+  },
+  lecture_hall: {
+    label: 'Lecture Hall',
+    desc: 'Educational presenter atmosphere',
+    promptValue: 'university lecture hall or classroom setting, educational environment, professor or teacher atmosphere',
+  },
+  broadcast_studio: {
+    label: 'Broadcast Studio',
+    desc: 'News/interview style',
+    promptValue: 'professional broadcast studio, news anchor desk setup, TV interview lighting and backdrop',
+  },
+  conference_stage: {
+    label: 'Conference Stage',
+    desc: 'TED/keynote presentation style',
+    promptValue: 'professional conference stage, TED talk style setup, keynote presentation lighting, speaker podium',
+  },
   // Common
   custom: {
     label: 'Custom',
@@ -514,8 +481,8 @@ const locationPresetLabels: Record<LocationPreset, LocationPresetInfo> = {
 // 영상 스타일별 추천 장소 프리셋
 const locationPresetsByVideoType: Record<VideoType, LocationPreset[]> = {
   UGC: ['auto', 'living_room', 'bedroom', 'cafe', 'outdoor', 'bathroom', 'custom'],
-  podcast: ['auto', 'home_office', 'study', 'podcast_studio', 'living_room', 'custom'],
-  expert: ['auto', 'studio', 'office', 'meeting_room', 'minimal', 'custom'],
+  podcast: ['auto', 'podcast_desk', 'podcast_sofa', 'home_office', 'podcast_studio', 'custom'],
+  expert: ['auto', 'studio', 'office', 'meeting_room', 'clinic', 'lab', 'lecture_hall', 'broadcast_studio', 'conference_stage', 'minimal', 'custom'],
 }
 
 // 영상 스타일별 기본 장소

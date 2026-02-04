@@ -52,45 +52,7 @@
     "secondsShort": "秒",
     "failed": "失败",
     "all": "全部",
-    "processing": "处理中...",
-    "done": "完成",
-    "female": "女性",
-    "male": "男性",
-    "navigationMenu": "导航菜单",
-    "none": "无",
-    "notSelected": "未选择",
-    "preview": "预览",
-    "stop": "停止",
-    "emptyState": {
-      "noImages": {
-        "title": "暂无图片",
-        "description": "创建您的第一个图片广告"
-      },
-      "noVideos": {
-        "title": "暂无视频",
-        "description": "创建您的第一个视频广告"
-      },
-      "noAvatars": {
-        "title": "暂无虚拟形象",
-        "description": "创建您的第一个虚拟形象"
-      },
-      "noMusic": {
-        "title": "暂无音乐",
-        "description": "生成您的第一首音乐"
-      },
-      "noProducts": {
-        "title": "暂无产品",
-        "description": "添加您的第一个产品"
-      },
-      "noResults": {
-        "title": "未找到结果",
-        "description": "请尝试调整搜索条件"
-      },
-      "error": {
-        "title": "出现问题",
-        "description": "发生错误，请重试。"
-      }
-    }
+    "processing": "处理中..."
   },
   "modal": {
     "insufficientCredits": {
@@ -260,89 +222,6 @@
     "allPlansCancelable": "所有付费方案均可随时取消。取消后可继续使用至下一个账单日期，您创建的内容将继续保留。",
     "watermarkIncluded": "含水印",
     "unlimited": "无限"
-  },
-  "pricing": {
-    "plans": {
-      "free": {
-        "description": "入门的完美选择",
-        "features": [
-          "AI虚拟形象生成",
-          "AI背景音乐",
-          "自动背景移除",
-          "每次1张图片",
-          "仅限最短视频",
-          "包含水印"
-        ],
-        "limits": {
-          "avatars": "最多3个",
-          "music": "最多5个",
-          "products": "最多3个",
-          "credits": "15积分（一次性）",
-          "imageEstimate": "~7张广告图片"
-        }
-      },
-      "starter": {
-        "description": "适合个人创作者",
-        "valueHighlight": "性价比高4倍",
-        "features": [
-          "Free全部功能",
-          "无水印",
-          "高清升级",
-          "每次最多5张",
-          "自定义视频时长",
-          "优先处理"
-        ],
-        "limits": {
-          "avatars": "最多9个",
-          "music": "最多15个",
-          "products": "最多9个",
-          "credits": "120积分/月",
-          "imageEstimate": "~60张广告图片",
-          "videoEstimate": "~12个广告视频"
-        }
-      },
-      "pro": {
-        "description": "适合专业人士",
-        "valueHighlight": "每张图片$0.14",
-        "features": [
-          "Starter全部功能",
-          "最高优先级处理",
-          "高质量图片",
-          "同时处理3个视频",
-          "Pro模板",
-          "高级支持"
-        ],
-        "limits": {
-          "avatars": "最多30个",
-          "music": "最多50个",
-          "products": "最多30个",
-          "credits": "420积分/月",
-          "imageEstimate": "~210张广告图片",
-          "videoEstimate": "~42个广告视频"
-        }
-      },
-      "business": {
-        "description": "适合团队和企业",
-        "valueHighlight": "每张图片$0.12",
-        "features": [
-          "Pro全部功能",
-          "无限内容",
-          "专属支持",
-          "API访问",
-          "团队协作",
-          "自定义品牌",
-          "优先更新"
-        ],
-        "limits": {
-          "avatars": "无限",
-          "music": "无限",
-          "products": "无限",
-          "credits": "1,600积分/月",
-          "imageEstimate": "~800张广告图片",
-          "videoEstimate": "~160个广告视频"
-        }
-      }
-    }
   },
   "showcase": {
     "title": "作品展示",
@@ -823,11 +702,7 @@
       "analyzingImage": "正在分析图片...",
       "selectMethod": "请选择设置方式",
       "uploadError": "上传图片时发生错误",
-      "analysisError": "分析图片时发生错误",
-      "invalidFileType": "请上传图片文件",
-      "dropHere": "将图片拖放到这里",
-      "dragOrClick": "拖放或点击选择",
-      "willAnalyzeOnNext": "点击下一步时，AI将结合产品信息分析此图片"
+      "analysisError": "分析图片时发生错误"
     },
     "options": {
       "title": "详细选项设置",
@@ -973,22 +848,11 @@
     "sellingPoints": "卖点",
     "sellingPointPlaceholder": "例如：100%天然材料",
     "addSellingPoint": "添加卖点",
-    "noProductInfo": "暂无产品信息",
-    "compareProductSize": "与虚拟形象比较产品大小",
-    "imageLoadFailed": "无法加载图片"
+    "noProductInfo": "暂无产品信息"
   },
   "videoAd": {
     "title": "视频广告",
     "subtitle": "用AI创建视频广告",
-    "createTitle": "创建视频广告",
-    "categories": {
-      "productDescription": "产品说明",
-      "avatarMotion": "虚拟形象动态",
-      "productAd": "产品广告",
-      "productShowcase": "产品展示",
-      "lifestyle": "生活方式",
-      "testimonial": "评价视频"
-    },
     "myVideos": "我的视频广告",
     "createAd": "创建视频广告",
     "emptyAds": "暂无创建的视频广告",
@@ -1093,12 +957,6 @@
       "inProgress": "生成中",
       "completed": "已完成",
       "failed": "失败"
-    },
-    "stepNames": {
-      "productDescription": ["产品/虚拟形象", "视频信息", "脚本/语音", "生成"],
-      "avatarMotion": ["虚拟形象/产品", "故事模式", "场景", "设置", "帧生成", "视频生成"],
-      "productAd": ["产品", "模式", "场景", "设置", "第一个镜头", "视频生成"],
-      "step": "步骤"
     },
     "alerts": {
       "deleteFailed": "删除失败",
@@ -1681,6 +1539,10 @@
       "studyDesc": "有书架的知识空间",
       "podcast_studio": "播客工作室",
       "podcast_studioDesc": "带麦克风/灯光的专业空间",
+      "podcast_desk": "播客（桌前）",
+      "podcast_deskDesc": "带麦克风设置的桌前",
+      "podcast_sofa": "播客（沙发）",
+      "podcast_sofaDesc": "舒适的扶手椅/沙发上",
       "studio": "工作室",
       "studioDesc": "简洁的纯色背景",
       "office": "办公室",
@@ -1689,34 +1551,46 @@
       "meeting_roomDesc": "演示/研讨会氛围",
       "minimal": "极简",
       "minimalDesc": "干净的白色/灰色背景",
+      "lab": "实验室",
+      "labDesc": "科学研究氛围",
+      "clinic": "医生办公室",
+      "clinicDesc": "医疗咨询环境",
+      "lecture_hall": "讲堂",
+      "lecture_hallDesc": "教育者氛围",
+      "broadcast_studio": "广播演播室",
+      "broadcast_studioDesc": "新闻/访谈风格",
+      "conference_stage": "会议舞台",
+      "conference_stageDesc": "TED/主题演讲风格",
       "custom": "自定义输入",
       "customDesc": "自行描述您想要的场景"
     },
     "cameraPresets": {
       "auto": "AI推荐",
       "autoDesc": "AI为您的视频推荐最佳构图",
-      "closeup": "特写",
-      "closeupDesc": "以脸部为中心的近距离镜头",
+      "closeup": "脸部特写",
+      "closeupDesc": "以脸部为中心",
       "selfie-high": "自拍（俯视）",
       "selfie-highDesc": "从上方俯视的角度",
-      "selfie-front": "自拍（正面）",
-      "selfie-frontDesc": "平视正面镜头",
+      "selfie-front": "自拍",
+      "selfie-frontDesc": "手机自拍角度",
       "selfie-side": "自拍（侧面）",
       "selfie-sideDesc": "稍微偏侧",
-      "ugc-closeup": "网红",
-      "ugc-closeupDesc": "从上身到脸部的近距离镜头",
-      "ugc-selfie": "UGC自拍",
-      "ugc-selfieDesc": "手机自拍构图",
-      "webcam": "网络摄像头",
-      "webcamDesc": "标准播客风格",
-      "medium-shot": "中景",
-      "medium-shotDesc": "可见上半身",
-      "three-quarter": "3/4视角",
-      "three-quarterDesc": "稍微斜角",
+      "pov-closeup": "POV（特写）",
+      "pov-closeupDesc": "无手机脸部特写",
+      "pov-upper": "POV（上半身）",
+      "pov-upperDesc": "无手机上半身",
+      "pov-full": "POV（全身）",
+      "pov-fullDesc": "无手机全身",
+      "medium-shot": "上半身",
+      "medium-shotDesc": "胸部到脸部",
+      "front": "正面",
+      "frontDesc": "网络摄像头风格正面镜头",
+      "side": "侧面",
+      "sideDesc": "侧面拍摄角度",
       "tripod": "三脚架",
       "tripodDesc": "稳定的正面镜头",
       "fullbody": "全身",
-      "fullbodyDesc": "可见全身",
+      "fullbodyDesc": "从头到脚",
       "presenter": "演讲者",
       "presenterDesc": "演讲者/主持人风格",
       "custom": "自定义输入",
@@ -1727,18 +1601,18 @@
       "autoDesc": "AI为您的产品推荐最佳姿势",
       "talking-only": "仅对话",
       "talking-onlyDesc": "无产品讲解",
-      "showing-product": "展示产品",
-      "showing-productDesc": "向镜头展示产品",
-      "holding-product": "手持产品",
-      "holding-productDesc": "自然地拿着产品",
+      "showing-product": "产品特写",
+      "showing-productDesc": "产品近距离展示",
+      "holding-product": "与产品一起",
+      "holding-productDesc": "拿着产品对话",
       "using-product": "使用产品",
       "using-productDesc": "演示产品使用",
       "reaction": "反应",
       "reactionDesc": "对产品的反应",
-      "desk-presenter": "在桌前",
-      "desk-presenterDesc": "在桌前演示",
-      "casual-chat": "随意聊天",
-      "casual-chatDesc": "自然对话风格",
+      "at-desk": "在桌前",
+      "at-deskDesc": "坐在麦克风前的桌子旁",
+      "on-sofa": "在沙发上",
+      "on-sofaDesc": "轻松地坐在单人沙发上",
       "demonstrating": "演示",
       "demonstratingDesc": "演示功能",
       "presenting": "演讲者",
@@ -1867,7 +1741,6 @@
     "numImages": "图片数量",
     "recentAds": "最近广告",
     "viewOriginal": "查看原图",
-    "directUpload": "直接上传",
     "options": {
       "background": "背景风格",
       "lighting": "灯光",
@@ -2705,7 +2578,6 @@
     "maxPhotos": "最多5张",
     "processing": "处理中...",
     "newProduct": "新产品",
-    "imageSpec": "PNG, JPG, WEBP / 最大5MB / 256~4096px",
     "validation": {
       "enterProductName": "请输入产品名称",
       "selectProductImage": "请选择产品图片",

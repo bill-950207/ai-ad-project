@@ -52,45 +52,7 @@
     "secondsShort": "초",
     "failed": "실패",
     "all": "전체",
-    "processing": "처리 중...",
-    "done": "완료",
-    "female": "여성",
-    "male": "남성",
-    "navigationMenu": "탐색 메뉴",
-    "none": "없음",
-    "notSelected": "선택 안됨",
-    "preview": "미리보기",
-    "stop": "중지",
-    "emptyState": {
-      "noImages": {
-        "title": "이미지가 없습니다",
-        "description": "첫 번째 이미지 광고를 만들어보세요"
-      },
-      "noVideos": {
-        "title": "영상이 없습니다",
-        "description": "첫 번째 영상 광고를 만들어보세요"
-      },
-      "noAvatars": {
-        "title": "아바타가 없습니다",
-        "description": "첫 번째 아바타를 만들어보세요"
-      },
-      "noMusic": {
-        "title": "음악이 없습니다",
-        "description": "첫 번째 음악을 생성해보세요"
-      },
-      "noProducts": {
-        "title": "제품이 없습니다",
-        "description": "첫 번째 제품을 등록해보세요"
-      },
-      "noResults": {
-        "title": "결과가 없습니다",
-        "description": "검색 조건을 조정해보세요"
-      },
-      "error": {
-        "title": "문제가 발생했습니다",
-        "description": "오류가 발생했습니다. 다시 시도해주세요."
-      }
-    }
+    "processing": "처리 중..."
   },
   "modal": {
     "insufficientCredits": {
@@ -260,89 +222,6 @@
     "allPlansCancelable": "모든 유료 플랜은 언제든지 취소할 수 있습니다. 취소 시 다음 결제일까지 서비스를 이용할 수 있으며, 생성한 콘텐츠는 계속 보관됩니다.",
     "watermarkIncluded": "워터마크 포함",
     "unlimited": "무제한"
-  },
-  "pricing": {
-    "plans": {
-      "free": {
-        "description": "시작하기에 딱 좋아요",
-        "features": [
-          "AI 아바타 생성",
-          "AI 배경 음악",
-          "자동 배경 제거",
-          "한 번에 1장씩 생성",
-          "가장 짧은 영상만",
-          "워터마크 포함"
-        ],
-        "limits": {
-          "avatars": "최대 3개",
-          "music": "최대 5개",
-          "products": "최대 3개",
-          "credits": "15 크레딧 (1회)",
-          "imageEstimate": "~7개 광고 이미지"
-        }
-      },
-      "starter": {
-        "description": "개인 크리에이터를 위해",
-        "valueHighlight": "4배 더 저렴",
-        "features": [
-          "Free 모든 기능",
-          "워터마크 없음",
-          "HD 업스케일링",
-          "한 번에 5장까지",
-          "원하는 영상 길이",
-          "우선 처리"
-        ],
-        "limits": {
-          "avatars": "최대 9개",
-          "music": "최대 15개",
-          "products": "최대 9개",
-          "credits": "120 크레딧/월",
-          "imageEstimate": "~60개 광고 이미지",
-          "videoEstimate": "~12개 광고 영상"
-        }
-      },
-      "pro": {
-        "description": "전문가를 위해",
-        "valueHighlight": "이미지당 $0.14",
-        "features": [
-          "Starter 모든 기능",
-          "최고 우선 처리",
-          "고품질 이미지",
-          "영상 3개 동시 처리",
-          "Pro 템플릿",
-          "프리미엄 지원"
-        ],
-        "limits": {
-          "avatars": "최대 30개",
-          "music": "최대 50개",
-          "products": "최대 30개",
-          "credits": "420 크레딧/월",
-          "imageEstimate": "~210개 광고 이미지",
-          "videoEstimate": "~42개 광고 영상"
-        }
-      },
-      "business": {
-        "description": "팀과 기업을 위해",
-        "valueHighlight": "이미지당 $0.12",
-        "features": [
-          "Pro 모든 기능",
-          "무제한 콘텐츠",
-          "전담 지원",
-          "API 액세스",
-          "팀 협업",
-          "커스텀 브랜딩",
-          "우선 업데이트"
-        ],
-        "limits": {
-          "avatars": "무제한",
-          "music": "무제한",
-          "products": "무제한",
-          "credits": "1,600 크레딧/월",
-          "imageEstimate": "~800개 광고 이미지",
-          "videoEstimate": "~160개 광고 영상"
-        }
-      }
-    }
   },
   "showcase": {
     "title": "제작 사례",
@@ -823,11 +702,7 @@
       "analyzingImage": "이미지 분석 중입니다...",
       "selectMethod": "설정 방식을 선택해주세요",
       "uploadError": "이미지 업로드 중 오류가 발생했습니다",
-      "analysisError": "이미지 분석 중 오류가 발생했습니다",
-      "invalidFileType": "이미지 파일을 업로드해주세요",
-      "dropHere": "이미지를 여기에 놓으세요",
-      "dragOrClick": "드래그 앤 드롭 또는 클릭하여 선택",
-      "willAnalyzeOnNext": "다음 단계 클릭 시 AI가 이 이미지를 제품 정보와 함께 분석합니다"
+      "analysisError": "이미지 분석 중 오류가 발생했습니다"
     },
     "options": {
       "title": "상세 옵션 설정",
@@ -973,22 +848,11 @@
     "sellingPoints": "셀링 포인트",
     "sellingPointPlaceholder": "예: 100% 천연 소재",
     "addSellingPoint": "셀링 포인트 추가",
-    "noProductInfo": "등록된 제품 정보가 없습니다",
-    "compareProductSize": "아바타와 제품 크기 비교",
-    "imageLoadFailed": "이미지를 불러올 수 없습니다"
+    "noProductInfo": "등록된 제품 정보가 없습니다"
   },
   "videoAd": {
     "title": "영상 광고",
     "subtitle": "AI로 영상 광고를 제작하세요",
-    "createTitle": "영상 광고 생성",
-    "categories": {
-      "productDescription": "제품 설명",
-      "avatarMotion": "아바타 모션",
-      "productAd": "제품 광고",
-      "productShowcase": "제품 쇼케이스",
-      "lifestyle": "라이프스타일",
-      "testimonial": "후기 영상"
-    },
     "myVideos": "내 영상 광고",
     "createAd": "영상 광고 생성",
     "emptyAds": "생성된 영상 광고가 없습니다",
@@ -1093,12 +957,6 @@
       "inProgress": "생성 중",
       "completed": "완료",
       "failed": "실패"
-    },
-    "stepNames": {
-      "productDescription": ["제품/아바타", "영상 정보", "대본/음성", "생성"],
-      "avatarMotion": ["아바타/제품", "스토리 모드", "시나리오", "설정", "프레임 생성", "영상 생성"],
-      "productAd": ["제품", "모드", "시나리오", "설정", "첫 씬", "영상 생성"],
-      "step": "단계"
     },
     "alerts": {
       "deleteFailed": "삭제 실패",
@@ -1681,6 +1539,10 @@
       "studyDesc": "책장이 있는 지적인 공간",
       "podcast_studio": "팟캐스트 스튜디오",
       "podcast_studioDesc": "마이크/조명이 있는 전문 공간",
+      "podcast_desk": "팟캐스트 (책상)",
+      "podcast_deskDesc": "마이크 셋업이 있는 책상에서",
+      "podcast_sofa": "팟캐스트 (소파)",
+      "podcast_sofaDesc": "편안한 안락의자/소파에서",
       "studio": "스튜디오",
       "studioDesc": "심플한 단색 배경",
       "office": "사무실",
@@ -1689,34 +1551,46 @@
       "meeting_roomDesc": "프레젠테이션/세미나 분위기",
       "minimal": "미니멀",
       "minimalDesc": "깔끔한 흰색/회색 배경",
+      "lab": "연구실",
+      "labDesc": "과학적 분위기의 실험실",
+      "clinic": "의사 사무실",
+      "clinicDesc": "의료 상담 환경",
+      "lecture_hall": "강의실",
+      "lecture_hallDesc": "교육자 분위기",
+      "broadcast_studio": "방송 스튜디오",
+      "broadcast_studioDesc": "뉴스/인터뷰 스타일",
+      "conference_stage": "컨퍼런스 무대",
+      "conference_stageDesc": "TED/발표 스타일",
       "custom": "직접 입력",
       "customDesc": "원하는 장소를 직접 설명"
     },
     "cameraPresets": {
       "auto": "AI 추천",
       "autoDesc": "영상에 맞는 최적의 구도를 AI가 추천",
-      "closeup": "클로즈업",
-      "closeupDesc": "얼굴 위주의 가까운 샷",
+      "closeup": "얼굴 클로즈업",
+      "closeupDesc": "얼굴 위주 가까운 샷",
       "selfie-high": "셀카 (위에서)",
       "selfie-highDesc": "위에서 아래로 내려다보는 앵글",
-      "selfie-front": "셀카 (정면)",
-      "selfie-frontDesc": "눈높이 정면 샷",
+      "selfie-front": "셀카",
+      "selfie-frontDesc": "폰으로 찍는 셀카 앵글",
       "selfie-side": "셀카 (측면)",
       "selfie-sideDesc": "약간 측면에서",
-      "ugc-closeup": "인플루언서",
-      "ugc-closeupDesc": "상반신에서 얼굴까지 클로즈샷",
-      "ugc-selfie": "UGC 셀카",
-      "ugc-selfieDesc": "폰 셀카 구도",
-      "webcam": "웹캠",
-      "webcamDesc": "일반적인 팟캐스트 스타일",
-      "medium-shot": "미디엄 샷",
-      "medium-shotDesc": "상반신이 보이는 샷",
-      "three-quarter": "3/4 뷰",
-      "three-quarterDesc": "약간 비스듬한 앵글",
+      "pov-closeup": "POV (클로즈업)",
+      "pov-closeupDesc": "폰 없이 얼굴 클로즈업",
+      "pov-upper": "POV (상반신)",
+      "pov-upperDesc": "폰 없이 상반신",
+      "pov-full": "POV (전신)",
+      "pov-fullDesc": "폰 없이 전신",
+      "medium-shot": "상반신",
+      "medium-shotDesc": "가슴부터 얼굴까지",
+      "front": "정면",
+      "frontDesc": "웹캠 스타일 정면 샷",
+      "side": "측면",
+      "sideDesc": "옆에서 촬영하는 앵글",
       "tripod": "삼각대",
       "tripodDesc": "안정적인 정면 샷",
-      "fullbody": "풀바디",
-      "fullbodyDesc": "전신이 보이는 샷",
+      "fullbody": "전신",
+      "fullbodyDesc": "머리부터 발끝까지",
       "presenter": "프레젠터",
       "presenterDesc": "발표자/연사 스타일",
       "custom": "직접 입력",
@@ -1727,18 +1601,18 @@
       "autoDesc": "제품에 맞는 최적의 포즈를 AI가 추천",
       "talking-only": "대화만",
       "talking-onlyDesc": "제품 없이 설명",
-      "showing-product": "제품 보여주기",
-      "showing-productDesc": "카메라를 향해 제품 제시",
-      "holding-product": "제품 들기",
-      "holding-productDesc": "자연스럽게 제품을 들고 있음",
+      "showing-product": "제품 강조",
+      "showing-productDesc": "카메라에 제품을 클로즈업",
+      "holding-product": "제품과 함께",
+      "holding-productDesc": "제품을 들고 대화",
       "using-product": "제품 사용",
       "using-productDesc": "제품 사용 시연",
       "reaction": "리액션",
       "reactionDesc": "제품에 대한 반응",
-      "desk-presenter": "책상에서",
-      "desk-presenterDesc": "책상에서 발표",
-      "casual-chat": "캐주얼 대화",
-      "casual-chatDesc": "자연스러운 대화 스타일",
+      "at-desk": "책상에서",
+      "at-deskDesc": "마이크 앞 책상에 앉아서",
+      "on-sofa": "소파에서",
+      "on-sofaDesc": "1인 소파에 편하게 앉아서",
       "demonstrating": "시연",
       "demonstratingDesc": "기능 시연",
       "presenting": "프레젠터",
@@ -1867,7 +1741,6 @@
     "numImages": "생성 개수",
     "recentAds": "최근 생성된 광고",
     "viewOriginal": "원본 보기",
-    "directUpload": "직접 업로드",
     "options": {
       "background": "배경 스타일",
       "lighting": "조명",
@@ -2705,7 +2578,6 @@
     "maxPhotos": "최대 5장",
     "processing": "처리 중...",
     "newProduct": "새 제품",
-    "imageSpec": "PNG, JPG, WEBP / 최대 5MB / 256~4096px",
     "validation": {
       "enterProductName": "제품 이름을 입력해주세요",
       "selectProductImage": "제품 이미지를 선택해주세요",
