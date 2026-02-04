@@ -89,13 +89,14 @@ function BackgroundSlider({ images, interval = 4000 }: BackgroundSliderProps) {
 
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* 이미지 슬라이드 */}
+      {/* 이미지 슬라이드 - 호버 시 확대 효과 */}
       {hasAnyLoaded && images.map((src, index) => (
         <div
           key={src}
           className={`
             absolute inset-0 bg-cover bg-center
-            transition-opacity duration-1000 ease-in-out
+            transition-all duration-1000 ease-in-out
+            group-hover:scale-110
             ${index === currentIndex && loadedImages.has(src) ? 'opacity-100' : 'opacity-0'}
           `}
           style={{ backgroundImage: `url(${src})` }}
@@ -169,7 +170,8 @@ function VideoSlider({ videos }: VideoSliderProps) {
             onEnded={handleVideoEnded}
             className={`
               absolute inset-0 w-full h-full object-cover
-              transition-opacity duration-500 ease-in-out
+              transition-all duration-500 ease-in-out
+              group-hover:scale-110
               ${isCurrent ? 'opacity-100' : isPrevious ? 'opacity-100' : 'opacity-0'}
             `}
             style={{ zIndex: isCurrent ? 1 : 0 }}
@@ -226,7 +228,7 @@ function AdCreationCard({
       <div className={`absolute inset-0 bg-gradient-to-br ${gradientFrom} via-card to-card -z-10`} />
 
       {/* 호버 시 밝아지는 효과 */}
-      <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-colors duration-300" />
+      <div className="absolute inset-0 z-[15] bg-white/0 group-hover:bg-white/5 transition-colors duration-300" />
 
       {/* 컨텐츠 */}
       <div className="relative z-10 h-full p-4 flex flex-col justify-between">
@@ -257,7 +259,7 @@ function AdCreationCard({
       <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10 group-hover:ring-white/20 transition-[box-shadow] duration-300" />
 
       {/* 호버 시 하단 악센트 라인 */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className={`absolute bottom-0 left-0 right-0 h-1 z-20 bg-gradient-to-r from-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${type === 'image' ? 'via-violet-500' : 'via-rose-500'}`} />
     </button>
   )
 }
