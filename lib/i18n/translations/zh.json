@@ -952,11 +952,38 @@
     "changeMusic": "更换音乐",
     "registerShowcase": "注册展示",
     "status": {
+      "draft": "草稿",
       "pending": "待处理",
       "inQueue": "排队中",
       "inProgress": "生成中",
       "completed": "已完成",
-      "failed": "失败"
+      "failed": "失败",
+      "generatingScripts": "生成脚本中",
+      "generatingImages": "生成图像中",
+      "generatingAudio": "生成音频中",
+      "generatingStory": "生成故事中",
+      "generatingFrames": "生成帧中",
+      "generatingAvatar": "生成头像中",
+      "framesCompleted": "帧完成",
+      "generatingScenario": "生成场景中",
+      "generatingScenes": "生成首场景中",
+      "scenesCompleted": "首场景完成",
+      "generatingVideo": "生成视频中",
+      "generatingSceneVideos": "生成场景视频中"
+    },
+    "categories": {
+      "productDescription": "产品描述",
+      "avatarMotion": "头像动作",
+      "productAd": "产品广告",
+      "productShowcase": "产品展示",
+      "lifestyle": "生活方式",
+      "testimonial": "评价"
+    },
+    "stepNames": {
+      "productDescription": ["产品/头像", "视频信息", "脚本/语音", "生成"],
+      "avatarMotion": ["头像/产品", "故事模式", "场景", "设置", "帧生成", "视频生成"],
+      "productAd": ["产品", "模式", "场景", "设置", "首场景", "视频生成"],
+      "step": "步骤"
     },
     "alerts": {
       "deleteFailed": "删除失败",

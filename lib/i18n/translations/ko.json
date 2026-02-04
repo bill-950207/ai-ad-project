@@ -952,11 +952,38 @@
     "changeMusic": "음악 변경",
     "registerShowcase": "쇼케이스 등록",
     "status": {
+      "draft": "임시저장",
       "pending": "대기 중",
-      "inQueue": "생성 중",
+      "inQueue": "대기열",
       "inProgress": "생성 중",
       "completed": "완료",
-      "failed": "실패"
+      "failed": "실패",
+      "generatingScripts": "대본 생성 중",
+      "generatingImages": "이미지 생성 중",
+      "generatingAudio": "음성 생성 중",
+      "generatingStory": "스토리 생성 중",
+      "generatingFrames": "프레임 생성 중",
+      "generatingAvatar": "아바타 생성 중",
+      "framesCompleted": "프레임 완료",
+      "generatingScenario": "시나리오 생성 중",
+      "generatingScenes": "첫 씬 생성 중",
+      "scenesCompleted": "첫 씬 완료",
+      "generatingVideo": "영상 생성 중",
+      "generatingSceneVideos": "씬 영상 생성 중"
+    },
+    "categories": {
+      "productDescription": "제품 설명",
+      "avatarMotion": "아바타 모션",
+      "productAd": "제품 광고",
+      "productShowcase": "제품 쇼케이스",
+      "lifestyle": "라이프스타일",
+      "testimonial": "후기"
+    },
+    "stepNames": {
+      "productDescription": ["제품/아바타", "영상 정보", "대본/음성", "생성"],
+      "avatarMotion": ["아바타/제품", "스토리 모드", "시나리오", "설정", "프레임 생성", "영상 생성"],
+      "productAd": ["제품", "모드", "시나리오", "설정", "첫 씬", "영상 생성"],
+      "step": "단계"
     },
     "alerts": {
       "deleteFailed": "삭제 실패",

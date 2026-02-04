@@ -952,11 +952,38 @@
     "changeMusic": "Change Music",
     "registerShowcase": "Register Showcase",
     "status": {
+      "draft": "Draft",
       "pending": "Pending",
       "inQueue": "In Queue",
       "inProgress": "Generating",
       "completed": "Completed",
-      "failed": "Failed"
+      "failed": "Failed",
+      "generatingScripts": "Generating Scripts",
+      "generatingImages": "Generating Images",
+      "generatingAudio": "Generating Audio",
+      "generatingStory": "Generating Story",
+      "generatingFrames": "Generating Frames",
+      "generatingAvatar": "Generating Avatar",
+      "framesCompleted": "Frames Completed",
+      "generatingScenario": "Generating Scenario",
+      "generatingScenes": "Generating First Scene",
+      "scenesCompleted": "First Scene Completed",
+      "generatingVideo": "Generating Video",
+      "generatingSceneVideos": "Generating Scene Videos"
+    },
+    "categories": {
+      "productDescription": "Product Description",
+      "avatarMotion": "Avatar Motion",
+      "productAd": "Product Ad",
+      "productShowcase": "Product Showcase",
+      "lifestyle": "Lifestyle",
+      "testimonial": "Testimonial"
+    },
+    "stepNames": {
+      "productDescription": ["Product/Avatar", "Video Info", "Script/Voice", "Generate"],
+      "avatarMotion": ["Avatar/Product", "Story Mode", "Scenario", "Settings", "Frame Gen", "Video Gen"],
+      "productAd": ["Product", "Mode", "Scenario", "Settings", "First Scene", "Video Gen"],
+      "step": "Step"
     },
     "alerts": {
       "deleteFailed": "Delete failed",
