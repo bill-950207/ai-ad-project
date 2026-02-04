@@ -455,15 +455,42 @@ IMPORTANT: All 3 scripts should follow the "${videoTypeStyle.korean}" video styl
   const outfitRecommendationSection = input.requestOutfitRecommendation
     ? `
 === OUTFIT RECOMMENDATION (REQUIRED) ===
-Based on the product and video style, recommend an appropriate outfit for the model.
+Based on the product, video style, and location, recommend an appropriate outfit for the model.
 ${input.avatarDescription ? `Model info: ${input.avatarDescription}` : ''}
 ${input.productImageUrl ? `Product image is provided for reference.` : ''}
+${input.locationPreset ? `Location/Background: ${input.locationPreset}` : ''}
 
 Consider:
 - Product category and target audience
 - Video style (${videoTypeStyle?.korean || 'UGC'})
+- Location/background setting (outfit should match the environment)
 - Overall brand image and mood
 - Natural, authentic appearance that matches the product context
+
+=== OUTFIT EXAMPLES BY CONTEXT ===
+Medical/Health products + Clinic/Lab:
+- "professional white lab coat over light blue button-up shirt with navy slacks" (의료 전문가)
+- "clean white doctor's coat with subtle professional attire underneath" (진료실)
+
+Skincare/Beauty products + Bathroom/Home:
+- "comfortable cream knit sweater with light wash relaxed jeans" (홈 뷰티)
+- "soft pink silk blouse with white wide-leg pants" (여성스러운 스킨케어)
+
+Tech products + Office/Studio:
+- "fitted navy blazer over white crew-neck t-shirt with dark gray chinos" (전문가)
+- "minimalist black turtleneck with tailored charcoal trousers" (프리미엄 테크)
+
+Food/Lifestyle products + Kitchen/Cafe:
+- "casual linen apron over white t-shirt and blue jeans" (요리/주방)
+- "cozy cream cardigan with white top and light brown pants" (따뜻한 카페)
+
+Fashion/Casual products + Living room/Outdoor:
+- "trendy oversized hoodie with slim-fit black joggers" (캐주얼)
+- "stylish denim jacket over graphic tee with ripped jeans" (스트릿)
+
+Conference/Broadcast settings:
+- "tailored charcoal suit with crisp white shirt, no tie for modern look" (컨퍼런스)
+- "elegant blazer with subtle pattern over solid color blouse" (방송)
 
 The outfit should complement the product without overshadowing it.
 Outfit must be described in ENGLISH for image generation.
@@ -471,7 +498,7 @@ Outfit must be described in ENGLISH for image generation.
 Include in your response:
 - "recommendedOutfit.description": Detailed English description (format: "[style] [top] with [bottom] and [optional accessories]")
 - "recommendedOutfit.localizedDescription": Outfit description in ${config_lang.name} for user display
-- "recommendedOutfit.reason": Brief explanation in ${config_lang.name} of why this outfit fits the product/video style
+- "recommendedOutfit.reason": Brief explanation in ${config_lang.name} of why this outfit fits the product/video style/location
 `
     : ''
 

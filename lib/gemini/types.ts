@@ -132,6 +132,8 @@ export interface ProductScriptInput {
   productImageUrl?: string
   /** 비디오 타입 (UGC, 팟캐스트, 전문가) */
   videoType?: VideoType
+  /** 배경/장소 (의상 추천에 활용) */
+  locationPreset?: string
 }
 
 /** 제품 설명 대본 생성 결과 */

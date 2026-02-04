@@ -299,6 +299,8 @@ export async function POST(request: NextRequest) {
       requestOutfitRecommendation: outfitMode === 'ai_recommend',
       avatarDescription: outfitMode === 'ai_recommend' ? avatarDescription : undefined,
       productImageUrl: outfitMode === 'ai_recommend' ? productImageUrl : undefined,
+      // 배경 정보 (의상 추천에 활용)
+      locationPreset: outfitMode === 'ai_recommend' ? locationPreset : undefined,
     })
 
     // 1.5. 배경 AI 추천 (locationPreset === 'auto'인 경우)
