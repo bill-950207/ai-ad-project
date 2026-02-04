@@ -952,11 +952,38 @@
     "changeMusic": "音楽を変更",
     "registerShowcase": "ショーケースに登録",
     "status": {
+      "draft": "下書き",
       "pending": "待機中",
       "inQueue": "キュー待機中",
       "inProgress": "生成中",
       "completed": "完了",
-      "failed": "失敗"
+      "failed": "失敗",
+      "generatingScripts": "スクリプト生成中",
+      "generatingImages": "画像生成中",
+      "generatingAudio": "音声生成中",
+      "generatingStory": "ストーリー生成中",
+      "generatingFrames": "フレーム生成中",
+      "generatingAvatar": "アバター生成中",
+      "framesCompleted": "フレーム完了",
+      "generatingScenario": "シナリオ生成中",
+      "generatingScenes": "最初のシーン生成中",
+      "scenesCompleted": "最初のシーン完了",
+      "generatingVideo": "動画生成中",
+      "generatingSceneVideos": "シーン動画生成中"
+    },
+    "categories": {
+      "productDescription": "製品説明",
+      "avatarMotion": "アバターモーション",
+      "productAd": "製品広告",
+      "productShowcase": "製品ショーケース",
+      "lifestyle": "ライフスタイル",
+      "testimonial": "レビュー"
+    },
+    "stepNames": {
+      "productDescription": ["製品/アバター", "動画情報", "スクリプト/音声", "生成"],
+      "avatarMotion": ["アバター/製品", "ストーリーモード", "シナリオ", "設定", "フレーム生成", "動画生成"],
+      "productAd": ["製品", "モード", "シナリオ", "設定", "最初のシーン", "動画生成"],
+      "step": "ステップ"
     },
     "alerts": {
       "deleteFailed": "削除に失敗しました",
