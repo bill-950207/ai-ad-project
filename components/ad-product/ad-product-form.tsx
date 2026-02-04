@@ -50,6 +50,7 @@ export function AdProductForm() {
     maxPhotos?: string
     processing?: string
     newProduct?: string
+    imageSpec?: string
     validation?: {
       enterProductName?: string
       selectProductImage?: string
