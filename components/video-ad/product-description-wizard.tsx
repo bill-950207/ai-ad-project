@@ -1070,15 +1070,38 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         console.error('AI 아바타 옵션 파싱 오류:', e)
       }
     } else if (draft.avatar_id) {
-      // 기존 아바타/의상 복원 (avatar_image_url이 없어도 avatar_id만 있으면 복원)
-      setSelectedAvatarInfo({
-        type: draft.outfit_id ? 'outfit' : 'avatar',
-        avatarId: draft.avatar_id,
-        avatarName: '',
-        outfitId: draft.outfit_id || undefined,
-        imageUrl: draft.avatar_image_url || '',  // 없으면 빈 문자열
-        displayName: '',
-      })
+      // 기존 아바타/의상 복원 - API에서 상세 정보 가져오기
+      const avatarId = draft.avatar_id
+      const outfitId = draft.outfit_id
+      fetch(`/api/avatars/${avatarId}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.avatar) {
+            if (outfitId) {
+              // 의상 선택된 경우
+              const outfit = data.avatar.outfits?.find((o: { id: string }) => o.id === outfitId)
+              setSelectedAvatarInfo({
+                type: 'outfit',
+                avatarId: avatarId,
+                avatarName: data.avatar.name,
+                outfitId: outfitId,
+                outfitName: outfit?.name,
+                imageUrl: outfit?.result_image_url || data.avatar.image_url || '',
+                displayName: outfit?.name || data.avatar.name,
+              })
+            } else {
+              // 기본 아바타
+              setSelectedAvatarInfo({
+                type: 'avatar',
+                avatarId: avatarId,
+                avatarName: data.avatar.name,
+                imageUrl: data.avatar.image_url || '',
+                displayName: data.avatar.name,
+              })
+            }
+          }
+        })
+        .catch(err => console.error('Failed to load avatar from draft:', err))
     }
 
     // 제품 선택 복원
@@ -1086,6 +1109,26 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       const product = products.find(p => p.id === draft.product_id)
       if (product) {
         setSelectedProduct(product)
+      } else {
+        // products 배열이 아직 로드되지 않았을 수 있으므로 API에서 직접 가져옴
+        fetch(`/api/ad-products/${draft.product_id}`)
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data?.product) {
+              setSelectedProduct({
+                id: data.product.id,
+                name: data.product.name,
+                rembg_image_url: data.product.rembg_image_url,
+                image_url: data.product.image_url,
+                description: data.product.description,
+                selling_points: data.product.selling_points,
+                brand: data.product.brand,
+                price: data.product.price,
+                source_url: data.product.source_url,
+              })
+            }
+          })
+          .catch(err => console.error('Failed to load product from draft:', err))
       }
     }
 
