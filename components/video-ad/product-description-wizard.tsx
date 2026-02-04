@@ -238,10 +238,8 @@ const defaultCameraByVideoType: Record<VideoType, CameraComposition> = {
 type ModelPose =
   // AI 추천
   | 'auto'
-  // 공통
+  // 공통 (제품 관련)
   | 'talking-only' | 'showing-product' | 'holding-product'
-  // Podcast용
-  | 'at-desk' | 'on-sofa'
   // Expert용
   | 'demonstrating' | 'presenting' | 'explaining'
   // 직접 입력
@@ -277,17 +275,6 @@ const modelPoseLabels: Record<ModelPose, ModelPoseInfo> = {
     desc: 'Hold product naturally',
     promptValue: 'naturally holding product at chest level, relaxed authentic pose, product clearly visible',
   },
-  // Podcast용
-  'at-desk': {
-    label: 'At Desk',
-    desc: 'Seated at desk with mic',
-    promptValue: 'seated at desk with microphone setup, professional podcast setting, conversational demeanor',
-  },
-  'on-sofa': {
-    label: 'On Sofa',
-    desc: 'Relaxed on armchair/sofa',
-    promptValue: 'seated comfortably on armchair or sofa, casual relaxed pose, intimate conversation setting',
-  },
   // Expert용
   demonstrating: {
     label: 'Demonstrate',
@@ -315,14 +302,14 @@ const modelPoseLabels: Record<ModelPose, ModelPoseInfo> = {
 // 영상 스타일별 모델 포즈 옵션
 const modelPosesByVideoType: Record<VideoType, ModelPose[]> = {
   UGC: ['auto', 'holding-product', 'showing-product', 'talking-only', 'custom'],
-  podcast: ['auto', 'at-desk', 'on-sofa', 'custom'],
+  podcast: ['auto', 'holding-product', 'showing-product', 'talking-only', 'custom'],
   expert: ['auto', 'presenting', 'explaining', 'demonstrating', 'showing-product', 'talking-only', 'custom'],
 }
 
 // 영상 스타일별 기본 모델 포즈
 const defaultPoseByVideoType: Record<VideoType, ModelPose> = {
   UGC: 'auto',
-  podcast: 'at-desk',
+  podcast: 'auto',
   expert: 'presenting',
 }
 
@@ -388,7 +375,7 @@ type LocationPreset =
   // UGC용 (일상적, 자연스러운)
   | 'living_room' | 'bedroom' | 'cafe' | 'outdoor' | 'bathroom'
   // Podcast용 (전문적이면서 캐주얼)
-  | 'home_office' | 'study' | 'podcast_studio'
+  | 'home_office' | 'study' | 'podcast_studio' | 'podcast_desk' | 'podcast_sofa'
   // Expert용 (권위적, 전문적)
   | 'studio' | 'office' | 'meeting_room' | 'minimal'
   // 공통
@@ -449,6 +436,16 @@ const locationPresetLabels: Record<LocationPreset, LocationPresetInfo> = {
     desc: 'Professional space with mic/lighting',
     promptValue: 'professional podcast studio setup with acoustic panels, warm ambient lighting, content creator atmosphere',
   },
+  podcast_desk: {
+    label: 'Podcast (Desk)',
+    desc: 'Seated at desk with mic setup',
+    promptValue: 'seated at desk with microphone setup, professional podcast setting, conversational demeanor, desk visible',
+  },
+  podcast_sofa: {
+    label: 'Podcast (Sofa)',
+    desc: 'Relaxed on armchair/sofa',
+    promptValue: 'seated comfortably on armchair or sofa, casual relaxed podcast pose, intimate conversation setting',
+  },
   // Expert
   studio: {
     label: 'Studio',
@@ -481,7 +478,7 @@ const locationPresetLabels: Record<LocationPreset, LocationPresetInfo> = {
 // 영상 스타일별 추천 장소 프리셋
 const locationPresetsByVideoType: Record<VideoType, LocationPreset[]> = {
   UGC: ['auto', 'living_room', 'bedroom', 'cafe', 'outdoor', 'bathroom', 'custom'],
-  podcast: ['auto', 'home_office', 'study', 'podcast_studio', 'living_room', 'custom'],
+  podcast: ['auto', 'podcast_desk', 'podcast_sofa', 'home_office', 'podcast_studio', 'custom'],
   expert: ['auto', 'studio', 'office', 'meeting_room', 'minimal', 'custom'],
 }
 
