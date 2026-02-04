@@ -12,7 +12,7 @@ import { useState, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
 import { useCredits } from '@/contexts/credit-context'
-import { Upload, X, Loader2, Plus, Minus, Link as LinkIcon, Edit3, ImagePlus } from 'lucide-react'
+import { Upload, X, Loader2, Plus, Minus, Link as LinkIcon, Edit3 } from 'lucide-react'
 import { AdProductScanner } from './ad-product-scanner'
 import { AdCreationHeader } from '@/components/ui/ad-creation-header'
 import { SlotLimitModal } from '@/components/ui/slot-limit-modal'
@@ -31,7 +31,6 @@ export function AdProductForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const additionalPhotosRef = useRef<HTMLInputElement>(null)
 
   // 번역 타입
   type AdProductFormT = {
@@ -90,8 +89,6 @@ export function AdProductForm() {
   // 제품 정보 필드
   const [description, setDescription] = useState('')
   const [sellingPoints, setSellingPoints] = useState<string[]>([''])
-  const [additionalPhotos, setAdditionalPhotos] = useState<string[]>([])
-  const [additionalPhotoFiles, setAdditionalPhotoFiles] = useState<File[]>([])
 
   // 스캐너 모드 상태
   const [scannerMode, setScannerMode] = useState(false)
@@ -215,29 +212,6 @@ export function AdProductForm() {
     const updated = [...sellingPoints]
     updated[index] = value
     setSellingPoints(updated)
-  }
-
-  // 추가 사진 관리
-  const handleAdditionalPhotosChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    const remaining = 5 - additionalPhotoFiles.length
-    const filesToAdd = files.slice(0, remaining)
-
-    for (const file of filesToAdd) {
-      const validationError = await validateImage(file)
-      if (validationError) {
-        setError(validationError)
-        return
-      }
-    }
-
-    setAdditionalPhotoFiles([...additionalPhotoFiles, ...filesToAdd])
-    setError(null)
-  }
-
-  const removeAdditionalPhoto = (index: number) => {
-    setAdditionalPhotoFiles(additionalPhotoFiles.filter((_, i) => i !== index))
-    setAdditionalPhotos(additionalPhotos.filter((_, i) => i !== index))
   }
 
   // URL에서 정보 추출
@@ -566,46 +540,6 @@ export function AdProductForm() {
               </button>
             )}
           </div>
-        </div>
-
-        {/* 추가 사진 */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            {formT?.additionalPhotos || 'Additional Photos'} <span className="text-muted-foreground text-xs">({formT?.maxPhotos || 'Max 5'})</span>
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {additionalPhotoFiles.map((file, index) => (
-              <div key={index} className="relative w-20 h-20 rounded-lg overflow-hidden">
-                <img
-                  src={URL.createObjectURL(file)}
-                  alt={`추가 사진 ${index + 1}`}
-                  className="w-full h-full object-cover"
-                />
-                <button
-                  onClick={() => removeAdditionalPhoto(index)}
-                  className="absolute top-1 right-1 p-0.5 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
-                >
-                  <X className="w-3 h-3 text-white" />
-                </button>
-              </div>
-            ))}
-            {additionalPhotoFiles.length < 5 && (
-              <button
-                onClick={() => additionalPhotosRef.current?.click()}
-                className="w-20 h-20 border-2 border-dashed border-border rounded-lg flex items-center justify-center hover:border-primary/50 transition-colors"
-              >
-                <ImagePlus className="w-6 h-6 text-muted-foreground" />
-              </button>
-            )}
-          </div>
-          <input
-            ref={additionalPhotosRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            multiple
-            onChange={handleAdditionalPhotosChange}
-            className="hidden"
-          />
         </div>
 
         {/* 에러 메시지 */}
