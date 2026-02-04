@@ -242,7 +242,7 @@ const cameraCompositionLabels: Record<CameraComposition, CameraCompositionInfo> 
 
 // 영상 스타일별 카메라 구도 옵션
 const cameraCompositionsByVideoType: Record<VideoType, CameraComposition[]> = {
-  UGC: ['auto', 'selfie-front', 'selfie-high', 'selfie-side', 'ugc-selfie', 'ugc-closeup', 'custom'],
+  UGC: ['auto', 'closeup', 'medium-shot', 'fullbody', 'custom'],
   podcast: ['auto', 'webcam', 'medium-shot', 'closeup', 'three-quarter', 'custom'],
   expert: ['auto', 'tripod', 'medium-shot', 'closeup', 'fullbody', 'presenter', 'custom'],
 }
