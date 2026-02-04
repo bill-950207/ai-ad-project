@@ -2242,8 +2242,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               <ArrowLeft className="w-4 h-4 text-muted-foreground" />
             </Link>
             <div className="min-w-0">
-              <h1 className="text-lg font-bold text-foreground">제품 설명 영상 만들기</h1>
-              <p className="text-xs text-muted-foreground">아바타가 음성으로 제품을 설명하는 영상</p>
+              <h1 className="text-lg font-bold text-foreground">{t.productDescWizard?.pageTitle || '제품 설명 영상 만들기'}</h1>
+              <p className="text-xs text-muted-foreground">{t.productDescWizard?.pageSubtitle || '아바타가 음성으로 제품을 설명하는 영상'}</p>
             </div>
 
             {/* 스페이서 */}
@@ -2396,15 +2396,15 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   <div>
                     <span className="text-foreground block">{selectedAvatarInfo.displayName}</span>
                     {selectedAvatarInfo.type === 'outfit' && (
-                      <span className="text-xs text-primary">의상 교체</span>
+                      <span className="text-xs text-primary">{t.productDescWizard?.outfitChange || '의상 교체'}</span>
                     )}
                     {selectedAvatarInfo.type === 'ai-generated' && (
-                      <span className="text-xs text-purple-500">AI 자동 생성</span>
+                      <span className="text-xs text-purple-500">{t.productDescWizard?.aiGenerated || 'AI 자동 생성'}</span>
                     )}
                   </div>
                 </div>
               ) : (
-                <span className="text-muted-foreground">아바타를 선택하세요</span>
+                <span className="text-muted-foreground">{t.productDescWizard?.selectAvatar || '아바타를 선택하세요'}</span>
               )}
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
             </button>
@@ -2453,7 +2453,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                     <span className="text-foreground">{selectedProduct.name}</span>
                   </div>
                 ) : (
-                  <span className="text-muted-foreground">제품을 선택하세요</span>
+                  <span className="text-muted-foreground">{t.productDescWizard?.selectProduct || '제품을 선택하세요'}</span>
                 )}
                 <ChevronDown className="w-4 h-4 text-muted-foreground" />
               </button>
@@ -2462,7 +2462,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                 <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                   {products.length === 0 ? (
                     <div className="p-4 text-center">
-                      <p className="text-muted-foreground text-sm mb-3">등록된 제품이 없습니다</p>
+                      <p className="text-muted-foreground text-sm mb-3">{t.productDescWizard?.noProducts || '등록된 제품이 없습니다'}</p>
                       <button
                         onClick={() => {
                           setShowProductDropdown(false)
@@ -2471,7 +2471,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                         className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
                       >
                         <Plus className="w-3 h-3" />
-                        제품 등록하기
+                        {t.productDescWizard?.newProduct || '새 제품 등록'}
                       </button>
                     </div>
                   ) : (
@@ -2487,7 +2487,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                           <Plus className="w-5 h-5" />
                         </div>
-                        <span className="font-medium">새 제품 등록</span>
+                        <span className="font-medium">{t.productDescWizard?.newProduct || '새 제품 등록'}</span>
                       </button>
                       {products.map((product) => (
                         <button
@@ -2530,13 +2530,13 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   </div>
                   <div>
                     <h4 className="font-medium text-foreground text-sm">{selectedProduct.name}</h4>
-                    <p className="text-xs text-muted-foreground">제품 정보를 확인하고 편집하세요</p>
+                    <p className="text-xs text-muted-foreground">{t.productDescWizard?.productInfoHint || '제품 정보를 확인하고 편집하세요'}</p>
                   </div>
                 </div>
 
                 {/* 설명 */}
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1">제품 설명</label>
+                  <label className="block text-xs text-muted-foreground mb-1">{t.productDescWizard?.productDescription || '제품 설명'}</label>
                   <textarea
                     value={editableDescription}
                     onChange={(e) => setEditableDescription(e.target.value)}
@@ -2592,7 +2592,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
             disabled={!canProceedStep1}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            다음
+            {t.productDescWizard?.buttons?.next || t.common?.next || '다음'}
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
@@ -2602,9 +2602,9 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       {step === 2 && (
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="text-center mb-8">
-            <h2 className="text-lg font-semibold text-foreground">영상 정보를 입력하세요</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t.productDescWizard?.step2Title || '영상 정보를 입력하세요'}</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              AI가 이 정보를 바탕으로 대본을 생성합니다
+              {t.productDescWizard?.step2Subtitle || 'AI가 이 정보를 바탕으로 대본을 생성합니다'}
             </p>
           </div>
 
@@ -2640,9 +2640,9 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <Clock className="w-4 h-4 inline mr-2" />
-              영상 길이
+              {t.productDescWizard?.videoDuration || '영상 길이'}
               <p className="text-xs text-muted-foreground mt-2">
-              대본에 따라 길이가 달라질 수 있습니다
+              {t.productDescWizard?.videoDurationHint || '대본에 따라 길이가 달라질 수 있습니다'}
             </p>
             </label>
             <div className="grid grid-cols-3 gap-3">
@@ -2693,7 +2693,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <Sparkles className="w-4 h-4 inline mr-2" />
-              영상 스타일
+              {t.productDescWizard?.videoStyle || '영상 스타일'}
             </label>
             <div className="grid grid-cols-3 gap-3">
               {videoTypeOptions.map((type) => {
@@ -2731,8 +2731,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <MapPin className="w-4 h-4 inline mr-2" />
-              배경/장소
-              <span className="text-xs text-muted-foreground ml-2">(선택 사항)</span>
+              {t.productDescWizard?.location || '배경/장소'}
             </label>
 
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -2787,8 +2786,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <Camera className="w-4 h-4 inline mr-2" />
-              카메라 구도
-              <span className="text-xs text-muted-foreground ml-2">(선택 사항)</span>
+              {t.productDescWizard?.cameraComposition || '카메라 구도'}
             </label>
 
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -2843,8 +2841,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <User className="w-4 h-4 inline mr-2" />
-              모델 포즈
-              <span className="text-xs text-muted-foreground ml-2">(선택 사항)</span>
+              {t.productDescWizard?.modelPose || '모델 포즈'}
             </label>
 
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -2899,8 +2896,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <Shirt className="w-4 h-4 inline mr-2" />
-              의상 설정
-              <span className="text-xs text-muted-foreground ml-2">(선택 사항)</span>
+              {t.productDescWizard?.outfit || '의상 설정'}
             </label>
 
             {/* 의상 모드 선택 */}
@@ -2921,7 +2917,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                       : 'border-border text-muted-foreground hover:border-primary/50'
                   }`}
                 >
-                  기존 의상 유지
+                  {t.productDescWizard?.outfitModes?.keepOriginal || '기존 의상 유지'}
                 </button>
               )}
               <button
@@ -2939,7 +2935,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                AI 추천
+                {t.productDescWizard?.outfitModes?.aiRecommend || 'AI 추천'}
               </button>
               <button
                 type="button"
@@ -2951,7 +2947,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                     : 'border-border text-muted-foreground hover:border-primary/50'
                 }`}
               >
-                스타일 선택
+                {t.productDescWizard?.outfitModes?.presetSelect || '스타일 선택'}
               </button>
               <button
                 type="button"
@@ -2963,19 +2959,10 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                     : 'border-border text-muted-foreground hover:border-primary/50'
                 }`}
               >
-                직접 입력
+                {t.productDescWizard?.outfitModes?.customInput || '직접 입력'}
               </button>
             </div>
 
-            {/* AI 추천 설명 */}
-            {outfitMode === 'ai_recommend' && (
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-4">
-                <p className="text-sm text-foreground flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  대본 생성 시 AI가 제품과 아바타에 어울리는 의상을 자동으로 추천합니다.
-                </p>
-              </div>
-            )}
 
             {/* 프리셋 선택 */}
             {outfitMode === 'preset' && (
@@ -3029,7 +3016,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              이전
+              {t.productDescWizard?.buttons?.prev || t.common?.prev || '이전'}
             </button>
             <button
               onClick={() => generateScriptsAndImage(false)}
@@ -3039,16 +3026,16 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               {isGeneratingScripts ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  생성 중...
+                  {t.productDescWizard?.buttons?.generating || '생성 중...'}
                 </>
               ) : hasGeneratedContent ? (
                 <>
-                  생성된 대본 확인
+                  {t.productDescWizard?.buttons?.viewGeneratedScript || '생성된 대본 확인'}
                   <ArrowRight className="w-4 h-4" />
                 </>
               ) : (
                 <>
-                  대본 생성하기 (1 크레딧)
+                  {t.productDescWizard?.buttons?.generateScript || '대본 생성하기'} (1 {t.productDescWizard?.credits || t.common?.credits || '크레딧'})
                   <Sparkles className="w-4 h-4" />
                 </>
               )}
@@ -3065,8 +3052,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
             <div className="max-w-2xl mx-auto">
               <div className="bg-card border border-border rounded-xl p-8 flex flex-col items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
-                <p className="text-foreground font-medium">대본과 이미지를 생성하고 있습니다...</p>
-                <p className="text-sm text-muted-foreground mt-1">잠시만 기다려주세요</p>
+                <p className="text-foreground font-medium">{t.productDescWizard?.loading?.generatingScriptsAndImages || '대본과 이미지를 생성하고 있습니다...'}</p>
+                <p className="text-sm text-muted-foreground mt-1">{t.productDescWizard?.loading?.pleaseWait || t.common?.pleaseWait || '잠시만 기다려주세요'}</p>
               </div>
             </div>
           ) : (
@@ -3075,9 +3062,9 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               <div className="bg-card border border-border rounded-xl p-4">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-foreground">첫 프레임 이미지 선택</h2>
+                    <h2 className="text-lg font-semibold text-foreground">{t.productDescWizard?.step3?.title || '첫 프레임 이미지 선택'}</h2>
                     <p className="text-sm text-muted-foreground mt-1">
-                      2개의 이미지 중 마음에 드는 것을 선택하세요
+                      {t.productDescWizard?.step3?.subtitle || '2개의 이미지 중 마음에 드는 것을 선택하세요'}
                     </p>
                   </div>
                   <button
@@ -3086,7 +3073,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                     className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <RefreshCw className={`w-4 h-4 ${isLoadingImages ? 'animate-spin' : ''}`} />
-                    {isLoadingImages ? '이미지 생성 중...' : '다시 생성'}
+                    {isLoadingImages ? (t.productDescWizard?.step3?.regenerating || '이미지 생성 중...') : (t.productDescWizard?.step3?.regenerate || '다시 생성')}
                   </button>
                 </div>
 
@@ -3098,10 +3085,10 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                         <div key={index} className="relative">
                           <div className="w-[180px] aspect-[2/3] rounded-lg overflow-hidden border-2 border-border bg-secondary/30 animate-pulse flex flex-col items-center justify-center gap-3">
                             <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                            <p className="text-muted-foreground text-sm">이미지 생성 중...</p>
+                            <p className="text-muted-foreground text-sm">{t.productDescWizard?.step3?.generating || '이미지 생성 중...'}</p>
                           </div>
                           <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 rounded text-white text-xs">
-                            옵션 {index + 1}
+                            {t.productDescWizard?.step3?.option || '옵션'} {index + 1}
                           </div>
                         </div>
                       ))}
@@ -3123,7 +3110,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                         >
                           <img
                             src={url}
-                            alt={`첫 프레임 옵션 ${index + 1}`}
+                            alt={`${t.productDescWizard?.firstFrame || 'First Frame'} ${t.productDescWizard?.step3?.option || '옵션'} ${index + 1}`}
                             className="w-full h-full object-cover"
                           />
                           {selectedFirstFrameIndex === index && (
@@ -3132,7 +3119,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                             </div>
                           )}
                           <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 rounded text-white text-xs">
-                            옵션 {index + 1}
+                            {t.productDescWizard?.step3?.option || '옵션'} {index + 1}
                           </div>
                         </button>
                         {/* 크게 보기 버튼 */}
@@ -3169,7 +3156,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                     </div>
                   ) : (
                     <div className="aspect-[2/3] w-[180px] rounded-lg bg-secondary/30 flex items-center justify-center">
-                      <p className="text-muted-foreground text-sm text-center px-2">이미지가 생성되면 여기에 표시됩니다</p>
+                      <p className="text-muted-foreground text-sm text-center px-2">{t.productDescWizard?.imageWillShowHere || '이미지가 생성되면 여기에 표시됩니다'}</p>
                     </div>
                   )}
                 </div>
@@ -3180,7 +3167,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                 {/* 왼쪽: 대본 선택/편집 */}
                 <div className="space-y-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-foreground">대본 선택</h2>
+                    <h2 className="text-lg font-semibold text-foreground">{t.productDescWizard?.scriptSelection || '대본 선택'}</h2>
                     <p className="text-sm text-muted-foreground mt-1">
                       3가지 스타일 중 하나를 선택하거나 직접 편집하세요
                     </p>
@@ -3241,7 +3228,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                 {/* 오른쪽: 음성 선택 */}
                 <div className="space-y-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-foreground">음성 선택</h2>
+                    <h2 className="text-lg font-semibold text-foreground">{t.productDescWizard?.voiceSelection || '음성 선택'}</h2>
                     <p className="text-sm text-muted-foreground mt-1">
                       대본을 읽어줄 AI 음성을 선택하세요
                     </p>
@@ -3321,7 +3308,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  이전
+                  {t.productDescWizard?.buttons?.prev || t.common?.prev || '이전'}
                 </button>
                 <button
                   onClick={generateVideo}
@@ -3331,11 +3318,11 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   {isLoadingImages ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      이미지 로딩 중...
+                      {t.productDescWizard?.buttons?.loadingImage || '이미지 로딩 중...'}
                     </>
                   ) : (
                     <>
-                      영상 생성하기 ({PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST[resolution]} 크레딧)
+                      {t.productDescWizard?.buttons?.generateVideo || '영상 생성하기'} ({PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST[resolution]} {t.productDescWizard?.credits || t.common?.credits || '크레딧'})
                       <Play className="w-4 h-4" />
                     </>
                   )}
@@ -3352,7 +3339,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           <div className="bg-card border border-border rounded-xl p-8 text-center">
             <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
             <h2 className="text-lg font-semibold text-foreground mb-2">
-              {isGeneratingAudio ? '음성을 생성하고 있습니다...' : `영상을 생성하고 있습니다 (${Math.floor(generationProgress)}%)`}
+              {isGeneratingAudio ? (t.productDescWizard?.step4?.generatingAudio || '음성을 생성하고 있습니다...') : `${t.productDescWizard?.step4?.generatingVideo || '영상을 생성하고 있습니다'} (${Math.floor(generationProgress)}%)`}
             </h2>
             <p className="text-muted-foreground mb-6">{generationStatus}</p>
 
@@ -3371,7 +3358,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   </div>
                 </div>
                 {generationProgress >= 99 && (
-                  <p className="text-xs text-muted-foreground mt-2">거의 완료되었습니다. 잠시만 기다려주세요...</p>
+                  <p className="text-xs text-muted-foreground mt-2">{t.productDescWizard?.step4?.almostDone || '거의 완료되었습니다. 잠시만 기다려주세요...'}</p>
                 )}
               </div>
             )}
@@ -3380,29 +3367,29 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
             <div className="bg-secondary/30 rounded-lg p-4 space-y-3">
               <div className="flex items-center gap-3">
                 <Check className="w-5 h-5 text-green-500" />
-                <span className="text-sm text-foreground">대본 생성 완료</span>
+                <span className="text-sm text-foreground">{t.productDescWizard?.step4?.scriptComplete || '대본 생성 완료'}</span>
               </div>
               <div className="flex items-center gap-3">
                 <Check className="w-5 h-5 text-green-500" />
-                <span className="text-sm text-foreground">첫 프레임 이미지 생성 완료</span>
+                <span className="text-sm text-foreground">{t.productDescWizard?.step4?.imageComplete || '첫 프레임 이미지 생성 완료'}</span>
               </div>
               <div className="flex items-center gap-3">
                 {isGeneratingAudio ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                    <span className="text-sm text-foreground">음성 생성 중...</span>
+                    <span className="text-sm text-foreground">{t.productDescWizard?.step4?.audioGenerating || '음성 생성 중...'}</span>
                   </>
                 ) : (
                   <>
                     <Check className="w-5 h-5 text-green-500" />
-                    <span className="text-sm text-foreground">음성 생성 완료</span>
+                    <span className="text-sm text-foreground">{t.productDescWizard?.step4?.audioComplete || '음성 생성 완료'}</span>
                   </>
                 )}
               </div>
               {!isGeneratingAudio && (
                 <div className="flex items-center gap-3">
                   <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                  <span className="text-sm text-foreground">영상 생성 중... ({Math.floor(generationProgress)}%)</span>
+                  <span className="text-sm text-foreground">{t.productDescWizard?.step4?.videoGenerating || '영상 생성 중...'} ({Math.floor(generationProgress)}%)</span>
                 </div>
               )}
             </div>
@@ -3427,7 +3414,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         onClose={() => setShowInsufficientCreditsModal(false)}
         requiredCredits={PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST[resolution]}
         availableCredits={credits ?? 0}
-        featureName="제품 설명 영상 생성"
+        featureName={t.productDescWizard?.featureNames?.videoGeneration || '제품 설명 영상 생성'}
       />
 
       {/* 크레딧 부족 모달 (키프레임 생성용) */}
@@ -3436,7 +3423,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         onClose={() => setShowKeyframeCreditsModal(false)}
         requiredCredits={1}
         availableCredits={credits ?? 0}
-        featureName="키프레임 이미지 생성"
+        featureName={t.productDescWizard?.featureNames?.keyframeGeneration || '키프레임 이미지 생성'}
       />
 
       {/* 재생성 확인 모달 */}
@@ -3444,17 +3431,17 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         <div className="fixed inset-0 z-50 !m-0 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowRegenerateConfirmModal(false)} />
           <div className="relative bg-card border border-border rounded-xl p-6 max-w-sm mx-4 shadow-xl">
-            <h3 className="text-lg font-semibold text-foreground mb-2">대본 및 이미지 재생성</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">{t.productDescWizard?.regenerateModal?.title || '대본 및 이미지 재생성'}</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              다시 생성하면 기존 대본과 이미지가 새로운 내용으로 대체됩니다.
+              {t.productDescWizard?.regenerateModal?.message || '다시 생성하면 기존 대본과 이미지가 새로운 내용으로 대체됩니다.'}
               <br />
-              <span className="text-primary font-medium">1 크레딧</span>이 사용됩니다.
+              <span className="text-primary font-medium">1 {t.productDescWizard?.credits || t.common?.credits || '크레딧'}</span>{t.productDescWizard?.regenerateModal?.creditUsage || '이 사용됩니다.'}
             </p>
             {/* 크레딧 부족 경고 */}
             {(credits ?? 0) < 1 && (
               <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4">
                 <p className="text-sm text-red-500 font-medium">
-                  크레딧이 부족합니다. (보유: {credits ?? 0})
+                  {t.productDescWizard?.regenerateModal?.insufficientCredits || '크레딧이 부족합니다.'} ({t.productDescWizard?.regenerateModal?.balance || '보유'}: {credits ?? 0})
                 </p>
               </div>
             )}
@@ -3463,7 +3450,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                 onClick={() => setShowRegenerateConfirmModal(false)}
                 className="flex-1 px-4 py-2 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
               >
-                취소
+                {t.common?.cancel || '취소'}
               </button>
               {(credits ?? 0) < 1 ? (
                 <button
@@ -3473,7 +3460,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   }}
                   className="flex-1 px-4 py-2 bg-gradient-to-r from-primary to-purple-500 text-white rounded-lg font-medium hover:opacity-90 transition-colors"
                 >
-                  업그레이드
+                  {t.modal?.insufficientCredits?.upgrade || '업그레이드'}
                 </button>
               ) : (
                 <button
@@ -3483,7 +3470,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   }}
                   className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
                 >
-                  재생성
+                  {t.productDescWizard?.regenerateModal?.regenerate || '재생성'}
                 </button>
               )}
             </div>

@@ -1440,14 +1440,108 @@
     }
   },
   "productDescWizard": {
+    "pageTitle": "Create Product Description Video",
+    "pageSubtitle": "Avatar describes product with voice",
     "loadingDraft": "Loading saved data...",
     "placeholders": {
       "productDescription": "Product description...",
       "sellingPoint": "Product advantages or features",
       "locationDescription": "Describe your desired location... (e.g., a bright living room with sunlight)",
-      "outfitDescription": "Describe your desired outfit... (e.g., white linen shirt and beige slacks)"
+      "outfitDescription": "Describe your desired outfit... (e.g., white linen shirt and beige slacks)",
+      "cameraComposition": "e.g., 45-degree angle showing face and upper body",
+      "modelPose": "e.g., holding product with both hands and smiling"
     },
-    "firstFrame": "First Frame"
+    "firstFrame": "First Frame",
+    "aiGenerated": "AI Generated",
+    "outfitChange": "Outfit Change",
+    "selectAvatar": "Select an avatar",
+    "selectProduct": "Select a product",
+    "avatarSelect": "Select Avatar",
+    "productSelect": "Select Product",
+    "noProducts": "No products registered",
+    "newProduct": "Register New Product",
+    "productInfoHint": "Review and edit product information",
+    "productDescription": "Product Description",
+    "imageWillShowHere": "Image will appear here when generated",
+    "scriptSelection": "Select Script",
+    "voiceSelection": "Select Voice",
+    "regenerateModal": {
+      "title": "Regenerate Script and Image",
+      "message": "Regenerating will replace the existing script and image with new content.",
+      "creditUsage": "will be used.",
+      "insufficientCredits": "Insufficient credits.",
+      "balance": "Balance",
+      "regenerate": "Regenerate"
+    },
+    "step2Title": "Enter video information",
+    "step2Subtitle": "AI will generate scripts based on this information",
+    "videoDuration": "Video Duration",
+    "videoDurationHint": "Duration may vary based on the script",
+    "videoStyle": "Video Style",
+    "location": "Background/Location",
+    "cameraComposition": "Camera Composition",
+    "modelPose": "Model Pose",
+    "outfit": "Outfit Settings",
+    "outfitModes": {
+      "keepOriginal": "Keep Original",
+      "aiRecommend": "AI Recommend",
+      "presetSelect": "Select Style",
+      "customInput": "Custom Input"
+    },
+    "buttons": {
+      "prev": "Previous",
+      "next": "Next",
+      "generateScript": "Generate Script",
+      "generating": "Generating...",
+      "viewGeneratedScript": "View Generated Script",
+      "generateVideo": "Generate Video",
+      "loadingImage": "Loading Image..."
+    },
+    "credits": "credits",
+    "step3": {
+      "title": "Select First Frame Image",
+      "subtitle": "Choose your favorite from 2 images",
+      "regenerate": "Regenerate",
+      "regenerating": "Generating image...",
+      "generating": "Generating image...",
+      "option": "Option"
+    },
+    "step4": {
+      "generatingAudio": "Generating audio...",
+      "generatingVideo": "Generating video",
+      "almostDone": "Almost done. Please wait...",
+      "scriptComplete": "Script generation complete",
+      "imageComplete": "First frame image generation complete",
+      "audioGenerating": "Generating audio...",
+      "audioComplete": "Audio generation complete",
+      "videoGenerating": "Generating video..."
+    },
+    "loading": {
+      "generatingScriptsAndImages": "Generating scripts and images...",
+      "pleaseWait": "Please wait"
+    },
+    "locationPresets": {
+      "auto": "AI Recommend",
+      "autoDesc": "AI recommends the best location for your product",
+      "custom": "Custom",
+      "customDesc": "Describe your own location"
+    },
+    "cameraPresets": {
+      "auto": "AI Recommend",
+      "autoDesc": "AI recommends the best composition for your video",
+      "custom": "Custom",
+      "customDesc": "Describe your own camera angle"
+    },
+    "posePresets": {
+      "auto": "AI Recommend",
+      "autoDesc": "AI recommends the best pose for your product",
+      "custom": "Custom",
+      "customDesc": "Describe your own pose"
+    },
+    "featureNames": {
+      "videoGeneration": "Product description video generation",
+      "keyframeGeneration": "Keyframe image generation"
+    }
   },
   "imageAdDetail": {
     "title": "Image Ad Details",

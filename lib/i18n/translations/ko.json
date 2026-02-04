@@ -1440,14 +1440,108 @@
     }
   },
   "productDescWizard": {
+    "pageTitle": "제품 설명 영상 만들기",
+    "pageSubtitle": "아바타가 음성으로 제품을 설명하는 영상",
     "loadingDraft": "임시 저장된 데이터를 불러오는 중...",
     "placeholders": {
       "productDescription": "제품에 대한 설명...",
       "sellingPoint": "제품의 장점이나 특징",
       "locationDescription": "원하는 장소를 설명해주세요... (예: 햇살이 들어오는 밝은 거실)",
-      "outfitDescription": "원하는 의상을 설명해주세요... (예: 흰색 린넨 셔츠와 베이지 슬랙스)"
+      "outfitDescription": "원하는 의상을 설명해주세요... (예: 흰색 린넨 셔츠와 베이지 슬랙스)",
+      "cameraComposition": "예: 45도 각도에서 얼굴과 상반신이 보이도록",
+      "modelPose": "예: 제품을 두 손으로 들고 미소 짓는 포즈"
     },
-    "firstFrame": "첫 프레임"
+    "firstFrame": "첫 프레임",
+    "aiGenerated": "AI 자동 생성",
+    "outfitChange": "의상 교체",
+    "selectAvatar": "아바타를 선택하세요",
+    "selectProduct": "제품을 선택하세요",
+    "avatarSelect": "아바타 선택",
+    "productSelect": "제품 선택",
+    "noProducts": "등록된 제품이 없습니다",
+    "newProduct": "새 제품 등록",
+    "productInfoHint": "제품 정보를 확인하고 편집하세요",
+    "productDescription": "제품 설명",
+    "imageWillShowHere": "이미지가 생성되면 여기에 표시됩니다",
+    "scriptSelection": "대본 선택",
+    "voiceSelection": "음성 선택",
+    "regenerateModal": {
+      "title": "대본 및 이미지 재생성",
+      "message": "다시 생성하면 기존 대본과 이미지가 새로운 내용으로 대체됩니다.",
+      "creditUsage": "이 사용됩니다.",
+      "insufficientCredits": "크레딧이 부족합니다.",
+      "balance": "보유",
+      "regenerate": "다시 생성"
+    },
+    "step2Title": "영상 정보를 입력하세요",
+    "step2Subtitle": "AI가 이 정보를 바탕으로 대본을 생성합니다",
+    "videoDuration": "영상 길이",
+    "videoDurationHint": "대본에 따라 길이가 달라질 수 있습니다",
+    "videoStyle": "영상 스타일",
+    "location": "배경/장소",
+    "cameraComposition": "카메라 구도",
+    "modelPose": "모델 포즈",
+    "outfit": "의상 설정",
+    "outfitModes": {
+      "keepOriginal": "기존 의상 유지",
+      "aiRecommend": "AI 추천",
+      "presetSelect": "스타일 선택",
+      "customInput": "직접 입력"
+    },
+    "buttons": {
+      "prev": "이전",
+      "next": "다음",
+      "generateScript": "대본 생성하기",
+      "generating": "생성 중...",
+      "viewGeneratedScript": "생성된 대본 확인",
+      "generateVideo": "영상 생성하기",
+      "loadingImage": "이미지 로딩 중..."
+    },
+    "credits": "크레딧",
+    "step3": {
+      "title": "첫 프레임 이미지 선택",
+      "subtitle": "2개의 이미지 중 마음에 드는 것을 선택하세요",
+      "regenerate": "다시 생성",
+      "regenerating": "이미지 생성 중...",
+      "generating": "이미지 생성 중...",
+      "option": "옵션"
+    },
+    "step4": {
+      "generatingAudio": "음성을 생성하고 있습니다...",
+      "generatingVideo": "영상을 생성하고 있습니다",
+      "almostDone": "거의 완료되었습니다. 잠시만 기다려주세요...",
+      "scriptComplete": "대본 생성 완료",
+      "imageComplete": "첫 프레임 이미지 생성 완료",
+      "audioGenerating": "음성 생성 중...",
+      "audioComplete": "음성 생성 완료",
+      "videoGenerating": "영상 생성 중..."
+    },
+    "loading": {
+      "generatingScriptsAndImages": "대본과 이미지를 생성하고 있습니다...",
+      "pleaseWait": "잠시만 기다려주세요"
+    },
+    "locationPresets": {
+      "auto": "AI 추천",
+      "autoDesc": "제품과 스타일에 맞는 최적의 장소를 AI가 추천",
+      "custom": "직접 입력",
+      "customDesc": "원하는 장소를 직접 설명"
+    },
+    "cameraPresets": {
+      "auto": "AI 추천",
+      "autoDesc": "영상에 맞는 최적의 구도를 AI가 추천",
+      "custom": "직접 입력",
+      "customDesc": "원하는 카메라 구도를 직접 설명"
+    },
+    "posePresets": {
+      "auto": "AI 추천",
+      "autoDesc": "제품에 맞는 최적의 포즈를 AI가 추천",
+      "custom": "직접 입력",
+      "customDesc": "원하는 포즈를 직접 설명"
+    },
+    "featureNames": {
+      "videoGeneration": "제품 설명 영상 생성",
+      "keyframeGeneration": "키프레임 이미지 생성"
+    }
   },
   "imageAdDetail": {
     "title": "이미지 광고 상세",
