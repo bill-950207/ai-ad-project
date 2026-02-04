@@ -35,7 +35,6 @@ function VideoAdCreateContent() {
   if (category === 'productAd') {
     return (
       <ProductAdWizard
-        onBack={() => router.push('/dashboard/video-ad')}
         videoAdId={videoAdId || undefined}
         initialProductId={productId}
         initialStep={initialStep}

@@ -28,12 +28,12 @@ interface ShowcaseRainProps {
   showcases?: ShowcaseItem[]
 }
 
-// 열 설정 (4개) - 속도 느리게 조정
+// 열 설정 (4개) - 속도 조정 (20초 기준으로 빠르게)
 const COLUMN_CONFIG = [
-  { speed: 35, direction: 1 },
-  { speed: 28, direction: -1 },
-  { speed: 40, direction: 1 },
-  { speed: 32, direction: -1 },
+  { speed: 20, direction: 1 },
+  { speed: 16, direction: -1 },
+  { speed: 22, direction: 1 },
+  { speed: 18, direction: -1 },
 ]
 
 // 각 열의 스켈레톤 카드 개수

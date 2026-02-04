@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Check, Loader2 } from 'lucide-react'
+import Link from 'next/link'
+import Image from 'next/image'
+import { ArrowLeft, Check, Loader2, Package } from 'lucide-react'
 import { ProductAdWizardProvider, useProductAdWizard, WizardStep } from './wizard-context'
 import { WizardStep1 } from './wizard-step-1'
 import { WizardStep2 } from './wizard-step-2'
@@ -22,35 +24,63 @@ function useStepTitles() {
   ]
 }
 
-interface WizardHeaderProps {
-  onBack?: () => void
-}
-
-function WizardHeader({ onBack }: WizardHeaderProps) {
-  const { step } = useProductAdWizard()
+function WizardHeader() {
+  const { step, selectedProduct, isGeneratingVideo, resultVideoUrls } = useProductAdWizard()
   const { t } = useLanguage()
   const STEPS = useStepTitles()
 
+  // 결과 화면 또는 생성 중에는 헤더 숨김
+  if (resultVideoUrls.length > 0 || isGeneratingVideo) {
+    return null
+  }
+
+  const productImageUrl = selectedProduct?.rembg_image_url || selectedProduct?.image_url
+  const showSelectedProduct = step >= 2 && selectedProduct
+
   return (
     <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="max-w-3xl mx-auto px-4 py-3">
-        {/* 타이틀 */}
+      <div className="max-w-5xl mx-auto px-4 py-3">
+        {/* 상단: 타이틀 + 선택 항목 */}
         <div className="flex items-center gap-3 mb-3">
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="p-1.5 hover:bg-secondary/50 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-            </button>
-          )}
-          <div>
-            <h1 className="text-lg font-bold text-foreground">{t.productAdWizard?.header?.title || 'Create Product Ad Video'}</h1>
-            <p className="text-xs text-muted-foreground">{t.productAdWizard?.header?.subtitle || 'Cinematic ad video showcasing your product'}</p>
+          <Link
+            href="/dashboard/video-ad"
+            className="p-1.5 hover:bg-secondary/50 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 text-muted-foreground" />
+          </Link>
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold text-foreground">{t.videoAd?.createTitle || 'Create Video Ad'}</h1>
+            <p className="text-xs text-muted-foreground">{t.productAdWizard?.header?.subtitle || 'Cinematic ad video'}</p>
           </div>
+
+          {/* 스페이서 */}
+          <div className="flex-1" />
+
+          {/* 선택 항목 요약 */}
+          {showSelectedProduct && (
+            <div className="hidden sm:flex items-center gap-2">
+              <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-secondary flex-shrink-0 ring-1 ring-border">
+                {productImageUrl ? (
+                  <Image
+                    src={productImageUrl}
+                    alt={selectedProduct.name}
+                    fill
+                    className="object-contain"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Package className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground line-clamp-2 max-w-[80px]">
+                {selectedProduct.name}
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* 단계 표시기 */}
+        {/* 하단: 단계 표시기 */}
         <div className="flex items-center justify-center">
           {STEPS.map(({ step: s, title }, index) => {
             const isCompleted = step > s
@@ -84,7 +114,7 @@ function WizardHeader({ onBack }: WizardHeaderProps) {
                   </span>
                 </div>
 
-                {/* 연결선 - 원의 세로 중간에 위치 */}
+                {/* 연결선 */}
                 {index < STEPS.length - 1 && (
                   <div className="w-10 mx-1 -mt-4">
                     <div
@@ -118,11 +148,10 @@ function WizardContent() {
 }
 
 interface WizardInnerProps {
-  onBack?: () => void
   videoAdId?: string
 }
 
-function WizardInner({ onBack, videoAdId }: WizardInnerProps) {
+function WizardInner({ videoAdId }: WizardInnerProps) {
   const { loadDraft, isSaving, pendingSave } = useProductAdWizard()
   const { t } = useLanguage()
   const [isLoadingDraft, setIsLoadingDraft] = useState(!!videoAdId)
@@ -166,23 +195,22 @@ function WizardInner({ onBack, videoAdId }: WizardInnerProps) {
 
   return (
     <div className="min-h-full flex flex-col bg-background">
-      <WizardHeader onBack={onBack} />
+      <WizardHeader />
       <WizardContent />
     </div>
   )
 }
 
 interface ProductAdWizardProps {
-  onBack?: () => void
   videoAdId?: string
   initialProductId?: string | null
   initialStep?: number
 }
 
-export function ProductAdWizard({ onBack, videoAdId, initialProductId, initialStep = 1 }: ProductAdWizardProps) {
+export function ProductAdWizard({ videoAdId, initialProductId, initialStep = 1 }: ProductAdWizardProps) {
   return (
     <ProductAdWizardProvider initialProductId={initialProductId} initialStep={initialStep}>
-      <WizardInner onBack={onBack} videoAdId={videoAdId} />
+      <WizardInner videoAdId={videoAdId} />
     </ProductAdWizardProvider>
   )
 }

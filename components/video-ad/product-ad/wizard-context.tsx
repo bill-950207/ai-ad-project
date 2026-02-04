@@ -751,30 +751,39 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
       setDraftId(draft.id)
       setStep((draft.wizard_step || 1) as WizardStep)
 
+      // 제품 정보 복원 헬퍼 함수
+      const fetchProductFromApi = (productId: string) => {
+        fetch(`/api/ad-products/${productId}`)
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data?.product) {
+              setSelectedProduct({
+                id: data.product.id,
+                name: data.product.name,
+                rembg_image_url: data.product.rembg_image_url,
+                image_url: data.product.image_url,
+                description: data.product.description,
+                selling_points: data.product.selling_points,
+              })
+            }
+          })
+          .catch(err => console.error('Failed to load product from draft:', err))
+      }
+
       if (draft.product_info) {
         // JSON으로 저장된 제품 정보 복원
         try {
           const productData = JSON.parse(draft.product_info) as AdProduct
           setSelectedProduct(productData)
         } catch {
-          // JSON 파싱 실패 시 (레거시 형식) product_id만 사용
+          // JSON 파싱 실패 시 (레거시 형식) API에서 제품 정보 가져오기
           if (draft.product_id) {
-            setSelectedProduct({
-              id: draft.product_id,
-              name: '',
-              rembg_image_url: null,
-              image_url: null,
-            })
+            fetchProductFromApi(draft.product_id)
           }
         }
       } else if (draft.product_id) {
-        // product_info가 없는 경우 (레거시 호환)
-        setSelectedProduct({
-          id: draft.product_id,
-          name: '',
-          rembg_image_url: null,
-          image_url: null,
-        })
+        // product_info가 없는 경우 (레거시 호환) API에서 제품 정보 가져오기
+        fetchProductFromApi(draft.product_id)
       }
 
       if (draft.scenario_method) {

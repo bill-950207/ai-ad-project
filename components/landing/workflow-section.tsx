@@ -21,6 +21,7 @@ import {
   MousePointerClick,
   Download
 } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 
 // ============================================================
 // 타입 정의
@@ -140,15 +141,15 @@ export function WorkflowSection() {
                 {/* 스텝 카드 */}
                 <div className="relative bg-card border border-border rounded-xl p-5 h-full">
                   {/* 스텝 번호 */}
-                  <div className="absolute -top-3 -left-2 w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-semibold">
+                  <Badge variant="primary" className="absolute -top-3 -left-2 w-7 h-7 rounded-full p-0">
                     {index + 1}
-                  </div>
+                  </Badge>
 
                   {/* 소요 시간 */}
-                  <div className="absolute -top-2.5 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary text-muted-foreground text-xs">
+                  <Badge variant="secondary" size="sm" className="absolute -top-2.5 right-3 gap-1">
                     <Clock className="w-3 h-3" />
                     {step.time}
-                  </div>
+                  </Badge>
 
                   {/* 아이콘 */}
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-3 mt-2">
@@ -179,13 +180,13 @@ export function WorkflowSection() {
 
         {/* 총 소요 시간 */}
         <div className="mt-10 flex justify-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary/50 border border-border">
-            <CheckCircle className="w-4 h-4 text-green-500" />
-            <span className="text-sm text-muted-foreground">
+          <Badge variant="outline" size="lg" className="gap-2">
+            <CheckCircle className="w-4 h-4 text-success" />
+            <span className="text-muted-foreground">
               {t.workflow.totalTime}
             </span>
-            <span className="text-sm font-semibold text-foreground">{totalTime}</span>
-          </div>
+            <span className="font-semibold text-foreground">{totalTime}</span>
+          </Badge>
         </div>
       </div>
     </section>

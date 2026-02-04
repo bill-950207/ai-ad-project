@@ -241,13 +241,13 @@ function AdCreationCard({
           </div>
         </div>
 
-        {/* 하단 */}
-        <div>
+        {/* 하단 - 텍스트 가독성을 위한 반투명 배경 추가 */}
+        <div className="bg-black/40 backdrop-blur-sm rounded-xl px-3 py-2 -mx-1">
           <div className="flex items-center gap-1.5 mb-1">
-            <h3 className="text-lg font-bold text-white tracking-tight">{title}</h3>
-            <ArrowRight className="w-4 h-4 text-white/50 group-hover:text-white group-hover:translate-x-1 transition-[color,transform] duration-300" />
+            <h3 className="text-lg font-bold text-white tracking-tight drop-shadow-md">{title}</h3>
+            <ArrowRight className="w-4 h-4 text-white/70 group-hover:text-white group-hover:translate-x-1 transition-[color,transform] duration-300" />
           </div>
-          <p className="text-xs text-white/60 leading-relaxed line-clamp-2">
+          <p className="text-xs text-white/80 leading-relaxed line-clamp-2">
             {description}
           </p>
         </div>

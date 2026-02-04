@@ -202,20 +202,29 @@
   animation: fade-in-up 0.4s ease-out forwards;
 }
 
+/* Stagger animation delays (75ms intervals for better visual flow) */
 .animation-delay-100 {
-  animation-delay: 50ms;
+  animation-delay: 75ms;
 }
 
 .animation-delay-200 {
-  animation-delay: 100ms;
-}
-
-.animation-delay-300 {
   animation-delay: 150ms;
 }
 
+.animation-delay-300 {
+  animation-delay: 225ms;
+}
+
 .animation-delay-400 {
-  animation-delay: 200ms;
+  animation-delay: 300ms;
+}
+
+.animation-delay-500 {
+  animation-delay: 375ms;
+}
+
+.animation-delay-600 {
+  animation-delay: 450ms;
 }
 
 /* ===== 접근성: prefers-reduced-motion ===== */
@@ -273,4 +282,34 @@
   100% {
     transform: translateY(-50%);
   }
+}
+
+/* ===== Additional Utility Classes ===== */
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Focus visible ring (consistent with Tailwind) */
+.focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+}
+
+/* Hover lift effect */
+.hover-lift {
+  @apply transition-transform duration-300 hover:-translate-y-1;
+}
+
+/* Card hover effect */
+.card-hover {
+  @apply transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/30;
 }

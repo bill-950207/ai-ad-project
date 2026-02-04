@@ -51,7 +51,7 @@ function WizardHeader() {
   return (
     <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
       <div className="max-w-5xl mx-auto px-4 py-3">
-        {/* 타이틀 */}
+        {/* 상단: 타이틀 + 선택 항목 */}
         <div className="flex items-center gap-3 mb-3">
           <Link
             href="/dashboard/image-ad"
@@ -59,127 +59,122 @@ function WizardHeader() {
           >
             <ArrowLeft className="w-4 h-4 text-muted-foreground" />
           </Link>
-          <div>
+          <div className="min-w-0">
             <h1 className="text-lg font-bold text-foreground">{imageAdT?.createTitle || 'Create Image Ad'}</h1>
             <p className="text-xs text-muted-foreground">{adTypeTitle}</p>
           </div>
+
+          {/* 스페이서 */}
+          <div className="flex-1" />
+
+          {/* 선택 항목 요약 */}
+          {showSelectedItems && (
+            <div className="hidden sm:flex items-center gap-3">
+              {/* 제품 */}
+              {selectedProduct && (
+                <div className="flex items-center gap-2">
+                  <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-secondary flex-shrink-0 ring-1 ring-border">
+                    {productImageUrl ? (
+                      <Image
+                        src={productImageUrl}
+                        alt={selectedProduct.name}
+                        fill
+                        className="object-contain"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Package className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground line-clamp-2 max-w-[80px]">
+                    {selectedProduct.name}
+                  </p>
+                </div>
+              )}
+
+              {/* 구분선 */}
+              {selectedProduct && selectedAvatarInfo && !isProductOnlyType && (
+                <div className="h-8 w-px bg-border" />
+              )}
+
+              {/* 아바타 */}
+              {selectedAvatarInfo && !isProductOnlyType && (
+                <div className="flex items-center gap-2">
+                  <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-secondary flex-shrink-0 ring-1 ring-border">
+                    {selectedAvatarInfo.type === 'ai-generated' ? (
+                      <div className="w-full h-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center">
+                        <Sparkles className="w-5 h-5 text-white" />
+                      </div>
+                    ) : avatarImageUrl ? (
+                      <Image
+                        src={avatarImageUrl}
+                        alt={selectedAvatarInfo.displayName}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <User className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground line-clamp-2 max-w-[80px]">
+                    {selectedAvatarInfo.displayName}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* 단계 표시기 + 선택 항목 */}
-        <div className="flex items-center justify-between">
-          {/* 왼쪽 여백 (선택 항목과 균형 맞추기) */}
-          <div className="w-48 hidden lg:block" />
+        {/* 하단: 단계 표시기 */}
+        <div className="flex items-center justify-center">
+          {STEPS.map(({ step: s, title }, index) => {
+            const isCompleted = step > s
+            const isCurrent = step === s
 
-          {/* 중앙: 단계 표시기 */}
-          <div className="flex items-center justify-center flex-1 lg:flex-none">
-            {STEPS.map(({ step: s, title }, index) => {
-              const isCompleted = step > s
-              const isCurrent = step === s
-
-              return (
-                <div key={s} className="flex items-center">
-                  {/* 단계 원 + 텍스트 */}
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-                        isCompleted
-                          ? 'bg-primary text-primary-foreground'
-                          : isCurrent
-                            ? 'bg-primary text-primary-foreground ring-2 ring-primary/20'
-                            : 'bg-secondary text-muted-foreground'
-                      }`}
-                    >
-                      {isCompleted ? (
-                        <Check className="w-4 h-4" />
-                      ) : (
-                        s
-                      )}
-                    </div>
-                    <span
-                      className={`text-[10px] mt-1 font-medium whitespace-nowrap ${
-                        isCurrent ? 'text-primary' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
-                      }`}
-                    >
-                      {title}
-                    </span>
+            return (
+              <div key={s} className="flex items-center">
+                {/* 단계 원 + 텍스트 */}
+                <div className="flex flex-col items-center">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
+                      isCompleted
+                        ? 'bg-primary text-primary-foreground'
+                        : isCurrent
+                          ? 'bg-primary text-primary-foreground ring-2 ring-primary/20'
+                          : 'bg-secondary text-muted-foreground'
+                    }`}
+                  >
+                    {isCompleted ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      s
+                    )}
                   </div>
-
-                  {/* 연결선 */}
-                  {index < STEPS.length - 1 && (
-                    <div className="w-12 mx-1 -mt-4">
-                      <div
-                        className={`h-0.5 rounded-full transition-all ${
-                          isCompleted ? 'bg-primary' : 'bg-secondary'
-                        }`}
-                      />
-                    </div>
-                  )}
+                  <span
+                    className={`text-[10px] mt-1 font-medium whitespace-nowrap ${
+                      isCurrent ? 'text-primary' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
+                    }`}
+                  >
+                    {title}
+                  </span>
                 </div>
-              )
-            })}
-          </div>
 
-          {/* 오른쪽: 선택 항목 요약 */}
-          <div className="w-48 hidden lg:flex items-center justify-end gap-2">
-            {showSelectedItems && (
-              <>
-                {/* 제품 */}
-                {selectedProduct && (
-                  <div className="flex items-center gap-1.5">
-                    <div className="relative w-8 h-8 rounded-md overflow-hidden bg-secondary flex-shrink-0">
-                      {productImageUrl ? (
-                        <Image
-                          src={productImageUrl}
-                          alt={selectedProduct.name}
-                          fill
-                          className="object-contain"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Package className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-[10px] text-muted-foreground truncate max-w-[60px]">
-                      {selectedProduct.name}
-                    </p>
+                {/* 연결선 */}
+                {index < STEPS.length - 1 && (
+                  <div className="w-12 mx-1 -mt-4">
+                    <div
+                      className={`h-0.5 rounded-full transition-all ${
+                        isCompleted ? 'bg-primary' : 'bg-secondary'
+                      }`}
+                    />
                   </div>
                 )}
-
-                {/* 구분선 */}
-                {selectedProduct && selectedAvatarInfo && !isProductOnlyType && (
-                  <div className="h-6 w-px bg-border" />
-                )}
-
-                {/* 아바타 */}
-                {selectedAvatarInfo && !isProductOnlyType && (
-                  <div className="flex items-center gap-1.5">
-                    <div className="relative w-8 h-8 rounded-md overflow-hidden bg-secondary flex-shrink-0">
-                      {selectedAvatarInfo.type === 'ai-generated' ? (
-                        <div className="w-full h-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center">
-                          <Sparkles className="w-4 h-4 text-white" />
-                        </div>
-                      ) : avatarImageUrl ? (
-                        <Image
-                          src={avatarImageUrl}
-                          alt={selectedAvatarInfo.displayName}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <User className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-[10px] text-muted-foreground truncate max-w-[60px]">
-                      {selectedAvatarInfo.displayName}
-                    </p>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>
