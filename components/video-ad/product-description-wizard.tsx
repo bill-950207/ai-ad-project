@@ -2218,10 +2218,10 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
 
   // Step info
   const STEPS = [
-    { step: 1, title: 'Product/Avatar', description: 'Select product and avatar' },
-    { step: 2, title: 'Video Info', description: 'Enter video information' },
-    { step: 3, title: 'Script/Voice', description: 'Select script and voice' },
-    { step: 4, title: 'Generate', description: 'Generate video' },
+    { step: 1, title: t.productDescWizard?.steps?.productAvatar || 'Product/Avatar' },
+    { step: 2, title: t.productDescWizard?.steps?.videoInfo || 'Video Info' },
+    { step: 3, title: t.productDescWizard?.steps?.scriptVoice || 'Script/Voice' },
+    { step: 4, title: t.productDescWizard?.steps?.generate || 'Generate' },
   ]
 
   // 선택 항목 표시 여부
@@ -2612,14 +2612,14 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <Globe className="w-4 h-4 inline mr-2" />
-              {t.productDescriptionVideo?.scriptLanguage || 'Script Language'}
+              {t.productDescWizard?.scriptLanguage || 'Script Language'}
             </label>
             <div className="grid grid-cols-4 gap-2">
               {([
-                { code: 'ko', label: 'Korean' },
-                { code: 'en', label: 'English' },
-                { code: 'ja', label: 'Japanese' },
-                { code: 'zh', label: 'Chinese' },
+                { code: 'ko', labelKey: 'korean' },
+                { code: 'en', labelKey: 'english' },
+                { code: 'ja', labelKey: 'japanese' },
+                { code: 'zh', labelKey: 'chinese' },
               ] as const).map((lang) => (
                 <button
                   key={lang.code}
@@ -2630,7 +2630,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                       : 'border-border text-muted-foreground hover:border-primary/50'
                     }`}
                 >
-                  {lang.label}
+                  {t.productDescWizard?.languages?.[lang.labelKey] || lang.labelKey}
                 </button>
               ))}
             </div>
@@ -2656,7 +2656,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                       : 'border-border text-muted-foreground hover:border-primary/50'
                     }`}
                 >
-                  {d}초
+                  {d}{t.common?.secondsShort || '초'}
                 </button>
               ))}
             </div>
@@ -2666,12 +2666,12 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <Monitor className="w-4 h-4 inline mr-2" />
-              {t.productDescriptionVideo?.resolution || 'Video Resolution'}
+              {t.productDescWizard?.resolution || 'Video Resolution'}
             </label>
             <div className="grid grid-cols-2 gap-3">
               {([
-                { value: '480p', label: '480p', desc: t.productDescriptionVideo?.fastGeneration || 'Fast generation' },
-                { value: '720p', label: '720p', desc: t.productDescriptionVideo?.highQuality || 'High quality' },
+                { value: '480p', label: '480p', desc: t.productDescWizard?.fastGeneration || 'Fast generation' },
+                { value: '720p', label: '720p', desc: t.productDescWizard?.highQuality || 'High quality' },
               ] as const).map((r) => (
                 <button
                   key={r.value}
@@ -2699,6 +2699,9 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               {videoTypeOptions.map((type) => {
                 const info = videoTypeLabels[type]
                 const IconComponent = type === 'UGC' ? User : type === 'podcast' ? Mic : GraduationCap
+                const videoTypes = t.productDescWizard?.videoTypes as Record<string, string> | undefined
+                const translatedLabel = videoTypes?.[type] || info.label
+                const translatedDesc = videoTypes?.[`${type}Desc`] || info.desc
                 return (
                   <button
                     key={type}
@@ -2711,10 +2714,10 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   >
                     <IconComponent className={`w-6 h-6 mx-auto mb-2 ${videoType === type ? 'text-primary' : 'text-muted-foreground'}`} />
                     <div className={`font-medium text-sm ${videoType === type ? 'text-primary' : 'text-foreground'}`}>
-                      {info.label}
+                      {translatedLabel}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      {info.desc}
+                      {translatedDesc}
                     </div>
                     {videoType === type && (
                       <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
@@ -2735,38 +2738,45 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
             </label>
 
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {locationPresetsByVideoType[videoType].map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => {
-                    setLocationPreset(preset)
-                    if (preset !== 'custom') {
-                      setLocationPrompt('')
-                    }
-                  }}
-                  disabled={hasGeneratedContent}
-                  className={`relative group p-3 rounded-lg border transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed ${
-                    locationPreset === preset
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border hover:border-primary/50'
-                  }`}
-                  title={locationPresetLabels[preset].desc}
-                >
-                  <span className={`text-sm font-medium flex items-center gap-1 ${locationPreset === preset ? 'text-primary' : 'text-foreground'}`}>
-                    {preset === 'auto' && <Sparkles className="w-3.5 h-3.5" />}
-                    {locationPresetLabels[preset].label}
-                  </span>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
-                    {locationPresetLabels[preset].desc}
-                  </p>
-                  {locationPreset === preset && (
-                    <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                      <Check className="w-2.5 h-2.5 text-primary-foreground" />
-                    </div>
-                  )}
-                </button>
-              ))}
+              {locationPresetsByVideoType[videoType].map((preset) => {
+                const locationPresets = t.productDescWizard?.locationPresets as Record<string, string> | undefined
+                const translatedLabel = locationPresets?.[preset] || locationPresetLabels[preset].label
+                const translatedDesc = locationPresets?.[`${preset}Desc`] || locationPresetLabels[preset].desc
+                return (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => {
+                      setLocationPreset(preset)
+                      if (preset !== 'custom') {
+                        setLocationPrompt('')
+                      }
+                    }}
+                    disabled={hasGeneratedContent}
+                    className={`relative group p-3 rounded-lg border transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed ${
+                      locationPreset === preset
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                    title={translatedDesc}
+                  >
+                    <span className={`text-sm font-medium flex items-center gap-1 ${locationPreset === preset ? 'text-primary' : 'text-foreground'}`}>
+                      {preset === 'auto' && <Sparkles className="w-3.5 h-3.5" />}
+                      {translatedLabel}
+                    </span>
+                    {preset !== 'auto' && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
+                        {translatedDesc}
+                      </p>
+                    )}
+                    {locationPreset === preset && (
+                      <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
             </div>
 
             {/* 직접 입력 필드 */}
@@ -2790,38 +2800,45 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
             </label>
 
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {cameraCompositionsByVideoType[videoType].map((comp) => (
-                <button
-                  key={comp}
-                  type="button"
-                  onClick={() => {
-                    setCameraComposition(comp)
-                    if (comp !== 'custom') {
-                      setCameraCompositionCustom('')
-                    }
-                  }}
-                  disabled={hasGeneratedContent}
-                  className={`relative group p-3 rounded-lg border transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed ${
-                    cameraComposition === comp
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border hover:border-primary/50'
-                  }`}
-                  title={cameraCompositionLabels[comp].desc}
-                >
-                  <span className={`text-sm font-medium flex items-center gap-1 ${cameraComposition === comp ? 'text-primary' : 'text-foreground'}`}>
-                    {comp === 'auto' && <Sparkles className="w-3.5 h-3.5" />}
-                    {cameraCompositionLabels[comp].label}
-                  </span>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
-                    {cameraCompositionLabels[comp].desc}
-                  </p>
-                  {cameraComposition === comp && (
-                    <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                      <Check className="w-2.5 h-2.5 text-primary-foreground" />
-                    </div>
-                  )}
-                </button>
-              ))}
+              {cameraCompositionsByVideoType[videoType].map((comp) => {
+                const cameraPresets = t.productDescWizard?.cameraPresets as Record<string, string> | undefined
+                const translatedLabel = cameraPresets?.[comp] || cameraCompositionLabels[comp].label
+                const translatedDesc = cameraPresets?.[`${comp}Desc`] || cameraCompositionLabels[comp].desc
+                return (
+                  <button
+                    key={comp}
+                    type="button"
+                    onClick={() => {
+                      setCameraComposition(comp)
+                      if (comp !== 'custom') {
+                        setCameraCompositionCustom('')
+                      }
+                    }}
+                    disabled={hasGeneratedContent}
+                    className={`relative group p-3 rounded-lg border transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed ${
+                      cameraComposition === comp
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                    title={translatedDesc}
+                  >
+                    <span className={`text-sm font-medium flex items-center gap-1 ${cameraComposition === comp ? 'text-primary' : 'text-foreground'}`}>
+                      {comp === 'auto' && <Sparkles className="w-3.5 h-3.5" />}
+                      {translatedLabel}
+                    </span>
+                    {comp !== 'auto' && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
+                        {translatedDesc}
+                      </p>
+                    )}
+                    {cameraComposition === comp && (
+                      <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
             </div>
 
             {/* 직접 입력 필드 */}
@@ -2845,38 +2862,45 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
             </label>
 
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {modelPosesByVideoType[videoType].map((pose) => (
-                <button
-                  key={pose}
-                  type="button"
-                  onClick={() => {
-                    setModelPose(pose)
-                    if (pose !== 'custom') {
-                      setModelPoseCustom('')
-                    }
-                  }}
-                  disabled={hasGeneratedContent}
-                  className={`relative group p-3 rounded-lg border transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed ${
-                    modelPose === pose
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border hover:border-primary/50'
-                  }`}
-                  title={modelPoseLabels[pose].desc}
-                >
-                  <span className={`text-sm font-medium flex items-center gap-1 ${modelPose === pose ? 'text-primary' : 'text-foreground'}`}>
-                    {pose === 'auto' && <Sparkles className="w-3.5 h-3.5" />}
-                    {modelPoseLabels[pose].label}
-                  </span>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
-                    {modelPoseLabels[pose].desc}
-                  </p>
-                  {modelPose === pose && (
-                    <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                      <Check className="w-2.5 h-2.5 text-primary-foreground" />
-                    </div>
-                  )}
-                </button>
-              ))}
+              {modelPosesByVideoType[videoType].map((pose) => {
+                const posePresets = t.productDescWizard?.posePresets as Record<string, string> | undefined
+                const translatedLabel = posePresets?.[pose] || modelPoseLabels[pose].label
+                const translatedDesc = posePresets?.[`${pose}Desc`] || modelPoseLabels[pose].desc
+                return (
+                  <button
+                    key={pose}
+                    type="button"
+                    onClick={() => {
+                      setModelPose(pose)
+                      if (pose !== 'custom') {
+                        setModelPoseCustom('')
+                      }
+                    }}
+                    disabled={hasGeneratedContent}
+                    className={`relative group p-3 rounded-lg border transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed ${
+                      modelPose === pose
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                    title={translatedDesc}
+                  >
+                    <span className={`text-sm font-medium flex items-center gap-1 ${modelPose === pose ? 'text-primary' : 'text-foreground'}`}>
+                      {pose === 'auto' && <Sparkles className="w-3.5 h-3.5" />}
+                      {translatedLabel}
+                    </span>
+                    {pose !== 'auto' && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
+                        {translatedDesc}
+                      </p>
+                    )}
+                    {modelPose === pose && (
+                      <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
             </div>
 
             {/* 직접 입력 필드 */}
@@ -2967,32 +2991,37 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
             {/* 프리셋 선택 */}
             {outfitMode === 'preset' && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {outfitPresetOptions.map((preset) => (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => setOutfitPreset(preset)}
-                    disabled={hasGeneratedContent}
-                    className={`relative group p-3 rounded-lg border transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed ${
-                      outfitPreset === preset
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border hover:border-primary/50'
-                    }`}
-                    title={outfitPresetLabels[preset].desc}
-                  >
-                    <span className={`text-sm font-medium ${outfitPreset === preset ? 'text-primary' : 'text-foreground'}`}>
-                      {outfitPresetLabels[preset].label}
-                    </span>
-                    <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
-                      {outfitPresetLabels[preset].desc}
-                    </p>
-                    {outfitPreset === preset && (
-                      <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                        <Check className="w-2.5 h-2.5 text-primary-foreground" />
-                      </div>
-                    )}
-                  </button>
-                ))}
+                {outfitPresetOptions.map((preset) => {
+                  const outfitPresets = t.productDescWizard?.outfitPresets as Record<string, string> | undefined
+                  const translatedLabel = outfitPresets?.[preset] || outfitPresetLabels[preset].label
+                  const translatedDesc = outfitPresets?.[`${preset}Desc`] || outfitPresetLabels[preset].desc
+                  return (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setOutfitPreset(preset)}
+                      disabled={hasGeneratedContent}
+                      className={`relative group p-3 rounded-lg border transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed ${
+                        outfitPreset === preset
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                      title={translatedDesc}
+                    >
+                      <span className={`text-sm font-medium ${outfitPreset === preset ? 'text-primary' : 'text-foreground'}`}>
+                        {translatedLabel}
+                      </span>
+                      <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
+                        {translatedDesc}
+                      </p>
+                      {outfitPreset === preset && (
+                        <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                        </div>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             )}
 
