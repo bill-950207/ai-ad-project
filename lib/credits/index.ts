@@ -6,7 +6,6 @@ export {
   IMAGE_EDIT_CREDIT_COST,
   BACKGROUND_CREDIT_COST,
   PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST,
-  AVATAR_MOTION_CREDIT_COST,
   MUSIC_CREDIT_COST,
   TTS_CREDIT_COST,
   REMBG_CREDIT_COST,
@@ -15,10 +14,9 @@ export {
   PRODUCT_AD_VIDEO_CREDIT_COST,
   KEYFRAME_CREDIT_COST,
   TRANSITION_CREDIT_COST,
-  // Vidu Q2 영상
+  // Vidu Q3 영상
   VIDU_CREDIT_COST_PER_SECOND,
   type ImageQuality,
-  type AvatarMotionDuration,
   type ViduResolution,
 } from './constants'
 
