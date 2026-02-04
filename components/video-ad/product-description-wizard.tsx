@@ -2339,7 +2339,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-2">
               <User className="w-4 h-4 inline mr-2" />
-              아바타 선택 <span className="text-red-500">*</span>
+              {t.productDescWizard?.avatarSelect || 'Select Avatar'} <span className="text-red-500">*</span>
             </label>
             <button
               onClick={() => setShowAvatarModal(true)}
@@ -2401,7 +2401,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-2">
               <Package className="w-4 h-4 inline mr-2" />
-              제품 선택 <span className="text-red-500">*</span>
+              {t.productDescWizard?.productSelect || 'Select Product'} <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <button
@@ -2516,7 +2516,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                 {/* 셀링 포인트 */}
                 <div>
                   <label className="block text-xs text-muted-foreground mb-1">
-                    셀링 포인트 <span className="text-muted-foreground/70">(예: &quot;24시간 보습&quot;, &quot;피부과 추천&quot;)</span>
+                    {t.productDescWizard?.sellingPointsLabel || 'Selling Points'} <span className="text-muted-foreground/70">{t.productDescWizard?.sellingPointsExample || '(e.g., "24-hour moisture", "Dermatologist recommended")'}</span>
                   </label>
                   <div className="space-y-2">
                     {editableSellingPoints.map((point, index) => (
@@ -2544,7 +2544,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                         className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
                       >
                         <Plus className="w-3 h-3" />
-                        포인트 추가
+                        {t.productDescWizard?.addPoint || 'Add Point'}
                       </button>
                     )}
                   </div>
