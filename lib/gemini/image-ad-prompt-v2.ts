@@ -33,12 +33,12 @@ const AD_TYPE_DESCRIPTIONS: Record<ImageAdType, string> = {
 - Focus: Full product sharpness, every detail crisp
 - Lighting: Rim light for separation, soft fill to show texture
 - Props: Minimal, complementary items only (leaves, droplets, fabric swatches)
-- Camera: 50mm macro or 85mm, f/8-f/11 for full sharpness`,
+- Camera: 50mm macro or 85mm, f/11-f/16 for full sharpness`,
 
   holding: `Holding Shot (MODEL + PRODUCT):
 - Product position: Chest to face level, clearly visible to camera
 - Hand grip: Natural hold, fingers NOT covering product label/key features
-- Both in focus: Model face AND product sharp (f/4-f/5.6)
+- Both in focus: Model face AND product sharp (f/11)
 - Product angle: Show front/main side of product to camera
 - Model engagement: Looking at camera OR looking at product with interest
 - Avoid: Awkward grip, product too small in frame, hidden product features
@@ -394,17 +394,14 @@ function postProcessPrompt(prompt: string, hasLogo: boolean | undefined, adType:
     additions.push('Commercial photography quality.')
   }
 
-  // 카메라 스펙 없으면 추가 (타입별 분기)
-  // - productOnly: f/8-f/11로 전체 선명도
-  // - holding/using: f/4-f/5.6으로 모델과 제품 모두 선명하게
-  // - 기타 (lifestyle, wearing 등): f/2.8로 약간의 배경 분리
+  // 카메라 스펙 없으면 추가 (모든 타입 f/11 통일)
   if (!lowerPrompt.includes('shot on') && !lowerPrompt.includes('lens') && !lowerPrompt.includes('f/')) {
     if (adType === 'productOnly') {
-      additions.push('Shot on 50mm macro lens at f/8.')
+      additions.push('Shot on 50mm macro lens at f/11.')
     } else if (adType === 'holding' || adType === 'using') {
-      additions.push('Shot on 85mm lens at f/4.5.')
+      additions.push('Shot on 85mm lens at f/11.')
     } else {
-      additions.push('Shot on 85mm lens at f/2.8.')
+      additions.push('Shot on 85mm lens at f/11.')
     }
   }
 
@@ -532,10 +529,10 @@ ${NO_OVERLAYS}
 
 === SEEDREAM 4.5 QUALITY REQUIREMENTS ===
 ${!figureInfo.needsModel ? `For PRODUCT ONLY shots:
-- Camera: "shot on 50mm macro lens at f/8" or "shot on 85mm at f/11" for full sharpness
+- Camera: "shot on 50mm macro lens at f/11" or "shot on 85mm at f/16" for full sharpness
 - Quality: "photorealistic, 8K RAW quality, product photography"
 - Focus: "focus stacking, every detail crisp"` : `For MODEL shots:
-- Camera: "shot on 85mm lens at f/1.8" (portrait) or "shot on 35mm at f/2.8" (environmental)
+- Camera: "shot on 85mm lens at f/11" (portrait) or "shot on 35mm at f/11" (environmental)
 - Quality: "photorealistic, 8K RAW quality"
 - Texture: "natural skin texture with visible pores, individual hair strands"`}
 
@@ -543,7 +540,7 @@ ${!figureInfo.needsModel ? `For PRODUCT ONLY shots:
 {
   "productHasLogo": true/false (based on product image analysis),
   "optimizedPrompt": "60-80 words. ${!figureInfo.needsModel
-    ? `Structure: [${figureInfo.productRef}] [as hero subject] [on/against background surface or setting] [dramatic lighting from angle] [camera: f/8-f/11 for sharpness] [quality: product photography, every detail crisp]. NO model, NO hands unless specified.`
+    ? `Structure: [${figureInfo.productRef}] [as hero subject] [on/against background surface or setting] [dramatic lighting from angle] [camera: f/11-f/16 for sharpness] [quality: product photography, every detail crisp]. NO model, NO hands unless specified.`
     : `Structure: [${figureInfo.modelRef}] ${outfitText ? '[outfit description] ' : ''}[pose/action] [with ${figureInfo.productRef}] [in CLEAN environment] [natural light from direction] [SPECIFIC expression] [camera specs] [quality]. NO studio equipment.`}",
   "koreanDescription": "한국어 요약 (15-20자)"
 }
