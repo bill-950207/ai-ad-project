@@ -293,7 +293,7 @@ export function MusicSelectModal({
   const maxDuration = selectedTrack?.duration || 30
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 m-0 flex items-center justify-center bg-black/50">
       <div className="bg-card border border-border rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* 헤더 */}
         <div className="flex items-center justify-between p-4 border-b border-border">

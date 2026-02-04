@@ -57,7 +57,7 @@ export function InsufficientCreditsModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 m-0 flex items-center justify-center animate-in fade-in duration-200">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"

@@ -1059,7 +1059,7 @@ export default function VideoAdDetailPage() {
 
       {/* 삭제 확인 모달 */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 m-0 flex items-center justify-center bg-black/50">
           <div className="bg-card border border-border rounded-xl p-6 max-w-sm w-full mx-4">
             <h3 className="text-lg font-medium text-foreground mb-2">
               {(videoAdT as { deleteModal?: { confirm?: string } })?.deleteModal?.confirm || 'Delete this video ad?'}
