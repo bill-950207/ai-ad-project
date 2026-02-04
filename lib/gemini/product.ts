@@ -25,17 +25,17 @@ const outputLanguageInstructions: Record<string, string> = {
 
 /** 제품 요약 예시 (Few-Shot) */
 const PRODUCT_SUMMARY_EXAMPLES = `
-=== PRODUCT SUMMARY EXAMPLES ===
+=== PRODUCT SUMMARY GUIDELINES ===
 
 GOOD (specific, benefit-focused):
-✓ summary: "천연 성분 기반의 수분 크림으로, 건조한 피부에 즉각적인 보습과 진정 효과를 제공합니다."
-✓ keyPoints: ["히알루론산 고함량", "무향료 저자극", "48시간 지속 보습"]
-✓ suggestedTone: "신뢰감 있는 전문적"
+✓ summary: Focus on [main ingredient/technology] + [target problem] + [key benefit]
+✓ keyPoints: List 3 specific features - [ingredient], [safety/formula], [efficacy duration/result]
+✓ suggestedTone: Match product category and target audience
 
 BAD (vague, exaggerated):
-✗ summary: "정말 좋은 크림입니다" (구체성 부족)
-✗ keyPoints: ["최고의 품질", "완벽한 제품"] (과장)
-✗ suggestedTone: "최고급" (모호)
+✗ summary: Generic marketing copy without specific benefits
+✗ keyPoints: Vague terms like "premium quality", "natural ingredients", "perfect product"
+✗ suggestedTone: Abstract words like "luxurious", "perfect" without context
 `.trim()
 
 /** 제품 분석 Self-Verification */
