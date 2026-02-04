@@ -532,18 +532,18 @@ For each category in recommendations, write CUSTOM descriptions (customText) tha
 AVOID these AI-typical patterns in ALL outputs:
 
 ❌ BANNED WRITING PATTERNS:
-- Stacking 3+ adjectives: "따뜻하고 부드럽고 포근한" → Use max 2 adjectives
-- Rhyming or parallel endings: "~는 느낌, ~는 분위기, ~는 감성"
-- Excessive superlatives: "가장 완벽한", "최고의", "비교할 수 없는"
-- Empty marketing phrases: "새로운 경험", "당신만의", "특별함을 선사"
+- Stacking 3+ adjectives: "warm and soft and cozy" → Use max 2 adjectives
+- Rhyming or parallel endings: "~feeling, ~mood, ~vibe" in sequence
+- Excessive superlatives: "the most perfect", "the best", "incomparable"
+- Empty marketing phrases: "new experience", "just for you", "delivers special moments"
 - Repetitive sentence structures across scenarios (vary your phrasing)
-- Starting every description with "부드러운" or "따뜻한"
-- Using "자연스럽게", "은은하게" as filler words
+- Starting every description with "soft" or "warm"
+- Using "naturally", "subtly" as filler words
 
 ✅ WRITE LIKE A REAL PHOTOGRAPHER/ART DIRECTOR:
-- Use concrete visual terms: "오후 3시 창가 자연광" instead of "따뜻하고 자연스러운 조명"
-- Be technically specific: "45도 측면광, 반사판 없음" instead of "은은한 조명"
-- Reference real-world scenarios: "카페 창가 자리" instead of "아늑한 공간"
+- Use concrete visual terms: "3PM window natural light" instead of "warm and natural lighting"
+- Be technically specific: "45-degree side light, no reflector" instead of "soft lighting"
+- Reference real-world scenarios: "cafe window seat" instead of "cozy space"
 - Vary sentence length and structure between scenarios
 - Use industry terminology when appropriate (ISO, f-stop style descriptions welcome)
 
@@ -822,28 +822,28 @@ const REFERENCE_CUSTOM_TEXT_GUIDELINES = `
 - Describe specific actions (where hands are, what they're doing)
 
 **BANNED EXPRESSIONS (Never use these alone without specifics):**
-❌ Abstract adjectives alone: "자연스러운", "은은한", "부드러운", "따뜻한"
-❌ Vague mood descriptions: "편안한 분위기", "우아한 느낌", "세련된 무드"
-❌ Non-specific environment: "아늑한 공간", "세련된 배경", "고급스러운 장소"
-❌ 3+ adjective chains: "따뜻하고 부드럽고 아늑한", "자연스럽고 은은하고 포근한"
-❌ Hedging expressions: "~하는 듯한", "~처럼 보이는", "~같은 느낌의"
+❌ Abstract adjectives alone: "natural", "soft", "warm", "subtle"
+❌ Vague mood descriptions: "comfortable atmosphere", "elegant feeling", "refined mood"
+❌ Non-specific environment: "cozy space", "stylish background", "luxurious place"
+❌ 3+ adjective chains: "warm and soft and cozy", "natural and subtle and gentle"
+❌ Hedging expressions: "as if...", "seems like...", "feels like..."
 
 **GOOD vs BAD EXAMPLES:**
 
-❌ BAD (pose): "자연스럽고 편안한 포즈로 제품을 들고 있는 모습"
-✅ GOOD (pose): "상체 45도 회전, 왼손으로 제품을 턱 높이에 들고, 오른팔은 자연스럽게 허리에"
+❌ BAD (pose): "natural and comfortable pose holding product" (vague, no specifics)
+✅ GOOD (pose): Describe exact body angle, which hand holds product, hand position relative to face/body
 
-❌ BAD (gaze): "은은하게 카메라를 바라보는 부드러운 시선"
-✅ GOOD (gaze): "눈높이보다 약간 위를 향한 시선, 카메라 렌즈에서 15도 왼쪽으로 벗어남, 눈꺼풀 반쯤 내린 상태"
+❌ BAD (gaze): "softly looking at camera with gentle eyes" (abstract adjectives)
+✅ GOOD (gaze): Specify eye direction (camera/product/off-frame), angle from lens, eyelid position
 
-❌ BAD (expression): "자연스럽고 따뜻한 미소"
-✅ GOOD (expression): "입꼬리 살짝 올라간 닫힌 입술 미소, 눈가 주름 없이 눈웃음, 이완된 턱선"
+❌ BAD (expression): "natural warm smile" (vague)
+✅ GOOD (expression): Describe lip position (closed/open), eye expression, jaw tension
 
-❌ BAD (lighting): "부드럽고 따뜻한 자연광"
-✅ GOOD (lighting): "11시 방향 창문 자연광, 그림자 경계 부드러움, 반사판 없는 단일 광원, 색온도 5000K 추정"
+❌ BAD (lighting): "soft warm natural light" (no technical detail)
+✅ GOOD (lighting): Specify light direction (clock position), shadow quality, color temperature estimate
 
-❌ BAD (background): "아늑한 실내 공간"
-✅ GOOD (background): "흰색 린넨 소재 커튼이 드리워진 창가, 아이보리색 플라스터 벽, 피사계 심도로 배경 흐림 f/2.8"
+❌ BAD (background): "cozy indoor space" (non-specific)
+✅ GOOD (background): Describe materials, colors, textures, depth of field
 `.trim()
 
 /** 참조 이미지 분석용 해부학적 규칙 */
@@ -1052,7 +1052,19 @@ CRITICAL REQUIREMENTS:
 - Describe what you ACTUALLY SEE in the reference image, not what you imagine
 - For model poses: ALWAYS specify exact hand positions, body angles, gaze direction
 - Match the reference image's EXACT mood and atmosphere through CONCRETE visual descriptions
-- All text responses must be in the specified output language`
+- All text responses must be in the specified output language
+
+⚠️⚠️⚠️ CRITICAL OUTPUT LANGUAGE REQUIREMENT ⚠️⚠️⚠️
+You MUST write ALL text fields in the OUTPUT LANGUAGE specified at the top:
+- overallStyle
+- suggestedPrompt
+- reason (for each option)
+- customText (for each option)
+- avatarDescription
+
+DO NOT use Korean unless the output language is Korean.
+DO NOT use English unless the output language is English.
+STRICTLY follow the OUTPUT LANGUAGE instruction.`
 
   const config: GenerateContentConfig = {
     thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },

@@ -12,19 +12,20 @@ import type { GenerateScenariosResult } from './types'
 // Few-Shot 예시 및 검증 규칙
 // ============================================================
 
-/** 씬 설명 예시 (Few-Shot - 한국어) */
+/** 씬 설명 예시 (Few-Shot) */
 const SCENE_DESCRIPTION_EXAMPLES = `
-=== SCENE DESCRIPTION EXAMPLES (한국어) ===
+=== SCENE DESCRIPTION GUIDELINES ===
 
-GOOD (구체적, 액션 중심):
-✓ title: "첫 만남" / description: "제품 상자를 천천히 열며 기대감 표현"
-✓ title: "발견" / description: "제품 텍스처를 손끝으로 느끼며 놀라는 표정"
-✓ title: "사용" / description: "제품을 피부에 부드럽게 바르는 모습"
+GOOD (action-oriented, specific):
+✓ title: 2-4 characters, emotion or action keyword
+✓ description: [specific action with product] + [facial expression/emotion]
+  - Include: body part interaction, speed/manner of action, resulting expression
+  - Pattern: "[verb] + [product/body part] + [manner] + [expression]"
 
-BAD (모호, 일반적):
-✗ title: "시작" / description: "제품을 보여준다"
-✗ title: "소개" / description: "제품 설명"
-✗ title: "끝" / description: "마무리"
+BAD (vague, emotion-only):
+✗ title: Abstract concepts like "Beginning", "Introduction", "End"
+✗ description: Only outcomes without specific actions ("shows product", "introduces")
+✗ description: Static descriptions without movement or expression change
 `.trim()
 
 /** 모션 프롬프트 가이드라인 (영어) */
