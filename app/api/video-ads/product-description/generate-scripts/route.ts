@@ -15,8 +15,10 @@ import {
   generateProductScripts,
   generateFirstFramePrompt,
   generateAiAvatarPrompt,
+  recommendLocation,
   type CameraCompositionType,
 } from '@/lib/gemini/client'
+import type { VideoType } from '@/lib/gemini/types'
 import { getGenAI } from '@/lib/gemini'
 import {
   submitSeedreamFirstFrameToQueue,
@@ -138,7 +140,8 @@ export async function POST(request: NextRequest) {
       avatarId,
       avatarImageUrl,  // 의상 선택 시 사용되는 이미지 URL (선택적)
       productInfo,
-      locationPrompt,
+      locationPreset,  // 배경 프리셋 ('auto' | 'living_room' | ... | 'custom')
+      locationPrompt,  // custom일 때 사용자 입력 또는 프리셋의 promptValue
       durationSeconds,
       cameraComposition,  // 카메라 구도 (selfie, tripod, closeup, fullbody)
       modelPose,  // 모델 포즈 (holding-product, showing-product, using-product, talking-only)
@@ -296,6 +299,27 @@ export async function POST(request: NextRequest) {
       productImageUrl: outfitMode === 'ai_recommend' ? productImageUrl : undefined,
     })
 
+    // 1.5. 배경 AI 추천 (locationPreset === 'auto'인 경우)
+    let effectiveLocationPrompt = locationPrompt?.trim() || undefined
+    let recommendedLocation: string | undefined
+
+    if (locationPreset === 'auto') {
+      console.log('[generate-scripts] 배경 AI 추천 요청:', { videoType, productInfo: productInfo.trim().substring(0, 50) })
+      const locationRecommendation = await recommendLocation({
+        productInfo: productInfo.trim(),
+        productImageUrl,
+        videoType: videoType as VideoType,
+        avatarDescription,
+        language,
+      })
+      effectiveLocationPrompt = locationRecommendation.locationPrompt
+      recommendedLocation = locationRecommendation.locationDescription
+      console.log('[generate-scripts] 배경 AI 추천 완료:', {
+        locationPrompt: effectiveLocationPrompt?.substring(0, 50),
+        locationDescription: recommendedLocation,
+      })
+    }
+
     // 2. 첫 프레임 프롬프트 생성 (Gemini) - AI 아바타와 기존 아바타 분기
     let firstFramePrompt: string
     let locationDescription: string
@@ -314,7 +338,7 @@ export async function POST(request: NextRequest) {
       const aiAvatarResult = await generateAiAvatarPrompt({
         productInfo: productInfo.trim(),
         productImageUrl: effectiveProductImageUrl,
-        locationPrompt: locationPrompt?.trim() || undefined,
+        locationPrompt: effectiveLocationPrompt,  // AI 추천 배경 또는 사용자 지정 배경
         cameraComposition: cameraComposition as CameraCompositionType | undefined,
         modelPose,
         outfitPreset: outfitMode === 'preset' ? outfitPreset : undefined,
@@ -332,14 +356,15 @@ export async function POST(request: NextRequest) {
         language,  // 대본 언어 (인종 자동 설정용)
       })
       firstFramePrompt = aiAvatarResult.prompt
-      locationDescription = aiAvatarResult.locationDescription
+      // AI 추천 배경 사용 시 추천된 설명 사용, 그렇지 않으면 프롬프트에서 생성된 설명 사용
+      locationDescription = recommendedLocation || aiAvatarResult.locationDescription
       console.log('AI 아바타 프롬프트 생성:', { prompt: firstFramePrompt, avatar: aiAvatarResult.avatarDescription, videoType, isTalkingOnlyPose })
     } else {
       // 기존 아바타: generateFirstFramePrompt 사용
       const firstFrameResult = await generateFirstFramePrompt({
         productInfo: productInfo.trim(),
         avatarImageUrl: finalAvatarImageUrl!,
-        locationPrompt: locationPrompt?.trim() || undefined,
+        locationPrompt: effectiveLocationPrompt,  // AI 추천 배경 또는 사용자 지정 배경
         productImageUrl: effectiveProductImageUrl,
         cameraComposition,
         modelPose,
@@ -352,7 +377,8 @@ export async function POST(request: NextRequest) {
         lightingPrompt,    // 조명 프롬프트
       })
       firstFramePrompt = firstFrameResult.prompt
-      locationDescription = firstFrameResult.locationDescription
+      // AI 추천 배경 사용 시 추천된 설명 사용, 그렇지 않으면 프롬프트에서 생성된 설명 사용
+      locationDescription = recommendedLocation || firstFrameResult.locationDescription
     }
 
     // 3. 첫 프레임 이미지 생성 (2개)
@@ -449,6 +475,8 @@ export async function POST(request: NextRequest) {
       firstFramePrompt,
       isAiGeneratedAvatar,
       recommendedOutfit: scriptsResult.recommendedOutfit,
+      // AI 추천 배경 (auto 모드일 때만)
+      recommendedLocation: locationPreset === 'auto' ? recommendedLocation : undefined,
     })
   } catch (error) {
     console.error('대본 생성 오류:', error)

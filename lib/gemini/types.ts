@@ -572,3 +572,26 @@ export interface ScenarioOutput {
 export interface GenerateScenariosResult {
   scenarios: ScenarioOutput[]
 }
+
+// ============================================================
+// 배경/장소 AI 추천 관련 타입
+// ============================================================
+
+/** 배경 추천 입력 타입 */
+export interface LocationRecommendationInput {
+  productInfo: string
+  productImageUrl?: string
+  videoType: VideoType
+  avatarDescription?: string
+  language?: 'ko' | 'en' | 'ja' | 'zh'
+}
+
+/** 배경 추천 결과 타입 */
+export interface LocationRecommendationResult {
+  /** 이미지 생성용 영문 배경 설명 */
+  locationPrompt: string
+  /** 사용자에게 표시할 배경 설명 (사용자 언어) */
+  locationDescription: string
+  /** 추천 이유 (사용자 언어) */
+  reason: string
+}

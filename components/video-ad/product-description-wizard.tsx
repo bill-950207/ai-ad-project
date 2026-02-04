@@ -382,6 +382,8 @@ const outfitPresetOptions: OutfitPreset[] = ['casual_everyday', 'formal_elegant'
 // 배경/장소 프리셋 (영상 스타일별로 다른 옵션 제공)
 // ============================================================
 type LocationPreset =
+  // AI 추천
+  | 'auto'
   // UGC용 (일상적, 자연스러운)
   | 'living_room' | 'bedroom' | 'cafe' | 'outdoor' | 'bathroom'
   // Podcast용 (전문적이면서 캐주얼)
@@ -398,6 +400,12 @@ interface LocationPresetInfo {
 }
 
 const locationPresetLabels: Record<LocationPreset, LocationPresetInfo> = {
+  // AI 추천
+  auto: {
+    label: 'AI Recommend',
+    desc: 'AI recommends the best location for your product',
+    promptValue: '',  // API에서 동적으로 생성
+  },
   // UGC
   living_room: {
     label: 'Living Room',
@@ -471,16 +479,16 @@ const locationPresetLabels: Record<LocationPreset, LocationPresetInfo> = {
 
 // 영상 스타일별 추천 장소 프리셋
 const locationPresetsByVideoType: Record<VideoType, LocationPreset[]> = {
-  UGC: ['living_room', 'bedroom', 'cafe', 'outdoor', 'bathroom', 'custom'],
-  podcast: ['home_office', 'study', 'podcast_studio', 'living_room', 'custom'],
-  expert: ['studio', 'office', 'meeting_room', 'minimal', 'custom'],
+  UGC: ['auto', 'living_room', 'bedroom', 'cafe', 'outdoor', 'bathroom', 'custom'],
+  podcast: ['auto', 'home_office', 'study', 'podcast_studio', 'living_room', 'custom'],
+  expert: ['auto', 'studio', 'office', 'meeting_room', 'minimal', 'custom'],
 }
 
 // 영상 스타일별 기본 장소
 const defaultLocationByVideoType: Record<VideoType, LocationPreset> = {
-  UGC: 'living_room',
-  podcast: 'home_office',
-  expert: 'studio',
+  UGC: 'auto',
+  podcast: 'auto',
+  expert: 'auto',
 }
 
 // ============================================================
@@ -587,7 +595,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
   const [videoType, setVideoType] = useState<VideoType>('UGC')
 
   // 새 옵션: 배경/장소
-  const [locationPreset, setLocationPreset] = useState<LocationPreset>('living_room')
+  const [locationPreset, setLocationPreset] = useState<LocationPreset>('auto')
 
   // videoType 변경 시 해당 스타일에 맞는 기본값으로 자동 변경
   useEffect(() => {
@@ -2706,7 +2714,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   }`}
                   title={locationPresetLabels[preset].desc}
                 >
-                  <span className={`text-sm font-medium ${locationPreset === preset ? 'text-primary' : 'text-foreground'}`}>
+                  <span className={`text-sm font-medium flex items-center gap-1 ${locationPreset === preset ? 'text-primary' : 'text-foreground'}`}>
+                    {preset === 'auto' && <Sparkles className="w-3.5 h-3.5" />}
                     {locationPresetLabels[preset].label}
                   </span>
                   <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
