@@ -8,7 +8,6 @@ export type {
   AdElementOptions,
   ScenarioInfo,
   FirstSceneOption,
-  ReferenceInfo,
   ProductAdWizardState,
   ProductAdWizardActions,
 } from './wizard-context'

@@ -286,7 +286,6 @@ export function WizardStep3() {
     selectedScenarioIndex,
     setSelectedScenarioIndex,
     updateScenarioElement,
-    referenceInfo,
     selectedProduct,
     editableDescription,
     editableSellingPoints,
@@ -383,60 +382,10 @@ export function WizardStep3() {
     }
   }
 
-  // 참조 분석 기반 시나리오 생성
-  const generateFromReference = async () => {
-    if (!referenceInfo?.analyzedElements || !selectedProduct || isGeneratingRef.current) return
-
-    isGeneratingRef.current = true
-    setIsGeneratingScenario(true)
-    try {
-      const res = await fetch('/api/product-ad/generate-scenario', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          productName: selectedProduct.name,
-          productDescription: editableDescription || selectedProduct.description,
-          sellingPoints: editableSellingPoints.filter(p => p.trim()) || selectedProduct.selling_points,
-          productImageUrl: selectedProduct.rembg_image_url || selectedProduct.image_url,
-          referenceElements: referenceInfo.analyzedElements,
-          referenceDescription: referenceInfo.analyzedDescription,
-          count: 1,
-          language,  // 사용자 언어 설정 전달
-          // sceneCount는 전달하지 않음 - AI가 제품에 맞게 자체 결정
-        }),
-      })
-
-      if (!res.ok) throw new Error('Scenario generation failed')
-
-      const data = await res.json()
-      if (data.scenarios.length > 0) {
-        const scenario = data.scenarios[0]
-        setScenarioInfo(scenario)
-
-        // AI 추천 영상 설정 적용
-        if (scenario.videoSettings) {
-          applyVideoSettingsFromScenario(scenario.videoSettings as RecommendedVideoSettings)
-        }
-
-        // AI가 생성한 씬별 요소 적용
-        if (scenario.sceneElements && Array.isArray(scenario.sceneElements)) {
-          setSceneElements(scenario.sceneElements as SceneElementOptions[])
-        }
-      }
-    } catch (error) {
-      console.error('Scenario generation error:', error)
-    } finally {
-      isGeneratingRef.current = false
-      setIsGeneratingScenario(false)
-    }
-  }
-
-  // 초기 로드 시 AI 추천 또는 참조 기반 시나리오 생성
+  // 초기 로드 시 AI 추천 시나리오 생성
   useEffect(() => {
     if (scenarioMethod === 'ai-auto' && generatedScenarios.length === 0 && !isGeneratingScenario && !isGeneratingRef.current) {
       generateAiScenarios()
-    } else if (scenarioMethod === 'reference' && referenceInfo?.analyzedElements && !scenarioInfo && !isGeneratingScenario && !isGeneratingRef.current) {
-      generateFromReference()
     } else if (scenarioMethod === 'direct' && !scenarioInfo) {
       // 직접 입력 모드: 빈 시나리오로 시작
       setScenarioInfo({
@@ -496,7 +445,7 @@ export function WizardStep3() {
         <div className="text-center">
           <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
           <p className="text-foreground font-medium">
-            {scenarioMethod === 'ai-auto' ? (t.productAdWizard?.step3?.aiRecommending || 'AI is recommending the optimal scenario...') : (t.productAdWizard?.step3?.analyzingReference || 'Analyzing reference video to build scenario...')}
+            {t.productAdWizard?.step3?.aiRecommending || 'AI is recommending the optimal scenario...'}
           </p>
           <p className="text-sm text-muted-foreground mt-2">{t.common?.pleaseWait || 'Please wait'}</p>
         </div>
@@ -512,9 +461,7 @@ export function WizardStep3() {
         <p className="text-muted-foreground mt-2">
           {scenarioMethod === 'direct'
             ? (t.productAdWizard?.step3?.subtitleDirect || 'Select your desired ad mood and video settings')
-            : scenarioMethod === 'ai-auto'
-              ? (t.productAdWizard?.step3?.subtitleAi || 'Select AI recommended scenario and review video settings')
-              : (t.productAdWizard?.step3?.subtitleReference || 'Review settings based on reference video analysis')}
+            : (t.productAdWizard?.step3?.subtitleAi || 'Select AI recommended scenario and review video settings')}
         </p>
       </div>
 
@@ -571,17 +518,6 @@ export function WizardStep3() {
               </button>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* 참조 분석 결과 표시 (reference 모드) */}
-      {scenarioMethod === 'reference' && referenceInfo?.analyzedDescription && (
-        <div className="p-4 bg-secondary/30 rounded-xl">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">{t.productAdWizard?.step3?.referenceAnalysisResult || 'Reference Video Analysis Result'}</span>
-          </div>
-          <p className="text-sm text-muted-foreground">{referenceInfo.analyzedDescription}</p>
         </div>
       )}
 
