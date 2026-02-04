@@ -9,13 +9,16 @@ interface ProfileContentProps {
     app_metadata?: { provider?: string }
     user_metadata?: { full_name?: string; name?: string }
   } | null
+  profileName?: string | null
 }
 
-export function ProfileContent({ user }: ProfileContentProps) {
+export function ProfileContent({ user, profileName }: ProfileContentProps) {
   const { t } = useLanguage()
 
   const getUserDisplayName = () => {
     if (!user) return 'User'
+    // DB 프로필 이름 우선 사용
+    if (profileName) return profileName
     if (user.user_metadata?.full_name) return user.user_metadata.full_name
     if (user.user_metadata?.name) return user.user_metadata.name
     return user.email?.split('@')[0] || 'User'
