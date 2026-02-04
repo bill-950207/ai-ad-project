@@ -34,6 +34,16 @@ export interface AnalysisResult {
     confidence: number
     reason?: string  // AI가 이 옵션을 선택한 이유
   }>
+  // AI 아바타 추천 스타일 (AI 아바타 선택 시)
+  recommendedAvatarStyle?: {
+    avatarPrompt: string
+    avatarDescription: string
+    gender?: 'male' | 'female' | 'any'
+    age?: 'young' | 'middle' | 'mature' | 'any'
+    style?: 'natural' | 'professional' | 'casual' | 'elegant' | 'any'
+    ethnicity?: 'korean' | 'asian' | 'western' | 'any'
+    bodyType?: 'slim' | 'average' | 'athletic' | 'curvy' | 'any'
+  }
 }
 
 export interface AiScenario {

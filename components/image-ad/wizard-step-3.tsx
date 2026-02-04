@@ -24,7 +24,11 @@ export function WizardStep3() {
     setSelectedAvatarInfo,
     productUsageMethod,  // 제품 사용 방법 (using 타입 전용)
     settingMethod,
+    referenceUrl,
+    isAnalyzingReference,
+    setIsAnalyzingReference,
     analysisResult,
+    setAnalysisResult,
     categoryOptions,
     setCategoryOptions,
     customOptions,
@@ -54,6 +58,9 @@ export function WizardStep3() {
 
   // 중복 요청 방지를 위한 ref
   const aiRecommendationRequestedRef = useRef(false)
+  const referenceAnalysisRequestedRef = useRef(false)
+  const analysisAppliedRef = useRef(false)  // 분석 결과 적용 여부 추적
+  const isInitialMountRef = useRef(true)  // 초기 마운트 여부
 
   // 시나리오 옵션 적용 헬퍼 함수
   const applyScenarioOptions = useCallback((scenario: {
@@ -207,6 +214,70 @@ export function WizardStep3() {
     }
   }, [adType, selectedProduct, selectedAvatarInfo, productUsageMethod, language, setIsAiRecommending, setHasLoadedAiRecommendation, setGeneratedScenarios, applyScenarioOptions])
 
+  // 참조 이미지 분석 (Step 3에서 수행)
+  const loadReferenceAnalysis = useCallback(async () => {
+    if (!referenceUrl || referenceAnalysisRequestedRef.current) return
+    referenceAnalysisRequestedRef.current = true
+    analysisAppliedRef.current = false  // 새 분석 시작 시 적용 플래그 리셋
+
+    setIsAnalyzingReference(true)
+    try {
+      // 아바타 정보 구성
+      const avatarInfo = selectedAvatarInfo ? {
+        type: selectedAvatarInfo.type,
+        avatarName: selectedAvatarInfo.avatarName,
+        outfitName: selectedAvatarInfo.outfitName,
+        aiOptions: selectedAvatarInfo.aiOptions,
+        avatarStyle: selectedAvatarInfo.avatarOptions ? {
+          vibe: selectedAvatarInfo.avatarOptions.vibe,
+          bodyType: selectedAvatarInfo.avatarOptions.bodyType,
+          height: selectedAvatarInfo.avatarOptions.height,
+          gender: selectedAvatarInfo.avatarOptions.gender,
+        } : undefined,
+      } : undefined
+
+      // 실제 아바타 이미지 URL (AI 추천이 아닌 경우만)
+      const avatarImageUrl = selectedAvatarInfo?.type !== 'ai-generated'
+        ? selectedAvatarInfo?.imageUrl
+        : undefined
+
+      const res = await fetch('/api/image-ads/analyze-reference', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUrl: referenceUrl,
+          adType,
+          productName: selectedProduct?.name,
+          productDescription: selectedProduct?.description,
+          productSellingPoints: selectedProduct?.selling_points,
+          productImageUrl: selectedProduct?.rembg_image_url || selectedProduct?.image_url,
+          hasAvatar: !!selectedAvatarInfo,
+          avatarInfo,
+          avatarImageUrl,
+          productUsageMethod: adType === 'using' ? productUsageMethod : undefined,
+          language,
+        }),
+      })
+
+      if (!res.ok) {
+        throw new Error('Analysis failed')
+      }
+
+      const result = await res.json()
+      setAnalysisResult({
+        overallStyle: result.overallStyle,
+        suggestedPrompt: result.suggestedPrompt,
+        analyzedOptions: result.analyzedOptions,
+        recommendedAvatarStyle: result.recommendedAvatarStyle,
+      })
+    } catch (error) {
+      console.error('Reference image analysis error:', error)
+      referenceAnalysisRequestedRef.current = false
+    } finally {
+      setIsAnalyzingReference(false)
+    }
+  }, [referenceUrl, adType, selectedProduct, selectedAvatarInfo, productUsageMethod, language, setIsAnalyzingReference, setAnalysisResult])
+
   // 참조 이미지 분석 결과 적용
   const applyAnalysisResult = useCallback(() => {
     if (!analysisResult?.analyzedOptions) return
@@ -217,9 +288,15 @@ export function WizardStep3() {
     const newAiReasons: Record<string, string> = {}
 
     for (const opt of analysisResult.analyzedOptions) {
-      if (opt.type === 'custom' && opt.customText) {
+      // customText가 있으면 항상 custom 모드로 설정 (type이 'custom'이 아니더라도)
+      if (opt.customText) {
         newCategoryOptions[opt.key] = '__custom__'
         newCustomOptions[opt.key] = opt.customText
+        newCustomInputActive[opt.key] = true
+      } else if (opt.type === 'custom') {
+        // type이 custom인데 customText가 없는 경우 (fallback)
+        newCategoryOptions[opt.key] = '__custom__'
+        newCustomOptions[opt.key] = opt.value
         newCustomInputActive[opt.key] = true
       } else {
         newCategoryOptions[opt.key] = opt.value
@@ -243,16 +320,72 @@ export function WizardStep3() {
     if (analysisResult.suggestedPrompt) {
       setAdditionalPrompt(analysisResult.suggestedPrompt)
     }
-  }, [analysisResult, setCategoryOptions, setCustomOptions, setCustomInputActive, setAiReasons, setAiStrategy, setAdditionalPrompt])
 
-  // AI 자동 설정 로드 (Step 3 진입 시)
+    // AI 추천 아바타 옵션 업데이트 (reference 분석 결과에서)
+    if (selectedAvatarInfo?.type === 'ai-generated' && analysisResult.recommendedAvatarStyle) {
+      const style = analysisResult.recommendedAvatarStyle
+      const current = selectedAvatarInfo.aiOptions || {
+        targetGender: 'any' as const,
+        targetAge: 'any' as const,
+        style: 'any' as const,
+        ethnicity: 'any' as const,
+        bodyType: 'any' as const,
+        height: 'any' as const,
+        hairStyle: 'any' as const,
+        hairColor: 'any' as const,
+      }
+
+      // 사용자가 'any'로 설정한 필드만 LLM 추천값으로 업데이트
+      const updatedOptions = {
+        targetGender: (current.targetGender === 'any' && style.gender && style.gender !== 'any')
+          ? (style.gender as 'male' | 'female' | 'any') : current.targetGender,
+        targetAge: (current.targetAge === 'any' && style.age && style.age !== 'any')
+          ? (style.age as 'young' | 'middle' | 'mature' | 'any') : current.targetAge,
+        style: (current.style === 'any' && style.style && style.style !== 'any')
+          ? (style.style as 'natural' | 'professional' | 'casual' | 'elegant' | 'any') : current.style,
+        ethnicity: (current.ethnicity === 'any' && style.ethnicity && style.ethnicity !== 'any')
+          ? (style.ethnicity as 'korean' | 'asian' | 'western' | 'any') : current.ethnicity,
+        bodyType: (current.bodyType === 'any' && style.bodyType && style.bodyType !== 'any')
+          ? (style.bodyType as 'slim' | 'average' | 'athletic' | 'curvy' | 'any') : current.bodyType,
+        // 상세 옵션은 사용자가 직접 설정한 값 유지
+        height: current.height,
+        hairStyle: current.hairStyle,
+        hairColor: current.hairColor,
+      }
+
+      setSelectedAvatarInfo({
+        ...selectedAvatarInfo,
+        aiOptions: updatedOptions,
+      })
+    }
+  }, [analysisResult, setCategoryOptions, setCustomOptions, setCustomInputActive, setAiReasons, setAiStrategy, setAdditionalPrompt, selectedAvatarInfo, setSelectedAvatarInfo])
+
+  // Draft 복원 시 이미 분석 결과가 있으면 적용 완료로 표시 (중복 적용 방지)
+  useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false
+      // 마운트 시 이미 분석 결과가 있으면 (Draft 복원) 적용된 것으로 간주
+      if (analysisResult?.analyzedOptions) {
+        analysisAppliedRef.current = true
+      }
+    }
+  }, [analysisResult])
+
+  // AI 자동 설정 또는 참조 이미지 분석 로드 (Step 3 진입 시)
   useEffect(() => {
     if (settingMethod === 'ai-auto' && !hasLoadedAiRecommendation) {
       loadAiRecommendation(false)
-    } else if (settingMethod === 'reference' && analysisResult?.analyzedOptions) {
-      applyAnalysisResult()
+    } else if (settingMethod === 'reference') {
+      if (!analysisResult && referenceUrl && !isAnalyzingReference) {
+        // 분석 결과가 없으면 분석 수행
+        loadReferenceAnalysis()
+      } else if (analysisResult?.analyzedOptions && !analysisAppliedRef.current) {
+        // 분석 결과가 있고 아직 적용 안 됐으면 적용 (중복 적용 방지)
+        analysisAppliedRef.current = true
+        applyAnalysisResult()
+      }
     }
-  }, [settingMethod, hasLoadedAiRecommendation, loadAiRecommendation, analysisResult])
+  }, [settingMethod, hasLoadedAiRecommendation, loadAiRecommendation, analysisResult, applyAnalysisResult, referenceUrl, isAnalyzingReference, loadReferenceAnalysis])
 
   // AI 재추천 (수동 새로고침)
   const handleRefreshAiRecommendation = () => {
@@ -284,17 +417,23 @@ export function WizardStep3() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {/* AI 추천 로딩 */}
-      {isAiRecommending && (
+      {/* AI 추천 또는 참조 이미지 분석 로딩 */}
+      {(isAiRecommending || isAnalyzingReference) && (
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
           <div className="flex flex-col items-center gap-4">
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
               <Loader2 className="w-8 h-8 text-primary animate-spin" />
             </div>
             <div className="text-center">
-              <h3 className="font-medium text-foreground mb-1">{t.imageAd?.options?.aiAnalyzing || 'AI is analyzing optimal settings'}</h3>
+              <h3 className="font-medium text-foreground mb-1">
+                {isAnalyzingReference
+                  ? (t.imageAd?.options?.analyzingReference || 'AI is analyzing reference image')
+                  : (t.imageAd?.options?.aiAnalyzing || 'AI is analyzing optimal settings')}
+              </h3>
               <p className="text-sm text-muted-foreground">
-                {(t.imageAd?.options?.aiAnalyzingDesc || 'Analyzing {product} product and avatar characteristics...').replace('{product}', selectedProduct?.name || 'product')}
+                {isAnalyzingReference
+                  ? (t.imageAd?.options?.analyzingReferenceDesc || 'Analyzing reference image style with product and avatar info...')
+                  : (t.imageAd?.options?.aiAnalyzingDesc || 'Analyzing {product} product and avatar characteristics...').replace('{product}', selectedProduct?.name || 'product')}
               </p>
             </div>
           </div>
@@ -379,7 +518,7 @@ export function WizardStep3() {
       )}
 
       {/* 상세 옵션 */}
-      {!isAiRecommending && (
+      {!isAiRecommending && !isAnalyzingReference && (
         <div className="bg-card border border-border rounded-xl p-6 space-y-6">
           <div className="flex items-center justify-between pb-4 border-b border-border">
             <h2 className="text-lg font-semibold text-foreground">{t.imageAd?.options?.title || 'Detailed Options'}</h2>
@@ -492,7 +631,7 @@ export function WizardStep3() {
       )}
 
       {/* 추가 프롬프트 */}
-      {!isAiRecommending && (
+      {!isAiRecommending && !isAnalyzingReference && (
         <div className="bg-card border border-border rounded-xl p-6">
           <label className="block text-sm font-medium text-foreground mb-3">
             {t.imageAd?.options?.additionalDesc || imageAdCreate.additionalPrompt || 'Additional Description (Optional)'}
@@ -519,9 +658,9 @@ export function WizardStep3() {
 
         <button
           onClick={goToNextStep}
-          disabled={isAiRecommending}
+          disabled={isAiRecommending || isAnalyzingReference}
           className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
-            !isAiRecommending
+            !isAiRecommending && !isAnalyzingReference
               ? 'bg-primary text-primary-foreground hover:bg-primary/90'
               : 'bg-secondary text-muted-foreground cursor-not-allowed'
           }`}

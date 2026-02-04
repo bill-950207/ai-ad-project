@@ -4,6 +4,7 @@
 
 import { GenerateContentConfig, MediaResolution, ThinkingLevel, Type } from '@google/genai'
 import { getGenAI, MODEL_NAME, fetchImageAsBase64 } from './shared'
+import { withRetry } from './fallback'
 import type {
   ImageAdType,
   RecommendedOptionsInput,
@@ -566,7 +567,7 @@ ${SCENARIO_SELF_VERIFICATION}
 IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be written in the specified output language.`
 
   const config: GenerateContentConfig = {
-    thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
     responseSchema: {
@@ -652,18 +653,24 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
   console.log('[generateMultipleRecommendedOptions] 입력 프롬프트 길이:', prompt.length)
   console.log('[generateMultipleRecommendedOptions] 제품명:', input.productName)
 
-  let response
-  try {
-    response = await getGenAI().models.generateContent({
+  // withRetry로 API 호출 (일시적 오류 시 1회 재시도)
+  const result = await withRetry(
+    () => getGenAI().models.generateContent({
       model: MODEL_NAME,
       contents: [{ role: 'user', parts }],
       config,
-    })
-    console.log('[generateMultipleRecommendedOptions] Gemini 응답 성공, 응답 길이:', response.text?.length || 0)
-  } catch (apiError) {
-    console.error('[generateMultipleRecommendedOptions] Gemini API 호출 실패:', apiError)
-    throw apiError
+    }),
+    'generateMultipleRecommendedOptions',
+    { maxRetries: 1, retryDelayMs: 1000 }
+  )
+
+  if (!result.success || !result.data) {
+    console.error('[generateMultipleRecommendedOptions] Gemini API 호출 실패:', result.error)
+    throw new Error(result.error || 'Gemini API call failed')
   }
+
+  const response = result.data
+  console.log('[generateMultipleRecommendedOptions] Gemini 응답 성공, 응답 길이:', response.text?.length || 0)
 
   try {
     const rawResult = JSON.parse(response.text || '') as {
