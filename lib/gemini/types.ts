@@ -336,7 +336,11 @@ export interface FirstFramePromptInput {
   locationPrompt?: string
   productImageUrl?: string
   cameraComposition?: CameraCompositionType
+  /** 카메라 구도 직접 입력 (cameraComposition이 undefined일 때 사용) */
+  cameraCompositionPrompt?: string
   modelPose?: ModelPoseType
+  /** 모델 포즈 직접 입력 (modelPose가 undefined일 때 사용) */
+  modelPosePrompt?: string
   outfitPreset?: OutfitPresetType
   outfitCustom?: string
   /** 비디오 타입 (UGC, 팟캐스트, 전문가) */
@@ -386,7 +390,11 @@ export interface AiAvatarPromptInput {
   productImageUrl?: string
   locationPrompt?: string
   cameraComposition?: CameraCompositionType
+  /** 카메라 구도 직접 입력 (cameraComposition이 undefined일 때 사용) */
+  cameraCompositionPrompt?: string
   modelPose?: ModelPoseType
+  /** 모델 포즈 직접 입력 (modelPose가 undefined일 때 사용) */
+  modelPosePrompt?: string
   outfitPreset?: OutfitPresetType
   outfitCustom?: string
   targetGender?: 'male' | 'female' | 'any'
@@ -571,4 +579,27 @@ export interface ScenarioOutput {
 /** 시나리오 생성 결과 타입 */
 export interface GenerateScenariosResult {
   scenarios: ScenarioOutput[]
+}
+
+// ============================================================
+// 배경/장소 AI 추천 관련 타입
+// ============================================================
+
+/** 배경 추천 입력 타입 */
+export interface LocationRecommendationInput {
+  productInfo: string
+  productImageUrl?: string
+  videoType: VideoType
+  avatarDescription?: string
+  language?: 'ko' | 'en' | 'ja' | 'zh'
+}
+
+/** 배경 추천 결과 타입 */
+export interface LocationRecommendationResult {
+  /** 이미지 생성용 영문 배경 설명 */
+  locationPrompt: string
+  /** 사용자에게 표시할 배경 설명 (사용자 언어) */
+  locationDescription: string
+  /** 추천 이유 (사용자 언어) */
+  reason: string
 }

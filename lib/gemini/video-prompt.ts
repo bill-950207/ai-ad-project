@@ -23,6 +23,8 @@ import type {
   ModelPoseType,
   OutfitPresetType,
   VideoType,
+  LocationRecommendationInput,
+  LocationRecommendationResult,
 } from './types'
 import { VIDEO_TYPE_SCRIPT_STYLES } from '@/lib/prompts/scripts'
 import {
@@ -684,14 +686,19 @@ export async function generateFirstFramePrompt(input: FirstFramePromptInput): Pr
     ? `Location: ${input.locationPrompt}`
     : `Location: ${videoTypeGuide.environmentPrompt}`
 
+  // 카메라 구도: 프리셋 > 직접 입력 > 비디오 타입 기본값
   const cameraSection = input.cameraComposition
     ? `Camera: ${cameraCompositionDescriptions[input.cameraComposition]}`
-    : ''
+    : input.cameraCompositionPrompt
+      ? `Camera: ${input.cameraCompositionPrompt}`
+      : ''
 
-  // 포즈: 사용자 지정 > 비디오 타입 기본값
+  // 포즈: 프리셋 > 직접 입력 > 비디오 타입 기본값
   const poseSection = input.modelPose
     ? `Pose: ${modelPoseDescriptions[input.modelPose]}`
-    : `Pose: ${videoTypeGuide.posePrompt}`
+    : input.modelPosePrompt
+      ? `Pose: ${input.modelPosePrompt}`
+      : `Pose: ${videoTypeGuide.posePrompt}`
 
   // UGC 셀카 + 제품 포즈 조합 시 특별 지시
   const isUgcSelfie = input.cameraComposition === 'ugc-selfie'
@@ -889,5 +896,131 @@ ${VIDEO_SELF_VERIFICATION}`
       prompt: 'The model from Figure 1 in a natural indoor setting. Soft natural daylight. Sharp in-focus background with every detail visible, NO bokeh, NO blur. Shot on Sony A7IV, 35mm f/11, entire scene razor sharp. Hyperrealistic photograph, 8K quality.',
       locationDescription: fallbackLocations[language] || fallbackLocations.ko,
     }
+  }
+}
+
+// ============================================================
+// 배경/장소 AI 추천
+// ============================================================
+
+/**
+ * 제품과 영상 스타일에 맞는 최적의 배경/장소를 추천합니다.
+ */
+export async function recommendLocation(input: LocationRecommendationInput): Promise<LocationRecommendationResult> {
+  const language = input.language || 'ko'
+  const languageInstruction = outputLanguageInstructions[language] || outputLanguageInstructions.ko
+
+  // 비디오 타입별 배경 컨텍스트
+  const videoTypeContexts: Record<VideoType, string> = {
+    UGC: 'UGC (User Generated Content) style - casual, authentic home/lifestyle settings that feel relatable and natural. Common locations: living room, bedroom, bathroom (for beauty), cafe, outdoor.',
+    podcast: 'Podcast style - intimate, conversational settings that feel professional yet approachable. Common locations: home office, study, podcast studio with warm lighting.',
+    expert: 'Expert style - professional, authoritative settings that convey expertise and trust. Common locations: studio, office, meeting room, minimal clean backgrounds.',
+  }
+
+  // 제품 카테고리별 배경 힌트
+  const categoryHints = `
+PRODUCT CATEGORY → BACKGROUND MAPPING (use as guidance):
+- Cosmetics/Skincare → bathroom vanity, well-lit bedroom, clean white background
+- Food/Beverages → kitchen, dining table, cafe setting
+- Electronics/Tech → modern office, minimal desk setup, studio
+- Fashion/Clothing → bedroom with wardrobe, dressing room, lifestyle setting
+- Health/Fitness → gym corner, bright living room, outdoor
+- Home/Living → living room, cozy interior, lifestyle setting
+- Baby/Kids → warm nursery, living room, safe home environment
+`
+
+  const prompt = `You are a visual marketing expert specializing in video advertisement backgrounds.
+Based on the product and video style, recommend the ideal background/location for a product description video.
+
+=== OUTPUT LANGUAGE ===
+${languageInstruction}
+Note: "locationPrompt" must always be in ENGLISH (for image generation AI).
+
+=== PRODUCT INFORMATION ===
+${input.productInfo}
+
+=== VIDEO STYLE ===
+${videoTypeContexts[input.videoType]}
+
+${input.avatarDescription ? `=== MODEL/AVATAR ===\n${input.avatarDescription}` : ''}
+
+${categoryHints}
+
+=== DECISION CRITERIA ===
+Consider these factors when recommending:
+1. Product category and typical usage context
+2. Target audience expectations and lifestyle
+3. Video style requirements (${input.videoType})
+4. Visual harmony between product, model, and background
+5. Lighting compatibility (natural vs artificial)
+6. Authenticity and relatability for the target audience
+
+=== OUTPUT FORMAT (JSON) ===
+{
+  "locationPrompt": "Detailed English background description for image generation (30-50 words). Include: specific location, lighting type, atmosphere, key visual elements. Example: 'cozy modern living room with warm ambient lighting, comfortable beige sofa visible in soft focus background, natural daylight from large window'",
+  "locationDescription": "배경 설명 in OUTPUT LANGUAGE (사용자에게 표시용, 10-20자)",
+  "reason": "추천 이유 in OUTPUT LANGUAGE (왜 이 배경이 제품과 영상 스타일에 적합한지 1-2문장)"
+}
+
+=== IMPORTANT RULES ===
+1. locationPrompt must be in ENGLISH, detailed enough for image generation
+2. locationDescription and reason must be in OUTPUT LANGUAGE
+3. Background should complement the product, not overshadow it
+4. Avoid overly complex or distracting backgrounds
+5. Consider lighting that flatters both product and model`
+
+  const config: GenerateContentConfig = {
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+    responseMimeType: 'application/json',
+  }
+
+  const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []
+
+  // 제품 이미지가 있으면 첨부 (더 정확한 추천을 위해)
+  if (input.productImageUrl) {
+    const imageData = await fetchImageAsBase64(input.productImageUrl)
+    if (imageData) {
+      parts.push({ inlineData: { mimeType: imageData.mimeType, data: imageData.base64 } })
+    }
+  }
+
+  parts.push({ text: prompt })
+
+  try {
+    const response = await getGenAI().models.generateContent({
+      model: MODEL_NAME,
+      contents: [{ role: 'user', parts }],
+      config,
+    })
+
+    const result = JSON.parse(response.text || '') as LocationRecommendationResult
+    console.log('[recommendLocation] AI 배경 추천 성공:', {
+      videoType: input.videoType,
+      locationPrompt: result.locationPrompt.substring(0, 50) + '...',
+    })
+    return result
+  } catch (error) {
+    console.error('[recommendLocation] AI 배경 추천 실패:', error)
+
+    // 폴백: 비디오 타입별 기본 배경
+    const fallbackLocations: Record<VideoType, LocationRecommendationResult> = {
+      UGC: {
+        locationPrompt: 'cozy modern living room with warm ambient lighting, comfortable sofa visible in soft focus background, natural daylight from window',
+        locationDescription: language === 'ko' ? '따뜻한 거실' : language === 'ja' ? '暖かいリビング' : language === 'zh' ? '温馨的客厅' : 'Cozy living room',
+        reason: language === 'ko' ? '자연스럽고 친근한 UGC 스타일에 적합합니다.' : language === 'ja' ? '自然で親しみやすいUGCスタイルに適しています。' : language === 'zh' ? '适合自然亲切的UGC风格。' : 'Suitable for natural and relatable UGC style.',
+      },
+      podcast: {
+        locationPrompt: 'clean home office setup with minimal desk, organized bookshelf in background, warm desk lamp lighting, professional yet cozy atmosphere',
+        locationDescription: language === 'ko' ? '홈 오피스' : language === 'ja' ? 'ホームオフィス' : language === 'zh' ? '家庭办公室' : 'Home office',
+        reason: language === 'ko' ? '전문적이면서 편안한 팟캐스트 분위기에 적합합니다.' : language === 'ja' ? 'プロフェッショナルでありながら親しみやすいポッドキャストの雰囲気に適しています。' : language === 'zh' ? '适合专业而轻松的播客氛围。' : 'Suitable for professional yet approachable podcast atmosphere.',
+      },
+      expert: {
+        locationPrompt: 'professional studio setting with soft gradient background, clean and minimal, even studio lighting, authoritative and trustworthy atmosphere',
+        locationDescription: language === 'ko' ? '전문 스튜디오' : language === 'ja' ? 'プロフェッショナルスタジオ' : language === 'zh' ? '专业工作室' : 'Professional studio',
+        reason: language === 'ko' ? '신뢰감 있는 전문가 스타일에 적합합니다.' : language === 'ja' ? '信頼感のある専門家スタイルに適しています。' : language === 'zh' ? '适合可信赖的专家风格。' : 'Suitable for trustworthy expert style.',
+      },
+    }
+
+    return fallbackLocations[input.videoType]
   }
 }

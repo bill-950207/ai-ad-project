@@ -141,99 +141,110 @@ const videoTypeOptions: VideoType[] = ['UGC', 'podcast', 'expert']
 
 // 카메라 구도 타입 (영상 스타일별로 다른 옵션 제공)
 type CameraComposition =
+  // AI 추천
+  | 'auto'
   // 공통
-  | 'auto' | 'closeup'
+  | 'closeup'
   // UGC용 (셀카 스타일)
   | 'selfie-high' | 'selfie-front' | 'selfie-side' | 'ugc-closeup' | 'ugc-selfie'
   // Podcast용 (웹캠/데스크 스타일)
   | 'webcam' | 'medium-shot' | 'three-quarter'
   // Expert용 (전문가 스타일)
   | 'tripod' | 'fullbody' | 'presenter'
+  // 직접 입력
+  | 'custom'
 
 // 카메라 구도 정보
 interface CameraCompositionInfo {
   label: string
   desc: string
-  exampleImage: string
+  promptValue: string  // 프롬프트에 사용될 영문 설명
 }
 
 const cameraCompositionLabels: Record<CameraComposition, CameraCompositionInfo> = {
-  // Common
+  // AI 추천
   auto: {
-    label: 'Auto',
-    desc: 'AI selects natural composition',
-    exampleImage: '/images/camera/auto.png',
+    label: 'AI Recommend',
+    desc: 'AI selects the best composition for your video',
+    promptValue: '',  // API에서 동적으로 결정
   },
+  // Common
   closeup: {
     label: 'Close-up',
     desc: 'Face-focused close shot',
-    exampleImage: '/images/camera/closeup.png',
+    promptValue: 'close-up portrait framing, face and upper chest, intimate conversational distance',
   },
   // UGC
   'selfie-high': {
-    label: 'Selfie (High Angle)',
+    label: 'Selfie (High)',
     desc: 'Looking down from above',
-    exampleImage: '/images/camera/selfie-high.png',
+    promptValue: 'high angle selfie perspective, camera looking down from above, flattering casual angle',
   },
   'selfie-front': {
     label: 'Selfie (Front)',
     desc: 'Eye level front shot',
-    exampleImage: '/images/camera/selfie-front.png',
+    promptValue: 'eye-level frontal selfie view, direct eye contact, natural smartphone distance',
   },
   'selfie-side': {
     label: 'Selfie (Side)',
     desc: 'Slightly from the side',
-    exampleImage: '/images/camera/selfie-side.png',
+    promptValue: 'three-quarter selfie angle, showing facial contours, casual authentic vibe',
   },
   'ugc-closeup': {
-    label: 'Influencer Close-up',
+    label: 'Influencer',
     desc: 'Chest to face close shot',
-    exampleImage: '/images/camera/ugc-closeup.png',
+    promptValue: 'UGC influencer style medium close-up, chest-up framing, casual and approachable feel',
   },
   'ugc-selfie': {
     label: 'UGC Selfie',
     desc: 'Phone selfie composition',
-    exampleImage: '/images/camera/ugc-selfie.png',
+    promptValue: 'POV selfie shot, subject looking at camera, NO phone visible, natural relaxed pose',
   },
   // Podcast
   webcam: {
-    label: 'Webcam Front',
+    label: 'Webcam',
     desc: 'Standard podcast style',
-    exampleImage: '/images/camera/webcam.png',
+    promptValue: 'webcam-style frontal view, desktop setup distance, conversational podcast framing',
   },
   'medium-shot': {
     label: 'Medium Shot',
     desc: 'Upper body visible',
-    exampleImage: '/images/camera/medium-shot.png',
+    promptValue: 'medium shot showing upper body from waist up, balanced composition, professional yet casual',
   },
   'three-quarter': {
     label: '3/4 View',
     desc: 'Slightly angled view',
-    exampleImage: '/images/camera/three-quarter.png',
+    promptValue: 'three-quarter angle view, slight turn adding depth and visual interest, engaging perspective',
   },
   // Expert
   tripod: {
-    label: 'Front (Tripod)',
+    label: 'Tripod',
     desc: 'Stable front shot',
-    exampleImage: '/images/camera/tripod.png',
+    promptValue: 'stable tripod-mounted frontal shot, professional broadcast quality, authoritative framing',
   },
   fullbody: {
     label: 'Full Body',
     desc: 'Full body visible',
-    exampleImage: '/images/camera/fullbody.png',
+    promptValue: 'full body shot showing entire person, suitable for demonstrations and presentations',
   },
   presenter: {
     label: 'Presenter',
     desc: 'Speaker/presenter style',
-    exampleImage: '/images/camera/presenter.png',
+    promptValue: 'professional presenter framing, confident stance, TED-talk style composition, authority position',
+  },
+  // Custom
+  custom: {
+    label: 'Custom',
+    desc: 'Describe your own camera angle',
+    promptValue: '',
   },
 }
 
 // 영상 스타일별 카메라 구도 옵션
 const cameraCompositionsByVideoType: Record<VideoType, CameraComposition[]> = {
-  UGC: ['auto', 'selfie-front', 'selfie-high', 'selfie-side', 'ugc-selfie', 'ugc-closeup'],
-  podcast: ['auto', 'webcam', 'medium-shot', 'closeup', 'three-quarter'],
-  expert: ['auto', 'tripod', 'medium-shot', 'closeup', 'fullbody', 'presenter'],
+  UGC: ['auto', 'selfie-front', 'selfie-high', 'selfie-side', 'ugc-selfie', 'ugc-closeup', 'custom'],
+  podcast: ['auto', 'webcam', 'medium-shot', 'closeup', 'three-quarter', 'custom'],
+  expert: ['auto', 'tripod', 'medium-shot', 'closeup', 'fullbody', 'presenter', 'custom'],
 }
 
 // 영상 스타일별 기본 카메라 구도
@@ -245,77 +256,100 @@ const defaultCameraByVideoType: Record<VideoType, CameraComposition> = {
 
 // 모델 포즈 타입 (영상 스타일별로 다른 옵션 제공)
 type ModelPose =
+  // AI 추천
+  | 'auto'
   // 공통
-  | 'auto' | 'talking-only' | 'showing-product'
+  | 'talking-only' | 'showing-product'
   // UGC용
   | 'holding-product' | 'using-product' | 'reaction'
   // Podcast용
   | 'desk-presenter' | 'casual-chat'
   // Expert용
   | 'demonstrating' | 'presenting' | 'explaining'
+  // 직접 입력
+  | 'custom'
 
 // 모델 포즈 정보
 interface ModelPoseInfo {
   label: string
   desc: string
+  promptValue: string  // 프롬프트에 사용될 영문 설명
 }
 
 const modelPoseLabels: Record<ModelPose, ModelPoseInfo> = {
-  // Common
+  // AI 추천
   auto: {
-    label: 'Auto',
-    desc: 'AI selects pose for product',
+    label: 'AI Recommend',
+    desc: 'AI selects the best pose for your product',
+    promptValue: '',  // API에서 동적으로 결정
   },
+  // Common
   'talking-only': {
     label: 'Talking Only',
     desc: 'Explain without product',
+    promptValue: 'natural conversational pose with empty hands relaxed at sides or gesturing naturally, no objects held',
   },
   'showing-product': {
-    label: 'Showing Product',
+    label: 'Show Product',
     desc: 'Show product to camera',
+    promptValue: 'presenting product toward camera, demonstrative pose, product prominently featured',
   },
   // UGC
   'holding-product': {
-    label: 'Holding Product',
+    label: 'Hold Product',
     desc: 'Hold product naturally',
+    promptValue: 'naturally holding product at chest level, relaxed authentic pose, product clearly visible',
   },
   'using-product': {
-    label: 'Using Product',
+    label: 'Use Product',
     desc: 'Demonstrate using product',
+    promptValue: 'demonstrating product use, natural interaction with product',
   },
   reaction: {
     label: 'Reaction',
     desc: 'React to product',
+    promptValue: 'showing genuine reaction to product, product held casually, expressive authentic enthusiasm',
   },
   // Podcast
   'desk-presenter': {
     label: 'At Desk',
     desc: 'Present at desk',
+    promptValue: 'seated at desk, product on desk or held casually, conversational demeanor',
   },
   'casual-chat': {
     label: 'Casual Chat',
     desc: 'Natural conversation style',
+    promptValue: 'relaxed conversational pose, product held casually if present, friendly approachable vibe',
   },
   // Expert
   demonstrating: {
-    label: 'Demonstrating',
+    label: 'Demonstrate',
     desc: 'Demonstrate features',
+    promptValue: 'displaying product features, product-focused composition, educational presentation',
   },
   presenting: {
     label: 'Presenter',
     desc: 'Expert presentation pose',
+    promptValue: 'confident presenter stance, product held for optimal viewing, professional display',
   },
   explaining: {
     label: 'Explaining',
     desc: 'Serious explanation',
+    promptValue: 'explanation pose, product presented clearly, knowledgeable expression',
+  },
+  // Custom
+  custom: {
+    label: 'Custom',
+    desc: 'Describe your own pose',
+    promptValue: '',
   },
 }
 
 // 영상 스타일별 모델 포즈 옵션
 const modelPosesByVideoType: Record<VideoType, ModelPose[]> = {
-  UGC: ['auto', 'holding-product', 'using-product', 'showing-product', 'reaction'],
-  podcast: ['auto', 'desk-presenter', 'casual-chat', 'showing-product', 'talking-only'],
-  expert: ['auto', 'presenting', 'explaining', 'demonstrating', 'showing-product', 'talking-only'],
+  UGC: ['auto', 'holding-product', 'using-product', 'showing-product', 'reaction', 'custom'],
+  podcast: ['auto', 'desk-presenter', 'casual-chat', 'showing-product', 'talking-only', 'custom'],
+  expert: ['auto', 'presenting', 'explaining', 'demonstrating', 'showing-product', 'talking-only', 'custom'],
 }
 
 // 영상 스타일별 기본 모델 포즈
@@ -382,6 +416,8 @@ const outfitPresetOptions: OutfitPreset[] = ['casual_everyday', 'formal_elegant'
 // 배경/장소 프리셋 (영상 스타일별로 다른 옵션 제공)
 // ============================================================
 type LocationPreset =
+  // AI 추천
+  | 'auto'
   // UGC용 (일상적, 자연스러운)
   | 'living_room' | 'bedroom' | 'cafe' | 'outdoor' | 'bathroom'
   // Podcast용 (전문적이면서 캐주얼)
@@ -398,6 +434,12 @@ interface LocationPresetInfo {
 }
 
 const locationPresetLabels: Record<LocationPreset, LocationPresetInfo> = {
+  // AI 추천
+  auto: {
+    label: 'AI Recommend',
+    desc: 'AI recommends the best location for your product',
+    promptValue: '',  // API에서 동적으로 생성
+  },
   // UGC
   living_room: {
     label: 'Living Room',
@@ -471,16 +513,16 @@ const locationPresetLabels: Record<LocationPreset, LocationPresetInfo> = {
 
 // 영상 스타일별 추천 장소 프리셋
 const locationPresetsByVideoType: Record<VideoType, LocationPreset[]> = {
-  UGC: ['living_room', 'bedroom', 'cafe', 'outdoor', 'bathroom', 'custom'],
-  podcast: ['home_office', 'study', 'podcast_studio', 'living_room', 'custom'],
-  expert: ['studio', 'office', 'meeting_room', 'minimal', 'custom'],
+  UGC: ['auto', 'living_room', 'bedroom', 'cafe', 'outdoor', 'bathroom', 'custom'],
+  podcast: ['auto', 'home_office', 'study', 'podcast_studio', 'living_room', 'custom'],
+  expert: ['auto', 'studio', 'office', 'meeting_room', 'minimal', 'custom'],
 }
 
 // 영상 스타일별 기본 장소
 const defaultLocationByVideoType: Record<VideoType, LocationPreset> = {
-  UGC: 'living_room',
-  podcast: 'home_office',
-  expert: 'studio',
+  UGC: 'auto',
+  podcast: 'auto',
+  expert: 'auto',
 }
 
 // ============================================================
@@ -576,7 +618,9 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
   const [duration, setDuration] = useState<VideoDuration>(30)
   const [resolution, setResolution] = useState<VideoResolution>('480p')
   const [cameraComposition, setCameraComposition] = useState<CameraComposition>('auto')
+  const [cameraCompositionCustom, setCameraCompositionCustom] = useState('')  // custom 카메라 구도 입력용
   const [modelPose, setModelPose] = useState<ModelPose>('auto')
+  const [modelPoseCustom, setModelPoseCustom] = useState('')  // custom 모델 포즈 입력용
   const [outfitMode, setOutfitMode] = useState<OutfitMode>('keep_original')
   const [outfitPreset, setOutfitPreset] = useState<OutfitPreset | null>(null)
   const [outfitCustom, setOutfitCustom] = useState('')
@@ -587,7 +631,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
   const [videoType, setVideoType] = useState<VideoType>('UGC')
 
   // 새 옵션: 배경/장소
-  const [locationPreset, setLocationPreset] = useState<LocationPreset>('living_room')
+  const [locationPreset, setLocationPreset] = useState<LocationPreset>('auto')
 
   // videoType 변경 시 해당 스타일에 맞는 기본값으로 자동 변경
   useEffect(() => {
@@ -1721,8 +1765,12 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           locationPreset,  // 장소 프리셋
           locationPrompt: locationPreset === 'custom' ? locationPrompt.trim() : locationPresetLabels[locationPreset].promptValue,
           durationSeconds: duration,
-          cameraComposition: cameraComposition !== 'auto' ? cameraComposition : undefined,
-          modelPose: modelPose !== 'auto' ? modelPose : undefined,
+          // 카메라 구도 설정
+          cameraComposition: cameraComposition !== 'auto' && cameraComposition !== 'custom' ? cameraComposition : undefined,
+          cameraCompositionPrompt: cameraComposition === 'custom' ? cameraCompositionCustom.trim() : undefined,
+          // 모델 포즈 설정
+          modelPose: modelPose !== 'auto' && modelPose !== 'custom' ? modelPose : undefined,
+          modelPosePrompt: modelPose === 'custom' ? modelPoseCustom.trim() : undefined,
           // 의상 설정
           outfitMode: outfitMode !== 'keep_original' ? outfitMode : undefined,
           outfitPreset: outfitMode === 'preset' ? outfitPreset : undefined,
@@ -2170,10 +2218,10 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
 
   // Step info
   const STEPS = [
-    { step: 1, title: 'Product/Avatar', description: 'Select product and avatar' },
-    { step: 2, title: 'Video Info', description: 'Enter video information' },
-    { step: 3, title: 'Script/Voice', description: 'Select script and voice' },
-    { step: 4, title: 'Generate', description: 'Generate video' },
+    { step: 1, title: t.productDescWizard?.steps?.productAvatar || 'Product/Avatar' },
+    { step: 2, title: t.productDescWizard?.steps?.videoInfo || 'Video Info' },
+    { step: 3, title: t.productDescWizard?.steps?.scriptVoice || 'Script/Voice' },
+    { step: 4, title: t.productDescWizard?.steps?.generate || 'Generate' },
   ]
 
   // 선택 항목 표시 여부
@@ -2194,8 +2242,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               <ArrowLeft className="w-4 h-4 text-muted-foreground" />
             </Link>
             <div className="min-w-0">
-              <h1 className="text-lg font-bold text-foreground">제품 설명 영상 만들기</h1>
-              <p className="text-xs text-muted-foreground">아바타가 음성으로 제품을 설명하는 영상</p>
+              <h1 className="text-lg font-bold text-foreground">{t.productDescWizard?.pageTitle || '제품 설명 영상 만들기'}</h1>
+              <p className="text-xs text-muted-foreground">{t.productDescWizard?.pageSubtitle || '아바타가 음성으로 제품을 설명하는 영상'}</p>
             </div>
 
             {/* 스페이서 */}
@@ -2348,15 +2396,15 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   <div>
                     <span className="text-foreground block">{selectedAvatarInfo.displayName}</span>
                     {selectedAvatarInfo.type === 'outfit' && (
-                      <span className="text-xs text-primary">의상 교체</span>
+                      <span className="text-xs text-primary">{t.productDescWizard?.outfitChange || '의상 교체'}</span>
                     )}
                     {selectedAvatarInfo.type === 'ai-generated' && (
-                      <span className="text-xs text-purple-500">AI 자동 생성</span>
+                      <span className="text-xs text-purple-500">{t.productDescWizard?.aiGenerated || 'AI 자동 생성'}</span>
                     )}
                   </div>
                 </div>
               ) : (
-                <span className="text-muted-foreground">아바타를 선택하세요</span>
+                <span className="text-muted-foreground">{t.productDescWizard?.selectAvatar || '아바타를 선택하세요'}</span>
               )}
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
             </button>
@@ -2405,7 +2453,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                     <span className="text-foreground">{selectedProduct.name}</span>
                   </div>
                 ) : (
-                  <span className="text-muted-foreground">제품을 선택하세요</span>
+                  <span className="text-muted-foreground">{t.productDescWizard?.selectProduct || '제품을 선택하세요'}</span>
                 )}
                 <ChevronDown className="w-4 h-4 text-muted-foreground" />
               </button>
@@ -2414,7 +2462,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                 <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                   {products.length === 0 ? (
                     <div className="p-4 text-center">
-                      <p className="text-muted-foreground text-sm mb-3">등록된 제품이 없습니다</p>
+                      <p className="text-muted-foreground text-sm mb-3">{t.productDescWizard?.noProducts || '등록된 제품이 없습니다'}</p>
                       <button
                         onClick={() => {
                           setShowProductDropdown(false)
@@ -2423,7 +2471,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                         className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
                       >
                         <Plus className="w-3 h-3" />
-                        제품 등록하기
+                        {t.productDescWizard?.newProduct || '새 제품 등록'}
                       </button>
                     </div>
                   ) : (
@@ -2439,7 +2487,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                           <Plus className="w-5 h-5" />
                         </div>
-                        <span className="font-medium">새 제품 등록</span>
+                        <span className="font-medium">{t.productDescWizard?.newProduct || '새 제품 등록'}</span>
                       </button>
                       {products.map((product) => (
                         <button
@@ -2482,13 +2530,13 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   </div>
                   <div>
                     <h4 className="font-medium text-foreground text-sm">{selectedProduct.name}</h4>
-                    <p className="text-xs text-muted-foreground">제품 정보를 확인하고 편집하세요</p>
+                    <p className="text-xs text-muted-foreground">{t.productDescWizard?.productInfoHint || '제품 정보를 확인하고 편집하세요'}</p>
                   </div>
                 </div>
 
                 {/* 설명 */}
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1">제품 설명</label>
+                  <label className="block text-xs text-muted-foreground mb-1">{t.productDescWizard?.productDescription || '제품 설명'}</label>
                   <textarea
                     value={editableDescription}
                     onChange={(e) => setEditableDescription(e.target.value)}
@@ -2544,7 +2592,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
             disabled={!canProceedStep1}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            다음
+            {t.productDescWizard?.buttons?.next || t.common?.next || '다음'}
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
@@ -2554,9 +2602,9 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       {step === 2 && (
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="text-center mb-8">
-            <h2 className="text-lg font-semibold text-foreground">영상 정보를 입력하세요</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t.productDescWizard?.step2Title || '영상 정보를 입력하세요'}</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              AI가 이 정보를 바탕으로 대본을 생성합니다
+              {t.productDescWizard?.step2Subtitle || 'AI가 이 정보를 바탕으로 대본을 생성합니다'}
             </p>
           </div>
 
@@ -2564,14 +2612,14 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <Globe className="w-4 h-4 inline mr-2" />
-              {t.productDescriptionVideo?.scriptLanguage || 'Script Language'}
+              {t.productDescWizard?.scriptLanguage || 'Script Language'}
             </label>
             <div className="grid grid-cols-4 gap-2">
               {([
-                { code: 'ko', label: 'Korean' },
-                { code: 'en', label: 'English' },
-                { code: 'ja', label: 'Japanese' },
-                { code: 'zh', label: 'Chinese' },
+                { code: 'ko', labelKey: 'korean' },
+                { code: 'en', labelKey: 'english' },
+                { code: 'ja', labelKey: 'japanese' },
+                { code: 'zh', labelKey: 'chinese' },
               ] as const).map((lang) => (
                 <button
                   key={lang.code}
@@ -2582,7 +2630,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                       : 'border-border text-muted-foreground hover:border-primary/50'
                     }`}
                 >
-                  {lang.label}
+                  {t.productDescWizard?.languages?.[lang.labelKey] || lang.labelKey}
                 </button>
               ))}
             </div>
@@ -2592,9 +2640,9 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <Clock className="w-4 h-4 inline mr-2" />
-              영상 길이
+              {t.productDescWizard?.videoDuration || '영상 길이'}
               <p className="text-xs text-muted-foreground mt-2">
-              대본에 따라 길이가 달라질 수 있습니다
+              {t.productDescWizard?.videoDurationHint || '대본에 따라 길이가 달라질 수 있습니다'}
             </p>
             </label>
             <div className="grid grid-cols-3 gap-3">
@@ -2608,7 +2656,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                       : 'border-border text-muted-foreground hover:border-primary/50'
                     }`}
                 >
-                  {d}초
+                  {d}{t.common?.secondsShort || '초'}
                 </button>
               ))}
             </div>
@@ -2618,12 +2666,12 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <Monitor className="w-4 h-4 inline mr-2" />
-              {t.productDescriptionVideo?.resolution || 'Video Resolution'}
+              {t.productDescWizard?.resolution || 'Video Resolution'}
             </label>
             <div className="grid grid-cols-2 gap-3">
               {([
-                { value: '480p', label: '480p', desc: t.productDescriptionVideo?.fastGeneration || 'Fast generation' },
-                { value: '720p', label: '720p', desc: t.productDescriptionVideo?.highQuality || 'High quality' },
+                { value: '480p', label: '480p', desc: t.productDescWizard?.fastGeneration || 'Fast generation' },
+                { value: '720p', label: '720p', desc: t.productDescWizard?.highQuality || 'High quality' },
               ] as const).map((r) => (
                 <button
                   key={r.value}
@@ -2645,12 +2693,15 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <Sparkles className="w-4 h-4 inline mr-2" />
-              영상 스타일
+              {t.productDescWizard?.videoStyle || '영상 스타일'}
             </label>
             <div className="grid grid-cols-3 gap-3">
               {videoTypeOptions.map((type) => {
                 const info = videoTypeLabels[type]
                 const IconComponent = type === 'UGC' ? User : type === 'podcast' ? Mic : GraduationCap
+                const videoTypes = t.productDescWizard?.videoTypes as Record<string, string> | undefined
+                const translatedLabel = videoTypes?.[type] || info.label
+                const translatedDesc = videoTypes?.[`${type}Desc`] || info.desc
                 return (
                   <button
                     key={type}
@@ -2663,10 +2714,10 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   >
                     <IconComponent className={`w-6 h-6 mx-auto mb-2 ${videoType === type ? 'text-primary' : 'text-muted-foreground'}`} />
                     <div className={`font-medium text-sm ${videoType === type ? 'text-primary' : 'text-foreground'}`}>
-                      {info.label}
+                      {translatedLabel}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      {info.desc}
+                      {translatedDesc}
                     </div>
                     {videoType === type && (
                       <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
@@ -2683,42 +2734,49 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <MapPin className="w-4 h-4 inline mr-2" />
-              배경/장소
-              <span className="text-xs text-muted-foreground ml-2">(선택 사항)</span>
+              {t.productDescWizard?.location || '배경/장소'}
             </label>
 
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {locationPresetsByVideoType[videoType].map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => {
-                    setLocationPreset(preset)
-                    if (preset !== 'custom') {
-                      setLocationPrompt('')
-                    }
-                  }}
-                  disabled={hasGeneratedContent}
-                  className={`relative group p-3 rounded-lg border transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed ${
-                    locationPreset === preset
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border hover:border-primary/50'
-                  }`}
-                  title={locationPresetLabels[preset].desc}
-                >
-                  <span className={`text-sm font-medium ${locationPreset === preset ? 'text-primary' : 'text-foreground'}`}>
-                    {locationPresetLabels[preset].label}
-                  </span>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
-                    {locationPresetLabels[preset].desc}
-                  </p>
-                  {locationPreset === preset && (
-                    <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                      <Check className="w-2.5 h-2.5 text-primary-foreground" />
-                    </div>
-                  )}
-                </button>
-              ))}
+              {locationPresetsByVideoType[videoType].map((preset) => {
+                const locationPresets = t.productDescWizard?.locationPresets as Record<string, string> | undefined
+                const translatedLabel = locationPresets?.[preset] || locationPresetLabels[preset].label
+                const translatedDesc = locationPresets?.[`${preset}Desc`] || locationPresetLabels[preset].desc
+                return (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => {
+                      setLocationPreset(preset)
+                      if (preset !== 'custom') {
+                        setLocationPrompt('')
+                      }
+                    }}
+                    disabled={hasGeneratedContent}
+                    className={`relative group p-3 rounded-lg border transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed ${
+                      locationPreset === preset
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                    title={translatedDesc}
+                  >
+                    <span className={`text-sm font-medium flex items-center gap-1 ${locationPreset === preset ? 'text-primary' : 'text-foreground'}`}>
+                      {preset === 'auto' && <Sparkles className="w-3.5 h-3.5" />}
+                      {translatedLabel}
+                    </span>
+                    {preset !== 'auto' && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
+                        {translatedDesc}
+                      </p>
+                    )}
+                    {locationPreset === preset && (
+                      <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
             </div>
 
             {/* 직접 입력 필드 */}
@@ -2738,90 +2796,131 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <Camera className="w-4 h-4 inline mr-2" />
-              카메라 구도
-              <span className="text-xs text-muted-foreground ml-2">(선택 사항)</span>
+              {t.productDescWizard?.cameraComposition || '카메라 구도'}
             </label>
+
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {cameraCompositionsByVideoType[videoType].map((comp) => (
-                <button
-                  key={comp}
-                  type="button"
-                  onClick={() => setCameraComposition(comp)}
-                  disabled={hasGeneratedContent}
-                  className={`relative group flex flex-col items-center p-2 rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${cameraComposition === comp
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border hover:border-primary/50'
+              {cameraCompositionsByVideoType[videoType].map((comp) => {
+                const cameraPresets = t.productDescWizard?.cameraPresets as Record<string, string> | undefined
+                const translatedLabel = cameraPresets?.[comp] || cameraCompositionLabels[comp].label
+                const translatedDesc = cameraPresets?.[`${comp}Desc`] || cameraCompositionLabels[comp].desc
+                return (
+                  <button
+                    key={comp}
+                    type="button"
+                    onClick={() => {
+                      setCameraComposition(comp)
+                      if (comp !== 'custom') {
+                        setCameraCompositionCustom('')
+                      }
+                    }}
+                    disabled={hasGeneratedContent}
+                    className={`relative group p-3 rounded-lg border transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed ${
+                      cameraComposition === comp
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:border-primary/50'
                     }`}
-                  title={cameraCompositionLabels[comp].desc}
-                >
-                  <div className="w-full aspect-square rounded bg-secondary/50 mb-1.5 flex items-center justify-center overflow-hidden">
-                    <Camera className="w-5 h-5 text-muted-foreground/50" />
-                  </div>
-                  <span className={`text-[11px] font-medium ${cameraComposition === comp ? 'text-primary' : 'text-muted-foreground'}`}>
-                    {cameraCompositionLabels[comp].label}
-                  </span>
-                  {cameraComposition === comp && (
-                    <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                      <Check className="w-2.5 h-2.5 text-primary-foreground" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-black/70 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
-                    <p className="text-[10px] text-white text-center leading-tight">
-                      {cameraCompositionLabels[comp].desc}
-                    </p>
-                  </div>
-                </button>
-              ))}
+                    title={translatedDesc}
+                  >
+                    <span className={`text-sm font-medium flex items-center gap-1 ${cameraComposition === comp ? 'text-primary' : 'text-foreground'}`}>
+                      {comp === 'auto' && <Sparkles className="w-3.5 h-3.5" />}
+                      {translatedLabel}
+                    </span>
+                    {comp !== 'auto' && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
+                        {translatedDesc}
+                      </p>
+                    )}
+                    {cameraComposition === comp && (
+                      <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
             </div>
+
+            {/* 직접 입력 필드 */}
+            {cameraComposition === 'custom' && (
+              <input
+                type="text"
+                value={cameraCompositionCustom}
+                onChange={(e) => setCameraCompositionCustom(e.target.value)}
+                placeholder="예: 45도 각도에서 얼굴과 상반신이 보이도록"
+                disabled={hasGeneratedContent}
+                className="mt-3 w-full px-4 py-2.5 text-sm bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            )}
           </div>
 
           {/* 모델 포즈 */}
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <User className="w-4 h-4 inline mr-2" />
-              모델 포즈
-              <span className="text-xs text-muted-foreground ml-2">(선택 사항)</span>
+              {t.productDescWizard?.modelPose || '모델 포즈'}
             </label>
+
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {modelPosesByVideoType[videoType].map((pose) => (
-                <button
-                  key={pose}
-                  type="button"
-                  onClick={() => setModelPose(pose)}
-                  disabled={hasGeneratedContent}
-                  className={`relative group flex flex-col items-center p-2 rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${modelPose === pose
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border hover:border-primary/50'
+              {modelPosesByVideoType[videoType].map((pose) => {
+                const posePresets = t.productDescWizard?.posePresets as Record<string, string> | undefined
+                const translatedLabel = posePresets?.[pose] || modelPoseLabels[pose].label
+                const translatedDesc = posePresets?.[`${pose}Desc`] || modelPoseLabels[pose].desc
+                return (
+                  <button
+                    key={pose}
+                    type="button"
+                    onClick={() => {
+                      setModelPose(pose)
+                      if (pose !== 'custom') {
+                        setModelPoseCustom('')
+                      }
+                    }}
+                    disabled={hasGeneratedContent}
+                    className={`relative group p-3 rounded-lg border transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed ${
+                      modelPose === pose
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:border-primary/50'
                     }`}
-                  title={modelPoseLabels[pose].desc}
-                >
-                  <div className="w-full aspect-square rounded bg-secondary/50 mb-1.5 flex items-center justify-center overflow-hidden">
-                    <User className="w-5 h-5 text-muted-foreground/50" />
-                  </div>
-                  <span className={`text-[11px] font-medium text-center ${modelPose === pose ? 'text-primary' : 'text-muted-foreground'}`}>
-                    {modelPoseLabels[pose].label}
-                  </span>
-                  {modelPose === pose && (
-                    <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                      <Check className="w-2.5 h-2.5 text-primary-foreground" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-black/70 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
-                    <p className="text-[10px] text-white text-center leading-tight">
-                      {modelPoseLabels[pose].desc}
-                    </p>
-                  </div>
-                </button>
-              ))}
+                    title={translatedDesc}
+                  >
+                    <span className={`text-sm font-medium flex items-center gap-1 ${modelPose === pose ? 'text-primary' : 'text-foreground'}`}>
+                      {pose === 'auto' && <Sparkles className="w-3.5 h-3.5" />}
+                      {translatedLabel}
+                    </span>
+                    {pose !== 'auto' && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
+                        {translatedDesc}
+                      </p>
+                    )}
+                    {modelPose === pose && (
+                      <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
             </div>
+
+            {/* 직접 입력 필드 */}
+            {modelPose === 'custom' && (
+              <input
+                type="text"
+                value={modelPoseCustom}
+                onChange={(e) => setModelPoseCustom(e.target.value)}
+                placeholder="예: 제품을 두 손으로 들고 미소 짓는 포즈"
+                disabled={hasGeneratedContent}
+                className="mt-3 w-full px-4 py-2.5 text-sm bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            )}
           </div>
 
           {/* 의상 설정 */}
           <div className="bg-card border border-border rounded-xl p-4">
             <label className="block text-sm font-medium text-foreground mb-3">
               <Shirt className="w-4 h-4 inline mr-2" />
-              의상 설정
-              <span className="text-xs text-muted-foreground ml-2">(선택 사항)</span>
+              {t.productDescWizard?.outfit || '의상 설정'}
             </label>
 
             {/* 의상 모드 선택 */}
@@ -2842,7 +2941,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                       : 'border-border text-muted-foreground hover:border-primary/50'
                   }`}
                 >
-                  기존 의상 유지
+                  {t.productDescWizard?.outfitModes?.keepOriginal || '기존 의상 유지'}
                 </button>
               )}
               <button
@@ -2860,7 +2959,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                AI 추천
+                {t.productDescWizard?.outfitModes?.aiRecommend || 'AI 추천'}
               </button>
               <button
                 type="button"
@@ -2872,7 +2971,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                     : 'border-border text-muted-foreground hover:border-primary/50'
                 }`}
               >
-                스타일 선택
+                {t.productDescWizard?.outfitModes?.presetSelect || '스타일 선택'}
               </button>
               <button
                 type="button"
@@ -2884,49 +2983,45 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                     : 'border-border text-muted-foreground hover:border-primary/50'
                 }`}
               >
-                직접 입력
+                {t.productDescWizard?.outfitModes?.customInput || '직접 입력'}
               </button>
             </div>
 
-            {/* AI 추천 설명 */}
-            {outfitMode === 'ai_recommend' && (
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-4">
-                <p className="text-sm text-foreground flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  대본 생성 시 AI가 제품과 아바타에 어울리는 의상을 자동으로 추천합니다.
-                </p>
-              </div>
-            )}
 
             {/* 프리셋 선택 */}
             {outfitMode === 'preset' && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {outfitPresetOptions.map((preset) => (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => setOutfitPreset(preset)}
-                    disabled={hasGeneratedContent}
-                    className={`relative group p-3 rounded-lg border transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed ${
-                      outfitPreset === preset
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border hover:border-primary/50'
-                    }`}
-                    title={outfitPresetLabels[preset].desc}
-                  >
-                    <span className={`text-sm font-medium ${outfitPreset === preset ? 'text-primary' : 'text-foreground'}`}>
-                      {outfitPresetLabels[preset].label}
-                    </span>
-                    <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
-                      {outfitPresetLabels[preset].desc}
-                    </p>
-                    {outfitPreset === preset && (
-                      <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                        <Check className="w-2.5 h-2.5 text-primary-foreground" />
-                      </div>
-                    )}
-                  </button>
-                ))}
+                {outfitPresetOptions.map((preset) => {
+                  const outfitPresets = t.productDescWizard?.outfitPresets as Record<string, string> | undefined
+                  const translatedLabel = outfitPresets?.[preset] || outfitPresetLabels[preset].label
+                  const translatedDesc = outfitPresets?.[`${preset}Desc`] || outfitPresetLabels[preset].desc
+                  return (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setOutfitPreset(preset)}
+                      disabled={hasGeneratedContent}
+                      className={`relative group p-3 rounded-lg border transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed ${
+                        outfitPreset === preset
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                      title={translatedDesc}
+                    >
+                      <span className={`text-sm font-medium ${outfitPreset === preset ? 'text-primary' : 'text-foreground'}`}>
+                        {translatedLabel}
+                      </span>
+                      <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
+                        {translatedDesc}
+                      </p>
+                      {outfitPreset === preset && (
+                        <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                        </div>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             )}
 
@@ -2950,7 +3045,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              이전
+              {t.productDescWizard?.buttons?.prev || t.common?.prev || '이전'}
             </button>
             <button
               onClick={() => generateScriptsAndImage(false)}
@@ -2960,16 +3055,16 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               {isGeneratingScripts ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  생성 중...
+                  {t.productDescWizard?.buttons?.generating || '생성 중...'}
                 </>
               ) : hasGeneratedContent ? (
                 <>
-                  생성된 대본 확인
+                  {t.productDescWizard?.buttons?.viewGeneratedScript || '생성된 대본 확인'}
                   <ArrowRight className="w-4 h-4" />
                 </>
               ) : (
                 <>
-                  대본 생성하기 (1 크레딧)
+                  {t.productDescWizard?.buttons?.generateScript || '대본 생성하기'} (1 {t.productDescWizard?.credits || t.common?.credits || '크레딧'})
                   <Sparkles className="w-4 h-4" />
                 </>
               )}
@@ -2986,8 +3081,8 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
             <div className="max-w-2xl mx-auto">
               <div className="bg-card border border-border rounded-xl p-8 flex flex-col items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
-                <p className="text-foreground font-medium">대본과 이미지를 생성하고 있습니다...</p>
-                <p className="text-sm text-muted-foreground mt-1">잠시만 기다려주세요</p>
+                <p className="text-foreground font-medium">{t.productDescWizard?.loading?.generatingScriptsAndImages || '대본과 이미지를 생성하고 있습니다...'}</p>
+                <p className="text-sm text-muted-foreground mt-1">{t.productDescWizard?.loading?.pleaseWait || t.common?.pleaseWait || '잠시만 기다려주세요'}</p>
               </div>
             </div>
           ) : (
@@ -2996,9 +3091,9 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               <div className="bg-card border border-border rounded-xl p-4">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-foreground">첫 프레임 이미지 선택</h2>
+                    <h2 className="text-lg font-semibold text-foreground">{t.productDescWizard?.step3?.title || '첫 프레임 이미지 선택'}</h2>
                     <p className="text-sm text-muted-foreground mt-1">
-                      2개의 이미지 중 마음에 드는 것을 선택하세요
+                      {t.productDescWizard?.step3?.subtitle || '2개의 이미지 중 마음에 드는 것을 선택하세요'}
                     </p>
                   </div>
                   <button
@@ -3007,7 +3102,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                     className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <RefreshCw className={`w-4 h-4 ${isLoadingImages ? 'animate-spin' : ''}`} />
-                    {isLoadingImages ? '이미지 생성 중...' : '다시 생성'}
+                    {isLoadingImages ? (t.productDescWizard?.step3?.regenerating || '이미지 생성 중...') : (t.productDescWizard?.step3?.regenerate || '다시 생성')}
                   </button>
                 </div>
 
@@ -3019,10 +3114,10 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                         <div key={index} className="relative">
                           <div className="w-[180px] aspect-[2/3] rounded-lg overflow-hidden border-2 border-border bg-secondary/30 animate-pulse flex flex-col items-center justify-center gap-3">
                             <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                            <p className="text-muted-foreground text-sm">이미지 생성 중...</p>
+                            <p className="text-muted-foreground text-sm">{t.productDescWizard?.step3?.generating || '이미지 생성 중...'}</p>
                           </div>
                           <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 rounded text-white text-xs">
-                            옵션 {index + 1}
+                            {t.productDescWizard?.step3?.option || '옵션'} {index + 1}
                           </div>
                         </div>
                       ))}
@@ -3044,7 +3139,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                         >
                           <img
                             src={url}
-                            alt={`첫 프레임 옵션 ${index + 1}`}
+                            alt={`${t.productDescWizard?.firstFrame || 'First Frame'} ${t.productDescWizard?.step3?.option || '옵션'} ${index + 1}`}
                             className="w-full h-full object-cover"
                           />
                           {selectedFirstFrameIndex === index && (
@@ -3053,7 +3148,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                             </div>
                           )}
                           <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 rounded text-white text-xs">
-                            옵션 {index + 1}
+                            {t.productDescWizard?.step3?.option || '옵션'} {index + 1}
                           </div>
                         </button>
                         {/* 크게 보기 버튼 */}
@@ -3090,7 +3185,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                     </div>
                   ) : (
                     <div className="aspect-[2/3] w-[180px] rounded-lg bg-secondary/30 flex items-center justify-center">
-                      <p className="text-muted-foreground text-sm text-center px-2">이미지가 생성되면 여기에 표시됩니다</p>
+                      <p className="text-muted-foreground text-sm text-center px-2">{t.productDescWizard?.imageWillShowHere || '이미지가 생성되면 여기에 표시됩니다'}</p>
                     </div>
                   )}
                 </div>
@@ -3101,7 +3196,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                 {/* 왼쪽: 대본 선택/편집 */}
                 <div className="space-y-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-foreground">대본 선택</h2>
+                    <h2 className="text-lg font-semibold text-foreground">{t.productDescWizard?.scriptSelection || '대본 선택'}</h2>
                     <p className="text-sm text-muted-foreground mt-1">
                       3가지 스타일 중 하나를 선택하거나 직접 편집하세요
                     </p>
@@ -3162,7 +3257,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                 {/* 오른쪽: 음성 선택 */}
                 <div className="space-y-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-foreground">음성 선택</h2>
+                    <h2 className="text-lg font-semibold text-foreground">{t.productDescWizard?.voiceSelection || '음성 선택'}</h2>
                     <p className="text-sm text-muted-foreground mt-1">
                       대본을 읽어줄 AI 음성을 선택하세요
                     </p>
@@ -3242,7 +3337,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  이전
+                  {t.productDescWizard?.buttons?.prev || t.common?.prev || '이전'}
                 </button>
                 <button
                   onClick={generateVideo}
@@ -3252,11 +3347,11 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   {isLoadingImages ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      이미지 로딩 중...
+                      {t.productDescWizard?.buttons?.loadingImage || '이미지 로딩 중...'}
                     </>
                   ) : (
                     <>
-                      영상 생성하기 ({PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST[resolution]} 크레딧)
+                      {t.productDescWizard?.buttons?.generateVideo || '영상 생성하기'} ({PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST[resolution]} {t.productDescWizard?.credits || t.common?.credits || '크레딧'})
                       <Play className="w-4 h-4" />
                     </>
                   )}
@@ -3273,7 +3368,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           <div className="bg-card border border-border rounded-xl p-8 text-center">
             <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
             <h2 className="text-lg font-semibold text-foreground mb-2">
-              {isGeneratingAudio ? '음성을 생성하고 있습니다...' : `영상을 생성하고 있습니다 (${Math.floor(generationProgress)}%)`}
+              {isGeneratingAudio ? (t.productDescWizard?.step4?.generatingAudio || '음성을 생성하고 있습니다...') : `${t.productDescWizard?.step4?.generatingVideo || '영상을 생성하고 있습니다'} (${Math.floor(generationProgress)}%)`}
             </h2>
             <p className="text-muted-foreground mb-6">{generationStatus}</p>
 
@@ -3292,7 +3387,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   </div>
                 </div>
                 {generationProgress >= 99 && (
-                  <p className="text-xs text-muted-foreground mt-2">거의 완료되었습니다. 잠시만 기다려주세요...</p>
+                  <p className="text-xs text-muted-foreground mt-2">{t.productDescWizard?.step4?.almostDone || '거의 완료되었습니다. 잠시만 기다려주세요...'}</p>
                 )}
               </div>
             )}
@@ -3301,29 +3396,29 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
             <div className="bg-secondary/30 rounded-lg p-4 space-y-3">
               <div className="flex items-center gap-3">
                 <Check className="w-5 h-5 text-green-500" />
-                <span className="text-sm text-foreground">대본 생성 완료</span>
+                <span className="text-sm text-foreground">{t.productDescWizard?.step4?.scriptComplete || '대본 생성 완료'}</span>
               </div>
               <div className="flex items-center gap-3">
                 <Check className="w-5 h-5 text-green-500" />
-                <span className="text-sm text-foreground">첫 프레임 이미지 생성 완료</span>
+                <span className="text-sm text-foreground">{t.productDescWizard?.step4?.imageComplete || '첫 프레임 이미지 생성 완료'}</span>
               </div>
               <div className="flex items-center gap-3">
                 {isGeneratingAudio ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                    <span className="text-sm text-foreground">음성 생성 중...</span>
+                    <span className="text-sm text-foreground">{t.productDescWizard?.step4?.audioGenerating || '음성 생성 중...'}</span>
                   </>
                 ) : (
                   <>
                     <Check className="w-5 h-5 text-green-500" />
-                    <span className="text-sm text-foreground">음성 생성 완료</span>
+                    <span className="text-sm text-foreground">{t.productDescWizard?.step4?.audioComplete || '음성 생성 완료'}</span>
                   </>
                 )}
               </div>
               {!isGeneratingAudio && (
                 <div className="flex items-center gap-3">
                   <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                  <span className="text-sm text-foreground">영상 생성 중... ({Math.floor(generationProgress)}%)</span>
+                  <span className="text-sm text-foreground">{t.productDescWizard?.step4?.videoGenerating || '영상 생성 중...'} ({Math.floor(generationProgress)}%)</span>
                 </div>
               )}
             </div>
@@ -3348,7 +3443,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         onClose={() => setShowInsufficientCreditsModal(false)}
         requiredCredits={PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST[resolution]}
         availableCredits={credits ?? 0}
-        featureName="제품 설명 영상 생성"
+        featureName={t.productDescWizard?.featureNames?.videoGeneration || '제품 설명 영상 생성'}
       />
 
       {/* 크레딧 부족 모달 (키프레임 생성용) */}
@@ -3357,7 +3452,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         onClose={() => setShowKeyframeCreditsModal(false)}
         requiredCredits={1}
         availableCredits={credits ?? 0}
-        featureName="키프레임 이미지 생성"
+        featureName={t.productDescWizard?.featureNames?.keyframeGeneration || '키프레임 이미지 생성'}
       />
 
       {/* 재생성 확인 모달 */}
@@ -3365,17 +3460,17 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         <div className="fixed inset-0 z-50 !m-0 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowRegenerateConfirmModal(false)} />
           <div className="relative bg-card border border-border rounded-xl p-6 max-w-sm mx-4 shadow-xl">
-            <h3 className="text-lg font-semibold text-foreground mb-2">대본 및 이미지 재생성</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">{t.productDescWizard?.regenerateModal?.title || '대본 및 이미지 재생성'}</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              다시 생성하면 기존 대본과 이미지가 새로운 내용으로 대체됩니다.
+              {t.productDescWizard?.regenerateModal?.message || '다시 생성하면 기존 대본과 이미지가 새로운 내용으로 대체됩니다.'}
               <br />
-              <span className="text-primary font-medium">1 크레딧</span>이 사용됩니다.
+              <span className="text-primary font-medium">1 {t.productDescWizard?.credits || t.common?.credits || '크레딧'}</span>{t.productDescWizard?.regenerateModal?.creditUsage || '이 사용됩니다.'}
             </p>
             {/* 크레딧 부족 경고 */}
             {(credits ?? 0) < 1 && (
               <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4">
                 <p className="text-sm text-red-500 font-medium">
-                  크레딧이 부족합니다. (보유: {credits ?? 0})
+                  {t.productDescWizard?.regenerateModal?.insufficientCredits || '크레딧이 부족합니다.'} ({t.productDescWizard?.regenerateModal?.balance || '보유'}: {credits ?? 0})
                 </p>
               </div>
             )}
@@ -3384,7 +3479,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                 onClick={() => setShowRegenerateConfirmModal(false)}
                 className="flex-1 px-4 py-2 bg-secondary text-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
               >
-                취소
+                {t.common?.cancel || '취소'}
               </button>
               {(credits ?? 0) < 1 ? (
                 <button
@@ -3394,7 +3489,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   }}
                   className="flex-1 px-4 py-2 bg-gradient-to-r from-primary to-purple-500 text-white rounded-lg font-medium hover:opacity-90 transition-colors"
                 >
-                  업그레이드
+                  {t.modal?.insufficientCredits?.upgrade || '업그레이드'}
                 </button>
               ) : (
                 <button
@@ -3404,7 +3499,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                   }}
                   className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
                 >
-                  재생성
+                  {t.productDescWizard?.regenerateModal?.regenerate || '재생성'}
                 </button>
               )}
             </div>

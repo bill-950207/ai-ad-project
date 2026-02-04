@@ -62,7 +62,7 @@ export type {
 
 // 함수 re-export
 export { summarizeProductInfo, extractProductFromUrl } from './product'
-export { generateText, generateVideoPrompt, generateVideoAdPrompts, generateUGCPrompts, generateProductScripts, generateFirstFramePrompt } from './video-prompt'
+export { generateText, generateVideoPrompt, generateVideoAdPrompts, generateUGCPrompts, generateProductScripts, generateFirstFramePrompt, recommendLocation } from './video-prompt'
 export { generateAiAvatarPrompt } from './avatar-prompt'
 export { generateRecommendedCategoryOptions, generateMultipleRecommendedOptions, generateImageAdPrompt, analyzeReferenceStyleImage, generateBackgroundPrompt } from './category'
 export { mergeEditPrompt } from './image-editing'
