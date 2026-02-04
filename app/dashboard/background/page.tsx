@@ -764,7 +764,7 @@ export default function BackgroundPage() {
       {/* 크게 보기 모달 */}
       {selectedBackground && (
         <div
-          className="fixed inset-0 z-50 !m-0 flex items-center justify-center bg-black/80"
+          className="fixed inset-0 z-50 !m-0 flex items-center justify-center bg-black/60"
           onClick={() => setSelectedBackground(null)}
         >
           <button
