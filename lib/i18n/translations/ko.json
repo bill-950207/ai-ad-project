@@ -52,7 +52,15 @@
     "secondsShort": "초",
     "failed": "실패",
     "all": "전체",
-    "processing": "처리 중..."
+    "processing": "처리 중...",
+    "done": "완료",
+    "female": "여성",
+    "male": "남성",
+    "navigationMenu": "탐색 메뉴",
+    "none": "없음",
+    "notSelected": "선택 안됨",
+    "preview": "미리보기",
+    "stop": "중지"
   },
   "modal": {
     "insufficientCredits": {
@@ -222,6 +230,89 @@
     "allPlansCancelable": "모든 유료 플랜은 언제든지 취소할 수 있습니다. 취소 시 다음 결제일까지 서비스를 이용할 수 있으며, 생성한 콘텐츠는 계속 보관됩니다.",
     "watermarkIncluded": "워터마크 포함",
     "unlimited": "무제한"
+  },
+  "pricing": {
+    "plans": {
+      "free": {
+        "description": "시작하기에 딱 좋아요",
+        "features": [
+          "AI 아바타 생성",
+          "AI 배경 음악",
+          "자동 배경 제거",
+          "한 번에 1장씩 생성",
+          "가장 짧은 영상만",
+          "워터마크 포함"
+        ],
+        "limits": {
+          "avatars": "최대 3개",
+          "music": "최대 5개",
+          "products": "최대 3개",
+          "credits": "15 크레딧 (1회)",
+          "imageEstimate": "~7개 광고 이미지"
+        }
+      },
+      "starter": {
+        "description": "개인 크리에이터를 위해",
+        "valueHighlight": "4배 더 저렴",
+        "features": [
+          "Free 모든 기능",
+          "워터마크 없음",
+          "HD 업스케일링",
+          "한 번에 5장까지",
+          "원하는 영상 길이",
+          "우선 처리"
+        ],
+        "limits": {
+          "avatars": "최대 9개",
+          "music": "최대 15개",
+          "products": "최대 9개",
+          "credits": "120 크레딧/월",
+          "imageEstimate": "~60개 광고 이미지",
+          "videoEstimate": "~12개 광고 영상"
+        }
+      },
+      "pro": {
+        "description": "전문가를 위해",
+        "valueHighlight": "이미지당 $0.14",
+        "features": [
+          "Starter 모든 기능",
+          "최고 우선 처리",
+          "고품질 이미지",
+          "영상 3개 동시 처리",
+          "Pro 템플릿",
+          "프리미엄 지원"
+        ],
+        "limits": {
+          "avatars": "최대 30개",
+          "music": "최대 50개",
+          "products": "최대 30개",
+          "credits": "420 크레딧/월",
+          "imageEstimate": "~210개 광고 이미지",
+          "videoEstimate": "~42개 광고 영상"
+        }
+      },
+      "business": {
+        "description": "팀과 기업을 위해",
+        "valueHighlight": "이미지당 $0.12",
+        "features": [
+          "Pro 모든 기능",
+          "무제한 콘텐츠",
+          "전담 지원",
+          "API 액세스",
+          "팀 협업",
+          "커스텀 브랜딩",
+          "우선 업데이트"
+        ],
+        "limits": {
+          "avatars": "무제한",
+          "music": "무제한",
+          "products": "무제한",
+          "credits": "1,600 크레딧/월",
+          "imageEstimate": "~800개 광고 이미지",
+          "videoEstimate": "~160개 광고 영상"
+        }
+      }
+    }
   },
   "showcase": {
     "title": "제작 사례",
@@ -848,11 +939,22 @@
     "sellingPoints": "셀링 포인트",
     "sellingPointPlaceholder": "예: 100% 천연 소재",
     "addSellingPoint": "셀링 포인트 추가",
-    "noProductInfo": "등록된 제품 정보가 없습니다"
+    "noProductInfo": "등록된 제품 정보가 없습니다",
+    "compareProductSize": "아바타와 제품 크기 비교",
+    "imageLoadFailed": "이미지를 불러올 수 없습니다"
   },
   "videoAd": {
     "title": "영상 광고",
     "subtitle": "AI로 영상 광고를 제작하세요",
+    "createTitle": "영상 광고 생성",
+    "categories": {
+      "productDescription": "제품 설명",
+      "avatarMotion": "아바타 모션",
+      "productAd": "제품 광고",
+      "productShowcase": "제품 쇼케이스",
+      "lifestyle": "라이프스타일",
+      "testimonial": "후기 영상"
+    },
     "myVideos": "내 영상 광고",
     "createAd": "영상 광고 생성",
     "emptyAds": "생성된 영상 광고가 없습니다",
@@ -957,6 +1059,12 @@
       "inProgress": "생성 중",
       "completed": "완료",
       "failed": "실패"
+    },
+    "stepNames": {
+      "productDescription": ["제품/아바타", "영상 정보", "대본/음성", "생성"],
+      "avatarMotion": ["아바타/제품", "스토리 모드", "시나리오", "설정", "프레임 생성", "영상 생성"],
+      "productAd": ["제품", "모드", "시나리오", "설정", "첫 씬", "영상 생성"],
+      "step": "단계"
     },
     "alerts": {
       "deleteFailed": "삭제 실패",
@@ -1725,6 +1833,7 @@
     "numImages": "생성 개수",
     "recentAds": "최근 생성된 광고",
     "viewOriginal": "원본 보기",
+    "directUpload": "직접 업로드",
     "options": {
       "background": "배경 스타일",
       "lighting": "조명",

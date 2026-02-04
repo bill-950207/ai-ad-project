@@ -52,7 +52,15 @@
     "secondsShort": "s",
     "failed": "Failed",
     "all": "All",
-    "processing": "Processing..."
+    "processing": "Processing...",
+    "done": "Done",
+    "female": "Female",
+    "male": "Male",
+    "navigationMenu": "Navigation menu",
+    "none": "None",
+    "notSelected": "Not selected",
+    "preview": "Preview",
+    "stop": "Stop"
   },
   "modal": {
     "insufficientCredits": {
@@ -222,6 +230,89 @@
     "allPlansCancelable": "All paid plans can be cancelled anytime. After cancellation, you can use the service until the next billing date, and your content will be preserved.",
     "watermarkIncluded": "Watermark included",
     "unlimited": "Unlimited"
+  },
+  "pricing": {
+    "plans": {
+      "free": {
+        "description": "Perfect to get started",
+        "features": [
+          "AI Avatar Generation",
+          "AI Background Music",
+          "Auto Background Removal",
+          "1 Image at a Time",
+          "Shortest Video Only",
+          "Watermark Included"
+        ],
+        "limits": {
+          "avatars": "Up to 3",
+          "music": "Up to 5",
+          "products": "Up to 3",
+          "credits": "15 Credits (One-time)",
+          "imageEstimate": "~7 Ad Images"
+        }
+      },
+      "starter": {
+        "description": "For individual creators",
+        "valueHighlight": "4x More Affordable",
+        "features": [
+          "All Free Features",
+          "No Watermark",
+          "HD Upscaling",
+          "Up to 5 Images at Once",
+          "Custom Video Length",
+          "Priority Queue"
+        ],
+        "limits": {
+          "avatars": "Up to 9",
+          "music": "Up to 15",
+          "products": "Up to 9",
+          "credits": "120 Credits/mo",
+          "imageEstimate": "~60 Ad Images",
+          "videoEstimate": "~12 Ad Videos"
+        }
+      },
+      "pro": {
+        "description": "For professionals",
+        "valueHighlight": "$0.14 per Image",
+        "features": [
+          "All Starter Features",
+          "Top Priority Processing",
+          "High Quality Images",
+          "3 Videos at Once",
+          "Pro Templates",
+          "Premium Support"
+        ],
+        "limits": {
+          "avatars": "Up to 30",
+          "music": "Up to 50",
+          "products": "Up to 30",
+          "credits": "420 Credits/mo",
+          "imageEstimate": "~210 Ad Images",
+          "videoEstimate": "~42 Ad Videos"
+        }
+      },
+      "business": {
+        "description": "For teams and enterprises",
+        "valueHighlight": "$0.12 per Image",
+        "features": [
+          "All Pro Features",
+          "Unlimited Content",
+          "Dedicated Support",
+          "API Access",
+          "Team Collaboration",
+          "Custom Branding",
+          "Priority Updates"
+        ],
+        "limits": {
+          "avatars": "Unlimited",
+          "music": "Unlimited",
+          "products": "Unlimited",
+          "credits": "1,600 Credits/mo",
+          "imageEstimate": "~800 Ad Images",
+          "videoEstimate": "~160 Ad Videos"
+        }
+      }
+    }
   },
   "showcase": {
     "title": "Gallery",
@@ -848,11 +939,22 @@
     "sellingPoints": "Selling Points",
     "sellingPointPlaceholder": "e.g., 100% natural materials",
     "addSellingPoint": "Add Selling Point",
-    "noProductInfo": "No product information available"
+    "noProductInfo": "No product information available",
+    "compareProductSize": "Compare product size with avatar",
+    "imageLoadFailed": "Failed to load image"
   },
   "videoAd": {
     "title": "Video Ad",
     "subtitle": "Create video ads with AI",
+    "createTitle": "Create Video Ad",
+    "categories": {
+      "productDescription": "Product Description",
+      "avatarMotion": "Avatar Motion",
+      "productAd": "Product Ad",
+      "productShowcase": "Product Showcase",
+      "lifestyle": "Lifestyle",
+      "testimonial": "Testimonial"
+    },
     "myVideos": "My Video Ads",
     "createAd": "Create Video Ad",
     "emptyAds": "No video ads yet",
@@ -957,6 +1059,12 @@
       "inProgress": "Generating",
       "completed": "Completed",
       "failed": "Failed"
+    },
+    "stepNames": {
+      "productDescription": ["Product/Avatar", "Video Info", "Script/Voice", "Generate"],
+      "avatarMotion": ["Avatar/Product", "Story Mode", "Scenario", "Settings", "Frame Gen", "Video Gen"],
+      "productAd": ["Product", "Mode", "Scenario", "Settings", "First Scene", "Video Gen"],
+      "step": "Step"
     },
     "alerts": {
       "deleteFailed": "Delete failed",
@@ -1725,6 +1833,7 @@
     "numImages": "Number of Images",
     "recentAds": "Recent Ads",
     "viewOriginal": "View Original",
+    "directUpload": "Direct Upload",
     "options": {
       "background": "Background Style",
       "lighting": "Lighting",
