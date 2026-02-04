@@ -455,50 +455,33 @@ IMPORTANT: All 3 scripts should follow the "${videoTypeStyle.korean}" video styl
   const outfitRecommendationSection = input.requestOutfitRecommendation
     ? `
 === OUTFIT RECOMMENDATION (REQUIRED) ===
-Based on the product, video style, and location, recommend an appropriate outfit for the model.
-${input.avatarDescription ? `Model info: ${input.avatarDescription}` : ''}
-${input.productImageUrl ? `Product image is provided for reference.` : ''}
-${input.locationPreset ? `Location/Background: ${input.locationPreset}` : ''}
+Creatively recommend an outfit that harmonizes with all the following elements:
+${input.avatarDescription ? `Model: ${input.avatarDescription}` : ''}
+${input.productImageUrl ? `Product: Image provided for reference` : ''}
+${input.locationPreset ? `Location: ${input.locationPreset}` : ''}
+Video Style: ${videoTypeStyle?.korean || 'UGC'}
 
-Consider:
-- Product category and target audience
-- Video style (${videoTypeStyle?.korean || 'UGC'})
-- Location/background setting (outfit should match the environment)
-- Overall brand image and mood
-- Natural, authentic appearance that matches the product context
+=== CREATIVE GUIDELINES ===
+Think holistically about the visual scene:
+1. What outfit would a real person wear in this location while presenting this type of product?
+2. How can the outfit complement the product colors/style without competing for attention?
+3. What clothing style matches the video tone (casual UGC vs professional expert)?
 
-=== OUTFIT EXAMPLES BY CONTEXT ===
-Medical/Health products + Clinic/Lab:
-- "professional white lab coat over light blue button-up shirt with navy slacks" (의료 전문가)
-- "clean white doctor's coat with subtle professional attire underneath" (진료실)
+Location-aware styling:
+- Professional settings (clinic, lab, office, studio): Consider appropriate professional attire
+- Casual settings (home, cafe, outdoor): Opt for relaxed, authentic everyday wear
+- Broadcast/conference: Balance authority with approachability
 
-Skincare/Beauty products + Bathroom/Home:
-- "comfortable cream knit sweater with light wash relaxed jeans" (홈 뷰티)
-- "soft pink silk blouse with white wide-leg pants" (여성스러운 스킨케어)
+Color harmony:
+- Analyze the product's dominant colors and choose complementary or neutral outfit colors
+- Avoid patterns or colors that clash with the product
 
-Tech products + Office/Studio:
-- "fitted navy blazer over white crew-neck t-shirt with dark gray chinos" (전문가)
-- "minimalist black turtleneck with tailored charcoal trousers" (프리미엄 테크)
+Be creative and specific - don't use generic descriptions. The outfit should feel intentional and styled for this exact scene.
 
-Food/Lifestyle products + Kitchen/Cafe:
-- "casual linen apron over white t-shirt and blue jeans" (요리/주방)
-- "cozy cream cardigan with white top and light brown pants" (따뜻한 카페)
-
-Fashion/Casual products + Living room/Outdoor:
-- "trendy oversized hoodie with slim-fit black joggers" (캐주얼)
-- "stylish denim jacket over graphic tee with ripped jeans" (스트릿)
-
-Conference/Broadcast settings:
-- "tailored charcoal suit with crisp white shirt, no tie for modern look" (컨퍼런스)
-- "elegant blazer with subtle pattern over solid color blouse" (방송)
-
-The outfit should complement the product without overshadowing it.
-Outfit must be described in ENGLISH for image generation.
-
-Include in your response:
-- "recommendedOutfit.description": Detailed English description (format: "[style] [top] with [bottom] and [optional accessories]")
+=== OUTPUT FORMAT ===
+- "recommendedOutfit.description": Detailed English description for image generation (specific colors, materials, fit)
 - "recommendedOutfit.localizedDescription": Outfit description in ${config_lang.name} for user display
-- "recommendedOutfit.reason": Brief explanation in ${config_lang.name} of why this outfit fits the product/video style/location
+- "recommendedOutfit.reason": Brief explanation in ${config_lang.name} of why this outfit fits the overall scene
 `
     : ''
 
@@ -662,7 +645,7 @@ const cameraCompositionDescriptions: Record<CameraCompositionType, string> = {
   // Podcast용
   webcam: 'webcam-style frontal view, desktop setup distance, conversational podcast framing',
   front: 'frontal camera view, direct eye contact, professional podcast framing',
-  side: 'side angle camera view, profile or three-quarter view, interview style podcast framing',
+  side: 'side profile camera angle, camera positioned at 90 degrees to subject, clear side view of face',
   'three-quarter': 'three-quarter angle view, slight turn adding depth and visual interest, engaging perspective',
   // Expert용 (레거시 호환)
   tripod: 'stable tripod-mounted frontal shot, professional broadcast quality, authoritative framing',
@@ -673,9 +656,9 @@ const cameraCompositionDescriptions: Record<CameraCompositionType, string> = {
 const modelPoseDescriptions: Record<ModelPoseType, string> = {
   // 공통
   'talking-only': '⚠️ NO PRODUCT IN IMAGE! Model only, natural conversational pose with empty hands relaxed at sides or gesturing naturally, no objects held',
-  'showing-product': 'Model presenting product toward camera, demonstrative pose, product prominently featured',
+  'showing-product': 'Model actively PRESENTING product TOWARD THE CAMERA, arm extended forward, product held UP and FACING the viewer prominently, demonstrating the product to the audience',
   // UGC용 - 자연스럽고 진정성 있는 포즈
-  'holding-product': 'Model naturally holding product at chest level, relaxed authentic pose, product clearly visible',
+  'holding-product': 'Model casually holding product at chest level, relaxed natural grip, product visible but not emphasized',
   'using-product': 'Model demonstrating product use, natural interaction',
   reaction: 'Model showing genuine reaction to product, product held casually, expressive authentic enthusiasm',
   // Podcast용 - 대화형 프레젠터 스타일

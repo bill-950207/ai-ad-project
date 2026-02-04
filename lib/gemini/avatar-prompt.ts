@@ -117,7 +117,7 @@ const cameraCompositionDescriptions: Record<CameraCompositionType, { description
   // Podcast용
   webcam: { description: 'webcam-style frontal view, desktop setup distance, conversational framing', aperture: 'f/11', lens: '35mm' },
   front: { description: 'frontal camera view, direct eye contact, professional podcast framing', aperture: 'f/11', lens: '35mm' },
-  side: { description: 'side angle camera view, profile or three-quarter view, interview style podcast framing', aperture: 'f/11', lens: '35mm' },
+  side: { description: 'side profile camera angle, camera positioned at 90 degrees to subject, clear side view of face', aperture: 'f/11', lens: '35mm' },
   'three-quarter': { description: 'three-quarter angle view, slight turn adding depth and visual interest', aperture: 'f/11', lens: '35mm' },
   // Expert용 (레거시 호환)
   tripod: { description: 'stable tripod shot, medium distance, waist to head visible, professional framing', aperture: 'f/16', lens: '50mm' },
@@ -128,9 +128,9 @@ const cameraCompositionDescriptions: Record<CameraCompositionType, { description
 const modelPoseDescriptions: Record<ModelPoseType, string> = {
   // 공통
   'talking-only': '⚠️ NO PRODUCT! Avatar only, natural conversational pose with empty hands relaxed at sides or gesturing naturally',
-  'showing-product': 'Model presenting product toward camera, demonstrative pose, product prominently featured',
+  'showing-product': 'Model actively PRESENTING product TOWARD THE CAMERA, arm extended forward, product held UP and FACING the viewer prominently, demonstrating the product to the audience',
   // UGC용
-  'holding-product': 'Model naturally holding product at chest level, relaxed authentic pose, product clearly visible',
+  'holding-product': 'Model casually holding product at chest level, relaxed natural grip, product visible but not emphasized',
   'using-product': 'Model demonstrating product use, natural interaction',
   reaction: 'Model showing genuine reaction, product held casually, expressive authentic enthusiasm',
   // Podcast용
