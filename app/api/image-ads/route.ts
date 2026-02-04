@@ -266,8 +266,8 @@ export async function POST(request: NextRequest) {
     const userPlan = await getUserPlan(user.id)
     const isFreeUser = userPlan.planType === plan_type.FREE
 
-    // FREE 사용자 제한: 1개씩만 생성, medium 품질만 가능
-    const effectiveNumImages = isFreeUser ? 1 : numImages
+    // FREE 사용자 제한: 최대 2개까지 생성, medium 품질만 가능
+    const effectiveNumImages = isFreeUser ? Math.min(numImages, 2) : numImages
     const effectiveQuality = isFreeUser ? 'medium' : quality
 
     // numImages 범위 제한 (1-5)
