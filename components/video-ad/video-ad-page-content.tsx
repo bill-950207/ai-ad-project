@@ -286,21 +286,28 @@ export function VideoAdPageContent() {
   const getStepName = (category: string | null | undefined, step: number | null | undefined): string => {
     const stepNumber = step || 1
 
-    const stepNames: Record<string, string[]> = {
-      // productDescription: 4 steps
+    // 번역된 단계 이름 사용
+    const stepNamesT = t.videoAd?.stepNames as {
+      productDescription?: string[]
+      avatarMotion?: string[]
+      productAd?: string[]
+      step?: string
+    } | undefined
+
+    const defaultStepNames: Record<string, string[]> = {
       'productDescription': ['Product/Avatar', 'Video Info', 'Script/Voice', 'Generate'],
-      // avatarMotion: 6 steps
       'avatarMotion': ['Avatar/Product', 'Story Mode', 'Scenario', 'Settings', 'Frame Gen', 'Video Gen'],
-      // productAd: 6 steps
       'productAd': ['Product', 'Mode', 'Scenario', 'Settings', 'First Scene', 'Video Gen'],
     }
 
-    const steps = stepNames[category || '']
+    const translatedSteps = stepNamesT?.[category as keyof typeof stepNamesT]
+    const steps = (Array.isArray(translatedSteps) ? translatedSteps : null) || defaultStepNames[category || '']
+
     if (steps && stepNumber >= 1 && stepNumber <= steps.length) {
       return steps[stepNumber - 1]
     }
 
-    return `Step ${stepNumber}`
+    return `${stepNamesT?.step || 'Step'} ${stepNumber}`
   }
 
   return (
