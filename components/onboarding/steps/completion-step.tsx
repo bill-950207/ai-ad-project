@@ -83,7 +83,7 @@ export function CompletionStep() {
       {/* 완료 메시지 */}
       <div className="text-center mt-6 animate-[fadeIn_0.5s_ease-out_0.2s_backwards]">
         <h3 className="text-2xl font-bold text-foreground tracking-tight">
-          {onbT?.readyTitle || 'Ready!'}
+          {onbT?.readyToCreate || 'Ready!'}
         </h3>
         <p className="text-muted-foreground mt-2">
           {targetType === 'video'
