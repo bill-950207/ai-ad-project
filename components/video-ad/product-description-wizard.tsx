@@ -347,7 +347,7 @@ const modelPoseLabels: Record<ModelPose, ModelPoseInfo> = {
 
 // 영상 스타일별 모델 포즈 옵션
 const modelPosesByVideoType: Record<VideoType, ModelPose[]> = {
-  UGC: ['auto', 'holding-product', 'using-product', 'showing-product', 'reaction', 'custom'],
+  UGC: ['auto', 'holding-product', 'showing-product', 'talking-only', 'custom'],
   podcast: ['auto', 'desk-presenter', 'casual-chat', 'showing-product', 'talking-only', 'custom'],
   expert: ['auto', 'presenting', 'explaining', 'demonstrating', 'showing-product', 'talking-only', 'custom'],
 }
