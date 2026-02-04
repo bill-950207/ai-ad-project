@@ -26,11 +26,12 @@ export interface UserPlan {
 }
 
 // FREE 플랜 기본값 (로딩 중 사용)
+// 서버의 FREE_PLAN (lib/subscription/queries.ts)과 동일한 값 유지
 const FREE_PLAN_DEFAULTS: UserPlan = {
   planType: 'FREE',
   displayName: 'Free',
-  avatarLimit: 1,
-  musicLimit: 1,
+  avatarLimit: 3,
+  musicLimit: 5,
   productLimit: 3,
   monthlyCredits: 15,
   keyframeCount: 1,
