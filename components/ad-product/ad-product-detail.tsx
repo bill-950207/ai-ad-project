@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
-import { Trash2, Plus, Image as ImageIcon, Loader2, RefreshCw, Edit3, X, Check, Tag, DollarSign, Building2, FileText, Sparkles } from 'lucide-react'
+import { Trash2, Plus, Image as ImageIcon, Loader2, RefreshCw, Edit3, X, Check, Tag, FileText, Sparkles } from 'lucide-react'
 import { AdCreationHeader } from '@/components/ui/ad-creation-header'
 
 interface AdProduct {
@@ -23,8 +23,6 @@ interface AdProduct {
   error_message?: string | null
   description?: string | null
   selling_points?: string[] | null
-  price?: string | null
-  brand?: string | null
 }
 
 interface ImageAd {
@@ -57,8 +55,6 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
   const [editForm, setEditForm] = useState({
     name: '',
     description: '',
-    price: '',
-    brand: '',
     selling_points: [''],
   })
 
@@ -104,8 +100,6 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
     setEditForm({
       name: product.name || '',
       description: product.description || '',
-      price: product.price || '',
-      brand: product.brand || '',
       selling_points: product.selling_points?.length ? [...product.selling_points] : [''],
     })
     setIsEditing(true)
@@ -151,8 +145,6 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
         body: JSON.stringify({
           name: editForm.name,
           description: editForm.description,
-          price: editForm.price,
-          brand: editForm.brand,
           selling_points: editForm.selling_points.filter(sp => sp.trim()),
         }),
       })
@@ -377,34 +369,6 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
                   />
                 </div>
 
-                {/* 브랜드 & 가격 */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">
-                      {t.adProduct.brand || 'Brand'}
-                    </label>
-                    <input
-                      type="text"
-                      value={editForm.brand}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, brand: e.target.value }))}
-                      placeholder={t.adProduct.brandPlaceholder || 'e.g., Nike, Apple'}
-                      className="w-full px-3 py-2 bg-secondary/30 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">
-                      {t.adProduct.price || 'Price'}
-                    </label>
-                    <input
-                      type="text"
-                      value={editForm.price}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, price: e.target.value }))}
-                      placeholder={t.adProduct.pricePlaceholder || 'e.g., $29.99'}
-                      className="w-full px-3 py-2 bg-secondary/30 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    />
-                  </div>
-                </div>
-
                 {/* 설명 */}
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">
@@ -478,24 +442,6 @@ export function AdProductDetail({ productId }: AdProductDetailProps) {
               </div>
             ) : (
               <div className="space-y-4">
-                {/* 브랜드 & 가격 */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-start gap-3">
-                    <Building2 className="w-5 h-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">{t.adProduct.brand || 'Brand'}</p>
-                      <p className="text-sm text-foreground">{product.brand || '-'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <DollarSign className="w-5 h-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">{t.adProduct.price || 'Price'}</p>
-                      <p className="text-sm text-foreground">{product.price || '-'}</p>
-                    </div>
-                  </div>
-                </div>
-
                 {/* 설명 */}
                 <div className="flex items-start gap-3">
                   <FileText className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
