@@ -484,7 +484,7 @@ export function AdProductForm() {
           />
 
           <p className="text-xs text-muted-foreground mt-2">
-            PNG, JPG, WEBP / 최대 5MB / 256~4096px
+            {formT?.imageSpec || 'PNG, JPG, WEBP / Max 5MB / 256~4096px'}
           </p>
         </div>
 

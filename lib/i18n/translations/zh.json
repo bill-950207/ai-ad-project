@@ -2705,6 +2705,7 @@
     "maxPhotos": "最多5张",
     "processing": "处理中...",
     "newProduct": "新产品",
+    "imageSpec": "PNG, JPG, WEBP / 最大5MB / 256~4096px",
     "validation": {
       "enterProductName": "请输入产品名称",
       "selectProductImage": "请选择产品图片",

@@ -2705,6 +2705,7 @@
     "maxPhotos": "Max 5",
     "processing": "Processing...",
     "newProduct": "New Product",
+    "imageSpec": "PNG, JPG, WEBP / Max 5MB / 256~4096px",
     "validation": {
       "enterProductName": "Please enter product name",
       "selectProductImage": "Please select product image",

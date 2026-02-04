@@ -2705,6 +2705,7 @@
     "maxPhotos": "최대 5장",
     "processing": "처리 중...",
     "newProduct": "새 제품",
+    "imageSpec": "PNG, JPG, WEBP / 최대 5MB / 256~4096px",
     "validation": {
       "enterProductName": "제품 이름을 입력해주세요",
       "selectProductImage": "제품 이미지를 선택해주세요",
