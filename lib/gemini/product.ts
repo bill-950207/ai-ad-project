@@ -9,6 +9,17 @@ import { getGenAI, MODEL_NAME } from './shared'
 import type { ProductInfoInput, ProductSummary, UrlExtractResult } from './types'
 
 // ============================================================
+// 언어별 출력 지시문
+// ============================================================
+
+const outputLanguageInstructions: Record<string, string> = {
+  ko: 'Write all responses in Korean (한국어).',
+  en: 'Write all responses in English.',
+  ja: 'Write all responses in Japanese (日本語).',
+  zh: 'Write all responses in Simplified Chinese (简体中文).',
+}
+
+// ============================================================
 // Few-Shot 예시 및 검증 규칙
 // ============================================================
 
@@ -42,6 +53,9 @@ If any check fails, revise before responding.
  * 제품 정보를 요약합니다.
  */
 export async function summarizeProductInfo(input: ProductInfoInput): Promise<ProductSummary> {
+  const language = input.language || 'ko'
+  const languageInstruction = outputLanguageInstructions[language] || outputLanguageInstructions.ko
+
   const inputText = input.rawText || `
 제품명: ${input.productName || '미입력'}
 브랜드: ${input.brandName || '미입력'}
@@ -53,12 +67,15 @@ export async function summarizeProductInfo(input: ProductInfoInput): Promise<Pro
 
   const prompt = `당신은 광고 마케팅 전문가입니다. 다음 제품 정보를 분석하고 영상 광고 제작에 사용할 수 있도록 요약해주세요.
 
+=== OUTPUT LANGUAGE ===
+${languageInstruction}
+
 제품 정보:
 ${inputText}
 
 ${PRODUCT_SUMMARY_EXAMPLES}
 
-다음 형식으로 JSON 응답해주세요:
+다음 형식으로 JSON 응답해주세요 (OUTPUT LANGUAGE로 작성):
 {
   "summary": "제품의 핵심 가치와 특징을 2-3문장으로 요약",
   "keyPoints": ["핵심 포인트 1", "핵심 포인트 2", "핵심 포인트 3"],
@@ -87,10 +104,19 @@ ${PRODUCT_SELF_VERIFICATION}`
     }
     throw new Error('JSON 형식 응답 없음')
   } catch {
+    // 폴백 메시지 (언어별)
+    const fallbackMessages: Record<string, { keyPoint: string; suggestedTone: string }> = {
+      ko: { keyPoint: '제품 정보 분석 완료', suggestedTone: '전문적인' },
+      en: { keyPoint: 'Product info analyzed', suggestedTone: 'Professional' },
+      ja: { keyPoint: '製品情報分析完了', suggestedTone: 'プロフェッショナル' },
+      zh: { keyPoint: '产品信息分析完成', suggestedTone: '专业' },
+    }
+    const fallback = fallbackMessages[language] || fallbackMessages.ko
+
     return {
       summary: responseText.slice(0, 200),
-      keyPoints: ['제품 정보 분석 완료'],
-      suggestedTone: '전문적인',
+      keyPoints: [fallback.keyPoint],
+      suggestedTone: fallback.suggestedTone,
     }
   }
 }

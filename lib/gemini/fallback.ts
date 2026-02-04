@@ -155,27 +155,41 @@ export async function withFallback<T>(
 // ============================================================
 
 /** 이미지 광고 프롬프트 Fallback */
-export function getImageAdFallbackPrompt(adType: string): {
+export function getImageAdFallbackPrompt(adType: string, language: string = 'ko'): {
   optimizedPrompt: string
-  koreanDescription: string
+  localizedDescription: string
 } {
   const fallback = FALLBACK_PROMPTS.imageAd[adType as keyof typeof FALLBACK_PROMPTS.imageAd]
     || FALLBACK_PROMPTS.imageAd.holding
 
+  const descriptions: Record<string, string> = {
+    ko: '기본 광고 이미지가 생성됩니다.',
+    en: 'Default advertisement image will be generated.',
+    ja: 'デフォルトの広告画像が生成されます。',
+    zh: '将生成默认广告图片。',
+  }
+
   return {
     optimizedPrompt: fallback,
-    koreanDescription: '기본 광고 이미지가 생성됩니다.',
+    localizedDescription: descriptions[language] || descriptions.ko,
   }
 }
 
 /** 첫 프레임 프롬프트 Fallback */
-export function getFirstFrameFallbackPrompt(): {
+export function getFirstFrameFallbackPrompt(language: string = 'ko'): {
   prompt: string
   locationDescription: string
 } {
+  const descriptions: Record<string, string> = {
+    ko: '기본 실내 환경',
+    en: 'Default indoor setting',
+    ja: 'デフォルトの室内環境',
+    zh: '默认室内环境',
+  }
+
   return {
     prompt: FALLBACK_PROMPTS.firstFrame,
-    locationDescription: '기본 실내 환경',
+    locationDescription: descriptions[language] || descriptions.ko,
   }
 }
 
@@ -217,13 +231,20 @@ export function getScriptFallbackResult(productInfo: string, durationSeconds: nu
 }
 
 /** 배경 프롬프트 Fallback */
-export function getBackgroundFallbackPrompt(): {
+export function getBackgroundFallbackPrompt(language: string = 'ko'): {
   optimizedPrompt: string
-  koreanDescription: string
+  localizedDescription: string
 } {
+  const descriptions: Record<string, string> = {
+    ko: '기본 배경이 생성됩니다.',
+    en: 'Default background will be generated.',
+    ja: 'デフォルトの背景が生成されます。',
+    zh: '将生成默认背景。',
+  }
+
   return {
     optimizedPrompt: FALLBACK_PROMPTS.background,
-    koreanDescription: '기본 배경이 생성됩니다.',
+    localizedDescription: descriptions[language] || descriptions.ko,
   }
 }
 

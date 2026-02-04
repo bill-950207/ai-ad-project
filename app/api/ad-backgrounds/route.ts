@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
           kie_task_id: taskId,
           status: 'IN_PROGRESS',
         },
-        koreanDescription: promptResult.koreanDescription,
+        localizedDescription: promptResult.localizedDescription,
       })
     } catch (kieError) {
       console.error('KIE API 오류:', kieError)

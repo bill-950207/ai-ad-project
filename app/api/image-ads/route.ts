@@ -59,6 +59,7 @@ interface ImageAdRequestBody {
   quality?: Quality
   numImages?: number
   referenceStyleImageUrl?: string  // 참조 스타일 이미지 URL (분위기/스타일만 참조)
+  language?: 'ko' | 'en' | 'ja' | 'zh'  // 출력 언어 설정
   options?: {
     // 공통 옵션
     background?: string
@@ -260,7 +261,7 @@ export async function POST(request: NextRequest) {
 
     // 요청 바디 파싱
     const body: ImageAdRequestBody = await request.json()
-    const { adType, productId, avatarIds = [], outfitId, prompt, imageSize, quality = 'medium', numImages = 2, referenceStyleImageUrl, options, aiAvatarOptions, draftId } = body
+    const { adType, productId, avatarIds = [], outfitId, prompt, imageSize, quality = 'medium', numImages = 2, referenceStyleImageUrl, language = 'ko', options, aiAvatarOptions, draftId } = body
 
     // 구독 플랜 확인
     const userPlan = await getUserPlan(user.id)
@@ -643,10 +644,11 @@ export async function POST(request: NextRequest) {
         selectedOptions: options || {},  // 의상 옵션도 포함됨 (outfit key)
         additionalPrompt: prompt,
         aiAvatarDescription,
+        language,
       })
 
       finalPrompt = geminiResult.optimizedPrompt
-      console.log('Gemini 프롬프트 생성 완료:', { koreanDescription: geminiResult.koreanDescription })
+      console.log('Gemini 프롬프트 생성 완료:', { localizedDescription: geminiResult.localizedDescription })
     } catch (geminiError) {
       console.error('Gemini 프롬프트 생성 실패, 기본 프롬프트 사용:', geminiError)
 

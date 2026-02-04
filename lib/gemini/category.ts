@@ -127,9 +127,10 @@ export async function generateRecommendedCategoryOptions(
   const language = input.language || 'ko'
 
   const outputLanguageInstructions: Record<string, string> = {
-    ko: 'Write all text responses in Korean.',
+    ko: 'Write all text responses in Korean (한국어).',
     en: 'Write all text responses in English.',
-    ja: 'Write all text responses in Japanese.',
+    ja: 'Write all text responses in Japanese (日本語).',
+    zh: 'Write all text responses in Simplified Chinese (简体中文).',
   }
 
   const groupsDescription = input.categoryGroups.map(group => {
@@ -232,9 +233,10 @@ export async function generateMultipleRecommendedOptions(
   const language = input.language || 'ko'
 
   const outputLanguageInstructions: Record<string, string> = {
-    ko: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt, customText) in Korean.',
+    ko: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt, customText) in Korean (한국어).',
     en: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt, customText) in English.',
-    ja: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt, customText) in Japanese.',
+    ja: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt, customText) in Japanese (日本語).',
+    zh: 'Write all text responses (title, description, reason, overallStrategy, suggestedPrompt, customText) in Simplified Chinese (简体中文).',
   }
 
   // 옵션 그룹 목록 (모든 카테고리에 대해 customText 필수 출력)
@@ -313,6 +315,30 @@ export async function generateMultipleRecommendedOptions(
       season: '季節感',
       theme: 'テーマ/イベント',
       atmosphere: '全体的な空気感/雰囲気',
+    },
+    zh: {
+      background: '产品背后的背景环境/表面',
+      lighting: '光源方向、强度、色温、阴影效果',
+      angle: '相机角度和产品视角',
+      style: '整体视觉风格和美学方向',
+      colorTone: '图像整体色调、饱和度、色温',
+      composition: '画面内产品布局和构图',
+      mood: '图像传达的情感和氛围',
+      outfit: '模特/虚拟形象的服装风格',
+      pose: '模特/虚拟形象的姿势和动作',
+      gaze: '模特/虚拟形象的视线方向',
+      expression: '模特/虚拟形象的表情',
+      framing: '镜头范围（特写、上半身、全身等）',
+      action: '模特与产品的互动动作',
+      setting: '拍摄场所/空间环境',
+      focus: '焦点对象（产品 vs 模特）',
+      scene: '场景/情境设定',
+      location: '具体地点',
+      time: '时间段（早晨、傍晚、黄金时段等）',
+      productPlacement: '产品摆放方式',
+      season: '季节感',
+      theme: '主题/活动',
+      atmosphere: '整体氛围/空气感',
     },
   }
 
@@ -703,6 +729,12 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
         reason: 'デフォルト設定です。',
         strategy: '製品情報に基づいてデフォルト設定が適用されました。',
       },
+      zh: {
+        title: '默认场景',
+        description: '适合产品的默认设置。',
+        reason: '默认设置。',
+        strategy: '已根据产品信息应用默认设置。',
+      },
     }
     const messages = fallbackMessages[language] || fallbackMessages.ko
 
@@ -770,10 +802,21 @@ Output JSON with: analyzedOptions, overallStyle, suggestedPrompt, recommendedAdT
   }
 }
 
+// 배경 프롬프트용 언어별 출력 지시문
+const backgroundLanguageInstructions: Record<string, string> = {
+  ko: 'Write the localizedDescription in Korean (한국어).',
+  en: 'Write the localizedDescription in English.',
+  ja: 'Write the localizedDescription in Japanese (日本語).',
+  zh: 'Write the localizedDescription in Simplified Chinese (简体中文).',
+}
+
 /**
  * 배경 프롬프트를 생성합니다.
  */
 export async function generateBackgroundPrompt(input: BackgroundPromptInput): Promise<BackgroundPromptResult> {
+  const language = input.language || 'ko'
+  const languageInstruction = backgroundLanguageInstructions[language] || backgroundLanguageInstructions.ko
+
   let promptContext = ''
 
   if (input.mode === 'PRODUCT' && input.productImageUrl) {
@@ -794,10 +837,13 @@ IMPORTANT: No visible lighting equipment, camera stands, or production equipment
 
   const prompt = `Generate z-image-turbo optimized background prompt.
 
+=== OUTPUT LANGUAGE ===
+${languageInstruction}
+
 ${promptContext}
 Aspect Ratio: ${input.aspectRatio || '16:9'}
 
-Output JSON: { "optimizedPrompt": "English background prompt", "koreanDescription": "Korean description" }`
+Output JSON: { "optimizedPrompt": "English background prompt", "localizedDescription": "Description in the OUTPUT LANGUAGE specified above" }`
 
   const config: GenerateContentConfig = {
     thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
@@ -825,9 +871,17 @@ Output JSON: { "optimizedPrompt": "English background prompt", "koreanDescriptio
   try {
     return JSON.parse(response.text || '') as BackgroundPromptResult
   } catch {
+    // 폴백 메시지 (언어별)
+    const fallbackDescriptions: Record<string, string> = {
+      ko: '깔끔한 모던 배경',
+      en: 'Clean modern background',
+      ja: 'クリーンなモダン背景',
+      zh: '简洁现代背景',
+    }
+
     return {
       optimizedPrompt: 'Clean seamless solid color backdrop with soft gradient lighting effect. Professional product photography setting with no visible equipment.',
-      koreanDescription: '깔끔한 모던 배경',
+      localizedDescription: fallbackDescriptions[language] || fallbackDescriptions.ko,
     }
   }
 }

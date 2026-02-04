@@ -193,10 +193,11 @@ export async function POST(
         outfitImageUrl,
         selectedOptions,
         additionalPrompt: '', // 추가 프롬프트는 원본에서 가져올 수 없으므로 빈 문자열
+        language: 'ko', // 재시도는 기본 한국어 (원본에서 언어 정보를 가져올 수 없음)
       })
 
       finalPrompt = geminiResult.optimizedPrompt
-      console.log('재시도: Gemini 프롬프트 생성 완료:', { koreanDescription: geminiResult.koreanDescription })
+      console.log('재시도: Gemini 프롬프트 생성 완료:', { localizedDescription: geminiResult.localizedDescription })
     } catch (geminiError) {
       console.error('재시도: Gemini 프롬프트 생성 실패, 기본 프롬프트 사용:', geminiError)
 

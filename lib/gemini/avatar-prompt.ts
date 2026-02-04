@@ -151,11 +151,23 @@ const outfitPresetDescriptions: Record<OutfitPresetType, string> = {
   minimal_simple: '미니멀 심플 의상 - 깔끔한 단색',
 }
 
+// 언어별 출력 지시문
+const outputLanguageInstructions: Record<string, string> = {
+  ko: 'Write all user-facing text responses (avatarDescription, locationDescription) in Korean (한국어).',
+  en: 'Write all user-facing text responses (avatarDescription, locationDescription) in English.',
+  ja: 'Write all user-facing text responses (avatarDescription, locationDescription) in Japanese (日本語).',
+  zh: 'Write all user-facing text responses (avatarDescription, locationDescription) in Simplified Chinese (简体中文).',
+}
+
 /**
  * AI 아바타 프롬프트 생성
  * 제품 정보를 바탕으로 GPT-Image 1.5용 이미지 생성 프롬프트를 생성합니다.
  */
 export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promise<AiAvatarPromptResult> {
+  // 출력 언어 설정
+  const outputLanguage = input.language || 'ko'
+  const languageInstruction = outputLanguageInstructions[outputLanguage] || outputLanguageInstructions.ko
+
   const genderMap: Record<string, string> = { male: '남성', female: '여성', any: '성별 무관' }
   const ageMap: Record<string, string> = { young: '20-30대', middle: '30-40대', mature: '40-50대', any: '연령대 무관' }
   const styleMap: Record<string, string> = { natural: '자연스럽고 편안한', professional: '전문적이고 세련된', casual: '캐주얼하고 편안한', elegant: '우아하고 고급스러운', any: '스타일 무관' }
@@ -306,6 +318,9 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
   const prompt = `당신은 GPT-Image 1.5 이미지 생성을 위한 프롬프트 전문가입니다.
 제품 설명 영상의 첫 프레임에 사용될 이미지를 생성하기 위한 프롬프트를 작성해주세요.
 
+=== OUTPUT LANGUAGE ===
+${languageInstruction}
+
 === 영상 스타일: ${videoTypeStyle.korean} ===
 ${videoTypeStyle.description}
 ${atmosphereSection}
@@ -373,8 +388,8 @@ ${AVATAR_LIGHTING_EXAMPLES}
 다음 JSON 형식으로 응답하세요:
 {
   "prompt": "영어로 작성된 GPT-Image 1.5 프롬프트 (50-100단어)",
-  "avatarDescription": "생성될 아바타에 대한 한국어 설명",
-  "locationDescription": "장소/배경에 대한 한국어 설명"
+  "avatarDescription": "생성될 아바타에 대한 설명 (OUTPUT LANGUAGE로 작성)",
+  "locationDescription": "장소/배경에 대한 설명 (OUTPUT LANGUAGE로 작성)"
 }
 
 ${AVATAR_SELF_VERIFICATION}`
@@ -407,10 +422,19 @@ ${AVATAR_SELF_VERIFICATION}`
   try {
     return JSON.parse(responseText) as AiAvatarPromptResult
   } catch {
+    // 폴백 메시지 (언어별)
+    const fallbackMessages: Record<string, { avatarDescription: string; locationDescription: string }> = {
+      ko: { avatarDescription: '자연스러운 느낌의 모델', locationDescription: '자연스러운 실내 배경' },
+      en: { avatarDescription: 'Natural looking model', locationDescription: 'Natural indoor background' },
+      ja: { avatarDescription: 'ナチュラルなモデル', locationDescription: '自然な室内背景' },
+      zh: { avatarDescription: '自然风格的模特', locationDescription: '自然的室内背景' },
+    }
+    const fallback = fallbackMessages[outputLanguage] || fallbackMessages.ko
+
     return {
       prompt: 'A person seated comfortably in a natural indoor setting, naturally holding a product. Full body visible. Calm, confident expression. Soft natural daylight. Sharp in-focus background with every detail visible, NO bokeh, NO blur. Shot on Sony A7IV, 35mm f/11, deep depth of field, entire scene razor sharp. Ultra-realistic cinematic editorial photography, 8K quality.',
-      avatarDescription: '자연스러운 느낌의 모델',
-      locationDescription: '자연스러운 실내 배경',
+      avatarDescription: fallback.avatarDescription,
+      locationDescription: fallback.locationDescription,
     }
   }
 }
