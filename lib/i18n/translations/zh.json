@@ -194,16 +194,19 @@
     }
   },
   "pricingPage": {
+    "badge": "定价",
     "title": "选择适合您的方案",
     "subtitle": "随时升级或取消。透明定价，无隐藏费用。",
     "loadError": "无法加载方案信息。",
     "checkoutError": "无法打开支付页面。",
     "processingError": "支付处理中出现错误，请稍后重试。",
+    "monthly": "月付",
+    "yearly": "年付",
     "monthlyBilling": "月付",
     "yearlyBilling": "年付",
     "save": "节省",
     "free": "免费",
-    "perMonth": "月",
+    "perMonth": "/月",
     "yearlySavings": "年省${{amount}}！",
     "avatars": "虚拟形象",
     "music": "音乐",
@@ -215,13 +218,92 @@
     "cannotDowngrade": "无法降级",
     "upgrade": "升级",
     "subscribe": "订阅",
+    "getStarted": "立即开始",
     "processing": "处理中...",
     "cancelAnytime": "随时取消",
     "keepContent": "内容永久保存",
     "creditsRollOver": "积分可累积",
+    "ctaText": "立即开始使用",
+    "startFree": "免费开始",
     "allPlansCancelable": "所有付费方案均可随时取消。取消后可继续使用至下一个账单日期，您创建的内容将继续保留。",
     "watermarkIncluded": "含水印",
-    "unlimited": "无限"
+    "unlimited": "无限",
+    "plans": {
+      "free": {
+        "description": "免费体验AI广告制作",
+        "valueHighlight": "",
+        "features": [
+          "图片广告生成",
+          "视频广告生成",
+          "含水印"
+        ],
+        "limits": {
+          "avatars": "1个",
+          "music": "1个",
+          "products": "3个",
+          "credits": "15积分",
+          "imageEstimate": "~5张图片",
+          "videoEstimate": "~1个视频"
+        }
+      },
+      "starter": {
+        "description": "个人创作者专属方案",
+        "valueHighlight": "¥0.7/积分",
+        "features": [
+          "图片广告生成",
+          "视频广告生成",
+          "无水印",
+          "优先支持"
+        ],
+        "limits": {
+          "avatars": "3个",
+          "music": "5个",
+          "products": "10个",
+          "credits": "100积分/月",
+          "imageEstimate": "~33张图片",
+          "videoEstimate": "~10个视频"
+        }
+      },
+      "pro": {
+        "description": "专业人士和小团队专属方案",
+        "valueHighlight": "¥0.7/积分",
+        "features": [
+          "图片广告生成",
+          "视频广告生成",
+          "无水印",
+          "优先支持",
+          "高级分析"
+        ],
+        "limits": {
+          "avatars": "无限",
+          "music": "无限",
+          "products": "无限",
+          "credits": "300积分/月",
+          "imageEstimate": "~100张图片",
+          "videoEstimate": "~30个视频"
+        }
+      },
+      "business": {
+        "description": "企业和大型团队专属方案",
+        "valueHighlight": "¥0.7/积分",
+        "features": [
+          "图片广告生成",
+          "视频广告生成",
+          "无水印",
+          "专属支持",
+          "高级分析",
+          "API访问"
+        ],
+        "limits": {
+          "avatars": "无限",
+          "music": "无限",
+          "products": "无限",
+          "credits": "1000积分/月",
+          "imageEstimate": "~333张图片",
+          "videoEstimate": "~100个视频"
+        }
+      }
+    }
   },
   "showcase": {
     "title": "作品展示",

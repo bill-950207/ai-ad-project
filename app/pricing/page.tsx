@@ -230,7 +230,7 @@ export default function PricingPage() {
                 )}
                 {plan.bestValue && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-xs font-medium px-3 py-1 rounded-full">
-                    Best Value
+                    {pricingT.bestValue}
                   </div>
                 )}
 

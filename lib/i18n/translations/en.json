@@ -194,17 +194,20 @@
     }
   },
   "pricingPage": {
+    "badge": "Pricing",
     "title": "Choose a Plan",
     "subtitle": "Select the plan that fits your needs. You can upgrade anytime.",
     "loadError": "Unable to load plan info.",
     "checkoutError": "Unable to open checkout page.",
     "processingError": "An error occurred during checkout. Please try again.",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
     "monthlyBilling": "Monthly",
     "yearlyBilling": "Yearly",
     "save": "Save",
     "free": "Free",
     "perMonth": "/mo",
-    "yearlySavings": "Save ${amount}/year!",
+    "yearlySavings": "Save ${{amount}}/year!",
     "avatars": "Avatars",
     "music": "Music",
     "products": "Products",
@@ -215,13 +218,92 @@
     "cannotDowngrade": "Cannot Downgrade",
     "upgrade": "Upgrade",
     "subscribe": "Subscribe",
+    "getStarted": "Get Started",
     "processing": "Processing...",
     "cancelAnytime": "Cancel anytime",
     "keepContent": "Keep your content forever",
     "creditsRollOver": "Credits roll over",
+    "ctaText": "Get started today",
+    "startFree": "Start Free",
     "allPlansCancelable": "All paid plans can be cancelled anytime. After cancellation, you can use the service until the next billing date, and your content will be preserved.",
     "watermarkIncluded": "Watermark included",
-    "unlimited": "Unlimited"
+    "unlimited": "Unlimited",
+    "plans": {
+      "free": {
+        "description": "Try AI ad creation for free",
+        "valueHighlight": "",
+        "features": [
+          "Image ad generation",
+          "Video ad generation",
+          "Watermark included"
+        ],
+        "limits": {
+          "avatars": "1",
+          "music": "1",
+          "products": "3",
+          "credits": "15 credits",
+          "imageEstimate": "~5 images",
+          "videoEstimate": "~1 video"
+        }
+      },
+      "starter": {
+        "description": "For individual creators",
+        "valueHighlight": "$0.10/credit",
+        "features": [
+          "Image ad generation",
+          "Video ad generation",
+          "No watermark",
+          "Priority support"
+        ],
+        "limits": {
+          "avatars": "3",
+          "music": "5",
+          "products": "10",
+          "credits": "100 credits/mo",
+          "imageEstimate": "~33 images",
+          "videoEstimate": "~10 videos"
+        }
+      },
+      "pro": {
+        "description": "For professionals and small teams",
+        "valueHighlight": "$0.10/credit",
+        "features": [
+          "Image ad generation",
+          "Video ad generation",
+          "No watermark",
+          "Priority support",
+          "Advanced analytics"
+        ],
+        "limits": {
+          "avatars": "Unlimited",
+          "music": "Unlimited",
+          "products": "Unlimited",
+          "credits": "300 credits/mo",
+          "imageEstimate": "~100 images",
+          "videoEstimate": "~30 videos"
+        }
+      },
+      "business": {
+        "description": "For enterprises and large teams",
+        "valueHighlight": "$0.10/credit",
+        "features": [
+          "Image ad generation",
+          "Video ad generation",
+          "No watermark",
+          "Dedicated support",
+          "Advanced analytics",
+          "API access"
+        ],
+        "limits": {
+          "avatars": "Unlimited",
+          "music": "Unlimited",
+          "products": "Unlimited",
+          "credits": "1000 credits/mo",
+          "imageEstimate": "~333 images",
+          "videoEstimate": "~100 videos"
+        }
+      }
+    }
   },
   "showcase": {
     "title": "Gallery",
