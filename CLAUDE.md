@@ -58,20 +58,44 @@ lib/
 ├── auth/                # 인증 헬퍼 (admin.ts, cached.ts)
 ├── avatar/              # 아바타 생성 유틸리티 (prompt-builder, option-labels)
 ├── cache/               # 데이터 캐싱 (user-data)
-├── client/              # 클라이언트 업로드 유틸리티
-├── credits/             # 크레딧 시스템 (constants, utils, history)
+├── client/              # 클라이언트 업로드 유틸리티 (image-upload, ad-product-upload)
+├── constants/           # UI 상수 (ui.ts)
+├── credits/             # 크레딧 시스템 (constants, utils, history, index)
 ├── fal/                 # FAL.ai 이미지/영상 클라이언트
-├── gemini/              # Google Gemini LLM (20+ 프롬프트 빌더)
+├── gemini/              # Google Gemini LLM (13개 모듈)
+│   ├── client.ts        # Gemini 클라이언트 (lazy init, ThinkingLevel)
+│   ├── index.ts         # 공통 export
+│   ├── types.ts         # 타입 정의
+│   ├── shared.ts        # 공통 유틸리티
+│   ├── avatar-prompt.ts # 아바타 프롬프트 최적화
+│   ├── image-ad-prompt-v2.ts  # 이미지 광고 프롬프트 (v2)
+│   ├── image-editing.ts # 이미지 편집 프롬프트
+│   ├── video-prompt.ts  # 영상 프롬프트 확장
+│   ├── scenario.ts      # 시나리오 생성 (멀티씬)
+│   ├── infinitetalk-prompt.ts # InfiniteTalk 프롬프트
+│   ├── product.ts       # 제품 분석/추천
+│   ├── category.ts      # 카테고리 분류
+│   └── fallback.ts      # 폴백 처리
 ├── generated/           # Prisma 생성 파일
-├── hooks/               # 커스텀 React 훅 (use-async-draft-save, use-user-plan)
+├── hooks/               # 커스텀 React 훅
+│   ├── use-async-draft-save.ts  # 드래프트 비동기 저장
+│   └── use-user-plan.ts         # 사용자 플랜 조회
 ├── i18n/                # 국제화 (ko, en, ja, zh)
+│   ├── index.ts         # 번역 유틸리티
+│   ├── seo.ts           # SEO용 locale 설정
+│   └── translations/    # 번역 파일
 ├── image/               # 이미지 처리 (compress, optimize, product-processor)
-├── image-ad/            # 이미지 광고 생성
-├── kie/                 # Kie.ai API 클라이언트 (TTS 포함)
+├── image-ad/            # 이미지 광고 생성 (category-options)
+├── kie/                 # Kie.ai API 클라이언트 (client, tts)
 ├── prompts/             # AI 프롬프트 템플릿
 ├── storage/             # Cloudflare R2 파일 스토리지
-├── stripe/              # Stripe 결제 통합
-├── subscription/        # 구독 시스템 (슬롯 제한, 캐시, 쿼리)
+├── stripe/              # Stripe 결제 통합 (client, config, index)
+├── subscription/        # 구독 시스템
+│   ├── cache.ts         # 구독 캐시
+│   ├── features.ts      # 플랜별 프리미엄 기능
+│   ├── queries.ts       # DB 쿼리
+│   ├── usage.ts         # 슬롯 제한 확인
+│   └── index.ts         # export
 ├── supabase/            # Supabase 클라이언트 (client, server, admin)
 ├── tts/                 # TTS 모듈 (lib/kie/tts re-export)
 ├── video/               # 영상 처리 (FFmpeg)
@@ -79,6 +103,8 @@ lib/
 
 contexts/                # React 컨텍스트 (credit-context)
 types/                   # TypeScript 타입 정의
+├── index.ts             # 공통 타입 export
+└── showcase.ts          # 쇼케이스 관련 타입
 
 prisma/
 ├── schema.prisma        # DB 스키마
@@ -90,7 +116,9 @@ scripts/
 ├── run-migration.mjs    # DB 마이그레이션 실행
 ├── seed.ts              # 기본 데이터 시딩
 ├── seed-plans.ts        # 요금제 데이터 시딩
-└── sync-translations.mjs # 번역 파일 동기화
+├── sync-translations.mjs # 번역 파일 동기화
+├── test-prompt-improvements.ts # 프롬프트 테스트 스크립트
+└── create-image-ads-table.sql  # 이미지 광고 테이블 SQL
 ```
 
 ## Development Commands
@@ -246,9 +274,15 @@ await prisma.$transaction(async (tx) => {
 - Cached: `lib/auth/cached.ts` (React.cache로 RSC 중복 호출 제거)
 - 사용자 역할: `MEMBER` (기본), `ADMIN`
 
+### Middleware (`middleware.ts`)
+- **루트 리다이렉트:** 브라우저 Accept-Language 헤더 기반 locale 리다이렉트
+- **인증 코드 처리:** 루트에 code 파라미터가 있으면 `/auth/callback`으로 리다이렉트
+- **세션 갱신:** `/dashboard/*`, `/api/*` 라우트에서만 세션 체크 (성능 최적화)
+
 ### 보호된 라우트
-- `/dashboard/*` 전체 인증 필요
-- 공개 라우트: `/`, `/pricing`, `/legal/*`, `/(auth)/*`
+- `/dashboard/*` - 전체 인증 필요
+- `/api/*` - 인증 체크 (API별 개별 처리)
+- 공개 라우트: `/[locale]`, `/pricing`, `/legal/*`, `/(auth)/*`
 
 ## Credit System
 
@@ -309,7 +343,10 @@ await recordCreditRefund(userId, 'IMAGE_AD', amount, balanceAfter, entityId, '�
 | PRO | 300 | -1 (무제한) | -1 | -1 | 2 |
 | BUSINESS | 1000 | -1 | -1 | -1 | 2 |
 
-**참고:** 슬롯은 동시 보유 가능 개수 제한 (월간 생성 횟수가 아님)
+**참고:**
+- 슬롯은 동시 보유 가능 개수 제한 (월간 생성 횟수가 아님)
+- FREE 플랜 이미지 광고 생성: 배치당 최대 1장 제한
+- `lib/subscription/queries.ts`에서 FREE_PLAN 상수 정의
 
 ### 슬롯 제한 확인 (`lib/subscription/usage.ts`)
 ```typescript
@@ -324,6 +361,21 @@ if (!result.withinLimit) {
 // 전체 슬롯 사용량 조회
 const summary = await getSlotSummary(userId)
 // { avatars: { used, limit }, music: { used, limit }, products: { used, limit } }
+```
+
+### 프리미엄 기능 확인 (`lib/subscription/features.ts`)
+```typescript
+import { getPlanFeatures, getKeyframeCount, canRemoveWatermark } from '@/lib/subscription/features'
+
+// 플랜별 프리미엄 기능 조회
+const features = await getPlanFeatures(userId)
+// { keyframeCount: 1|2, watermarkFree: boolean, hdUpscale: boolean }
+
+// 키프레임 생성 개수 확인
+const keyframeCount = await getKeyframeCount(userId)
+
+// 워터마크 제거 가능 여부
+const canRemove = await canRemoveWatermark(userId)
 ```
 
 ## AI Services
@@ -362,11 +414,18 @@ const summary = await getSlotSummary(userId)
 ### Google Gemini (`lib/gemini/`)
 - Lazy Initialization으로 Cold Start 최적화
 - ThinkingLevel: LOW (모든 요청에 적용)
-- 프롬프트 최적화 및 확장
-- 레퍼런스 분석 (이미지, 영상)
-- 시나리오 생성 (멀티씬, 싱글씬)
-- 추천 엔진
-- InfiniteTalk 프롬프트 생성
+- 모델: `gemini-2.0-flash-thinking`
+- **프롬프트 모듈 (13개):**
+  - `avatar-prompt.ts`: 아바타 프롬프트 최적화/확장
+  - `image-ad-prompt-v2.ts`: 이미지 광고 프롬프트 (개선된 v2)
+  - `image-editing.ts`: 이미지 편집 프롬프트
+  - `video-prompt.ts`: 영상 프롬프트 확장
+  - `scenario.ts`: 시나리오 생성 (멀티씬)
+  - `infinitetalk-prompt.ts`: InfiniteTalk 프롬프트 생성
+  - `product.ts`: 제품 분석/추천
+  - `category.ts`: 카테고리 분류
+  - `fallback.ts`: 폴백 처리
+- **다국어 출력 지원:** ko, en, ja, zh (사용자 언어 설정에 따라)
 
 ### TTS (`lib/tts/index.ts` → `lib/kie/tts.ts`)
 ```typescript
@@ -529,9 +588,11 @@ NEXT_PUBLIC_SENTRY_DSN=
 ## Performance Optimizations
 
 최근 적용된 성능 최적화:
+- **LLM 프롬프트 엔지니어링:** 이미지/영상 광고 생성 품질 및 속도 개선
 - **Gemini 클라이언트 Lazy Initialization:** Cold Start 시간 단축
 - **Gemini ThinkingLevel LOW:** 응답 속도 개선
 - **React.cache():** RSC 요청 중복 인증 호출 제거
+- **Middleware 최적화:** 보호된 라우트에서만 세션 체크
 - **API 라우트 캐싱:** 자주 호출되는 엔드포인트 최적화
 - **R2 지연 초기화:** 스토리지 성능 개선
 - **드래프트 캐시 개선:** 위저드 상태 복원 속도 향상
@@ -540,8 +601,13 @@ NEXT_PUBLIC_SENTRY_DSN=
 ## Recent Features
 
 최근 구현된 주요 기능들:
+- **LLM 프롬프트 엔지니어링 개선:** 이미지/영상 광고 생성 품질 향상
+- **LLM 다국어 출력 지원:** 프롬프트 결과물 ko/en/ja/zh 지원
+- **제품 설명 영상 옵션 개선:** AI 추천 기능 추가
+- **대시보드 광고 생성 카드 호버 효과:** UX 개선
+- **i18n 완성도 향상:** 누락 키 및 하드코딩 텍스트 처리
+- **조리개 설정 통일:** f/11~f/22 범위로 표준화
 - **대시보드 쇼케이스:** 제품/아바타 썸네일 표시
-- **개별 쇼케이스 이미지 최적화:** 썸네일 생성 기능
 - **Vidu Q3 전용 모드:** 제품 광고 영상 생성을 Vidu Q3 단일 모델로 통합 (1-16초 지원)
 - **드래프트 시스템:** 이미지/영상 광고 자동 저장/복원
 - **크레딧 히스토리:** 사용/획득 내역 추적
@@ -560,5 +626,7 @@ NEXT_PUBLIC_SENTRY_DSN=
 - **레거시 영상 모델:** Seedance, Kling 2.6, Wan 2.6, Kling O1, Vidu Q2 (제품 광고는 Vidu Q3 전용)
 - **일반 모드 영상 생성:** `/api/product-ad/generate-video` (멀티씬 모드만 사용)
 - **Kie.ai InfiniteTalk:** WaveSpeed 대체
+- **영상 광고 참조 분석:** `/api/product-ad/analyze-reference` (기능 제거됨)
+- **제품 추가 사진:** 제품 등록 모달에서 추가 사진 항목 제거됨
 
 해당 코드는 레거시로 유지되며, 신규 개발이나 버그 수정 대상이 아님.
