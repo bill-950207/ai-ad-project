@@ -144,7 +144,9 @@ export async function POST(request: NextRequest) {
       locationPrompt,  // custom일 때 사용자 입력 또는 프리셋의 promptValue
       durationSeconds,
       cameraComposition,  // 카메라 구도 (selfie, tripod, closeup, fullbody)
+      cameraCompositionPrompt,  // 카메라 구도 직접 입력 (custom일 때)
       modelPose,  // 모델 포즈 (holding-product, showing-product, using-product, talking-only)
+      modelPosePrompt,  // 모델 포즈 직접 입력 (custom일 때)
       // 의상 설정
       outfitMode,  // 의상 모드 (preset, custom)
       outfitPreset,  // 의상 프리셋 (casual_everyday, formal_elegant, etc.)
@@ -340,7 +342,9 @@ export async function POST(request: NextRequest) {
         productImageUrl: effectiveProductImageUrl,
         locationPrompt: effectiveLocationPrompt,  // AI 추천 배경 또는 사용자 지정 배경
         cameraComposition: cameraComposition as CameraCompositionType | undefined,
+        cameraCompositionPrompt,  // 카메라 구도 직접 입력
         modelPose,
+        modelPosePrompt,  // 모델 포즈 직접 입력
         outfitPreset: outfitMode === 'preset' ? outfitPreset : undefined,
         outfitCustom: effectiveOutfitCustom,
         targetGender: aiAvatarOptions?.targetGender,
@@ -367,7 +371,9 @@ export async function POST(request: NextRequest) {
         locationPrompt: effectiveLocationPrompt,  // AI 추천 배경 또는 사용자 지정 배경
         productImageUrl: effectiveProductImageUrl,
         cameraComposition,
+        cameraCompositionPrompt,  // 카메라 구도 직접 입력
         modelPose,
+        modelPosePrompt,  // 모델 포즈 직접 입력
         outfitPreset: outfitMode === 'preset' ? outfitPreset : undefined,
         outfitCustom: effectiveOutfitCustom,
         videoType,  // 비디오 타입 (UGC, podcast, expert)

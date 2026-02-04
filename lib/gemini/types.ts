@@ -336,7 +336,11 @@ export interface FirstFramePromptInput {
   locationPrompt?: string
   productImageUrl?: string
   cameraComposition?: CameraCompositionType
+  /** 카메라 구도 직접 입력 (cameraComposition이 undefined일 때 사용) */
+  cameraCompositionPrompt?: string
   modelPose?: ModelPoseType
+  /** 모델 포즈 직접 입력 (modelPose가 undefined일 때 사용) */
+  modelPosePrompt?: string
   outfitPreset?: OutfitPresetType
   outfitCustom?: string
   /** 비디오 타입 (UGC, 팟캐스트, 전문가) */
@@ -386,7 +390,11 @@ export interface AiAvatarPromptInput {
   productImageUrl?: string
   locationPrompt?: string
   cameraComposition?: CameraCompositionType
+  /** 카메라 구도 직접 입력 (cameraComposition이 undefined일 때 사용) */
+  cameraCompositionPrompt?: string
   modelPose?: ModelPoseType
+  /** 모델 포즈 직접 입력 (modelPose가 undefined일 때 사용) */
+  modelPosePrompt?: string
   outfitPreset?: OutfitPresetType
   outfitCustom?: string
   targetGender?: 'male' | 'female' | 'any'

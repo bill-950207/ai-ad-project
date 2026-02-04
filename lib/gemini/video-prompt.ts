@@ -686,14 +686,19 @@ export async function generateFirstFramePrompt(input: FirstFramePromptInput): Pr
     ? `Location: ${input.locationPrompt}`
     : `Location: ${videoTypeGuide.environmentPrompt}`
 
+  // 카메라 구도: 프리셋 > 직접 입력 > 비디오 타입 기본값
   const cameraSection = input.cameraComposition
     ? `Camera: ${cameraCompositionDescriptions[input.cameraComposition]}`
-    : ''
+    : input.cameraCompositionPrompt
+      ? `Camera: ${input.cameraCompositionPrompt}`
+      : ''
 
-  // 포즈: 사용자 지정 > 비디오 타입 기본값
+  // 포즈: 프리셋 > 직접 입력 > 비디오 타입 기본값
   const poseSection = input.modelPose
     ? `Pose: ${modelPoseDescriptions[input.modelPose]}`
-    : `Pose: ${videoTypeGuide.posePrompt}`
+    : input.modelPosePrompt
+      ? `Pose: ${input.modelPosePrompt}`
+      : `Pose: ${videoTypeGuide.posePrompt}`
 
   // UGC 셀카 + 제품 포즈 조합 시 특별 지시
   const isUgcSelfie = input.cameraComposition === 'ugc-selfie'

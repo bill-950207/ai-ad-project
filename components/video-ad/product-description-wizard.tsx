@@ -141,99 +141,110 @@ const videoTypeOptions: VideoType[] = ['UGC', 'podcast', 'expert']
 
 // 카메라 구도 타입 (영상 스타일별로 다른 옵션 제공)
 type CameraComposition =
+  // AI 추천
+  | 'auto'
   // 공통
-  | 'auto' | 'closeup'
+  | 'closeup'
   // UGC용 (셀카 스타일)
   | 'selfie-high' | 'selfie-front' | 'selfie-side' | 'ugc-closeup' | 'ugc-selfie'
   // Podcast용 (웹캠/데스크 스타일)
   | 'webcam' | 'medium-shot' | 'three-quarter'
   // Expert용 (전문가 스타일)
   | 'tripod' | 'fullbody' | 'presenter'
+  // 직접 입력
+  | 'custom'
 
 // 카메라 구도 정보
 interface CameraCompositionInfo {
   label: string
   desc: string
-  exampleImage: string
+  promptValue: string  // 프롬프트에 사용될 영문 설명
 }
 
 const cameraCompositionLabels: Record<CameraComposition, CameraCompositionInfo> = {
-  // Common
+  // AI 추천
   auto: {
-    label: 'Auto',
-    desc: 'AI selects natural composition',
-    exampleImage: '/images/camera/auto.png',
+    label: 'AI Recommend',
+    desc: 'AI selects the best composition for your video',
+    promptValue: '',  // API에서 동적으로 결정
   },
+  // Common
   closeup: {
     label: 'Close-up',
     desc: 'Face-focused close shot',
-    exampleImage: '/images/camera/closeup.png',
+    promptValue: 'close-up portrait framing, face and upper chest, intimate conversational distance',
   },
   // UGC
   'selfie-high': {
-    label: 'Selfie (High Angle)',
+    label: 'Selfie (High)',
     desc: 'Looking down from above',
-    exampleImage: '/images/camera/selfie-high.png',
+    promptValue: 'high angle selfie perspective, camera looking down from above, flattering casual angle',
   },
   'selfie-front': {
     label: 'Selfie (Front)',
     desc: 'Eye level front shot',
-    exampleImage: '/images/camera/selfie-front.png',
+    promptValue: 'eye-level frontal selfie view, direct eye contact, natural smartphone distance',
   },
   'selfie-side': {
     label: 'Selfie (Side)',
     desc: 'Slightly from the side',
-    exampleImage: '/images/camera/selfie-side.png',
+    promptValue: 'three-quarter selfie angle, showing facial contours, casual authentic vibe',
   },
   'ugc-closeup': {
-    label: 'Influencer Close-up',
+    label: 'Influencer',
     desc: 'Chest to face close shot',
-    exampleImage: '/images/camera/ugc-closeup.png',
+    promptValue: 'UGC influencer style medium close-up, chest-up framing, casual and approachable feel',
   },
   'ugc-selfie': {
     label: 'UGC Selfie',
     desc: 'Phone selfie composition',
-    exampleImage: '/images/camera/ugc-selfie.png',
+    promptValue: 'POV selfie shot, subject looking at camera, NO phone visible, natural relaxed pose',
   },
   // Podcast
   webcam: {
-    label: 'Webcam Front',
+    label: 'Webcam',
     desc: 'Standard podcast style',
-    exampleImage: '/images/camera/webcam.png',
+    promptValue: 'webcam-style frontal view, desktop setup distance, conversational podcast framing',
   },
   'medium-shot': {
     label: 'Medium Shot',
     desc: 'Upper body visible',
-    exampleImage: '/images/camera/medium-shot.png',
+    promptValue: 'medium shot showing upper body from waist up, balanced composition, professional yet casual',
   },
   'three-quarter': {
     label: '3/4 View',
     desc: 'Slightly angled view',
-    exampleImage: '/images/camera/three-quarter.png',
+    promptValue: 'three-quarter angle view, slight turn adding depth and visual interest, engaging perspective',
   },
   // Expert
   tripod: {
-    label: 'Front (Tripod)',
+    label: 'Tripod',
     desc: 'Stable front shot',
-    exampleImage: '/images/camera/tripod.png',
+    promptValue: 'stable tripod-mounted frontal shot, professional broadcast quality, authoritative framing',
   },
   fullbody: {
     label: 'Full Body',
     desc: 'Full body visible',
-    exampleImage: '/images/camera/fullbody.png',
+    promptValue: 'full body shot showing entire person, suitable for demonstrations and presentations',
   },
   presenter: {
     label: 'Presenter',
     desc: 'Speaker/presenter style',
-    exampleImage: '/images/camera/presenter.png',
+    promptValue: 'professional presenter framing, confident stance, TED-talk style composition, authority position',
+  },
+  // Custom
+  custom: {
+    label: 'Custom',
+    desc: 'Describe your own camera angle',
+    promptValue: '',
   },
 }
 
 // 영상 스타일별 카메라 구도 옵션
 const cameraCompositionsByVideoType: Record<VideoType, CameraComposition[]> = {
-  UGC: ['auto', 'selfie-front', 'selfie-high', 'selfie-side', 'ugc-selfie', 'ugc-closeup'],
-  podcast: ['auto', 'webcam', 'medium-shot', 'closeup', 'three-quarter'],
-  expert: ['auto', 'tripod', 'medium-shot', 'closeup', 'fullbody', 'presenter'],
+  UGC: ['auto', 'selfie-front', 'selfie-high', 'selfie-side', 'ugc-selfie', 'ugc-closeup', 'custom'],
+  podcast: ['auto', 'webcam', 'medium-shot', 'closeup', 'three-quarter', 'custom'],
+  expert: ['auto', 'tripod', 'medium-shot', 'closeup', 'fullbody', 'presenter', 'custom'],
 }
 
 // 영상 스타일별 기본 카메라 구도
@@ -245,77 +256,100 @@ const defaultCameraByVideoType: Record<VideoType, CameraComposition> = {
 
 // 모델 포즈 타입 (영상 스타일별로 다른 옵션 제공)
 type ModelPose =
+  // AI 추천
+  | 'auto'
   // 공통
-  | 'auto' | 'talking-only' | 'showing-product'
+  | 'talking-only' | 'showing-product'
   // UGC용
   | 'holding-product' | 'using-product' | 'reaction'
   // Podcast용
   | 'desk-presenter' | 'casual-chat'
   // Expert용
   | 'demonstrating' | 'presenting' | 'explaining'
+  // 직접 입력
+  | 'custom'
 
 // 모델 포즈 정보
 interface ModelPoseInfo {
   label: string
   desc: string
+  promptValue: string  // 프롬프트에 사용될 영문 설명
 }
 
 const modelPoseLabels: Record<ModelPose, ModelPoseInfo> = {
-  // Common
+  // AI 추천
   auto: {
-    label: 'Auto',
-    desc: 'AI selects pose for product',
+    label: 'AI Recommend',
+    desc: 'AI selects the best pose for your product',
+    promptValue: '',  // API에서 동적으로 결정
   },
+  // Common
   'talking-only': {
     label: 'Talking Only',
     desc: 'Explain without product',
+    promptValue: 'natural conversational pose with empty hands relaxed at sides or gesturing naturally, no objects held',
   },
   'showing-product': {
-    label: 'Showing Product',
+    label: 'Show Product',
     desc: 'Show product to camera',
+    promptValue: 'presenting product toward camera, demonstrative pose, product prominently featured',
   },
   // UGC
   'holding-product': {
-    label: 'Holding Product',
+    label: 'Hold Product',
     desc: 'Hold product naturally',
+    promptValue: 'naturally holding product at chest level, relaxed authentic pose, product clearly visible',
   },
   'using-product': {
-    label: 'Using Product',
+    label: 'Use Product',
     desc: 'Demonstrate using product',
+    promptValue: 'demonstrating product use, natural interaction with product',
   },
   reaction: {
     label: 'Reaction',
     desc: 'React to product',
+    promptValue: 'showing genuine reaction to product, product held casually, expressive authentic enthusiasm',
   },
   // Podcast
   'desk-presenter': {
     label: 'At Desk',
     desc: 'Present at desk',
+    promptValue: 'seated at desk, product on desk or held casually, conversational demeanor',
   },
   'casual-chat': {
     label: 'Casual Chat',
     desc: 'Natural conversation style',
+    promptValue: 'relaxed conversational pose, product held casually if present, friendly approachable vibe',
   },
   // Expert
   demonstrating: {
-    label: 'Demonstrating',
+    label: 'Demonstrate',
     desc: 'Demonstrate features',
+    promptValue: 'displaying product features, product-focused composition, educational presentation',
   },
   presenting: {
     label: 'Presenter',
     desc: 'Expert presentation pose',
+    promptValue: 'confident presenter stance, product held for optimal viewing, professional display',
   },
   explaining: {
     label: 'Explaining',
     desc: 'Serious explanation',
+    promptValue: 'explanation pose, product presented clearly, knowledgeable expression',
+  },
+  // Custom
+  custom: {
+    label: 'Custom',
+    desc: 'Describe your own pose',
+    promptValue: '',
   },
 }
 
 // 영상 스타일별 모델 포즈 옵션
 const modelPosesByVideoType: Record<VideoType, ModelPose[]> = {
-  UGC: ['auto', 'holding-product', 'using-product', 'showing-product', 'reaction'],
-  podcast: ['auto', 'desk-presenter', 'casual-chat', 'showing-product', 'talking-only'],
-  expert: ['auto', 'presenting', 'explaining', 'demonstrating', 'showing-product', 'talking-only'],
+  UGC: ['auto', 'holding-product', 'using-product', 'showing-product', 'reaction', 'custom'],
+  podcast: ['auto', 'desk-presenter', 'casual-chat', 'showing-product', 'talking-only', 'custom'],
+  expert: ['auto', 'presenting', 'explaining', 'demonstrating', 'showing-product', 'talking-only', 'custom'],
 }
 
 // 영상 스타일별 기본 모델 포즈
@@ -584,7 +618,9 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
   const [duration, setDuration] = useState<VideoDuration>(30)
   const [resolution, setResolution] = useState<VideoResolution>('480p')
   const [cameraComposition, setCameraComposition] = useState<CameraComposition>('auto')
+  const [cameraCompositionCustom, setCameraCompositionCustom] = useState('')  // custom 카메라 구도 입력용
   const [modelPose, setModelPose] = useState<ModelPose>('auto')
+  const [modelPoseCustom, setModelPoseCustom] = useState('')  // custom 모델 포즈 입력용
   const [outfitMode, setOutfitMode] = useState<OutfitMode>('keep_original')
   const [outfitPreset, setOutfitPreset] = useState<OutfitPreset | null>(null)
   const [outfitCustom, setOutfitCustom] = useState('')
@@ -1729,8 +1765,12 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           locationPreset,  // 장소 프리셋
           locationPrompt: locationPreset === 'custom' ? locationPrompt.trim() : locationPresetLabels[locationPreset].promptValue,
           durationSeconds: duration,
-          cameraComposition: cameraComposition !== 'auto' ? cameraComposition : undefined,
-          modelPose: modelPose !== 'auto' ? modelPose : undefined,
+          // 카메라 구도 설정
+          cameraComposition: cameraComposition !== 'auto' && cameraComposition !== 'custom' ? cameraComposition : undefined,
+          cameraCompositionPrompt: cameraComposition === 'custom' ? cameraCompositionCustom.trim() : undefined,
+          // 모델 포즈 설정
+          modelPose: modelPose !== 'auto' && modelPose !== 'custom' ? modelPose : undefined,
+          modelPosePrompt: modelPose === 'custom' ? modelPoseCustom.trim() : undefined,
           // 의상 설정
           outfitMode: outfitMode !== 'keep_original' ? outfitMode : undefined,
           outfitPreset: outfitMode === 'preset' ? outfitPreset : undefined,
@@ -2750,38 +2790,53 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               카메라 구도
               <span className="text-xs text-muted-foreground ml-2">(선택 사항)</span>
             </label>
+
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {cameraCompositionsByVideoType[videoType].map((comp) => (
                 <button
                   key={comp}
                   type="button"
-                  onClick={() => setCameraComposition(comp)}
+                  onClick={() => {
+                    setCameraComposition(comp)
+                    if (comp !== 'custom') {
+                      setCameraCompositionCustom('')
+                    }
+                  }}
                   disabled={hasGeneratedContent}
-                  className={`relative group flex flex-col items-center p-2 rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${cameraComposition === comp
+                  className={`relative group p-3 rounded-lg border transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed ${
+                    cameraComposition === comp
                       ? 'border-primary bg-primary/10'
                       : 'border-border hover:border-primary/50'
-                    }`}
+                  }`}
                   title={cameraCompositionLabels[comp].desc}
                 >
-                  <div className="w-full aspect-square rounded bg-secondary/50 mb-1.5 flex items-center justify-center overflow-hidden">
-                    <Camera className="w-5 h-5 text-muted-foreground/50" />
-                  </div>
-                  <span className={`text-[11px] font-medium ${cameraComposition === comp ? 'text-primary' : 'text-muted-foreground'}`}>
+                  <span className={`text-sm font-medium flex items-center gap-1 ${cameraComposition === comp ? 'text-primary' : 'text-foreground'}`}>
+                    {comp === 'auto' && <Sparkles className="w-3.5 h-3.5" />}
                     {cameraCompositionLabels[comp].label}
                   </span>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
+                    {cameraCompositionLabels[comp].desc}
+                  </p>
                   {cameraComposition === comp && (
                     <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
                       <Check className="w-2.5 h-2.5 text-primary-foreground" />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-black/70 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
-                    <p className="text-[10px] text-white text-center leading-tight">
-                      {cameraCompositionLabels[comp].desc}
-                    </p>
-                  </div>
                 </button>
               ))}
             </div>
+
+            {/* 직접 입력 필드 */}
+            {cameraComposition === 'custom' && (
+              <input
+                type="text"
+                value={cameraCompositionCustom}
+                onChange={(e) => setCameraCompositionCustom(e.target.value)}
+                placeholder="예: 45도 각도에서 얼굴과 상반신이 보이도록"
+                disabled={hasGeneratedContent}
+                className="mt-3 w-full px-4 py-2.5 text-sm bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            )}
           </div>
 
           {/* 모델 포즈 */}
@@ -2791,38 +2846,53 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
               모델 포즈
               <span className="text-xs text-muted-foreground ml-2">(선택 사항)</span>
             </label>
+
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {modelPosesByVideoType[videoType].map((pose) => (
                 <button
                   key={pose}
                   type="button"
-                  onClick={() => setModelPose(pose)}
+                  onClick={() => {
+                    setModelPose(pose)
+                    if (pose !== 'custom') {
+                      setModelPoseCustom('')
+                    }
+                  }}
                   disabled={hasGeneratedContent}
-                  className={`relative group flex flex-col items-center p-2 rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${modelPose === pose
+                  className={`relative group p-3 rounded-lg border transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed ${
+                    modelPose === pose
                       ? 'border-primary bg-primary/10'
                       : 'border-border hover:border-primary/50'
-                    }`}
+                  }`}
                   title={modelPoseLabels[pose].desc}
                 >
-                  <div className="w-full aspect-square rounded bg-secondary/50 mb-1.5 flex items-center justify-center overflow-hidden">
-                    <User className="w-5 h-5 text-muted-foreground/50" />
-                  </div>
-                  <span className={`text-[11px] font-medium text-center ${modelPose === pose ? 'text-primary' : 'text-muted-foreground'}`}>
+                  <span className={`text-sm font-medium flex items-center gap-1 ${modelPose === pose ? 'text-primary' : 'text-foreground'}`}>
+                    {pose === 'auto' && <Sparkles className="w-3.5 h-3.5" />}
                     {modelPoseLabels[pose].label}
                   </span>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
+                    {modelPoseLabels[pose].desc}
+                  </p>
                   {modelPose === pose && (
                     <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
                       <Check className="w-2.5 h-2.5 text-primary-foreground" />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-black/70 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
-                    <p className="text-[10px] text-white text-center leading-tight">
-                      {modelPoseLabels[pose].desc}
-                    </p>
-                  </div>
                 </button>
               ))}
             </div>
+
+            {/* 직접 입력 필드 */}
+            {modelPose === 'custom' && (
+              <input
+                type="text"
+                value={modelPoseCustom}
+                onChange={(e) => setModelPoseCustom(e.target.value)}
+                placeholder="예: 제품을 두 손으로 들고 미소 짓는 포즈"
+                disabled={hasGeneratedContent}
+                className="mt-3 w-full px-4 py-2.5 text-sm bg-secondary/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            )}
           </div>
 
           {/* 의상 설정 */}
