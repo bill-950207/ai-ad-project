@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Check, Loader2 } from 'lucide-react'
+import Link from 'next/link'
+import Image from 'next/image'
+import { ArrowLeft, Check, Loader2, Package } from 'lucide-react'
 import { ProductAdWizardProvider, useProductAdWizard, WizardStep } from './wizard-context'
 import { WizardStep1 } from './wizard-step-1'
 import { WizardStep2 } from './wizard-step-2'
@@ -22,81 +24,114 @@ function useStepTitles() {
   ]
 }
 
-interface WizardHeaderProps {
-  onBack?: () => void
-}
-
-function WizardHeader({ onBack }: WizardHeaderProps) {
-  const { step } = useProductAdWizard()
+function WizardHeader() {
+  const { step, selectedProduct, isGeneratingVideo, resultVideoUrls } = useProductAdWizard()
   const { t } = useLanguage()
   const STEPS = useStepTitles()
 
+  // 결과 화면 또는 생성 중에는 헤더 숨김
+  if (resultVideoUrls.length > 0 || isGeneratingVideo) {
+    return null
+  }
+
+  const productImageUrl = selectedProduct?.rembg_image_url || selectedProduct?.image_url
+  const showSelectedProduct = step >= 2 && selectedProduct
+
   return (
     <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="max-w-3xl mx-auto px-4 py-3">
+      <div className="max-w-5xl mx-auto px-4 py-3">
         {/* 타이틀 */}
         <div className="flex items-center gap-3 mb-3">
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="p-1.5 hover:bg-secondary/50 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-            </button>
-          )}
+          <Link
+            href="/dashboard/video-ad"
+            className="p-1.5 hover:bg-secondary/50 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 text-muted-foreground" />
+          </Link>
           <div>
-            <h1 className="text-lg font-bold text-foreground">{t.productAdWizard?.header?.title || 'Create Product Ad Video'}</h1>
-            <p className="text-xs text-muted-foreground">{t.productAdWizard?.header?.subtitle || 'Cinematic ad video showcasing your product'}</p>
+            <h1 className="text-lg font-bold text-foreground">{t.videoAd?.createTitle || 'Create Video Ad'}</h1>
+            <p className="text-xs text-muted-foreground">{t.productAdWizard?.header?.subtitle || 'Cinematic ad video'}</p>
           </div>
         </div>
 
-        {/* 단계 표시기 */}
-        <div className="flex items-center justify-center">
-          {STEPS.map(({ step: s, title }, index) => {
-            const isCompleted = step > s
-            const isCurrent = step === s
+        {/* 단계 표시기 + 선택 항목 */}
+        <div className="flex items-center justify-between">
+          {/* 왼쪽 여백 (선택 항목과 균형 맞추기) */}
+          <div className="w-48 hidden md:block" />
 
-            return (
-              <div key={s} className="flex items-center">
-                {/* 단계 원 + 텍스트 */}
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-                      isCompleted
-                        ? 'bg-primary text-primary-foreground'
-                        : isCurrent
-                          ? 'bg-primary text-primary-foreground ring-2 ring-primary/20'
-                          : 'bg-secondary text-muted-foreground'
-                    }`}
-                  >
-                    {isCompleted ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      s
-                    )}
-                  </div>
-                  <span
-                    className={`text-[10px] mt-1 font-medium whitespace-nowrap ${
-                      isCurrent ? 'text-primary' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
-                    }`}
-                  >
-                    {title}
-                  </span>
-                </div>
+          {/* 중앙: 단계 표시기 */}
+          <div className="flex items-center justify-center flex-1 md:flex-none">
+            {STEPS.map(({ step: s, title }, index) => {
+              const isCompleted = step > s
+              const isCurrent = step === s
 
-                {/* 연결선 - 원의 세로 중간에 위치 */}
-                {index < STEPS.length - 1 && (
-                  <div className="w-10 mx-1 -mt-4">
+              return (
+                <div key={s} className="flex items-center">
+                  {/* 단계 원 + 텍스트 */}
+                  <div className="flex flex-col items-center">
                     <div
-                      className={`h-0.5 rounded-full transition-all ${
-                        isCompleted ? 'bg-primary' : 'bg-secondary'
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
+                        isCompleted
+                          ? 'bg-primary text-primary-foreground'
+                          : isCurrent
+                            ? 'bg-primary text-primary-foreground ring-2 ring-primary/20'
+                            : 'bg-secondary text-muted-foreground'
                       }`}
-                    />
+                    >
+                      {isCompleted ? (
+                        <Check className="w-4 h-4" />
+                      ) : (
+                        s
+                      )}
+                    </div>
+                    <span
+                      className={`text-[10px] mt-1 font-medium whitespace-nowrap ${
+                        isCurrent ? 'text-primary' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
+                      }`}
+                    >
+                      {title}
+                    </span>
                   </div>
-                )}
+
+                  {/* 연결선 */}
+                  {index < STEPS.length - 1 && (
+                    <div className="w-10 mx-1 -mt-4">
+                      <div
+                        className={`h-0.5 rounded-full transition-all ${
+                          isCompleted ? 'bg-primary' : 'bg-secondary'
+                        }`}
+                      />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* 오른쪽: 선택 항목 요약 */}
+          <div className="w-48 hidden md:flex items-center justify-end gap-2">
+            {showSelectedProduct && (
+              <div className="flex items-center gap-1.5">
+                <div className="relative w-8 h-8 rounded-md overflow-hidden bg-secondary flex-shrink-0">
+                  {productImageUrl ? (
+                    <Image
+                      src={productImageUrl}
+                      alt={selectedProduct.name}
+                      fill
+                      className="object-contain"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Package className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground truncate max-w-[60px]">
+                  {selectedProduct.name}
+                </p>
               </div>
-            )
-          })}
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -118,11 +153,10 @@ function WizardContent() {
 }
 
 interface WizardInnerProps {
-  onBack?: () => void
   videoAdId?: string
 }
 
-function WizardInner({ onBack, videoAdId }: WizardInnerProps) {
+function WizardInner({ videoAdId }: WizardInnerProps) {
   const { loadDraft, isSaving, pendingSave } = useProductAdWizard()
   const { t } = useLanguage()
   const [isLoadingDraft, setIsLoadingDraft] = useState(!!videoAdId)
@@ -166,23 +200,22 @@ function WizardInner({ onBack, videoAdId }: WizardInnerProps) {
 
   return (
     <div className="min-h-full flex flex-col bg-background">
-      <WizardHeader onBack={onBack} />
+      <WizardHeader />
       <WizardContent />
     </div>
   )
 }
 
 interface ProductAdWizardProps {
-  onBack?: () => void
   videoAdId?: string
   initialProductId?: string | null
   initialStep?: number
 }
 
-export function ProductAdWizard({ onBack, videoAdId, initialProductId, initialStep = 1 }: ProductAdWizardProps) {
+export function ProductAdWizard({ videoAdId, initialProductId, initialStep = 1 }: ProductAdWizardProps) {
   return (
     <ProductAdWizardProvider initialProductId={initialProductId} initialStep={initialStep}>
-      <WizardInner onBack={onBack} videoAdId={videoAdId} />
+      <WizardInner videoAdId={videoAdId} />
     </ProductAdWizardProvider>
   )
 }
