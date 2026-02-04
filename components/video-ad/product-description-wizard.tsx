@@ -146,7 +146,9 @@ type CameraComposition =
   // 공통
   | 'closeup'
   // UGC용 (셀카 스타일)
-  | 'selfie-high' | 'selfie-front' | 'selfie-side' | 'ugc-closeup' | 'ugc-selfie'
+  | 'selfie-high' | 'selfie-front' | 'selfie-side'
+  // UGC용 (POV 스타일 - 폰 없이 자연스럽게)
+  | 'pov-closeup' | 'pov-upper' | 'pov-full'
   // Podcast용 (웹캠/데스크 스타일)
   | 'webcam' | 'medium-shot' | 'three-quarter'
   // Expert용 (전문가 스타일)
@@ -190,15 +192,21 @@ const cameraCompositionLabels: Record<CameraComposition, CameraCompositionInfo> 
     desc: 'Slightly from the side',
     promptValue: 'three-quarter selfie angle, showing facial contours, casual authentic vibe',
   },
-  'ugc-closeup': {
-    label: 'Influencer',
-    desc: 'Chest to face close shot',
-    promptValue: 'UGC influencer style medium close-up, chest-up framing, casual and approachable feel',
+  // POV (폰 없이 자연스럽게 바라보는 시점)
+  'pov-closeup': {
+    label: 'POV (Close-up)',
+    desc: 'Face close-up, no phone',
+    promptValue: 'POV close-up shot, subject looking directly at camera, NO phone visible, face-focused intimate framing',
   },
-  'ugc-selfie': {
-    label: 'UGC Selfie',
-    desc: 'Phone selfie composition',
-    promptValue: 'POV selfie shot, subject looking at camera, NO phone visible, natural relaxed pose',
+  'pov-upper': {
+    label: 'POV (Upper Body)',
+    desc: 'Upper body, no phone',
+    promptValue: 'POV upper body shot, subject looking at camera, NO phone visible, chest-up natural framing',
+  },
+  'pov-full': {
+    label: 'POV (Full Body)',
+    desc: 'Full body, no phone',
+    promptValue: 'POV full body shot, subject looking at camera, NO phone visible, entire body visible natural pose',
   },
   // Podcast
   webcam: {
@@ -242,7 +250,7 @@ const cameraCompositionLabels: Record<CameraComposition, CameraCompositionInfo> 
 
 // 영상 스타일별 카메라 구도 옵션
 const cameraCompositionsByVideoType: Record<VideoType, CameraComposition[]> = {
-  UGC: ['auto', 'closeup', 'medium-shot', 'fullbody', 'custom'],
+  UGC: ['auto', 'selfie-front', 'closeup', 'medium-shot', 'fullbody', 'custom'],
   podcast: ['auto', 'webcam', 'medium-shot', 'closeup', 'three-quarter', 'custom'],
   expert: ['auto', 'tripod', 'medium-shot', 'closeup', 'fullbody', 'presenter', 'custom'],
 }
