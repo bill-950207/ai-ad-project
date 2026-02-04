@@ -149,8 +149,6 @@ type CameraComposition =
   | 'selfie-front'
   // Podcast용
   | 'front' | 'side'
-  // Expert용 (전문가 스타일)
-  | 'tripod' | 'presenter'
   // 직접 입력
   | 'custom'
 
@@ -201,17 +199,6 @@ const cameraCompositionLabels: Record<CameraComposition, CameraCompositionInfo> 
     desc: 'Side angle view',
     promptValue: 'side angle camera view, profile or three-quarter view, interview style podcast framing',
   },
-  // Expert용
-  tripod: {
-    label: 'Tripod',
-    desc: 'Stable front shot',
-    promptValue: 'stable tripod-mounted frontal shot, professional broadcast quality, authoritative framing',
-  },
-  presenter: {
-    label: 'Presenter',
-    desc: 'Speaker/presenter style',
-    promptValue: 'professional presenter framing, confident stance, TED-talk style composition, authority position',
-  },
   // Custom
   custom: {
     label: 'Custom',
@@ -224,14 +211,14 @@ const cameraCompositionLabels: Record<CameraComposition, CameraCompositionInfo> 
 const cameraCompositionsByVideoType: Record<VideoType, CameraComposition[]> = {
   UGC: ['auto', 'selfie-front', 'closeup', 'medium-shot', 'fullbody', 'custom'],
   podcast: ['auto', 'front', 'side', 'custom'],
-  expert: ['auto', 'tripod', 'closeup', 'medium-shot', 'fullbody', 'presenter', 'custom'],
+  expert: ['auto', 'closeup', 'medium-shot', 'fullbody', 'custom'],
 }
 
 // 영상 스타일별 기본 카메라 구도
 const defaultCameraByVideoType: Record<VideoType, CameraComposition> = {
   UGC: 'auto',
   podcast: 'front',
-  expert: 'tripod',
+  expert: 'auto',
 }
 
 // 모델 포즈 타입 (영상 스타일별로 다른 옵션 제공)
@@ -241,7 +228,7 @@ type ModelPose =
   // 공통 (제품 관련)
   | 'talking-only' | 'showing-product' | 'holding-product'
   // Expert용
-  | 'demonstrating' | 'presenting' | 'explaining'
+  | 'presenting'
   // 직접 입력
   | 'custom'
 
@@ -276,20 +263,10 @@ const modelPoseLabels: Record<ModelPose, ModelPoseInfo> = {
     promptValue: 'naturally holding product at chest level, relaxed authentic pose, product clearly visible',
   },
   // Expert용
-  demonstrating: {
-    label: 'Demonstrate',
-    desc: 'Demonstrate features',
-    promptValue: 'displaying product features, product-focused composition, educational presentation',
-  },
   presenting: {
     label: 'Presenter',
     desc: 'Expert presentation pose',
     promptValue: 'confident presenter stance, product held for optimal viewing, professional display',
-  },
-  explaining: {
-    label: 'Explaining',
-    desc: 'Serious explanation',
-    promptValue: 'explanation pose, product presented clearly, knowledgeable expression',
   },
   // Custom
   custom: {
@@ -303,7 +280,7 @@ const modelPoseLabels: Record<ModelPose, ModelPoseInfo> = {
 const modelPosesByVideoType: Record<VideoType, ModelPose[]> = {
   UGC: ['auto', 'holding-product', 'showing-product', 'talking-only', 'custom'],
   podcast: ['auto', 'holding-product', 'showing-product', 'talking-only', 'custom'],
-  expert: ['auto', 'presenting', 'explaining', 'demonstrating', 'showing-product', 'talking-only', 'custom'],
+  expert: ['auto', 'presenting', 'showing-product', 'talking-only', 'custom'],
 }
 
 // 영상 스타일별 기본 모델 포즈
@@ -378,6 +355,7 @@ type LocationPreset =
   | 'home_office' | 'study' | 'podcast_studio' | 'podcast_desk' | 'podcast_sofa'
   // Expert용 (권위적, 전문적)
   | 'studio' | 'office' | 'meeting_room' | 'minimal'
+  | 'lab' | 'clinic' | 'lecture_hall' | 'broadcast_studio' | 'conference_stage'
   // 공통
   | 'custom'
 
@@ -467,6 +445,31 @@ const locationPresetLabels: Record<LocationPreset, LocationPresetInfo> = {
     desc: 'Clean white/gray background',
     promptValue: 'clean minimal white or light gray background, simple and distraction-free',
   },
+  lab: {
+    label: 'Laboratory',
+    desc: 'Scientific research atmosphere',
+    promptValue: 'professional laboratory setting with scientific equipment, clean white lab environment, research atmosphere',
+  },
+  clinic: {
+    label: 'Clinic',
+    desc: 'Medical professional atmosphere',
+    promptValue: 'clean medical clinic or doctors office, professional healthcare setting, white coat environment',
+  },
+  lecture_hall: {
+    label: 'Lecture Hall',
+    desc: 'Educational presenter atmosphere',
+    promptValue: 'university lecture hall or classroom setting, educational environment, professor or teacher atmosphere',
+  },
+  broadcast_studio: {
+    label: 'Broadcast Studio',
+    desc: 'News/interview style',
+    promptValue: 'professional broadcast studio, news anchor desk setup, TV interview lighting and backdrop',
+  },
+  conference_stage: {
+    label: 'Conference Stage',
+    desc: 'TED/keynote presentation style',
+    promptValue: 'professional conference stage, TED talk style setup, keynote presentation lighting, speaker podium',
+  },
   // Common
   custom: {
     label: 'Custom',
@@ -479,7 +482,7 @@ const locationPresetLabels: Record<LocationPreset, LocationPresetInfo> = {
 const locationPresetsByVideoType: Record<VideoType, LocationPreset[]> = {
   UGC: ['auto', 'living_room', 'bedroom', 'cafe', 'outdoor', 'bathroom', 'custom'],
   podcast: ['auto', 'podcast_desk', 'podcast_sofa', 'home_office', 'podcast_studio', 'custom'],
-  expert: ['auto', 'studio', 'office', 'meeting_room', 'minimal', 'custom'],
+  expert: ['auto', 'studio', 'office', 'meeting_room', 'clinic', 'lab', 'lecture_hall', 'broadcast_studio', 'conference_stage', 'minimal', 'custom'],
 }
 
 // 영상 스타일별 기본 장소
