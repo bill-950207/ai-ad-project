@@ -758,17 +758,279 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
 
 
 
+/** 참조 이미지 분석용 모델 분석 가이드 */
+const REFERENCE_MODEL_ANALYSIS_GUIDE = `
+=== MODEL ANALYSIS GUIDE (If model present in reference) ===
+
+When the reference image contains a model, you MUST analyze and describe these details:
+
+**1. POSE & BODY POSITION:**
+- Body angle: frontal (0°), 3/4 turn (45°), profile (90°), over-shoulder
+- Posture: standing straight, leaning, sitting, dynamic movement
+- Weight distribution: centered, shifted to one leg, balanced
+- Shoulder-to-hip alignment: squared, angled, twisted
+
+**2. HAND POSITION & PRODUCT INTERACTION:**
+- Hand placement: holding product, near face, on body, at sides, behind back
+- Grip style: two-handed, one-handed, fingertip hold, palm hold
+- Product position relative to face/body: at chin level, chest height, extended forward
+- Product-to-camera distance: close-up, arm's length, full view
+
+**3. GAZE & EXPRESSION:**
+- Eye direction: direct to camera, looking at product, off-frame left/right, downward
+- Eye intensity: soft/dreamy, direct/confident, playful/coy, neutral
+- Mouth expression: closed-lip smile, teeth showing, neutral, slightly parted
+- Overall emotion conveyed: joy, serenity, confidence, curiosity, sophistication
+
+**4. FRAMING & COMPOSITION:**
+- Shot type: extreme close-up (face), close-up (head/shoulders), medium (waist-up), full body
+- Model position in frame: centered, rule-of-thirds, off-center
+- Negative space usage: tight crop, breathing room, asymmetric balance
+- Crop points: above eyebrows, mid-chest, waist, knees, full length
+`.trim()
+
+/** 참조 이미지 분석용 customText 작성 가이드 */
+const REFERENCE_CUSTOM_TEXT_GUIDELINES = `
+=== CUSTOMTEXT WRITING GUIDELINES (30-50 words each) ===
+
+**MUST INCLUDE:**
+- Describe what is ACTUALLY VISIBLE in the reference image
+- Use technically accurate terms (angles, directions, spatial relationships)
+- Specify spatial relationships (position relative to camera/product, distance, angle)
+- Describe specific actions (where hands are, what they're doing)
+
+**BANNED EXPRESSIONS (Never use these alone without specifics):**
+❌ Abstract adjectives alone: "자연스러운", "은은한", "부드러운", "따뜻한"
+❌ Vague mood descriptions: "편안한 분위기", "우아한 느낌", "세련된 무드"
+❌ Non-specific environment: "아늑한 공간", "세련된 배경", "고급스러운 장소"
+❌ 3+ adjective chains: "따뜻하고 부드럽고 아늑한", "자연스럽고 은은하고 포근한"
+❌ Hedging expressions: "~하는 듯한", "~처럼 보이는", "~같은 느낌의"
+
+**GOOD vs BAD EXAMPLES:**
+
+❌ BAD (pose): "자연스럽고 편안한 포즈로 제품을 들고 있는 모습"
+✅ GOOD (pose): "상체 45도 회전, 왼손으로 제품을 턱 높이에 들고, 오른팔은 자연스럽게 허리에"
+
+❌ BAD (gaze): "은은하게 카메라를 바라보는 부드러운 시선"
+✅ GOOD (gaze): "눈높이보다 약간 위를 향한 시선, 카메라 렌즈에서 15도 왼쪽으로 벗어남, 눈꺼풀 반쯤 내린 상태"
+
+❌ BAD (expression): "자연스럽고 따뜻한 미소"
+✅ GOOD (expression): "입꼬리 살짝 올라간 닫힌 입술 미소, 눈가 주름 없이 눈웃음, 이완된 턱선"
+
+❌ BAD (lighting): "부드럽고 따뜻한 자연광"
+✅ GOOD (lighting): "11시 방향 창문 자연광, 그림자 경계 부드러움, 반사판 없는 단일 광원, 색온도 5000K 추정"
+
+❌ BAD (background): "아늑한 실내 공간"
+✅ GOOD (background): "흰색 린넨 소재 커튼이 드리워진 창가, 아이보리색 플라스터 벽, 피사계 심도로 배경 흐림 f/2.8"
+`.trim()
+
+/** 참조 이미지 분석용 해부학적 규칙 */
+const REFERENCE_ANATOMICAL_RULES = `
+=== ANATOMICAL RULES (CRITICAL) ===
+⚠️ Complex body descriptions cause AI generators to create extra limbs!
+
+**RULES:**
+- Describe ONE clear hand action only
+- If holding product, that is the ONLY hand action
+- NEVER use "one hand does X while other hand does Y AND also Z" pattern
+
+**AVOID COMPLEX DESCRIPTIONS:**
+❌ Simultaneous multi-hand actions: "한 손으로 턱 괴고 + 다른 손으로 제품 들고 + 머리 넘기며"
+❌ Vague product position: "어딘가에 제품을 들고 있는"
+❌ Multiple body parts doing different things simultaneously
+
+**POSE SIMPLIFICATION:**
+1. Product-holding poses: Focus ONLY on how product is held (one hand/both hands)
+2. Non-product poses: Maximum ONE additional gesture (touch hair OR rest chin, NOT both)
+3. When uncertain, describe FEWER hand actions
+`.trim()
+
+/** 참조 이미지 분석용 품질 체크리스트 */
+const REFERENCE_QUALITY_CHECKLIST = `
+=== OUTPUT QUALITY CHECKLIST (Verify before responding) ===
+For each customText, check:
+□ Does it describe what is ACTUALLY VISIBLE in the reference image?
+□ Is it specific enough to recreate the same pose/lighting/mood?
+□ No abstract expressions without concrete visual details?
+□ For pose: Is hand position CLEARLY specified?
+□ For gaze: Is eye direction and intensity SPECIFIC?
+□ For expression: Are facial details (mouth, eyes, overall emotion) CONCRETE?
+□ For lighting: Is direction, quality, and color temperature described?
+□ For background: Are materials, colors, and depth of field noted?
+
+If any check fails, REWRITE that customText with more specificity.
+`.trim()
+
 /**
  * 참조 스타일 이미지를 분석합니다.
+ * 제품 이미지, 제품 정보, 아바타 정보를 함께 분석하여 더 정확한 옵션을 추천합니다.
  */
 export async function analyzeReferenceStyleImage(input: ReferenceStyleAnalysisInput): Promise<ReferenceStyleAnalysisResult> {
-  const prompt = `Analyze this reference image for ${input.adType} advertisement style.
+  const language = input.language || 'ko'
 
-Available options to match:
+  const outputLanguageInstructions: Record<string, string> = {
+    ko: 'Write all text responses (overallStyle, suggestedPrompt, reason, customText) in Korean.',
+    en: 'Write all text responses (overallStyle, suggestedPrompt, reason, customText) in English.',
+    ja: 'Write all text responses (overallStyle, suggestedPrompt, reason, customText) in Japanese.',
+    zh: 'Write all text responses (overallStyle, suggestedPrompt, reason, customText) in Chinese.',
+  }
+
+  // 아바타 정보 컨텍스트 생성
+  const isAiGeneratedAvatar = input.avatarInfo?.type === 'ai-generated'
+  const hasRealAvatar = input.avatarInfo?.type === 'avatar' || input.avatarInfo?.type === 'outfit'
+
+  let avatarContext = ''
+  if (input.hasAvatar) {
+    if (hasRealAvatar && input.avatarInfo?.avatarStyle) {
+      const style = input.avatarInfo.avatarStyle
+      const styleParts: string[] = []
+      if (style.vibe) styleParts.push(`vibe: ${style.vibe}`)
+      if (style.bodyType) styleParts.push(`body type: ${style.bodyType}`)
+      if (style.height) styleParts.push(`height: ${style.height}`)
+      if (style.gender) styleParts.push(`gender: ${style.gender}`)
+      const hasAvatarImage = !!input.avatarImageUrl
+      avatarContext = `
+=== AVATAR INFO ===
+Type: Real avatar selected${hasAvatarImage ? ' (image provided as 3rd image)' : ''}
+Characteristics: ${styleParts.length > 0 ? styleParts.join(', ') : 'Not specified'}
+${hasAvatarImage ? 'Look at the avatar image to understand their appearance and recommend poses/outfits that suit them.' : ''}
+Consider these avatar traits when recommending pose, outfit, expression options.`
+    } else if (isAiGeneratedAvatar) {
+      // 사용자 초기 AI 아바타 옵션 텍스트 생성
+      let userPreferencesText = 'None specified - AI will decide all characteristics'
+      if (input.avatarInfo?.aiOptions) {
+        const opts = input.avatarInfo.aiOptions
+        const prefs: string[] = []
+        if (opts.targetGender && opts.targetGender !== 'any') prefs.push(`Gender: ${opts.targetGender}`)
+        if (opts.targetAge && opts.targetAge !== 'any') prefs.push(`Age: ${opts.targetAge}`)
+        if (opts.style && opts.style !== 'any') prefs.push(`Style: ${opts.style}`)
+        if (opts.ethnicity && opts.ethnicity !== 'any') prefs.push(`Ethnicity: ${opts.ethnicity}`)
+        if (opts.bodyType && opts.bodyType !== 'any') prefs.push(`Body Type: ${opts.bodyType}`)
+        if (prefs.length > 0) userPreferencesText = prefs.join(', ')
+      }
+
+      avatarContext = `
+=== AI AVATAR RECOMMENDATION ===
+The user will use an AI-generated avatar. Recommend avatar characteristics that match both the REFERENCE IMAGE STYLE and the PRODUCT.
+
+USER'S INITIAL PREFERENCES:
+${userPreferencesText}
+
+For recommendedAvatarStyle, provide ALL these fields:
+
+1. STRUCTURED FIELDS (REQUIRED - exact string values):
+   - gender: "male" | "female" | "any" (if user specified not "any", KEEP their choice)
+   - age: "young" (20-30s) | "middle" (30-40s) | "mature" (40-50s) | "any"
+   - style: "natural" | "professional" | "casual" | "elegant" | "any"
+   - ethnicity: "korean" | "asian" | "western" | "any"
+   - bodyType: "slim" | "average" | "athletic" | "curvy" | "any"
+
+2. avatarPrompt: A detailed English prompt (40-60 words) matching the structured fields above. Include:
+   - Age range and ethnicity appropriate for the product's target market
+   - Body type and height that fits the reference image mood
+   - Facial features and expression matching the reference image vibe
+   - Hair style appropriate for the concept
+   - Match the MODEL STYLE from the reference image if present
+
+3. avatarDescription: Brief description in output language (15-25 characters)
+
+RULES:
+- If user specified a value (NOT "any"), KEEP that exact value in structured fields
+- If user selected "any", YOU decide the best value based on reference image and product
+- If the reference image has a model, analyze their characteristics and recommend similar
+- Structured fields MUST align with avatarPrompt description`
+    }
+  }
+
+  // 이미지 설명 (어떤 이미지가 전달되는지)
+  const imageDescriptions: string[] = ['1st image: Reference ad image (analyze this style)']
+  if (input.productImageUrl) {
+    imageDescriptions.push('2nd image: Product image')
+  }
+  if (input.avatarImageUrl && hasRealAvatar) {
+    imageDescriptions.push(`${input.productImageUrl ? '3rd' : '2nd'} image: Avatar image (the model to use)`)
+  }
+
+  const prompt = `You are an expert advertising creative director and photographer. Analyze the reference image with EXTREME PRECISION and recommend optimal ad settings that EXACTLY match its style.
+
+OUTPUT LANGUAGE: ${outputLanguageInstructions[language] || outputLanguageInstructions.ko}
+
+=== IMAGES PROVIDED ===
+${imageDescriptions.join('\n')}
+
+=== REFERENCE IMAGE ===
+Analyze the 1st image's visual style, mood, composition, lighting, and overall aesthetic with TECHNICAL PRECISION.
+
+=== PRODUCT INFO ===
+Name: ${input.productName || 'Not provided'}
+Description: ${input.productDescription || 'Not provided'}
+${input.productSellingPoints?.length ? `Selling Points: ${input.productSellingPoints.join(', ')}` : ''}
+${input.productUsageMethod ? `Usage Method: ${input.productUsageMethod}` : ''}
+
+=== AD TYPE ===
+${input.adType}: ${adTypeDescriptions[input.adType]}
+${avatarContext}
+
+${REFERENCE_MODEL_ANALYSIS_GUIDE}
+
+=== AVAILABLE OPTIONS ===
+For each category, choose the best matching option OR use "__custom__" with customText for specific requirements:
 ${input.availableOptions.map(g => `${g.key}: ${g.options.join(', ')}`).join('\n')}
 
-Analyze and recommend matching options for each category.
-Output JSON with: analyzedOptions, overallStyle, suggestedPrompt, recommendedAdType`
+=== ANALYSIS TASK ===
+1. Analyze the reference image's visual characteristics with TECHNICAL PRECISION:
+   - Overall mood and atmosphere (describe with concrete visual elements, not abstract feelings)
+   - Lighting setup: direction (clock position), intensity (high-key/low-key), color temperature (K value estimate), shadow quality
+   - Background: materials, colors, textures, depth of field
+   - Color palette: dominant colors, accent colors, overall grading
+   - Composition: shot type, subject placement, negative space, crop points
+   - If a model is present: DETAILED pose, hand positions, gaze direction, facial expression (use MODEL ANALYSIS GUIDE above)
+
+2. Match these characteristics to the available options
+3. Consider how the product would fit into this style
+4. Provide SPECIFIC, TECHNICAL customText for each option - NO VAGUE DESCRIPTIONS
+
+${REFERENCE_CUSTOM_TEXT_GUIDELINES}
+
+${REFERENCE_ANATOMICAL_RULES}
+
+=== OUTPUT FORMAT (JSON) ===
+{
+  "analyzedOptions": [
+    {
+      "key": "category_key",
+      "type": "custom",
+      "value": "__custom__",
+      "customText": "SPECIFIC, TECHNICAL description matching reference style (30-50 words) - NO ABSTRACT ADJECTIVES",
+      "confidence": 0.0-1.0,
+      "reason": "CONCRETE visual element from reference that this matches"
+    }
+  ],
+  "overallStyle": "TECHNICAL description of the reference image style with specific visual elements (50-100 words)",
+  "suggestedPrompt": "Optimized prompt to recreate this style with the product - include technical details",
+  "recommendedAdType": "${input.adType}",
+  "adTypeMatchConfidence": 0.0-1.0,
+  "adTypeMatchReason": "Why this ad type fits the reference"${isAiGeneratedAvatar ? `,
+  "recommendedAvatarStyle": {
+    "avatarPrompt": "Detailed English prompt for avatar generation",
+    "avatarDescription": "Brief description in output language",
+    "gender": "male|female|any",
+    "age": "young|middle|mature|any",
+    "style": "natural|professional|casual|elegant|any",
+    "ethnicity": "korean|asian|western|any",
+    "bodyType": "slim|average|athletic|curvy|any"
+  }` : ''}
+}
+
+${REFERENCE_QUALITY_CHECKLIST}
+
+CRITICAL REQUIREMENTS:
+- ALWAYS use "__custom__" with detailed customText - preset options are too generic for accurate style matching
+- customText MUST be SPECIFIC and TECHNICALLY DESCRIPTIVE - never use vague adjectives alone
+- Describe what you ACTUALLY SEE in the reference image, not what you imagine
+- For model poses: ALWAYS specify exact hand positions, body angles, gaze direction
+- Match the reference image's EXACT mood and atmosphere through CONCRETE visual descriptions
+- All text responses must be in the specified output language`
 
   const config: GenerateContentConfig = {
     thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
@@ -778,12 +1040,34 @@ Output JSON with: analyzedOptions, overallStyle, suggestedPrompt, recommendedAdT
 
   const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []
 
-  const imageData = await fetchImageAsBase64(input.imageUrl)
-  if (imageData) {
-    parts.push({ inlineData: { mimeType: imageData.mimeType, data: imageData.base64 } })
+  // 참조 이미지 추가
+  const referenceImageData = await fetchImageAsBase64(input.imageUrl)
+  if (referenceImageData) {
+    parts.push({ inlineData: { mimeType: referenceImageData.mimeType, data: referenceImageData.base64 } })
+  }
+
+  // 제품 이미지 추가 (있는 경우)
+  if (input.productImageUrl) {
+    const productImageData = await fetchImageAsBase64(input.productImageUrl)
+    if (productImageData) {
+      parts.push({ inlineData: { mimeType: productImageData.mimeType, data: productImageData.base64 } })
+    }
+  }
+
+  // 아바타 이미지 추가 (실제 아바타 선택 시만, AI 추천은 이미지 없음)
+  if (input.avatarImageUrl && !isAiGeneratedAvatar) {
+    const avatarImageData = await fetchImageAsBase64(input.avatarImageUrl)
+    if (avatarImageData) {
+      parts.push({ inlineData: { mimeType: avatarImageData.mimeType, data: avatarImageData.base64 } })
+    }
   }
 
   parts.push({ text: prompt })
+
+  console.log('[analyzeReferenceStyleImage] 참조 이미지 분석 시작')
+  console.log('[analyzeReferenceStyleImage] 제품명:', input.productName)
+  console.log('[analyzeReferenceStyleImage] 아바타 정보:', input.hasAvatar ? (isAiGeneratedAvatar ? 'AI 생성' : '실제 아바타') : '없음')
+  console.log('[analyzeReferenceStyleImage] 아바타 이미지:', input.avatarImageUrl ? '있음' : '없음')
 
   const response = await getGenAI().models.generateContent({
     model: MODEL_NAME,
@@ -792,8 +1076,12 @@ Output JSON with: analyzedOptions, overallStyle, suggestedPrompt, recommendedAdT
   })
 
   try {
-    return JSON.parse(response.text || '') as ReferenceStyleAnalysisResult
-  } catch {
+    const result = JSON.parse(response.text || '') as ReferenceStyleAnalysisResult
+    console.log('[analyzeReferenceStyleImage] 분석 완료, 옵션 수:', result.analyzedOptions?.length || 0)
+    return result
+  } catch (error) {
+    console.error('[analyzeReferenceStyleImage] 파싱 오류:', error)
+    console.error('[analyzeReferenceStyleImage] 응답:', response.text)
     return {
       analyzedOptions: [],
       overallStyle: '분석 결과를 가져올 수 없습니다.',
