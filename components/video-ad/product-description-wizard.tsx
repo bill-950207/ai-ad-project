@@ -3324,7 +3324,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
 
       {/* 재생성 확인 모달 */}
       {showRegenerateConfirmModal && (
-        <div className="fixed inset-0 z-50 m-0 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 !m-0 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowRegenerateConfirmModal(false)} />
           <div className="relative bg-card border border-border rounded-xl p-6 max-w-sm mx-4 shadow-xl">
             <h3 className="text-lg font-semibold text-foreground mb-2">대본 및 이미지 재생성</h3>

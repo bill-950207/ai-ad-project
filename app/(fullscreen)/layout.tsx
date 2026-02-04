@@ -30,7 +30,7 @@ export default async function FullscreenLayout({
   }
 
   return (
-    <div className="fixed inset-0 z-50 m-0 overflow-y-auto bg-background">
+    <div className="fixed inset-0 z-50 !m-0 overflow-y-auto bg-background">
       <FullscreenProviders>
         {children}
       </FullscreenProviders>

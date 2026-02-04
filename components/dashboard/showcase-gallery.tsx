@@ -296,7 +296,7 @@ function ShowcaseLightbox({ item, onClose, onCreateAd, getAdTypeLabel }: Showcas
 
   return (
     <div
-      className="fixed inset-0 z-50 m-0 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 !m-0 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
       onClick={onClose}
     >
       <div

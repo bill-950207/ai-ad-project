@@ -297,7 +297,7 @@ export function Navbar() {
       </nav>
 
       {/* 모바일 메뉴 */}
-      <div className={`fixed inset-0 z-40 m-0 md:hidden transition-all duration-300 ${
+      <div className={`fixed inset-0 z-40 !m-0 md:hidden transition-all duration-300 ${
         mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
       }`}>
         {/* 백드롭 */}

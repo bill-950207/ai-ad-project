@@ -207,7 +207,7 @@ export function Sidebar() {
       {/* 모바일 오버레이 */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 m-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+          className="fixed inset-0 !m-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
