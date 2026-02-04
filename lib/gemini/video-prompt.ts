@@ -655,7 +655,7 @@ const locationPresetDescriptions: Record<string, string> = {
   meeting_room: 'professional meeting/conference room',
   minimal: 'minimal white/gray background',
   lab: 'scientific laboratory/research setting',
-  clinic: 'medical clinic/doctor office',
+  clinic: "professional doctor's office with medical certificates",
   lecture_hall: 'educational lecture hall/classroom',
   broadcast_studio: 'TV broadcast/news studio',
   conference_stage: 'conference/keynote presentation stage',

@@ -451,9 +451,9 @@ const locationPresetLabels: Record<LocationPreset, LocationPresetInfo> = {
     promptValue: 'professional laboratory setting with scientific equipment, clean white lab environment, research atmosphere',
   },
   clinic: {
-    label: 'Clinic',
-    desc: 'Medical professional atmosphere',
-    promptValue: 'clean medical clinic or doctors office, professional healthcare setting, white coat environment',
+    label: "Doctor's Office",
+    desc: 'Medical consultation setting',
+    promptValue: 'professional doctors office with medical certificates on wall, clean organized desk, healthcare consultation setting',
   },
   lecture_hall: {
     label: 'Lecture Hall',
