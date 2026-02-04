@@ -149,19 +149,21 @@ export interface ProductScriptResult {
 export type CameraCompositionType =
   // 공통
   | 'closeup'
+  | 'medium-shot'
+  | 'fullbody'
   // UGC용 (셀카 스타일)
   | 'selfie-high'
   | 'selfie-front'
   | 'selfie-side'
   | 'ugc-closeup'
   | 'ugc-selfie'
-  // Podcast용 (웹캠/데스크 스타일)
+  // Podcast용
   | 'webcam'
-  | 'medium-shot'
+  | 'front'
+  | 'side'
   | 'three-quarter'
-  // Expert용 (전문가 스타일)
+  // Expert용 (레거시 호환)
   | 'tripod'
-  | 'fullbody'
   | 'presenter'
 
 /** 모델 포즈 타입 (영상 스타일별로 다른 옵션 제공) */

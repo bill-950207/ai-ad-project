@@ -624,19 +624,21 @@ Before responding, check:
 const cameraCompositionDescriptions: Record<CameraCompositionType, string> = {
   // 공통
   closeup: 'close-up portrait framing, face and upper chest, intimate conversational distance',
+  'medium-shot': 'medium shot showing upper body from waist up, balanced composition, professional yet casual',
+  fullbody: 'full body shot showing entire person, suitable for demonstrations and presentations',
   // UGC용 (셀카 스타일) - 자연스럽고 친근한 느낌
   'selfie-high': 'high angle selfie perspective, camera looking down from above, flattering casual angle',
   'selfie-front': 'eye-level frontal selfie view, direct eye contact, natural smartphone distance',
   'selfie-side': 'three-quarter selfie angle, showing facial contours, casual authentic vibe',
   'ugc-closeup': 'UGC influencer style medium close-up, chest-up framing, casual and approachable feel',
   'ugc-selfie': 'POV selfie shot, subject looking at camera, NO phone visible, natural relaxed pose, anatomically correct hands',
-  // Podcast용 (웹캠/데스크 스타일) - 대화형, 편안한 전문성
+  // Podcast용
   webcam: 'webcam-style frontal view, desktop setup distance, conversational podcast framing',
-  'medium-shot': 'medium shot showing upper body from waist up, balanced composition, professional yet casual',
+  front: 'frontal camera view, direct eye contact, professional podcast framing',
+  side: 'side angle camera view, profile or three-quarter view, interview style podcast framing',
   'three-quarter': 'three-quarter angle view, slight turn adding depth and visual interest, engaging perspective',
-  // Expert용 (전문가 스타일) - 권위있고 신뢰감
+  // Expert용 (레거시 호환)
   tripod: 'stable tripod-mounted frontal shot, professional broadcast quality, authoritative framing',
-  fullbody: 'full body shot showing entire person, suitable for demonstrations and presentations',
   presenter: 'professional presenter framing, confident stance, TED-talk style composition, authority position',
 }
 

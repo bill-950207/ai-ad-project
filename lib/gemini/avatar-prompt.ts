@@ -106,19 +106,21 @@ If any check fails, revise before responding.
 const cameraCompositionDescriptions: Record<CameraCompositionType, { description: string; aperture: string; lens: string }> = {
   // 공통
   closeup: { description: 'close-up portrait, face and upper body prominent', aperture: 'f/11', lens: '50mm' },
+  'medium-shot': { description: 'medium shot showing upper body from waist up, balanced composition', aperture: 'f/11', lens: '50mm' },
+  fullbody: { description: 'full body shot, entire person visible in frame', aperture: 'f/16', lens: '35mm' },
   // UGC용 (셀카 스타일)
   'selfie-high': { description: 'high angle selfie perspective, camera looking down from above eye level', aperture: 'f/11', lens: '28mm' },
   'selfie-front': { description: 'eye-level frontal view, direct eye contact with camera', aperture: 'f/11', lens: '35mm' },
   'selfie-side': { description: 'three-quarter angle, showing facial contours, slight side view', aperture: 'f/11', lens: '35mm' },
   'ugc-closeup': { description: 'UGC-style intimate medium close-up, chest-up framing, eyes looking DIRECTLY into camera lens', aperture: 'f/11', lens: '35mm' },
   'ugc-selfie': { description: 'POV selfie shot, subject looking at camera, NO phone visible, natural relaxed pose', aperture: 'f/11', lens: '28mm' },
-  // Podcast용 (웹캠/데스크 스타일)
+  // Podcast용
   webcam: { description: 'webcam-style frontal view, desktop setup distance, conversational framing', aperture: 'f/11', lens: '35mm' },
-  'medium-shot': { description: 'medium shot showing upper body from waist up, balanced composition', aperture: 'f/11', lens: '50mm' },
+  front: { description: 'frontal camera view, direct eye contact, professional podcast framing', aperture: 'f/11', lens: '35mm' },
+  side: { description: 'side angle camera view, profile or three-quarter view, interview style podcast framing', aperture: 'f/11', lens: '35mm' },
   'three-quarter': { description: 'three-quarter angle view, slight turn adding depth and visual interest', aperture: 'f/11', lens: '35mm' },
-  // Expert용 (전문가 스타일)
+  // Expert용 (레거시 호환)
   tripod: { description: 'stable tripod shot, medium distance, waist to head visible, professional framing', aperture: 'f/16', lens: '50mm' },
-  fullbody: { description: 'full body shot, entire person visible in frame', aperture: 'f/16', lens: '35mm' },
   presenter: { description: 'professional presenter framing, confident stance, authoritative composition', aperture: 'f/16', lens: '50mm' },
 }
 
