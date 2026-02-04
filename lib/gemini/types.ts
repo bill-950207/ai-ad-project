@@ -288,6 +288,30 @@ export interface ReferenceStyleAnalysisInput {
     key: string
     options: string[]
   }[]
+  language?: string
+  hasAvatar?: boolean
+  avatarImageUrl?: string
+  avatarInfo?: {
+    type?: 'ai-generated' | 'avatar' | 'outfit'
+    avatarStyle?: {
+      vibe?: string
+      bodyType?: string
+      height?: string
+      gender?: string
+    }
+    aiOptions?: {
+      targetGender?: string
+      targetAge?: string
+      style?: string
+      ethnicity?: string
+      bodyType?: string
+    }
+  }
+  productImageUrl?: string
+  productName?: string
+  productDescription?: string
+  productSellingPoints?: string[]
+  productUsageMethod?: string
 }
 
 /** 분석된 옵션 값 */

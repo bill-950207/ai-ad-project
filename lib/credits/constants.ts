@@ -43,16 +43,6 @@ export const PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST = {
 } as const
 
 // ============================================================
-// [DEPRECATED] 아바타 모션 - 현재 미사용
-// ============================================================
-
-/** @deprecated 아바타 모션 영상 - 현재 서비스에서 미사용 */
-export const AVATAR_MOTION_CREDIT_COST = {
-  5: 40,
-  10: 60,
-} as const
-
-// ============================================================
 // 제품 광고 영상 관련
 // ============================================================
 
@@ -115,6 +105,5 @@ export const DEFAULT_SIGNUP_CREDITS = 15
 // ============================================================
 
 export type ImageQuality = keyof typeof IMAGE_AD_CREDIT_COST
-export type AvatarMotionDuration = keyof typeof AVATAR_MOTION_CREDIT_COST
 export type ViduResolution = keyof typeof VIDU_CREDIT_COST_PER_SECOND
 export type ProductDescriptionResolution = keyof typeof PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST

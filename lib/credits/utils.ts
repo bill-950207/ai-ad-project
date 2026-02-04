@@ -1,10 +1,5 @@
 import { prisma } from '@/lib/db'
-import {
-  IMAGE_AD_CREDIT_COST,
-  AVATAR_MOTION_CREDIT_COST,
-  type ImageQuality,
-  type AvatarMotionDuration,
-} from './constants'
+import { IMAGE_AD_CREDIT_COST, type ImageQuality } from './constants'
 
 /**
  * 사용자 크레딧 조회
@@ -63,15 +58,6 @@ export function calculateImageAdCredits(
   numImages: number = 1
 ): number {
   return IMAGE_AD_CREDIT_COST[quality] * numImages
-}
-
-/**
- * 아바타 모션 크레딧 계산
- */
-export function calculateAvatarMotionCredits(
-  duration: AvatarMotionDuration
-): number {
-  return AVATAR_MOTION_CREDIT_COST[duration]
 }
 
 /**
