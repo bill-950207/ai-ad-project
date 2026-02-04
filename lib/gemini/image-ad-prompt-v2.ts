@@ -418,6 +418,17 @@ function postProcessPrompt(prompt: string, hasLogo: boolean | undefined, adType:
 }
 
 // ============================================================
+// 언어별 출력 지시문
+// ============================================================
+
+const outputLanguageInstructions: Record<string, string> = {
+  ko: 'Write all user-facing text responses (localizedDescription) in Korean (한국어).',
+  en: 'Write all user-facing text responses (localizedDescription) in English.',
+  ja: 'Write all user-facing text responses (localizedDescription) in Japanese (日本語).',
+  zh: 'Write all user-facing text responses (localizedDescription) in Simplified Chinese (简体中文).',
+}
+
+// ============================================================
 // 메인 함수
 // ============================================================
 
@@ -425,6 +436,10 @@ function postProcessPrompt(prompt: string, hasLogo: boolean | undefined, adType:
  * 이미지 광고 프롬프트 생성 (v2)
  */
 export async function generateImageAdPromptV2(input: ImageAdPromptInput): Promise<ImageAdPromptResult> {
+  // 언어 설정
+  const language = input.language || 'ko'
+  const languageInstruction = outputLanguageInstructions[language] || outputLanguageInstructions.ko
+
   // 기본 정보 추출
   const productCategory = detectProductCategory(input.productDescription)
   const avatarGender = input.avatarCharacteristics?.gender === 'female' ? 'female model'
@@ -499,6 +514,9 @@ Violation of this rule will result in rejection.`
   // 시스템 프롬프트 (핵심 보존, 중복 제거)
   const systemPrompt = `You are an expert advertising photographer. Generate a Seedream 4.5 optimized prompt for "${input.adType}" advertisement.
 
+=== OUTPUT LANGUAGE ===
+${languageInstruction}
+
 === AD TYPE ===
 ${input.adType}: ${adTypeDescription}
 
@@ -542,7 +560,7 @@ ${!figureInfo.needsModel ? `For PRODUCT ONLY shots:
   "optimizedPrompt": "60-80 words. ${!figureInfo.needsModel
     ? `Structure: [${figureInfo.productRef}] [as hero subject] [on/against background surface or setting] [dramatic lighting from angle] [camera: f/11-f/16 for sharpness] [quality: product photography, every detail crisp]. NO model, NO hands unless specified.`
     : `Structure: [${figureInfo.modelRef}] ${outfitText ? '[outfit description] ' : ''}[pose/action] [with ${figureInfo.productRef}] [in CLEAN environment] [natural light from direction] [SPECIFIC expression] [camera specs] [quality]. NO studio equipment.`}",
-  "koreanDescription": "한국어 요약 (15-20자)"
+  "localizedDescription": "Brief description in the OUTPUT LANGUAGE specified above (15-20 characters)"
 }
 
 === ANATOMICAL RULES (CRITICAL) ===
@@ -590,10 +608,17 @@ If any check fails, revise before responding.`
 
     return result
   } catch {
-    // 폴백
+    // 폴백 메시지 (언어별)
+    const fallbackDescriptions: Record<string, string> = {
+      ko: '제품 광고 이미지',
+      en: 'Product advertisement image',
+      ja: '製品広告画像',
+      zh: '产品广告图片',
+    }
+
     return {
       optimizedPrompt: `Professional ${input.adType} advertisement, photorealistic, commercial photography, brand campaign quality, pure photograph without overlays.`,
-      koreanDescription: '제품 광고 이미지',
+      localizedDescription: fallbackDescriptions[language] || fallbackDescriptions.ko,
     }
   }
 }

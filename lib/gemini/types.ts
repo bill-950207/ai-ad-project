@@ -15,6 +15,8 @@ export interface ProductInfoInput {
   brandName?: string
   price?: string
   rawText?: string
+  /** 출력 언어 */
+  language?: 'ko' | 'en' | 'ja' | 'zh'
 }
 
 /** 제품 정보 요약 결과 */
@@ -84,6 +86,8 @@ export interface UGCPromptInput {
   duration: number
   mood?: 'friendly' | 'professional' | 'energetic'
   additionalInstructions?: string
+  /** 출력 언어 (productSummary, suggestedScript 언어) */
+  language?: 'ko' | 'en' | 'ja' | 'zh'
 }
 
 /** UGC 영상 프롬프트 생성 결과 */
@@ -212,12 +216,15 @@ export interface BackgroundPromptInput {
   options?: BackgroundOptions
   userPrompt?: string
   aspectRatio?: '16:9' | '9:16' | '1:1' | '4:3' | '3:4'
+  /** 출력 언어 (localizedDescription 언어) */
+  language?: 'ko' | 'en' | 'ja' | 'zh'
 }
 
 /** 배경 프롬프트 생성 결과 */
 export interface BackgroundPromptResult {
   optimizedPrompt: string
-  koreanDescription: string
+  /** 사용자 언어로 된 설명 (language 파라미터에 따라 언어가 달라짐) */
+  localizedDescription: string
 }
 
 // ============================================================
@@ -260,12 +267,15 @@ export interface ImageAdPromptInput {
   selectedOptions: Record<string, string>
   additionalPrompt?: string
   aiAvatarDescription?: string
+  /** 출력 언어 (localizedDescription 언어) */
+  language?: 'ko' | 'en' | 'ja' | 'zh'
 }
 
 /** 이미지 광고 프롬프트 생성 결과 */
 export interface ImageAdPromptResult {
   optimizedPrompt: string
-  koreanDescription: string
+  /** 사용자 언어로 된 설명 (language 파라미터에 따라 언어가 달라짐) */
+  localizedDescription: string
   /** 제품에 로고/텍스트가 있는지 여부 (Gemini가 이미지 분석 결과) */
   productHasLogo?: boolean
 }
@@ -326,6 +336,8 @@ export interface FirstFramePromptInput {
   expressionPrompt?: string
   /** 조명 프롬프트 (프리셋에서 변환된 영문 프롬프트) */
   lightingPrompt?: string
+  /** 출력 언어 (locationDescription 언어) */
+  language?: 'ko' | 'en' | 'ja' | 'zh'
 }
 
 /** 첫 프레임 이미지 프롬프트 생성 결과 */

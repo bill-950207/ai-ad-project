@@ -38,6 +38,17 @@ import {
 import { VIDEO_TYPE_FIRST_FRAME_GUIDES } from '@/lib/prompts/first-frame'
 
 // ============================================================
+// 언어별 출력 지시문
+// ============================================================
+
+const outputLanguageInstructions: Record<string, string> = {
+  ko: 'Write all user-facing text responses in Korean (한국어).',
+  en: 'Write all user-facing text responses in English.',
+  ja: 'Write all user-facing text responses in Japanese (日本語).',
+  zh: 'Write all user-facing text responses in Simplified Chinese (简体中文).',
+}
+
+// ============================================================
 // Few-Shot 예시 및 검증 규칙
 // ============================================================
 
@@ -275,6 +286,9 @@ ${VIDEO_SELF_VERIFICATION}`
  * UGC 영상용 프롬프트를 생성합니다.
  */
 export async function generateUGCPrompts(input: UGCPromptInput): Promise<UGCPromptResult> {
+  const language = input.language || 'ko'
+  const languageInstruction = outputLanguageInstructions[language] || outputLanguageInstructions.ko
+
   const durationDesc = input.duration === 5 ? 'short 5 seconds' : input.duration === 8 ? 'medium 8 seconds' : 'longer 12 seconds'
   const moodDesc = { friendly: 'relaxed, natural, casual', professional: 'confident, knowledgeable', energetic: 'excited, enthusiastic' }[input.mood || 'friendly']
 
@@ -285,6 +299,9 @@ export async function generateUGCPrompts(input: UGCPromptInput): Promise<UGCProm
   const scriptSection = input.script ? `User Script: "${input.script}"` : 'No script provided - please generate a natural UGC-style script.'
 
   const prompt = `You are a UGC video expert. Create prompts for an authentic video.
+
+=== OUTPUT LANGUAGE ===
+${languageInstruction}
 
 ${productSection}
 ${scriptSection}
@@ -297,7 +314,7 @@ ${VIDEO_EXPRESSION_EXAMPLES}
 
 ${VIDEO_LIGHTING_EXAMPLES}
 
-Generate: productSummary (Korean), firstScenePrompt (English, gpt-image-1.5), videoPrompt (English, Seedance), suggestedScript (Korean, if no user script)
+Generate: productSummary (in OUTPUT LANGUAGE), firstScenePrompt (English, gpt-image-1.5), videoPrompt (English, Seedance), suggestedScript (in OUTPUT LANGUAGE, if no user script)
 
 ${VIDEO_SELF_VERIFICATION}`
 
@@ -338,11 +355,36 @@ ${VIDEO_SELF_VERIFICATION}`
     if (input.script) result.suggestedScript = undefined
     return result
   } catch {
+    // 폴백 메시지 (언어별)
+    const fallbackMessages: Record<string, { productSummary: string; productSummaryEmpty: string; suggestedScript: string }> = {
+      ko: {
+        productSummary: '제품 정보가 분석되었습니다.',
+        productSummaryEmpty: '일반 UGC 영상',
+        suggestedScript: '안녕하세요! 오늘 정말 좋은 거 발견해서 공유하려고요.',
+      },
+      en: {
+        productSummary: 'Product information has been analyzed.',
+        productSummaryEmpty: 'General UGC video',
+        suggestedScript: 'Hi! I found something really great today and wanted to share it with you.',
+      },
+      ja: {
+        productSummary: '製品情報が分析されました。',
+        productSummaryEmpty: '一般的なUGC動画',
+        suggestedScript: 'こんにちは！今日は本当に良いものを見つけたので共有したいと思います。',
+      },
+      zh: {
+        productSummary: '产品信息已分析。',
+        productSummaryEmpty: '一般UGC视频',
+        suggestedScript: '大家好！今天发现了一个很棒的东西，想和大家分享一下。',
+      },
+    }
+    const fallback = fallbackMessages[language] || fallbackMessages.ko
+
     return {
-      productSummary: input.productInfo ? '제품 정보가 분석되었습니다.' : '일반 UGC 영상',
+      productSummary: input.productInfo ? fallback.productSummary : fallback.productSummaryEmpty,
       firstScenePrompt: 'A person seated comfortably looking at camera with confident expression. Soft natural daylight. Sharp background. Ultra-realistic editorial photography.',
       videoPrompt: `A person speaks naturally to camera with subtle movements. ${input.duration} seconds of natural conversation.`,
-      suggestedScript: input.script ? undefined : '안녕하세요! 오늘 정말 좋은 거 발견해서 공유하려고요.',
+      suggestedScript: input.script ? undefined : fallback.suggestedScript,
     }
   }
 }
@@ -629,6 +671,10 @@ const outfitPresetDescriptions: Record<OutfitPresetType, string> = {
  * 첫 프레임 이미지 생성용 프롬프트를 생성합니다.
  */
 export async function generateFirstFramePrompt(input: FirstFramePromptInput): Promise<FirstFramePromptResult> {
+  // 출력 언어 설정
+  const language = input.language || 'ko'
+  const languageInstruction = outputLanguageInstructions[language] || outputLanguageInstructions.ko
+
   // 비디오 타입별 스타일 가이드
   const videoType = input.videoType || 'UGC'
   const videoTypeGuide = VIDEO_TYPE_FIRST_FRAME_GUIDES[videoType]
@@ -758,6 +804,9 @@ ${HAND_PRODUCT_EXAMPLES}
 
   const prompt = `Generate Seedream 4.5 first frame image prompt.
 
+=== OUTPUT LANGUAGE ===
+${languageInstruction}
+
 VIDEO STYLE: ${VIDEO_TYPE_SCRIPT_STYLES[videoType]?.korean || 'UGC 스타일'}
 ${atmosphereSection}
 ${expressionGuideSection}
@@ -793,7 +842,7 @@ ${VIDEO_EXPRESSION_EXAMPLES}
 ${VIDEO_LIGHTING_EXAMPLES}
 
 Include: camera specs, lighting direction, quality tags, AND natural grip description (avoid finger details) if product is present.
-Output JSON: { "prompt": "English 50-80 words", "locationDescription": "Korean location description" }
+Output JSON: { "prompt": "English 50-80 words", "locationDescription": "Location description in OUTPUT LANGUAGE" }
 
 ${VIDEO_SELF_VERIFICATION}`
 
@@ -828,9 +877,17 @@ ${VIDEO_SELF_VERIFICATION}`
   try {
     return JSON.parse(response.text || '') as FirstFramePromptResult
   } catch {
+    // 폴백 메시지 (언어별)
+    const fallbackLocations: Record<string, string> = {
+      ko: '자연스러운 실내',
+      en: 'Natural indoor setting',
+      ja: '自然な室内',
+      zh: '自然的室内',
+    }
+
     return {
       prompt: 'The model from Figure 1 in a natural indoor setting. Soft natural daylight. Sharp in-focus background with every detail visible, NO bokeh, NO blur. Shot on Sony A7IV, 35mm f/11, entire scene razor sharp. Hyperrealistic photograph, 8K quality.',
-      locationDescription: '자연스러운 실내',
+      locationDescription: fallbackLocations[language] || fallbackLocations.ko,
     }
   }
 }
