@@ -54,15 +54,15 @@ Options focus: Theme-appropriate props, seasonal color palette, festive mood.`,
 // Few-Shot 예시 및 검증 규칙
 // ============================================================
 
-/** 시나리오 추천 규칙 (BAD 예시만 제공 - 창의성은 LLM에게 맡김) */
+/** Scenario recommendation rules (BAD examples only - let LLM be creative) */
 const SCENARIO_RECOMMENDATION_EXAMPLES = `
 === WHAT TO AVOID (BAD EXAMPLES) ===
 
 These patterns are FORBIDDEN - do NOT produce anything similar:
 
 ❌ GENERIC TITLES:
-- "프리미엄 시나리오", "기본 시나리오", "스탠다드" - No creative concept
-- "시나리오 1", "시나리오 2", "시나리오 3" - Just numbers
+- "Premium Scenario", "Basic Scenario", "Standard" - No creative concept
+- "Scenario 1", "Scenario 2", "Scenario 3" - Just numbers
 - Any title using banned words from the list above
 
 ❌ LACK OF DIVERSITY:
@@ -76,47 +76,49 @@ These patterns are FORBIDDEN - do NOT produce anything similar:
 - Premium product with budget-friendly casual style
 
 ❌ AI WRITING PATTERNS:
-- "따뜻하고 부드럽고 자연스러운" - 3+ stacked adjectives
-- "특별한 경험을 선사하는" - Empty marketing phrase
-- Starting all backgrounds with "따뜻한" or "부드러운"
+- "warm and soft and natural" - 3+ stacked adjectives
+- "delivers a special experience" - Empty marketing phrase
+- Starting all backgrounds with "warm" or "soft"
 - Using same sentence structure for all customText
 - Repetitive vocabulary across scenarios
 
 ❌ VAGUE DESCRIPTIONS:
-- "아늑한 분위기" instead of specific setting details
-- "은은한 조명" instead of technical lighting description
-- "자연스러운 느낌" without concrete visual elements
+- "cozy atmosphere" instead of specific setting details
+- "soft lighting" instead of technical lighting description
+- "natural feeling" without concrete visual elements
 `.trim()
 
-/** 시나리오 다양성 검증 */
+/** Scenario diversity check */
 const SCENARIO_DIVERSITY_CHECK = `
 === DIVERSITY REQUIREMENTS ===
 
 Each scenario MUST differ in at least 3 of these dimensions:
-1. Target Age: (20대 vs 30대 vs 40대+)
-2. Target Lifestyle: (직장인 vs 학생 vs 전업주부 vs 인플루언서)
-3. Emotional Tone: (활기찬 vs 차분한 vs 단정한 vs 친근한)
-4. Visual Mood: (밝고 화사 vs 차분하고 편안 vs 모던하고 깔끔)
-5. Setting: (집 vs 사무실 vs 카페 vs 야외 vs 스튜디오)
-6. Time: (아침 vs 낮 vs 저녁 vs 밤)
+1. Target Age: (20s vs 30s vs 40s+)
+2. Target Lifestyle: (office worker vs student vs homemaker vs influencer)
+3. Emotional Tone: (energetic vs calm vs neat vs friendly)
+4. Visual Mood: (bright & vibrant vs calm & comfortable vs modern & clean)
+5. Setting: (home vs office vs cafe vs outdoor vs studio)
+6. Time: (morning vs noon vs evening vs night)
 `.trim()
 
-/** 시나리오 Self-Verification 체크리스트 */
+/** Scenario Self-Verification checklist */
 const SCENARIO_SELF_VERIFICATION = `
 === SELF-VERIFICATION (before responding) ===
 Check your scenarios:
-✓ All 3 scenarios have UNIQUE creative titles (not "프리미엄", "기본", "스탠다드")?
+✓ All 3 scenarios have UNIQUE creative titles (not "Premium", "Basic", "Standard")?
 ✓ Each scenario targets a DIFFERENT audience segment?
 ✓ Price positioning matches product's actual tier?
 ✓ Options within each scenario are COHERENT (mood + lighting + background align)?
 ✓ Titles are 8-15 characters in output language?
 ✓ Descriptions explain the concept clearly (30-50 characters)?
 ✓ NO banned words used in any text (check BANNED lists above)?
-✓ NO repetitive adjective patterns ("~하고 ~하고 ~한")?
+✓ NO repetitive adjective patterns ("X and Y and Z")?
 ✓ customText reads like a real photographer's notes, NOT like marketing copy?
 ✓ Each scenario uses DIFFERENT sentence structures and vocabulary?
 ✓ Pose/action customText has SIMPLE hand actions? (max 1 action per hand, no 3+ gestures)?
 If any check fails, revise before responding.
+
+⚠️ CRITICAL: All title, description, reason, overallStrategy, customText MUST be written in the OUTPUT LANGUAGE specified above!
 `.trim()
 
 /**
@@ -459,12 +461,12 @@ Based on your product analysis, create 3 DISTINCT advertising scenarios.
 **NAMING REQUIREMENT (CRITICAL):**
 - Title must clearly show WHAT PRODUCT BENEFIT/FEATURE this scenario emphasizes
 - User should INSTANTLY understand the selling point from the title alone
-- Format: "[강조 포인트] + [표현 방식]" (8-15 characters)
+- Format: "[emphasis point] + [expression style]" (8-15 characters)
 - Focus on: efficacy, texture, lasting power, ingredients, target concern, usage benefit
-- BANNED ABSTRACT WORDS: "감성", "무드", "순간", "프리미엄", "럭셔리", "스페셜", "특별한", "완벽한"
-- BANNED AI-SOUNDING WORDS: "아름다운", "황홀한", "찬란한", "눈부신", "매력적인", "트렌디한", "세련된", "고급스러운", "조화로운", "감각적인"
+- BANNED ABSTRACT WORDS: "emotion", "mood", "moment", "premium", "luxury", "special", "perfect"
+- BANNED AI-SOUNDING WORDS: "beautiful", "stunning", "radiant", "dazzling", "charming", "trendy", "sophisticated", "elegant", "harmonious", "sensational"
 - BANNED: Poetic/vague expressions that don't communicate product benefits
-- BANNED PATTERNS: Marketing clichés like "~를 경험하세요", "~의 완벽한 조화", "~를 선사합니다"
+- BANNED PATTERNS: Marketing clichés like "experience the...", "perfect harmony of...", "delivers..."
 - Each scenario = DIFFERENT product benefit angle (not just different mood/style)
 
 **TARGETING REQUIREMENT:**
@@ -564,7 +566,20 @@ POSE SIMPLIFICATION RULES:
 
 ${SCENARIO_SELF_VERIFICATION}
 
-IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be written in the specified output language.`
+⚠️⚠️⚠️ CRITICAL OUTPUT LANGUAGE REQUIREMENT ⚠️⚠️⚠️
+You MUST write ALL of the following fields in the OUTPUT LANGUAGE specified at the top:
+- title (scenario title)
+- description (scenario description)
+- targetAudience
+- reason (for each recommendation)
+- customText (for each recommendation)
+- overallStrategy
+- suggestedPrompt
+- avatarDescription
+
+DO NOT use Korean unless the output language is Korean.
+DO NOT use English unless the output language is English.
+STRICTLY follow the OUTPUT LANGUAGE instruction.`
 
   const config: GenerateContentConfig = {
     thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
@@ -576,7 +591,7 @@ IMPORTANT: All scenario titles, descriptions, reasons, and strategies must be wr
       properties: {
         scenarios: {
           type: Type.ARRAY,
-          description: '추천 시나리오 배열',
+          description: 'Array of recommended scenarios',
           items: {
             type: Type.OBJECT,
             required: ['title', 'description', 'recommendations', 'overallStrategy'],
