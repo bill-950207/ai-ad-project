@@ -13,6 +13,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Image as ImageIcon, Play, Loader2, ArrowRight } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
+import { Badge } from '@/components/ui/badge'
+import { GridSkeleton } from '@/components/ui/skeleton'
 
 // ============================================================
 // 타입 정의
@@ -242,11 +244,11 @@ export function RecentAdsSection() {
             {t.dashboard?.recentWork?.title || 'Recent Ads'}
           </h2>
         </div>
-        <div className="grid grid-cols-5 gap-3">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="aspect-square rounded-xl bg-secondary/30 animate-pulse" />
-          ))}
-        </div>
+        <GridSkeleton
+          count={5}
+          columns={{ default: 2, sm: 3, md: 4, lg: 5 }}
+          aspectRatio="square"
+        />
       </div>
     )
   }
@@ -266,10 +268,10 @@ export function RecentAdsSection() {
             {t.dashboard?.recentWork?.title || 'Recent Ads'}
           </h2>
           {hasProcessing && (
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+            <Badge variant="primary" size="sm" className="gap-1 bg-primary/10 text-primary">
               <Loader2 className="w-3 h-3 animate-spin" />
               <span className="text-[10px]">{t.dashboard?.recentWork?.processing || 'In Progress'}</span>
-            </div>
+            </Badge>
           )}
         </div>
         <button

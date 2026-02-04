@@ -12,6 +12,9 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Play, Loader2, Volume2, VolumeX, X, Plus, Image as ImageIcon, Video } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 import { useOnboarding, VideoAdType } from '@/components/onboarding/onboarding-context'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Modal } from '@/components/ui/modal'
 
 // ============================================================
 // 타입 정의
@@ -209,13 +212,13 @@ function ShowcaseCard({ item, onClick, getAdTypeLabel }: ShowcaseCardProps) {
         <div className="flex items-end justify-between gap-2">
           {/* 좌측: 미디어 타입 + 광고 유형 */}
           <div className="flex flex-col gap-1 items-start">
-            <span className="px-2 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[10px] font-medium text-white/90">
+            <Badge variant="glass" size="sm" className="text-[10px]">
               {item.type === 'video' ? 'VIDEO' : 'IMAGE'}
-            </span>
+            </Badge>
             {item.ad_type && (
-              <span className="px-2 py-1 rounded-lg bg-primary/30 backdrop-blur-sm text-xs font-semibold text-white">
+              <Badge variant="glass" size="sm" className="bg-primary/30">
                 {getAdTypeLabel(item.ad_type)}
-              </span>
+              </Badge>
             )}
           </div>
 
@@ -295,14 +298,14 @@ function ShowcaseLightbox({ item, onClose, onCreateAd, getAdTypeLabel }: Showcas
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 !m-0 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      onClick={onClose}
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      size="xl"
+      ariaLabel={item.title}
+      className="max-w-5xl"
     >
-      <div
-        className="relative w-full max-w-5xl max-h-[90vh] bg-card rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="flex flex-col md:flex-row max-h-[90vh]">
         {/* 닫기 버튼 */}
         <button
           onClick={onClose}
@@ -313,7 +316,7 @@ function ShowcaseLightbox({ item, onClose, onCreateAd, getAdTypeLabel }: Showcas
         </button>
 
         {/* 미디어 영역 */}
-        <div className="flex-1 bg-black flex items-center justify-center min-h-[250px] md:min-h-0 md:max-h-[85vh]">
+        <div className="flex-1 bg-black flex items-center justify-center min-h-[250px] md:min-h-0 md:max-h-[85vh] rounded-t-2xl md:rounded-l-2xl md:rounded-tr-none overflow-hidden">
           {item.type === 'video' && item.media_url ? (
             <div className="relative w-full h-full flex items-center justify-center">
               <video
@@ -353,22 +356,22 @@ function ShowcaseLightbox({ item, onClose, onCreateAd, getAdTypeLabel }: Showcas
         <div className="w-full md:w-72 p-5 flex flex-col flex-shrink-0 max-h-[40vh] md:max-h-[85vh] overflow-y-auto">
           {/* 광고 타입 배지 */}
           <div className="flex items-center gap-2 mb-3">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+            <Badge variant="primary" className="gap-1.5 bg-primary/10 text-primary">
               {item.type === 'video' ? (
                 <Video className="w-3.5 h-3.5" aria-hidden="true" />
               ) : (
                 <ImageIcon className="w-3.5 h-3.5" aria-hidden="true" />
               )}
               <span>{getTypeLabel()}</span>
-            </div>
+            </Badge>
           </div>
 
           {/* 광고 서브타입 */}
           {item.ad_type && (
             <div className="mb-3">
-              <span className="px-2 py-1 rounded-lg bg-secondary text-xs font-medium text-muted-foreground">
+              <Badge variant="secondary" size="sm">
                 {getAdTypeLabel(item.ad_type)}
-              </span>
+              </Badge>
             </div>
           )}
 
@@ -425,22 +428,19 @@ function ShowcaseLightbox({ item, onClose, onCreateAd, getAdTypeLabel }: Showcas
           <div className="flex-1 min-h-2" />
 
           {/* 광고 만들기 버튼 */}
-          <button
-            onClick={onCreateAd}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            <Plus className="w-4 h-4" aria-hidden="true" />
+          <Button onClick={onCreateAd} className="w-full">
+            <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
             <span className="text-sm">
               {t.showcase?.createThisAd || 'Create This Ad'}
             </span>
-          </button>
+          </Button>
 
           <p className="text-[10px] text-muted-foreground text-center mt-2">
             {t.showcase?.createSimilar || 'Create a similar ad with your own assets'}
           </p>
         </div>
       </div>
-    </div>
+    </Modal>
   )
 }
 

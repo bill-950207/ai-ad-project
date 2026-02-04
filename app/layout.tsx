@@ -4,6 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/navbar";
 import { SupabaseProvider } from "@/components/providers/supabase-provider";
 import { LanguageProvider } from "@/contexts/language-context";
+import { ToastProvider } from "@/components/ui/toast";
 import { ClarityScript } from "@/components/analytics/clarity";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 
@@ -49,10 +50,12 @@ export default function RootLayout({
           supabaseAnonKey={process.env.SUPABASE_ANON_KEY!}
         >
           <LanguageProvider>
-            <Navbar />
-            <div className="pt-16">
-              {children}
-            </div>
+            <ToastProvider>
+              <Navbar />
+              <div className="pt-16">
+                {children}
+              </div>
+            </ToastProvider>
           </LanguageProvider>
         </SupabaseProvider>
       </body>

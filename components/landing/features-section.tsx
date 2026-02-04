@@ -12,6 +12,7 @@
 
 import { Image as ImageIcon, Video, User, Music, Zap, Palette, Clock, Globe } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
+import { Badge } from '@/components/ui/badge'
 
 // ============================================================
 // 타입 정의
@@ -56,14 +57,14 @@ interface FeatureCardProps {
 
 function FeatureCard({ feature, items }: FeatureCardProps) {
   return (
-    <div className="group relative p-6 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors">
+    <div className="group relative p-6 rounded-xl bg-card border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
       {/* 아이콘 - 단색 */}
-      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-4">
+      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-4 group-hover:bg-primary/20 group-hover:scale-105 transition-all duration-300">
         {feature.icon}
       </div>
 
       {/* 제목 */}
-      <h3 className="text-base font-semibold text-foreground mb-2">
+      <h3 className="text-base font-semibold text-foreground mb-2 group-hover:text-primary transition-colors duration-300">
         {items[feature.key]?.title}
       </h3>
 
@@ -111,11 +112,11 @@ export function FeaturesSection() {
         {/* 장점 섹션 - 단순화 */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 p-6 rounded-xl border border-border bg-secondary/30">
           {benefits.map((benefit) => (
-            <div key={benefit.key} className="text-center">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary mx-auto mb-2">
+            <div key={benefit.key} className="text-center group cursor-default">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary mx-auto mb-2 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
                 {benefit.icon}
               </div>
-              <h4 className="font-medium text-foreground text-sm mb-0.5">
+              <h4 className="font-medium text-foreground text-sm mb-0.5 group-hover:text-primary transition-colors duration-300">
                 {featuresT.benefits[benefit.key]?.title}
               </h4>
               <p className="text-xs text-muted-foreground">

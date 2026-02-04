@@ -17,6 +17,8 @@ import { useLanguage } from "@/contexts/language-context";
 import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { ShowcaseRain } from "./landing/showcase-rain";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
 import type { ShowcaseData } from "@/types/showcase";
 
 // ============================================================
@@ -59,10 +61,10 @@ export function HeroSection({ rainShowcases }: HeroSectionProps) {
 
       <div className="mx-auto max-w-4xl text-center relative z-10">
         {/* 배지 - AI 대신 기능 강조 */}
-        <div className="mb-6 inline-flex items-center gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-1.5 text-sm text-muted-foreground animate-fade-in-up">
-          <CheckCircle className="h-3.5 w-3.5 text-green-500" aria-hidden="true" />
+        <Badge variant="outline" className="mb-6 gap-2 animate-fade-in-up">
+          <CheckCircle className="h-3.5 w-3.5 text-success" aria-hidden="true" />
           <span>{t.hero.tagline}</span>
-        </div>
+        </Badge>
 
         {/* 메인 헤드라인 - 단순한 그라데이션 */}
         <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl animate-fade-in-up animation-delay-100">
@@ -80,21 +82,19 @@ export function HeroSection({ rainShowcases }: HeroSectionProps) {
           {t.hero.description}
         </p>
 
-        {/* CTA 버튼 - rounded-xl로 변경 */}
+        {/* CTA 버튼 */}
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row animate-fade-in-up animation-delay-300">
-          <Link
-            href={user ? "/dashboard" : "/login"}
-            className="group inline-flex items-center justify-center gap-2 h-12 rounded-xl px-6 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            {t.hero.ctaStart}
-            <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
+          <Link href={user ? "/dashboard" : "/login"}>
+            <Button size="lg" className="group gap-2">
+              {t.hero.ctaStart}
+              <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
+            </Button>
           </Link>
-          <Link
-            href="#gallery"
-            className="inline-flex items-center justify-center gap-2 h-12 rounded-xl px-6 text-base font-medium text-muted-foreground hover:text-foreground border border-border hover:border-foreground/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            <Play className="h-4 w-4" aria-hidden="true" />
-            {t.hero.ctaSamples}
+          <Link href="#gallery">
+            <Button variant="outline" size="lg" className="gap-2">
+              <Play className="h-4 w-4" aria-hidden="true" />
+              {t.hero.ctaSamples}
+            </Button>
           </Link>
         </div>
 

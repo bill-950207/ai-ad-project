@@ -68,10 +68,10 @@ function WizardHeader() {
         {/* 단계 표시기 + 선택 항목 */}
         <div className="flex items-center justify-between">
           {/* 왼쪽 여백 (선택 항목과 균형 맞추기) */}
-          <div className="w-48 hidden lg:block" />
+          <div className="w-48 hidden md:block" />
 
           {/* 중앙: 단계 표시기 */}
-          <div className="flex items-center justify-center flex-1 lg:flex-none">
+          <div className="flex items-center justify-center flex-1 md:flex-none">
             {STEPS.map(({ step: s, title }, index) => {
               const isCompleted = step > s
               const isCurrent = step === s
@@ -120,7 +120,7 @@ function WizardHeader() {
           </div>
 
           {/* 오른쪽: 선택 항목 요약 */}
-          <div className="w-48 hidden lg:flex items-center justify-end gap-2">
+          <div className="w-48 hidden md:flex items-center justify-end gap-2">
             {showSelectedItems && (
               <>
                 {/* 제품 */}

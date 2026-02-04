@@ -189,15 +189,22 @@ export function Navbar() {
               <div className="relative" ref={langMenuRef}>
                 <button
                   onClick={() => setShowLangMenu(!showLangMenu)}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground rounded-lg hover:bg-secondary/50 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground rounded-lg hover:bg-secondary/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  aria-label={t.common?.selectLanguage || 'Select language'}
+                  aria-expanded={showLangMenu}
+                  aria-haspopup="listbox"
                 >
-                  <Globe className="w-4 h-4" />
+                  <Globe className="w-4 h-4" aria-hidden="true" />
                   <span className="hidden sm:inline">{currentLang.flag}</span>
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showLangMenu ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showLangMenu ? 'rotate-180' : ''}`} aria-hidden="true" />
                 </button>
 
                 {showLangMenu && (
-                  <div className="absolute right-0 mt-2 w-40 rounded-xl border border-border bg-background/95 backdrop-blur-lg shadow-xl py-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div
+                    className="absolute right-0 mt-2 w-40 rounded-xl border border-border bg-background/95 backdrop-blur-lg shadow-xl py-1.5 animate-in fade-in slide-in-from-top-2 duration-200"
+                    role="listbox"
+                    aria-label={t.common?.selectLanguage || 'Select language'}
+                  >
                     {LANGUAGES.map((lang) => (
                       <button
                         key={lang.code}
@@ -207,8 +214,10 @@ export function Navbar() {
                             ? 'bg-primary/10 text-primary'
                             : 'text-foreground hover:bg-secondary/50'
                         }`}
+                        role="option"
+                        aria-selected={language === lang.code}
                       >
-                        <span className="text-base">{lang.flag}</span>
+                        <span className="text-base" aria-hidden="true">{lang.flag}</span>
                         <span>{lang.label}</span>
                       </button>
                     ))}
@@ -283,12 +292,15 @@ export function Navbar() {
               {/* 모바일 메뉴 버튼 */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 rounded-lg hover:bg-secondary/50 transition-colors"
+                className="md:hidden p-2 rounded-lg hover:bg-secondary/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                aria-label={mobileMenuOpen ? (t.common?.closeMenu || 'Close menu') : (t.common?.openMenu || 'Open menu')}
+                aria-expanded={mobileMenuOpen}
+                aria-controls="mobile-menu"
               >
                 {mobileMenuOpen ? (
-                  <X className="w-5 h-5 text-foreground" />
+                  <X className="w-5 h-5 text-foreground" aria-hidden="true" />
                 ) : (
-                  <Menu className="w-5 h-5 text-foreground" />
+                  <Menu className="w-5 h-5 text-foreground" aria-hidden="true" />
                 )}
               </button>
             </div>
@@ -297,13 +309,20 @@ export function Navbar() {
       </nav>
 
       {/* 모바일 메뉴 */}
-      <div className={`fixed inset-0 z-40 !m-0 md:hidden transition-all duration-300 ${
-        mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-      }`}>
+      <div
+        id="mobile-menu"
+        className={`fixed inset-0 z-40 md:hidden transition-all duration-300 ${
+          mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t.common?.navigationMenu || 'Navigation menu'}
+      >
         {/* 백드롭 */}
         <div
           className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
         />
 
         {/* 메뉴 패널 */}

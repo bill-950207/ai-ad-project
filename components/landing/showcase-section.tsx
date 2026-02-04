@@ -11,7 +11,7 @@
 'use client'
 
 import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react'
-import { Play, Image as ImageIcon, Video, Volume2, VolumeX, X, Plus } from 'lucide-react'
+import { Play, Image as ImageIcon, Video, Volume2, VolumeX, X, Plus, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 
 // 메모리 최적화: 비디오 요소 제거, 썸네일만 표시
@@ -19,6 +19,9 @@ import { useLanguage } from '@/contexts/language-context'
 import { optimizeThumbnailUrl, optimizeLightboxUrl } from '@/lib/image/optimize'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Modal, ModalBody } from '@/components/ui/modal'
 
 // ============================================================
 // 타입 정의
@@ -186,19 +189,19 @@ function ShowcaseCard({ item }: ShowcaseCardProps) {
         {/* 하단 좌측: 타입 배지 (메인 타입 + 서브타입) */}
         <div className="absolute bottom-3 left-3 flex flex-col gap-1 pointer-events-none">
           {/* 메인 타입 배지 */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-medium text-white">
+          <Badge variant="glass" size="sm" className="gap-1.5">
             {item.type === 'video' ? (
               <Video className="w-3 h-3" aria-hidden="true" />
             ) : (
               <ImageIcon className="w-3 h-3" aria-hidden="true" />
             )}
             <span>{item.type === 'video' ? 'Video' : 'Image'}</span>
-          </div>
+          </Badge>
           {/* 서브타입 배지 */}
           {getAdTypeLabel() && (
-            <div className="px-2 py-0.5 rounded-full bg-primary/30 backdrop-blur-sm text-[10px] text-white/90 w-fit">
+            <Badge variant="glass" size="sm" className="bg-primary/30 text-[10px]">
               {getAdTypeLabel()}
-            </div>
+            </Badge>
           )}
         </div>
 
@@ -311,14 +314,14 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 !m-0 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      onClick={onClose}
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      size="xl"
+      ariaLabel={item.title}
+      className="max-w-5xl"
     >
-      <div
-        className="relative w-full max-w-5xl max-h-[90vh] bg-card rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="flex flex-col md:flex-row max-h-[90vh]">
         {/* 닫기 버튼 */}
         <button
           onClick={onClose}
@@ -329,7 +332,7 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
         </button>
 
         {/* 미디어 영역 */}
-        <div className="flex-1 bg-black flex items-center justify-center min-h-[250px] md:min-h-0 md:max-h-[85vh]">
+        <div className="flex-1 bg-black flex items-center justify-center min-h-[250px] md:min-h-0 md:max-h-[85vh] rounded-t-2xl md:rounded-l-2xl md:rounded-tr-none overflow-hidden">
           {item.type === 'video' && item.media_url ? (
             <div className="relative w-full h-full flex items-center justify-center">
               <video
@@ -367,94 +370,92 @@ function ShowcaseLightbox({ item, onClose }: ShowcaseLightboxProps) {
 
         {/* 정보 영역 */}
         <div className="w-full md:w-72 p-5 flex flex-col flex-shrink-0 max-h-[40vh] md:max-h-[85vh] overflow-y-auto">
-            {/* 광고 타입 배지 */}
-            <div className="flex items-center gap-2 mb-3">
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                {item.type === 'video' ? (
-                  <Video className="w-3.5 h-3.5" aria-hidden="true" />
-                ) : (
-                  <ImageIcon className="w-3.5 h-3.5" aria-hidden="true" />
+          {/* 광고 타입 배지 */}
+          <div className="flex items-center gap-2 mb-3">
+            <Badge variant="primary" className="gap-1.5 bg-primary/10 text-primary">
+              {item.type === 'video' ? (
+                <Video className="w-3.5 h-3.5" aria-hidden="true" />
+              ) : (
+                <ImageIcon className="w-3.5 h-3.5" aria-hidden="true" />
+              )}
+              <span>{getAdTypeLabel()}</span>
+            </Badge>
+          </div>
+
+          {/* 제품 & 아바타 정보 */}
+          {(item.product_image_url || item.avatar_image_url) && (
+            <div className="mb-4">
+              <p className="text-xs text-muted-foreground mb-2">
+                {t.showcase.assetsUsed}
+              </p>
+              <div className="flex items-center gap-2">
+                {item.product_image_url && (
+                  <div className="flex flex-col items-center gap-0.5">
+                    <div className="w-12 h-12 rounded-lg bg-secondary/50 p-0.5 border border-border">
+                      <img
+                        src={optimizeThumbnailUrl(item.product_image_url)}
+                        alt="Product"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">
+                      {t.showcase.product}
+                    </span>
+                  </div>
                 )}
-                <span>{getAdTypeLabel()}</span>
+                {item.product_image_url && item.avatar_image_url && (
+                  <div className="text-muted-foreground text-sm">+</div>
+                )}
+                {item.avatar_image_url && (
+                  <div className="flex flex-col items-center gap-0.5">
+                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-border">
+                      <img
+                        src={optimizeThumbnailUrl(item.avatar_image_url)}
+                        alt="Avatar"
+                        className="w-full h-full object-cover object-top"
+                      />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">
+                      {t.showcase.avatar}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
+          )}
 
-            {/* 제품 & 아바타 정보 */}
-            {(item.product_image_url || item.avatar_image_url) && (
-              <div className="mb-4">
-                <p className="text-xs text-muted-foreground mb-2">
-                  {t.showcase.assetsUsed}
-                </p>
-                <div className="flex items-center gap-2">
-                  {item.product_image_url && (
-                    <div className="flex flex-col items-center gap-0.5">
-                      <div className="w-12 h-12 rounded-lg bg-secondary/50 p-0.5 border border-border">
-                        <img
-                          src={optimizeThumbnailUrl(item.product_image_url)}
-                          alt="Product"
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                      <span className="text-[10px] text-muted-foreground">
-                        {t.showcase.product}
-                      </span>
-                    </div>
-                  )}
-                  {item.product_image_url && item.avatar_image_url && (
-                    <div className="text-muted-foreground text-sm">+</div>
-                  )}
-                  {item.avatar_image_url && (
-                    <div className="flex flex-col items-center gap-0.5">
-                      <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-border">
-                        <img
-                          src={optimizeThumbnailUrl(item.avatar_image_url)}
-                          alt="Avatar"
-                          className="w-full h-full object-cover object-top"
-                        />
-                      </div>
-                      <span className="text-[10px] text-muted-foreground">
-                        {t.showcase.avatar}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* 설명 */}
-            {item.description && (
-              <p className="text-xs text-muted-foreground mb-4 line-clamp-2">
-                {item.description}
-              </p>
-            )}
-
-            {/* 스페이서 - 모바일에서는 최소화 */}
-            <div className="flex-1 min-h-2" />
-
-            {/* 광고 만들기 버튼 */}
-            <button
-              onClick={handleCreateClick}
-              disabled={isCheckingAuth}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              {isCheckingAuth ? (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  <Plus className="w-4 h-4" aria-hidden="true" />
-                  <span className="text-sm">
-                    {t.showcase.createThisAd}
-                  </span>
-                </>
-              )}
-            </button>
-
-            <p className="text-[10px] text-muted-foreground text-center mt-2">
-              {t.showcase.createSimilar}
+          {/* 설명 */}
+          {item.description && (
+            <p className="text-xs text-muted-foreground mb-4 line-clamp-2">
+              {item.description}
             </p>
-          </div>
+          )}
+
+          {/* 스페이서 - 모바일에서는 최소화 */}
+          <div className="flex-1 min-h-2" />
+
+          {/* 광고 만들기 버튼 */}
+          <Button
+            onClick={handleCreateClick}
+            disabled={isCheckingAuth}
+            className="w-full"
+          >
+            {isCheckingAuth ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            ) : (
+              <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
+            )}
+            <span className="text-sm">
+              {t.showcase.createThisAd}
+            </span>
+          </Button>
+
+          <p className="text-[10px] text-muted-foreground text-center mt-2">
+            {t.showcase.createSimilar}
+          </p>
+        </div>
       </div>
-    </div>
+    </Modal>
   )
 }
 
