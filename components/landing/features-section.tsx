@@ -12,7 +12,6 @@
 
 import { Image as ImageIcon, Video, User, Music, Zap, Palette, Clock, Globe } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
-import { Badge } from '@/components/ui/badge'
 
 // ============================================================
 // 타입 정의
