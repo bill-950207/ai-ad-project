@@ -18,17 +18,15 @@ import { compressImage } from '@/lib/image/compress-client'
 import { useLanguage } from '@/contexts/language-context'
 
 export function WizardStep2() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const {
     settingMethod,
     setSettingMethod,
     referenceUrl,
     setReferenceImage,
     isAnalyzingReference,
-    setIsAnalyzingReference,
     analysisResult,
     setAnalysisResult,
-    adType,
     selectedProduct,
     goToNextStep,
     goToPrevStep,
@@ -66,16 +64,21 @@ export function WizardStep2() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [localPreview, setLocalPreview] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
 
-  // 파일 선택 핸들러
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  // 파일 처리 공통 함수
+  const processFile = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert(t.imageAd?.method?.invalidFileType || 'Please upload an image file')
+      return
+    }
 
     // 로컬 미리보기 생성
     const previewUrl = URL.createObjectURL(file)
     setLocalPreview(previewUrl)
     setReferenceImage(file, null)
+    // 이전 분석 결과 초기화
+    setAnalysisResult(null)
 
     try {
       setIsUploading(true)
@@ -103,9 +106,7 @@ export function WizardStep2() {
 
       const { url } = await uploadRes.json()
       setReferenceImage(file, url)
-
-      // 업로드 성공 후 자동 분석
-      await analyzeReference(url)
+      // 분석은 Next Step 클릭 시 수행
     } catch (error) {
       console.error('Reference image upload error:', error)
       alert(t.imageAd?.method?.uploadError || 'An error occurred while uploading the image')
@@ -115,35 +116,34 @@ export function WizardStep2() {
     }
   }
 
-  // 참조 이미지 분석
-  const analyzeReference = async (imageUrl: string) => {
-    setIsAnalyzingReference(true)
-    try {
-      const res = await fetch('/api/image-ads/analyze-reference', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageUrl,
-          adType,
-        }),
-      })
+  // 파일 선택 핸들러 (업로드만, 분석은 Next Step 클릭 시)
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    await processFile(file)
+  }
 
-      if (!res.ok) {
-        throw new Error('Analysis failed')
-      }
+  // 드래그 앤 드롭 핸들러
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }
 
-      const result = await res.json()
-      setAnalysisResult({
-        overallStyle: result.overallStyle,
-        suggestedPrompt: result.suggestedPrompt,
-        analyzedOptions: result.analyzedOptions,
-      })
-    } catch (error) {
-      console.error('Reference image analysis error:', error)
-      alert(t.imageAd?.method?.analysisError || 'An error occurred while analyzing the image')
-    } finally {
-      setIsAnalyzingReference(false)
-    }
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    const file = e.dataTransfer.files?.[0]
+    if (!file) return
+    await processFile(file)
   }
 
   // 참조 이미지 삭제
@@ -174,6 +174,12 @@ export function WizardStep2() {
       return !!referenceUrl && !isAnalyzingReference && !isUploading
     }
     return true
+  }
+
+  // Next Step 클릭 핸들러
+  const handleNextStep = async () => {
+    // reference 모드: Step 3으로 이동 후 거기서 분석 (프로그레스 화면 표시)
+    goToNextStep()
   }
 
   return (
@@ -260,11 +266,11 @@ export function WizardStep2() {
                     alt={t.imageAd?.method?.referenceAlt || 'Reference image'}
                     className="w-full h-full object-contain"
                   />
-                  {(isUploading || isAnalyzingReference) && (
+                  {isUploading && (
                     <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-2">
                       <Loader2 className="w-8 h-8 text-white animate-spin" />
                       <span className="text-sm text-white">
-                        {isUploading ? t.imageAd?.method?.uploading || 'Uploading...' : t.imageAd?.method?.analyzing || 'Analyzing style...'}
+                        {t.imageAd?.method?.uploading || 'Uploading...'}
                       </span>
                     </div>
                   )}
@@ -278,8 +284,8 @@ export function WizardStep2() {
                 </button>
               </div>
 
-              {/* 분석 결과 */}
-              {analysisResult && (
+              {/* 분석 결과 또는 분석 대기 메시지 */}
+              {analysisResult ? (
                 <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Sparkles className="w-4 h-4 text-primary" />
@@ -292,20 +298,42 @@ export function WizardStep2() {
                     </p>
                   )}
                 </div>
+              ) : referenceUrl && !isUploading && (
+                <div className="bg-secondary/50 border border-border rounded-xl p-4">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {t.imageAd?.method?.willAnalyzeOnNext || 'AI will analyze this image with product info when you click Next Step'}
+                    </span>
+                  </div>
+                </div>
               )}
             </div>
           ) : (
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-full flex flex-col items-center justify-center gap-3 py-12 border-2 border-dashed border-border rounded-xl hover:border-primary/50 hover:bg-secondary/30 transition-colors"
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`w-full flex flex-col items-center justify-center gap-3 py-12 border-2 border-dashed rounded-xl transition-colors ${
+                isDragging
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border hover:border-primary/50 hover:bg-secondary/30'
+              }`}
             >
-              <div className="w-16 h-16 bg-secondary/50 rounded-full flex items-center justify-center">
-                <Upload className="w-8 h-8 text-muted-foreground" />
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                isDragging ? 'bg-primary/20' : 'bg-secondary/50'
+              }`}>
+                <Upload className={`w-8 h-8 ${isDragging ? 'text-primary' : 'text-muted-foreground'}`} />
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium text-foreground">{t.imageAd?.method?.uploadImage || 'Upload Image'}</p>
+                <p className={`text-sm font-medium ${isDragging ? 'text-primary' : 'text-foreground'}`}>
+                  {isDragging
+                    ? (t.imageAd?.method?.dropHere || 'Drop image here')
+                    : (t.imageAd?.method?.uploadImage || 'Upload Image')}
+                </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {t.imageAd?.method?.uploadImageDesc || 'Upload a reference ad image'}
+                  {t.imageAd?.method?.dragOrClick || 'Drag & drop or click to select'}
                 </p>
               </div>
             </button>
@@ -341,16 +369,25 @@ export function WizardStep2() {
         </button>
 
         <button
-          onClick={goToNextStep}
-          disabled={!canProceed()}
+          onClick={handleNextStep}
+          disabled={!canProceed() || isAnalyzingReference}
           className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
-            canProceed()
+            canProceed() && !isAnalyzingReference
               ? 'bg-primary text-primary-foreground hover:bg-primary/90'
               : 'bg-secondary text-muted-foreground cursor-not-allowed'
           }`}
         >
-          {t.imageAd?.wizard?.nextStep || 'Next Step'}
-          <ChevronRight className="w-5 h-5" />
+          {isAnalyzingReference ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              {t.imageAd?.method?.analyzing || 'Analyzing style...'}
+            </>
+          ) : (
+            <>
+              {t.imageAd?.wizard?.nextStep || 'Next Step'}
+              <ChevronRight className="w-5 h-5" />
+            </>
+          )}
         </button>
       </div>
 

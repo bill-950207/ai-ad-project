@@ -288,30 +288,19 @@ export interface ReferenceStyleAnalysisInput {
     key: string
     options: string[]
   }[]
-  language?: string
-  hasAvatar?: boolean
-  avatarImageUrl?: string
-  avatarInfo?: {
-    type?: 'ai-generated' | 'avatar' | 'outfit'
-    avatarStyle?: {
-      vibe?: string
-      bodyType?: string
-      height?: string
-      gender?: string
-    }
-    aiOptions?: {
-      targetGender?: string
-      targetAge?: string
-      style?: string
-      ethnicity?: string
-      bodyType?: string
-    }
-  }
-  productImageUrl?: string
+  // 제품 정보 (컨텍스트 추가)
   productName?: string
   productDescription?: string
   productSellingPoints?: string[]
+  productImageUrl?: string
+  // 아바타 정보
+  hasAvatar?: boolean
+  avatarInfo?: AvatarInfoForScenario
+  avatarImageUrl?: string
+  // using 타입 전용
   productUsageMethod?: string
+  // 출력 언어
+  language?: string
 }
 
 /** 분석된 옵션 값 */
@@ -332,6 +321,8 @@ export interface ReferenceStyleAnalysisResult {
   recommendedAdType?: ImageAdType
   adTypeMatchConfidence?: number
   adTypeMatchReason?: string
+  // AI 아바타 추천 스타일 (AI 아바타 선택 시)
+  recommendedAvatarStyle?: RecommendedAvatarStyle
 }
 
 // ============================================================
