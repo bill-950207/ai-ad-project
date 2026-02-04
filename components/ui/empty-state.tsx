@@ -1,6 +1,9 @@
+'use client'
+
 import { cn } from "@/lib/utils";
 import { HTMLAttributes, forwardRef, ReactNode } from "react";
 import { Button, ButtonProps } from "./button";
+import { useLanguage } from "@/contexts/language-context";
 import {
   ImageIcon,
   VideoIcon,
@@ -12,6 +15,16 @@ import {
   AlertCircle,
   LucideIcon
 } from "lucide-react";
+
+type EmptyStateT = {
+  noImages?: { title?: string; description?: string };
+  noVideos?: { title?: string; description?: string };
+  noAvatars?: { title?: string; description?: string };
+  noMusic?: { title?: string; description?: string };
+  noProducts?: { title?: string; description?: string };
+  noResults?: { title?: string; description?: string };
+  error?: { title?: string; description?: string };
+};
 
 interface EmptyStateProps extends HTMLAttributes<HTMLDivElement> {
   /** Icon to display (can be a Lucide icon component or custom ReactNode) */
@@ -163,77 +176,91 @@ interface PresetEmptyStateProps extends Omit<EmptyStateProps, "icon" | "title" |
 }
 
 function NoImagesEmptyState({ customTitle, customDescription, ...props }: PresetEmptyStateProps) {
+  const { t } = useLanguage();
+  const emptyStateT = t.common?.emptyState as EmptyStateT | undefined;
   return (
     <EmptyState
       icon={ImageIcon}
-      title={customTitle || "No images yet"}
-      description={customDescription || "Create your first image ad to get started"}
+      title={customTitle || emptyStateT?.noImages?.title || "No images yet"}
+      description={customDescription || emptyStateT?.noImages?.description || "Create your first image ad to get started"}
       {...props}
     />
   );
 }
 
 function NoVideosEmptyState({ customTitle, customDescription, ...props }: PresetEmptyStateProps) {
+  const { t } = useLanguage();
+  const emptyStateT = t.common?.emptyState as EmptyStateT | undefined;
   return (
     <EmptyState
       icon={VideoIcon}
-      title={customTitle || "No videos yet"}
-      description={customDescription || "Create your first video ad to get started"}
+      title={customTitle || emptyStateT?.noVideos?.title || "No videos yet"}
+      description={customDescription || emptyStateT?.noVideos?.description || "Create your first video ad to get started"}
       {...props}
     />
   );
 }
 
 function NoAvatarsEmptyState({ customTitle, customDescription, ...props }: PresetEmptyStateProps) {
+  const { t } = useLanguage();
+  const emptyStateT = t.common?.emptyState as EmptyStateT | undefined;
   return (
     <EmptyState
       icon={UserCircle2}
-      title={customTitle || "No avatars yet"}
-      description={customDescription || "Create your first avatar to get started"}
+      title={customTitle || emptyStateT?.noAvatars?.title || "No avatars yet"}
+      description={customDescription || emptyStateT?.noAvatars?.description || "Create your first avatar to get started"}
       {...props}
     />
   );
 }
 
 function NoMusicEmptyState({ customTitle, customDescription, ...props }: PresetEmptyStateProps) {
+  const { t } = useLanguage();
+  const emptyStateT = t.common?.emptyState as EmptyStateT | undefined;
   return (
     <EmptyState
       icon={Music}
-      title={customTitle || "No music yet"}
-      description={customDescription || "Generate your first music track to get started"}
+      title={customTitle || emptyStateT?.noMusic?.title || "No music yet"}
+      description={customDescription || emptyStateT?.noMusic?.description || "Generate your first music track to get started"}
       {...props}
     />
   );
 }
 
 function NoProductsEmptyState({ customTitle, customDescription, ...props }: PresetEmptyStateProps) {
+  const { t } = useLanguage();
+  const emptyStateT = t.common?.emptyState as EmptyStateT | undefined;
   return (
     <EmptyState
       icon={Package}
-      title={customTitle || "No products yet"}
-      description={customDescription || "Add your first product to get started"}
+      title={customTitle || emptyStateT?.noProducts?.title || "No products yet"}
+      description={customDescription || emptyStateT?.noProducts?.description || "Add your first product to get started"}
       {...props}
     />
   );
 }
 
 function NoResultsEmptyState({ customTitle, customDescription, ...props }: PresetEmptyStateProps) {
+  const { t } = useLanguage();
+  const emptyStateT = t.common?.emptyState as EmptyStateT | undefined;
   return (
     <EmptyState
       icon={SearchX}
-      title={customTitle || "No results found"}
-      description={customDescription || "Try adjusting your search or filters"}
+      title={customTitle || emptyStateT?.noResults?.title || "No results found"}
+      description={customDescription || emptyStateT?.noResults?.description || "Try adjusting your search or filters"}
       {...props}
     />
   );
 }
 
 function ErrorEmptyState({ customTitle, customDescription, ...props }: PresetEmptyStateProps) {
+  const { t } = useLanguage();
+  const emptyStateT = t.common?.emptyState as EmptyStateT | undefined;
   return (
     <EmptyState
       icon={AlertCircle}
-      title={customTitle || "Something went wrong"}
-      description={customDescription || "An error occurred. Please try again."}
+      title={customTitle || emptyStateT?.error?.title || "Something went wrong"}
+      description={customDescription || emptyStateT?.error?.description || "An error occurred. Please try again."}
       {...props}
     />
   );

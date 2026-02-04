@@ -60,7 +60,37 @@
     "none": "なし",
     "notSelected": "未選択",
     "preview": "プレビュー",
-    "stop": "停止"
+    "stop": "停止",
+    "emptyState": {
+      "noImages": {
+        "title": "画像がありません",
+        "description": "最初の画像広告を作成しましょう"
+      },
+      "noVideos": {
+        "title": "動画がありません",
+        "description": "最初の動画広告を作成しましょう"
+      },
+      "noAvatars": {
+        "title": "アバターがありません",
+        "description": "最初のアバターを作成しましょう"
+      },
+      "noMusic": {
+        "title": "音楽がありません",
+        "description": "最初の音楽を生成しましょう"
+      },
+      "noProducts": {
+        "title": "製品がありません",
+        "description": "最初の製品を登録しましょう"
+      },
+      "noResults": {
+        "title": "結果が見つかりません",
+        "description": "検索条件を調整してみてください"
+      },
+      "error": {
+        "title": "問題が発生しました",
+        "description": "エラーが発生しました。もう一度お試しください。"
+      }
+    }
   },
   "modal": {
     "insufficientCredits": {

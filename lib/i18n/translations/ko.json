@@ -60,7 +60,37 @@
     "none": "없음",
     "notSelected": "선택 안됨",
     "preview": "미리보기",
-    "stop": "중지"
+    "stop": "중지",
+    "emptyState": {
+      "noImages": {
+        "title": "이미지가 없습니다",
+        "description": "첫 번째 이미지 광고를 만들어보세요"
+      },
+      "noVideos": {
+        "title": "영상이 없습니다",
+        "description": "첫 번째 영상 광고를 만들어보세요"
+      },
+      "noAvatars": {
+        "title": "아바타가 없습니다",
+        "description": "첫 번째 아바타를 만들어보세요"
+      },
+      "noMusic": {
+        "title": "음악이 없습니다",
+        "description": "첫 번째 음악을 생성해보세요"
+      },
+      "noProducts": {
+        "title": "제품이 없습니다",
+        "description": "첫 번째 제품을 등록해보세요"
+      },
+      "noResults": {
+        "title": "결과가 없습니다",
+        "description": "검색 조건을 조정해보세요"
+      },
+      "error": {
+        "title": "문제가 발생했습니다",
+        "description": "오류가 발생했습니다. 다시 시도해주세요."
+      }
+    }
   },
   "modal": {
     "insufficientCredits": {

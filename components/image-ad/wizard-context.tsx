@@ -268,13 +268,13 @@ export function ImageAdWizardProvider({
 
     // 초기 아바타 설정
     if (initialAvatarType === 'ai' && initialAiAvatarOptions) {
-      // AI 추천 아바타
+      // AI recommended avatar
       setSelectedAvatarInfo({
         type: 'ai-generated',
         avatarId: '',
-        avatarName: 'AI 추천',
+        avatarName: 'AI Recommended',
         imageUrl: '',
-        displayName: 'AI 추천 아바타',
+        displayName: 'AI Recommended Avatar',
       })
     } else if (initialAvatarType === 'avatar' && initialAvatarId) {
       // 기존 아바타

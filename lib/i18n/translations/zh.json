@@ -60,7 +60,37 @@
     "none": "无",
     "notSelected": "未选择",
     "preview": "预览",
-    "stop": "停止"
+    "stop": "停止",
+    "emptyState": {
+      "noImages": {
+        "title": "暂无图片",
+        "description": "创建您的第一个图片广告"
+      },
+      "noVideos": {
+        "title": "暂无视频",
+        "description": "创建您的第一个视频广告"
+      },
+      "noAvatars": {
+        "title": "暂无虚拟形象",
+        "description": "创建您的第一个虚拟形象"
+      },
+      "noMusic": {
+        "title": "暂无音乐",
+        "description": "生成您的第一首音乐"
+      },
+      "noProducts": {
+        "title": "暂无产品",
+        "description": "添加您的第一个产品"
+      },
+      "noResults": {
+        "title": "未找到结果",
+        "description": "请尝试调整搜索条件"
+      },
+      "error": {
+        "title": "出现问题",
+        "description": "发生错误，请重试。"
+      }
+    }
   },
   "modal": {
     "insufficientCredits": {

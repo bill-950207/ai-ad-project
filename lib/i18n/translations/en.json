@@ -60,7 +60,37 @@
     "none": "None",
     "notSelected": "Not selected",
     "preview": "Preview",
-    "stop": "Stop"
+    "stop": "Stop",
+    "emptyState": {
+      "noImages": {
+        "title": "No images yet",
+        "description": "Create your first image ad to get started"
+      },
+      "noVideos": {
+        "title": "No videos yet",
+        "description": "Create your first video ad to get started"
+      },
+      "noAvatars": {
+        "title": "No avatars yet",
+        "description": "Create your first avatar to get started"
+      },
+      "noMusic": {
+        "title": "No music yet",
+        "description": "Generate your first music track to get started"
+      },
+      "noProducts": {
+        "title": "No products yet",
+        "description": "Add your first product to get started"
+      },
+      "noResults": {
+        "title": "No results found",
+        "description": "Try adjusting your search or filters"
+      },
+      "error": {
+        "title": "Something went wrong",
+        "description": "An error occurred. Please try again."
+      }
+    }
   },
   "modal": {
     "insufficientCredits": {
