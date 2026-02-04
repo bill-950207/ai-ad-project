@@ -89,13 +89,14 @@ function BackgroundSlider({ images, interval = 4000 }: BackgroundSliderProps) {
 
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* 이미지 슬라이드 */}
+      {/* 이미지 슬라이드 - 호버 시 확대 효과 */}
       {hasAnyLoaded && images.map((src, index) => (
         <div
           key={src}
           className={`
             absolute inset-0 bg-cover bg-center
-            transition-opacity duration-1000 ease-in-out
+            transition-all duration-1000 ease-in-out
+            group-hover:scale-110
             ${index === currentIndex && loadedImages.has(src) ? 'opacity-100' : 'opacity-0'}
           `}
           style={{ backgroundImage: `url(${src})` }}
@@ -169,7 +170,8 @@ function VideoSlider({ videos }: VideoSliderProps) {
             onEnded={handleVideoEnded}
             className={`
               absolute inset-0 w-full h-full object-cover
-              transition-opacity duration-500 ease-in-out
+              transition-all duration-500 ease-in-out
+              group-hover:scale-110
               ${isCurrent ? 'opacity-100' : isPrevious ? 'opacity-100' : 'opacity-0'}
             `}
             style={{ zIndex: isCurrent ? 1 : 0 }}
