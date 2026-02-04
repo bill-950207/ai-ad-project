@@ -228,7 +228,7 @@ function AdCreationCard({
       <div className={`absolute inset-0 bg-gradient-to-br ${gradientFrom} via-card to-card -z-10`} />
 
       {/* 호버 시 밝아지는 효과 */}
-      <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-colors duration-300" />
+      <div className="absolute inset-0 z-[15] bg-white/0 group-hover:bg-white/5 transition-colors duration-300" />
 
       {/* 컨텐츠 */}
       <div className="relative z-10 h-full p-4 flex flex-col justify-between">
@@ -259,7 +259,7 @@ function AdCreationCard({
       <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10 group-hover:ring-white/20 transition-[box-shadow] duration-300" />
 
       {/* 호버 시 하단 악센트 라인 */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className={`absolute bottom-0 left-0 right-0 h-1 z-20 bg-gradient-to-r from-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${type === 'image' ? 'via-violet-500' : 'via-rose-500'}`} />
     </button>
   )
 }
