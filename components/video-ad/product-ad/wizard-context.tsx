@@ -17,7 +17,7 @@ export interface AdProduct {
 }
 
 export type WizardStep = 1 | 2 | 3 | 4 | 5
-export type ScenarioMethod = 'direct' | 'ai-auto' | 'reference'
+export type ScenarioMethod = 'direct' | 'ai-auto'
 export type AspectRatio = '16:9' | '9:16' | '1:1' | null
 export type VideoModel = 'vidu'
 export type VideoResolution = '720p' | '1080p'  // Vidu Q2 Turbo는 540p 미지원
@@ -114,14 +114,6 @@ export interface SceneVideoSegment {
   status: 'pending' | 'generating' | 'completed' | 'failed'
 }
 
-// 참조 영상 정보
-export interface ReferenceInfo {
-  type: 'file' | 'youtube'
-  url: string
-  file?: File
-  analyzedElements?: Partial<AdElementOptions>
-  analyzedDescription?: string
-}
 
 export interface ProductAdWizardState {
   // DB 연동
@@ -139,8 +131,6 @@ export interface ProductAdWizardState {
 
   // Step 2: 시나리오 설정 방식
   scenarioMethod: ScenarioMethod | null
-  referenceInfo: ReferenceInfo | null
-  isAnalyzingReference: boolean
 
   // Step 3: 시나리오 구성
   scenarioInfo: ScenarioInfo | null
@@ -202,8 +192,6 @@ export interface ProductAdWizardActions {
 
   // Step 2 actions
   setScenarioMethod: (method: ScenarioMethod | null) => void
-  setReferenceInfo: (info: ReferenceInfo | null) => void
-  setIsAnalyzingReference: (loading: boolean) => void
 
   // Step 3 actions
   setScenarioInfo: (info: ScenarioInfo | null) => void
@@ -309,8 +297,6 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
 
   // Step 2 상태
   const [scenarioMethod, setScenarioMethod] = useState<ScenarioMethod | null>(null)
-  const [referenceInfo, setReferenceInfo] = useState<ReferenceInfo | null>(null)
-  const [isAnalyzingReference, setIsAnalyzingReference] = useState(false)
 
   // Step 3 상태
   const [scenarioInfo, setScenarioInfo] = useState<ScenarioInfo | null>(null)
@@ -569,7 +555,6 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
         productId: selectedProduct?.id,
         productInfo: selectedProduct ? JSON.stringify(selectedProduct) : null,
         scenarioMethod,
-        referenceInfo: referenceInfo ? JSON.stringify(referenceInfo) : null,
         // 시나리오 정보에 영상 설정과 씬별 요소도 함께 저장
         scenarioInfo: scenarioInfo ? JSON.stringify({
           ...scenarioInfo,
@@ -631,7 +616,7 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
       setIsSaving(false)
     }
   }, [
-    draftId, step, selectedProduct, scenarioMethod, referenceInfo,
+    draftId, step, selectedProduct, scenarioMethod,
     scenarioInfo, aspectRatio, duration, sceneDurations, videoResolution, videoModel,
     sceneCount, sceneElements, firstSceneOptions, selectedSceneIndex, videoRequestIds,
     resultVideoUrls, sceneKeyframes, sceneVideoSegments
@@ -691,7 +676,6 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
       productId: selectedProduct?.id,
       productInfo: selectedProduct ? JSON.stringify(selectedProduct) : null,
       scenarioMethod,
-      referenceInfo: referenceInfo ? JSON.stringify(referenceInfo) : null,
       scenarioInfo: scenarioInfo ? JSON.stringify({
         ...scenarioInfo,
         _videoSettings: { videoResolution, videoModel, sceneCount, sceneDurations },
@@ -718,7 +702,7 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
 
     queueSave(payload)
   }, [
-    draftId, step, selectedProduct, scenarioMethod, referenceInfo,
+    draftId, step, selectedProduct, scenarioMethod,
     scenarioInfo, aspectRatio, duration, sceneDurations, videoResolution, videoModel,
     sceneCount, firstSceneOptions, selectedSceneIndex, videoRequestIds,
     resultVideoUrls, sceneKeyframes, sceneVideoSegments, queueSave
@@ -788,12 +772,6 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
 
       if (draft.scenario_method) {
         setScenarioMethod(draft.scenario_method as ScenarioMethod)
-      }
-
-      if (draft.reference_info) {
-        try {
-          setReferenceInfo(JSON.parse(draft.reference_info))
-        } catch { /* ignore */ }
       }
 
       if (draft.scenario_info) {
@@ -921,12 +899,8 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
   }, [selectedProduct])
 
   const canProceedToStep3 = useCallback(() => {
-    if (!scenarioMethod) return false
-    if (scenarioMethod === 'reference') {
-      return !!referenceInfo && !isAnalyzingReference
-    }
-    return true
-  }, [scenarioMethod, referenceInfo, isAnalyzingReference])
+    return !!scenarioMethod
+  }, [scenarioMethod])
 
   const canProceedToStep4 = useCallback(() => {
     // Step 3 → Step 4 (통합): 시나리오 + 영상 설정 + 씬별 요소 필수
@@ -994,8 +968,6 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
     setEditableDescription('')
     setEditableSellingPoints([''])
     setScenarioMethod(null)
-    setReferenceInfo(null)
-    setIsAnalyzingReference(false)
     setScenarioInfo(null)
     setIsGeneratingScenario(false)
     setGeneratedScenarios([])
@@ -1043,8 +1015,6 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
     editableDescription,
     editableSellingPoints,
     scenarioMethod,
-    referenceInfo,
-    isAnalyzingReference,
     scenarioInfo,
     isGeneratingScenario,
     generatedScenarios,
@@ -1088,8 +1058,6 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
     removeSellingPoint,
     updateSellingPoint,
     setScenarioMethod,
-    setReferenceInfo,
-    setIsAnalyzingReference,
     setScenarioInfo,
     setIsGeneratingScenario,
     setGeneratedScenarios,
