@@ -52,7 +52,45 @@
     "secondsShort": "秒",
     "failed": "失敗",
     "all": "すべて",
-    "processing": "処理中..."
+    "processing": "処理中...",
+    "done": "完了",
+    "female": "女性",
+    "male": "男性",
+    "navigationMenu": "ナビゲーションメニュー",
+    "none": "なし",
+    "notSelected": "未選択",
+    "preview": "プレビュー",
+    "stop": "停止",
+    "emptyState": {
+      "noImages": {
+        "title": "画像がありません",
+        "description": "最初の画像広告を作成しましょう"
+      },
+      "noVideos": {
+        "title": "動画がありません",
+        "description": "最初の動画広告を作成しましょう"
+      },
+      "noAvatars": {
+        "title": "アバターがありません",
+        "description": "最初のアバターを作成しましょう"
+      },
+      "noMusic": {
+        "title": "音楽がありません",
+        "description": "最初の音楽を生成しましょう"
+      },
+      "noProducts": {
+        "title": "製品がありません",
+        "description": "最初の製品を登録しましょう"
+      },
+      "noResults": {
+        "title": "結果が見つかりません",
+        "description": "検索条件を調整してみてください"
+      },
+      "error": {
+        "title": "問題が発生しました",
+        "description": "エラーが発生しました。もう一度お試しください。"
+      }
+    }
   },
   "modal": {
     "insufficientCredits": {
@@ -222,6 +260,89 @@
     "allPlansCancelable": "すべての有料プランはいつでも解約できます。解約後も次回請求日までサービスをご利用いただけ、生成したコンテンツは保存されます。",
     "watermarkIncluded": "ウォーターマーク付き",
     "unlimited": "無制限"
+  },
+  "pricing": {
+    "plans": {
+      "free": {
+        "description": "始めるのに最適",
+        "features": [
+          "AIアバター生成",
+          "AIバックグラウンドミュージック",
+          "自動背景除去",
+          "一度に1枚",
+          "最短動画のみ",
+          "ウォーターマーク付き"
+        ],
+        "limits": {
+          "avatars": "最大3個",
+          "music": "最大5個",
+          "products": "最大3個",
+          "credits": "15クレジット（初回のみ）",
+          "imageEstimate": "~7枚の広告画像"
+        }
+      },
+      "starter": {
+        "description": "個人クリエイター向け",
+        "valueHighlight": "4倍お得",
+        "features": [
+          "Freeの全機能",
+          "ウォーターマークなし",
+          "HDアップスケーリング",
+          "一度に5枚まで",
+          "カスタム動画長",
+          "優先処理"
+        ],
+        "limits": {
+          "avatars": "最大9個",
+          "music": "最大15個",
+          "products": "最大9個",
+          "credits": "120クレジット/月",
+          "imageEstimate": "~60枚の広告画像",
+          "videoEstimate": "~12本の広告動画"
+        }
+      },
+      "pro": {
+        "description": "プロフェッショナル向け",
+        "valueHighlight": "画像1枚$0.14",
+        "features": [
+          "Starterの全機能",
+          "最優先処理",
+          "高品質画像",
+          "動画3本同時",
+          "Proテンプレート",
+          "プレミアムサポート"
+        ],
+        "limits": {
+          "avatars": "最大30個",
+          "music": "最大50個",
+          "products": "最大30個",
+          "credits": "420クレジット/月",
+          "imageEstimate": "~210枚の広告画像",
+          "videoEstimate": "~42本の広告動画"
+        }
+      },
+      "business": {
+        "description": "チーム・企業向け",
+        "valueHighlight": "画像1枚$0.12",
+        "features": [
+          "Proの全機能",
+          "無制限コンテンツ",
+          "専任サポート",
+          "APIアクセス",
+          "チームコラボレーション",
+          "カスタムブランディング",
+          "優先アップデート"
+        ],
+        "limits": {
+          "avatars": "無制限",
+          "music": "無制限",
+          "products": "無制限",
+          "credits": "1,600クレジット/月",
+          "imageEstimate": "~800枚の広告画像",
+          "videoEstimate": "~160本の広告動画"
+        }
+      }
+    }
   },
   "showcase": {
     "title": "制作事例",
@@ -702,7 +823,11 @@
       "analyzingImage": "画像を分析中...",
       "selectMethod": "設定方法を選択してください",
       "uploadError": "画像のアップロード中にエラーが発生しました",
-      "analysisError": "画像の分析中にエラーが発生しました"
+      "analysisError": "画像の分析中にエラーが発生しました",
+      "invalidFileType": "画像ファイルをアップロードしてください",
+      "dropHere": "ここに画像をドロップ",
+      "dragOrClick": "ドラッグ＆ドロップまたはクリックして選択",
+      "willAnalyzeOnNext": "次へをクリックすると、AIがこの画像を商品情報と一緒に分析します"
     },
     "options": {
       "title": "詳細オプション設定",
@@ -848,11 +973,22 @@
     "sellingPoints": "セールスポイント",
     "sellingPointPlaceholder": "例：100%天然素材",
     "addSellingPoint": "セールスポイントを追加",
-    "noProductInfo": "登録された製品情報がありません"
+    "noProductInfo": "登録された製品情報がありません",
+    "compareProductSize": "アバターと製品サイズを比較",
+    "imageLoadFailed": "画像を読み込めません"
   },
   "videoAd": {
     "title": "動画広告",
     "subtitle": "AIで動画広告を作成します",
+    "createTitle": "動画広告を作成",
+    "categories": {
+      "productDescription": "製品説明",
+      "avatarMotion": "アバターモーション",
+      "productAd": "製品広告",
+      "productShowcase": "製品ショーケース",
+      "lifestyle": "ライフスタイル",
+      "testimonial": "レビュー動画"
+    },
     "myVideos": "動画広告",
     "createAd": "動画広告作成",
     "emptyAds": "作成された動画広告がありません",
@@ -957,6 +1093,12 @@
       "inProgress": "生成中",
       "completed": "完了",
       "failed": "失敗"
+    },
+    "stepNames": {
+      "productDescription": ["製品/アバター", "動画情報", "台本/音声", "生成"],
+      "avatarMotion": ["アバター/製品", "ストーリーモード", "シナリオ", "設定", "フレーム生成", "動画生成"],
+      "productAd": ["製品", "モード", "シナリオ", "設定", "最初のシーン", "動画生成"],
+      "step": "ステップ"
     },
     "alerts": {
       "deleteFailed": "削除に失敗しました",
@@ -1725,6 +1867,7 @@
     "numImages": "生成枚数",
     "recentAds": "最近生成した広告",
     "viewOriginal": "原本を見る",
+    "directUpload": "直接アップロード",
     "options": {
       "background": "背景スタイル",
       "lighting": "照明",
@@ -2562,6 +2705,7 @@
     "maxPhotos": "最大5枚",
     "processing": "処理中...",
     "newProduct": "新商品",
+    "imageSpec": "PNG, JPG, WEBP / 最大5MB / 256~4096px",
     "validation": {
       "enterProductName": "商品名を入力してください",
       "selectProductImage": "商品画像を選択してください",

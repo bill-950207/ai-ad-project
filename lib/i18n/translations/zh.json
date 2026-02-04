@@ -52,7 +52,45 @@
     "secondsShort": "秒",
     "failed": "失败",
     "all": "全部",
-    "processing": "处理中..."
+    "processing": "处理中...",
+    "done": "完成",
+    "female": "女性",
+    "male": "男性",
+    "navigationMenu": "导航菜单",
+    "none": "无",
+    "notSelected": "未选择",
+    "preview": "预览",
+    "stop": "停止",
+    "emptyState": {
+      "noImages": {
+        "title": "暂无图片",
+        "description": "创建您的第一个图片广告"
+      },
+      "noVideos": {
+        "title": "暂无视频",
+        "description": "创建您的第一个视频广告"
+      },
+      "noAvatars": {
+        "title": "暂无虚拟形象",
+        "description": "创建您的第一个虚拟形象"
+      },
+      "noMusic": {
+        "title": "暂无音乐",
+        "description": "生成您的第一首音乐"
+      },
+      "noProducts": {
+        "title": "暂无产品",
+        "description": "添加您的第一个产品"
+      },
+      "noResults": {
+        "title": "未找到结果",
+        "description": "请尝试调整搜索条件"
+      },
+      "error": {
+        "title": "出现问题",
+        "description": "发生错误，请重试。"
+      }
+    }
   },
   "modal": {
     "insufficientCredits": {
@@ -222,6 +260,89 @@
     "allPlansCancelable": "所有付费方案均可随时取消。取消后可继续使用至下一个账单日期，您创建的内容将继续保留。",
     "watermarkIncluded": "含水印",
     "unlimited": "无限"
+  },
+  "pricing": {
+    "plans": {
+      "free": {
+        "description": "入门的完美选择",
+        "features": [
+          "AI虚拟形象生成",
+          "AI背景音乐",
+          "自动背景移除",
+          "每次1张图片",
+          "仅限最短视频",
+          "包含水印"
+        ],
+        "limits": {
+          "avatars": "最多3个",
+          "music": "最多5个",
+          "products": "最多3个",
+          "credits": "15积分（一次性）",
+          "imageEstimate": "~7张广告图片"
+        }
+      },
+      "starter": {
+        "description": "适合个人创作者",
+        "valueHighlight": "性价比高4倍",
+        "features": [
+          "Free全部功能",
+          "无水印",
+          "高清升级",
+          "每次最多5张",
+          "自定义视频时长",
+          "优先处理"
+        ],
+        "limits": {
+          "avatars": "最多9个",
+          "music": "最多15个",
+          "products": "最多9个",
+          "credits": "120积分/月",
+          "imageEstimate": "~60张广告图片",
+          "videoEstimate": "~12个广告视频"
+        }
+      },
+      "pro": {
+        "description": "适合专业人士",
+        "valueHighlight": "每张图片$0.14",
+        "features": [
+          "Starter全部功能",
+          "最高优先级处理",
+          "高质量图片",
+          "同时处理3个视频",
+          "Pro模板",
+          "高级支持"
+        ],
+        "limits": {
+          "avatars": "最多30个",
+          "music": "最多50个",
+          "products": "最多30个",
+          "credits": "420积分/月",
+          "imageEstimate": "~210张广告图片",
+          "videoEstimate": "~42个广告视频"
+        }
+      },
+      "business": {
+        "description": "适合团队和企业",
+        "valueHighlight": "每张图片$0.12",
+        "features": [
+          "Pro全部功能",
+          "无限内容",
+          "专属支持",
+          "API访问",
+          "团队协作",
+          "自定义品牌",
+          "优先更新"
+        ],
+        "limits": {
+          "avatars": "无限",
+          "music": "无限",
+          "products": "无限",
+          "credits": "1,600积分/月",
+          "imageEstimate": "~800张广告图片",
+          "videoEstimate": "~160个广告视频"
+        }
+      }
+    }
   },
   "showcase": {
     "title": "作品展示",
@@ -702,7 +823,11 @@
       "analyzingImage": "正在分析图片...",
       "selectMethod": "请选择设置方式",
       "uploadError": "上传图片时发生错误",
-      "analysisError": "分析图片时发生错误"
+      "analysisError": "分析图片时发生错误",
+      "invalidFileType": "请上传图片文件",
+      "dropHere": "将图片拖放到这里",
+      "dragOrClick": "拖放或点击选择",
+      "willAnalyzeOnNext": "点击下一步时，AI将结合产品信息分析此图片"
     },
     "options": {
       "title": "详细选项设置",
@@ -848,11 +973,22 @@
     "sellingPoints": "卖点",
     "sellingPointPlaceholder": "例如：100%天然材料",
     "addSellingPoint": "添加卖点",
-    "noProductInfo": "暂无产品信息"
+    "noProductInfo": "暂无产品信息",
+    "compareProductSize": "与虚拟形象比较产品大小",
+    "imageLoadFailed": "无法加载图片"
   },
   "videoAd": {
     "title": "视频广告",
     "subtitle": "用AI创建视频广告",
+    "createTitle": "创建视频广告",
+    "categories": {
+      "productDescription": "产品说明",
+      "avatarMotion": "虚拟形象动态",
+      "productAd": "产品广告",
+      "productShowcase": "产品展示",
+      "lifestyle": "生活方式",
+      "testimonial": "评价视频"
+    },
     "myVideos": "我的视频广告",
     "createAd": "创建视频广告",
     "emptyAds": "暂无创建的视频广告",
@@ -957,6 +1093,12 @@
       "inProgress": "生成中",
       "completed": "已完成",
       "failed": "失败"
+    },
+    "stepNames": {
+      "productDescription": ["产品/虚拟形象", "视频信息", "脚本/语音", "生成"],
+      "avatarMotion": ["虚拟形象/产品", "故事模式", "场景", "设置", "帧生成", "视频生成"],
+      "productAd": ["产品", "模式", "场景", "设置", "第一个镜头", "视频生成"],
+      "step": "步骤"
     },
     "alerts": {
       "deleteFailed": "删除失败",
@@ -1725,6 +1867,7 @@
     "numImages": "图片数量",
     "recentAds": "最近广告",
     "viewOriginal": "查看原图",
+    "directUpload": "直接上传",
     "options": {
       "background": "背景风格",
       "lighting": "灯光",
@@ -2562,6 +2705,7 @@
     "maxPhotos": "最多5张",
     "processing": "处理中...",
     "newProduct": "新产品",
+    "imageSpec": "PNG, JPG, WEBP / 最大5MB / 256~4096px",
     "validation": {
       "enterProductName": "请输入产品名称",
       "selectProductImage": "请选择产品图片",
