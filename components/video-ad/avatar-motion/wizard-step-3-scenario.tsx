@@ -527,7 +527,7 @@ export function WizardStep3Scenario() {
 
       {/* 시나리오 수정 모달 */}
       {showModifyModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 !m-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-background rounded-2xl shadow-xl w-full max-w-md">
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-3">

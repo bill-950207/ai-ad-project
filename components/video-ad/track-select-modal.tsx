@@ -106,7 +106,7 @@ export function TrackSelectModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60">
+    <div className="fixed inset-0 z-[60] !m-0 flex items-center justify-center bg-black/60">
       <div className="bg-card border border-border rounded-xl w-full max-w-lg overflow-hidden">
         {/* 헤더 */}
         <div className="flex items-center justify-between p-4 border-b border-border">

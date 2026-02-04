@@ -157,9 +157,9 @@ export function OnboardingFlowModal() {
   return (
     <div
       className={`
-        fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8
+        fixed inset-0 z-50 !m-0 flex items-center justify-center p-4 md:p-8
         transition-[background-color,backdrop-filter] duration-300 ease-out motion-reduce:transition-none
-        ${isEntering ? 'bg-black/90 backdrop-blur-sm' : 'bg-black/0 backdrop-blur-none'}
+        ${isEntering ? 'bg-black/60 backdrop-blur-sm' : 'bg-black/0 backdrop-blur-none'}
       `}
       onClick={handleBackdropClick}
       role="dialog"
