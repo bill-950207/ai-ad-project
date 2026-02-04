@@ -823,7 +823,11 @@
       "analyzingImage": "Analyzing image...",
       "selectMethod": "Please select a setting method",
       "uploadError": "An error occurred while uploading the image",
-      "analysisError": "An error occurred while analyzing the image"
+      "analysisError": "An error occurred while analyzing the image",
+      "invalidFileType": "Please upload an image file",
+      "dropHere": "Drop image here",
+      "dragOrClick": "Drag & drop or click to select",
+      "willAnalyzeOnNext": "AI will analyze this image with product info when you click Next Step"
     },
     "options": {
       "title": "Detailed Options",

@@ -823,7 +823,11 @@
       "analyzingImage": "이미지 분석 중입니다...",
       "selectMethod": "설정 방식을 선택해주세요",
       "uploadError": "이미지 업로드 중 오류가 발생했습니다",
-      "analysisError": "이미지 분석 중 오류가 발생했습니다"
+      "analysisError": "이미지 분석 중 오류가 발생했습니다",
+      "invalidFileType": "이미지 파일을 업로드해주세요",
+      "dropHere": "이미지를 여기에 놓으세요",
+      "dragOrClick": "드래그 앤 드롭 또는 클릭하여 선택",
+      "willAnalyzeOnNext": "다음 단계 클릭 시 AI가 이 이미지를 제품 정보와 함께 분석합니다"
     },
     "options": {
       "title": "상세 옵션 설정",

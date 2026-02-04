@@ -823,7 +823,11 @@
       "analyzingImage": "正在分析图片...",
       "selectMethod": "请选择设置方式",
       "uploadError": "上传图片时发生错误",
-      "analysisError": "分析图片时发生错误"
+      "analysisError": "分析图片时发生错误",
+      "invalidFileType": "请上传图片文件",
+      "dropHere": "将图片拖放到这里",
+      "dragOrClick": "拖放或点击选择",
+      "willAnalyzeOnNext": "点击下一步时，AI将结合产品信息分析此图片"
     },
     "options": {
       "title": "详细选项设置",

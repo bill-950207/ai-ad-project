@@ -145,6 +145,7 @@ function FilterTab({ active, onClick, icon, label }: {
 }
 
 function ShowcaseCard({ showcase, index }: { showcase: Showcase; index: number }) {
+  const { t } = useLanguage()
   const [isHovered, setIsHovered] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -222,7 +223,7 @@ function ShowcaseCard({ showcase, index }: { showcase: Showcase; index: number }
             : 'bg-accent/80 text-accent-foreground'
         )}>
           {showcase.type === 'video' ? <Film className="h-3 w-3" /> : <ImageIcon className="h-3 w-3" />}
-          {showcase.type === 'video' ? 'Video' : 'Image'}
+          {showcase.type === 'video' ? (t.landing?.filterVideo || 'Video') : (t.landing?.filterImage || 'Image')}
         </span>
       </div>
 
