@@ -276,20 +276,24 @@ export async function generateAiAvatarPrompt(input: AiAvatarPromptInput): Promis
   const hairStyleText = hairStyleMap[input.hairStyle || 'any'] || ''
   const hairColorText = hairColorMap[input.hairColor || 'any'] || ''
 
-  // 카메라 구도: 프리셋 > 직접 입력 > 기본값
-  const cameraConfig = input.cameraComposition
+  // 카메라 구도: 프리셋 > 직접 입력 > 기본값 (안전한 fallback 포함)
+  const defaultCameraConfig = { description: 'natural framing', aperture: 'f/11', lens: '35mm' }
+  const cameraConfig = (input.cameraComposition && cameraCompositionDescriptions[input.cameraComposition])
     ? cameraCompositionDescriptions[input.cameraComposition]
-    : { description: 'natural framing', aperture: 'f/11', lens: '35mm' }
+    : defaultCameraConfig
 
-  const cameraSection = input.cameraComposition
+  const cameraSection = input.cameraComposition && cameraCompositionDescriptions[input.cameraComposition]
     ? `카메라 구도: ${cameraConfig.description}\n카메라 스펙: Shot on Sony A7IV, ${cameraConfig.lens} ${cameraConfig.aperture}, deep depth of field`
     : input.cameraCompositionPrompt
       ? `카메라 구도: ${input.cameraCompositionPrompt}\n카메라 스펙: Shot on Sony A7IV, 35mm f/11, deep depth of field`
-      : `카메라 구도: ${cameraConfig.description}\n카메라 스펙: Shot on Sony A7IV, ${cameraConfig.lens} ${cameraConfig.aperture}, deep depth of field`
+      : `카메라 구도: ${defaultCameraConfig.description}\n카메라 스펙: Shot on Sony A7IV, ${defaultCameraConfig.lens} ${defaultCameraConfig.aperture}, deep depth of field`
 
-  // 포즈: 프리셋 > 직접 입력 > 비디오 타입 기본값
-  const poseSection = input.modelPose
-    ? `모델 포즈: ${modelPoseDescriptions[input.modelPose]}`
+  // 포즈: 프리셋 > 직접 입력 > 비디오 타입 기본값 (안전한 fallback 포함)
+  const poseDescription = input.modelPose && modelPoseDescriptions[input.modelPose]
+    ? modelPoseDescriptions[input.modelPose]
+    : null
+  const poseSection = poseDescription
+    ? `모델 포즈: ${poseDescription}`
     : input.modelPosePrompt
       ? `모델 포즈: ${input.modelPosePrompt}`
       : `모델 포즈: ${videoTypeGuide.posePrompt}`

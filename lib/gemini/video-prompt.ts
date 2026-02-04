@@ -452,13 +452,16 @@ IMPORTANT: All 3 scripts should follow the "${videoTypeStyle.korean}" video styl
     : ''
 
   // AI 의상 추천 섹션 (requestOutfitRecommendation이 true일 때만 추가) - 다국어 지원
+  const locationDescription = input.locationPreset
+    ? (locationPresetDescriptions[input.locationPreset] || input.locationPreset)
+    : null
   const outfitRecommendationSection = input.requestOutfitRecommendation
     ? `
 === OUTFIT RECOMMENDATION (REQUIRED) ===
 Creatively recommend an outfit that harmonizes with all the following elements:
 ${input.avatarDescription ? `Model: ${input.avatarDescription}` : ''}
 ${input.productImageUrl ? `Product: Image provided for reference` : ''}
-${input.locationPreset ? `Location: ${input.locationPreset}` : ''}
+${locationDescription ? `Location/Setting: ${locationDescription}` : ''}
 Video Style: ${videoTypeStyle?.korean || 'UGC'}
 
 === CREATIVE GUIDELINES ===
@@ -630,6 +633,36 @@ Before responding, check:
   }
 }
 
+// 배경/장소 프리셋 설명 (의상 추천용)
+const locationPresetDescriptions: Record<string, string> = {
+  // AI 추천
+  auto: 'AI-selected optimal location',
+  // UGC용
+  living_room: 'cozy living room at home',
+  bedroom: 'comfortable bedroom setting',
+  cafe: 'trendy cafe interior',
+  outdoor: 'bright outdoor natural setting',
+  bathroom: 'clean bathroom/vanity area',
+  // Podcast용
+  home_office: 'clean home office workspace',
+  study: 'intellectual study with bookshelves',
+  podcast_studio: 'professional podcast studio with mic/lighting',
+  podcast_desk: 'podcast setting at desk with microphone',
+  podcast_sofa: 'relaxed podcast setting on sofa/armchair',
+  // Expert용
+  studio: 'professional studio with solid background',
+  office: 'corporate office environment',
+  meeting_room: 'professional meeting/conference room',
+  minimal: 'minimal white/gray background',
+  lab: 'scientific laboratory/research setting',
+  clinic: 'medical clinic/doctor office',
+  lecture_hall: 'educational lecture hall/classroom',
+  broadcast_studio: 'TV broadcast/news studio',
+  conference_stage: 'conference/keynote presentation stage',
+  // 직접 입력
+  custom: 'custom user-specified location',
+}
+
 // 카메라 구도 설명 (영상 스타일별로 최적화된 프롬프트)
 const cameraCompositionDescriptions: Record<CameraCompositionType, string> = {
   // 공통
@@ -698,16 +731,22 @@ export async function generateFirstFramePrompt(input: FirstFramePromptInput): Pr
     ? `Location: ${input.locationPrompt}`
     : `Location: ${videoTypeGuide.environmentPrompt}`
 
-  // 카메라 구도: 프리셋 > 직접 입력 > 비디오 타입 기본값
-  const cameraSection = input.cameraComposition
-    ? `Camera: ${cameraCompositionDescriptions[input.cameraComposition]}`
+  // 카메라 구도: 프리셋 > 직접 입력 > 비디오 타입 기본값 (안전한 fallback 포함)
+  const cameraDesc = input.cameraComposition && cameraCompositionDescriptions[input.cameraComposition]
+    ? cameraCompositionDescriptions[input.cameraComposition]
+    : null
+  const cameraSection = cameraDesc
+    ? `Camera: ${cameraDesc}`
     : input.cameraCompositionPrompt
       ? `Camera: ${input.cameraCompositionPrompt}`
       : ''
 
-  // 포즈: 프리셋 > 직접 입력 > 비디오 타입 기본값
-  const poseSection = input.modelPose
-    ? `Pose: ${modelPoseDescriptions[input.modelPose]}`
+  // 포즈: 프리셋 > 직접 입력 > 비디오 타입 기본값 (안전한 fallback 포함)
+  const poseDesc = input.modelPose && modelPoseDescriptions[input.modelPose]
+    ? modelPoseDescriptions[input.modelPose]
+    : null
+  const poseSection = poseDesc
+    ? `Pose: ${poseDesc}`
     : input.modelPosePrompt
       ? `Pose: ${input.modelPosePrompt}`
       : `Pose: ${videoTypeGuide.posePrompt}`
