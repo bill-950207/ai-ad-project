@@ -48,6 +48,17 @@ export function Navbar() {
   const isLocaleLandingPage = pathname ? locales.some(loc => pathname === `/${loc}`) : false
   const currentLocaleFromUrl = pathname ? locales.find(loc => pathname === `/${loc}`) : null
 
+  // 현재 랜딩 페이지인지 확인 (/, /ko, /en, /ja, /zh)
+  const isLandingPage = pathname === '/' || isLocaleLandingPage
+
+  // 앵커 링크의 href 계산 (랜딩 페이지가 아닌 곳에서는 / 추가)
+  const getAnchorHref = (anchor: string) => {
+    if (isLandingPage) {
+      return anchor  // #features
+    }
+    return `/${anchor}`  // /#features
+  }
+
   // 언어 변경 핸들러
   const handleLanguageChange = (newLang: Locale) => {
     setLanguage(newLang)
@@ -166,7 +177,7 @@ export function Navbar() {
                 link.href.startsWith('#') ? (
                   <a
                     key={link.href}
-                    href={link.href}
+                    href={getAnchorHref(link.href)}
                     className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-secondary/50"
                   >
                     {link.label}
@@ -339,7 +350,7 @@ export function Navbar() {
               return link.href.startsWith('#') ? (
                 <a
                   key={link.href}
-                  href={link.href}
+                  href={getAnchorHref(link.href)}
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-3 px-4 py-3 text-foreground rounded-xl hover:bg-secondary/50 transition-colors"
                 >
