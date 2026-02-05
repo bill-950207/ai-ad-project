@@ -396,7 +396,7 @@ export function AvatarSelectModal({
                   </Link>
                 </div>
               ) : (
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-5 gap-3">
                   {avatars.map((avatar) => {
                     const isAvatarSelected = selectedAvatarId === avatar.id && selectedType === 'avatar'
 
@@ -446,7 +446,7 @@ export function AvatarSelectModal({
                   </div>
 
                   {/* 프리셋 아바타 그리드 */}
-                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
+                  <div className="grid grid-cols-5 gap-3">
                     {defaultAvatars.map((preset) => {
                       const isSelected = selectedAvatarId === preset.id && selectedType === 'preset'
 
