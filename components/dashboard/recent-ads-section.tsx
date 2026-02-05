@@ -283,8 +283,8 @@ export function RecentAdsSection() {
         </button>
       </div>
 
-      {/* 광고 그리드 - 한 줄 */}
-      <div className="grid grid-cols-5 gap-3">
+      {/* 광고 그리드 - 반응형 */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
         {items.map((item) => (
           <RecentAdCard
             key={`${item.type}-${item.id}`}

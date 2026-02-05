@@ -9,10 +9,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const { isCollapsed } = useSidebar()
 
   return (
-    <div className="flex -mt-16">
+    <div className="flex -mt-16 overflow-x-hidden">
       <Sidebar />
       <main className={cn(
-        "flex-1 p-6 min-h-screen transition-all duration-300",
+        "flex-1 p-6 min-h-screen transition-all duration-300 overflow-x-hidden",
         // 데스크톱: 사이드바 너비에 따라 margin 조정
         "md:ml-64",
         isCollapsed && "md:ml-[72px]",

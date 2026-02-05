@@ -353,16 +353,31 @@
   "dashboard": {
     "title": "ダッシュボード",
     "subtitle": "AI広告コンテンツの作成を始めましょう",
+    "createImageAd": "画像広告を作成",
+    "createVideoAd": "動画広告を作成",
     "totalAds": "総広告数",
     "thisMonth": "今月",
     "creditsRemaining": "残りクレジット",
-    "quickActions": "クイックアクション",
+    "quickActions": {
+      "title": "",
+      "product": "広告製品を登録",
+      "productDesc": "広告用の製品を登録",
+      "avatar": "アバターを作成",
+      "avatarDesc": "AIアバターの作成と管理",
+      "music": "広告音楽を作成",
+      "musicDesc": "AI背景音楽を生成"
+    },
     "recentActivity": "最近のアクティビティ",
     "noRecentActivity": "最近のアクティビティはありません",
     "showcase": {
       "title": "こんな広告が作れます",
       "browse": "広告を見る",
-      "cta": "自分だけの広告を作る"
+      "browseDesc": "様々なAI広告の例をご覧ください",
+      "cta": "自分だけの広告を作る",
+      "imageTitle": "画像広告の例",
+      "imageDesc": "様々なスタイルのAI画像広告をご覧ください",
+      "videoTitle": "動画広告の例",
+      "videoDesc": "様々なスタイルのAI動画広告をご覧ください"
     },
     "recentWork": {
       "title": "最近の作業",
