@@ -1211,6 +1211,7 @@
     "configureOptions": "设置详细选项",
     "selectedOptions": "已选选项",
     "allAutoDesc": "所有选项已设为自动 - AI将根据产品自动选择",
+    "myOwnAvatars": "我的形象",
     "presetAvatars": "预设形象",
     "noUserAvatars": "暂无创建的虚拟形象",
     "createMyAvatar": "创建我的形象"

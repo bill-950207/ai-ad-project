@@ -1211,6 +1211,7 @@
     "configureOptions": "상세 옵션 설정",
     "selectedOptions": "선택된 옵션",
     "allAutoDesc": "모든 옵션이 자동 설정됨 - AI가 제품에 맞게 선택합니다",
+    "myOwnAvatars": "내 소유 아바타",
     "presetAvatars": "프리셋 아바타",
     "noUserAvatars": "등록된 아바타가 없습니다",
     "createMyAvatar": "내 아바타 만들기"

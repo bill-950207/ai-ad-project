@@ -373,7 +373,7 @@ export function AvatarSelectModal({
           {/* 구분선 */}
           <div className="flex items-center gap-3 my-4">
             <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground">{t.avatarSelect?.orSelectExisting || 'or select existing avatar'}</span>
+            <span className="text-xs text-muted-foreground">{t.avatarSelect?.myOwnAvatars || 'My Avatars'}</span>
             <div className="flex-1 h-px bg-border" />
           </div>
 

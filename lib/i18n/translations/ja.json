@@ -1211,6 +1211,7 @@
     "configureOptions": "詳細オプションを設定",
     "selectedOptions": "選択したオプション",
     "allAutoDesc": "すべてのオプションが自動設定 - AIが商品に合わせて選択します",
+    "myOwnAvatars": "マイアバター",
     "presetAvatars": "プリセットアバター",
     "noUserAvatars": "登録されたアバターがありません",
     "createMyAvatar": "マイアバターを作成"

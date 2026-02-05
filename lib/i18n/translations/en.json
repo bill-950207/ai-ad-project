@@ -1211,6 +1211,7 @@
     "configureOptions": "Configure Detailed Options",
     "selectedOptions": "Selected Options",
     "allAutoDesc": "All options set to auto - AI will choose based on product",
+    "myOwnAvatars": "My Avatars",
     "presetAvatars": "Preset Avatars",
     "noUserAvatars": "No avatars created yet",
     "createMyAvatar": "Create My Avatar"
