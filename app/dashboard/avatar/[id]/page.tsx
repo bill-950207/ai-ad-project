@@ -343,7 +343,7 @@ export default function AvatarDetailPage() {
       const res = await fetch('/api/me')
       if (res.ok) {
         const data = await res.json()
-        setIsAdmin(data.user?.role === 'ADMIN')
+        setIsAdmin(data.data?.role === 'ADMIN')
       }
     } catch (error) {
       console.error('User fetch error:', error)
