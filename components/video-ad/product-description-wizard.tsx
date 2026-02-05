@@ -21,6 +21,7 @@ import {
   Check,
   ChevronDown,
   Clock,
+  Coins,
   Edit3,
   Expand,
   Globe,
@@ -3474,6 +3475,28 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
         </div>
       )}
       </div>
+
+      {/* 크레딧 표시 (왼쪽 하단 고정) */}
+      {!isGeneratingVideo && (
+        <div className="fixed bottom-6 left-6 z-50">
+          <div className="flex items-center gap-3 px-4 py-2.5 bg-card border border-border rounded-xl shadow-lg">
+            <div className="flex items-center gap-2">
+              <Coins className="w-4 h-4 text-primary" />
+              <span className="text-sm text-muted-foreground">
+                {(t.imageAd as { generate?: { yourCredits?: string } } | undefined)?.generate?.yourCredits || 'Credits'}
+              </span>
+              <span className="font-semibold text-foreground">{credits ?? '-'}</span>
+            </div>
+            <div className="w-px h-4 bg-border" />
+            <Link
+              href="/dashboard/subscription"
+              className="text-sm text-primary hover:underline font-medium"
+            >
+              {(t.imageAd as { generate?: { upgradePlan?: string } } | undefined)?.generate?.upgradePlan || 'Upgrade'}
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

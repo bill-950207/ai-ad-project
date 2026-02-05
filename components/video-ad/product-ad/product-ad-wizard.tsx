@@ -3,14 +3,53 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Check, Loader2, Package } from 'lucide-react'
+import { ArrowLeft, Check, Coins, Loader2, Package } from 'lucide-react'
 import { ProductAdWizardProvider, useProductAdWizard, WizardStep } from './wizard-context'
+import { useCredits } from '@/contexts/credit-context'
 import { WizardStep1 } from './wizard-step-1'
 import { WizardStep2 } from './wizard-step-2'
 import { WizardStep3 } from './wizard-step-3'
 import { WizardStep4 } from './wizard-step-4'
 import { WizardStep5 } from './wizard-step-5'
 import { useLanguage } from '@/contexts/language-context'
+
+// ============================================================
+// 크레딧 표시 컴포넌트 (왼쪽 하단 고정)
+// ============================================================
+
+function CreditDisplay() {
+  const { t } = useLanguage()
+  const { credits } = useCredits()
+  const { isGeneratingVideo, resultVideoUrls } = useProductAdWizard()
+
+  const imageAdT = t.imageAd as { generate?: { yourCredits?: string; upgradePlan?: string } } | undefined
+
+  // 결과 화면 또는 생성 중에는 숨김
+  if (resultVideoUrls.length > 0 || isGeneratingVideo) {
+    return null
+  }
+
+  return (
+    <div className="fixed bottom-6 left-6 z-50">
+      <div className="flex items-center gap-3 px-4 py-2.5 bg-card border border-border rounded-xl shadow-lg">
+        <div className="flex items-center gap-2">
+          <Coins className="w-4 h-4 text-primary" />
+          <span className="text-sm text-muted-foreground">
+            {imageAdT?.generate?.yourCredits || 'Credits'}
+          </span>
+          <span className="font-semibold text-foreground">{credits ?? '-'}</span>
+        </div>
+        <div className="w-px h-4 bg-border" />
+        <Link
+          href="/dashboard/subscription"
+          className="text-sm text-primary hover:underline font-medium"
+        >
+          {imageAdT?.generate?.upgradePlan || 'Upgrade'}
+        </Link>
+      </div>
+    </div>
+  )
+}
 
 // Step titles will be translated in the component
 function useStepTitles() {
@@ -197,6 +236,7 @@ function WizardInner({ videoAdId }: WizardInnerProps) {
     <div className="min-h-full flex flex-col bg-background">
       <WizardHeader />
       <WizardContent />
+      <CreditDisplay />
     </div>
   )
 }
