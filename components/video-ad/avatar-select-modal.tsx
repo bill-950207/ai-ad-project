@@ -1,7 +1,7 @@
 /**
  * 아바타 선택 모달
  *
- * 기본 아바타와 의상 교체 아바타를 모두 보여주고 선택할 수 있습니다.
+ * 내 아바타와 프리셋 아바타를 3열 그리드로 보여줍니다.
  * AI가 제품에 어울리는 아바타를 자동 생성하는 옵션도 제공합니다.
  */
 
@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { X, Loader2, Check, Shirt, Sparkles, Settings2 } from 'lucide-react'
+import { X, Loader2, Check, Sparkles, Settings2 } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 import { AiAvatarOptionsModal, type DetailedAiAvatarOptions } from './ai-avatar-options-modal'
 
@@ -28,16 +28,6 @@ interface Avatar {
   options?: AvatarStyleOptions
 }
 
-interface AvatarOutfit {
-  id: string
-  name: string
-  image_url: string | null
-  status: string
-}
-
-interface AvatarWithOutfits extends Avatar {
-  outfits: AvatarOutfit[]
-}
 
 /** AI 아바타 생성 옵션 (상세 옵션 포함) */
 export interface AiAvatarOptions {
@@ -53,7 +43,7 @@ export interface AiAvatarOptions {
 }
 
 export interface SelectedAvatarInfo {
-  type: 'avatar' | 'outfit' | 'ai-generated'
+  type: 'avatar' | 'outfit' | 'ai-generated' | 'preset'
   avatarId: string
   avatarName: string
   outfitId?: string
@@ -64,6 +54,20 @@ export interface SelectedAvatarInfo {
   aiOptions?: AiAvatarOptions
   // 아바타 스타일 옵션 (실제 아바타 선택 시)
   avatarOptions?: AvatarStyleOptions
+  // 프리셋 여부
+  isPreset?: boolean
+}
+
+/** 프리셋 아바타 (preset_avatars 테이블 - avatars 참조) */
+interface PresetAvatar {
+  id: string  // avatar_id (avatars 테이블의 id)
+  presetId: string  // preset_avatars 테이블의 id
+  name: string
+  image_url: string | null
+  image_url_original: string | null
+  options: AvatarStyleOptions | null
+  display_order: number | null
+  type: 'preset'
 }
 
 interface AvatarSelectModalProps {
@@ -71,8 +75,8 @@ interface AvatarSelectModalProps {
   onClose: () => void
   onSelect: (avatar: SelectedAvatarInfo) => void
   selectedAvatarId?: string
-  selectedOutfitId?: string
-  selectedType?: 'avatar' | 'outfit' | 'ai-generated'
+  selectedOutfitId?: string // deprecated, kept for backward compatibility
+  selectedType?: 'avatar' | 'outfit' | 'ai-generated' | 'preset'
 }
 
 // AI 아바타 옵션을 AiAvatarOptions로 변환하는 헬퍼 함수
@@ -204,13 +208,12 @@ export function AvatarSelectModal({
   onClose,
   onSelect,
   selectedAvatarId,
-  selectedOutfitId,
   selectedType,
 }: AvatarSelectModalProps) {
   const { t } = useLanguage()
-  const [avatarsWithOutfits, setAvatarsWithOutfits] = useState<AvatarWithOutfits[]>([])
+  const [avatars, setAvatars] = useState<Avatar[]>([])
+  const [presetAvatars, setPresetAvatars] = useState<PresetAvatar[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [expandedAvatarId, setExpandedAvatarId] = useState<string | null>(null)
 
   // AI 아바타 옵션 상태
   const [showDetailedOptionsModal, setShowDetailedOptionsModal] = useState(false)
@@ -224,45 +227,46 @@ export function AvatarSelectModal({
     hairColor: 'any',
   })
 
-  // 아바타 및 의상 데이터 로드 (N+1 문제 해결: 단일 쿼리로 의상까지 조회)
+  // 아바타 데이터 로드
   const fetchData = useCallback(async () => {
     if (!isOpen) return
 
     setIsLoading(true)
     try {
-      // 아바타 + 의상 목록을 한 번의 API 호출로 조회
-      const avatarsRes = await fetch('/api/avatars?includeOutfits=true')
+      // 아바타 목록과 프리셋 아바타를 병렬로 조회
+      const [avatarsRes, presetAvatarsRes] = await Promise.all([
+        fetch('/api/avatars'),
+        fetch('/api/preset-avatars')
+      ])
+
       if (!avatarsRes.ok) throw new Error('Failed to fetch avatars')
 
       const avatarsData = await avatarsRes.json()
 
       // COMPLETED 상태이고 image_url이 있는 아바타만 필터링
-      const avatarsWithOutfitsData: AvatarWithOutfits[] = avatarsData.avatars
+      const filteredAvatars: Avatar[] = avatarsData.avatars
         .filter((a: Avatar & { status: string }) => a.status === 'COMPLETED' && a.image_url)
-        .map((avatar: Avatar & { outfits?: AvatarOutfit[] }) => ({
-          ...avatar,
-          outfits: avatar.outfits || [],
-        }))
 
-      setAvatarsWithOutfits(avatarsWithOutfitsData)
+      setAvatars(filteredAvatars)
 
-      // 선택된 아바타가 있으면 해당 아바타 확장
-      if (selectedAvatarId) {
-        setExpandedAvatarId(selectedAvatarId)
+      // 프리셋 아바타 로드
+      if (presetAvatarsRes.ok) {
+        const presetData = await presetAvatarsRes.json()
+        setPresetAvatars(presetData.data || [])
       }
     } catch (error) {
       console.error('Failed to load data:', error)
     } finally {
       setIsLoading(false)
     }
-  }, [isOpen, selectedAvatarId])
+  }, [isOpen])
 
   useEffect(() => {
     fetchData()
   }, [fetchData])
 
-  // 기본 아바타 선택
-  const handleSelectAvatar = (avatar: AvatarWithOutfits) => {
+  // 아바타 선택
+  const handleSelectAvatar = (avatar: Avatar) => {
     if (!avatar.image_url) return
 
     onSelect({
@@ -275,25 +279,19 @@ export function AvatarSelectModal({
     })
   }
 
-  // 의상 교체 아바타 선택
-  const handleSelectOutfit = (avatar: AvatarWithOutfits, outfit: AvatarOutfit) => {
-    if (!outfit.image_url) return
+  // 프리셋 아바타 선택
+  const handleSelectPreset = (preset: PresetAvatar) => {
+    if (!preset.image_url) return
 
     onSelect({
-      type: 'outfit',
-      avatarId: avatar.id,
-      avatarName: avatar.name,
-      outfitId: outfit.id,
-      outfitName: outfit.name,
-      imageUrl: outfit.image_url,
-      displayName: `${avatar.name} - ${outfit.name}`,
-      avatarOptions: avatar.options,
+      type: 'preset',
+      avatarId: preset.id,  // avatars 테이블의 id (FK 호환)
+      avatarName: preset.name,
+      imageUrl: preset.image_url,
+      displayName: preset.name,
+      avatarOptions: preset.options || undefined,
+      isPreset: true,
     })
-  }
-
-  // 아바타 확장/축소 토글
-  const toggleAvatarExpand = (avatarId: string) => {
-    setExpandedAvatarId(expandedAvatarId === avatarId ? null : avatarId)
   }
 
   if (!isOpen) return null
@@ -379,7 +377,7 @@ export function AvatarSelectModal({
           {/* 구분선 */}
           <div className="flex items-center gap-3 my-4">
             <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground">{t.avatarSelect?.orSelectExisting || 'or select existing avatar'}</span>
+            <span className="text-xs text-muted-foreground">{t.avatarSelect?.myOwnAvatars || 'My Avatars'}</span>
             <div className="flex-1 h-px bg-border" />
           </div>
 
@@ -387,138 +385,109 @@ export function AvatarSelectModal({
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-          ) : avatarsWithOutfits.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">{t.avatarSelect?.noAvatars || 'No avatars created'}</p>
-              <p className="text-sm text-muted-foreground mt-1 mb-4">
-                {t.avatarSelect?.useAiOrCreate || "Use the 'AI Auto Generate' option above or create a new avatar"}
-              </p>
-              <Link
-                href="/dashboard/avatar/new"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-lg text-sm hover:bg-secondary/80 transition-colors"
-              >
-                <Sparkles className="w-4 h-4" />
-                {t.avatarSelect?.createNewAvatar || 'Create New Avatar'}
-              </Link>
-            </div>
           ) : (
-            <div className="space-y-4">
-              {avatarsWithOutfits.map((avatar) => {
-                const isExpanded = expandedAvatarId === avatar.id
-                const hasOutfits = avatar.outfits.length > 0
-                const isAvatarSelected = selectedAvatarId === avatar.id && !selectedOutfitId
-
-                return (
-                  <div
-                    key={avatar.id}
-                    className="bg-secondary/30 border border-border rounded-xl overflow-hidden"
+            <>
+              {/* 내 아바타 섹션 */}
+              {avatars.length === 0 ? (
+                <div className="text-center py-8 bg-secondary/20 rounded-xl border border-dashed border-border">
+                  <p className="text-muted-foreground">{t.avatarSelect?.noUserAvatars || 'No avatars created yet'}</p>
+                  <Link
+                    href="/dashboard/avatar/new"
+                    className="inline-flex items-center gap-2 px-4 py-2 mt-3 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
                   >
-                    {/* 아바타 헤더 */}
-                    <div className="flex items-center gap-3 p-3">
-                      {/* 기본 아바타 선택 버튼 */}
+                    <Sparkles className="w-4 h-4" />
+                    {t.avatarSelect?.createMyAvatar || 'Create My Avatar'}
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-5 gap-3">
+                  {avatars.map((avatar) => {
+                    const isAvatarSelected = selectedAvatarId === avatar.id && selectedType === 'avatar'
+
+                    return (
                       <button
+                        key={avatar.id}
                         onClick={() => handleSelectAvatar(avatar)}
-                        className={`relative flex-shrink-0 w-20 h-28 rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
+                        className={`relative rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
                           isAvatarSelected
                             ? 'border-primary ring-2 ring-primary/30'
                             : 'border-transparent hover:border-primary/50'
                         }`}
                       >
-                        {avatar.image_url && (
-                          <img
-                            src={avatar.image_url}
-                            alt={avatar.name}
-                            className="w-full h-full object-cover"
-                          />
-                        )}
+                        <div className="aspect-[9/16]">
+                          {avatar.image_url && (
+                            <img
+                              src={avatar.image_url}
+                              alt={avatar.name}
+                              className="w-full h-full object-cover"
+                            />
+                          )}
+                        </div>
                         {isAvatarSelected && (
                           <div className="absolute top-1 right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
                             <Check className="w-3 h-3 text-primary-foreground" />
                           </div>
                         )}
-                        {/* 기본 아바타 라벨 */}
                         <div className="absolute bottom-0 left-0 right-0 bg-black/60 py-0.5 px-1">
-                          <span className="text-[10px] text-white">{t.avatarSelect?.base || 'Base'}</span>
+                          <span className="text-[10px] text-white truncate block">
+                            {avatar.name}
+                          </span>
                         </div>
                       </button>
+                    )
+                  })}
+                </div>
+              )}
 
-                      {/* 아바타 정보 */}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-foreground truncate">
-                          {avatar.name}
-                        </h3>
-                        {hasOutfits && (
-                          <button
-                            onClick={() => toggleAvatarExpand(avatar.id)}
-                            className="flex items-center gap-1 mt-1 text-xs text-primary hover:text-primary/80 transition-colors"
-                          >
-                            <Shirt className="w-3 h-3" />
-                            <span>{(t.avatarSelect?.outfitsCount || '{{count}} outfits').replace('{{count}}', String(avatar.outfits.length))}</span>
-                            <svg
-                              className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </button>
-                        )}
-                        {!hasOutfits && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {t.avatarSelect?.noOutfits || 'No outfits registered'}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* 의상 목록 (확장 시) */}
-                    {isExpanded && hasOutfits && (
-                      <div className="border-t border-border bg-secondary/20 p-3">
-                        <p className="text-xs text-muted-foreground mb-2">{t.avatarSelect?.outfitsList || 'Outfit variations'}</p>
-                        <div className="flex gap-2 overflow-x-auto pb-2">
-                          {avatar.outfits.map((outfit) => {
-                            const isOutfitSelected = selectedOutfitId === outfit.id
-
-                            return (
-                              <button
-                                key={outfit.id}
-                                onClick={() => handleSelectOutfit(avatar, outfit)}
-                                className={`relative flex-shrink-0 w-20 rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
-                                  isOutfitSelected
-                                    ? 'border-primary ring-2 ring-primary/30'
-                                    : 'border-transparent hover:border-primary/50'
-                                }`}
-                              >
-                                <div className="aspect-[9/16]">
-                                  {outfit.image_url && (
-                                    <img
-                                      src={outfit.image_url}
-                                      alt={outfit.name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  )}
-                                </div>
-                                {isOutfitSelected && (
-                                  <div className="absolute top-1 right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                                    <Check className="w-3 h-3 text-primary-foreground" />
-                                  </div>
-                                )}
-                                <div className="absolute bottom-0 left-0 right-0 bg-black/60 py-0.5 px-1">
-                                  <span className="text-[10px] text-white truncate block">
-                                    {outfit.name}
-                                  </span>
-                                </div>
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )}
+              {/* 프리셋 아바타 섹션 */}
+              {presetAvatars.length > 0 && (
+                <>
+                  {/* 구분선 */}
+                  <div className="flex items-center gap-3 my-4">
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-xs text-muted-foreground">{t.avatarSelect?.presetAvatars || 'Preset Avatars'}</span>
+                    <div className="flex-1 h-px bg-border" />
                   </div>
-                )
-              })}
-            </div>
+
+                  {/* 프리셋 아바타 그리드 */}
+                  <div className="grid grid-cols-5 gap-3">
+                    {presetAvatars.map((preset) => {
+                      const isSelected = selectedAvatarId === preset.id && selectedType === 'preset'
+
+                      return (
+                        <button
+                          key={preset.id}
+                          onClick={() => handleSelectPreset(preset)}
+                          className={`relative rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
+                            isSelected
+                              ? 'border-primary ring-2 ring-primary/30'
+                              : 'border-transparent hover:border-primary/50'
+                          }`}
+                        >
+                          <div className="aspect-[9/16]">
+                            <img
+                              src={preset.image_url || ''}
+                              alt={preset.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          {isSelected && (
+                            <div className="absolute top-1 right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                              <Check className="w-3 h-3 text-primary-foreground" />
+                            </div>
+                          )}
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/60 py-0.5 px-1">
+                            <span className="text-[10px] text-white truncate block">
+                              {preset.name}
+                            </span>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+            </>
           )}
         </div>
       </div>

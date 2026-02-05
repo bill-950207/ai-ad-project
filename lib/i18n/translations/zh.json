@@ -543,7 +543,10 @@
       "generating": "生成中",
       "failed": "失败",
       "adImage": "广告图片",
-      "noProduct": "无产品"
+      "noProduct": "无产品",
+      "registerAsPreset": "注册为预设形象",
+      "presetRegistered": "已成功注册为预设形象！",
+      "presetRegisterFailed": "注册预设失败"
     }
   },
   "outfit": {
@@ -1207,7 +1210,11 @@
     "outfitsList": "换装列表",
     "configureOptions": "设置详细选项",
     "selectedOptions": "已选选项",
-    "allAutoDesc": "所有选项已设为自动 - AI将根据产品自动选择"
+    "allAutoDesc": "所有选项已设为自动 - AI将根据产品自动选择",
+    "myOwnAvatars": "我的形象",
+    "presetAvatars": "预设形象",
+    "noUserAvatars": "暂无创建的虚拟形象",
+    "createMyAvatar": "创建我的形象"
   },
   "aiAvatarOptions": {
     "title": "AI虚拟形象选项",
@@ -2578,6 +2585,31 @@
     "verifyEmailNote": "请同时检查垃圾邮件文件夹。链接24小时内有效。"
   },
   "admin": {
+    "tabs": {
+      "showcase": "展示柜管理",
+      "presetAvatar": "预设形象管理"
+    },
+    "presetAvatar": {
+      "title": "预设形象管理",
+      "subtitle": "管理用户可选择的默认虚拟形象。",
+      "noPresets": "暂无注册的预设形象。",
+      "name": "名称",
+      "gender": "性别",
+      "ageGroup": "年龄段",
+      "style": "风格",
+      "order": "顺序",
+      "status": "状态",
+      "active": "启用",
+      "inactive": "禁用",
+      "edit": "编辑",
+      "delete": "删除",
+      "editPreset": "编辑预设形象",
+      "confirmDelete": "确定要删除此预设形象吗？",
+      "save": "保存",
+      "cancel": "取消",
+      "description": "描述",
+      "descriptionPlaceholder": "形象描述（可选）"
+    },
     "showcase": {
       "title": "展示柜管理",
       "subtitle": "管理显示在仪表板上的广告示例。",

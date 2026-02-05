@@ -543,7 +543,10 @@
       "generating": "Generating",
       "failed": "Failed",
       "adImage": "Ad image",
-      "noProduct": "No product"
+      "noProduct": "No product",
+      "registerAsPreset": "Register as Preset Avatar",
+      "presetRegistered": "Avatar registered as preset successfully!",
+      "presetRegisterFailed": "Failed to register as preset"
     }
   },
   "outfit": {
@@ -1207,7 +1210,11 @@
     "outfitsList": "Outfit variations",
     "configureOptions": "Configure Detailed Options",
     "selectedOptions": "Selected Options",
-    "allAutoDesc": "All options set to auto - AI will choose based on product"
+    "allAutoDesc": "All options set to auto - AI will choose based on product",
+    "myOwnAvatars": "My Avatars",
+    "presetAvatars": "Preset Avatars",
+    "noUserAvatars": "No avatars created yet",
+    "createMyAvatar": "Create My Avatar"
   },
   "aiAvatarOptions": {
     "title": "AI Avatar Options",
@@ -2578,6 +2585,31 @@
     "verifyEmailNote": "Please check your spam folder too. The link is valid for 24 hours."
   },
   "admin": {
+    "tabs": {
+      "showcase": "Showcase Management",
+      "presetAvatar": "Preset Avatar Management"
+    },
+    "presetAvatar": {
+      "title": "Preset Avatar Management",
+      "subtitle": "Manage default avatars available for users to select.",
+      "noPresets": "No preset avatars registered.",
+      "name": "Name",
+      "gender": "Gender",
+      "ageGroup": "Age Group",
+      "style": "Style",
+      "order": "Order",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "edit": "Edit",
+      "delete": "Delete",
+      "editPreset": "Edit Preset Avatar",
+      "confirmDelete": "Are you sure you want to delete this preset avatar?",
+      "save": "Save",
+      "cancel": "Cancel",
+      "description": "Description",
+      "descriptionPlaceholder": "Avatar description (optional)"
+    },
     "showcase": {
       "title": "Showcase Management",
       "subtitle": "Manage ad examples displayed on dashboard.",

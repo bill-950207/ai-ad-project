@@ -25,6 +25,7 @@ import {
   Calendar,
   Loader2,
   AlertCircle,
+  Star,
 } from 'lucide-react'
 import { AvatarOptions } from '@/lib/avatar/prompt-builder'
 
@@ -103,6 +104,9 @@ interface AvatarDetailTranslation {
   failed?: string
   adImage?: string
   noProduct?: string
+  registerAsPreset?: string
+  presetRegistered?: string
+  presetRegisterFailed?: string
 }
 
 function GeneratingAnimation({ isUploading = false, avatarName, detailT }: GeneratingAnimationProps) {
@@ -330,7 +334,21 @@ export default function AvatarDetailPage() {
   const [isUploading, setIsUploading] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [isRegisteringPreset, setIsRegisteringPreset] = useState(false)
   const uploadingRef = useRef(false)
+
+  const fetchUser = async () => {
+    try {
+      const res = await fetch('/api/me')
+      if (res.ok) {
+        const data = await res.json()
+        setIsAdmin(data.data?.role === 'ADMIN')
+      }
+    } catch (error) {
+      console.error('User fetch error:', error)
+    }
+  }
 
   const fetchAvatar = async () => {
     try {
@@ -386,6 +404,7 @@ export default function AvatarDetailPage() {
   }
 
   useEffect(() => {
+    fetchUser()
     fetchAvatar()
     fetchImageAds()
   }, [id])
@@ -447,6 +466,33 @@ export default function AvatarDetailPage() {
       window.URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Download error:', error)
+    }
+  }
+
+  const handleRegisterAsPreset = async () => {
+    if (!avatar) return
+    setIsRegisteringPreset(true)
+
+    try {
+      const res = await fetch('/api/admin/preset-avatars', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          avatarId: avatar.id,
+        }),
+      })
+
+      if (res.ok) {
+        alert(detailT?.presetRegistered || 'Avatar registered as preset successfully!')
+      } else {
+        const data = await res.json()
+        alert(data.error || (detailT?.presetRegisterFailed || 'Failed to register as preset'))
+      }
+    } catch (error) {
+      console.error('Register preset error:', error)
+      alert(detailT?.presetRegisterFailed || 'Failed to register as preset')
+    } finally {
+      setIsRegisteringPreset(false)
     }
   }
 
@@ -664,6 +710,22 @@ export default function AvatarDetailPage() {
               {detailT?.videoAd || 'Video Ad'}
             </Link>
           </div>
+
+          {/* Admin: Register as Preset */}
+          {isAdmin && (
+            <button
+              onClick={handleRegisterAsPreset}
+              disabled={isRegisteringPreset}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-xl font-medium hover:bg-amber-500/20 transition-colors disabled:opacity-50"
+            >
+              {isRegisteringPreset ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Star className="w-4 h-4" />
+              )}
+              {detailT?.registerAsPreset || 'Register as Preset Avatar'}
+            </button>
+          )}
         </div>
       </div>
 
