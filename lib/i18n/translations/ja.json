@@ -2715,7 +2715,9 @@
       "imageTooLarge": "画像が大きすぎます。最大{max}px以下にしてください。（現在：{width}x{height}）",
       "resolutionTooHigh": "画像の解像度が高すぎます。最大16MPまで対応しています。（現在：{mp}MP）",
       "cannotReadImage": "画像を読み取れません。",
-      "fetchFailed": "情報を取得できません",
+      "fetchFailed": "商品情報を自動で取得できません",
+      "fetchFailedGuide": "一部のショッピングサイトは自動情報収集を制限しています。",
+      "switchToManual": "直接入力に切り替え",
       "slotFull": "スロットがいっぱいです"
     }
   },

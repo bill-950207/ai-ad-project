@@ -62,6 +62,8 @@ export function AdProductForm() {
       resolutionTooHigh?: string
       cannotReadImage?: string
       fetchFailed?: string
+      fetchFailedGuide?: string
+      switchToManual?: string
       slotFull?: string
     }
   }
@@ -79,6 +81,7 @@ export function AdProductForm() {
   const [productUrl, setProductUrl] = useState('')
   const [isExtractingUrl, setIsExtractingUrl] = useState(false)
   const [urlExtracted, setUrlExtracted] = useState(false)
+  const [urlFetchFailed, setUrlFetchFailed] = useState(false)
 
   // 기본 정보
   const [name, setName] = useState(retryName || '')
@@ -224,6 +227,7 @@ export function AdProductForm() {
 
     setIsExtractingUrl(true)
     setError(null)
+    setUrlFetchFailed(false)
 
     try {
       const res = await fetch('/api/ad-products/extract-url', {
@@ -251,12 +255,20 @@ export function AdProductForm() {
       }
 
       setUrlExtracted(true)
+      setUrlFetchFailed(false)
     } catch (err) {
       console.error('URL 추출 오류:', err)
-      setError(err instanceof Error ? err.message : (validationT?.fetchFailed || 'Unable to fetch info'))
+      setUrlFetchFailed(true)
+      setError(null) // 에러는 별도 UI로 표시
     } finally {
       setIsExtractingUrl(false)
     }
+  }
+
+  // 수동 입력으로 전환
+  const handleSwitchToManual = () => {
+    setInputMode('manual')
+    setUrlFetchFailed(false)
   }
 
   const handleSubmit = async () => {
@@ -405,7 +417,11 @@ export function AdProductForm() {
               <input
                 type="url"
                 value={productUrl}
-                onChange={(e) => setProductUrl(e.target.value)}
+                onChange={(e) => {
+                  setProductUrl(e.target.value)
+                  // URL 수정 시 실패 상태 초기화
+                  if (urlFetchFailed) setUrlFetchFailed(false)
+                }}
                 placeholder="https://example.com/product/..."
                 className="flex-1 px-4 py-2 bg-secondary/30 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
@@ -426,6 +442,27 @@ export function AdProductForm() {
             </div>
             {urlExtracted && (
               <p className="text-sm text-green-500">{formT?.fetchSuccess || 'Successfully fetched info. Please review and modify below.'}</p>
+            )}
+            {urlFetchFailed && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 space-y-3">
+                <div className="flex items-start gap-2">
+                  <span className="text-amber-500 text-lg">⚠️</span>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-amber-500">
+                      {validationT?.fetchFailed || 'Unable to fetch info'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {validationT?.fetchFailedGuide || 'Some shopping sites restrict automatic information collection.'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleSwitchToManual}
+                  className="w-full py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-500 rounded-lg text-sm font-medium transition-colors"
+                >
+                  {validationT?.switchToManual || 'Switch to manual input'}
+                </button>
+              </div>
             )}
           </div>
         )}

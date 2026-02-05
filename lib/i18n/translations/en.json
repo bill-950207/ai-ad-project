@@ -2715,7 +2715,9 @@
       "imageTooLarge": "Image is too large. Maximum {max}px allowed. (Current: {width}x{height})",
       "resolutionTooHigh": "Image resolution is too high. Maximum 16MP allowed. (Current: {mp}MP)",
       "cannotReadImage": "Cannot read image.",
-      "fetchFailed": "Unable to fetch info",
+      "fetchFailed": "Unable to automatically fetch product info",
+      "fetchFailedGuide": "Some shopping sites restrict automatic information collection.",
+      "switchToManual": "Switch to manual input",
       "slotFull": "Slot is full"
     }
   },

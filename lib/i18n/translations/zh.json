@@ -2715,7 +2715,9 @@
       "imageTooLarge": "图片太大。最大支持{max}px。（当前：{width}x{height}）",
       "resolutionTooHigh": "图片分辨率太高。最大支持16MP。（当前：{mp}MP）",
       "cannotReadImage": "无法读取图片。",
-      "fetchFailed": "无法获取信息",
+      "fetchFailed": "无法自动获取产品信息",
+      "fetchFailedGuide": "部分购物网站限制自动信息收集。",
+      "switchToManual": "切换到手动输入",
       "slotFull": "槽位已满"
     }
   },

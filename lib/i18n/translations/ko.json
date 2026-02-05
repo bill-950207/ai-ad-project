@@ -2715,7 +2715,9 @@
       "imageTooLarge": "이미지가 너무 큽니다. 최대 {max}px 이하여야 합니다. (현재: {width}x{height})",
       "resolutionTooHigh": "이미지 해상도가 너무 높습니다. 최대 16MP까지 가능합니다. (현재: {mp}MP)",
       "cannotReadImage": "이미지를 읽을 수 없습니다.",
-      "fetchFailed": "정보를 가져올 수 없습니다",
+      "fetchFailed": "제품 정보를 자동으로 가져올 수 없습니다",
+      "fetchFailedGuide": "일부 쇼핑몰은 자동 정보 수집을 제한하고 있습니다.",
+      "switchToManual": "직접 입력으로 전환",
       "slotFull": "슬롯이 가득 찼습니다"
     }
   },
