@@ -461,7 +461,10 @@ Based on your product analysis, create 3 DISTINCT advertising scenarios.
 **NAMING REQUIREMENT (CRITICAL):**
 - Title must clearly show WHAT PRODUCT BENEFIT/FEATURE this scenario emphasizes
 - User should INSTANTLY understand the selling point from the title alone
-- Format: "[emphasis point] + [expression style]" (8-15 characters)
+- Format: "[emphasis point] + [expression style]" (4-15 characters excluding spaces)
+- MUST include natural word spacing - DO NOT concatenate words without spaces
+- For Korean: Use proper spacing between words (e.g., "다리 라인 강조 룩" NOT "다리라인강조룩")
+- For English: Always separate words with spaces (e.g., "Natural Glow" NOT "NaturalGlow")
 - Focus on: efficacy, texture, lasting power, ingredients, target concern, usage benefit
 - BANNED ABSTRACT WORDS: "emotion", "mood", "moment", "premium", "luxury", "special", "perfect"
 - BANNED AI-SOUNDING WORDS: "beautiful", "stunning", "radiant", "dazzling", "charming", "trendy", "sophisticated", "elegant", "harmonious", "sensational"
