@@ -850,7 +850,9 @@
       "generateButton": "광고 생성하기",
       "nsfwError": "생성된 이미지가 콘텐츠 정책(NSFW)에 위배되어 차단되었습니다. 다른 옵션으로 다시 시도해주세요.",
       "timeoutError": "이미지 생성 시간 초과",
-      "allFailedError": "모든 이미지 생성 실패"
+      "allFailedError": "모든 이미지 생성 실패",
+      "yourCredits": "보유 크레딧",
+      "upgradePlan": "플랜 업그레이드"
     },
     "detail": {
       "title": "이미지 광고 상세",

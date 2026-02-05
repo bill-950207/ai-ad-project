@@ -850,7 +850,9 @@
       "generateButton": "広告を生成",
       "nsfwError": "生成された画像がコンテンツポリシー(NSFW)に違反したためブロックされました。別のオプションで再試行してください。",
       "timeoutError": "画像生成がタイムアウトしました",
-      "allFailedError": "すべての画像生成に失敗しました"
+      "allFailedError": "すべての画像生成に失敗しました",
+      "yourCredits": "保有クレジット",
+      "upgradePlan": "プランをアップグレード"
     },
     "detail": {
       "title": "画像広告の詳細",

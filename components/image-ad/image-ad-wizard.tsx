@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useLanguage } from '@/contexts/language-context'
-import { ArrowLeft, Check, Package, Sparkles, User } from 'lucide-react'
+import { useCredits } from '@/contexts/credit-context'
+import { ArrowLeft, Check, Coins, Package, Sparkles, User } from 'lucide-react'
 import { ImageAdType } from '@/components/ad-product/image-ad-type-modal'
 import { ImageAdWizardProvider, useImageAdWizard, WizardStep } from './wizard-context'
 import { WizardStep1 } from './wizard-step-1'
@@ -16,6 +17,44 @@ import { WizardStep4 } from './wizard-step-4'
 // ============================================================
 
 const STEP_KEYS = ['step1', 'step2', 'step3', 'step4'] as const
+
+// ============================================================
+// 크레딧 표시 컴포넌트 (왼쪽 하단 고정)
+// ============================================================
+
+function CreditDisplay() {
+  const { t } = useLanguage()
+  const { credits } = useCredits()
+  const { resultImages, isGenerating } = useImageAdWizard()
+
+  const imageAdT = t.imageAd as { generate?: { yourCredits?: string; upgradePlan?: string } } | undefined
+
+  // 결과 화면 또는 생성 중에는 숨김
+  if (resultImages.length > 0 || isGenerating) {
+    return null
+  }
+
+  return (
+    <div className="fixed bottom-6 left-6 z-50">
+      <div className="flex items-center gap-3 px-4 py-2.5 bg-card border border-border rounded-xl shadow-lg">
+        <div className="flex items-center gap-2">
+          <Coins className="w-4 h-4 text-primary" />
+          <span className="text-sm text-muted-foreground">
+            {imageAdT?.generate?.yourCredits || 'Credits'}
+          </span>
+          <span className="font-semibold text-foreground">{credits ?? '-'}</span>
+        </div>
+        <div className="w-px h-4 bg-border" />
+        <Link
+          href="/dashboard/subscription"
+          className="text-sm text-primary hover:underline font-medium"
+        >
+          {imageAdT?.generate?.upgradePlan || 'Upgrade'}
+        </Link>
+      </div>
+    </div>
+  )
+}
 
 // ============================================================
 // 헤더 컴포넌트 (선택 항목 포함)
@@ -271,6 +310,7 @@ export function ImageAdWizard({
         <div className="flex-1">
           <WizardContent />
         </div>
+        <CreditDisplay />
       </div>
     </ImageAdWizardProvider>
   )

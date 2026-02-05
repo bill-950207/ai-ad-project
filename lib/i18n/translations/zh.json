@@ -850,7 +850,9 @@
       "generateButton": "生成广告",
       "nsfwError": "生成的图片因违反内容政策（NSFW）被阻止。请使用其他选项重试。",
       "timeoutError": "图片生成超时",
-      "allFailedError": "所有图片生成失败"
+      "allFailedError": "所有图片生成失败",
+      "yourCredits": "持有积分",
+      "upgradePlan": "升级计划"
     },
     "detail": {
       "title": "图片广告详情",

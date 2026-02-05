@@ -850,7 +850,9 @@
       "generateButton": "Generate Ad",
       "nsfwError": "Generated images were blocked due to content policy (NSFW). Please try again with different options.",
       "timeoutError": "Image generation timed out",
-      "allFailedError": "All image generations failed"
+      "allFailedError": "All image generations failed",
+      "yourCredits": "Your Credits",
+      "upgradePlan": "Upgrade Plan"
     },
     "detail": {
       "title": "Image Ad Details",
