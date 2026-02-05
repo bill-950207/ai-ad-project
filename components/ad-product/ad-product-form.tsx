@@ -12,7 +12,7 @@ import { useState, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
 import { useCredits } from '@/contexts/credit-context'
-import { Upload, X, Loader2, Plus, Minus, Link as LinkIcon, Edit3 } from 'lucide-react'
+import { Upload, X, Loader2, Plus, Minus, Link as LinkIcon, Edit3, Sparkles } from 'lucide-react'
 import { AdProductScanner } from './ad-product-scanner'
 import { AdCreationHeader } from '@/components/ui/ad-creation-header'
 import { SlotLimitModal } from '@/components/ui/slot-limit-modal'
@@ -60,9 +60,7 @@ export function AdProductForm({ isModal = false, onComplete, onClose }: AdProduc
     processing?: string
     newProduct?: string
     imageSpec?: string
-    nameHint?: string
-    descriptionHint?: string
-    sellingPointsHint?: string
+    formHint?: string
     validation?: {
       enterProductName?: string
       selectProductImage?: string
@@ -403,10 +401,11 @@ export function AdProductForm({ isModal = false, onComplete, onClose }: AdProduc
         <div className="flex gap-2">
           <button
             onClick={() => setInputMode('url')}
-            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+            disabled={isExtractingUrl}
+            className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
               inputMode === 'url'
                 ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                : 'bg-secondary/30 text-muted-foreground hover:bg-secondary/50'
             }`}
           >
             <LinkIcon className="w-4 h-4" />
@@ -414,10 +413,11 @@ export function AdProductForm({ isModal = false, onComplete, onClose }: AdProduc
           </button>
           <button
             onClick={() => setInputMode('manual')}
-            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+            disabled={isExtractingUrl}
+            className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
               inputMode === 'manual'
                 ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                : 'bg-secondary/30 text-muted-foreground hover:bg-secondary/50'
             }`}
           >
             <Edit3 className="w-4 h-4" />
@@ -427,8 +427,8 @@ export function AdProductForm({ isModal = false, onComplete, onClose }: AdProduc
 
         {/* URL 입력 영역 */}
         {inputMode === 'url' && (
-          <div className="space-y-3">
-            <label className="block text-sm font-medium text-foreground">
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {formT?.productUrl || 'Product URL'}
             </label>
             <div className="flex gap-2">
@@ -440,13 +440,14 @@ export function AdProductForm({ isModal = false, onComplete, onClose }: AdProduc
                   // URL 수정 시 실패 상태 초기화
                   if (urlFetchFailed) setUrlFetchFailed(false)
                 }}
+                disabled={isExtractingUrl}
                 placeholder="https://example.com/product/..."
-                className="flex-1 px-4 py-2 bg-secondary/30 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="flex-1 px-3 py-2.5 bg-secondary/20 border border-border/50 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/50 focus:bg-secondary/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <button
                 onClick={handleExtractUrl}
                 disabled={isExtractingUrl || !productUrl.trim()}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                className="px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2"
               >
                 {isExtractingUrl ? (
                   <>
@@ -459,24 +460,24 @@ export function AdProductForm({ isModal = false, onComplete, onClose }: AdProduc
               </button>
             </div>
             {urlExtracted && (
-              <p className="text-sm text-green-500">{formT?.fetchSuccess || 'Successfully fetched info. Please review and modify below.'}</p>
+              <p className="text-xs text-emerald-500 font-medium">{formT?.fetchSuccess || 'Successfully fetched info. Please review and modify below.'}</p>
             )}
             {urlFetchFailed && (
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 space-y-3">
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 space-y-3">
                 <div className="flex items-start gap-2">
                   <span className="text-amber-500 text-lg">⚠️</span>
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-amber-500">
                       {validationT?.fetchFailed || 'Unable to fetch info'}
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       {validationT?.fetchFailedGuide || 'Some shopping sites restrict automatic information collection.'}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={handleSwitchToManual}
-                  className="w-full py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-500 rounded-lg text-sm font-medium transition-colors"
+                  className="w-full py-2.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-500 rounded-xl text-sm font-medium transition-all duration-200"
                 >
                   {validationT?.switchToManual || 'Switch to manual input'}
                 </button>
@@ -485,52 +486,73 @@ export function AdProductForm({ isModal = false, onComplete, onClose }: AdProduc
           </div>
         )}
 
+        {/* 상단 안내 문구 */}
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/5 via-primary/10 to-violet-500/5 border border-primary/20">
+          <div className="flex items-center gap-3 px-4 py-3">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/20">
+              <Sparkles className="w-4 h-4 text-primary" />
+            </div>
+            <p className="text-sm font-medium text-foreground/80">
+              {formT?.formHint || 'Detailed product info helps AI create more relevant ads'}
+            </p>
+          </div>
+        </div>
+
         {/* 제품 이름 */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">
-            {t.adProduct.productName} <span className="text-red-500">*</span>
+        <div className="space-y-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {t.adProduct.productName} <span className="text-rose-400">*</span>
           </label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            disabled={isExtractingUrl}
             placeholder={t.adProduct.productNamePlaceholder}
-            className="w-full px-3 py-2 bg-secondary/30 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className="w-full px-3 py-2.5 bg-secondary/20 border border-border/50 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/50 focus:bg-secondary/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           />
-          <p className="text-xs text-muted-foreground mt-1.5">
-            {formT?.nameHint || 'The more detailed, the better the ad matches your product'}
-          </p>
         </div>
 
         {/* 제품 이미지 */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">
-            {t.adProduct.productImage} <span className="text-red-500">*</span>
+        <div className="space-y-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {t.adProduct.productImage} <span className="text-rose-400">*</span>
           </label>
 
           {previewUrl ? (
-            <div className="relative w-40 h-40 bg-secondary/30 rounded-lg overflow-hidden">
+            <div className={`group relative w-36 h-36 bg-gradient-to-br from-secondary/40 to-secondary/20 rounded-2xl overflow-hidden ring-1 ring-border/50 ${isExtractingUrl ? 'opacity-50' : ''}`}>
               <img
                 src={previewUrl}
                 alt="Preview"
-                className="absolute inset-0 w-full h-full object-contain"
+                className="absolute inset-0 w-full h-full object-contain p-2"
               />
-              <button
-                onClick={handleRemoveFile}
-                className="absolute top-1.5 right-1.5 p-1 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
-              >
-                <X className="w-3.5 h-3.5 text-white" />
-              </button>
+              {!isExtractingUrl && (
+                <>
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-200" />
+                  <button
+                    onClick={handleRemoveFile}
+                    className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-red-500 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
+                  >
+                    <X className="w-3.5 h-3.5 text-white" />
+                  </button>
+                </>
+              )}
             </div>
           ) : (
             <div
-              onClick={() => fileInputRef.current?.click()}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              className="w-40 h-40 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-secondary/20 transition-colors"
+              onClick={() => !isExtractingUrl && fileInputRef.current?.click()}
+              onDrop={!isExtractingUrl ? handleDrop : undefined}
+              onDragOver={!isExtractingUrl ? handleDragOver : undefined}
+              className={`group w-36 h-36 border-2 border-dashed border-border/60 rounded-2xl flex flex-col items-center justify-center transition-all duration-200 ${
+                isExtractingUrl
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'cursor-pointer hover:border-primary/60 hover:bg-primary/5'
+              }`}
             >
-              <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-              <p className="text-xs text-muted-foreground">{t.adProduct.selectImage}</p>
+              <div className={`w-10 h-10 rounded-xl bg-secondary/50 flex items-center justify-center mb-2 transition-colors duration-200 ${!isExtractingUrl ? 'group-hover:bg-primary/20' : ''}`}>
+                <Upload className={`w-5 h-5 text-muted-foreground transition-colors duration-200 ${!isExtractingUrl ? 'group-hover:text-primary' : ''}`} />
+              </div>
+              <p className="text-xs text-muted-foreground/70 text-center px-3">{t.adProduct.selectImage}</p>
             </div>
           )}
 
@@ -539,81 +561,78 @@ export function AdProductForm({ isModal = false, onComplete, onClose }: AdProduc
             type="file"
             accept="image/png,image/jpeg,image/webp"
             onChange={handleFileInputChange}
+            disabled={isExtractingUrl}
             className="hidden"
           />
 
-          <p className="text-xs text-muted-foreground mt-1.5">
+          <p className="text-[10px] text-muted-foreground/60 tracking-wide">
             {formT?.imageSpec || 'PNG, JPG, WEBP / Max 5MB / 256~4096px'}
           </p>
         </div>
 
         {/* 제품 설명 */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">
+        <div className="space-y-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {formT?.productDescription || 'Product Description'}
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            disabled={isExtractingUrl}
             placeholder={formT?.productDescPlaceholder || 'Enter a detailed description of your product...'}
             rows={2}
-            className="w-full px-3 py-2 bg-secondary/30 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+            className="w-full px-3 py-2.5 bg-secondary/20 border border-border/50 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/50 focus:bg-secondary/30 transition-all duration-200 resize-none disabled:opacity-50 disabled:cursor-not-allowed"
           />
-          <p className="text-xs text-muted-foreground mt-1.5">
-            {formT?.descriptionHint || 'Helps AI understand your product'}
-          </p>
         </div>
 
         {/* 셀링 포인트 */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">
+        <div className="space-y-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {formT?.sellingPoints || 'Selling Points'}
           </label>
           <div className="space-y-2">
             {sellingPoints.map((point, index) => (
-              <div key={index} className="flex gap-2">
+              <div key={index} className="group flex gap-2">
                 <input
                   type="text"
                   value={point}
                   onChange={(e) => updateSellingPoint(index, e.target.value)}
+                  disabled={isExtractingUrl}
                   placeholder={formT?.sellingPointPlaceholder || 'Enter product advantages or features'}
-                  className="flex-1 px-3 py-2 bg-secondary/30 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="flex-1 px-3 py-2.5 bg-secondary/20 border border-border/50 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/50 focus:bg-secondary/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
-                {sellingPoints.length > 1 && (
+                {sellingPoints.length > 1 && !isExtractingUrl && (
                   <button
                     onClick={() => removeSellingPoint(index)}
-                    className="p-2 text-muted-foreground hover:text-red-500 transition-colors"
+                    className="p-2 text-muted-foreground/40 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all duration-200"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
                 )}
               </div>
             ))}
-            {sellingPoints.length < 10 && (
+            {sellingPoints.length < 10 && !isExtractingUrl && (
               <button
                 onClick={addSellingPoint}
-                className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-primary/70 hover:text-primary transition-colors"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5" />
                 {formT?.addSellingPoint || 'Add Selling Point'}
               </button>
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-1.5">
-            {formT?.sellingPointsHint || 'Enter key benefits for more relevant ads'}
-          </p>
         </div>
 
         {/* 에러 메시지 */}
         {error && (
-          <p className="text-sm text-red-500">{error}</p>
+          <p className="text-xs text-rose-400 font-medium">{error}</p>
         )}
 
         {/* 등록 버튼 */}
         <button
           onClick={handleSubmit}
-          disabled={isSubmitting || !name.trim() || (!selectedFile && !previewUrl)}
-          className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          disabled={isSubmitting || isExtractingUrl || !name.trim() || (!selectedFile && !previewUrl)}
+          className="w-full py-3 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-xl font-medium hover:shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:translate-y-0 transition-all duration-200 flex items-center justify-center gap-2"
         >
           {isSubmitting ? (
             <>
