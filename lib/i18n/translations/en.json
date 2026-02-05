@@ -353,16 +353,31 @@
   "dashboard": {
     "title": "Dashboard",
     "subtitle": "Start creating AI advertising content",
+    "createImageAd": "Create Image Ad",
+    "createVideoAd": "Create Video Ad",
     "totalAds": "Total Ads",
     "thisMonth": "This Month",
     "creditsRemaining": "Credits Remaining",
-    "quickActions": "Quick Actions",
+    "quickActions": {
+      "title": "",
+      "product": "Register Ad Product",
+      "productDesc": "Register products for ads",
+      "avatar": "Create Avatar",
+      "avatarDesc": "Create and manage AI avatars",
+      "music": "Create Ad Music",
+      "musicDesc": "Generate AI background music"
+    },
     "recentActivity": "Recent Activity",
     "noRecentActivity": "No recent activity",
     "showcase": {
       "title": "See What You Can Create",
       "browse": "Browse Ads",
-      "cta": "Create Your Own Ad"
+      "browseDesc": "Explore various AI ad examples",
+      "cta": "Create Your Own Ad",
+      "imageTitle": "Image Ad Examples",
+      "imageDesc": "Explore various AI image ad styles",
+      "videoTitle": "Video Ad Examples",
+      "videoDesc": "Explore various AI video ad styles"
     },
     "recentWork": {
       "title": "Recent Work",

@@ -4,7 +4,9 @@
  * 대시보드 메인 페이지의 콘텐츠를 담당합니다.
  * - 페이지 제목 및 설명
  * - 광고 생성 버튼 (이미지 광고, 영상 광고)
- * - 최근 작업 (기존 유저) 또는 쇼케이스 갤러리 (신규 유저)
+ * - 빠른 액션 (제품/아바타/음악 관리)
+ * - 최근 작업
+ * - 쇼케이스 갤러리 (카테고리별 가로 스크롤)
  */
 
 'use client'
@@ -15,7 +17,8 @@ import { useLanguage } from '@/contexts/language-context'
 import { useOnboarding, VideoAdType } from '@/components/onboarding/onboarding-context'
 import { OnboardingFlowModal } from '@/components/onboarding/onboarding-flow-modal'
 import { RecentAdsSection } from './recent-ads-section'
-import { ShowcaseGallery } from './showcase-gallery'
+import { QuickActions } from './quick-actions'
+import { ShowcaseSection } from './showcase-section'
 import { useSearchParams, useRouter } from 'next/navigation'
 
 // ============================================================
@@ -35,19 +38,17 @@ interface ShowcaseItem {
   avatar_image_url: string | null
 }
 
-interface GalleryMeta {
-  imageCount: number
-  videoCount: number
-  nextImageOffset: number
-  nextVideoOffset: number
+interface CategoryGroup {
+  adType: string
+  items: ShowcaseItem[]
 }
 
 interface DashboardContentProps {
   userEmail?: string
   initialImageShowcases?: string[]
   initialVideoShowcases?: string[]
-  initialGalleryShowcases?: ShowcaseItem[]
-  initialGalleryMeta?: GalleryMeta
+  imageCategories?: CategoryGroup[]
+  videoCategories?: CategoryGroup[]
 }
 
 // ============================================================
@@ -272,8 +273,8 @@ export function DashboardContent({
   userEmail: _userEmail,
   initialImageShowcases = [],
   initialVideoShowcases = [],
-  initialGalleryShowcases = [],
-  initialGalleryMeta
+  imageCategories = [],
+  videoCategories = []
 }: DashboardContentProps) {
   const { t } = useLanguage()
   const { startOnboarding, setVideoAdType, isOpen } = useOnboarding()
@@ -309,7 +310,7 @@ export function DashboardContent({
   }, [searchParams, startOnboarding, setVideoAdType, isOpen, router])
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       {/* 페이지 헤더 */}
       <div className="animate-[fadeIn_0.4s_ease-out]">
         <h1 className="text-3xl font-bold text-foreground tracking-tight mb-2">
@@ -320,11 +321,11 @@ export function DashboardContent({
         </p>
       </div>
 
-      {/* 광고 생성 카드 */}
+      {/* 광고 생성 카드 - 메인 CTA */}
       <div className="flex flex-wrap gap-5">
         <AdCreationCard
           type="image"
-          title={t.nav.imageAd}
+          title={t.dashboard?.createImageAd || '이미지 광고 생성'}
           description={t.imageAd.subtitle}
           images={imageShowcases}
           gradientFrom="from-violet-600/40"
@@ -334,7 +335,7 @@ export function DashboardContent({
         />
         <AdCreationCard
           type="video"
-          title={t.nav.videoAd}
+          title={t.dashboard?.createVideoAd || '영상 광고 생성'}
           description={t.videoAd.subtitle}
           videos={videoShowcases}
           gradientFrom="from-rose-600/40"
@@ -344,17 +345,19 @@ export function DashboardContent({
         />
       </div>
 
-      {/* 최근 생성 광고 + 쇼케이스 갤러리 */}
-      <div className="animate-[fadeIn_0.4s_ease-out_0.3s_backwards] space-y-8">
-        {/* 최근 생성 광고 - 이미지+영상 혼합, 최근 5개 */}
-        <RecentAdsSection />
+      {/* 빠른 액션 - 제품/아바타/음악 관리 바로가기 */}
+      <QuickActions />
 
-        {/* 쇼케이스 갤러리 - 이미지/영상 각각 5x3 그리드 */}
-        <ShowcaseGallery
-          initialData={initialGalleryShowcases}
-          initialMeta={initialGalleryMeta}
-        />
+      {/* 최근 생성 광고 */}
+      <div className="animate-[fadeIn_0.4s_ease-out_0.3s_backwards]">
+        <RecentAdsSection />
       </div>
+
+      {/* 쇼케이스 갤러리 - 카테고리별 가로 스크롤 섹션 */}
+      <ShowcaseSection
+        imageCategories={imageCategories}
+        videoCategories={videoCategories}
+      />
 
       {/* 온보딩 플로우 모달 */}
       <OnboardingFlowModal />

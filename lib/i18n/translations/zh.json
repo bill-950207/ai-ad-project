@@ -353,16 +353,31 @@
   "dashboard": {
     "title": "控制面板",
     "subtitle": "开始创建AI广告内容",
+    "createImageAd": "创建图片广告",
+    "createVideoAd": "创建视频广告",
     "totalAds": "广告总数",
     "thisMonth": "本月",
     "creditsRemaining": "剩余积分",
-    "quickActions": "快捷操作",
+    "quickActions": {
+      "title": "",
+      "product": "注册广告产品",
+      "productDesc": "注册广告产品",
+      "avatar": "创建虚拟形象",
+      "avatarDesc": "创建和管理AI虚拟形象",
+      "music": "创建广告音乐",
+      "musicDesc": "生成AI背景音乐"
+    },
     "recentActivity": "最近活动",
     "noRecentActivity": "暂无最近活动",
     "showcase": {
       "title": "看看您能创建什么",
       "browse": "浏览广告",
-      "cta": "创建您的专属广告"
+      "browseDesc": "探索各种AI广告示例",
+      "cta": "创建您的专属广告",
+      "imageTitle": "图片广告示例",
+      "imageDesc": "探索各种风格的AI图片广告",
+      "videoTitle": "视频广告示例",
+      "videoDesc": "探索各种风格的AI视频广告"
     },
     "recentWork": {
       "title": "最近作品",

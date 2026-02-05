@@ -353,16 +353,31 @@
   "dashboard": {
     "title": "대시보드",
     "subtitle": "AI 광고 콘텐츠 생성을 시작하세요",
+    "createImageAd": "이미지 광고 생성",
+    "createVideoAd": "영상 광고 생성",
     "totalAds": "총 광고",
     "thisMonth": "이번 달",
     "creditsRemaining": "남은 크레딧",
-    "quickActions": "빠른 작업",
+    "quickActions": {
+      "title": "",
+      "product": "광고 제품 등록",
+      "productDesc": "광고에 사용할 제품 등록",
+      "avatar": "아바타 만들기",
+      "avatarDesc": "AI 아바타 생성 및 관리",
+      "music": "광고 음악 만들기",
+      "musicDesc": "배경 음악 AI 생성"
+    },
     "recentActivity": "최근 활동",
     "noRecentActivity": "최근 활동이 없습니다",
     "showcase": {
       "title": "이런 광고를 만들 수 있어요",
       "browse": "광고 둘러보기",
-      "cta": "나만의 광고 만들기"
+      "browseDesc": "다양한 AI 광고 예시를 살펴보세요",
+      "cta": "나만의 광고 만들기",
+      "imageTitle": "이미지 광고 예시",
+      "imageDesc": "다양한 스타일의 AI 이미지 광고를 살펴보세요",
+      "videoTitle": "영상 광고 예시",
+      "videoDesc": "다양한 스타일의 AI 영상 광고를 살펴보세요"
     },
     "recentWork": {
       "title": "최근 작업",
