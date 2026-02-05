@@ -543,7 +543,10 @@
       "generating": "生成中",
       "failed": "失敗",
       "adImage": "広告画像",
-      "noProduct": "商品なし"
+      "noProduct": "商品なし",
+      "registerAsPreset": "プリセットアバターとして登録",
+      "presetRegistered": "プリセットアバターとして登録されました！",
+      "presetRegisterFailed": "プリセット登録に失敗しました"
     }
   },
   "outfit": {
@@ -1207,7 +1210,10 @@
     "outfitsList": "衣装変更一覧",
     "configureOptions": "詳細オプションを設定",
     "selectedOptions": "選択したオプション",
-    "allAutoDesc": "すべてのオプションが自動設定 - AIが商品に合わせて選択します"
+    "allAutoDesc": "すべてのオプションが自動設定 - AIが商品に合わせて選択します",
+    "presetAvatars": "プリセットアバター",
+    "noUserAvatars": "登録されたアバターがありません",
+    "createMyAvatar": "マイアバターを作成"
   },
   "aiAvatarOptions": {
     "title": "AIアバターオプション",
@@ -2578,6 +2584,31 @@
     "verifyEmailNote": "迷惑メールフォルダもご確認ください。リンクは24時間有効です。"
   },
   "admin": {
+    "tabs": {
+      "showcase": "ショーケース管理",
+      "presetAvatar": "プリセットアバター管理"
+    },
+    "presetAvatar": {
+      "title": "プリセットアバター管理",
+      "subtitle": "ユーザーが選択できるデフォルトアバターを管理します。",
+      "noPresets": "登録されたプリセットアバターがありません。",
+      "name": "名前",
+      "gender": "性別",
+      "ageGroup": "年齢層",
+      "style": "スタイル",
+      "order": "順序",
+      "status": "ステータス",
+      "active": "有効",
+      "inactive": "無効",
+      "edit": "編集",
+      "delete": "削除",
+      "editPreset": "プリセットアバター編集",
+      "confirmDelete": "このプリセットアバターを削除しますか？",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "description": "説明",
+      "descriptionPlaceholder": "アバターの説明（任意）"
+    },
     "showcase": {
       "title": "ショーケース管理",
       "subtitle": "ダッシュボードに表示される広告例を管理します。",

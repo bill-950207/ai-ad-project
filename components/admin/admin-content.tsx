@@ -15,8 +15,13 @@ import {
   Video,
   Loader2,
   X,
-  AlertCircle
+  AlertCircle,
+  LayoutGrid,
+  User
 } from 'lucide-react'
+import { PresetAvatarManagement } from './preset-avatar-management'
+
+type AdminTab = 'showcase' | 'preset'
 
 interface Showcase {
   id: string
@@ -60,6 +65,7 @@ const initialFormData: FormData = {
 export function AdminContent() {
   const router = useRouter()
   const { t } = useLanguage()
+  const [activeTab, setActiveTab] = useState<AdminTab>('showcase')
   const [showcases, setShowcases] = useState<Showcase[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -348,47 +354,88 @@ export function AdminContent() {
     )
   }
 
+  // 탭 번역
+  type AdminTabsT = {
+    showcase?: string
+    presetAvatar?: string
+  }
+  const tabsT = (t.admin as { tabs?: AdminTabsT } | undefined)?.tabs
+
   return (
     <div className="p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">{adminT?.title || 'Showcase Management'}</h1>
-          <p className="text-muted-foreground mt-1">
-            {adminT?.subtitle || 'Manage ad examples displayed on dashboard.'}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleConvertToWebp}
-            disabled={isConverting}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2.5 rounded-xl",
-              "bg-orange-500 text-white",
-              "hover:bg-orange-600 transition-colors",
-              "disabled:opacity-50 disabled:cursor-not-allowed"
-            )}
-          >
-            {isConverting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Image className="w-4 h-4" />
-            )}
-            {isConverting ? 'Optimizing...' : 'Optimize Images'}
-          </button>
-          <button
-            onClick={openCreateModal}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2.5 rounded-xl",
-              "bg-primary text-primary-foreground",
-              "hover:bg-primary/90 transition-colors"
-            )}
-          >
-            <Plus className="w-4 h-4" />
-            {adminT?.addNew || 'Add New Showcase'}
-          </button>
-        </div>
+      {/* 탭 네비게이션 */}
+      <div className="flex items-center gap-2 mb-6 border-b border-border pb-4">
+        <button
+          onClick={() => setActiveTab('showcase')}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all",
+            activeTab === 'showcase'
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted/50 text-muted-foreground hover:bg-muted"
+          )}
+        >
+          <LayoutGrid className="w-4 h-4" />
+          {tabsT?.showcase || 'Showcase Management'}
+        </button>
+        <button
+          onClick={() => setActiveTab('preset')}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all",
+            activeTab === 'preset'
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted/50 text-muted-foreground hover:bg-muted"
+          )}
+        >
+          <User className="w-4 h-4" />
+          {tabsT?.presetAvatar || 'Preset Avatar Management'}
+        </button>
       </div>
+
+      {/* 프리셋 아바타 관리 탭 */}
+      {activeTab === 'preset' && <PresetAvatarManagement />}
+
+      {/* 쇼케이스 관리 탭 */}
+      {activeTab === 'showcase' && (
+        <>
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold">{adminT?.title || 'Showcase Management'}</h1>
+              <p className="text-muted-foreground mt-1">
+                {adminT?.subtitle || 'Manage ad examples displayed on dashboard.'}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleConvertToWebp}
+                disabled={isConverting}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2.5 rounded-xl",
+                  "bg-orange-500 text-white",
+                  "hover:bg-orange-600 transition-colors",
+                  "disabled:opacity-50 disabled:cursor-not-allowed"
+                )}
+              >
+                {isConverting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Image className="w-4 h-4" />
+                )}
+                {isConverting ? 'Optimizing...' : 'Optimize Images'}
+              </button>
+              <button
+                onClick={openCreateModal}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2.5 rounded-xl",
+                  "bg-primary text-primary-foreground",
+                  "hover:bg-primary/90 transition-colors"
+                )}
+              >
+                <Plus className="w-4 h-4" />
+                {adminT?.addNew || 'Add New Showcase'}
+              </button>
+            </div>
+          </div>
 
       {/* Convert Result */}
       {convertResult && (
@@ -761,6 +808,8 @@ export function AdminContent() {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   )
