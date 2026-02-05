@@ -4,7 +4,7 @@
  * POST /api/ad-products/extract-url
  * - 먼저 HTML 스크래핑 시도
  * - 스크래핑 성공 시: LLM으로 데이터 정리/보완 (광고 문구 제거, 요약 등)
- * - 스크래핑 실패 시: Gemini의 googleSearch/urlContext로 직접 추출
+ * - 스크래핑 실패 시: 에러 반환
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -25,6 +25,40 @@ interface ExtractedProductInfo {
   brand?: string
   features?: string[]
   imageUrl?: string
+}
+
+/**
+ * 이미지 URL이 클라이언트 브라우저에서 접근 가능한지 실제로 요청해서 확인
+ * - 레퍼러 없이 요청하여 클라이언트 환경과 유사하게 테스트
+ */
+async function isImageAccessible(imageUrl: string): Promise<boolean> {
+  try {
+    const response = await fetch(imageUrl, {
+      method: 'GET',
+      headers: {
+        // 레퍼러 제거하여 클라이언트 직접 접근과 유사하게
+        'Referer': '',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+      signal: AbortSignal.timeout(5000),
+    })
+
+    if (!response.ok) {
+      console.log(`이미지 접근 실패 (${response.status}):`, imageUrl)
+      return false
+    }
+
+    const contentType = response.headers.get('content-type')
+    if (!contentType?.startsWith('image/')) {
+      console.log('이미지가 아닌 응답:', imageUrl, contentType)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.log('이미지 접근 오류:', imageUrl, error)
+    return false
+  }
 }
 
 /**
@@ -104,12 +138,21 @@ async function scrapeProductInfo(url: string): Promise<ExtractedProductInfo | nu
 
     // 최소한의 정보가 있으면 반환
     if (title || description) {
+      // 이미지 URL 검증 (실제 접근 가능 여부 확인)
+      let validatedImageUrl: string | undefined
+      if (imageUrl) {
+        const accessible = await isImageAccessible(imageUrl)
+        if (accessible) {
+          validatedImageUrl = imageUrl
+        }
+      }
+
       return {
         title: title || undefined,
         description: description || undefined,
         price,
         brand,
-        imageUrl: imageUrl || undefined,
+        imageUrl: validatedImageUrl,
       }
     }
 
@@ -222,73 +265,20 @@ ${url}
     const responseText = response.text || '{}'
     const result = JSON.parse(responseText)
 
+    // 이미지 URL은 스크래핑 단계에서 이미 검증됨 (scrapedData.imageUrl)
+    // LLM은 이미지 URL을 수정하지 않도록 프롬프트에 명시
     return {
       title: result.title || scrapedData.title || undefined,
       description: result.description || scrapedData.description || undefined,
       price: result.price || scrapedData.price || undefined,
       brand: result.brand || scrapedData.brand || undefined,
       features: result.features || undefined,
-      imageUrl: scrapedData.imageUrl || result.imageUrl || undefined, // 이미지 URL은 원본 우선
+      imageUrl: scrapedData.imageUrl, // 원본 유지 (이미 검증됨)
     }
   } catch (error) {
     console.error('스크래핑 데이터 정리 오류:', error)
     // LLM 정리 실패 시 원본 데이터 반환
     return scrapedData
-  }
-}
-
-/**
- * Gemini를 사용하여 제품 정보 추출 (스크래핑 실패 시)
- */
-async function extractWithGemini(url: string): Promise<ExtractedProductInfo> {
-  const prompt = `다음 URL은 제품 상세 페이지입니다. URL에 직접 접근하여 제품 정보를 추출해주세요.
-필요한 경우 Google 검색을 사용하여 추가 정보를 수집할 수 있습니다.
-
-URL: ${url}
-
-다음 정보를 추출하고 깔끔하게 정리해주세요:
-1. 제품명 (title) - 브랜드명 + 제품명, 불필요한 수식어 제거
-2. 제품 설명 (description) - 핵심 내용을 2-3문장으로 요약, 광고 문구 제외
-3. 가격 (price) - 통화 기호 포함
-4. 브랜드명 (brand)
-5. 주요 특징/셀링 포인트 (features) - 3-5개의 핵심 특징
-6. 대표 제품 이미지 URL (imageUrl) - 있는 경우만
-
-정보를 찾을 수 없는 필드는 null로 표시하세요.`
-
-  const config: GenerateContentConfig = {
-    tools: [
-      { urlContext: {} },
-      { googleSearch: {} },
-    ],
-    thinkingConfig: {
-      thinkingLevel: ThinkingLevel.LOW,
-    },
-    responseMimeType: 'application/json',
-    responseSchema: productInfoSchema,
-  }
-
-  try {
-    const response = await genAI.models.generateContent({
-      model: MODEL_NAME,
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      config,
-    })
-
-    const responseText = response.text || '{}'
-    const result = JSON.parse(responseText)
-
-    return {
-      title: result.title || undefined,
-      description: result.description || undefined,
-      price: result.price || undefined,
-      brand: result.brand || undefined,
-      features: result.features || undefined,
-      imageUrl: result.imageUrl || undefined,
-    }
-  } catch (error) {
-    console.error('Gemini 추출 오류:', error)
-    throw new Error('제품 정보를 추출할 수 없습니다')
   }
 }
 
@@ -332,20 +322,18 @@ export async function POST(request: NextRequest) {
     // 스크래핑 결과 확인 (최소 title 또는 description이 있어야 함)
     const hasMinimalInfo = scrapedInfo && (scrapedInfo.title || scrapedInfo.description)
 
-    let productInfo: ExtractedProductInfo
-    let source: 'scraping+llm' | 'gemini'
-
-    if (hasMinimalInfo) {
-      // 2단계: 스크래핑 성공 시 LLM으로 데이터 정리/보완
-      console.log('스크래핑 성공, LLM으로 데이터 정리:', validUrl.href)
-      productInfo = await cleanScrapedDataWithLLM(scrapedInfo, validUrl.href)
-      source = 'scraping+llm'
-    } else {
-      // 스크래핑 실패 시 Gemini로 직접 추출
-      console.log('Gemini 추출 시도:', validUrl.href)
-      productInfo = await extractWithGemini(validUrl.href)
-      source = 'gemini'
+    if (!hasMinimalInfo) {
+      // 스크래핑 실패 시 에러 반환
+      console.log('스크래핑 실패:', validUrl.href)
+      return NextResponse.json(
+        { error: '제품 정보를 가져올 수 없습니다' },
+        { status: 400 }
+      )
     }
+
+    // 2단계: 스크래핑 성공 시 LLM으로 데이터 정리/보완
+    console.log('스크래핑 성공, LLM으로 데이터 정리:', validUrl.href)
+    const productInfo = await cleanScrapedDataWithLLM(scrapedInfo, validUrl.href)
 
     return NextResponse.json({
       success: true,
@@ -357,7 +345,6 @@ export async function POST(request: NextRequest) {
         features: productInfo?.features || null,
         imageUrl: productInfo?.imageUrl || null,
       },
-      source,
     })
   } catch (error) {
     console.error('URL 추출 오류:', error)
