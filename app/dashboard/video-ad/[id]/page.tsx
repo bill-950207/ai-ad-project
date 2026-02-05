@@ -342,7 +342,7 @@ export default function VideoAdDetailPage() {
 
   // 제품 광고인 경우 씬 버전 조회
   useEffect(() => {
-    if (videoAd?.category === 'product-ad' && videoAd.scene_video_urls && videoAd.scene_video_urls.length > 0) {
+    if ((videoAd?.category === 'productAd' || videoAd?.category === 'product-ad') && videoAd.scene_video_urls && videoAd.scene_video_urls.length > 0) {
       fetchSceneVersions()
     }
   }, [videoAd?.category, videoAd?.scene_video_urls, fetchSceneVersions])
@@ -476,7 +476,9 @@ export default function VideoAdDetailPage() {
           description: videoAd.product_summary || videoAd.prompt || null,
           thumbnailUrl: thumbnailUrl,
           mediaUrl: videoAd.video_url,
-          adType: videoAd.category === 'product-description' ? 'productDescription' : 'productAd',
+          adType: ['productDescription', 'product-description'].includes(videoAd.category || '')
+            ? 'productDescription'
+            : 'productAd',
           category: videoAd.ad_products?.brand || null,
           productImageUrl: videoAd.ad_products?.rembg_image_url || videoAd.ad_products?.image_url || null,
           avatarImageUrl: videoAd.avatars?.image_url || null,
