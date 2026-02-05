@@ -2705,6 +2705,9 @@
     "maxPhotos": "最大5枚",
     "processing": "処理中...",
     "newProduct": "新商品",
+    "nameHint": "詳細に入力するほど、商品に合った広告が生成されます",
+    "descriptionHint": "AIが商品を理解するために参考にします",
+    "sellingPointsHint": "主な特長を入力すると、より適切な広告が作成されます",
     "validation": {
       "enterProductName": "商品名を入力してください",
       "selectProductImage": "商品画像を選択してください",

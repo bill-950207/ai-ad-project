@@ -2705,6 +2705,9 @@
     "maxPhotos": "Max 5",
     "processing": "Processing...",
     "newProduct": "New Product",
+    "nameHint": "The more detailed, the better the ad matches your product",
+    "descriptionHint": "Helps AI understand your product",
+    "sellingPointsHint": "Enter key benefits for more relevant ads",
     "validation": {
       "enterProductName": "Please enter product name",
       "selectProductImage": "Please select product image",

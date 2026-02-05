@@ -2705,6 +2705,9 @@
     "maxPhotos": "최대 5장",
     "processing": "처리 중...",
     "newProduct": "새 제품",
+    "nameHint": "상세할수록 제품에 맞는 광고가 생성됩니다",
+    "descriptionHint": "AI가 제품을 이해하는 데 참고합니다",
+    "sellingPointsHint": "제품의 핵심 장점을 입력하면 더 적합한 광고가 만들어집니다",
     "validation": {
       "enterProductName": "제품 이름을 입력해주세요",
       "selectProductImage": "제품 이미지를 선택해주세요",

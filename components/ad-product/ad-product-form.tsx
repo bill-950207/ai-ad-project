@@ -25,7 +25,16 @@ interface SlotInfo {
   message?: string
 }
 
-export function AdProductForm() {
+interface AdProductFormProps {
+  /** 모달 모드 여부 */
+  isModal?: boolean
+  /** 등록 완료 시 콜백 */
+  onComplete?: (productId: string) => void
+  /** 모달 닫기 콜백 */
+  onClose?: () => void
+}
+
+export function AdProductForm({ isModal = false, onComplete, onClose }: AdProductFormProps) {
   const { t } = useLanguage()
   const { refreshCredits } = useCredits()
   const router = useRouter()
@@ -51,6 +60,9 @@ export function AdProductForm() {
     processing?: string
     newProduct?: string
     imageSpec?: string
+    nameHint?: string
+    descriptionHint?: string
+    sellingPointsHint?: string
     validation?: {
       enterProductName?: string
       selectProductImage?: string
@@ -353,7 +365,11 @@ export function AdProductForm() {
 
   const handleScanComplete = () => {
     if (productId) {
-      router.push(`/dashboard/ad-products/${productId}`)
+      if (isModal && onComplete) {
+        onComplete(productId)
+      } else {
+        router.push(`/dashboard/ad-products/${productId}`)
+      }
     }
   }
 
@@ -369,18 +385,20 @@ export function AdProductForm() {
   }
 
   return (
-    <div className="max-w-lg mx-auto">
-      {/* 헤더 */}
-      <AdCreationHeader
-        backHref="/dashboard/image-ad"
-        title={t.adProduct.registerProduct}
-        selectedProduct={previewUrl ? {
-          name: name || (formT?.newProduct || 'New Product'),
-          imageUrl: previewUrl,
-        } : null}
-      />
+    <div className={isModal ? '' : 'max-w-lg mx-auto'}>
+      {/* 헤더 - 페이지 모드에서만 표시 */}
+      {!isModal && (
+        <AdCreationHeader
+          backHref="/dashboard/ad-products"
+          title={t.adProduct.registerProduct}
+          selectedProduct={previewUrl ? {
+            name: name || (formT?.newProduct || 'New Product'),
+            imageUrl: previewUrl,
+          } : null}
+        />
+      )}
 
-      <div className="bg-card border border-border rounded-xl p-6 space-y-6">
+      <div className={`space-y-5 ${isModal ? '' : 'bg-card border border-border rounded-xl p-6'}`}>
         {/* 입력 모드 선택 */}
         <div className="flex gap-2">
           <button
@@ -469,7 +487,7 @@ export function AdProductForm() {
 
         {/* 제품 이름 */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
+          <label className="block text-sm font-medium text-foreground mb-1.5">
             {t.adProduct.productName} <span className="text-red-500">*</span>
           </label>
           <input
@@ -477,18 +495,21 @@ export function AdProductForm() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder={t.adProduct.productNamePlaceholder}
-            className="w-full px-4 py-2 bg-secondary/30 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className="w-full px-3 py-2 bg-secondary/30 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
+          <p className="text-xs text-muted-foreground mt-1.5">
+            {formT?.nameHint || 'The more detailed, the better the ad matches your product'}
+          </p>
         </div>
 
         {/* 제품 이미지 */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
+          <label className="block text-sm font-medium text-foreground mb-1.5">
             {t.adProduct.productImage} <span className="text-red-500">*</span>
           </label>
 
           {previewUrl ? (
-            <div className="relative aspect-square bg-secondary/30 rounded-lg overflow-hidden">
+            <div className="relative w-40 h-40 bg-secondary/30 rounded-lg overflow-hidden">
               <img
                 src={previewUrl}
                 alt="Preview"
@@ -496,9 +517,9 @@ export function AdProductForm() {
               />
               <button
                 onClick={handleRemoveFile}
-                className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+                className="absolute top-1.5 right-1.5 p-1 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
               >
-                <X className="w-4 h-4 text-white" />
+                <X className="w-3.5 h-3.5 text-white" />
               </button>
             </div>
           ) : (
@@ -506,10 +527,10 @@ export function AdProductForm() {
               onClick={() => fileInputRef.current?.click()}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
-              className="aspect-square border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-secondary/20 transition-colors"
+              className="w-40 h-40 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-secondary/20 transition-colors"
             >
-              <Upload className="w-10 h-10 text-muted-foreground mb-3" />
-              <p className="text-sm text-muted-foreground">{t.adProduct.selectImage}</p>
+              <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+              <p className="text-xs text-muted-foreground">{t.adProduct.selectImage}</p>
             </div>
           )}
 
@@ -521,33 +542,33 @@ export function AdProductForm() {
             className="hidden"
           />
 
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-xs text-muted-foreground mt-1.5">
             {formT?.imageSpec || 'PNG, JPG, WEBP / Max 5MB / 256~4096px'}
           </p>
         </div>
 
         {/* 제품 설명 */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
+          <label className="block text-sm font-medium text-foreground mb-1.5">
             {formT?.productDescription || 'Product Description'}
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder={formT?.productDescPlaceholder || 'Enter a detailed description of your product...'}
-            rows={3}
-            className="w-full px-4 py-2 bg-secondary/30 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+            rows={2}
+            className="w-full px-3 py-2 bg-secondary/30 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
           />
+          <p className="text-xs text-muted-foreground mt-1.5">
+            {formT?.descriptionHint || 'Helps AI understand your product'}
+          </p>
         </div>
 
         {/* 셀링 포인트 */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
+          <label className="block text-sm font-medium text-foreground mb-1.5">
             {formT?.sellingPoints || 'Selling Points'}
           </label>
-          <p className="text-xs text-muted-foreground mb-2">
-            {formT?.sellingPointExample || 'e.g., "24-hour lasting moisture", "Dermatologist recommended", "Fragrance-free"'}
-          </p>
           <div className="space-y-2">
             {sellingPoints.map((point, index) => (
               <div key={index} className="flex gap-2">
@@ -556,14 +577,14 @@ export function AdProductForm() {
                   value={point}
                   onChange={(e) => updateSellingPoint(index, e.target.value)}
                   placeholder={formT?.sellingPointPlaceholder || 'Enter product advantages or features'}
-                  className="flex-1 px-4 py-2 bg-secondary/30 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="flex-1 px-3 py-2 bg-secondary/30 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
                 {sellingPoints.length > 1 && (
                   <button
                     onClick={() => removeSellingPoint(index)}
                     className="p-2 text-muted-foreground hover:text-red-500 transition-colors"
                   >
-                    <Minus className="w-5 h-5" />
+                    <Minus className="w-4 h-4" />
                   </button>
                 )}
               </div>
@@ -578,6 +599,9 @@ export function AdProductForm() {
               </button>
             )}
           </div>
+          <p className="text-xs text-muted-foreground mt-1.5">
+            {formT?.sellingPointsHint || 'Enter key benefits for more relevant ads'}
+          </p>
         </div>
 
         {/* 에러 메시지 */}

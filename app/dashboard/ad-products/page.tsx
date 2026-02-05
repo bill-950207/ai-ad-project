@@ -15,7 +15,9 @@ import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/language-context'
 import { Plus, Package } from 'lucide-react'
 import { AdProductCard } from '@/components/ad-product/ad-product-card'
+import { AdProductForm } from '@/components/ad-product/ad-product-form'
 import { GridSkeleton } from '@/components/ui/grid-skeleton'
+import { Modal, ModalHeader, ModalBody } from '@/components/ui/modal'
 
 interface AdProduct {
   id: string
@@ -37,6 +39,7 @@ export default function AdProductsPage() {
   const router = useRouter()
   const [products, setProducts] = useState<AdProduct[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [showRegisterModal, setShowRegisterModal] = useState(false)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
 
   const fetchProducts = useCallback(async () => {
@@ -116,7 +119,18 @@ export default function AdProductsPage() {
   }
 
   const handleRegisterProduct = () => {
-    router.push('/dashboard/ad-products/new')
+    setShowRegisterModal(true)
+  }
+
+  const handleRegisterComplete = (productId: string) => {
+    setShowRegisterModal(false)
+    fetchProducts() // 목록 새로고침
+    router.push(`/dashboard/ad-products/${productId}`)
+  }
+
+  const handleRegisterClose = () => {
+    setShowRegisterModal(false)
+    fetchProducts() // 목록 새로고침 (스캐너 완료 후 닫힌 경우)
   }
 
   return (
@@ -165,6 +179,25 @@ export default function AdProductsPage() {
           ))}
         </div>
       )}
+
+      {/* 제품 등록 모달 */}
+      <Modal
+        isOpen={showRegisterModal}
+        onClose={handleRegisterClose}
+        size="lg"
+        ariaLabel={t.adProduct.registerProduct}
+      >
+        <ModalHeader onClose={handleRegisterClose} icon={<Package className="w-5 h-5 text-primary" />}>
+          {t.adProduct.registerProduct}
+        </ModalHeader>
+        <ModalBody className="max-h-[70vh] overflow-y-auto">
+          <AdProductForm
+            isModal
+            onComplete={handleRegisterComplete}
+            onClose={handleRegisterClose}
+          />
+        </ModalBody>
+      </Modal>
     </div>
   )
 }

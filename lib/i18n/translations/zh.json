@@ -2705,6 +2705,9 @@
     "maxPhotos": "最多5张",
     "processing": "处理中...",
     "newProduct": "新产品",
+    "nameHint": "描述越详细，生成的广告越符合您的产品",
+    "descriptionHint": "帮助AI理解您的产品",
+    "sellingPointsHint": "输入核心优势，让广告更加精准",
     "validation": {
       "enterProductName": "请输入产品名称",
       "selectProductImage": "请选择产品图片",
