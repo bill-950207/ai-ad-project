@@ -53,6 +53,7 @@ interface ImageAdRequestBody {
   adType: ImageAdType
   productId?: string  // wearing일 경우 없을 수 있음
   avatarIds?: string[]  // 다중 아바타 지원 (productOnly일 경우 빈 배열)
+  avatarType?: 'avatar' | 'preset' | 'ai-generated'  // 아바타 유형 ('preset'은 default_avatars 테이블)
   outfitId?: string  // wearing일 경우 의상 ID
   prompt: string
   imageSize: ImageAdSize
@@ -261,7 +262,7 @@ export async function POST(request: NextRequest) {
 
     // 요청 바디 파싱
     const body: ImageAdRequestBody = await request.json()
-    const { adType, productId, avatarIds = [], outfitId, prompt, imageSize, quality = 'medium', numImages = 2, referenceStyleImageUrl, language = 'ko', options, aiAvatarOptions, draftId } = body
+    const { adType, productId, avatarIds = [], avatarType, outfitId, prompt, imageSize, quality = 'medium', numImages = 2, referenceStyleImageUrl, language = 'ko', options, aiAvatarOptions, draftId } = body
 
     // 구독 플랜 확인
     const userPlan = await getUserPlan(user.id)
@@ -361,9 +362,11 @@ export async function POST(request: NextRequest) {
     let primaryAvatarId: string | null = null
 
     // AI 생성 아바타 여부 확인
-    const isAiGeneratedAvatar = avatarIds.length > 0 && avatarIds[0] === 'ai-generated'
-    console.log('=== AI 아바타 디버그 ===', {
+    // 프리셋 아바타는 avatars 테이블의 id를 사용하므로 일반 아바타와 동일하게 처리
+    const isAiGeneratedAvatar = avatarIds.length > 0 && (avatarIds[0] === 'ai-generated' || avatarType === 'ai-generated')
+    console.log('=== 아바타 디버그 ===', {
       isAiGeneratedAvatar,
+      avatarType,
       avatarIds,
       aiAvatarOptions,
       hasTargetGender: aiAvatarOptions?.targetGender,
@@ -392,6 +395,7 @@ export async function POST(request: NextRequest) {
         // aiAvatarDescription은 아래에서 생성되어 Gemini/Seedream에 전달됨
       }
       // 착용샷이고 의상이 선택된 경우, 의상 이미지 사용 (단일 아바타만)
+      // 프리셋 아바타는 avatars 테이블의 id를 사용하므로 아래 일반 아바타 로직에서 처리됨
       else if (isWearingType && outfitId) {
         const avatarId = avatarIds[0]
         primaryAvatarId = avatarId

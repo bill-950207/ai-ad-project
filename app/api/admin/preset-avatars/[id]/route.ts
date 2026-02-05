@@ -6,7 +6,11 @@ interface RouteParams {
   params: Promise<{ id: string }>
 }
 
-// PATCH: Update a default avatar (admin only)
+/**
+ * PATCH /api/admin/preset-avatars/[id]
+ *
+ * 프리셋 아바타 수정 (관리자 전용)
+ */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const { isAdmin, error } = await checkAdminRole()
@@ -20,48 +24,23 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const { id } = await params
     const body = await request.json()
+    const { display_order, is_active } = body
 
-    // Check if avatar exists
-    const existing = await prisma.default_avatars.findUnique({
-      where: { id }
-    })
-
-    if (!existing) {
-      return NextResponse.json(
-        { error: 'Default avatar not found' },
-        { status: 404 }
-      )
-    }
-
-    const {
-      name,
-      description,
-      image_url,
-      gender,
-      age_group,
-      style,
-      is_active,
-      display_order
-    } = body
-
-    const updatedAvatar = await prisma.default_avatars.update({
+    const presetAvatar = await prisma.preset_avatars.update({
       where: { id },
       data: {
-        ...(name !== undefined && { name }),
-        ...(description !== undefined && { description }),
-        ...(image_url !== undefined && { image_url }),
-        ...(gender !== undefined && { gender }),
-        ...(age_group !== undefined && { age_group }),
-        ...(style !== undefined && { style }),
-        ...(is_active !== undefined && { is_active }),
         ...(display_order !== undefined && { display_order }),
-        updated_at: new Date()
+        ...(is_active !== undefined && { is_active }),
+        updated_at: new Date(),
+      },
+      include: {
+        avatars: true
       }
     })
 
-    return NextResponse.json({ data: updatedAvatar })
+    return NextResponse.json({ data: presetAvatar })
   } catch (error) {
-    console.error('Error updating default avatar:', error)
+    console.error('Error updating preset avatar:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -69,7 +48,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// DELETE: Delete a default avatar (admin only)
+/**
+ * DELETE /api/admin/preset-avatars/[id]
+ *
+ * 프리셋 아바타 삭제 (관리자 전용)
+ * 원본 아바타는 유지됨
+ */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { isAdmin, error } = await checkAdminRole()
@@ -83,25 +67,32 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     const { id } = await params
 
-    // Check if avatar exists
-    const existing = await prisma.default_avatars.findUnique({
+    // 프리셋 정보 조회 (avatar_id 확인용)
+    const preset = await prisma.preset_avatars.findUnique({
       where: { id }
     })
 
-    if (!existing) {
+    if (!preset) {
       return NextResponse.json(
-        { error: 'Default avatar not found' },
+        { error: 'Preset avatar not found' },
         { status: 404 }
       )
     }
 
-    await prisma.default_avatars.delete({
-      where: { id }
-    })
+    // 프리셋 삭제 및 원본 아바타 is_preset 해제
+    await prisma.$transaction([
+      prisma.preset_avatars.delete({
+        where: { id }
+      }),
+      prisma.avatars.update({
+        where: { id: preset.avatar_id },
+        data: { is_preset: false }
+      })
+    ])
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting default avatar:', error)
+    console.error('Error deleting preset avatar:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

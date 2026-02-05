@@ -474,12 +474,11 @@ export default function AvatarDetailPage() {
     setIsRegisteringPreset(true)
 
     try {
-      const res = await fetch('/api/admin/default-avatars/register', {
+      const res = await fetch('/api/admin/preset-avatars', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           avatarId: avatar.id,
-          name: avatar.name,
         }),
       })
 

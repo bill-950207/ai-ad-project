@@ -58,15 +58,16 @@ export interface SelectedAvatarInfo {
   isPreset?: boolean
 }
 
-/** 프리셋 아바타 (default_avatars 테이블) */
-interface DefaultAvatar {
-  id: string
+/** 프리셋 아바타 (preset_avatars 테이블 - avatars 참조) */
+interface PresetAvatar {
+  id: string  // avatar_id (avatars 테이블의 id)
+  presetId: string  // preset_avatars 테이블의 id
   name: string
-  description: string | null
-  image_url: string
-  gender: string | null
-  age_group: string | null
-  style: string | null
+  image_url: string | null
+  image_url_original: string | null
+  options: AvatarStyleOptions | null
+  display_order: number | null
+  type: 'preset'
 }
 
 interface AvatarSelectModalProps {
@@ -211,7 +212,7 @@ export function AvatarSelectModal({
 }: AvatarSelectModalProps) {
   const { t } = useLanguage()
   const [avatars, setAvatars] = useState<Avatar[]>([])
-  const [defaultAvatars, setDefaultAvatars] = useState<DefaultAvatar[]>([])
+  const [presetAvatars, setPresetAvatars] = useState<PresetAvatar[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   // AI 아바타 옵션 상태
@@ -233,9 +234,9 @@ export function AvatarSelectModal({
     setIsLoading(true)
     try {
       // 아바타 목록과 프리셋 아바타를 병렬로 조회
-      const [avatarsRes, defaultAvatarsRes] = await Promise.all([
+      const [avatarsRes, presetAvatarsRes] = await Promise.all([
         fetch('/api/avatars'),
-        fetch('/api/default-avatars')
+        fetch('/api/preset-avatars')
       ])
 
       if (!avatarsRes.ok) throw new Error('Failed to fetch avatars')
@@ -249,9 +250,9 @@ export function AvatarSelectModal({
       setAvatars(filteredAvatars)
 
       // 프리셋 아바타 로드
-      if (defaultAvatarsRes.ok) {
-        const defaultData = await defaultAvatarsRes.json()
-        setDefaultAvatars(defaultData.data || [])
+      if (presetAvatarsRes.ok) {
+        const presetData = await presetAvatarsRes.json()
+        setPresetAvatars(presetData.data || [])
       }
     } catch (error) {
       console.error('Failed to load data:', error)
@@ -279,13 +280,16 @@ export function AvatarSelectModal({
   }
 
   // 프리셋 아바타 선택
-  const handleSelectPreset = (preset: DefaultAvatar) => {
+  const handleSelectPreset = (preset: PresetAvatar) => {
+    if (!preset.image_url) return
+
     onSelect({
       type: 'preset',
-      avatarId: preset.id,
+      avatarId: preset.id,  // avatars 테이블의 id (FK 호환)
       avatarName: preset.name,
       imageUrl: preset.image_url,
       displayName: preset.name,
+      avatarOptions: preset.options || undefined,
       isPreset: true,
     })
   }
@@ -436,7 +440,7 @@ export function AvatarSelectModal({
               )}
 
               {/* 프리셋 아바타 섹션 */}
-              {defaultAvatars.length > 0 && (
+              {presetAvatars.length > 0 && (
                 <>
                   {/* 구분선 */}
                   <div className="flex items-center gap-3 my-4">
@@ -447,7 +451,7 @@ export function AvatarSelectModal({
 
                   {/* 프리셋 아바타 그리드 */}
                   <div className="grid grid-cols-5 gap-3">
-                    {defaultAvatars.map((preset) => {
+                    {presetAvatars.map((preset) => {
                       const isSelected = selectedAvatarId === preset.id && selectedType === 'preset'
 
                       return (
@@ -462,7 +466,7 @@ export function AvatarSelectModal({
                         >
                           <div className="aspect-[9/16]">
                             <img
-                              src={preset.image_url}
+                              src={preset.image_url || ''}
                               alt={preset.name}
                               className="w-full h-full object-cover"
                             />

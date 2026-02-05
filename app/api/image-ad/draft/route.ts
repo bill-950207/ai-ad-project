@@ -42,8 +42,11 @@ export async function POST(request: NextRequest) {
       forceNew,  // true면 항상 새 draft 생성
     } = body
 
-    // AI 생성 아바타의 경우 avatar_id는 null로 저장 (UUID가 아니므로)
-    const avatarId = rawAvatarId === 'ai-generated' ? null : rawAvatarId
+    // AI 생성 아바타의 경우 avatar_id는 null로 저장 (UUID가 아님)
+    // 프리셋 아바타는 avatars 테이블의 id를 사용하므로 정상 저장 가능
+    const avatarType = wizardState?.selectedAvatarInfo?.type
+    const isAiGeneratedAvatar = rawAvatarId === 'ai-generated' || avatarType === 'ai-generated'
+    const avatarId = isAiGeneratedAvatar ? null : rawAvatarId
 
     // 기존 초안 업데이트 (id가 있고 forceNew가 아닐 때)
     if (id && !forceNew) {

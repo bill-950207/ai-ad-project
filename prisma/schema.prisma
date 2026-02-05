@@ -398,34 +398,34 @@ model avatars {
   updated_at         DateTime         @default(now()) @db.Timestamptz(6)
   completed_at       DateTime?        @db.Timestamptz(6)
   image_url_original String?
+  is_preset          Boolean?         @default(false)
   outfits            avatar_outfits[]
   profiles           profiles         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   image_ads          image_ads[]
   video_ads          video_ads[]
+  preset_avatars     preset_avatars?
 
   @@index([fal_request_id], map: "idx_avatars_fal_request_id")
   @@index([status], map: "idx_avatars_status")
   @@index([user_id], map: "idx_avatars_user_id")
+  @@index([is_preset], map: "idx_avatars_is_preset")
   @@schema("public")
 }
 
-/// 서비스 기본 제공 아바타 (모든 사용자가 사용 가능)
+/// 프리셋 아바타 (avatars 테이블 참조, 모든 사용자가 선택 가능)
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model default_avatars {
+model preset_avatars {
   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name          String
-  description   String?
-  image_url     String
-  gender        String?
-  age_group     String?
-  style         String?
-  is_active     Boolean?  @default(true)
+  avatar_id     String    @unique @db.Uuid
   display_order Int?      @default(0)
+  is_active     Boolean?  @default(true)
   created_at    DateTime? @default(now()) @db.Timestamptz(6)
   updated_at    DateTime? @default(now()) @db.Timestamptz(6)
+  avatars       avatars   @relation(fields: [avatar_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([is_active], map: "idx_default_avatars_is_active")
-  @@index([display_order], map: "idx_default_avatars_display_order")
+  @@index([is_active], map: "idx_preset_avatars_is_active")
+  @@index([display_order], map: "idx_preset_avatars_display_order")
+  @@index([avatar_id], map: "idx_preset_avatars_avatar_id")
   @@schema("public")
 }
 

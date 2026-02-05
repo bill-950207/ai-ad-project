@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
       status,  // 상태 업데이트 (DRAFT, GENERATING_IMAGES, GENERATING_AUDIO 등)
       // Step 1 데이터
       avatarId,
+      avatarType,  // 'avatar' | 'preset' | 'ai-generated'
       outfitId,
       avatarImageUrl,
       productId,
@@ -73,8 +74,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Category is required' }, { status: 400 })
     }
 
-    // AI 생성 아바타 처리 (avatarId가 'ai-generated'이면 DB에는 null 저장)
-    const isAiGeneratedAvatar = avatarId === 'ai-generated'
+    // AI 생성 아바타 처리 (DB의 avatars FK에 저장 불가하므로 null 처리)
+    // 프리셋 아바타는 avatars 테이블의 id를 사용하므로 정상 저장 가능
+    const isAiGeneratedAvatar = avatarId === 'ai-generated' || avatarType === 'ai-generated'
     const dbAvatarId = isAiGeneratedAvatar ? null : (avatarId || null)
 
     // 기존 초안 업데이트 또는 새로 생성
