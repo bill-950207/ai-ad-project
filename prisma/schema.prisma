@@ -400,15 +400,15 @@ model avatars {
   image_url_original String?
   is_preset          Boolean?         @default(false)
   outfits            avatar_outfits[]
+  preset_avatars     preset_avatars?
   profiles           profiles         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   image_ads          image_ads[]
   video_ads          video_ads[]
-  preset_avatars     preset_avatars?
 
   @@index([fal_request_id], map: "idx_avatars_fal_request_id")
+  @@index([is_preset], map: "idx_avatars_is_preset")
   @@index([status], map: "idx_avatars_status")
   @@index([user_id], map: "idx_avatars_user_id")
-  @@index([is_preset], map: "idx_avatars_is_preset")
   @@schema("public")
 }
 
@@ -423,9 +423,9 @@ model preset_avatars {
   updated_at    DateTime? @default(now()) @db.Timestamptz(6)
   avatars       avatars   @relation(fields: [avatar_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([is_active], map: "idx_preset_avatars_is_active")
-  @@index([display_order], map: "idx_preset_avatars_display_order")
   @@index([avatar_id], map: "idx_preset_avatars_avatar_id")
+  @@index([display_order], map: "idx_preset_avatars_display_order")
+  @@index([is_active], map: "idx_preset_avatars_is_active")
   @@schema("public")
 }
 

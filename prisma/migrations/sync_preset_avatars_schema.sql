@@ -1,0 +1,10 @@
+-- Prisma 스키마 동기화: default_avatars → preset_avatars
+-- 이 마이그레이션은 스키마 코드만 동기화합니다.
+-- DB에는 이미 preset_avatars 테이블과 avatars.is_preset 컬럼이 존재하므로
+-- 실제 SQL 실행은 필요하지 않습니다.
+--
+-- 변경 사항:
+-- 1. default_avatars 모델 제거 (DB에 존재하지 않음)
+-- 2. preset_avatars 모델 추가 (DB에 이미 존재)
+-- 3. avatars.is_preset 필드 추가 (DB에 이미 존재)
+-- 4. idx_avatars_is_preset 인덱스 추가 (DB에 이미 존재)
