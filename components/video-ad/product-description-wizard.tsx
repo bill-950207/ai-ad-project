@@ -663,6 +663,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
 
   // Step 3: 음성 (Step 4에서 통합됨)
   const [selectedVoice, setSelectedVoice] = useState<Voice | null>(null)
+  const [voiceGenderFilter, setVoiceGenderFilter] = useState<'female' | 'male'>('female')
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false)
@@ -1217,6 +1218,9 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
     if (draft.first_frame_prompt) setFirstFramePrompt(draft.first_frame_prompt)
 
     // Step 4 데이터
+    // 참고: 이 함수는 loadExistingData(useCallback) 내에서 호출되어 stale closure로
+    // voices=[]를 참조하므로, 여기서는 임시 객체로 복원하고 실제 gender 보정은
+    // selectedVoiceId 기반 useEffect에서 voices 로드 후 처리됨.
     if (draft.voice_id && draft.voice_name) {
       setSelectedVoice({
         id: draft.voice_id,
@@ -2132,6 +2136,44 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       stopAudioPreview()
     }
   }, [stopAudioPreview])
+
+  // 아바타 성별에 따라 음성 성별 필터 자동 설정
+  // (이미 음성이 선택되어 있으면 스킵 — 드래프트 복원 시 음성 선택 보존)
+  useEffect(() => {
+    if (!selectedAvatarInfo) return
+    if (selectedVoice) return
+    const avatarGender = selectedAvatarInfo.avatarOptions?.gender
+      || (selectedAvatarInfo.aiOptions?.targetGender !== 'any'
+          ? selectedAvatarInfo.aiOptions?.targetGender : undefined)
+    if (avatarGender === 'male' || avatarGender === 'female') {
+      setVoiceGenderFilter(avatarGender)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAvatarInfo])
+
+  // 드래프트 복원된 음성의 gender 보정 (voices 로드 후 또는 voice 설정 후)
+  // restoreDraftData는 stale closure로 voices=[]을 참조하므로 항상 fallback gender 사용.
+  // voices 로드/voice 설정 어느 쪽이 먼저든 이 effect가 실제 gender로 보정.
+  const selectedVoiceId = selectedVoice?.id
+  useEffect(() => {
+    if (!selectedVoice || voices.length === 0) return
+    const matched = voices.find(v => v.id === selectedVoice.id)
+    if (matched && matched.gender !== selectedVoice.gender) {
+      setSelectedVoice(matched)
+      if (matched.gender === 'male' || matched.gender === 'female') {
+        setVoiceGenderFilter(matched.gender)
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voices, selectedVoiceId])
+
+  // 성별 탭 전환 시 다른 성별의 음성이 선택되어 있으면 해제
+  useEffect(() => {
+    if (selectedVoice && selectedVoice.gender !== voiceGenderFilter) {
+      setSelectedVoice(null)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voiceGenderFilter])
 
   // 스텝 변경 시 오디오 정리 (음성 선택 스텝에서 벗어날 때)
   useEffect(() => {
@@ -3256,8 +3298,31 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                       <Volume2 className="w-4 h-4 inline mr-1" />
                       AI 음성 {isLoadingVoices && <Loader2 className="w-3 h-3 inline ml-1 animate-spin" />}
                     </label>
+                    {/* 성별 탭 */}
+                    <div className="flex gap-2 mb-3">
+                      <button
+                        onClick={() => { stopAudioPreview(); setVoiceGenderFilter('female') }}
+                        className={`flex-1 py-1.5 px-3 rounded-lg text-sm font-medium transition-colors ${
+                          voiceGenderFilter === 'female'
+                            ? 'bg-pink-500/20 text-pink-500 border border-pink-500/30'
+                            : 'bg-secondary text-muted-foreground border border-transparent hover:bg-secondary/80'
+                        }`}
+                      >
+                        {t.common?.female || 'Female'}
+                      </button>
+                      <button
+                        onClick={() => { stopAudioPreview(); setVoiceGenderFilter('male') }}
+                        className={`flex-1 py-1.5 px-3 rounded-lg text-sm font-medium transition-colors ${
+                          voiceGenderFilter === 'male'
+                            ? 'bg-blue-500/20 text-blue-500 border border-blue-500/30'
+                            : 'bg-secondary text-muted-foreground border border-transparent hover:bg-secondary/80'
+                        }`}
+                      >
+                        {t.common?.male || 'Male'}
+                      </button>
+                    </div>
                     <div className="grid grid-cols-1 gap-2 max-h-[400px] overflow-y-auto">
-                      {voices.map((voice) => (
+                      {voices.filter(v => v.gender === voiceGenderFilter).map((voice) => (
                         <div
                           key={voice.id}
                           className={`relative text-left p-3 rounded-lg border transition-colors ${selectedVoice?.id === voice.id
@@ -3271,12 +3336,6 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
                           >
                             <div className="flex items-center gap-2">
                               <span className="font-medium text-foreground text-sm">{voice.name}</span>
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded ${voice.gender === 'female'
-                                  ? 'bg-pink-500/20 text-pink-500'
-                                  : 'bg-blue-500/20 text-blue-500'
-                                }`}>
-                                {voice.gender === 'female' ? (t.common?.female || 'Female') : (t.common?.male || 'Male')}
-                              </span>
                             </div>
                             <p className="text-[11px] text-muted-foreground mt-0.5">{voice.description}</p>
                           </button>
