@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCredits } from '@/contexts/credit-context'
 import { useLanguage } from '@/contexts/language-context'
+import { trackEvent } from '@/lib/analytics/track'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
 import { InsufficientCreditsModal } from '@/components/ui/insufficient-credits-modal'
 import {
   ArrowLeft,
@@ -765,6 +767,12 @@ export function WizardStep5() {
     }
 
     setError(null)
+
+    trackEvent(ANALYTICS_EVENTS.VIDEO_AD_GENERATION_STARTED, {
+      wizard_type: 'product_ad',
+      resolution: videoResolution,
+    })
+
     setIsGeneratingVideo(true)
     setGenerationProgress(0)
     setSceneVideoStatuses([])
@@ -1113,6 +1121,10 @@ export function WizardStep5() {
         setGenerationProgress(100)
         setIsGeneratingVideo(false)
 
+        trackEvent(ANALYTICS_EVENTS.VIDEO_AD_GENERATION_COMPLETED, {
+          wizard_type: 'product_ad',
+        })
+
         // DB 업데이트 (폴링 중 수집된 최종 상태 사용 - React 상태 업데이트 타이밍 이슈 해결)
         // 초기 statuses와 수집된 결과를 병합하여 최종 sceneVideoUrls 구성
         const finalSceneVideoUrls = statuses.map(s => {
@@ -1324,6 +1336,10 @@ export function WizardStep5() {
 
         setGenerationProgress(100)
         setIsGeneratingVideo(false)
+
+        trackEvent(ANALYTICS_EVENTS.VIDEO_AD_GENERATION_COMPLETED, {
+          wizard_type: 'product_ad',
+        })
 
         // DB 업데이트 (폴링 중 수집한 URL 사용)
         if (collectedUrls.length > 0) {

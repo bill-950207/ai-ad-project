@@ -1,6 +1,8 @@
 'use client'
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react'
+import { trackEvent } from '@/lib/analytics/track'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
 import { ImageAdType } from '@/components/ad-product/image-ad-type-modal'
 import { SelectedAvatarInfo, AiAvatarOptions } from '@/components/video-ad/avatar-select-modal'
 import { getDefaultOptions } from '@/lib/image-ad/category-options'
@@ -640,6 +642,18 @@ export function ImageAdWizardProvider({
 
     loadOrCreateDraft()
   }, [initialDraftId, initialAdType])
+
+  // ============================================================
+  // 위저드 시작 이벤트 추적
+  // ============================================================
+
+  useEffect(() => {
+    trackEvent(ANALYTICS_EVENTS.IMAGE_AD_WIZARD_STARTED, {
+      ad_type: initialAdType,
+      has_draft: !!initialDraftId,
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ============================================================
   // Auto-save (단계 진행 시)

@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react'
 import { useAsyncDraftSave } from '@/lib/hooks/use-async-draft-save'
+import { trackEvent } from '@/lib/analytics/track'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
 
 // ============================================================
 // 타입 정의
@@ -364,6 +366,14 @@ export function ProductAdWizardProvider({ children, initialProductId, initialSte
         .catch(err => console.error('Failed to load initial products:', err))
     }
   }, [initialProductId])
+
+  // 위저드 시작 이벤트 추적
+  useEffect(() => {
+    trackEvent(ANALYTICS_EVENTS.VIDEO_AD_WIZARD_STARTED, {
+      wizard_type: 'product_ad',
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Helper functions for video arrays
   const addVideoRequestId = useCallback((id: string) => {

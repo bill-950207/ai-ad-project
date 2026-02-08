@@ -48,6 +48,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AvatarSelectModal, SelectedAvatarInfo } from './avatar-select-modal'
 import { ProductCreateModal, AdProduct as ModalAdProduct } from './product-create-modal'
 import { useAsyncDraftSave } from '@/lib/hooks/use-async-draft-save'
+import { trackEvent } from '@/lib/analytics/track'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
 
 // ============================================================
 // 타입 정의
@@ -600,6 +602,14 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
 
   // 새 옵션: 배경/장소
   const [locationPreset, setLocationPreset] = useState<LocationPreset>('auto')
+
+  // 위저드 시작 이벤트 추적
+  useEffect(() => {
+    trackEvent(ANALYTICS_EVENTS.VIDEO_AD_WIZARD_STARTED, {
+      wizard_type: 'product_description',
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // videoType 변경 시 해당 스타일에 맞는 기본값으로 자동 변경
   useEffect(() => {
@@ -1368,6 +1378,9 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
 
       if (status.status === 'COMPLETED') {
         setGenerationStatus('완료!')
+        trackEvent(ANALYTICS_EVENTS.VIDEO_AD_GENERATION_COMPLETED, {
+          wizard_type: 'product_description',
+        })
         // 크레딧 갱신
         refreshCredits()
         setTimeout(() => {
@@ -1964,6 +1977,12 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
       setShowInsufficientCreditsModal(true)
       return
     }
+
+    trackEvent(ANALYTICS_EVENTS.VIDEO_AD_GENERATION_STARTED, {
+      wizard_type: 'product_description',
+      resolution,
+      credits_used: requiredCredits,
+    })
 
     // 버튼 클릭 즉시 Step 4로 이동
     setStep(4)

@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/contexts/language-context";
 import { ToastProvider } from "@/components/ui/toast";
 import { ClarityScript } from "@/components/analytics/clarity";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
+import { PostHogProvider } from "@/components/analytics/posthog-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -49,6 +50,7 @@ export default function RootLayout({
           supabaseUrl={process.env.SUPABASE_URL!}
           supabaseAnonKey={process.env.SUPABASE_ANON_KEY!}
         >
+          <PostHogProvider>
           <LanguageProvider>
             <ToastProvider>
               <Navbar />
@@ -57,6 +59,7 @@ export default function RootLayout({
               </div>
             </ToastProvider>
           </LanguageProvider>
+          </PostHogProvider>
         </SupabaseProvider>
       </body>
     </html>

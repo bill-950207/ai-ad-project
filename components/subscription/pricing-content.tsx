@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Check, X, Sparkles, Zap, Building2, Infinity, Crown, TrendingUp, Loader2, AlertCircle } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
+import { useTrack } from '@/lib/analytics/track'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
 
 type BillingInterval = 'monthly' | 'yearly'
 
@@ -163,6 +165,7 @@ const getPlanTier = (planName: string): number => {
 export function PricingContent() {
   const { t } = useLanguage()
   const [interval, setInterval] = useState<BillingInterval>('monthly')
+  const track = useTrack()
   const [loading, setLoading] = useState<string | null>(null)
   const [currentPlanType, setCurrentPlanType] = useState<string>('FREE')
   const [pageLoading, setPageLoading] = useState(true)
@@ -217,7 +220,9 @@ export function PricingContent() {
           throw new Error('Failed to fetch plan')
         }
         const data = await response.json()
-        setCurrentPlanType(data.planType || 'FREE')
+        const planType = data.planType || 'FREE'
+        setCurrentPlanType(planType)
+        track(ANALYTICS_EVENTS.PRICING_PAGE_VIEWED, { current_plan: planType })
       } catch (err) {
         console.error('Failed to fetch current plan:', err)
         setError(pricingT?.loadError || 'Unable to load plan info.')
@@ -227,6 +232,7 @@ export function PricingContent() {
     }
 
     fetchCurrentPlan()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const currentTier = getPlanTier(currentPlanType)
@@ -239,6 +245,9 @@ export function PricingContent() {
 
     setLoading(planName)
     setError(null)
+
+    track(ANALYTICS_EVENTS.CHECKOUT_INITIATED, { plan: planName, interval })
+
     try {
       const response = await fetch('/api/stripe/checkout', {
         method: 'POST',
