@@ -5,17 +5,15 @@
  */
 
 import ffmpeg from 'fluent-ffmpeg'
+import { execFile } from 'child_process'
 import { promises as fs } from 'fs'
 import path from 'path'
 import os from 'os'
 
-// @ffmpeg-installer/ffmpeg, @ffprobe-installer/ffprobe 패키지에서 경로 가져오기
+// @ffmpeg-installer/ffmpeg 패키지에서 경로 가져오기
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg')
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const ffprobeInstaller = require('@ffprobe-installer/ffprobe')
 ffmpeg.setFfmpegPath(ffmpegInstaller.path)
-ffmpeg.setFfprobePath(ffprobeInstaller.path)
 
 /**
  * 여러 비디오 URL을 하나의 비디오로 합칩니다.
@@ -525,16 +523,29 @@ export async function normalizeAudioVolume(
 
 /**
  * 미디어 파일의 길이(초)를 반환합니다.
+ * ffmpeg를 사용하여 duration을 추출합니다 (ffprobe 불필요).
  */
 async function getMediaDuration(filePath: string): Promise<number> {
   return new Promise((resolve, reject) => {
-    ffmpeg.ffprobe(filePath, (err, metadata) => {
-      if (err) {
-        reject(err)
-        return
+    execFile(
+      ffmpegInstaller.path,
+      ['-i', filePath, '-f', 'null', '-'],
+      { timeout: 30000 },
+      (err, _stdout, stderr) => {
+        // ffmpeg -i는 항상 에러로 종료하지만 stderr에 Duration 정보가 있음
+        const output = stderr || ''
+        const match = output.match(/Duration:\s*(\d+):(\d+):(\d+)\.(\d+)/)
+        if (match) {
+          const hours = parseInt(match[1], 10)
+          const minutes = parseInt(match[2], 10)
+          const seconds = parseInt(match[3], 10)
+          const centiseconds = parseInt(match[4], 10)
+          const duration = hours * 3600 + minutes * 60 + seconds + centiseconds / 100
+          resolve(duration)
+        } else {
+          reject(new Error(`Could not determine duration of ${filePath}: ${err?.message || 'no duration found'}`))
+        }
       }
-      const duration = metadata.format.duration || 0
-      resolve(duration)
-    })
+    )
   })
 }

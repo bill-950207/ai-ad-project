@@ -9,11 +9,6 @@ const nextConfig = {
     '@ffmpeg-installer/darwin-x64',
     '@ffmpeg-installer/linux-x64',
     '@ffmpeg-installer/win32-x64',
-    '@ffprobe-installer/ffprobe',
-    '@ffprobe-installer/darwin-arm64',
-    '@ffprobe-installer/darwin-x64',
-    '@ffprobe-installer/linux-x64',
-    '@ffprobe-installer/win32-x64',
     'fluent-ffmpeg',
   ],
   // 배럴 파일 임포트 최적화 (lucide-react 등)
