@@ -29,7 +29,7 @@ function createPostHogClient(): PostHog | null {
 
 const posthogServer = globalForPostHog.posthogServer ?? createPostHogClient() ?? undefined
 
-if (process.env.NODE_ENV !== 'production' && posthogServer) {
+if (process.env.NODE_ENV === 'production' && posthogServer) {
   globalForPostHog.posthogServer = posthogServer
 }
 

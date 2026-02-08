@@ -184,6 +184,8 @@ export function WizardStep4() {
       return
     }
 
+    const startTime = Date.now()
+
     track(ANALYTICS_EVENTS.IMAGE_AD_GENERATION_STARTED, {
       ad_type: adType,
       quality,
@@ -194,7 +196,7 @@ export function WizardStep4() {
 
     setIsGenerating(true)
     setResultImages([])
-    setGenerationStartTime(Date.now())
+    setGenerationStartTime(startTime)
     setGenerationProgress(0)
     currentProgressRef.current = 0  // ref도 초기화
 
@@ -393,7 +395,7 @@ export function WizardStep4() {
       track(ANALYTICS_EVENTS.IMAGE_AD_GENERATION_COMPLETED, {
         ad_type: adType,
         num_images: imageUrls.length,
-        duration_seconds: Math.round((Date.now() - (generationStartTime || Date.now())) / 1000),
+        duration_seconds: Math.round((Date.now() - startTime) / 1000),
       })
 
       // 생성 완료 시 draft는 이미 IN_QUEUE → COMPLETED로 업데이트됨

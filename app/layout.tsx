@@ -51,14 +51,14 @@ export default function RootLayout({
           supabaseAnonKey={process.env.SUPABASE_ANON_KEY!}
         >
           <PostHogProvider>
-          <LanguageProvider>
-            <ToastProvider>
-              <Navbar />
-              <div className="pt-16">
-                {children}
-              </div>
-            </ToastProvider>
-          </LanguageProvider>
+            <LanguageProvider>
+              <ToastProvider>
+                <Navbar />
+                <div className="pt-16">
+                  {children}
+                </div>
+              </ToastProvider>
+            </LanguageProvider>
           </PostHogProvider>
         </SupabaseProvider>
       </body>
