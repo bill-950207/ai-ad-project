@@ -832,6 +832,12 @@
       "generatingDesc": "AI正在生成{count}张图片...",
       "progress": "进度",
       "almostDone": "即将完成...",
+      "steps": {
+        "analyzing": "正在分析产品和风格...",
+        "composing": "正在设计构图和氛围...",
+        "rendering": "正在生成高品质图片...",
+        "finalizing": "即将完成..."
+      },
       "preview": "生成预览",
       "product": "产品",
       "avatar": "虚拟形象",
