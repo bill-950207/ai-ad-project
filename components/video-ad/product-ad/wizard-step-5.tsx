@@ -771,6 +771,7 @@ export function WizardStep5() {
     trackEvent(ANALYTICS_EVENTS.VIDEO_AD_GENERATION_STARTED, {
       wizard_type: 'product_ad',
       resolution: videoResolution,
+      credits_used: estimatedCredits,
     })
 
     setIsGeneratingVideo(true)

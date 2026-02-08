@@ -36,11 +36,6 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}/verify-email?email=${email}`)
     }
 
-    // 이메일 인증 완료 이벤트
-    captureServerEvent(user.id, ANALYTICS_EVENTS.AUTH_EMAIL_VERIFIED, {
-      method: isGoogleAuth ? 'google' : 'email',
-    })
-
     try {
       // 프로필 존재 여부 확인
       let profile = await prisma.profiles.findUnique({
@@ -86,8 +81,16 @@ export async function GET(request: Request) {
           return newProfile
         })
 
-        // Google 회원가입 완료 이벤트
+        // 신규 사용자: 이메일 인증 완료 + 회원가입 완료 이벤트
+        captureServerEvent(user.id, ANALYTICS_EVENTS.AUTH_EMAIL_VERIFIED, {
+          method: isGoogleAuth ? 'google' : 'email',
+        })
         captureServerEvent(user.id, ANALYTICS_EVENTS.AUTH_SIGNUP_COMPLETED, {
+          method: isGoogleAuth ? 'google' : 'email',
+        })
+      } else {
+        // 기존 사용자: 로그인 성공 이벤트
+        captureServerEvent(user.id, ANALYTICS_EVENTS.AUTH_LOGIN_SUCCESS, {
           method: isGoogleAuth ? 'google' : 'email',
         })
       }
