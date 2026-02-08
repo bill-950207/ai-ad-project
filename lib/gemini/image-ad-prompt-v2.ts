@@ -582,7 +582,7 @@ Check your optimizedPrompt:
 If any check fails, revise before responding.`
 
   const config: GenerateContentConfig = {
-    thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
   }

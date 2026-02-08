@@ -408,7 +408,7 @@ ${AVATAR_LIGHTING_EXAMPLES}
 ${AVATAR_SELF_VERIFICATION}`
 
   const config: GenerateContentConfig = {
-    thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
   }

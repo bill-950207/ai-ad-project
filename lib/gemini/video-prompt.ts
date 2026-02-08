@@ -242,7 +242,7 @@ ${VIDEO_SELF_VERIFICATION}`
 
   const config: GenerateContentConfig = {
     tools,
-    thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
   }
@@ -324,7 +324,7 @@ ${VIDEO_SELF_VERIFICATION}`
 
   const config: GenerateContentConfig = {
     tools,
-    thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
   }
@@ -905,7 +905,7 @@ Output JSON: { "prompt": "English 50-80 words", "locationDescription": "Location
 ${VIDEO_SELF_VERIFICATION}`
 
   const config: GenerateContentConfig = {
-    thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     responseMimeType: 'application/json',
   }
