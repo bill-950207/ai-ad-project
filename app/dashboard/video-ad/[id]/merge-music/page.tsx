@@ -152,7 +152,7 @@ export default function MergeMusicPage() {
 
       // 3초 후 상세 페이지로 이동
       setTimeout(() => {
-        router.push(`/dashboard/video-ad/${params.id}`)
+        router.replace(`/dashboard/video-ad/${params.id}`)
       }, 2000)
     } catch (err) {
       console.error('Music merge error:', err)
