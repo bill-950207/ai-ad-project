@@ -17,6 +17,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { PRODUCT_CREDIT_COST } from '@/lib/credits'
 import { checkUsageLimit } from '@/lib/subscription'
+import { isAdminUser } from '@/lib/auth/admin'
 import { getUserCacheTag, invalidateProductsCache, DEFAULT_USER_DATA_TTL } from '@/lib/cache/user-data'
 
 /**
@@ -170,8 +171,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 크레딧 사전 확인 (무료가 아닌 경우에만)
-    if (PRODUCT_CREDIT_COST > 0) {
+    // 어드민 여부 확인
+    const isAdmin = await isAdminUser(user.id)
+
+    // 크레딧 사전 확인 (무료가 아닌 경우에만) - 어드민은 스킵
+    if (PRODUCT_CREDIT_COST > 0 && !isAdmin) {
       const profile = await prisma.profiles.findUnique({
         where: { id: user.id },
         select: { credits: true },
@@ -235,8 +239,8 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // 5. 크레딧 차감 (무료가 아닌 경우에만)
-      if (PRODUCT_CREDIT_COST > 0) {
+      // 5. 크레딧 차감 (무료가 아닌 경우에만) - 어드민은 스킵
+      if (PRODUCT_CREDIT_COST > 0 && !isAdmin) {
         await prisma.$transaction(async (tx) => {
           const currentProfile = await tx.profiles.findUnique({
             where: { id: user.id },

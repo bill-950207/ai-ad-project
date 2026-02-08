@@ -12,6 +12,7 @@ import { prisma } from '@/lib/db'
 import { submitInfiniteTalkToQueue } from '@/lib/wavespeed/client'
 import { PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST } from '@/lib/credits'
 import { recordCreditUse } from '@/lib/credits/history'
+import { isAdminUser } from '@/lib/auth/admin'
 import { uploadExternalImageToR2 } from '@/lib/image/compress'
 import { generateInfiniteTalkPrompt } from '@/lib/gemini/infinitetalk-prompt'
 
@@ -66,18 +67,23 @@ export async function POST(request: NextRequest) {
     const isAiGeneratedAvatar = avatarId === 'ai-generated'
     const dbAvatarId = isAiGeneratedAvatar ? null : avatarId
 
-    // 크레딧 확인
-    const profile = await prisma.profiles.findUnique({
-      where: { id: user.id },
-    })
+    // 어드민 여부 확인
+    const isAdmin = await isAdminUser(user.id)
 
+    // 크레딧 확인 - 어드민은 스킵
     const creditCost = PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST[resolution as keyof typeof PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST] || PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST['480p']
-    if (!profile || (profile.credits ?? 0) < creditCost) {
-      return NextResponse.json({
-        error: 'Insufficient credits',
-        required: creditCost,
-        available: profile?.credits ?? 0,
-      }, { status: 402 })
+    if (!isAdmin) {
+      const profile = await prisma.profiles.findUnique({
+        where: { id: user.id },
+      })
+
+      if (!profile || (profile.credits ?? 0) < creditCost) {
+        return NextResponse.json({
+          error: 'Insufficient credits',
+          required: creditCost,
+          available: profile?.credits ?? 0,
+        }, { status: 402 })
+      }
     }
 
     // 첫 프레임 이미지 R2 업로드 (WebP 압축)
@@ -147,55 +153,66 @@ export async function POST(request: NextRequest) {
 
     // 크레딧 차감 및 요청 ID 저장 (트랜잭션으로 원자적 처리 + 히스토리 기록)
     // provider 정보를 kie_request_id 필드에 prefix로 저장 (wavespeed: 또는 kie:)
-    try {
-      await prisma.$transaction(async (tx) => {
-        const currentProfile = await tx.profiles.findUnique({
-          where: { id: user.id },
-          select: { credits: true },
-        })
+    if (isAdmin) {
+      // 어드민: 크레딧 차감 없이 요청 ID만 저장
+      await prisma.video_ads.update({
+        where: { id: videoAd.id },
+        data: {
+          kie_request_id: `${provider}:${requestId}`,
+          status: 'IN_PROGRESS',
+        },
+      })
+    } else {
+      try {
+        await prisma.$transaction(async (tx) => {
+          const currentProfile = await tx.profiles.findUnique({
+            where: { id: user.id },
+            select: { credits: true },
+          })
 
-        if (!currentProfile || (currentProfile.credits ?? 0) < creditCost) {
-          throw new Error('INSUFFICIENT_CREDITS')
+          if (!currentProfile || (currentProfile.credits ?? 0) < creditCost) {
+            throw new Error('INSUFFICIENT_CREDITS')
+          }
+
+          const balanceAfter = (currentProfile.credits ?? 0) - creditCost
+
+          await tx.video_ads.update({
+            where: { id: videoAd.id },
+            data: {
+              kie_request_id: `${provider}:${requestId}`,
+              status: 'IN_PROGRESS',
+            },
+          })
+
+          await tx.profiles.update({
+            where: { id: user.id },
+            data: { credits: { decrement: creditCost } },
+          })
+
+          // 크레딧 히스토리 기록
+          await recordCreditUse({
+            userId: user.id,
+            featureType: 'VIDEO_PRODUCT_DESC',
+            amount: creditCost,
+            balanceAfter,
+            relatedEntityId: videoAd.id,
+            description: `제품설명 영상 생성 (${resolution})`,
+          }, tx)
+        }, { timeout: 10000 })
+      } catch (creditError) {
+        // 크레딧 부족 시 생성된 레코드 실패 처리
+        if (creditError instanceof Error && creditError.message === 'INSUFFICIENT_CREDITS') {
+          await prisma.video_ads.update({
+            where: { id: videoAd.id },
+            data: { status: 'FAILED', error_message: 'Insufficient credits' },
+          })
+          return NextResponse.json(
+            { error: 'Insufficient credits (concurrent request detected)' },
+            { status: 402 }
+          )
         }
-
-        const balanceAfter = (currentProfile.credits ?? 0) - creditCost
-
-        await tx.video_ads.update({
-          where: { id: videoAd.id },
-          data: {
-            kie_request_id: `${provider}:${requestId}`,
-            status: 'IN_PROGRESS',
-          },
-        })
-
-        await tx.profiles.update({
-          where: { id: user.id },
-          data: { credits: { decrement: creditCost } },
-        })
-
-        // 크레딧 히스토리 기록
-        await recordCreditUse({
-          userId: user.id,
-          featureType: 'VIDEO_PRODUCT_DESC',
-          amount: creditCost,
-          balanceAfter,
-          relatedEntityId: videoAd.id,
-          description: `제품설명 영상 생성 (${resolution})`,
-        }, tx)
-      }, { timeout: 10000 })
-    } catch (creditError) {
-      // 크레딧 부족 시 생성된 레코드 실패 처리
-      if (creditError instanceof Error && creditError.message === 'INSUFFICIENT_CREDITS') {
-        await prisma.video_ads.update({
-          where: { id: videoAd.id },
-          data: { status: 'FAILED', error_message: 'Insufficient credits' },
-        })
-        return NextResponse.json(
-          { error: 'Insufficient credits (concurrent request detected)' },
-          { status: 402 }
-        )
+        throw creditError
       }
-      throw creditError
     }
 
     // 드래프트 삭제 (서버 측에서 확실하게 처리)

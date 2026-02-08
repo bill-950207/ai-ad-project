@@ -15,6 +15,7 @@ import {
   type KlingO1Duration,
 } from '@/lib/fal/client'
 import { TRANSITION_CREDIT_COST } from '@/lib/credits'
+import { isAdminUser } from '@/lib/auth/admin'
 
 interface SceneKeyframe {
   sceneIndex: number
@@ -59,36 +60,39 @@ export async function POST(request: NextRequest) {
     // 전환 개수 계산 (키프레임 수 - 1)
     const transitionCount = keyframes.length - 1
     const totalCreditCost = transitionCount * TRANSITION_CREDIT_COST
+    const isAdmin = await isAdminUser(user.id)
 
-    // 트랜잭션으로 크레딧 확인 및 차감 (원자적 처리)
-    try {
-      await prisma.$transaction(async (tx) => {
-        const profile = await tx.profiles.findUnique({
-          where: { id: user.id },
-          select: { credits: true },
-        })
+    // 트랜잭션으로 크레딧 확인 및 차감 (원자적 처리) - 어드민은 스킵
+    if (!isAdmin) {
+      try {
+        await prisma.$transaction(async (tx) => {
+          const profile = await tx.profiles.findUnique({
+            where: { id: user.id },
+            select: { credits: true },
+          })
 
-        if (!profile || (profile.credits ?? 0) < totalCreditCost) {
-          throw new Error('INSUFFICIENT_CREDITS')
+          if (!profile || (profile.credits ?? 0) < totalCreditCost) {
+            throw new Error('INSUFFICIENT_CREDITS')
+          }
+
+          await tx.profiles.update({
+            where: { id: user.id },
+            data: { credits: { decrement: totalCreditCost } },
+          })
+        }, { timeout: 10000 })
+      } catch (error) {
+        if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
+          const profile = await prisma.profiles.findUnique({
+            where: { id: user.id },
+            select: { credits: true },
+          })
+          return NextResponse.json(
+            { error: 'Insufficient credits', required: totalCreditCost, available: profile?.credits ?? 0 },
+            { status: 402 }
+          )
         }
-
-        await tx.profiles.update({
-          where: { id: user.id },
-          data: { credits: { decrement: totalCreditCost } },
-        })
-      }, { timeout: 10000 })
-    } catch (error) {
-      if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
-        const profile = await prisma.profiles.findUnique({
-          where: { id: user.id },
-          select: { credits: true },
-        })
-        return NextResponse.json(
-          { error: 'Insufficient credits', required: totalCreditCost, available: profile?.credits ?? 0 },
-          { status: 402 }
-        )
+        throw error
       }
-      throw error
     }
 
     // 키프레임 인덱스 순으로 정렬
@@ -131,8 +135,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 실패한 전환이 있으면 해당 크레딧 환불
-    if (failedCount > 0) {
+    // 실패한 전환이 있으면 해당 크레딧 환불 (어드민은 차감 안 했으므로 환불도 스킵)
+    if (failedCount > 0 && !isAdmin) {
       const refundAmount = failedCount * TRANSITION_CREDIT_COST
       await prisma.profiles.update({
         where: { id: user.id },

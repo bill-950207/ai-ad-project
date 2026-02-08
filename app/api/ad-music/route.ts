@@ -15,6 +15,7 @@ import { submitAdMusicToQueue } from '@/lib/kie/client'
 import { MUSIC_CREDIT_COST } from '@/lib/credits'
 import { recordCreditUse } from '@/lib/credits/history'
 import { checkUsageLimit } from '@/lib/subscription'
+import { isAdminUser } from '@/lib/auth/admin'
 import { getUserCacheTag, invalidateMusicCache, DEFAULT_USER_DATA_TTL } from '@/lib/cache/user-data'
 
 // 요청 바디 타입
@@ -124,21 +125,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 크레딧 확인
-    const profile = await prisma.profiles.findUnique({
-      where: { id: user.id },
-      select: { credits: true },
-    })
+    // 어드민 여부 확인
+    const isAdmin = await isAdminUser(user.id)
 
-    if (!profile || (profile.credits ?? 0) < MUSIC_CREDIT_COST) {
-      return NextResponse.json(
-        {
-          error: 'Insufficient credits',
-          required: MUSIC_CREDIT_COST,
-          available: profile?.credits ?? 0,
-        },
-        { status: 402 }
-      )
+    // 크레딧 확인 - 어드민은 스킵
+    if (!isAdmin) {
+      const profile = await prisma.profiles.findUnique({
+        where: { id: user.id },
+        select: { credits: true },
+      })
+
+      if (!profile || (profile.credits ?? 0) < MUSIC_CREDIT_COST) {
+        return NextResponse.json(
+          {
+            error: 'Insufficient credits',
+            required: MUSIC_CREDIT_COST,
+            available: profile?.credits ?? 0,
+          },
+          { status: 402 }
+        )
+      }
     }
 
     // 콜백 URL 생성
@@ -172,47 +178,49 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 크레딧 차감 (트랜잭션으로 재확인 후 원자적 차감 + 히스토리 기록)
-    try {
-      await prisma.$transaction(async (tx) => {
-        const currentProfile = await tx.profiles.findUnique({
-          where: { id: user.id },
-          select: { credits: true },
-        })
+    // 크레딧 차감 (트랜잭션으로 재확인 후 원자적 차감 + 히스토리 기록) - 어드민은 스킵
+    if (!isAdmin) {
+      try {
+        await prisma.$transaction(async (tx) => {
+          const currentProfile = await tx.profiles.findUnique({
+            where: { id: user.id },
+            select: { credits: true },
+          })
 
-        if (!currentProfile || (currentProfile.credits ?? 0) < MUSIC_CREDIT_COST) {
-          throw new Error('INSUFFICIENT_CREDITS')
+          if (!currentProfile || (currentProfile.credits ?? 0) < MUSIC_CREDIT_COST) {
+            throw new Error('INSUFFICIENT_CREDITS')
+          }
+
+          const balanceAfter = (currentProfile.credits ?? 0) - MUSIC_CREDIT_COST
+
+          await tx.profiles.update({
+            where: { id: user.id },
+            data: { credits: { decrement: MUSIC_CREDIT_COST } },
+          })
+
+          // 크레딧 히스토리 기록
+          await recordCreditUse({
+            userId: user.id,
+            featureType: 'MUSIC',
+            amount: MUSIC_CREDIT_COST,
+            balanceAfter,
+            relatedEntityId: music.id,
+            description: `음악 생성 (${mood}, ${genre})`,
+          }, tx)
+        }, { timeout: 10000 })
+      } catch (txError) {
+        // 크레딧 차감 실패 시 생성된 음악 레코드 정리
+        if (txError instanceof Error && txError.message === 'INSUFFICIENT_CREDITS') {
+          await supabase.from('ad_music').delete().eq('id', music.id)
+          return NextResponse.json(
+            { error: 'Insufficient credits (concurrent request detected)' },
+            { status: 402 }
+          )
         }
-
-        const balanceAfter = (currentProfile.credits ?? 0) - MUSIC_CREDIT_COST
-
-        await tx.profiles.update({
-          where: { id: user.id },
-          data: { credits: { decrement: MUSIC_CREDIT_COST } },
-        })
-
-        // 크레딧 히스토리 기록
-        await recordCreditUse({
-          userId: user.id,
-          featureType: 'MUSIC',
-          amount: MUSIC_CREDIT_COST,
-          balanceAfter,
-          relatedEntityId: music.id,
-          description: `음악 생성 (${mood}, ${genre})`,
-        }, tx)
-      }, { timeout: 10000 })
-    } catch (txError) {
-      // 크레딧 차감 실패 시 생성된 음악 레코드 정리
-      if (txError instanceof Error && txError.message === 'INSUFFICIENT_CREDITS') {
-        await supabase.from('ad_music').delete().eq('id', music.id)
-        return NextResponse.json(
-          { error: 'Insufficient credits (concurrent request detected)' },
-          { status: 402 }
-        )
+        // 기타 트랜잭션 에러 시에도 레코드 정리
+        await supabase.from('ad_music').update({ status: 'FAILED' }).eq('id', music.id)
+        throw txError
       }
-      // 기타 트랜잭션 에러 시에도 레코드 정리
-      await supabase.from('ad_music').update({ status: 'FAILED' }).eq('id', music.id)
-      throw txError
     }
 
     // 캐시 무효화

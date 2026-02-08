@@ -4,6 +4,7 @@
 
 import { prisma } from '@/lib/db'
 import { plan_type } from '@/lib/generated/prisma/client'
+import { isAdminUser } from '@/lib/auth/admin'
 
 export interface UserPlan {
   planType: plan_type
@@ -49,11 +50,30 @@ function isValidSubscription(subscription: { status: string; canceled_at: Date |
   return validStatuses.includes(subscription.status) && subscription.canceled_at === null
 }
 
+// 어드민 전용 무제한 플랜
+const ADMIN_PLAN: UserPlan = {
+  planType: plan_type.BUSINESS,
+  displayName: 'Admin',
+  avatarLimit: -1,
+  musicLimit: -1,
+  productLimit: -1,
+  monthlyCredits: 999999,
+  keyframeCount: 10,
+  watermarkFree: true,
+  hdUpscale: true,
+}
+
 /**
  * 사용자의 현재 플랜 정보 조회
+ * 어드민은 무제한 플랜 반환
  * 구독이 없거나 취소된 경우 Free 플랜 반환
  */
 export async function getUserPlan(userId: string): Promise<UserPlan> {
+  // 어드민은 무제한
+  if (await isAdminUser(userId)) {
+    return ADMIN_PLAN
+  }
+
   const subscription = await prisma.subscriptions.findUnique({
     where: { user_id: userId },
     include: { plan: true },

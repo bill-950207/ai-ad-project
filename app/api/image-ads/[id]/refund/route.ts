@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { IMAGE_AD_CREDIT_COST } from '@/lib/credits'
 import { recordCreditRefund } from '@/lib/credits/history'
+import { isAdminUser } from '@/lib/auth/admin'
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -57,31 +58,35 @@ export async function POST(
     // 환불 크레딧 계산
     const quality = (imageAd.quality || 'medium') as keyof typeof IMAGE_AD_CREDIT_COST
     const refundCredits = IMAGE_AD_CREDIT_COST[quality] || IMAGE_AD_CREDIT_COST.medium
+    const isAdmin = await isAdminUser(user.id)
 
     // 트랜잭션: 크레딧 환불 + 히스토리 기록 + 이미지 광고 삭제
     await prisma.$transaction(async (tx) => {
-      // 현재 잔액 조회
-      const profile = await tx.profiles.findUnique({
-        where: { id: user.id },
-        select: { credits: true },
-      })
-      const balanceAfterRefund = (profile?.credits ?? 0) + refundCredits
+      // 어드민이 아닌 경우에만 크레딧 환불 (어드민은 차감받지 않았으므로)
+      if (!isAdmin) {
+        // 현재 잔액 조회
+        const profile = await tx.profiles.findUnique({
+          where: { id: user.id },
+          select: { credits: true },
+        })
+        const balanceAfterRefund = (profile?.credits ?? 0) + refundCredits
 
-      // 크레딧 환불
-      await tx.profiles.update({
-        where: { id: user.id },
-        data: { credits: { increment: refundCredits } },
-      })
+        // 크레딧 환불
+        await tx.profiles.update({
+          where: { id: user.id },
+          data: { credits: { increment: refundCredits } },
+        })
 
-      // 환불 히스토리 기록
-      await recordCreditRefund({
-        userId: user.id,
-        featureType: 'IMAGE_AD',
-        amount: refundCredits,
-        balanceAfter: balanceAfterRefund,
-        relatedEntityId: id,
-        description: '이미지 광고 실패 환불 (수동)',
-      }, tx)
+        // 환불 히스토리 기록
+        await recordCreditRefund({
+          userId: user.id,
+          featureType: 'IMAGE_AD',
+          amount: refundCredits,
+          balanceAfter: balanceAfterRefund,
+          relatedEntityId: id,
+          description: '이미지 광고 실패 환불 (수동)',
+        }, tx)
+      }
 
       // 이미지 광고 삭제
       await tx.image_ads.delete({
@@ -89,11 +94,11 @@ export async function POST(
       })
     })
 
-    console.log('이미지 광고 환불 완료:', { userId: user.id, imageAdId: id, refundCredits })
+    console.log('이미지 광고 환불 완료:', { userId: user.id, imageAdId: id, refundCredits: isAdmin ? 0 : refundCredits })
 
     return NextResponse.json({
       success: true,
-      refundedCredits: refundCredits,
+      refundedCredits: isAdmin ? 0 : refundCredits,
     })
   } catch (error) {
     console.error('이미지 광고 환불 오류:', error)

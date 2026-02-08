@@ -18,6 +18,7 @@ import { submitZImageToQueue } from '@/lib/kie/client'
 import { buildPromptFromOptions, validateAvatarOptions, AvatarOptions, DEFAULT_AVATAR_OPTIONS } from '@/lib/avatar/prompt-builder'
 import { AVATAR_CREDIT_COST } from '@/lib/credits'
 import { checkUsageLimit } from '@/lib/subscription'
+import { isAdminUser } from '@/lib/auth/admin'
 import { applyRateLimit, RateLimits, rateLimitExceededResponse } from '@/lib/rate-limit'
 import { getUserCacheTag, invalidateAvatarsCache, DEFAULT_USER_DATA_TTL } from '@/lib/cache/user-data'
 
@@ -197,21 +198,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 크레딧 사전 확인 (빠른 실패를 위해)
-    const profile = await prisma.profiles.findUnique({
-      where: { id: user.id },
-      select: { credits: true },
-    })
+    // 어드민 여부 확인
+    const isAdmin = await isAdminUser(user.id)
 
-    if (!profile || (profile.credits ?? 0) < AVATAR_CREDIT_COST) {
-      return NextResponse.json(
-        {
-          error: 'Insufficient credits',
-          required: AVATAR_CREDIT_COST,
-          available: profile?.credits ?? 0,
-        },
-        { status: 402 }
-      )
+    // 크레딧 사전 확인 (빠른 실패를 위해) - 어드민은 스킵
+    if (!isAdmin) {
+      const profile = await prisma.profiles.findUnique({
+        where: { id: user.id },
+        select: { credits: true },
+      })
+
+      if (!profile || (profile.credits ?? 0) < AVATAR_CREDIT_COST) {
+        return NextResponse.json(
+          {
+            error: 'Insufficient credits',
+            required: AVATAR_CREDIT_COST,
+            available: profile?.credits ?? 0,
+          },
+          { status: 402 }
+        )
+      }
     }
 
     // AI 프로바이더에 따라 큐에 생성 요청 제출
@@ -231,21 +237,24 @@ export async function POST(request: NextRequest) {
 
     // 트랜잭션으로 크레딧 확인/차감 및 아바타 레코드 생성 (원자적 처리로 Race Condition 방지)
     const avatar = await prisma.$transaction(async (tx) => {
-      // 트랜잭션 내에서 크레딧 재확인 (동시성 문제 해결)
-      const currentProfile = await tx.profiles.findUnique({
-        where: { id: user.id },
-        select: { credits: true },
-      })
+      // 어드민이 아닌 경우에만 크레딧 차감
+      if (!isAdmin) {
+        // 트랜잭션 내에서 크레딧 재확인 (동시성 문제 해결)
+        const currentProfile = await tx.profiles.findUnique({
+          where: { id: user.id },
+          select: { credits: true },
+        })
 
-      if (!currentProfile || (currentProfile.credits ?? 0) < AVATAR_CREDIT_COST) {
-        throw new Error('INSUFFICIENT_CREDITS')
+        if (!currentProfile || (currentProfile.credits ?? 0) < AVATAR_CREDIT_COST) {
+          throw new Error('INSUFFICIENT_CREDITS')
+        }
+
+        // 크레딧 차감 (원자적)
+        await tx.profiles.update({
+          where: { id: user.id },
+          data: { credits: { decrement: AVATAR_CREDIT_COST } },
+        })
       }
-
-      // 크레딧 차감 (원자적)
-      await tx.profiles.update({
-        where: { id: user.id },
-        data: { credits: { decrement: AVATAR_CREDIT_COST } },
-      })
 
       // 아바타 레코드 생성
       return tx.avatars.create({
