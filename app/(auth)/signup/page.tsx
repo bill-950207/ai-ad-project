@@ -124,6 +124,7 @@ export default function SignupPage() {
     }
 
     // 이메일 인증 페이지로 리다이렉트 (언어 정보 포함)
+    // AUTH_SIGNUP_COMPLETED는 이메일 인증 완료 후 callback에서 발생 (이중 발사 방지)
     router.push(`/verify-email?email=${encodeURIComponent(email)}&lang=${language}`)
   }
 

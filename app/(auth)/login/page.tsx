@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { trackEvent } from '@/lib/analytics/track'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
 import NextImage from 'next/image'
 
 interface VideoShowcase {
@@ -127,6 +129,7 @@ export default function LoginPage() {
       // API 오류 시 대시보드로 (layout에서 체크)
     }
 
+    trackEvent(ANALYTICS_EVENTS.AUTH_LOGIN_SUCCESS, { method: 'email' })
     router.push('/dashboard')
     router.refresh()
   }

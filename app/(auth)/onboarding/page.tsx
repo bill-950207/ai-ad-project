@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Loader2, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
+import { useTrack } from '@/lib/analytics/track'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
 import NextImage from 'next/image'
 
 // 직책 키 목록
@@ -52,6 +54,7 @@ export default function OnboardingPage() {
   const supabase = createClient()
   const { t } = useLanguage()
 
+  const track = useTrack()
   const onboardingT = (t as Record<string, unknown>).authOnboarding as OnboardingTranslation | undefined
 
   const [step, setStep] = useState(1)
@@ -119,6 +122,12 @@ export default function OnboardingPage() {
         const data = await res.json()
         throw new Error(data.error || onboardingT?.onboardingFailed || 'Failed to complete onboarding')
       }
+
+      // 온보딩 완료 이벤트
+      track(ANALYTICS_EVENTS.ONBOARDING_COMPLETED, {
+        job_title: jobTitle || undefined,
+        industry: industry || undefined,
+      })
 
       // 대시보드로 이동
       router.push('/dashboard')
@@ -348,7 +357,10 @@ export default function OnboardingPage() {
 
             {step < 4 ? (
               <Button
-                onClick={() => setStep(step + 1)}
+                onClick={() => {
+                  track(ANALYTICS_EVENTS.ONBOARDING_STEP_COMPLETED, { step, total_steps: 4 })
+                  setStep(step + 1)
+                }}
                 disabled={!canProceed()}
               >
                 {onboardingT?.next || 'Next'}

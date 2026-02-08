@@ -27,6 +27,8 @@ import { compressImage } from '@/lib/image/compress-client'
 import { uploadImageAdImage } from '@/lib/client/image-upload'
 import { IMAGE_AD_CREDIT_COST } from '@/lib/credits/constants'
 import { useUserPlan } from '@/lib/hooks/use-user-plan'
+import { useTrack } from '@/lib/analytics/track'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
 
 // 가격 계산 (중앙 상수 사용)
 const calculateCredits = (quality: Quality, numImages: number): number => {
@@ -93,6 +95,7 @@ export function WizardStep4() {
   // 사용자 플랜 정보 (로딩 중에는 FREE로 가정하여 UX 개선)
   const { isFreeUser, isLoaded: isPlanLoaded } = useUserPlan()
 
+  const track = useTrack()
   const isWearingType = adType === 'wearing'
 
   // 플랜 로드 완료 후 FREE 사용자인 경우 기본값 조정
@@ -181,9 +184,19 @@ export function WizardStep4() {
       return
     }
 
+    const startTime = Date.now()
+
+    track(ANALYTICS_EVENTS.IMAGE_AD_GENERATION_STARTED, {
+      ad_type: adType,
+      quality,
+      num_images: numImages,
+      aspect_ratio: aspectRatio,
+      credits_used: requiredCredits,
+    })
+
     setIsGenerating(true)
     setResultImages([])
-    setGenerationStartTime(Date.now())
+    setGenerationStartTime(startTime)
     setGenerationProgress(0)
     currentProgressRef.current = 0  // ref도 초기화
 
@@ -379,6 +392,12 @@ export function WizardStep4() {
       setResultImages(imageUrls)
       setGenerationProgress(100)
 
+      track(ANALYTICS_EVENTS.IMAGE_AD_GENERATION_COMPLETED, {
+        ad_type: adType,
+        num_images: imageUrls.length,
+        duration_seconds: Math.round((Date.now() - startTime) / 1000),
+      })
+
       // 생성 완료 시 draft는 이미 IN_QUEUE → COMPLETED로 업데이트됨
       // (별도 삭제 불필요 - draft 레코드가 실제 image_ad 레코드로 변환됨)
 
@@ -391,6 +410,12 @@ export function WizardStep4() {
         return
       }
       console.error('Generation error:', error)
+
+      track(ANALYTICS_EVENTS.IMAGE_AD_GENERATION_FAILED, {
+        ad_type: adType,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
+
       alert(error instanceof Error ? error.message : t.imageAd?.generate?.error || 'An error occurred during generation')
     } finally {
       setIsGenerating(false)

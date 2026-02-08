@@ -17,6 +17,8 @@ import { prisma } from '@/lib/db'
 import { stripe, getPlanFromPriceId } from '@/lib/stripe'
 import { plan_type, subscription_status } from '@/lib/generated/prisma/client'
 import { recordSubscriptionCredit } from '@/lib/credits/history'
+import { captureServerEvent } from '@/lib/analytics/posthog-server'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
 import Stripe from 'stripe'
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
@@ -240,6 +242,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       balanceAfter,
       description: `${planRecord.display_name || planInfo.plan} 구독 시작 크레딧`,
     }, tx)
+  })
+
+  captureServerEvent(userId, ANALYTICS_EVENTS.CHECKOUT_COMPLETED, {
+    plan: planInfo.plan,
+    user_id: userId,
   })
 
   console.log(`Subscription created for user ${userId}, plan: ${planInfo.plan}`)

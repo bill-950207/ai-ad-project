@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { DEFAULT_SIGNUP_CREDITS } from '@/lib/credits/constants'
 import { recordSignupCredit } from '@/lib/credits/history'
+import { captureServerEvent } from '@/lib/analytics/posthog-server'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -77,6 +79,19 @@ export async function GET(request: Request) {
           }
 
           return newProfile
+        })
+
+        // 신규 사용자: 이메일 인증 완료 + 회원가입 완료 이벤트
+        captureServerEvent(user.id, ANALYTICS_EVENTS.AUTH_EMAIL_VERIFIED, {
+          method: isGoogleAuth ? 'google' : 'email',
+        })
+        captureServerEvent(user.id, ANALYTICS_EVENTS.AUTH_SIGNUP_COMPLETED, {
+          method: isGoogleAuth ? 'google' : 'email',
+        })
+      } else {
+        // 기존 사용자: 로그인 성공 이벤트
+        captureServerEvent(user.id, ANALYTICS_EVENTS.AUTH_LOGIN_SUCCESS, {
+          method: isGoogleAuth ? 'google' : 'email',
         })
       }
 
