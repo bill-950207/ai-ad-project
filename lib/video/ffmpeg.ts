@@ -9,10 +9,13 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import os from 'os'
 
-// @ffmpeg-installer/ffmpeg 패키지에서 경로 가져오기
+// @ffmpeg-installer/ffmpeg, @ffprobe-installer/ffprobe 패키지에서 경로 가져오기
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg')
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const ffprobeInstaller = require('@ffprobe-installer/ffprobe')
 ffmpeg.setFfmpegPath(ffmpegInstaller.path)
+ffmpeg.setFfprobePath(ffprobeInstaller.path)
 
 /**
  * 여러 비디오 URL을 하나의 비디오로 합칩니다.
