@@ -18,6 +18,7 @@ import { IMAGE_AD_CREDIT_COST } from '@/lib/credits'
 import { recordCreditUse } from '@/lib/credits/history'
 import { getUserPlan } from '@/lib/subscription/queries'
 import { plan_type, image_ad_status } from '@/lib/generated/prisma/client'
+import { isAdminUser } from '@/lib/auth/admin'
 import { getUserCacheTag, invalidateImageAdsCache, DEFAULT_USER_DATA_TTL } from '@/lib/cache/user-data'
 
 // 이미지 크기를 Seedream aspect_ratio로 변환
@@ -267,6 +268,7 @@ export async function POST(request: NextRequest) {
     // 구독 플랜 확인
     const userPlan = await getUserPlan(user.id)
     const isFreeUser = userPlan.planType === plan_type.FREE
+    const isAdmin = await isAdminUser(user.id)
 
     // FREE 사용자 제한: 최대 2개까지 생성, medium 품질만 가능
     const effectiveNumImages = isFreeUser ? Math.min(numImages, 2) : numImages
@@ -279,18 +281,19 @@ export async function POST(request: NextRequest) {
     const creditCostPerImage = IMAGE_AD_CREDIT_COST[effectiveQuality] || IMAGE_AD_CREDIT_COST.medium
     const totalCreditCost = creditCostPerImage * validNumImages
 
-    // 크레딧 사전 확인 (빠른 실패를 위해)
-    // 실제 차감은 트랜잭션 내에서 재확인 후 수행
-    const profile = await prisma.profiles.findUnique({
-      where: { id: user.id },
-      select: { credits: true },
-    })
+    // 크레딧 사전 확인 (빠른 실패를 위해) - 어드민은 스킵
+    if (!isAdmin) {
+      const profile = await prisma.profiles.findUnique({
+        where: { id: user.id },
+        select: { credits: true },
+      })
 
-    if (!profile || (profile.credits ?? 0) < totalCreditCost) {
-      return NextResponse.json(
-        { error: 'Insufficient credits', required: totalCreditCost, available: profile?.credits ?? 0 },
-        { status: 402 }
-      )
+      if (!profile || (profile.credits ?? 0) < totalCreditCost) {
+        return NextResponse.json(
+          { error: 'Insufficient credits', required: totalCreditCost, available: profile?.credits ?? 0 },
+          { status: 402 }
+        )
+      }
     }
 
     // 필수 필드 검증
@@ -907,50 +910,52 @@ export async function POST(request: NextRequest) {
       imageAdRecords.push(imageAdId)
     }
 
-    // 크레딧 차감 (트랜잭션으로 재확인 후 원자적 차감 - Race Condition 방지)
-    try {
-      await prisma.$transaction(async (tx) => {
-        const currentProfile = await tx.profiles.findUnique({
-          where: { id: user.id },
-          select: { credits: true },
-        })
+    // 크레딧 차감 (트랜잭션으로 재확인 후 원자적 차감 - Race Condition 방지) - 어드민은 스킵
+    if (!isAdmin) {
+      try {
+        await prisma.$transaction(async (tx) => {
+          const currentProfile = await tx.profiles.findUnique({
+            where: { id: user.id },
+            select: { credits: true },
+          })
 
-        if (!currentProfile || (currentProfile.credits ?? 0) < totalCreditCost) {
-          throw new Error('INSUFFICIENT_CREDITS')
+          if (!currentProfile || (currentProfile.credits ?? 0) < totalCreditCost) {
+            throw new Error('INSUFFICIENT_CREDITS')
+          }
+
+          const balanceAfter = (currentProfile.credits ?? 0) - totalCreditCost
+
+          await tx.profiles.update({
+            where: { id: user.id },
+            data: { credits: { decrement: totalCreditCost } },
+          })
+
+          // 크레딧 히스토리 기록
+          await recordCreditUse({
+            userId: user.id,
+            featureType: 'IMAGE_AD',
+            amount: totalCreditCost,
+            balanceAfter,
+            relatedEntityId: imageAdRecords[0],  // 첫 번째 이미지 광고 ID
+            description: `이미지 광고 생성 (${validNumImages}장, ${effectiveQuality === 'high' ? '고화질' : '중화질'})`,
+          }, tx)
+        }, { timeout: 10000 })
+      } catch (creditError) {
+        // 크레딧 부족 시 생성된 레코드 실패 처리
+        if (creditError instanceof Error && creditError.message === 'INSUFFICIENT_CREDITS') {
+          if (imageAdRecords.length > 0) {
+            await supabase
+              .from('image_ads')
+              .update({ status: 'FAILED', error_message: 'Insufficient credits' })
+              .in('id', imageAdRecords)
+          }
+          return NextResponse.json(
+            { error: 'Insufficient credits (concurrent request detected)' },
+            { status: 402 }
+          )
         }
-
-        const balanceAfter = (currentProfile.credits ?? 0) - totalCreditCost
-
-        await tx.profiles.update({
-          where: { id: user.id },
-          data: { credits: { decrement: totalCreditCost } },
-        })
-
-        // 크레딧 히스토리 기록
-        await recordCreditUse({
-          userId: user.id,
-          featureType: 'IMAGE_AD',
-          amount: totalCreditCost,
-          balanceAfter,
-          relatedEntityId: imageAdRecords[0],  // 첫 번째 이미지 광고 ID
-          description: `이미지 광고 생성 (${validNumImages}장, ${effectiveQuality === 'high' ? '고화질' : '중화질'})`,
-        }, tx)
-      }, { timeout: 10000 })
-    } catch (creditError) {
-      // 크레딧 부족 시 생성된 레코드 실패 처리
-      if (creditError instanceof Error && creditError.message === 'INSUFFICIENT_CREDITS') {
-        if (imageAdRecords.length > 0) {
-          await supabase
-            .from('image_ads')
-            .update({ status: 'FAILED', error_message: 'Insufficient credits' })
-            .in('id', imageAdRecords)
-        }
-        return NextResponse.json(
-          { error: 'Insufficient credits (concurrent request detected)' },
-          { status: 402 }
-        )
+        throw creditError
       }
-      throw creditError
     }
 
     console.log('이미지 광고 크레딧 차감:', { userId: user.id, cost: totalCreditCost, numImages: validNumImages })

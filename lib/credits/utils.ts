@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { IMAGE_AD_CREDIT_COST, type ImageQuality } from './constants'
+import { isAdminUser } from '@/lib/auth/admin'
 
 /**
  * 사용자 크레딧 조회
@@ -14,11 +15,13 @@ export async function getUserCredits(userId: string): Promise<number> {
 
 /**
  * 크레딧 충분 여부 확인
+ * 어드민은 항상 true 반환
  */
 export async function hasEnoughCredits(
   userId: string,
   requiredCredits: number
 ): Promise<boolean> {
+  if (await isAdminUser(userId)) return true
   const credits = await getUserCredits(userId)
   return credits >= requiredCredits
 }
@@ -71,11 +74,15 @@ export interface CreditValidationResult {
 
 /**
  * 크레딧 충분 여부 검증
+ * 어드민은 항상 유효 반환
  */
 export async function validateCredits(
   userId: string,
   requiredCredits: number
 ): Promise<CreditValidationResult> {
+  if (await isAdminUser(userId)) {
+    return { isValid: true, currentCredits: 999999, requiredCredits }
+  }
   const currentCredits = await getUserCredits(userId)
   const isValid = currentCredits >= requiredCredits
 

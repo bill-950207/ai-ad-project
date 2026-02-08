@@ -15,6 +15,7 @@ import { mergeEditPrompt } from '@/lib/gemini/client'
 import { submitSeedreamEditToQueue, type SeedreamAspectRatio } from '@/lib/fal/client'
 import { IMAGE_EDIT_CREDIT_COST } from '@/lib/credits'
 import { recordCreditUse, recordCreditRefund } from '@/lib/credits/history'
+import { isAdminUser } from '@/lib/auth/admin'
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -118,48 +119,51 @@ export async function POST(
     // 크레딧 비용 계산
     const quality = (originalAd.quality as 'medium' | 'high') || 'medium'
     const creditCost = IMAGE_EDIT_CREDIT_COST[quality] || IMAGE_EDIT_CREDIT_COST.medium
+    const isAdmin = await isAdminUser(user.id)
 
-    // 트랜잭션으로 크레딧 확인 및 차감 (원자적 처리 + 히스토리 기록)
-    try {
-      await prisma.$transaction(async (tx) => {
-        const profile = await tx.profiles.findUnique({
-          where: { id: user.id },
-          select: { credits: true },
-        })
+    // 트랜잭션으로 크레딧 확인 및 차감 (원자적 처리 + 히스토리 기록) - 어드민은 스킵
+    if (!isAdmin) {
+      try {
+        await prisma.$transaction(async (tx) => {
+          const profile = await tx.profiles.findUnique({
+            where: { id: user.id },
+            select: { credits: true },
+          })
 
-        if (!profile || (profile.credits ?? 0) < creditCost) {
-          throw new Error('INSUFFICIENT_CREDITS')
+          if (!profile || (profile.credits ?? 0) < creditCost) {
+            throw new Error('INSUFFICIENT_CREDITS')
+          }
+
+          const balanceAfter = (profile.credits ?? 0) - creditCost
+
+          await tx.profiles.update({
+            where: { id: user.id },
+            data: { credits: { decrement: creditCost } },
+          })
+
+          // 크레딧 사용 히스토리 기록
+          await recordCreditUse({
+            userId: user.id,
+            featureType: 'IMAGE_EDIT',
+            amount: creditCost,
+            balanceAfter,
+            relatedEntityId: id,
+            description: `이미지 광고 편집 (${quality === 'high' ? '고화질' : '중화질'})`,
+          }, tx)
+        }, { timeout: 10000 })
+      } catch (error) {
+        if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
+          const profile = await prisma.profiles.findUnique({
+            where: { id: user.id },
+            select: { credits: true },
+          })
+          return NextResponse.json(
+            { error: 'Insufficient credits', required: creditCost, available: profile?.credits ?? 0 },
+            { status: 402 }
+          )
         }
-
-        const balanceAfter = (profile.credits ?? 0) - creditCost
-
-        await tx.profiles.update({
-          where: { id: user.id },
-          data: { credits: { decrement: creditCost } },
-        })
-
-        // 크레딧 사용 히스토리 기록
-        await recordCreditUse({
-          userId: user.id,
-          featureType: 'IMAGE_EDIT',
-          amount: creditCost,
-          balanceAfter,
-          relatedEntityId: id,
-          description: `이미지 광고 편집 (${quality === 'high' ? '고화질' : '중화질'})`,
-        }, tx)
-      }, { timeout: 10000 })
-    } catch (error) {
-      if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
-        const profile = await prisma.profiles.findUnique({
-          where: { id: user.id },
-          select: { credits: true },
-        })
-        return NextResponse.json(
-          { error: 'Insufficient credits', required: creditCost, available: profile?.credits ?? 0 },
-          { status: 402 }
-        )
+        throw error
       }
-      throw error
     }
 
     // 현재 이미지 URL 결정 (편집할 이미지)
@@ -167,26 +171,28 @@ export async function POST(
     const currentImageUrl = imageUrls[imageIndex] || imageUrls[0]
 
     if (!currentImageUrl) {
-      // 이미지 없으면 크레딧 환불 + 환불 히스토리 기록
-      await prisma.$transaction(async (tx) => {
-        const profile = await tx.profiles.findUnique({
-          where: { id: user.id },
-          select: { credits: true },
+      // 이미지 없으면 크레딧 환불 + 환불 히스토리 기록 (어드민은 스킵)
+      if (!isAdmin) {
+        await prisma.$transaction(async (tx) => {
+          const profile = await tx.profiles.findUnique({
+            where: { id: user.id },
+            select: { credits: true },
+          })
+          const balanceAfterRefund = (profile?.credits ?? 0) + creditCost
+          await tx.profiles.update({
+            where: { id: user.id },
+            data: { credits: { increment: creditCost } },
+          })
+          await recordCreditRefund({
+            userId: user.id,
+            featureType: 'IMAGE_EDIT',
+            amount: creditCost,
+            balanceAfter: balanceAfterRefund,
+            relatedEntityId: id,
+            description: '이미지 편집 환불 (이미지 없음)',
+          }, tx)
         })
-        const balanceAfterRefund = (profile?.credits ?? 0) + creditCost
-        await tx.profiles.update({
-          where: { id: user.id },
-          data: { credits: { increment: creditCost } },
-        })
-        await recordCreditRefund({
-          userId: user.id,
-          featureType: 'IMAGE_EDIT',
-          amount: creditCost,
-          balanceAfter: balanceAfterRefund,
-          relatedEntityId: id,
-          description: '이미지 편집 환불 (이미지 없음)',
-        }, tx)
-      })
+      }
       return NextResponse.json(
         { error: 'No image found to edit' },
         { status: 400 }
@@ -204,27 +210,29 @@ export async function POST(
         currentImageUrl,
       })
     } catch (mergeError) {
-      // 프롬프트 합성 실패 시 크레딧 환불 + 환불 히스토리 기록
+      // 프롬프트 합성 실패 시 크레딧 환불 + 환불 히스토리 기록 (어드민은 스킵)
       console.error('프롬프트 합성 실패, 크레딧 환불:', mergeError)
-      await prisma.$transaction(async (tx) => {
-        const profile = await tx.profiles.findUnique({
-          where: { id: user.id },
-          select: { credits: true },
+      if (!isAdmin) {
+        await prisma.$transaction(async (tx) => {
+          const profile = await tx.profiles.findUnique({
+            where: { id: user.id },
+            select: { credits: true },
+          })
+          const balanceAfterRefund = (profile?.credits ?? 0) + creditCost
+          await tx.profiles.update({
+            where: { id: user.id },
+            data: { credits: { increment: creditCost } },
+          })
+          await recordCreditRefund({
+            userId: user.id,
+            featureType: 'IMAGE_EDIT',
+            amount: creditCost,
+            balanceAfter: balanceAfterRefund,
+            relatedEntityId: id,
+            description: '이미지 편집 환불 (프롬프트 합성 실패)',
+          }, tx)
         })
-        const balanceAfterRefund = (profile?.credits ?? 0) + creditCost
-        await tx.profiles.update({
-          where: { id: user.id },
-          data: { credits: { increment: creditCost } },
-        })
-        await recordCreditRefund({
-          userId: user.id,
-          featureType: 'IMAGE_EDIT',
-          amount: creditCost,
-          balanceAfter: balanceAfterRefund,
-          relatedEntityId: id,
-          description: '이미지 편집 환불 (프롬프트 합성 실패)',
-        }, tx)
-      })
+      }
       throw mergeError
     }
 
@@ -246,27 +254,29 @@ export async function POST(
         quality: seedreamQuality,
       })
     } catch (requestError) {
-      // 이미지 생성 요청 실패 시 크레딧 환불 + 환불 히스토리 기록
+      // 이미지 생성 요청 실패 시 크레딧 환불 + 환불 히스토리 기록 (어드민은 스킵)
       console.error('이미지 편집 요청 실패, 크레딧 환불:', requestError)
-      await prisma.$transaction(async (tx) => {
-        const profile = await tx.profiles.findUnique({
-          where: { id: user.id },
-          select: { credits: true },
+      if (!isAdmin) {
+        await prisma.$transaction(async (tx) => {
+          const profile = await tx.profiles.findUnique({
+            where: { id: user.id },
+            select: { credits: true },
+          })
+          const balanceAfterRefund = (profile?.credits ?? 0) + creditCost
+          await tx.profiles.update({
+            where: { id: user.id },
+            data: { credits: { increment: creditCost } },
+          })
+          await recordCreditRefund({
+            userId: user.id,
+            featureType: 'IMAGE_EDIT',
+            amount: creditCost,
+            balanceAfter: balanceAfterRefund,
+            relatedEntityId: id,
+            description: '이미지 편집 환불 (요청 실패)',
+          }, tx)
         })
-        const balanceAfterRefund = (profile?.credits ?? 0) + creditCost
-        await tx.profiles.update({
-          where: { id: user.id },
-          data: { credits: { increment: creditCost } },
-        })
-        await recordCreditRefund({
-          userId: user.id,
-          featureType: 'IMAGE_EDIT',
-          amount: creditCost,
-          balanceAfter: balanceAfterRefund,
-          relatedEntityId: id,
-          description: '이미지 편집 환불 (요청 실패)',
-        }, tx)
-      })
+      }
       throw requestError
     }
 

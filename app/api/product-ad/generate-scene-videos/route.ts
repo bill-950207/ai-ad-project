@@ -27,6 +27,7 @@ import {
 } from '@/lib/fal/client'
 import { VIDU_CREDIT_COST_PER_SECOND } from '@/lib/credits'
 import { recordCreditUse, recordCreditRefund } from '@/lib/credits/history'
+import { isAdminUser } from '@/lib/auth/admin'
 
 // FREE 사용자 제한
 const FREE_USER_LIMITS = {
@@ -95,6 +96,7 @@ export async function POST(request: NextRequest) {
     // 사용자 플랜 확인
     const userPlan = await getUserPlan(user.id)
     const isFreeUser = userPlan.planType === plan_type.FREE
+    const isAdmin = await isAdminUser(user.id)
 
     // FREE 사용자 제한 적용
     let effectiveResolution = resolution
@@ -128,58 +130,60 @@ export async function POST(request: NextRequest) {
       totalCreditCost += sceneCost
     }
 
-    // 트랜잭션으로 크레딧 확인 및 차감 (원자적 처리 + 히스토리 기록)
-    try {
-      await prisma.$transaction(async (tx) => {
-        const profile = await tx.profiles.findUnique({
-          where: { id: user.id },
-          select: { credits: true },
-        })
+    // 트랜잭션으로 크레딧 확인 및 차감 (원자적 처리 + 히스토리 기록) - 어드민은 스킵
+    if (!isAdmin) {
+      try {
+        await prisma.$transaction(async (tx) => {
+          const profile = await tx.profiles.findUnique({
+            where: { id: user.id },
+            select: { credits: true },
+          })
 
-        if (!profile || (profile.credits ?? 0) < totalCreditCost) {
-          throw new Error('INSUFFICIENT_CREDITS')
+          if (!profile || (profile.credits ?? 0) < totalCreditCost) {
+            throw new Error('INSUFFICIENT_CREDITS')
+          }
+
+          const balanceAfter = (profile.credits ?? 0) - totalCreditCost
+
+          await tx.profiles.update({
+            where: { id: user.id },
+            data: { credits: { decrement: totalCreditCost } },
+          })
+
+          // 총 씬 영상 시간 계산
+          let totalSeconds = 0
+          for (const keyframe of sortedKeyframes) {
+            const sceneDuration = keyframe.duration ?? effectiveDuration
+            const adjustedDuration = isFreeUser ? Math.min(sceneDuration, FREE_USER_LIMITS.maxDuration) : sceneDuration
+            totalSeconds += adjustedDuration
+          }
+
+          // 크레딧 사용 히스토리 기록
+          await recordCreditUse({
+            userId: user.id,
+            featureType: 'VIDU_SCENE',
+            amount: totalCreditCost,
+            balanceAfter,
+            description: `Vidu Q2 씬 영상 생성 (${sortedKeyframes.length}개 씬, ${totalSeconds}초, ${effectiveResolution})`,
+          }, tx)
+        }, { timeout: 10000 })
+      } catch (error) {
+        if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
+          const profile = await prisma.profiles.findUnique({
+            where: { id: user.id },
+            select: { credits: true },
+          })
+          return NextResponse.json(
+            {
+              error: 'Insufficient credits',
+              required: totalCreditCost,
+              available: profile?.credits ?? 0,
+            },
+            { status: 402 }
+          )
         }
-
-        const balanceAfter = (profile.credits ?? 0) - totalCreditCost
-
-        await tx.profiles.update({
-          where: { id: user.id },
-          data: { credits: { decrement: totalCreditCost } },
-        })
-
-        // 총 씬 영상 시간 계산
-        let totalSeconds = 0
-        for (const keyframe of sortedKeyframes) {
-          const sceneDuration = keyframe.duration ?? effectiveDuration
-          const adjustedDuration = isFreeUser ? Math.min(sceneDuration, FREE_USER_LIMITS.maxDuration) : sceneDuration
-          totalSeconds += adjustedDuration
-        }
-
-        // 크레딧 사용 히스토리 기록
-        await recordCreditUse({
-          userId: user.id,
-          featureType: 'VIDU_SCENE',
-          amount: totalCreditCost,
-          balanceAfter,
-          description: `Vidu Q2 씬 영상 생성 (${sortedKeyframes.length}개 씬, ${totalSeconds}초, ${effectiveResolution})`,
-        }, tx)
-      }, { timeout: 10000 })
-    } catch (error) {
-      if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
-        const profile = await prisma.profiles.findUnique({
-          where: { id: user.id },
-          select: { credits: true },
-        })
-        return NextResponse.json(
-          {
-            error: 'Insufficient credits',
-            required: totalCreditCost,
-            available: profile?.credits ?? 0,
-          },
-          { status: 402 }
-        )
+        throw error
       }
-      throw error
     }
 
     console.log(`Generating ${sortedKeyframes.length} scene videos @ ${effectiveResolution} (${totalCreditCost} credits)`)
@@ -228,8 +232,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 실패한 씬이 있으면 해당 크레딧 환불 + 환불 히스토리 기록
-    if (failedSceneIndices.length > 0) {
+    // 실패한 씬이 있으면 해당 크레딧 환불 + 환불 히스토리 기록 (어드민은 차감 안 했으므로 환불도 스킵)
+    if (failedSceneIndices.length > 0 && !isAdmin) {
       const refundAmount = failedSceneIndices.reduce((sum, sceneIndex) => {
         return sum + (sceneCreditCosts.get(sceneIndex) ?? 0)
       }, 0)

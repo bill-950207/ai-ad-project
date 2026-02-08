@@ -18,6 +18,7 @@ import {
 import { uploadExternalImageToR2 } from '@/lib/image/compress'
 import { IMAGE_AD_CREDIT_COST } from '@/lib/credits'
 import { recordCreditRefund } from '@/lib/credits/history'
+import { isAdminUser } from '@/lib/auth/admin'
 import { invalidateImageAdsCache } from '@/lib/cache/user-data'
 
 /** requestId에서 provider와 실제 ID 파싱 */
@@ -132,36 +133,40 @@ export async function GET(
               // 단일 이미지인 경우 전체 환불
               const refundAmount = isBatchImage ? creditCost : creditCost * (imageAd.num_images || 1)
 
-              // 크레딧 환불 + 히스토리 기록 (트랜잭션)
-              await prisma.$transaction(async (tx) => {
-                const profile = await tx.profiles.findUnique({
-                  where: { id: user.id },
-                  select: { credits: true },
-                })
-                const balanceAfterRefund = (profile?.credits ?? 0) + refundAmount
+              // 어드민이 아닌 경우에만 크레딧 환불 (어드민은 차감받지 않았으므로)
+              const isAdmin = await isAdminUser(user.id)
+              if (!isAdmin) {
+                // 크레딧 환불 + 히스토리 기록 (트랜잭션)
+                await prisma.$transaction(async (tx) => {
+                  const profile = await tx.profiles.findUnique({
+                    where: { id: user.id },
+                    select: { credits: true },
+                  })
+                  const balanceAfterRefund = (profile?.credits ?? 0) + refundAmount
 
-                await tx.profiles.update({
-                  where: { id: user.id },
-                  data: { credits: { increment: refundAmount } },
+                  await tx.profiles.update({
+                    where: { id: user.id },
+                    data: { credits: { increment: refundAmount } },
+                  })
+
+                  await recordCreditRefund({
+                    userId: user.id,
+                    featureType: 'IMAGE_AD',
+                    amount: refundAmount,
+                    balanceAfter: balanceAfterRefund,
+                    relatedEntityId: imageAd.id,
+                    description: `이미지 광고 NSFW 환불 (${isBatchImage ? '1장' : `${imageAd.num_images || 1}장`})`,
+                  }, tx)
                 })
 
-                await recordCreditRefund({
+                console.log('NSFW 에러로 크레딧 환불:', {
                   userId: user.id,
-                  featureType: 'IMAGE_AD',
-                  amount: refundAmount,
-                  balanceAfter: balanceAfterRefund,
-                  relatedEntityId: imageAd.id,
-                  description: `이미지 광고 NSFW 환불 (${isBatchImage ? '1장' : `${imageAd.num_images || 1}장`})`,
-                }, tx)
-              })
-
-              console.log('NSFW 에러로 크레딧 환불:', {
-                userId: user.id,
-                refundAmount,
-                quality,
-                isBatchImage,
-                numImages: imageAd.num_images
-              })
+                  refundAmount,
+                  quality,
+                  isBatchImage,
+                  numImages: imageAd.num_images
+                })
+              }
             }
           } catch (refundError) {
             console.error('NSFW 크레딧 환불 실패:', refundError)

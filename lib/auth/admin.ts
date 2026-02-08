@@ -69,3 +69,13 @@ export async function getUserRole(userId: string): Promise<string | null> {
     return null
   }
 }
+
+/**
+ * Check if user is admin by userId
+ * @param userId User ID to check
+ * @returns true if user has ADMIN role
+ */
+export async function isAdminUser(userId: string): Promise<boolean> {
+  const role = await getUserRole(userId)
+  return role === 'ADMIN'
+}

@@ -14,6 +14,7 @@ import {
 } from '@/lib/kie/client'
 import { KEYFRAME_CREDIT_COST } from '@/lib/credits'
 import { recordCreditUse, recordCreditRefund } from '@/lib/credits/history'
+import { isAdminUser } from '@/lib/auth/admin'
 import { sanitizePrompt } from '@/lib/prompts/sanitize'
 
 interface SceneInput {
@@ -65,48 +66,51 @@ export async function POST(request: NextRequest) {
 
     // 크레딧 계산 (씬 개수 × 키프레임당 비용)
     const totalCreditCost = scenes.length * KEYFRAME_CREDIT_COST
+    const isAdmin = await isAdminUser(user.id)
 
-    // 트랜잭션으로 크레딧 확인 및 차감 (원자적 처리 + 히스토리 기록)
+    // 트랜잭션으로 크레딧 확인 및 차감 (원자적 처리 + 히스토리 기록) - 어드민은 스킵
     let balanceAfterDeduction = 0
-    try {
-      await prisma.$transaction(async (tx) => {
-        const profile = await tx.profiles.findUnique({
-          where: { id: user.id },
-          select: { credits: true },
-        })
+    if (!isAdmin) {
+      try {
+        await prisma.$transaction(async (tx) => {
+          const profile = await tx.profiles.findUnique({
+            where: { id: user.id },
+            select: { credits: true },
+          })
 
-        if (!profile || (profile.credits ?? 0) < totalCreditCost) {
-          throw new Error('INSUFFICIENT_CREDITS')
+          if (!profile || (profile.credits ?? 0) < totalCreditCost) {
+            throw new Error('INSUFFICIENT_CREDITS')
+          }
+
+          balanceAfterDeduction = (profile.credits ?? 0) - totalCreditCost
+
+          await tx.profiles.update({
+            where: { id: user.id },
+            data: { credits: { decrement: totalCreditCost } },
+          })
+
+          // 크레딧 사용 히스토리 기록
+          await recordCreditUse({
+            userId: user.id,
+            featureType: 'KEYFRAME',
+            amount: totalCreditCost,
+            balanceAfter: balanceAfterDeduction,
+            description: `키프레임 이미지 생성 (${scenes.length}장)`,
+          }, tx)
+        }, { timeout: 10000 })
+      } catch (error) {
+        if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
+          const profile = await prisma.profiles.findUnique({
+            where: { id: user.id },
+            select: { credits: true },
+          })
+          return NextResponse.json(
+            { error: 'Insufficient credits', required: totalCreditCost, available: profile?.credits ?? 0 },
+            { status: 402 }
+          )
         }
-
-        balanceAfterDeduction = (profile.credits ?? 0) - totalCreditCost
-
-        await tx.profiles.update({
-          where: { id: user.id },
-          data: { credits: { decrement: totalCreditCost } },
-        })
-
-        // 크레딧 사용 히스토리 기록
-        await recordCreditUse({
-          userId: user.id,
-          featureType: 'KEYFRAME',
-          amount: totalCreditCost,
-          balanceAfter: balanceAfterDeduction,
-          description: `키프레임 이미지 생성 (${scenes.length}장)`,
-        }, tx)
-      }, { timeout: 10000 })
-    } catch (error) {
-      if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
-        const profile = await prisma.profiles.findUnique({
-          where: { id: user.id },
-          select: { credits: true },
-        })
-        return NextResponse.json(
-          { error: 'Insufficient credits', required: totalCreditCost, available: profile?.credits ?? 0 },
-          { status: 402 }
-        )
+        throw error
       }
-      throw error
     }
 
     // 각 씬에 대해 Seedream 4.5로 이미지 생성 요청 (부분 실패 처리)
@@ -136,8 +140,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 실패한 씬이 있으면 해당 크레딧 환불 + 환불 히스토리 기록
-    if (failedSceneIndices.length > 0) {
+    // 실패한 씬이 있으면 해당 크레딧 환불 + 환불 히스토리 기록 (어드민은 차감 안 했으므로 환불도 스킵)
+    if (failedSceneIndices.length > 0 && !isAdmin) {
       const refundAmount = failedSceneIndices.length * KEYFRAME_CREDIT_COST
       await prisma.$transaction(async (tx) => {
         const currentProfile = await tx.profiles.findUnique({
