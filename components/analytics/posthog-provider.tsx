@@ -19,7 +19,7 @@ function PostHogPageView() {
 
   useEffect(() => {
     if (pathname && posthogClient) {
-      posthogClient.capture('$pageview', { $current_url: window.origin + pathname })
+      posthogClient.capture('$pageview', { $current_url: window.location.href })
     }
   }, [pathname, posthogClient])
 
