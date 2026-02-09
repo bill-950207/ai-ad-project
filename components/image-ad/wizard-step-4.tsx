@@ -18,6 +18,9 @@ import {
   Wand2,
   Lock,
   Crown,
+  Square,
+  RectangleHorizontal,
+  RectangleVertical,
 } from 'lucide-react'
 import { ImageEditModal } from './image-edit-modal'
 import { InsufficientCreditsModal } from '@/components/ui/insufficient-credits-modal'
@@ -60,6 +63,7 @@ export function WizardStep4() {
     customOptions,
     additionalPrompt,
     aspectRatio,
+    setAspectRatio,
     quality,
     setQuality,
     numImages,
@@ -641,8 +645,34 @@ export function WizardStep4() {
         </div>
       </div>
 
-      {/* 이미지 비율 - 정방형(1:1) 고정 */}
-      {/* 비율 선택 UI 숨김 - 1:1 고정 */}
+      {/* 이미지 비율 */}
+      <div className="bg-card border border-border rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <RectangleHorizontal className="w-5 h-5" />
+          {t.imageAd?.generate?.aspectRatio || 'Image Ratio'}
+        </h2>
+        <div className="grid grid-cols-3 gap-3">
+          {([
+            { ratio: '1:1' as AspectRatio, icon: Square, label: t.imageAd?.generate?.square || '1:1 Square', desc: '1024×1024' },
+            { ratio: '16:9' as AspectRatio, icon: RectangleHorizontal, label: t.imageAd?.generate?.landscape || '16:9 Landscape', desc: '1536×1024' },
+            { ratio: '9:16' as AspectRatio, icon: RectangleVertical, label: t.imageAd?.generate?.portrait || '9:16 Portrait', desc: '1024×1536' },
+          ]).map(({ ratio, icon: Icon, label, desc }) => (
+            <button
+              key={ratio}
+              onClick={() => setAspectRatio(ratio)}
+              className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all ${
+                aspectRatio === ratio
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/50'
+              }`}
+            >
+              <Icon className={`w-6 h-6 mb-2 ${aspectRatio === ratio ? 'text-primary' : 'text-muted-foreground'}`} />
+              <span className={`text-sm font-medium ${aspectRatio === ratio ? 'text-primary' : 'text-foreground'}`}>{label}</span>
+              <span className="text-xs text-muted-foreground mt-1">{desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* 퀄리티 & 개수 */}
       <div className="bg-card border border-border rounded-xl p-6">

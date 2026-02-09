@@ -314,8 +314,10 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
   const getAspectRatioLabel = (size: string | null): string => {
     if (!size) return '-'
     const ratios = (t.imageAdCreate as Record<string, unknown>)?.aspectRatios as Record<string, string> | undefined
-    // Convert size format (e.g., "square_hd" -> "1:1")
     const sizeToRatio: Record<string, string> = {
+      '1024x1024': '1:1',
+      '1536x1024': '16:9',
+      '1024x1536': '9:16',
       'square_hd': '1:1',
       'landscape_16_9': '16:9',
       'portrait_9_16': '9:16',
@@ -975,7 +977,11 @@ export function ImageAdDetail({ imageAdId }: ImageAdDetailProps) {
             {/* 배경 그라데이션 효과 */}
             <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 via-transparent to-transparent pointer-events-none" />
 
-            <div className="relative aspect-[4/3] bg-[#0a0a12]">
+            <div className={`relative bg-[#0a0a12] ${
+              imageAd.image_size === '1024x1536' ? 'aspect-[2/3]' :
+              imageAd.image_size === '1536x1024' ? 'aspect-[3/2]' :
+              'aspect-square'
+            }`}>
               {selectedImageUrl ? (
                 <>
                   <img
