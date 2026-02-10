@@ -32,6 +32,12 @@ function getPreferredLocale(request: NextRequest): Locale {
 export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
 
+  // Stripe webhook은 자체 서명 검증을 사용하므로 middleware 처리 스킵
+  // (불필요한 Supabase 세션 체크 방지 및 잠재적 리다이렉트 이슈 방지)
+  if (pathname === '/api/stripe/webhooks') {
+    return NextResponse.next()
+  }
+
   // 루트에 code 파라미터가 있으면 auth/callback으로 리다이렉트
   // (Supabase 이메일 인증 링크가 루트로 올 경우 처리)
   if (pathname === '/' && searchParams.get('code')) {
