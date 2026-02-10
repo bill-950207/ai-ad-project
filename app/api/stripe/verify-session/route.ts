@@ -50,9 +50,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Stripe에서 세션 정보를 먼저 가져와서 subscription ID 확인
-    // (기존 구독과 새 구독을 비교하기 위해 필요)
-
     // Stripe에서 세션 정보 가져오기
     let session
     try {
