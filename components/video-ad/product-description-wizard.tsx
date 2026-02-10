@@ -779,7 +779,7 @@ export function ProductDescriptionWizard(props: ProductDescriptionWizardProps) {
           const options = JSON.parse(initialAiAvatarOptions)
           setSelectedAvatarInfo({
             type: 'ai-generated',
-            avatarId: '',
+            avatarId: 'ai-generated',
             avatarName: 'AI 추천',
             imageUrl: '',
             displayName: 'AI 추천 아바타',
