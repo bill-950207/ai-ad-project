@@ -98,7 +98,7 @@ export const PRODUCT_CREDIT_COST = 0
 // ============================================================
 
 /** 회원가입 시 기본 크레딧 (FREE 플랜 월간 크레딧과 동일) */
-export const DEFAULT_SIGNUP_CREDITS = 15
+export const DEFAULT_SIGNUP_CREDITS = 20
 
 // ============================================================
 // 타입 정의

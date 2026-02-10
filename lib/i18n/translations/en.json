@@ -238,12 +238,12 @@
           "Watermark included"
         ],
         "limits": {
-          "avatars": "1",
-          "music": "1",
+          "avatars": "3",
+          "music": "5",
           "products": "3",
-          "credits": "15 credits",
-          "imageEstimate": "~5 images",
-          "videoEstimate": "~1 video"
+          "credits": "20 credits",
+          "imageEstimate": "~7 images",
+          "videoEstimate": "~2 videos"
         }
       },
       "starter": {
@@ -256,9 +256,9 @@
           "Priority support"
         ],
         "limits": {
-          "avatars": "3",
-          "music": "5",
-          "products": "10",
+          "avatars": "9",
+          "music": "15",
+          "products": "9",
           "credits": "120 credits/mo",
           "imageEstimate": "~40 images",
           "videoEstimate": "~12 videos"
@@ -275,9 +275,9 @@
           "Advanced analytics"
         ],
         "limits": {
-          "avatars": "Unlimited",
-          "music": "Unlimited",
-          "products": "Unlimited",
+          "avatars": "30",
+          "music": "50",
+          "products": "30",
           "credits": "420 credits/mo",
           "imageEstimate": "~140 images",
           "videoEstimate": "~42 videos"

@@ -238,12 +238,12 @@
           "워터마크 포함"
         ],
         "limits": {
-          "avatars": "1개",
-          "music": "1개",
+          "avatars": "3개",
+          "music": "5개",
           "products": "3개",
-          "credits": "15 크레딧",
-          "imageEstimate": "~이미지 5장",
-          "videoEstimate": "~영상 1개"
+          "credits": "20 크레딧",
+          "imageEstimate": "~이미지 7장",
+          "videoEstimate": "~영상 2개"
         }
       },
       "starter": {
@@ -256,9 +256,9 @@
           "우선 지원"
         ],
         "limits": {
-          "avatars": "3개",
-          "music": "5개",
-          "products": "10개",
+          "avatars": "9개",
+          "music": "15개",
+          "products": "9개",
           "credits": "120 크레딧/월",
           "imageEstimate": "~이미지 40장",
           "videoEstimate": "~영상 12개"
@@ -275,9 +275,9 @@
           "고급 분석"
         ],
         "limits": {
-          "avatars": "무제한",
-          "music": "무제한",
-          "products": "무제한",
+          "avatars": "30개",
+          "music": "50개",
+          "products": "30개",
           "credits": "420 크레딧/월",
           "imageEstimate": "~이미지 140장",
           "videoEstimate": "~영상 42개"

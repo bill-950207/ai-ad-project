@@ -238,12 +238,12 @@
           "含水印"
         ],
         "limits": {
-          "avatars": "1个",
-          "music": "1个",
+          "avatars": "3个",
+          "music": "5个",
           "products": "3个",
-          "credits": "15积分",
-          "imageEstimate": "~5张图片",
-          "videoEstimate": "~1个视频"
+          "credits": "20积分",
+          "imageEstimate": "~7张图片",
+          "videoEstimate": "~2个视频"
         }
       },
       "starter": {
@@ -256,9 +256,9 @@
           "优先支持"
         ],
         "limits": {
-          "avatars": "3个",
-          "music": "5个",
-          "products": "10个",
+          "avatars": "9个",
+          "music": "15个",
+          "products": "9个",
           "credits": "120积分/月",
           "imageEstimate": "~40张图片",
           "videoEstimate": "~12个视频"
@@ -275,9 +275,9 @@
           "高级分析"
         ],
         "limits": {
-          "avatars": "无限",
-          "music": "无限",
-          "products": "无限",
+          "avatars": "30个",
+          "music": "50个",
+          "products": "30个",
           "credits": "420积分/月",
           "imageEstimate": "~140张图片",
           "videoEstimate": "~42个视频"

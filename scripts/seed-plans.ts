@@ -34,7 +34,7 @@ const plans = [
     avatar_limit: 3,
     music_limit: 5,
     product_limit: 3,
-    monthly_credits: 15, // 가입 시 1회 지급
+    monthly_credits: 20, // 가입 시 1회 지급
     keyframe_count: 1,
     watermark_free: false,
     hd_upscale: false,
