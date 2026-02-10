@@ -1,5 +1,5 @@
 /**
- * 멀티씬 영상 생성 API (Vidu Q3 + Q2 폴백)
+ * 멀티씬 영상 생성 API (Vidu Q3 Turbo + Q2 폴백)
  *
  * POST: 각 씬 키프레임 이미지로 개별 영상을 생성합니다.
  * - 씬1 이미지 → 씬1 영상
@@ -7,7 +7,7 @@
  * - ...
  *
  * 지원 모델:
- * - Primary: WaveSpeed Vidu Q3 (1-16초, 540p/720p/1080p)
+ * - Primary: WaveSpeed Vidu Q3 Turbo (1-16초, 540p/720p/1080p)
  * - Fallback: FAL.ai Vidu Q2 Turbo (2-8초, 720p/1080p)
  *
  * 전환 방식: 컷 전환 (하드컷)
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
             featureType: 'VIDU_SCENE',
             amount: totalCreditCost,
             balanceAfter,
-            description: `Vidu Q3 씬 영상 생성 (${sortedKeyframes.length}개 씬, ${totalSeconds}초, ${effectiveResolution})`,
+            description: `Vidu Q3 Turbo 씬 영상 생성 (${sortedKeyframes.length}개 씬, ${totalSeconds}초, ${effectiveResolution})`,
           }, tx)
         }, { timeout: 10000 })
       } catch (error) {
@@ -219,7 +219,7 @@ export async function POST(request: NextRequest) {
       const sceneMovementAmplitude = keyframe.movementAmplitude ?? 'auto'
 
       try {
-        // Primary: WaveSpeed Vidu Q3 (1-16초, 540p/720p/1080p)
+        // Primary: WaveSpeed Vidu Q3 Turbo (1-16초, 540p/720p/1080p)
         const result = await submitViduToQueue({
           prompt: scenePrompt,
           image: keyframe.imageUrl,
@@ -238,7 +238,7 @@ export async function POST(request: NextRequest) {
         })
       } catch (wavespeedError) {
         // WaveSpeed 실패 → Fallback: FAL.ai Vidu Q2 Turbo (2-8초, 720p/1080p)
-        console.warn(`씬 ${keyframe.sceneIndex} WaveSpeed Q3 실패, FAL Q2 폴백 시도:`, wavespeedError)
+        console.warn(`씬 ${keyframe.sceneIndex} WaveSpeed Q3 Turbo 실패, FAL Q2 폴백 시도:`, wavespeedError)
         try {
           // Q2 폴백: duration 클램핑 (2-8초), resolution 클램핑 (540p→720p)
           const fallbackResolution: ViduQ2Resolution = effectiveResolution === '540p' ? '720p' : effectiveResolution as ViduQ2Resolution
@@ -289,7 +289,7 @@ export async function POST(request: NextRequest) {
             featureType: 'VIDU_SCENE',
             amount: refundAmount,
             balanceAfter: balanceAfterRefund,
-            description: `Vidu Q3 씬 영상 생성 실패 환불 (${failedSceneIndices.length}개 씬)`,
+            description: `Vidu Q3 Turbo 씬 영상 생성 실패 환불 (${failedSceneIndices.length}개 씬)`,
           }, tx)
         })
         console.log(`${failedSceneIndices.length}개 씬 실패, ${refundAmount} 크레딧 환불`)
