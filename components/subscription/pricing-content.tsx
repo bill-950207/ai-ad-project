@@ -89,7 +89,7 @@ const fallbackPlanTranslations: Record<string, PlanTranslation> = {
       avatars: 'Up to 3',
       music: 'Up to 5',
       products: 'Up to 3',
-      credits: '15 Credits (One-time)',
+      credits: '20 Credits (One-time)',
       imageEstimate: '~7 Ad Images',
     },
   },

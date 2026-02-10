@@ -33,7 +33,7 @@ const FREE_PLAN_DEFAULTS: UserPlan = {
   avatarLimit: 3,
   musicLimit: 5,
   productLimit: 3,
-  monthlyCredits: 15,
+  monthlyCredits: 20,
   keyframeCount: 1,
   watermarkFree: false,
   hdUpscale: false,

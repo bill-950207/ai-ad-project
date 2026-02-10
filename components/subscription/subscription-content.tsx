@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
   CreditCard,
@@ -66,6 +66,7 @@ export function SubscriptionContent() {
   const [showSuccess, setShowSuccess] = useState(false)
   const [showManageModal, setShowManageModal] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Translation type
   type SubscriptionPageT = {
@@ -108,16 +109,89 @@ export function SubscriptionContent() {
   const subT = t.subscriptionPage as SubscriptionPageT | undefined
 
   useEffect(() => {
-    // 성공 메시지 표시
-    if (searchParams.get('success') === 'true') {
-      setShowSuccess(true)
-      setTimeout(() => setShowSuccess(false), 5000)
+    const sessionId = searchParams.get('session_id')
+    const isSuccess = searchParams.get('success') === 'true'
+
+    if (isSuccess && sessionId) {
+      // 결제 완료: Stripe 세션을 검증하고 구독 동기화 후 데이터 조회
+      verifyAndFetch(sessionId)
+    } else {
+      fetchSubscription()
     }
 
-    fetchSubscription()
+    // cleanup: 컴포넌트 언마운트 시 폴링 정리
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current)
+        pollIntervalRef.current = null
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
-  const fetchSubscription = async () => {
+  /**
+   * 결제 완료 후: 세션 검증 → 구독 동기화 → 데이터 조회
+   * webhook이 아직 도착하지 않았거나 실패한 경우에도 구독이 반영됩니다.
+   */
+  const verifyAndFetch = async (sessionId: string) => {
+    try {
+      setError(null)
+      const verifyResponse = await fetch('/api/stripe/verify-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      })
+
+      if (verifyResponse.ok) {
+        const verifyResult = await verifyResponse.json()
+        if (verifyResult.verified) {
+          setShowSuccess(true)
+          setTimeout(() => setShowSuccess(false), 5000)
+        }
+      }
+    } catch (err) {
+      console.error('Session verification failed:', err)
+      // 검증 실패해도 일반 조회로 폴백
+    }
+
+    // 검증 후 구독 데이터 조회 (결과를 직접 반환받아 클로저 문제 방지)
+    const subscriptionData = await fetchSubscription()
+
+    // 조회 결과가 여전히 FREE면 폴링으로 재시도 (webhook 지연 대응)
+    if (!subscriptionData || subscriptionData.subscription.planType === 'FREE') {
+      let retries = 0
+      const maxRetries = 5
+
+      pollIntervalRef.current = setInterval(async () => {
+        retries++
+        try {
+          const response = await fetch('/api/subscription')
+          if (response.ok) {
+            const result = await response.json()
+            if (result.subscription?.planType !== 'FREE') {
+              setData(result)
+              setShowSuccess(true)
+              setTimeout(() => setShowSuccess(false), 5000)
+              if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current)
+                pollIntervalRef.current = null
+              }
+              return
+            }
+          }
+        } catch {
+          // 폴링 실패 무시
+        }
+
+        if (retries >= maxRetries && pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current)
+          pollIntervalRef.current = null
+        }
+      }, 2000)
+    }
+  }
+
+  const fetchSubscription = async (): Promise<SubscriptionData | null> => {
     try {
       setError(null)
       const response = await fetch('/api/subscription')
@@ -129,9 +203,11 @@ export function SubscriptionContent() {
         throw new Error(result.error)
       }
       setData(result)
+      return result
     } catch (err) {
       console.error('Failed to fetch subscription:', err)
       setError(subT?.loadError || 'Unable to load subscription info. Please try again.')
+      return null
     } finally {
       setLoading(false)
     }

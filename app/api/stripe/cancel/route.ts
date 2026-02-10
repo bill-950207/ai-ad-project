@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { stripe } from '@/lib/stripe'
 import { applyRateLimit, rateLimitExceededResponse } from '@/lib/rate-limit'
+import { invalidateUserSubscription } from '@/lib/subscription/cache'
 
 // Stripe API Rate Limit: 분당 5회
 const STRIPE_RATE_LIMIT = {
@@ -82,6 +83,9 @@ export async function POST() {
       })
       throw stripeError
     }
+
+    // 구독 캐시 무효화
+    invalidateUserSubscription(user.id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

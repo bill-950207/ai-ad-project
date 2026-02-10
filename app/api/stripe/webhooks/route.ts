@@ -19,6 +19,7 @@ import { plan_type, subscription_status } from '@/lib/generated/prisma/client'
 import { recordSubscriptionCredit } from '@/lib/credits/history'
 import { captureServerEvent } from '@/lib/analytics/posthog-server'
 import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
+import { invalidateUserSubscription } from '@/lib/subscription/cache'
 import Stripe from 'stripe'
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
@@ -220,29 +221,43 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     },
   })
 
-  // 첫 결제 시 월 크레딧 지급 (트랜잭션으로 히스토리 기록)
-  await prisma.$transaction(async (tx) => {
-    const currentProfile = await tx.profiles.findUnique({
-      where: { id: userId },
-      select: { credits: true },
-    })
-
-    const currentCredits = currentProfile?.credits ?? 0
-    const balanceAfter = currentCredits + planRecord.monthly_credits
-
-    await tx.profiles.update({
-      where: { id: userId },
-      data: { credits: { increment: planRecord.monthly_credits } },
-    })
-
-    // 구독 크레딧 히스토리 기록
-    await recordSubscriptionCredit({
-      userId,
-      amount: planRecord.monthly_credits,
-      balanceAfter,
-      description: `${planRecord.display_name || planInfo.plan} 구독 시작 크레딧`,
-    }, tx)
+  // 첫 결제 시 월 크레딧 지급 (중복 방지: verify-session에서 이미 지급했을 수 있음)
+  const creditAlreadyGranted = await prisma.credit_history.findFirst({
+    where: {
+      user_id: userId,
+      transaction_type: 'SUBSCRIPTION',
+      description: { contains: '구독 시작 크레딧' },
+      created_at: { gte: new Date(Date.now() - 5 * 60 * 1000) }, // 5분 이내
+    },
   })
+
+  if (!creditAlreadyGranted) {
+    await prisma.$transaction(async (tx) => {
+      const currentProfile = await tx.profiles.findUnique({
+        where: { id: userId },
+        select: { credits: true },
+      })
+
+      const currentCredits = currentProfile?.credits ?? 0
+      const balanceAfter = currentCredits + planRecord.monthly_credits
+
+      await tx.profiles.update({
+        where: { id: userId },
+        data: { credits: { increment: planRecord.monthly_credits } },
+      })
+
+      // 구독 크레딧 히스토리 기록
+      await recordSubscriptionCredit({
+        userId,
+        amount: planRecord.monthly_credits,
+        balanceAfter,
+        description: `${planRecord.display_name || planInfo.plan} 구독 시작 크레딧`,
+      }, tx)
+    })
+  }
+
+  // 구독 캐시 무효화
+  invalidateUserSubscription(userId)
 
   captureServerEvent(userId, ANALYTICS_EVENTS.CHECKOUT_COMPLETED, {
     plan: planInfo.plan,
@@ -317,6 +332,9 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     },
   })
 
+  // 구독 캐시 무효화
+  invalidateUserSubscription(existingSubscription.user_id)
+
   console.log(`Subscription updated: ${subData.id}, status: ${status}`)
 }
 
@@ -348,6 +366,9 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       stripe_subscription_id: null,  // Stripe 연결 해제 (재구독 시 새 ID 사용)
     },
   })
+
+  // 구독 캐시 무효화
+  invalidateUserSubscription(existingSubscription.user_id)
 
   console.log(`Subscription soft-deleted: ${subData.id}, user downgraded to FREE`)
 }
@@ -441,6 +462,15 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     where: { stripe_subscription_id: subscriptionId },
     data: { status: 'PAST_DUE' },
   })
+
+  // 영향받는 사용자의 구독 캐시 무효화
+  const failedSubscription = await prisma.subscriptions.findFirst({
+    where: { stripe_subscription_id: subscriptionId },
+    select: { user_id: true },
+  })
+  if (failedSubscription) {
+    invalidateUserSubscription(failedSubscription.user_id)
+  }
 
   console.log(`Payment failed for subscription: ${subscriptionId}`)
 }
