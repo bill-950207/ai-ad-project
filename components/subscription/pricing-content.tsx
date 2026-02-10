@@ -206,7 +206,7 @@ export function PricingContent() {
   // Get translated plan data
   const getPlanTranslation = (planName: string): PlanTranslation => {
     const key = planName.toLowerCase()
-    const pricingPlans = (t.pricing as { plans?: Record<string, PlanTranslation> })?.plans
+    const pricingPlans = (t.pricingPage as { plans?: Record<string, PlanTranslation> })?.plans
     return pricingPlans?.[key] || fallbackPlanTranslations[key] || fallbackPlanTranslations.free
   }
 
