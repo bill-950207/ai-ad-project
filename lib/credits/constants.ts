@@ -66,7 +66,7 @@ export const KEYFRAME_CREDIT_COST = 1 // ~$0.03/장
 /** @deprecated 씬 전환 영상 (Kling O1) - 현재 서비스에서 미사용 */
 export const TRANSITION_CREDIT_COST = 12
 
-/** Vidu Q3 영상 생성 해상도별 초당 크레딧 (WaveSpeed) */
+/** Vidu Q3 Turbo 영상 생성 해상도별 초당 크레딧 (WaveSpeed) */
 export const VIDU_CREDIT_COST_PER_SECOND = {
   '540p': 1, // SD: ~$0.03/초
   '720p': 2, // HD: ~$0.05/초

@@ -151,6 +151,21 @@ cd ../ai_ad_project-[feature]
 ./scripts/setup-worktree.sh  # npm install + .env 복사 + db:generate
 ```
 
+## Git Workflow Rules
+
+### 워크트리 안전 규칙
+- Git 작업 전 항상 `git worktree list`로 현재 워크트리 상태 확인
+- 워크트리에서 체크아웃된 브랜치는 다른 워크트리에서 체크아웃 불가 — 충돌 시 사용자에게 설명
+
+### 리베이스 & 병합 규칙
+- **이미 병합된 PR의 브랜치는 절대 rebase/force-push 금지** — 병합 후에는 새 브랜치 생성
+- 리베이스 충돌 발생 시 임의로 해결하지 말고, **어떤 버전을 유지할지 사용자에게 확인**
+- PR 병합 후 로컬 동기화: `git fetch origin && git rebase origin/main`
+
+### PR & 브랜치 관리
+- `gh pr merge --delete-branch` 실패 시 (워크트리 충돌 등) 원인을 설명하고 대안 제시
+- PR 생성 전 항상 브랜치 상태 확인 (미커밋 변경, 리베이스 완료 여부)
+
 ## Commit & PR Guidelines
 
 ### 커밋 메시지 형식
@@ -161,6 +176,20 @@ feat: 새 기능 | fix: 버그 수정 | refactor: 리팩토링 | docs: 문서 | 
 ### 브랜치 규칙
 - Claude는 main에 직접 병합하지 않음
 - PR 생성까지만 Claude 역할, 병합은 사용자가 수행
+
+## Code Change Rules
+
+### 정확한 값 사용
+- 사용자가 지정한 정확한 값 (모델명, 필드명, 숫자 범위 등)을 **그대로** 사용 — 유사한 값으로 대체하지 않음
+- 불확실한 경우 소스 파일을 먼저 읽어서 확인한 후 변경
+
+### 배포 환경 고려
+- Vercel 서버리스 환경에서 동작해야 함 — 네이티브 바이너리 의존 패키지 사용 금지 (예: @ffprobe-installer)
+- 빌드 실패 가능성이 있는 변경은 `npm run build`로 반드시 검증
+
+### i18n 필수 확인
+- UI 텍스트 수정 시 하드코딩 문자열 여부 확인 → 번역 파일(ko, en, ja, zh) 업데이트 필수
+- 새로운 UI 문자열 추가 시 4개 언어 번역 파일 모두 업데이트
 
 ## Code Conventions
 
