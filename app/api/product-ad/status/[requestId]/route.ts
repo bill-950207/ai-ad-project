@@ -5,7 +5,7 @@
  * - kie:xxx 형식: kie.ai 상태 조회
  * - fal:xxx 형식: fal.ai 상태 조회 (Kling O1)
  * - fal-vidu-q2:xxx 형식: FAL.ai Vidu Q2 Turbo 상태 조회
- * - wavespeed-vidu:xxx 형식: WaveSpeed Vidu Q3 상태 조회 (레거시)
+ * - wavespeed-vidu:xxx 형식: WaveSpeed Vidu Q3 상태 조회
  * - 이미지 완료 시 AI 서비스 원본 URL 반환 (클라이언트에서 R2 업로드)
  */
 
@@ -159,7 +159,7 @@ export async function GET(
         status = 'IN_PROGRESS'
       }
     } else if (provider === 'wavespeed-vidu') {
-      // WaveSpeed Vidu Q3 상태 조회 (레거시 지원)
+      // WaveSpeed Vidu Q3 상태 조회
       const statusInfo = await getWaveSpeedViduQueueStatus(taskId)
 
       if (statusInfo.status === 'IN_QUEUE') {
