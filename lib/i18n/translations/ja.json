@@ -259,9 +259,9 @@
           "avatars": "3個",
           "music": "5個",
           "products": "10個",
-          "credits": "100クレジット/月",
-          "imageEstimate": "~画像33枚",
-          "videoEstimate": "~動画10本"
+          "credits": "120クレジット/月",
+          "imageEstimate": "~画像40枚",
+          "videoEstimate": "~動画12本"
         }
       },
       "pro": {
@@ -278,9 +278,9 @@
           "avatars": "無制限",
           "music": "無制限",
           "products": "無制限",
-          "credits": "300クレジット/月",
-          "imageEstimate": "~画像100枚",
-          "videoEstimate": "~動画30本"
+          "credits": "420クレジット/月",
+          "imageEstimate": "~画像140枚",
+          "videoEstimate": "~動画42本"
         }
       },
       "business": {
@@ -298,9 +298,9 @@
           "avatars": "無制限",
           "music": "無制限",
           "products": "無制限",
-          "credits": "1000クレジット/月",
-          "imageEstimate": "~画像333枚",
-          "videoEstimate": "~動画100本"
+          "credits": "1600クレジット/月",
+          "imageEstimate": "~画像533枚",
+          "videoEstimate": "~動画160本"
         }
       }
     }

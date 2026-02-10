@@ -259,9 +259,9 @@
           "avatars": "3",
           "music": "5",
           "products": "10",
-          "credits": "100 credits/mo",
-          "imageEstimate": "~33 images",
-          "videoEstimate": "~10 videos"
+          "credits": "120 credits/mo",
+          "imageEstimate": "~40 images",
+          "videoEstimate": "~12 videos"
         }
       },
       "pro": {
@@ -278,9 +278,9 @@
           "avatars": "Unlimited",
           "music": "Unlimited",
           "products": "Unlimited",
-          "credits": "300 credits/mo",
-          "imageEstimate": "~100 images",
-          "videoEstimate": "~30 videos"
+          "credits": "420 credits/mo",
+          "imageEstimate": "~140 images",
+          "videoEstimate": "~42 videos"
         }
       },
       "business": {
@@ -298,9 +298,9 @@
           "avatars": "Unlimited",
           "music": "Unlimited",
           "products": "Unlimited",
-          "credits": "1000 credits/mo",
-          "imageEstimate": "~333 images",
-          "videoEstimate": "~100 videos"
+          "credits": "1600 credits/mo",
+          "imageEstimate": "~533 images",
+          "videoEstimate": "~160 videos"
         }
       }
     }

@@ -259,9 +259,9 @@
           "avatars": "3개",
           "music": "5개",
           "products": "10개",
-          "credits": "100 크레딧/월",
-          "imageEstimate": "~이미지 33장",
-          "videoEstimate": "~영상 10개"
+          "credits": "120 크레딧/월",
+          "imageEstimate": "~이미지 40장",
+          "videoEstimate": "~영상 12개"
         }
       },
       "pro": {
@@ -278,9 +278,9 @@
           "avatars": "무제한",
           "music": "무제한",
           "products": "무제한",
-          "credits": "300 크레딧/월",
-          "imageEstimate": "~이미지 100장",
-          "videoEstimate": "~영상 30개"
+          "credits": "420 크레딧/월",
+          "imageEstimate": "~이미지 140장",
+          "videoEstimate": "~영상 42개"
         }
       },
       "business": {
@@ -298,9 +298,9 @@
           "avatars": "무제한",
           "music": "무제한",
           "products": "무제한",
-          "credits": "1000 크레딧/월",
-          "imageEstimate": "~이미지 333장",
-          "videoEstimate": "~영상 100개"
+          "credits": "1600 크레딧/월",
+          "imageEstimate": "~이미지 533장",
+          "videoEstimate": "~영상 160개"
         }
       }
     }

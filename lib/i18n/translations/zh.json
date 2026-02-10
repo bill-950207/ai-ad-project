@@ -259,9 +259,9 @@
           "avatars": "3个",
           "music": "5个",
           "products": "10个",
-          "credits": "100积分/月",
-          "imageEstimate": "~33张图片",
-          "videoEstimate": "~10个视频"
+          "credits": "120积分/月",
+          "imageEstimate": "~40张图片",
+          "videoEstimate": "~12个视频"
         }
       },
       "pro": {
@@ -278,9 +278,9 @@
           "avatars": "无限",
           "music": "无限",
           "products": "无限",
-          "credits": "300积分/月",
-          "imageEstimate": "~100张图片",
-          "videoEstimate": "~30个视频"
+          "credits": "420积分/月",
+          "imageEstimate": "~140张图片",
+          "videoEstimate": "~42个视频"
         }
       },
       "business": {
@@ -298,9 +298,9 @@
           "avatars": "无限",
           "music": "无限",
           "products": "无限",
-          "credits": "1000积分/月",
-          "imageEstimate": "~333张图片",
-          "videoEstimate": "~100个视频"
+          "credits": "1600积分/月",
+          "imageEstimate": "~533张图片",
+          "videoEstimate": "~160个视频"
         }
       }
     }
