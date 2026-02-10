@@ -19,6 +19,7 @@ import { plan_type, subscription_status } from '@/lib/generated/prisma/client'
 import { recordSubscriptionCredit } from '@/lib/credits/history'
 import { captureServerEvent } from '@/lib/analytics/posthog-server'
 import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
+import { invalidateUserSubscription } from '@/lib/subscription/cache'
 import Stripe from 'stripe'
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
@@ -244,6 +245,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     }, tx)
   })
 
+  // 구독 캐시 무효화
+  invalidateUserSubscription(userId)
+
   captureServerEvent(userId, ANALYTICS_EVENTS.CHECKOUT_COMPLETED, {
     plan: planInfo.plan,
     user_id: userId,
@@ -317,6 +321,9 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     },
   })
 
+  // 구독 캐시 무효화
+  invalidateUserSubscription(existingSubscription.user_id)
+
   console.log(`Subscription updated: ${subData.id}, status: ${status}`)
 }
 
@@ -348,6 +355,9 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       stripe_subscription_id: null,  // Stripe 연결 해제 (재구독 시 새 ID 사용)
     },
   })
+
+  // 구독 캐시 무효화
+  invalidateUserSubscription(existingSubscription.user_id)
 
   console.log(`Subscription soft-deleted: ${subData.id}, user downgraded to FREE`)
 }
@@ -441,6 +451,15 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     where: { stripe_subscription_id: subscriptionId },
     data: { status: 'PAST_DUE' },
   })
+
+  // 영향받는 사용자의 구독 캐시 무효화
+  const failedSubscription = await prisma.subscriptions.findFirst({
+    where: { stripe_subscription_id: subscriptionId },
+    select: { user_id: true },
+  })
+  if (failedSubscription) {
+    invalidateUserSubscription(failedSubscription.user_id)
+  }
 
   console.log(`Payment failed for subscription: ${subscriptionId}`)
 }

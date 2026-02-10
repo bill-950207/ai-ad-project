@@ -108,14 +108,75 @@ export function SubscriptionContent() {
   const subT = t.subscriptionPage as SubscriptionPageT | undefined
 
   useEffect(() => {
-    // 성공 메시지 표시
-    if (searchParams.get('success') === 'true') {
-      setShowSuccess(true)
-      setTimeout(() => setShowSuccess(false), 5000)
+    const sessionId = searchParams.get('session_id')
+    const isSuccess = searchParams.get('success') === 'true'
+
+    if (isSuccess && sessionId) {
+      // 결제 완료: Stripe 세션을 검증하고 구독 동기화 후 데이터 조회
+      verifyAndFetch(sessionId)
+    } else {
+      fetchSubscription()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
+  /**
+   * 결제 완료 후: 세션 검증 → 구독 동기화 → 데이터 조회
+   * webhook이 아직 도착하지 않았거나 실패한 경우에도 구독이 반영됩니다.
+   */
+  const verifyAndFetch = async (sessionId: string) => {
+    try {
+      setError(null)
+      const verifyResponse = await fetch('/api/stripe/verify-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      })
+
+      if (verifyResponse.ok) {
+        const verifyResult = await verifyResponse.json()
+        if (verifyResult.verified) {
+          setShowSuccess(true)
+          setTimeout(() => setShowSuccess(false), 5000)
+        }
+      }
+    } catch (err) {
+      console.error('Session verification failed:', err)
+      // 검증 실패해도 일반 조회로 폴백
     }
 
-    fetchSubscription()
-  }, [searchParams])
+    // 검증 후 구독 데이터 조회
+    await fetchSubscription()
+
+    // 조회 결과가 여전히 FREE면 폴링으로 재시도 (webhook 지연 대응)
+    if (!data || data.subscription.planType === 'FREE') {
+      let retries = 0
+      const maxRetries = 5
+      const pollInterval = 2000
+
+      const poll = setInterval(async () => {
+        retries++
+        try {
+          const response = await fetch('/api/subscription')
+          if (response.ok) {
+            const result = await response.json()
+            if (result.subscription?.planType !== 'FREE') {
+              setData(result)
+              setShowSuccess(true)
+              setTimeout(() => setShowSuccess(false), 5000)
+              clearInterval(poll)
+            }
+          }
+        } catch {
+          // 폴링 실패 무시
+        }
+
+        if (retries >= maxRetries) {
+          clearInterval(poll)
+        }
+      }, pollInterval)
+    }
+  }
 
   const fetchSubscription = async () => {
     try {
