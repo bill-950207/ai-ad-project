@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
   CreditCard,
@@ -66,6 +66,7 @@ export function SubscriptionContent() {
   const [showSuccess, setShowSuccess] = useState(false)
   const [showManageModal, setShowManageModal] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Translation type
   type SubscriptionPageT = {
@@ -117,6 +118,14 @@ export function SubscriptionContent() {
     } else {
       fetchSubscription()
     }
+
+    // cleanup: 컴포넌트 언마운트 시 폴링 정리
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current)
+        pollIntervalRef.current = null
+      }
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
@@ -145,16 +154,15 @@ export function SubscriptionContent() {
       // 검증 실패해도 일반 조회로 폴백
     }
 
-    // 검증 후 구독 데이터 조회
-    await fetchSubscription()
+    // 검증 후 구독 데이터 조회 (결과를 직접 반환받아 클로저 문제 방지)
+    const subscriptionData = await fetchSubscription()
 
     // 조회 결과가 여전히 FREE면 폴링으로 재시도 (webhook 지연 대응)
-    if (!data || data.subscription.planType === 'FREE') {
+    if (!subscriptionData || subscriptionData.subscription.planType === 'FREE') {
       let retries = 0
       const maxRetries = 5
-      const pollInterval = 2000
 
-      const poll = setInterval(async () => {
+      pollIntervalRef.current = setInterval(async () => {
         retries++
         try {
           const response = await fetch('/api/subscription')
@@ -164,21 +172,26 @@ export function SubscriptionContent() {
               setData(result)
               setShowSuccess(true)
               setTimeout(() => setShowSuccess(false), 5000)
-              clearInterval(poll)
+              if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current)
+                pollIntervalRef.current = null
+              }
+              return
             }
           }
         } catch {
           // 폴링 실패 무시
         }
 
-        if (retries >= maxRetries) {
-          clearInterval(poll)
+        if (retries >= maxRetries && pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current)
+          pollIntervalRef.current = null
         }
-      }, pollInterval)
+      }, 2000)
     }
   }
 
-  const fetchSubscription = async () => {
+  const fetchSubscription = async (): Promise<SubscriptionData | null> => {
     try {
       setError(null)
       const response = await fetch('/api/subscription')
@@ -190,9 +203,11 @@ export function SubscriptionContent() {
         throw new Error(result.error)
       }
       setData(result)
+      return result
     } catch (err) {
       console.error('Failed to fetch subscription:', err)
       setError(subT?.loadError || 'Unable to load subscription info. Please try again.')
+      return null
     } finally {
       setLoading(false)
     }

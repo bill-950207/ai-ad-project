@@ -221,29 +221,40 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     },
   })
 
-  // 첫 결제 시 월 크레딧 지급 (트랜잭션으로 히스토리 기록)
-  await prisma.$transaction(async (tx) => {
-    const currentProfile = await tx.profiles.findUnique({
-      where: { id: userId },
-      select: { credits: true },
-    })
-
-    const currentCredits = currentProfile?.credits ?? 0
-    const balanceAfter = currentCredits + planRecord.monthly_credits
-
-    await tx.profiles.update({
-      where: { id: userId },
-      data: { credits: { increment: planRecord.monthly_credits } },
-    })
-
-    // 구독 크레딧 히스토리 기록
-    await recordSubscriptionCredit({
-      userId,
-      amount: planRecord.monthly_credits,
-      balanceAfter,
-      description: `${planRecord.display_name || planInfo.plan} 구독 시작 크레딧`,
-    }, tx)
+  // 첫 결제 시 월 크레딧 지급 (중복 방지: verify-session에서 이미 지급했을 수 있음)
+  const creditAlreadyGranted = await prisma.credit_history.findFirst({
+    where: {
+      user_id: userId,
+      transaction_type: 'SUBSCRIPTION',
+      description: { contains: '구독 시작 크레딧' },
+      created_at: { gte: new Date(Date.now() - 5 * 60 * 1000) }, // 5분 이내
+    },
   })
+
+  if (!creditAlreadyGranted) {
+    await prisma.$transaction(async (tx) => {
+      const currentProfile = await tx.profiles.findUnique({
+        where: { id: userId },
+        select: { credits: true },
+      })
+
+      const currentCredits = currentProfile?.credits ?? 0
+      const balanceAfter = currentCredits + planRecord.monthly_credits
+
+      await tx.profiles.update({
+        where: { id: userId },
+        data: { credits: { increment: planRecord.monthly_credits } },
+      })
+
+      // 구독 크레딧 히스토리 기록
+      await recordSubscriptionCredit({
+        userId,
+        amount: planRecord.monthly_credits,
+        balanceAfter,
+        description: `${planRecord.display_name || planInfo.plan} 구독 시작 크레딧`,
+      }, tx)
+    })
+  }
 
   // 구독 캐시 무효화
   invalidateUserSubscription(userId)

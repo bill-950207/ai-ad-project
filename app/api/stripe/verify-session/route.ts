@@ -50,25 +50,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 이미 유효한 구독이 있는지 확인
-    const existingSubscription = await prisma.subscriptions.findUnique({
-      where: { user_id: user.id },
-      include: { plan: true },
-    })
-
-    if (
-      existingSubscription &&
-      existingSubscription.status === 'ACTIVE' &&
-      existingSubscription.canceled_at === null &&
-      existingSubscription.stripe_subscription_id
-    ) {
-      // 이미 활성 구독이 있으면 즉시 반환 (webhook이 이미 처리함)
-      return NextResponse.json({
-        verified: true,
-        alreadySynced: true,
-        planType: existingSubscription.plan.name,
-      })
-    }
+    // Stripe에서 세션 정보를 먼저 가져와서 subscription ID 확인
+    // (기존 구독과 새 구독을 비교하기 위해 필요)
 
     // Stripe에서 세션 정보 가져오기
     let session
