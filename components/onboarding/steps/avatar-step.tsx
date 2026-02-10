@@ -2,7 +2,7 @@
  * 아바타 선택/생성 단계
  *
  * 탭 방식 UI로 세 가지 선택지 제공:
- * 1. 기존 아바타 선택: 아바타 카드 그리드 (의상 포함)
+ * 1. 기존 아바타 선택: 아바타 카드 그리드
  * 2. AI 추천 아바타: 성별/나이/스타일/인종/체형 옵션 선택
  * 3. 나만의 아바타 생성: AvatarForm 로직 재사용
  */
@@ -10,7 +10,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Sparkles, User, Plus, Check, Loader2, ChevronDown, Shirt } from 'lucide-react'
+import { Sparkles, User, Plus, Check, Loader2 } from 'lucide-react'
 import { useOnboarding, OnboardingAvatar } from '../onboarding-context'
 import { AiAvatarOptions, SelectedAvatarInfo } from '@/components/video-ad/avatar-select-modal'
 import { AvatarOptions } from '@/lib/avatar/prompt-builder'
@@ -24,9 +24,6 @@ type AvatarStepT = {
   createNew?: string
   noAvatars?: string
   noAvatarsHint?: string
-  default?: string
-  outfits?: string
-  outfitList?: string
   aiGenerateTitle?: string
   aiGenerateDesc?: string
   selectAvatarCharacteristics?: string
@@ -150,7 +147,6 @@ export function AvatarStep() {
   // 탭 상태 (기존 아바타가 있으면 existing, 없으면 ai)
   const [activeTab, setActiveTab] = useState<TabType>('existing')
   const [avatarsWithOutfits, setAvatarsWithOutfits] = useState<AvatarWithOutfits[]>([])
-  const [expandedAvatarId, setExpandedAvatarId] = useState<string | null>(null)
 
   // AI 옵션 상태
   const [aiGender, setAiGender] = useState<'male' | 'female' | 'any'>('any')
@@ -232,20 +228,6 @@ export function AvatarStep() {
     })
   }
 
-  // 의상 선택
-  const handleSelectOutfit = (avatar: AvatarWithOutfits, outfit: { id: string; name: string; image_url: string | null }) => {
-    if (!outfit.image_url) return
-
-    setSelectedAvatarInfo({
-      type: 'outfit',
-      avatarId: avatar.id,
-      avatarName: avatar.name,
-      outfitId: outfit.id,
-      outfitName: outfit.name,
-      imageUrl: outfit.image_url,
-      displayName: `${avatar.name} - ${outfit.name}`,
-    })
-  }
 
   // 아바타 생성 제출
   const handleCreateAvatar = async () => {
@@ -281,10 +263,6 @@ export function AvatarStep() {
     }
   }
 
-  // 아바타 확장/축소
-  const toggleAvatarExpand = (avatarId: string) => {
-    setExpandedAvatarId(expandedAvatarId === avatarId ? null : avatarId)
-  }
 
   // 옵션 업데이트 헬퍼
   const updateOption = <K extends keyof AvatarOptions>(key: K, value: AvatarOptions[K]) => {
@@ -351,7 +329,7 @@ export function AvatarStep() {
       <div className="flex-1 min-h-0 overflow-y-auto">
         {/* 기존 아바타 탭 */}
         {activeTab === 'existing' && (
-          <div className="space-y-3">
+          <div>
             {avatarsWithOutfits.length === 0 ? (
               <div className="text-center py-12">
                 <User className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
@@ -361,110 +339,41 @@ export function AvatarStep() {
                 </p>
               </div>
             ) : (
-              <>
+              <div className="grid grid-cols-5 gap-3">
                 {avatarsWithOutfits.map((avatar) => {
-                  const isExpanded = expandedAvatarId === avatar.id
-                  const hasOutfits = avatar.outfits.length > 0
                   const isAvatarSelected = selectedAvatarInfo?.avatarId === avatar.id && selectedAvatarInfo?.type === 'avatar'
 
                   return (
-                    <div
+                    <button
                       key={avatar.id}
-                      className="bg-secondary/30 border border-border rounded-xl overflow-hidden"
+                      onClick={() => handleSelectAvatar(avatar)}
+                      className={`relative rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
+                        isAvatarSelected
+                          ? 'border-primary ring-2 ring-primary/30'
+                          : 'border-transparent hover:border-primary/50'
+                      }`}
                     >
-                      <div className="flex items-center gap-3 p-3">
-                        {/* 아바타 선택 버튼 */}
-                        <button
-                          onClick={() => handleSelectAvatar(avatar)}
-                          className={`relative flex-shrink-0 w-16 h-24 rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
-                            isAvatarSelected
-                              ? 'border-primary ring-2 ring-primary/30'
-                              : 'border-transparent hover:border-primary/50'
-                          }`}
-                        >
-                          {avatar.image_url && (
-                            <img
-                              src={avatar.image_url}
-                              alt={avatar.name}
-                              className="w-full h-full object-cover"
-                            />
-                          )}
-                          {isAvatarSelected && (
-                            <div className="absolute top-1 right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-primary-foreground" />
-                            </div>
-                          )}
-                          <div className="absolute bottom-0 left-0 right-0 bg-black/60 py-0.5 px-1">
-                            <span className="text-[10px] text-white">{avatarT?.default || 'Default'}</span>
-                          </div>
-                        </button>
-
-                        {/* 아바타 정보 */}
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-foreground truncate text-sm">
-                            {avatar.name}
-                          </h3>
-                          {hasOutfits && (
-                            <button
-                              onClick={() => toggleAvatarExpand(avatar.id)}
-                              className="flex items-center gap-1 mt-1 text-xs text-primary hover:text-primary/80 transition-colors"
-                            >
-                              <Shirt className="w-3 h-3" />
-                              <span>{avatarT?.outfits || 'Outfits'} {avatar.outfits.length}</span>
-                              <ChevronDown className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                            </button>
-                          )}
-                        </div>
+                      <div className="aspect-[9/16]">
+                        {avatar.image_url && (
+                          <img
+                            src={avatar.image_url}
+                            alt={avatar.name}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
                       </div>
-
-                      {/* 의상 목록 */}
-                      {isExpanded && hasOutfits && (
-                        <div className="border-t border-border bg-secondary/20 p-3">
-                          <p className="text-xs text-muted-foreground mb-2">{avatarT?.outfitList || 'Outfit list'}</p>
-                          <div className="flex gap-2 overflow-x-auto pb-2">
-                            {avatar.outfits.map((outfit) => {
-                              const isOutfitSelected = selectedAvatarInfo?.outfitId === outfit.id
-
-                              return (
-                                <button
-                                  key={outfit.id}
-                                  onClick={() => handleSelectOutfit(avatar, outfit)}
-                                  className={`relative flex-shrink-0 w-16 rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
-                                    isOutfitSelected
-                                      ? 'border-primary ring-2 ring-primary/30'
-                                      : 'border-transparent hover:border-primary/50'
-                                  }`}
-                                >
-                                  <div className="aspect-[9/16]">
-                                    {outfit.image_url && (
-                                      <img
-                                        src={outfit.image_url}
-                                        alt={outfit.name}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    )}
-                                  </div>
-                                  {isOutfitSelected && (
-                                    <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                                      <Check className="w-2.5 h-2.5 text-primary-foreground" />
-                                    </div>
-                                  )}
-                                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 py-0.5 px-1">
-                                    <span className="text-[10px] text-white truncate block">
-                                      {outfit.name}
-                                    </span>
-                                  </div>
-                                </button>
-                              )
-                            })}
-                          </div>
+                      {isAvatarSelected && (
+                        <div className="absolute top-1 right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                          <Check className="w-3 h-3 text-primary-foreground" />
                         </div>
                       )}
-                    </div>
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/60 py-0.5 px-1">
+                        <span className="text-[10px] text-white truncate block">{avatar.name}</span>
+                      </div>
+                    </button>
                   )
                 })}
-
-              </>
+              </div>
             )}
           </div>
         )}
