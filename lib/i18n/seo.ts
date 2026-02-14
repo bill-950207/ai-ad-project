@@ -195,11 +195,6 @@ export function getJsonLd(locale: Locale, siteUrl: string) {
                    locale === 'ja' ? '無料トライアル提供' :
                    locale === 'zh' ? '提供免费试用' : 'Free trial available',
     },
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.8',
-      ratingCount: '150',
-    },
     featureList: locale === 'ko' ? [
       'AI 이미지 광고 생성',
       'AI 영상 광고 생성',
