@@ -39,13 +39,14 @@ export const seoData: Record<Locale, {
   twitterDescription: string
 }> = {
   ko: {
-    title: 'gwanggo - AI 광고 이미지·영상 생성 플랫폼',
+    title: 'gwanggo - AI 광고 이미지·영상 자동 생성 | 무료 시작',
     titleTemplate: '%s | gwanggo',
-    description: 'AI로 광고 이미지와 영상을 몇 분 만에 생성. 아바타, 제품 광고, 음악까지 원클릭 제작.',
+    description: 'AI로 인스타그램, 페이스북, 쇼핑몰 광고 이미지와 제품 영상을 자동 생성. 아바타, BGM까지 원클릭 제작. 무료 크레딧으로 지금 시작하세요.',
     keywords: [
       'AI 광고', 'AI 광고 제작', 'AI 이미지 생성', 'AI 영상 광고', 'AI 아바타',
       '광고 자동화', '마케팅 AI', '제품 광고', 'SNS 광고', '인스타그램 광고',
       '페이스북 광고', '숏폼 광고', 'AI 마케팅 도구', '광고 콘텐츠 생성', '이커머스 광고',
+      'AI 상세페이지', 'AI 쇼핑몰 광고', '무료 AI 광고', 'AI 광고 만들기', 'AI 제품 사진',
     ],
     ogTitle: 'gwanggo - AI 광고 콘텐츠 생성 플랫폼',
     ogDescription: 'AI로 전문적인 광고 이미지와 영상을 몇 분 만에 생성하세요. 마케터와 크리에이터를 위한 올인원 AI 광고 솔루션.',
@@ -53,13 +54,14 @@ export const seoData: Record<Locale, {
     twitterDescription: 'AI로 전문적인 광고 이미지와 영상을 몇 분 만에 생성하세요.',
   },
   en: {
-    title: 'gwanggo - AI Ad Image & Video Generator',
+    title: 'gwanggo - AI Ad Image & Video Generator | Free to Start',
     titleTemplate: '%s | gwanggo',
-    description: 'Create ad images and videos in minutes with AI. One-click production of avatars, product ads, and music.',
+    description: 'Generate Instagram, Facebook & e-commerce ad images and product videos with AI. Create avatars, background music in one click. Start free today.',
     keywords: [
       'AI advertising', 'AI ad creation', 'AI image generation', 'AI video ads', 'AI avatar',
       'ad automation', 'marketing AI', 'product ads', 'social media ads', 'Instagram ads',
       'Facebook ads', 'short-form ads', 'AI marketing tools', 'ad content generation', 'ecommerce ads',
+      'AI product photography', 'free AI ad maker', 'AI commercial video',
     ],
     ogTitle: 'gwanggo - AI Ad Content Creation Platform',
     ogDescription: 'Create professional ad images and videos in minutes with AI. All-in-one AI advertising solution for marketers and creators.',
@@ -96,7 +98,83 @@ export const seoData: Record<Locale, {
   },
 }
 
-/** 언어별 JSON-LD 구조화 데이터 */
+/** 언어별 FAQ 데이터 (FAQPage JSON-LD용) */
+export const faqData: Record<Locale, Array<{ question: string; answer: string }>> = {
+  ko: [
+    {
+      question: 'gwanggo는 무료인가요?',
+      answer: '네, 회원가입 시 15크레딧이 무료로 제공되어 바로 AI 광고 이미지와 영상을 생성해볼 수 있습니다. 추가 크레딧이 필요하면 Starter, Pro, Business 요금제를 선택할 수 있습니다.',
+    },
+    {
+      question: 'AI 광고 이미지는 어떻게 만드나요?',
+      answer: '제품 사진을 업로드하고 원하는 스타일을 선택하면 AI가 자동으로 전문적인 광고 이미지를 생성합니다. 인스타그램, 페이스북 등 다양한 플랫폼에 최적화된 사이즈로 제작할 수 있습니다.',
+    },
+    {
+      question: 'AI로 만든 광고의 저작권은 누구에게 있나요?',
+      answer: 'gwanggo에서 생성한 모든 광고 이미지와 영상의 사용 권리는 사용자에게 있습니다. 상업적 용도로 자유롭게 사용하실 수 있습니다.',
+    },
+    {
+      question: '어떤 종류의 광고를 만들 수 있나요?',
+      answer: '제품 이미지 광고, 제품 영상 광고, AI 아바타를 활용한 영상, 배경 음악까지 다양한 광고 콘텐츠를 만들 수 있습니다. 쇼핑몰, SNS, 상세페이지 등에 활용 가능합니다.',
+    },
+  ],
+  en: [
+    {
+      question: 'Is gwanggo free to use?',
+      answer: 'Yes, you get 15 free credits when you sign up, allowing you to create AI ad images and videos right away. For more credits, you can choose from Starter, Pro, or Business plans.',
+    },
+    {
+      question: 'How do I create AI ad images?',
+      answer: 'Simply upload your product photo and select your desired style. AI will automatically generate professional ad images optimized for Instagram, Facebook, and other platforms.',
+    },
+    {
+      question: 'Who owns the copyright for AI-generated ads?',
+      answer: 'You retain full usage rights to all ad images and videos created on gwanggo. You can freely use them for commercial purposes.',
+    },
+    {
+      question: 'What types of ads can I create?',
+      answer: 'You can create product image ads, product video ads, AI avatar videos, and background music. Perfect for e-commerce, social media, and product detail pages.',
+    },
+  ],
+  ja: [
+    {
+      question: 'gwanggoは無料ですか？',
+      answer: 'はい、会員登録時に15クレジットが無料で提供され、すぐにAI広告画像と動画を作成できます。追加クレジットが必要な場合は、Starter、Pro、Businessプランを選択できます。',
+    },
+    {
+      question: 'AI広告画像はどのように作りますか？',
+      answer: '商品写真をアップロードし、お好みのスタイルを選択すると、AIが自動的にプロフェッショナルな広告画像を生成します。Instagram、Facebookなど様々なプラットフォームに最適化されたサイズで制作できます。',
+    },
+    {
+      question: 'AIで作った広告の著作権は誰にありますか？',
+      answer: 'gwanggoで生成したすべての広告画像と動画の使用権はユーザーにあります。商業目的で自由にご使用いただけます。',
+    },
+    {
+      question: 'どのような広告を作れますか？',
+      answer: '商品画像広告、商品動画広告、AIアバターを活用した動画、バックグラウンドミュージックなど、様々な広告コンテンツを作成できます。',
+    },
+  ],
+  zh: [
+    {
+      question: 'gwanggo免费吗？',
+      answer: '是的，注册时免费获得15积分，可以立即创建AI广告图片和视频。需要更多积分可以选择Starter、Pro或Business套餐。',
+    },
+    {
+      question: '如何制作AI广告图片？',
+      answer: '上传产品照片并选择想要的风格，AI将自动生成专业的广告图片。可以制作适配Instagram、Facebook等各种平台的优化尺寸。',
+    },
+    {
+      question: 'AI生成的广告版权归谁？',
+      answer: '在gwanggo上生成的所有广告图片和视频的使用权归用户所有。可以自由用于商业目的。',
+    },
+    {
+      question: '可以制作哪些类型的广告？',
+      answer: '可以制作产品图片广告、产品视频广告、AI虚拟形象视频、背景音乐等各种广告内容。适用于电商、社交媒体、产品详情页等。',
+    },
+  ],
+}
+
+/** 언어별 JSON-LD 구조화 데이터 (SoftwareApplication) */
 export function getJsonLd(locale: Locale, siteUrl: string) {
   const data = seoData[locale]
 
@@ -147,5 +225,48 @@ export function getJsonLd(locale: Locale, siteUrl: string) {
       'AI background music generation',
       'Product ad automation',
     ],
+  }
+}
+
+/** FAQPage JSON-LD 생성 */
+export function getFaqJsonLd(locale: Locale) {
+  const faqs = faqData[locale]
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  }
+}
+
+/** BreadcrumbList JSON-LD 생성 */
+export function getBreadcrumbJsonLd(siteUrl: string, items: Array<{ name: string; url: string }>) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  }
+}
+
+/** Organization JSON-LD 생성 */
+export function getOrganizationJsonLd(siteUrl: string) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'gwanggo',
+    url: siteUrl,
+    logo: `${siteUrl}/og-image.png`,
   }
 }
