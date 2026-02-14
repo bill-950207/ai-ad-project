@@ -36,6 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const langCode = loc === 'ko' ? 'ko-KR' : loc === 'en' ? 'en-US' : loc === 'ja' ? 'ja-JP' : 'zh-CN'
     alternateLanguages[langCode] = `${siteUrl}/${loc}`
   })
+  alternateLanguages['x-default'] = `${siteUrl}/ko`
 
   return {
     title: {

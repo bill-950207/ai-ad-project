@@ -6,13 +6,14 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gwanggo.jocoding.io'
 export default function sitemap(): MetadataRoute.Sitemap {
   const currentDate = new Date()
 
-  // 언어별 대체 URL 생성 헬퍼
+  // 언어별 대체 URL 생성 헬퍼 (x-default 포함)
   const getLanguageAlternates = (path: string = '') => {
     const languages: Record<string, string> = {}
     locales.forEach((locale) => {
       const langCode = locale === 'ko' ? 'ko-KR' : locale === 'en' ? 'en-US' : locale === 'ja' ? 'ja-JP' : 'zh-CN'
       languages[langCode] = `${siteUrl}/${locale}${path}`
     })
+    languages['x-default'] = `${siteUrl}/ko${path}`
     return languages
   }
 
