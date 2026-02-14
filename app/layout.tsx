@@ -8,10 +8,11 @@ import { ToastProvider } from "@/components/ui/toast";
 import { ClarityScript } from "@/components/analytics/clarity";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { PostHogProvider } from "@/components/analytics/posthog-provider";
+import { getOrganizationJsonLd } from "@/lib/i18n/seo";
 
 const inter = Inter({ subsets: ["latin"] });
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://gwanggo.io";
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://gwanggo.jocoding.io";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -41,8 +42,16 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const organizationJsonLd = getOrganizationJsonLd(siteUrl);
+
   return (
     <html lang="ko" suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+      </head>
       <body className={inter.className}>
         <ClarityScript />
         <GoogleAnalytics />

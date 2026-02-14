@@ -5,12 +5,13 @@ import {
   isValidLocale,
   seoData,
   ogLocale,
-  htmlLang,
   getJsonLd,
+  getFaqJsonLd,
+  getBreadcrumbJsonLd,
   type Locale,
 } from '@/lib/i18n/seo'
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gwanggo.io'
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gwanggo.jocoding.io'
 
 interface Props {
   children: React.ReactNode
@@ -100,13 +101,27 @@ export default async function LocaleLayout({ children, params }: Props) {
     notFound()
   }
 
-  const jsonLd = getJsonLd(locale as Locale, siteUrl)
+  const validLocale = locale as Locale
+  const jsonLd = getJsonLd(validLocale, siteUrl)
+  const faqJsonLd = getFaqJsonLd(validLocale)
+  const localeName = locale === 'ko' ? '홈' : locale === 'ja' ? 'ホーム' : locale === 'zh' ? '首页' : 'Home'
+  const breadcrumbJsonLd = getBreadcrumbJsonLd(siteUrl, [
+    { name: localeName, url: `${siteUrl}/${locale}` },
+  ])
 
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       {children}
     </>

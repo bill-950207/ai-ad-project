@@ -85,6 +85,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     setIsLoaded(true)
   }, [])
 
+  // HTML lang 속성 동적 업데이트 (SEO + 접근성)
+  useEffect(() => {
+    const htmlLang = language === 'zh' ? 'zh-CN' : language
+    document.documentElement.lang = htmlLang
+  }, [language])
+
   /**
    * 언어 변경 함수
    * 상태 업데이트 및 localStorage에 저장
