@@ -11,6 +11,7 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { usePathname } from 'next/navigation'
 import { Language, getTranslation, Translations } from '@/lib/i18n'
 
 // ============================================================
@@ -53,6 +54,16 @@ function detectBrowserLanguage(): Language {
   return supportedLanguages[langCode] || 'en'
 }
 
+/**
+ * URL 경로에서 locale 추출
+ * /ko, /en, /ja, /zh 패턴만 매칭
+ */
+function getLocaleFromPath(pathname: string | null): Language | null {
+  if (!pathname) return null
+  const match = pathname.match(/^\/(ko|en|ja|zh)$/)
+  return match ? (match[1] as Language) : null
+}
+
 // ============================================================
 // 컨텍스트 생성
 // ============================================================
@@ -70,20 +81,29 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>('ko')  // 현재 언어 (기본: 한국어)
   const [isLoaded, setIsLoaded] = useState(false)                 // 클라이언트 로딩 완료 여부
+  const pathname = usePathname()
 
-  // 컴포넌트 마운트 시 localStorage에서 언어 설정 로드, 없으면 브라우저 언어 감지
+  // 언어 결정: URL locale > localStorage > 브라우저 감지
+  // pathname 변경 시마다 재평가하여 URL locale 동기화
   useEffect(() => {
-    const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY) as Language | null
-    if (savedLanguage && ['ko', 'en', 'ja', 'zh'].includes(savedLanguage)) {
-      setLanguageState(savedLanguage)
-    } else {
-      // 저장된 언어가 없으면 브라우저 언어 감지 (기본값: 영어)
-      const detectedLanguage = detectBrowserLanguage()
-      setLanguageState(detectedLanguage)
-      localStorage.setItem(LANGUAGE_STORAGE_KEY, detectedLanguage)
+    const localeFromUrl = getLocaleFromPath(pathname)
+    if (localeFromUrl) {
+      setLanguageState(localeFromUrl)
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, localeFromUrl)
+    } else if (!isLoaded) {
+      // 최초 마운트 + 비-locale 페이지: localStorage 또는 브라우저 감지
+      const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY) as Language | null
+      if (savedLanguage && ['ko', 'en', 'ja', 'zh'].includes(savedLanguage)) {
+        setLanguageState(savedLanguage)
+      } else {
+        const detectedLanguage = detectBrowserLanguage()
+        setLanguageState(detectedLanguage)
+        localStorage.setItem(LANGUAGE_STORAGE_KEY, detectedLanguage)
+      }
     }
     setIsLoaded(true)
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
 
   // HTML lang 속성 동적 업데이트 (SEO + 접근성)
   useEffect(() => {
