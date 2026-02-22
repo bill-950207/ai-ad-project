@@ -73,6 +73,13 @@ export const VIDU_CREDIT_COST_PER_SECOND = {
   '1080p': 3, // FHD: ~$0.07/초
 } as const
 
+/** Seedance 2.0 시네마틱 광고 해상도별 초당 크레딧 (BytePlus) */
+export const SEEDANCE_V2_CREDIT_COST_PER_SECOND = {
+  '480p': 1, // SD: ~$0.03/초
+  '720p': 2, // HD: ~$0.05/초
+  '1080p': 3, // FHD: ~$0.07/초
+} as const
+
 // ============================================================
 // 오디오 관련
 // ============================================================
@@ -106,4 +113,5 @@ export const DEFAULT_SIGNUP_CREDITS = 20
 
 export type ImageQuality = keyof typeof IMAGE_AD_CREDIT_COST
 export type ViduResolution = keyof typeof VIDU_CREDIT_COST_PER_SECOND
+export type SeedanceV2Resolution = keyof typeof SEEDANCE_V2_CREDIT_COST_PER_SECOND
 export type ProductDescriptionResolution = keyof typeof PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST

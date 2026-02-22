@@ -9,11 +9,12 @@
 'use client'
 
 import { useLanguage } from '@/contexts/language-context'
-import { X, Mic, Package } from 'lucide-react'
+import { X, Mic, Package, Film } from 'lucide-react'
 
 export type VideoAdCategory =
   | 'productDescription'  // 제품 설명 영상 (음성으로 제품 설명)
   | 'productAd'           // 제품 광고 영상 (시네마틱 제품 영상)
+  | 'cinematicAd'         // AI 시네마틱 광고 (Seedance 2.0)
 
 interface VideoAdTypeModalProps {
   isOpen: boolean
@@ -24,12 +25,13 @@ interface VideoAdTypeModalProps {
 interface CategoryInfo {
   category: VideoAdCategory
   icon: typeof Mic
-  titleKey: 'productDescription' | 'productAd'
+  titleKey: 'productDescription' | 'productAd' | 'cinematicAd'
 }
 
 const CATEGORY_ICONS: CategoryInfo[] = [
   { category: 'productDescription', icon: Mic, titleKey: 'productDescription' },
   { category: 'productAd', icon: Package, titleKey: 'productAd' },
+  { category: 'cinematicAd', icon: Film, titleKey: 'cinematicAd' },
 ]
 
 export function VideoAdTypeModal({ isOpen, onClose, onSelect }: VideoAdTypeModalProps) {
@@ -42,6 +44,7 @@ export function VideoAdTypeModal({ isOpen, onClose, onSelect }: VideoAdTypeModal
       subtitle?: string
       productDescription?: { title?: string; description?: string; features?: string[] }
       productAd?: { title?: string; description?: string; features?: string[] }
+      cinematicAd?: { title?: string; description?: string; features?: string[] }
     }
   } | undefined
   const typeModalT = videoAdT?.typeModal

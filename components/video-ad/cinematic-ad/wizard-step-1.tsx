@@ -1,0 +1,297 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Package, ArrowRight, Loader2, Plus, Check, ChevronDown, Minus } from 'lucide-react'
+import { useCinematicWizard, type AdProduct } from './wizard-context'
+import { ProductCreateModal } from '../product-create-modal'
+import { useLanguage } from '@/contexts/language-context'
+
+export function WizardStep1() {
+  const { t } = useLanguage()
+  const {
+    draftId,
+    selectedProduct,
+    setSelectedProduct,
+    editableDescription,
+    setEditableDescription,
+    editableSellingPoints,
+    setEditableSellingPoints,
+    addSellingPoint,
+    removeSellingPoint,
+    updateSellingPoint,
+    canProceedToStep2,
+    goToNextStep,
+    saveDraftAsync,
+  } = useCinematicWizard()
+
+  const [products, setProducts] = useState<AdProduct[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [showProductDropdown, setShowProductDropdown] = useState(false)
+  const [showProductCreateModal, setShowProductCreateModal] = useState(false)
+
+  const cinematicT = t.cinematicAdWizard as Record<string, unknown> | undefined
+  const step1T = cinematicT?.step1 as Record<string, string> | undefined
+
+  // 제품 목록 불러오기
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('/api/ad-products')
+        if (res.ok) {
+          const data = await res.json()
+          const completedProducts = data.products?.filter(
+            (p: AdProduct & { status: string }) => p.status === 'COMPLETED'
+          ) || []
+          setProducts(completedProducts)
+        }
+      } catch (error) {
+        console.error('Failed to load product list:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchProducts()
+  }, [])
+
+  // 제품 선택 시 편집 가능한 필드 초기화
+  useEffect(() => {
+    if (selectedProduct) {
+      setEditableDescription(selectedProduct.description || '')
+      setEditableSellingPoints(
+        selectedProduct.selling_points && selectedProduct.selling_points.length > 0
+          ? selectedProduct.selling_points
+          : ['']
+      )
+    } else {
+      setEditableDescription('')
+      setEditableSellingPoints([''])
+    }
+  }, [selectedProduct, setEditableDescription, setEditableSellingPoints])
+
+  const handleSelectProduct = (product: AdProduct | null) => {
+    setSelectedProduct(product)
+    setShowProductDropdown(false)
+  }
+
+  const handleProductCreated = (newProduct: AdProduct) => {
+    setProducts(prev => [newProduct, ...prev])
+    setSelectedProduct(newProduct)
+    setShowProductCreateModal(false)
+  }
+
+  const handleNext = () => {
+    if (!canProceedToStep2()) return
+    goToNextStep()
+    saveDraftAsync({ wizardStep: 2, forceNew: !draftId })
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-6">
+      {/* 헤더 */}
+      <div className="text-center">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
+          <Package className="w-6 h-6 text-primary" />
+        </div>
+        <h2 className="text-xl font-bold text-foreground">
+          {step1T?.title || t.productAdWizard?.step1?.title || 'Select Product to Advertise'}
+        </h2>
+        <p className="text-muted-foreground mt-2">
+          {step1T?.subtitle || t.productAdWizard?.step1?.subtitle || 'Select a product for your video ad and review its information'}
+        </p>
+      </div>
+
+      {/* 제품 선택 드롭다운 */}
+      <div className="bg-card border border-border rounded-xl p-4">
+        <label className="block text-sm font-medium text-foreground mb-2">
+          <Package className="w-4 h-4 inline mr-2" />
+          {step1T?.selectProduct || t.productAdWizard?.step1?.selectProduct || 'Select Product'}
+        </label>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="relative">
+            <button
+              onClick={() => setShowProductDropdown(!showProductDropdown)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-secondary/50 border border-border rounded-lg text-left hover:border-primary/50 transition-colors"
+            >
+              {selectedProduct ? (
+                <div className="flex items-center gap-3">
+                  {(selectedProduct.rembg_image_url || selectedProduct.image_url) && (
+                    <img
+                      src={selectedProduct.rembg_image_url || selectedProduct.image_url || ''}
+                      alt={selectedProduct.name}
+                      className="w-10 h-10 object-contain rounded bg-secondary/30"
+                    />
+                  )}
+                  <span className="text-foreground font-medium">{selectedProduct.name}</span>
+                </div>
+              ) : (
+                <span className="text-muted-foreground">
+                  {step1T?.selectProductPlaceholder || t.productAdWizard?.step1?.selectProductPlaceholder || 'Select a product'}
+                </span>
+              )}
+              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showProductDropdown ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showProductDropdown && (
+              <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {products.length === 0 ? (
+                  <div className="p-4 text-center">
+                    <p className="text-muted-foreground text-sm mb-3">
+                      {step1T?.noProducts || t.productAdWizard?.step1?.noProducts || 'No products registered'}
+                    </p>
+                    <button
+                      onClick={() => {
+                        setShowProductDropdown(false)
+                        setShowProductCreateModal(true)
+                      }}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
+                    >
+                      <Plus className="w-3 h-3" />
+                      {step1T?.registerProduct || t.productAdWizard?.step1?.registerProduct || 'Register Product'}
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => {
+                        setShowProductDropdown(false)
+                        setShowProductCreateModal(true)
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors border-b border-border text-primary"
+                    >
+                      <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center">
+                        <Plus className="w-5 h-5" />
+                      </div>
+                      <span className="font-medium">
+                        {step1T?.newProduct || t.productAdWizard?.step1?.newProduct || 'Register New Product'}
+                      </span>
+                    </button>
+                    {products.map((product) => (
+                      <button
+                        key={product.id}
+                        onClick={() => handleSelectProduct(product)}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors"
+                      >
+                        {(product.rembg_image_url || product.image_url) && (
+                          <img
+                            src={product.rembg_image_url || product.image_url || ''}
+                            alt={product.name}
+                            className="w-10 h-10 object-contain rounded bg-secondary/30"
+                          />
+                        )}
+                        <span className="text-foreground flex-1 text-left">{product.name}</span>
+                        {selectedProduct?.id === product.id && (
+                          <Check className="w-4 h-4 text-primary" />
+                        )}
+                      </button>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 선택된 제품 정보 편집 */}
+        {selectedProduct && (
+          <div className="mt-4 p-4 bg-secondary/30 rounded-xl space-y-4">
+            <div className="flex items-center gap-3 pb-3 border-b border-border">
+              <div className="w-12 h-12 bg-secondary rounded-lg overflow-hidden flex-shrink-0">
+                <img
+                  src={selectedProduct.rembg_image_url || selectedProduct.image_url || ''}
+                  alt={selectedProduct.name}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div>
+                <h4 className="font-medium text-foreground text-sm">{selectedProduct.name}</h4>
+                <p className="text-xs text-muted-foreground">
+                  {step1T?.reviewAndEdit || t.productAdWizard?.step1?.reviewAndEdit || 'Review and edit product information'}
+                </p>
+              </div>
+            </div>
+
+            {/* 설명 */}
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1">
+                {step1T?.productDescription || t.productAdWizard?.step1?.productDescription || 'Product Description'}
+              </label>
+              <textarea
+                value={editableDescription}
+                onChange={(e) => setEditableDescription(e.target.value)}
+                placeholder={step1T?.descriptionPlaceholder || t.productAdWizard?.step1?.descriptionPlaceholder || 'Description of the product...'}
+                rows={3}
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+              />
+            </div>
+
+            {/* 셀링 포인트 */}
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1">
+                {step1T?.sellingPoints || t.productAdWizard?.step1?.sellingPoints || 'Selling Points'}
+              </label>
+              <div className="space-y-2">
+                {editableSellingPoints.map((point, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={point}
+                      onChange={(e) => updateSellingPoint(index, e.target.value)}
+                      placeholder={step1T?.pointPlaceholder || t.productAdWizard?.step1?.pointPlaceholder || 'Product advantage or feature'}
+                      className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                    {editableSellingPoints.length > 1 && (
+                      <button
+                        onClick={() => removeSellingPoint(index)}
+                        className="p-2 text-muted-foreground hover:text-red-500 transition-colors"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {editableSellingPoints.length < 10 && (
+                  <button
+                    onClick={addSellingPoint}
+                    className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
+                  >
+                    <Plus className="w-3 h-3" />
+                    {step1T?.addPoint || t.productAdWizard?.step1?.addPoint || 'Add point'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 네비게이션 */}
+      <div className="flex justify-end">
+        <button
+          onClick={handleNext}
+          disabled={!canProceedToStep2()}
+          className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {t.common?.next || 'Next'}
+          <ArrowRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      {!canProceedToStep2() && (
+        <p className="text-center text-sm text-muted-foreground">
+          {step1T?.pleaseSelect || t.productAdWizard?.step1?.pleaseSelect || 'Please select a product'}
+        </p>
+      )}
+
+      <ProductCreateModal
+        isOpen={showProductCreateModal}
+        onClose={() => setShowProductCreateModal(false)}
+        onProductCreated={handleProductCreated}
+      />
+    </div>
+  )
+}

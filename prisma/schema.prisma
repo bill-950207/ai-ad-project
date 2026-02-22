@@ -1144,6 +1144,7 @@ enum credit_feature_type {
   KEYFRAME              // 키프레임 생성
   TRANSITION            // 전환 영상
   VIDU_SCENE            // Vidu Q3 씬 영상
+  SEEDANCE_VIDEO        // Seedance 2.0 시네마틱 광고 영상
   MUSIC                 // 음악 생성
   OUTFIT                // 의상 교체
   BACKGROUND            // 배경 생성

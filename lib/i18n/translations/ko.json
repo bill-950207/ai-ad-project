@@ -994,6 +994,16 @@
           "제품 이미지로 첫 씬 3가지 생성",
           "선택한 씬으로 영상 자동 생성"
         ]
+      },
+      "cinematicAd": {
+        "title": "AI 시네마틱 광고",
+        "description": "AI가 자연스러운 장면 전환과 오디오가 포함된 시네마틱 광고 영상을 한 번에 생성합니다",
+        "features": [
+          "멀티샷 자동 전환",
+          "네이티브 오디오 생성",
+          "6가지 화면 비율",
+          "최대 15초 영상"
+        ]
       }
     },
     "createFirstAd": "첫 영상 광고를 만들어보세요",
@@ -1077,6 +1087,7 @@
       "productDescription": "제품 설명",
       "avatarMotion": "아바타 모션",
       "productAd": "제품 광고",
+      "cinematicAd": "시네마틱 광고",
       "productShowcase": "제품 쇼케이스",
       "lifestyle": "라이프스타일",
       "testimonial": "후기"
@@ -1085,6 +1096,7 @@
       "productDescription": ["제품/아바타", "영상 정보", "대본/음성", "생성"],
       "avatarMotion": ["아바타/제품", "스토리 모드", "시나리오", "설정", "프레임 생성", "영상 생성"],
       "productAd": ["제품", "모드", "시나리오", "설정", "첫 씬", "영상 생성"],
+      "cinematicAd": ["제품 선택", "시나리오 & 설정", "영상 생성"],
       "step": "단계"
     },
     "alerts": {
@@ -1165,6 +1177,79 @@
         "step2": "제품과 아바타가 함께 있는 첫 씬 이미지를 생성합니다",
         "step3": "첫 씬 이미지를 바탕으로 영상을 생성합니다 (약 2-5분)"
       }
+    }
+  },
+  "cinematicAdWizard": {
+    "header": {
+      "title": "AI 시네마틱 광고 만들기",
+      "subtitle": "AI가 멀티샷 시네마틱 광고를 생성합니다"
+    },
+    "steps": {
+      "selectProduct": "제품 선택",
+      "scenarioSettings": "시나리오 & 설정",
+      "generateVideo": "영상 생성"
+    },
+    "loading": "진행 상태를 불러오는 중...",
+    "step1": {
+      "title": "광고할 제품 선택",
+      "subtitle": "시네마틱 광고로 만들 제품을 선택하고 정보를 확인해주세요",
+      "selectProduct": "제품 선택",
+      "selectProductPlaceholder": "제품을 선택하세요",
+      "noProducts": "등록된 제품이 없습니다",
+      "registerProduct": "제품 등록하기",
+      "newProduct": "새 제품 등록",
+      "reviewAndEdit": "제품 정보를 확인하고 편집하세요",
+      "productDescription": "제품 설명",
+      "descriptionPlaceholder": "제품에 대한 설명...",
+      "sellingPoints": "셀링 포인트",
+      "pointPlaceholder": "제품의 장점이나 특징",
+      "addPoint": "포인트 추가",
+      "pleaseSelect": "제품을 선택해주세요"
+    },
+    "step2": {
+      "title": "시나리오 & 영상 설정",
+      "subtitle": "시나리오를 생성하고 영상 설정을 구성하세요",
+      "aiRecommend": "AI 추천",
+      "directInput": "직접 입력",
+      "scenarios": "AI 추천 시나리오",
+      "generate": "시나리오 생성",
+      "regenerate": "다시 추천",
+      "generating": "생성 중...",
+      "aiGenerating": "AI가 최적의 시나리오를 생성하고 있습니다...",
+      "noScenarios": "\"시나리오 생성\" 버튼을 눌러 AI 추천 시나리오를 받아보세요",
+      "shotBreakdown": "샷 구성",
+      "directPrompt": "영상 프롬프트",
+      "directPromptHint": "생성하고 싶은 영상을 설명해주세요. \"Shot 1: ... Shot 2: ...\" 형식으로 멀티샷을 구성할 수 있습니다.",
+      "promptPlaceholder": "Shot 1: 어둠 속에서 드라마틱한 림 라이팅과 함께 제품이 천천히 드러납니다. Shot 2: 소프트 보케 배경과 함께 제품 디테일 클로즈업...",
+      "videoSettings": "영상 설정",
+      "aspectRatio": "화면 비율",
+      "duration": "영상 길이",
+      "resolution": "해상도",
+      "audioGeneration": "오디오 생성",
+      "audioHint": "립싱크 포함 네이티브 오디오 생성",
+      "estimatedCredits": "예상 크레딧"
+    },
+    "step3": {
+      "title": "시네마틱 영상 생성",
+      "titleComplete": "영상 생성 완료",
+      "subtitle": "설정을 확인하고 시네마틱 광고 영상을 생성하세요",
+      "summary": "요약",
+      "product": "제품",
+      "scenario": "시나리오",
+      "prompt": "프롬프트",
+      "ratio": "비율",
+      "durationLabel": "길이",
+      "resolutionLabel": "해상도",
+      "audio": "오디오",
+      "creditsRequired": "소모 크레딧",
+      "generate": "영상 생성하기",
+      "generating": "시네마틱 영상 생성 중...",
+      "estimatedTime": "약 1~3분 소요됩니다",
+      "download": "영상 다운로드",
+      "regenerate": "재생성",
+      "toDashboard": "대시보드",
+      "failed": "생성 실패",
+      "tryAgain": "다시 시도"
     }
   },
   "imageEdit": {

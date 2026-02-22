@@ -994,6 +994,11 @@
           "从产品图片生成3个初始场景",
           "从选定场景自动生成视频"
         ]
+      },
+      "cinematicAd": {
+        "title": "AI电影级广告",
+        "description": "AI一次性生成包含自然场景转换和音频的电影级广告视频",
+        "features": ["多镜头自动转换", "原生音频生成", "6种画面比例", "最长15秒视频"]
       }
     },
     "createFirstAd": "创建您的第一个视频广告",
@@ -1077,6 +1082,7 @@
       "productDescription": "产品描述",
       "avatarMotion": "头像动作",
       "productAd": "产品广告",
+      "cinematicAd": "电影级广告",
       "productShowcase": "产品展示",
       "lifestyle": "生活方式",
       "testimonial": "评价"
@@ -1085,6 +1091,7 @@
       "productDescription": ["产品/头像", "视频信息", "脚本/语音", "生成"],
       "avatarMotion": ["头像/产品", "故事模式", "场景", "设置", "帧生成", "视频生成"],
       "productAd": ["产品", "模式", "场景", "设置", "首场景", "视频生成"],
+      "cinematicAd": ["选择产品", "场景和设置", "生成视频"],
       "step": "步骤"
     },
     "alerts": {
@@ -2754,6 +2761,79 @@
       "fetchFailedGuide": "部分购物网站限制自动信息收集。",
       "switchToManual": "切换到手动输入",
       "slotFull": "槽位已满"
+    }
+  },
+  "cinematicAdWizard": {
+    "header": {
+      "title": "创建AI电影级广告",
+      "subtitle": "AI生成多镜头电影级广告"
+    },
+    "steps": {
+      "selectProduct": "选择产品",
+      "scenarioSettings": "场景和设置",
+      "generateVideo": "生成视频"
+    },
+    "loading": "加载进度中...",
+    "step1": {
+      "title": "选择广告产品",
+      "subtitle": "选择要制作电影级广告的产品并确认信息",
+      "selectProduct": "选择产品",
+      "selectProductPlaceholder": "请选择产品",
+      "noProducts": "暂无注册产品",
+      "registerProduct": "注册产品",
+      "newProduct": "注册新产品",
+      "reviewAndEdit": "确认并编辑产品信息",
+      "productDescription": "产品描述",
+      "descriptionPlaceholder": "产品描述...",
+      "sellingPoints": "卖点",
+      "pointPlaceholder": "产品优势或特点",
+      "addPoint": "添加卖点",
+      "pleaseSelect": "请选择产品"
+    },
+    "step2": {
+      "title": "场景和视频设置",
+      "subtitle": "生成场景并配置视频设置",
+      "aiRecommend": "AI推荐",
+      "directInput": "直接输入",
+      "scenarios": "AI推荐场景",
+      "generate": "生成场景",
+      "regenerate": "重新生成",
+      "generating": "生成中...",
+      "aiGenerating": "AI正在创建最优场景...",
+      "noScenarios": "点击\"生成场景\"获取AI推荐场景",
+      "shotBreakdown": "镜头构成",
+      "directPrompt": "视频提示词",
+      "directPromptHint": "描述您想创建的视频。使用\"Shot 1: ... Shot 2: ...\"格式来构成多镜头。",
+      "promptPlaceholder": "Shot 1: 产品从黑暗中伴随着戏剧性的轮廓光缓缓显现。Shot 2: 柔和散景背景下的产品细节特写...",
+      "videoSettings": "视频设置",
+      "aspectRatio": "画面比例",
+      "duration": "视频时长",
+      "resolution": "分辨率",
+      "audioGeneration": "音频生成",
+      "audioHint": "支持唇形同步的原生音频生成",
+      "estimatedCredits": "预计积分"
+    },
+    "step3": {
+      "title": "生成电影级视频",
+      "titleComplete": "视频生成完成",
+      "subtitle": "确认设置并生成电影级广告视频",
+      "summary": "摘要",
+      "product": "产品",
+      "scenario": "场景",
+      "prompt": "提示词",
+      "ratio": "比例",
+      "durationLabel": "时长",
+      "resolutionLabel": "分辨率",
+      "audio": "音频",
+      "creditsRequired": "所需积分",
+      "generate": "生成视频",
+      "generating": "电影级视频生成中...",
+      "estimatedTime": "预计需要1-3分钟",
+      "download": "下载视频",
+      "regenerate": "重新生成",
+      "toDashboard": "仪表盘",
+      "failed": "生成失败",
+      "tryAgain": "重试"
     }
   },
   "globalError": {
