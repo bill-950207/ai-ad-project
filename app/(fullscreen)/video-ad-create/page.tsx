@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react'
 import { ProductDescriptionWizard } from '@/components/video-ad/product-description-wizard'
 import { AvatarMotionWizard } from '@/components/video-ad/avatar-motion'
 import { ProductAdWizard } from '@/components/video-ad/product-ad/product-ad-wizard'
+import { CinematicAdWizard } from '@/components/video-ad/cinematic-ad'
 
 function VideoAdCreateContent() {
   const searchParams = useSearchParams()
@@ -35,6 +36,17 @@ function VideoAdCreateContent() {
   if (category === 'productAd') {
     return (
       <ProductAdWizard
+        videoAdId={videoAdId || undefined}
+        initialProductId={productId}
+        initialStep={initialStep}
+      />
+    )
+  }
+
+  // AI 시네마틱 광고 영상
+  if (category === 'cinematicAd') {
+    return (
+      <CinematicAdWizard
         videoAdId={videoAdId || undefined}
         initialProductId={productId}
         initialStep={initialStep}

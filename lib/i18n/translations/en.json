@@ -994,6 +994,16 @@
           "Generates 3 initial scenes from product image",
           "Automatically creates video from selected scene"
         ]
+      },
+      "cinematicAd": {
+        "title": "AI Cinematic Ad",
+        "description": "AI generates cinematic ad videos with natural scene transitions and audio in a single shot",
+        "features": [
+          "Multi-shot auto transitions",
+          "Native audio generation",
+          "6 aspect ratios",
+          "Up to 15s video"
+        ]
       }
     },
     "createFirstAd": "Create your first video ad",
@@ -1077,6 +1087,7 @@
       "productDescription": "Product Description",
       "avatarMotion": "Avatar Motion",
       "productAd": "Product Ad",
+      "cinematicAd": "Cinematic Ad",
       "productShowcase": "Product Showcase",
       "lifestyle": "Lifestyle",
       "testimonial": "Testimonial"
@@ -1085,6 +1096,7 @@
       "productDescription": ["Product/Avatar", "Video Info", "Script/Voice", "Generate"],
       "avatarMotion": ["Avatar/Product", "Story Mode", "Scenario", "Settings", "Frame Gen", "Video Gen"],
       "productAd": ["Product", "Mode", "Scenario", "Settings", "First Scene", "Video Gen"],
+      "cinematicAd": ["Product", "Scenario & Settings", "Generate"],
       "step": "Step"
     },
     "alerts": {
@@ -1570,6 +1582,79 @@
         "hdDesc": "Standard quality",
         "fhdDesc": "High quality"
       }
+    }
+  },
+  "cinematicAdWizard": {
+    "header": {
+      "title": "Create AI Cinematic Ad",
+      "subtitle": "AI generates multi-shot cinematic ads"
+    },
+    "steps": {
+      "selectProduct": "Select Product",
+      "scenarioSettings": "Scenario & Settings",
+      "generateVideo": "Generate Video"
+    },
+    "loading": "Loading progress...",
+    "step1": {
+      "title": "Select Product to Advertise",
+      "subtitle": "Select a product for your cinematic ad and review its information",
+      "selectProduct": "Select Product",
+      "selectProductPlaceholder": "Select a product",
+      "noProducts": "No products registered",
+      "registerProduct": "Register Product",
+      "newProduct": "Register New Product",
+      "reviewAndEdit": "Review and edit product information",
+      "productDescription": "Product Description",
+      "descriptionPlaceholder": "Description of the product...",
+      "sellingPoints": "Selling Points",
+      "pointPlaceholder": "Product advantage or feature",
+      "addPoint": "Add point",
+      "pleaseSelect": "Please select a product"
+    },
+    "step2": {
+      "title": "Scenario & Video Settings",
+      "subtitle": "Generate a scenario and configure video settings",
+      "aiRecommend": "AI Recommend",
+      "directInput": "Direct Input",
+      "scenarios": "AI Recommended Scenarios",
+      "generate": "Generate Scenarios",
+      "regenerate": "Regenerate",
+      "generating": "Generating...",
+      "aiGenerating": "AI is creating optimal scenarios...",
+      "noScenarios": "Click \"Generate Scenarios\" to get AI-recommended scenarios",
+      "shotBreakdown": "Shot Breakdown",
+      "directPrompt": "Video Prompt",
+      "directPromptHint": "Describe the video you want to create. Use \"Shot 1: ... Shot 2: ...\" format for multi-shot.",
+      "promptPlaceholder": "Shot 1: The product slowly reveals from darkness with dramatic rim lighting. Shot 2: Close-up of product details with soft bokeh background...",
+      "videoSettings": "Video Settings",
+      "aspectRatio": "Aspect Ratio",
+      "duration": "Duration",
+      "resolution": "Resolution",
+      "audioGeneration": "Audio Generation",
+      "audioHint": "Native audio with lip-sync support",
+      "estimatedCredits": "Estimated Credits"
+    },
+    "step3": {
+      "title": "Generate Cinematic Video",
+      "titleComplete": "Video Generation Complete",
+      "subtitle": "Review settings and generate your cinematic ad video",
+      "summary": "Summary",
+      "product": "Product",
+      "scenario": "Scenario",
+      "prompt": "Prompt",
+      "ratio": "Ratio",
+      "durationLabel": "Duration",
+      "resolutionLabel": "Resolution",
+      "audio": "Audio",
+      "creditsRequired": "Credits Required",
+      "generate": "Generate Video",
+      "generating": "Generating cinematic video...",
+      "estimatedTime": "This may take 1-3 minutes",
+      "download": "Download Video",
+      "regenerate": "Regenerate",
+      "toDashboard": "Dashboard",
+      "failed": "Generation Failed",
+      "tryAgain": "Try Again"
     }
   },
   "productDescWizard": {

@@ -994,6 +994,16 @@
           "商品画像から最初の3シーンを生成",
           "選択したシーンから動画を自動生成"
         ]
+      },
+      "cinematicAd": {
+        "title": "AIシネマティック広告",
+        "description": "AIが自然なシーン遷移とオーディオを含むシネマティック広告動画を一度に生成します",
+        "features": [
+          "マルチショット自動遷移",
+          "ネイティブオーディオ生成",
+          "6つのアスペクト比",
+          "最大15秒動画"
+        ]
       }
     },
     "createFirstAd": "最初の動画広告を作成しましょう",
@@ -1077,6 +1087,7 @@
       "productDescription": "製品説明",
       "avatarMotion": "アバターモーション",
       "productAd": "製品広告",
+      "cinematicAd": "シネマティック広告",
       "productShowcase": "製品ショーケース",
       "lifestyle": "ライフスタイル",
       "testimonial": "レビュー"
@@ -1085,6 +1096,7 @@
       "productDescription": ["製品/アバター", "動画情報", "スクリプト/音声", "生成"],
       "avatarMotion": ["アバター/製品", "ストーリーモード", "シナリオ", "設定", "フレーム生成", "動画生成"],
       "productAd": ["製品", "モード", "シナリオ", "設定", "最初のシーン", "動画生成"],
+      "cinematicAd": ["商品選択", "シナリオ＆設定", "動画生成"],
       "step": "ステップ"
     },
     "alerts": {
@@ -2754,6 +2766,79 @@
       "fetchFailedGuide": "一部のショッピングサイトは自動情報収集を制限しています。",
       "switchToManual": "直接入力に切り替え",
       "slotFull": "スロットがいっぱいです"
+    }
+  },
+  "cinematicAdWizard": {
+    "header": {
+      "title": "AIシネマティック広告作成",
+      "subtitle": "AIがマルチショットシネマティック広告を生成します"
+    },
+    "steps": {
+      "selectProduct": "商品選択",
+      "scenarioSettings": "シナリオ＆設定",
+      "generateVideo": "動画生成"
+    },
+    "loading": "進行状況を読み込み中...",
+    "step1": {
+      "title": "広告する商品を選択",
+      "subtitle": "シネマティック広告にする商品を選択し、情報を確認してください",
+      "selectProduct": "商品選択",
+      "selectProductPlaceholder": "商品を選択してください",
+      "noProducts": "登録された商品がありません",
+      "registerProduct": "商品を登録",
+      "newProduct": "新しい商品を登録",
+      "reviewAndEdit": "商品情報を確認・編集してください",
+      "productDescription": "商品説明",
+      "descriptionPlaceholder": "商品の説明...",
+      "sellingPoints": "セールスポイント",
+      "pointPlaceholder": "商品のメリットや特徴",
+      "addPoint": "ポイント追加",
+      "pleaseSelect": "商品を選択してください"
+    },
+    "step2": {
+      "title": "シナリオ＆動画設定",
+      "subtitle": "シナリオを生成し、動画設定を構成してください",
+      "aiRecommend": "AI推薦",
+      "directInput": "直接入力",
+      "scenarios": "AI推薦シナリオ",
+      "generate": "シナリオ生成",
+      "regenerate": "再生成",
+      "generating": "生成中...",
+      "aiGenerating": "AIが最適なシナリオを生成しています...",
+      "noScenarios": "「シナリオ生成」ボタンをクリックしてAI推薦シナリオを取得してください",
+      "shotBreakdown": "ショット構成",
+      "directPrompt": "動画プロンプト",
+      "directPromptHint": "作成したい動画を説明してください。「Shot 1: ... Shot 2: ...」形式でマルチショットを構成できます。",
+      "promptPlaceholder": "Shot 1: 暗闇からドラマティックなリムライティングとともに商品がゆっくり現れます。Shot 2: ソフトなボケ背景と商品ディテールのクローズアップ...",
+      "videoSettings": "動画設定",
+      "aspectRatio": "アスペクト比",
+      "duration": "動画の長さ",
+      "resolution": "解像度",
+      "audioGeneration": "オーディオ生成",
+      "audioHint": "リップシンク対応ネイティブオーディオ生成",
+      "estimatedCredits": "推定クレジット"
+    },
+    "step3": {
+      "title": "シネマティック動画生成",
+      "titleComplete": "動画生成完了",
+      "subtitle": "設定を確認してシネマティック広告動画を生成してください",
+      "summary": "概要",
+      "product": "商品",
+      "scenario": "シナリオ",
+      "prompt": "プロンプト",
+      "ratio": "比率",
+      "durationLabel": "長さ",
+      "resolutionLabel": "解像度",
+      "audio": "オーディオ",
+      "creditsRequired": "必要クレジット",
+      "generate": "動画生成",
+      "generating": "シネマティック動画生成中...",
+      "estimatedTime": "約1〜3分かかります",
+      "download": "動画ダウンロード",
+      "regenerate": "再生成",
+      "toDashboard": "ダッシュボード",
+      "failed": "生成失敗",
+      "tryAgain": "再試行"
     }
   },
   "globalError": {

@@ -275,6 +275,7 @@ export function VideoAdPageContent() {
       'productDescription': t.videoAd?.categories?.productDescription || 'Product Description',
       'avatarMotion': t.videoAd?.categories?.avatarMotion || 'Avatar Motion',
       'productAd': t.videoAd?.categories?.productAd || 'Product Ad',
+      'cinematicAd': t.videoAd?.categories?.cinematicAd || 'Cinematic Ad',
       'productShowcase': t.videoAd?.categories?.productShowcase || 'Product Showcase',
       'lifestyle': t.videoAd?.categories?.lifestyle || 'Lifestyle',
       'testimonial': t.videoAd?.categories?.testimonial || 'Testimonial',
@@ -291,6 +292,7 @@ export function VideoAdPageContent() {
       productDescription?: string[]
       avatarMotion?: string[]
       productAd?: string[]
+      cinematicAd?: string[]
       step?: string
     } | undefined
 
@@ -298,6 +300,7 @@ export function VideoAdPageContent() {
       'productDescription': ['Product/Avatar', 'Video Info', 'Script/Voice', 'Generate'],
       'avatarMotion': ['Avatar/Product', 'Story Mode', 'Scenario', 'Settings', 'Frame Gen', 'Video Gen'],
       'productAd': ['Product', 'Mode', 'Scenario', 'Settings', 'First Scene', 'Video Gen'],
+      'cinematicAd': ['Product', 'Scenario & Settings', 'Generate'],
     }
 
     const translatedSteps = stepNamesT?.[category as keyof typeof stepNamesT]

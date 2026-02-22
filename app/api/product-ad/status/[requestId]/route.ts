@@ -6,6 +6,7 @@
  * - fal:xxx 형식: fal.ai 상태 조회 (Kling O1)
  * - fal-vidu-q2:xxx 형식: FAL.ai Vidu Q2 Turbo 상태 조회
  * - wavespeed-vidu:xxx 형식: WaveSpeed Vidu Q3 상태 조회 (레거시)
+ * - byteplus:xxx 형식: BytePlus Seedance 영상 상태 조회
  * - 이미지 완료 시 AI 서비스 원본 URL 반환 (클라이언트에서 R2 업로드)
  */
 
@@ -27,6 +28,9 @@ import {
   getViduQueueStatus as getWaveSpeedViduQueueStatus,
   getViduQueueResponse as getWaveSpeedViduQueueResponse,
 } from '@/lib/wavespeed/client'
+import {
+  getVideoTaskStatus as getBytePlusVideoTaskStatus,
+} from '@/lib/byteplus/client'
 
 interface RouteContext {
   params: Promise<{ requestId: string }>
@@ -184,6 +188,16 @@ export async function GET(
       } else {
         // 알 수 없는 상태는 진행 중으로 처리
         status = 'IN_PROGRESS'
+      }
+    } else if (provider === 'byteplus') {
+      // BytePlus Seedance 상태 조회
+      const taskResult = await getBytePlusVideoTaskStatus(taskId)
+      status = taskResult.status
+
+      if (status === 'COMPLETED') {
+        resultUrl = taskResult.videoUrl || null
+      } else if (status === 'FAILED') {
+        errorMessage = taskResult.error || 'Video generation failed'
       }
     } else {
       return NextResponse.json(
