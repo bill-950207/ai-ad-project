@@ -13,7 +13,7 @@ const IMAGE_MODELS = [
   {
     id: 'seedream-4.5',
     name: 'Seedream 4.5',
-    description: 'Image Edit',
+    description: 'Image Edit / Text to Image',
   },
   {
     id: 'z-image',

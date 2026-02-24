@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, Pencil, Type } from 'lucide-react'
 import ImageDropzone from '../image-dropzone'
 import { IMAGE_AD_CREDIT_COST, type ImageQuality } from '@/lib/credits/constants'
 import { useLanguage } from '@/contexts/language-context'
@@ -11,7 +11,7 @@ const QUALITIES = ['basic', 'high'] as const
 
 interface SeedreamFormData {
   prompt: string
-  imageUrl: string
+  imageUrl?: string
   aspectRatio: typeof ASPECT_RATIOS[number]
   quality: typeof QUALITIES[number]
 }
@@ -30,6 +30,8 @@ export default function SeedreamForm({ onSubmit, isGenerating }: SeedreamFormPro
   const [aspectRatio, setAspectRatio] = useState<typeof ASPECT_RATIOS[number]>('1:1')
   const [quality, setQuality] = useState<typeof QUALITIES[number]>('basic')
 
+  const isEditMode = !!imageUrl
+
   const estimatedCredits = useMemo(() => {
     const mappedQuality: ImageQuality = quality === 'high' ? 'high' : 'medium'
     return IMAGE_AD_CREDIT_COST[mappedQuality]
@@ -37,12 +39,12 @@ export default function SeedreamForm({ onSubmit, isGenerating }: SeedreamFormPro
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!prompt.trim() || !imageUrl) return
+    if (!prompt.trim()) return
 
     onSubmit({
       model: 'seedream-4.5',
       prompt: prompt.trim(),
-      imageUrl,
+      ...(imageUrl ? { imageUrl } : {}),
       aspectRatio,
       quality,
     })
@@ -53,8 +55,22 @@ export default function SeedreamForm({ onSubmit, isGenerating }: SeedreamFormPro
     high: aiToolsT.qualityHigh || '고화질',
   }
 
+  const modeLabel = isEditMode
+    ? (aiToolsT.modeEdit || 'Image Edit')
+    : (aiToolsT.modeTextToImage || 'Text to Image')
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* 모드 표시 */}
+      <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${
+        isEditMode
+          ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+          : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+      }`}>
+        {isEditMode ? <Pencil className="w-3.5 h-3.5" /> : <Type className="w-3.5 h-3.5" />}
+        {modeLabel}
+      </div>
+
       {/* 프롬프트 */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-foreground">
@@ -63,19 +79,21 @@ export default function SeedreamForm({ onSubmit, isGenerating }: SeedreamFormPro
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder={aiToolsT.imagePromptPlaceholder || '이미지 편집 지시를 입력하세요...'}
+          placeholder={isEditMode
+            ? (aiToolsT.imageEditPlaceholder || '이미지 편집 지시를 입력하세요...')
+            : (aiToolsT.textToImagePlaceholder || '생성할 이미지를 설명하세요...')
+          }
           rows={3}
           className="w-full px-3 py-2.5 bg-secondary/50 border border-border/60 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 resize-none"
           disabled={isGenerating}
         />
       </div>
 
-      {/* 참조 이미지 (필수) */}
+      {/* 참조 이미지 (선택) */}
       <ImageDropzone
         imageUrl={imageUrl}
         onImageChange={setImageUrl}
-        label={aiToolsT.referenceImageRequired || '참조 이미지'}
-        required
+        label={aiToolsT.referenceImageOptional || '참조 이미지 (선택)'}
       />
 
       {/* 화면 비율 */}
@@ -129,7 +147,7 @@ export default function SeedreamForm({ onSubmit, isGenerating }: SeedreamFormPro
       {/* 생성 버튼 */}
       <button
         type="submit"
-        disabled={isGenerating || !prompt.trim() || !imageUrl}
+        disabled={isGenerating || !prompt.trim()}
         className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-purple-500 text-white text-sm font-medium rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Sparkles className="w-4 h-4" />

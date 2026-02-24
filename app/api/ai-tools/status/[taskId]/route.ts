@@ -11,6 +11,7 @@
  * - wavespeed-vidu:xxx → WaveSpeed (Vidu Q3)
  * - kie-edit:xxx → Kie.ai (Seedream 4.5)
  * - kie-zimage:xxx → Kie.ai (Z-Image)
+ * - kie-seedream-v4:xxx → Kie.ai (Seedream V4 Text-to-Image)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -18,7 +19,7 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import { getVideoTaskStatus } from '@/lib/byteplus/client'
 import { getViduQueueStatus, getViduQueueResponse } from '@/lib/wavespeed/client'
-import { getEditQueueStatus, getEditQueueResponse, getZImageQueueStatus, getZImageQueueResponse } from '@/lib/kie/client'
+import { getEditQueueStatus, getEditQueueResponse, getZImageQueueStatus, getZImageQueueResponse, getSeedreamV4QueueStatus, getSeedreamV4QueueResponse } from '@/lib/kie/client'
 
 // ============================================================
 // 상태 조회 결과 타입
@@ -81,6 +82,18 @@ async function getProviderStatus(providerTaskId: string): Promise<StatusResult> 
       const statusResult = await getZImageQueueStatus(taskId)
       if (statusResult.status === 'COMPLETED') {
         const response = await getZImageQueueResponse(taskId)
+        return {
+          status: 'COMPLETED',
+          resultUrl: response.images[0]?.url,
+        }
+      }
+      return { status: statusResult.status }
+    }
+
+    case 'kie-seedream-v4': {
+      const statusResult = await getSeedreamV4QueueStatus(taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getSeedreamV4QueueResponse(taskId)
         return {
           status: 'COMPLETED',
           resultUrl: response.images[0]?.url,

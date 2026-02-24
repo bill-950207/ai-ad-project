@@ -18,8 +18,8 @@ import {
   Z_IMAGE_TOOL_CREDIT_COST,
   type ImageQuality,
 } from '@/lib/credits/constants'
-import { createEditTask, submitZImageToQueue } from '@/lib/kie/client'
-import type { EditAspectRatio, EditQuality, ZImageAspectRatio } from '@/lib/kie/client'
+import { createEditTask, submitZImageToQueue, submitSeedreamV4ToQueue } from '@/lib/kie/client'
+import type { EditAspectRatio, EditQuality, ZImageAspectRatio, SeedreamV4ImageSize } from '@/lib/kie/client'
 
 // ============================================================
 // 요청 타입
@@ -28,9 +28,21 @@ import type { EditAspectRatio, EditQuality, ZImageAspectRatio } from '@/lib/kie/
 interface SeedreamRequest {
   model: 'seedream-4.5'
   prompt: string
-  imageUrl: string
+  imageUrl?: string // 있으면 Image Edit, 없으면 Text to Image
   aspectRatio?: EditAspectRatio
   quality?: EditQuality
+}
+
+// Aspect ratio → Seedream V4 image_size 매핑
+const ASPECT_TO_V4_SIZE: Record<string, SeedreamV4ImageSize> = {
+  '1:1': 'square_hd',
+  '4:3': 'landscape_4_3',
+  '3:4': 'portrait_4_3',
+  '16:9': 'landscape_16_9',
+  '9:16': 'portrait_16_9',
+  '2:3': 'portrait_3_2',
+  '3:2': 'landscape_3_2',
+  '21:9': 'landscape_21_9',
 }
 
 interface ZImageRequest {
@@ -74,9 +86,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '필수 파라미터가 누락되었습니다' }, { status: 400 })
     }
 
-    if (body.model === 'seedream-4.5' && !body.imageUrl) {
-      return NextResponse.json({ error: 'Seedream 4.5는 참조 이미지가 필수입니다' }, { status: 400 })
-    }
+    // imageUrl이 있으면 Image Edit, 없으면 Text to Image
 
     // 크레딧 계산 및 확인
     const creditsRequired = calculateCredits(body)
@@ -131,7 +141,8 @@ export async function POST(request: NextRequest) {
     let providerTaskId: string
 
     try {
-      if (body.model === 'seedream-4.5') {
+      if (body.model === 'seedream-4.5' && body.imageUrl) {
+        // Image Edit 모드
         const result = await createEditTask({
           prompt: body.prompt,
           image_urls: [body.imageUrl],
@@ -139,8 +150,18 @@ export async function POST(request: NextRequest) {
           quality: body.quality,
         })
         providerTaskId = `kie-edit:${result.taskId}`
+      } else if (body.model === 'seedream-4.5' && !body.imageUrl) {
+        // Text to Image 모드 (Seedream V4)
+        const imageSize = ASPECT_TO_V4_SIZE[body.aspectRatio || '1:1'] || 'square_hd'
+        const imageResolution = body.quality === 'high' ? '2K' : '1K'
+        const result = await submitSeedreamV4ToQueue(body.prompt, {
+          imageSize,
+          imageResolution,
+        })
+        providerTaskId = `kie-seedream-v4:${result.request_id}`
       } else {
-        const result = await submitZImageToQueue(body.prompt, body.aspectRatio)
+        const zBody = body as ZImageRequest
+        const result = await submitZImageToQueue(zBody.prompt, zBody.aspectRatio)
         providerTaskId = `kie-zimage:${result.request_id}`
       }
     } catch (error) {
