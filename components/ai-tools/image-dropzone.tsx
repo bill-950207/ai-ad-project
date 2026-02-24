@@ -85,7 +85,7 @@ export default function ImageDropzone({
           <img
             src={imageUrl}
             alt="Uploaded"
-            className="w-full h-48 object-contain bg-black/20"
+            className="w-full h-36 object-contain bg-black/20"
           />
           <button
             onClick={() => onImageChange(null)}
@@ -107,16 +107,16 @@ export default function ImageDropzone({
         onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
-        className={`flex flex-col items-center justify-center gap-3 p-8 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 ${
+        className={`flex flex-col items-center justify-center gap-2 p-5 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 ${
           dragOver
             ? 'border-primary bg-primary/5'
             : 'border-border/60 hover:border-primary/50 hover:bg-secondary/30'
         } ${isUploading ? 'pointer-events-none opacity-60' : ''}`}
       >
         {isUploading ? (
-          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <Loader2 className="w-6 h-6 text-primary animate-spin" />
         ) : (
-          <Upload className="w-8 h-8 text-muted-foreground" />
+          <Upload className="w-6 h-6 text-muted-foreground" />
         )}
         <div className="text-center">
           <p className="text-sm font-medium text-foreground">

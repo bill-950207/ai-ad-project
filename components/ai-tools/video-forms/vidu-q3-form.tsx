@@ -61,7 +61,7 @@ export default function ViduQ3Form({ onSubmit, isGenerating }: ViduQ3FormProps) 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-4">
       {/* 프롬프트 */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-foreground">
@@ -72,7 +72,7 @@ export default function ViduQ3Form({ onSubmit, isGenerating }: ViduQ3FormProps) 
           onChange={(e) => setPrompt(e.target.value)}
           placeholder={aiToolsT.promptPlaceholder || '생성할 영상을 설명하세요...'}
           rows={3}
-          className="w-full px-4 py-3 bg-secondary/50 border border-border/60 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 resize-none"
+          className="w-full px-3 py-2.5 bg-secondary/50 border border-border/60 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 resize-none"
           disabled={isGenerating}
         />
       </div>
@@ -178,7 +178,7 @@ export default function ViduQ3Form({ onSubmit, isGenerating }: ViduQ3FormProps) 
       <button
         type="submit"
         disabled={isGenerating || !prompt.trim() || !imageUrl}
-        className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-purple-500 text-white font-medium rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-purple-500 text-white text-sm font-medium rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Sparkles className="w-4 h-4" />
         {isGenerating

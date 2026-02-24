@@ -69,7 +69,7 @@ export default function VideoGenerator() {
   }, [])
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground mb-2">
@@ -80,40 +80,48 @@ export default function VideoGenerator() {
         </p>
       </div>
 
-      {/* Model Selector */}
-      <ModelSelector
-        models={VIDEO_MODELS}
-        selectedModel={selectedModel}
-        onSelect={setSelectedModel}
-      />
+      {/* 2-column layout: Form (left) + History (right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,560px)_1fr] gap-6">
+        {/* Left: Form + Result */}
+        <div className="space-y-5">
+          {/* Model Selector */}
+          <ModelSelector
+            models={VIDEO_MODELS}
+            selectedModel={selectedModel}
+            onSelect={setSelectedModel}
+          />
 
-      {/* Form */}
-      <div className="bg-card border border-border/80 rounded-2xl p-6">
-        {selectedModel === 'seedance-1.5-pro' ? (
-          <SeedanceForm
-            onSubmit={handleSubmit}
-            isGenerating={isGenerating}
+          {/* Form */}
+          <div className="bg-card border border-border/80 rounded-2xl p-5">
+            {selectedModel === 'seedance-1.5-pro' ? (
+              <SeedanceForm
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            ) : (
+              <ViduQ3Form
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            )}
+          </div>
+
+          {/* Result */}
+          <GenerationResult
+            generationId={generationId}
+            type="video"
+            onComplete={handleComplete}
           />
-        ) : (
-          <ViduQ3Form
-            onSubmit={handleSubmit}
-            isGenerating={isGenerating}
+        </div>
+
+        {/* Right: History */}
+        <div className="min-w-0">
+          <GenerationHistory
+            type="video"
+            refreshTrigger={refreshTrigger}
           />
-        )}
+        </div>
       </div>
-
-      {/* Result */}
-      <GenerationResult
-        generationId={generationId}
-        type="video"
-        onComplete={handleComplete}
-      />
-
-      {/* History */}
-      <GenerationHistory
-        type="video"
-        refreshTrigger={refreshTrigger}
-      />
     </div>
   )
 }

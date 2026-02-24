@@ -69,7 +69,7 @@ export default function ImageGenerator() {
   }, [])
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground mb-2">
@@ -80,40 +80,48 @@ export default function ImageGenerator() {
         </p>
       </div>
 
-      {/* Model Selector */}
-      <ModelSelector
-        models={IMAGE_MODELS}
-        selectedModel={selectedModel}
-        onSelect={setSelectedModel}
-      />
+      {/* 2-column layout: Form (left) + History (right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,560px)_1fr] gap-6">
+        {/* Left: Form + Result */}
+        <div className="space-y-5">
+          {/* Model Selector */}
+          <ModelSelector
+            models={IMAGE_MODELS}
+            selectedModel={selectedModel}
+            onSelect={setSelectedModel}
+          />
 
-      {/* Form */}
-      <div className="bg-card border border-border/80 rounded-2xl p-6">
-        {selectedModel === 'seedream-4.5' ? (
-          <SeedreamForm
-            onSubmit={handleSubmit}
-            isGenerating={isGenerating}
+          {/* Form */}
+          <div className="bg-card border border-border/80 rounded-2xl p-5">
+            {selectedModel === 'seedream-4.5' ? (
+              <SeedreamForm
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            ) : (
+              <ZImageForm
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            )}
+          </div>
+
+          {/* Result */}
+          <GenerationResult
+            generationId={generationId}
+            type="image"
+            onComplete={handleComplete}
           />
-        ) : (
-          <ZImageForm
-            onSubmit={handleSubmit}
-            isGenerating={isGenerating}
+        </div>
+
+        {/* Right: History */}
+        <div className="min-w-0">
+          <GenerationHistory
+            type="image"
+            refreshTrigger={refreshTrigger}
           />
-        )}
+        </div>
       </div>
-
-      {/* Result */}
-      <GenerationResult
-        generationId={generationId}
-        type="image"
-        onComplete={handleComplete}
-      />
-
-      {/* History */}
-      <GenerationHistory
-        type="image"
-        refreshTrigger={refreshTrigger}
-      />
     </div>
   )
 }
