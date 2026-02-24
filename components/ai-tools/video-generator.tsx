@@ -13,12 +13,12 @@ const VIDEO_MODELS = [
   {
     id: 'seedance-1.5-pro',
     name: 'Seedance 1.5 Pro',
-    description: 'BytePlus | Text/Image to Video',
+    description: 'Text/Image to Video',
   },
   {
     id: 'vidu-q3',
     name: 'Vidu Q3',
-    description: 'WaveSpeed | Image to Video',
+    description: 'Image to Video',
   },
 ]
 

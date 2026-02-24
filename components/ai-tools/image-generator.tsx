@@ -13,12 +13,12 @@ const IMAGE_MODELS = [
   {
     id: 'seedream-4.5',
     name: 'Seedream 4.5',
-    description: 'Kie.ai | Image Edit',
+    description: 'Image Edit',
   },
   {
     id: 'z-image',
     name: 'Z-Image',
-    description: 'Kie.ai | Text to Image',
+    description: 'Text to Image',
   },
 ]
 
