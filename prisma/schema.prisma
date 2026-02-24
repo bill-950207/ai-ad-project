@@ -460,6 +460,8 @@ model profiles {
   usage_tracking  usage_tracking[]
   // 크레딧 히스토리
   credit_history  credit_history[]
+  // AI 도구 생성
+  tool_generations tool_generations[]
 
   @@schema("public")
 }
@@ -1147,6 +1149,8 @@ enum credit_feature_type {
   MUSIC                 // 음악 생성
   OUTFIT                // 의상 교체
   BACKGROUND            // 배경 생성
+  TOOL_VIDEO            // AI 도구 영상 생성
+  TOOL_IMAGE            // AI 도구 이미지 생성
 
   @@schema("public")
 }
@@ -1170,5 +1174,29 @@ model credit_history {
   @@index([user_id, created_at(sort: Desc)], map: "idx_credit_history_user_created")
   @@index([transaction_type], map: "idx_credit_history_type")
   @@index([feature_type], map: "idx_credit_history_feature")
+  @@schema("public")
+}
+
+/// AI 도구 생성 히스토리 (영상/이미지 독립 생성)
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tool_generations {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          String   @db.Uuid
+  type             String   // 'video' | 'image'
+  model            String   // 'seedance-1.5-pro' | 'vidu-q3' | 'seedream-4.5' | 'z-image'
+  prompt           String?
+  input_params     Json?    // 모델별 파라미터 (resolution, duration, aspectRatio 등)
+  status           String   @default("PENDING") // PENDING | IN_QUEUE | IN_PROGRESS | COMPLETED | FAILED
+  provider_task_id String?  // 'byteplus:xxx' | 'wavespeed-vidu:xxx' | 'kie:xxx'
+  result_url       String?  // 생성된 영상/이미지 URL
+  thumbnail_url    String?
+  error_message    String?
+  credits_used     Int      @default(0)
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  profiles profiles @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, type, created_at(sort: Desc)], map: "idx_tool_generations_user_type")
   @@schema("public")
 }

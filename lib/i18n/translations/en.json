@@ -348,7 +348,10 @@
     "backgroundGeneration": "Product Photo Backgrounds",
     "adProducts": "Ad Products Management",
     "imageAd": "Image Ad",
-    "videoAd": "Video Ad"
+    "videoAd": "Video Ad",
+    "aiTools": "AI Tools",
+    "videoGeneration": "Video Generation",
+    "imageGeneration": "Image Generation"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -2760,5 +2763,40 @@
     "title": "Something went wrong",
     "description": "An unexpected error occurred. Please try again later.",
     "retry": "Try again"
+  },
+  "aiTools": {
+    "videoTitle": "AI Video Generation",
+    "videoDescription": "Select an AI model and generate videos",
+    "imageTitle": "AI Image Generation",
+    "imageDescription": "Select an AI model and generate images",
+    "prompt": "Prompt",
+    "promptPlaceholder": "Describe the video you want to create...",
+    "imagePromptPlaceholder": "Enter image editing instructions...",
+    "textToImagePlaceholder": "Describe the image you want to create...",
+    "referenceImage": "Reference Image (Optional)",
+    "referenceImageRequired": "Reference Image",
+    "startImage": "Start Image",
+    "aspectRatio": "Aspect Ratio",
+    "resolution": "Resolution",
+    "duration": "Duration",
+    "quality": "Quality",
+    "qualityBasic": "Basic",
+    "qualityHigh": "High",
+    "generateAudio": "Generate Audio",
+    "movementAmplitude": "Movement Amplitude",
+    "movementSmall": "Small",
+    "movementMedium": "Medium",
+    "movementLarge": "Large",
+    "generate": "Generate",
+    "generating": "Generating...",
+    "credits": "Credits",
+    "statusPending": "Processing request...",
+    "statusInQueue": "Waiting in queue...",
+    "statusInProgress": "Generating...",
+    "statusCompleted": "Complete!",
+    "statusFailed": "Failed",
+    "download": "Download",
+    "history": "Generation History",
+    "noHistory": "No generation history yet"
   }
 }

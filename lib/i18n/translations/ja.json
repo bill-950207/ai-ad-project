@@ -348,7 +348,10 @@
     "backgroundGeneration": "商品撮影用背景",
     "adProducts": "広告商品管理",
     "imageAd": "画像広告",
-    "videoAd": "動画広告"
+    "videoAd": "動画広告",
+    "aiTools": "AIツール",
+    "videoGeneration": "動画生成",
+    "imageGeneration": "画像生成"
   },
   "dashboard": {
     "title": "ダッシュボード",
@@ -2760,5 +2763,40 @@
     "title": "問題が発生しました",
     "description": "予期しないエラーが発生しました。しばらくしてからもう一度お試しください。",
     "retry": "もう一度試す"
+  },
+  "aiTools": {
+    "videoTitle": "AI動画生成",
+    "videoDescription": "AIモデルを選択して動画を生成しましょう",
+    "imageTitle": "AI画像生成",
+    "imageDescription": "AIモデルを選択して画像を生成しましょう",
+    "prompt": "プロンプト",
+    "promptPlaceholder": "生成したい動画を説明してください...",
+    "imagePromptPlaceholder": "画像編集の指示を入力してください...",
+    "textToImagePlaceholder": "生成したい画像を説明してください...",
+    "referenceImage": "参照画像（任意）",
+    "referenceImageRequired": "参照画像",
+    "startImage": "開始画像",
+    "aspectRatio": "アスペクト比",
+    "resolution": "解像度",
+    "duration": "長さ",
+    "quality": "画質",
+    "qualityBasic": "標準",
+    "qualityHigh": "高画質",
+    "generateAudio": "オーディオ生成",
+    "movementAmplitude": "動きの強さ",
+    "movementSmall": "小さい",
+    "movementMedium": "普通",
+    "movementLarge": "大きい",
+    "generate": "生成する",
+    "generating": "生成中...",
+    "credits": "クレジット",
+    "statusPending": "リクエスト処理中...",
+    "statusInQueue": "キューで待機中...",
+    "statusInProgress": "生成中...",
+    "statusCompleted": "完了！",
+    "statusFailed": "失敗",
+    "download": "ダウンロード",
+    "history": "生成履歴",
+    "noHistory": "生成履歴がありません"
   }
 }

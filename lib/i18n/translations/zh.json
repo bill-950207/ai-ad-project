@@ -348,7 +348,10 @@
     "backgroundGeneration": "产品拍摄背景",
     "adProducts": "广告产品管理",
     "imageAd": "图片广告",
-    "videoAd": "视频广告"
+    "videoAd": "视频广告",
+    "aiTools": "AI工具",
+    "videoGeneration": "视频生成",
+    "imageGeneration": "图片生成"
   },
   "dashboard": {
     "title": "控制面板",
@@ -2760,5 +2763,40 @@
     "title": "出现问题",
     "description": "发生了意外错误。请稍后重试。",
     "retry": "重试"
+  },
+  "aiTools": {
+    "videoTitle": "AI视频生成",
+    "videoDescription": "选择AI模型并生成视频",
+    "imageTitle": "AI图片生成",
+    "imageDescription": "选择AI模型并生成图片",
+    "prompt": "提示词",
+    "promptPlaceholder": "描述你想要创建的视频...",
+    "imagePromptPlaceholder": "输入图片编辑指令...",
+    "textToImagePlaceholder": "描述你想要创建的图片...",
+    "referenceImage": "参考图片（可选）",
+    "referenceImageRequired": "参考图片",
+    "startImage": "起始图片",
+    "aspectRatio": "画面比例",
+    "resolution": "分辨率",
+    "duration": "时长",
+    "quality": "画质",
+    "qualityBasic": "标准",
+    "qualityHigh": "高清",
+    "generateAudio": "生成音频",
+    "movementAmplitude": "运动幅度",
+    "movementSmall": "小",
+    "movementMedium": "中",
+    "movementLarge": "大",
+    "generate": "生成",
+    "generating": "生成中...",
+    "credits": "积分",
+    "statusPending": "正在处理请求...",
+    "statusInQueue": "排队等待中...",
+    "statusInProgress": "生成中...",
+    "statusCompleted": "完成！",
+    "statusFailed": "失败",
+    "download": "下载",
+    "history": "生成历史",
+    "noHistory": "暂无生成历史"
   }
 }

@@ -35,7 +35,10 @@ import {
   Menu,
   X,
   Home,
-  Shield
+  Shield,
+  Cpu,
+  Film,
+  ImagePlus,
 } from 'lucide-react'
 
 // ============================================================
@@ -43,7 +46,7 @@ import {
 // ============================================================
 
 interface NavItem {
-  labelKey: 'adCreationTools' | 'adWorkflow'
+  labelKey: 'adCreationTools' | 'adWorkflow' | 'aiTools'
   icon: React.ReactNode
   children: { labelKey: string; href: string; icon: React.ReactNode }[]
 }
@@ -68,6 +71,14 @@ const navItems: NavItem[] = [
     children: [
       { labelKey: 'imageAd', href: '/dashboard/image-ad', icon: <Image className="w-4 h-4" /> },
       { labelKey: 'videoAd', href: '/dashboard/video-ad', icon: <Video className="w-4 h-4" /> },
+    ]
+  },
+  {
+    labelKey: 'aiTools',
+    icon: <Cpu className="w-4 h-4" />,
+    children: [
+      { labelKey: 'videoGeneration', href: '/dashboard/ai-tools/video', icon: <Film className="w-4 h-4" /> },
+      { labelKey: 'imageGeneration', href: '/dashboard/ai-tools/image', icon: <ImagePlus className="w-4 h-4" /> },
     ]
   }
 ]

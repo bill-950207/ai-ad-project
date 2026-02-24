@@ -1,0 +1,119 @@
+'use client'
+
+import { useState, useCallback } from 'react'
+import ModelSelector from './model-selector'
+import SeedreamForm from './image-forms/seedream-form'
+import ZImageForm from './image-forms/z-image-form'
+import GenerationResult from './generation-result'
+import GenerationHistory from './generation-history'
+import { useLanguage } from '@/contexts/language-context'
+import { useCredits } from '@/contexts/credit-context'
+
+const IMAGE_MODELS = [
+  {
+    id: 'seedream-4.5',
+    name: 'Seedream 4.5',
+    description: 'Kie.ai | Image Edit',
+  },
+  {
+    id: 'z-image',
+    name: 'Z-Image',
+    description: 'Kie.ai | Text to Image',
+  },
+]
+
+export default function ImageGenerator() {
+  const { t } = useLanguage()
+  const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
+  const { refreshCredits } = useCredits()
+
+  const [selectedModel, setSelectedModel] = useState('seedream-4.5')
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [generationId, setGenerationId] = useState<string | null>(null)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleSubmit = useCallback(async (data: any) => {
+    setIsGenerating(true)
+    setGenerationId(null)
+
+    try {
+      const res = await fetch('/api/ai-tools/image/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        if (res.status === 402) {
+          alert(error.error || '크레딧이 부족합니다')
+        } else {
+          alert(error.error || '생성 요청에 실패했습니다')
+        }
+        return
+      }
+
+      const result = await res.json()
+      setGenerationId(result.id)
+      refreshCredits()
+    } catch {
+      alert('네트워크 오류가 발생했습니다')
+    } finally {
+      setIsGenerating(false)
+    }
+  }, [refreshCredits])
+
+  const handleComplete = useCallback(() => {
+    setRefreshTrigger((v) => v + 1)
+  }, [])
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-foreground mb-2">
+          {aiToolsT.imageTitle || 'AI 이미지 생성'}
+        </h1>
+        <p className="text-muted-foreground">
+          {aiToolsT.imageDescription || 'AI 모델을 선택하고 이미지를 생성하세요'}
+        </p>
+      </div>
+
+      {/* Model Selector */}
+      <ModelSelector
+        models={IMAGE_MODELS}
+        selectedModel={selectedModel}
+        onSelect={setSelectedModel}
+      />
+
+      {/* Form */}
+      <div className="bg-card border border-border/80 rounded-2xl p-6">
+        {selectedModel === 'seedream-4.5' ? (
+          <SeedreamForm
+            onSubmit={handleSubmit}
+            isGenerating={isGenerating}
+          />
+        ) : (
+          <ZImageForm
+            onSubmit={handleSubmit}
+            isGenerating={isGenerating}
+          />
+        )}
+      </div>
+
+      {/* Result */}
+      <GenerationResult
+        generationId={generationId}
+        type="image"
+        onComplete={handleComplete}
+      />
+
+      {/* History */}
+      <GenerationHistory
+        type="image"
+        refreshTrigger={refreshTrigger}
+      />
+    </div>
+  )
+}

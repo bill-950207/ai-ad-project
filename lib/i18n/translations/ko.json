@@ -348,7 +348,10 @@
     "backgroundGeneration": "제품 촬영 배경",
     "adProducts": "광고 제품 관리",
     "imageAd": "이미지 광고",
-    "videoAd": "영상 광고"
+    "videoAd": "영상 광고",
+    "aiTools": "AI 도구",
+    "videoGeneration": "영상 생성",
+    "imageGeneration": "이미지 생성"
   },
   "dashboard": {
     "title": "대시보드",
@@ -2760,5 +2763,40 @@
     "title": "문제가 발생했습니다",
     "description": "예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
     "retry": "다시 시도"
+  },
+  "aiTools": {
+    "videoTitle": "AI 영상 생성",
+    "videoDescription": "AI 모델을 선택하고 영상을 생성하세요",
+    "imageTitle": "AI 이미지 생성",
+    "imageDescription": "AI 모델을 선택하고 이미지를 생성하세요",
+    "prompt": "프롬프트",
+    "promptPlaceholder": "생성할 영상을 설명하세요...",
+    "imagePromptPlaceholder": "이미지 편집 지시를 입력하세요...",
+    "textToImagePlaceholder": "생성할 이미지를 설명하세요...",
+    "referenceImage": "참조 이미지 (선택)",
+    "referenceImageRequired": "참조 이미지",
+    "startImage": "시작 이미지",
+    "aspectRatio": "화면 비율",
+    "resolution": "해상도",
+    "duration": "길이",
+    "quality": "화질",
+    "qualityBasic": "기본",
+    "qualityHigh": "고화질",
+    "generateAudio": "오디오 생성",
+    "movementAmplitude": "움직임 강도",
+    "movementSmall": "작음",
+    "movementMedium": "보통",
+    "movementLarge": "큼",
+    "generate": "생성하기",
+    "generating": "생성 중...",
+    "credits": "크레딧",
+    "statusPending": "요청 처리 중...",
+    "statusInQueue": "대기열에서 대기 중...",
+    "statusInProgress": "생성 중...",
+    "statusCompleted": "완료!",
+    "statusFailed": "실패",
+    "download": "다운로드",
+    "history": "생성 히스토리",
+    "noHistory": "생성 히스토리가 없습니다"
   }
 }
