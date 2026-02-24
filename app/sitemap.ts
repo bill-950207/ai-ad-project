@@ -42,6 +42,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }))
   )
 
+  // 대시보드 AI 도구 페이지 (다국어)
+  const getDashboardToolAlternates = (tool: string) => {
+    const languages: Record<string, string> = {}
+    locales.forEach((locale) => {
+      const langCode = locale === 'ko' ? 'ko-KR' : locale === 'en' ? 'en-US' : locale === 'ja' ? 'ja-JP' : 'zh-CN'
+      languages[langCode] = `${siteUrl}/dashboard/ai-tools/${locale}/${tool}`
+    })
+    languages['x-default'] = `${siteUrl}/dashboard/ai-tools/ko/${tool}`
+    return languages
+  }
+
+  const dashboardToolTypes = ['video', 'image']
+  const dashboardToolPages: MetadataRoute.Sitemap = dashboardToolTypes.flatMap((tool) =>
+    locales.map((locale) => ({
+      url: `${siteUrl}/dashboard/ai-tools/${locale}/${tool}`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+      alternates: {
+        languages: getDashboardToolAlternates(tool),
+      },
+    }))
+  )
+
   // 기타 페이지 (언어 독립적 - locale 라우트가 없으므로 alternates 미포함)
   const otherPages: MetadataRoute.Sitemap = [
     {
@@ -64,5 +88,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ]
 
-  return [...landingPages, ...toolPages, ...otherPages]
+  return [...landingPages, ...toolPages, ...dashboardToolPages, ...otherPages]
 }

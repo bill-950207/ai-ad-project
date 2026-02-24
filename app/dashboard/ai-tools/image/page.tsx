@@ -1,7 +1,16 @@
 'use client'
 
-import ImageGenerator from '@/components/ai-tools/image-generator'
+import { useLanguage } from '@/contexts/language-context'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
-export default function ImageToolPage() {
-  return <ImageGenerator />
+export default function ImageToolRedirect() {
+  const { language } = useLanguage()
+  const router = useRouter()
+
+  useEffect(() => {
+    router.replace(`/dashboard/ai-tools/${language}/image`)
+  }, [language, router])
+
+  return null
 }
