@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   alternateLanguages['x-default'] = `${siteUrl}/ko/tools/video`
 
   return {
-    title: data.title,
+    title: { absolute: data.title },
     description: data.description,
     keywords: data.keywords,
     authors: [{ name: 'gwanggo', url: siteUrl }],
@@ -190,6 +190,15 @@ export default async function VideoToolPage({ params }: Props) {
 
   const t = content[locale]
   const toolJsonLd = getToolJsonLd(locale, siteUrl, 'video')
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: t.faq.map((item) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: { '@type': 'Answer', text: item.a },
+    })),
+  }
   const breadcrumbJsonLd = getBreadcrumbJsonLd(siteUrl, [
     { name: locale === 'ko' ? '홈' : locale === 'ja' ? 'ホーム' : locale === 'zh' ? '首页' : 'Home', url: `${siteUrl}/${locale}` },
     { name: t.heading, url: `${siteUrl}/${locale}/tools/video` },
@@ -204,6 +213,10 @@ export default async function VideoToolPage({ params }: Props) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
         />
       ))}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
