@@ -98,6 +98,175 @@ export const seoData: Record<Locale, {
   },
 }
 
+/** AI 영상 생성 도구 SEO */
+export const videoToolSeoData: Record<Locale, {
+  title: string
+  description: string
+  keywords: string[]
+  ogTitle: string
+  ogDescription: string
+}> = {
+  ko: {
+    title: 'AI 영상 생성 - Seedance 1.5 Pro · Vidu Q3 | 무료 AI 동영상 만들기',
+    description: 'ByteDance Seedance 1.5 Pro와 Vidu Q3로 텍스트·이미지에서 고품질 AI 영상을 생성하세요. 480p~1080p, 최대 16초, 오디오 포함. 무료 크레딧으로 지금 시작.',
+    keywords: [
+      'AI 영상 생성', 'AI 동영상 만들기', 'AI 비디오 생성기', 'Seedance', 'Seedance 1.5 Pro',
+      'ByteDance AI', 'ByteDance Seedance', 'Vidu Q3', 'Vidu AI', 'Text to Video',
+      'Image to Video', '텍스트 영상 변환', '이미지 영상 변환', '무료 AI 영상',
+      'AI video generator', 'AI 숏폼 영상', 'AI 동영상 생성기', '바이트댄스 AI',
+      'AI 영상 제작', 'AI 영상 편집', '무료 동영상 만들기', 'Seedance Pro',
+    ],
+    ogTitle: 'AI 영상 생성 도구 - Seedance 1.5 Pro · Vidu Q3 | gwanggo',
+    ogDescription: 'ByteDance Seedance 1.5 Pro와 Vidu Q3로 텍스트·이미지에서 고품질 AI 영상을 생성하세요.',
+  },
+  en: {
+    title: 'AI Video Generator - Seedance 1.5 Pro · Vidu Q3 | Free AI Video Maker',
+    description: 'Generate high-quality AI videos from text and images with ByteDance Seedance 1.5 Pro and Vidu Q3. 480p–1080p, up to 16 seconds, with audio. Start free.',
+    keywords: [
+      'AI video generator', 'AI video maker', 'Seedance', 'Seedance 1.5 Pro',
+      'ByteDance AI', 'ByteDance Seedance', 'Vidu Q3', 'Vidu AI', 'text to video',
+      'image to video', 'free AI video generator', 'AI short video', 'AI video creation',
+      'AI video editing', 'text to video AI', 'image to video AI', 'Seedance Pro',
+    ],
+    ogTitle: 'AI Video Generator - Seedance 1.5 Pro · Vidu Q3 | gwanggo',
+    ogDescription: 'Generate high-quality AI videos from text and images with ByteDance Seedance 1.5 Pro and Vidu Q3.',
+  },
+  ja: {
+    title: 'AI動画生成 - Seedance 1.5 Pro · Vidu Q3 | 無料AI動画メーカー',
+    description: 'ByteDance Seedance 1.5 ProとVidu Q3でテキスト・画像から高品質なAI動画を生成。480p〜1080p、最大16秒、音声付き。無料クレジットで今すぐ開始。',
+    keywords: [
+      'AI動画生成', 'AI動画メーカー', 'Seedance', 'Seedance 1.5 Pro',
+      'ByteDance AI', 'Vidu Q3', 'Vidu AI', 'テキストから動画', '画像から動画',
+      '無料AI動画', 'AIショート動画', 'AI動画制作', 'AI動画編集', 'バイトダンスAI',
+    ],
+    ogTitle: 'AI動画生成ツール - Seedance 1.5 Pro · Vidu Q3 | gwanggo',
+    ogDescription: 'ByteDance Seedance 1.5 ProとVidu Q3でテキスト・画像から高品質なAI動画を生成。',
+  },
+  zh: {
+    title: 'AI视频生成 - Seedance 1.5 Pro · Vidu Q3 | 免费AI视频制作',
+    description: '使用ByteDance Seedance 1.5 Pro和Vidu Q3从文字和图片生成高质量AI视频。480p-1080p，最长16秒，含音频。免费积分立即开始。',
+    keywords: [
+      'AI视频生成', 'AI视频制作', 'Seedance', 'Seedance 1.5 Pro',
+      'ByteDance AI', '字节跳动AI', 'Vidu Q3', 'Vidu AI', '文字转视频',
+      '图片转视频', '免费AI视频', 'AI短视频', 'AI视频创作', 'AI视频编辑',
+    ],
+    ogTitle: 'AI视频生成工具 - Seedance 1.5 Pro · Vidu Q3 | gwanggo',
+    ogDescription: '使用ByteDance Seedance 1.5 Pro和Vidu Q3从文字和图片生成高质量AI视频。',
+  },
+}
+
+/** AI 이미지 생성 도구 SEO */
+export const imageToolSeoData: Record<Locale, {
+  title: string
+  description: string
+  keywords: string[]
+  ogTitle: string
+  ogDescription: string
+}> = {
+  ko: {
+    title: 'AI 이미지 생성 - Seedream 4.5 · Z-Image | 무료 AI 그림 생성기',
+    description: 'ByteDance Seedream 4.5로 이미지 편집, Z-Image로 텍스트에서 고품질 AI 이미지 생성. 다양한 비율과 화질 지원. 무료 크레딧으로 지금 시작.',
+    keywords: [
+      'AI 이미지 생성', 'AI 그림 생성기', 'AI 이미지 편집', 'Seedream', 'Seedream 4.5',
+      'ByteDance AI', 'ByteDance Seedream', 'Z-Image', 'Text to Image', 'Image Edit',
+      '텍스트 이미지 생성', 'AI 사진 생성', '무료 AI 이미지', 'AI image generator',
+      'AI 그림 그리기', 'AI 이미지 만들기', '무료 AI 그림', '바이트댄스 AI',
+      'AI 이미지 제작', 'AI 사진 편집', 'Seedream Pro',
+    ],
+    ogTitle: 'AI 이미지 생성 도구 - Seedream 4.5 · Z-Image | gwanggo',
+    ogDescription: 'ByteDance Seedream 4.5와 Z-Image로 고품질 AI 이미지를 생성하세요.',
+  },
+  en: {
+    title: 'AI Image Generator - Seedream 4.5 · Z-Image | Free AI Image Maker',
+    description: 'Edit images with ByteDance Seedream 4.5 and generate from text with Z-Image. Multiple aspect ratios and quality options. Start free.',
+    keywords: [
+      'AI image generator', 'AI image maker', 'Seedream', 'Seedream 4.5',
+      'ByteDance AI', 'ByteDance Seedream', 'Z-Image', 'text to image',
+      'AI image editing', 'free AI image generator', 'AI art generator',
+      'AI photo generator', 'AI image creation', 'Seedream Pro',
+    ],
+    ogTitle: 'AI Image Generator - Seedream 4.5 · Z-Image | gwanggo',
+    ogDescription: 'Create high-quality AI images with ByteDance Seedream 4.5 and Z-Image.',
+  },
+  ja: {
+    title: 'AI画像生成 - Seedream 4.5 · Z-Image | 無料AI画像メーカー',
+    description: 'ByteDance Seedream 4.5で画像編集、Z-Imageでテキストから高品質AI画像を生成。多様な比率と画質に対応。無料クレジットで今すぐ開始。',
+    keywords: [
+      'AI画像生成', 'AI画像メーカー', 'Seedream', 'Seedream 4.5',
+      'ByteDance AI', 'Z-Image', 'テキストから画像', 'AI画像編集',
+      '無料AI画像', 'AIアート', 'AI写真生成', 'AI画像制作', 'バイトダンスAI',
+    ],
+    ogTitle: 'AI画像生成ツール - Seedream 4.5 · Z-Image | gwanggo',
+    ogDescription: 'ByteDance Seedream 4.5とZ-Imageで高品質なAI画像を生成。',
+  },
+  zh: {
+    title: 'AI图片生成 - Seedream 4.5 · Z-Image | 免费AI图片生成器',
+    description: '使用ByteDance Seedream 4.5编辑图片，Z-Image从文字生成高质量AI图片。支持多种比例和画质。免费积分立即开始。',
+    keywords: [
+      'AI图片生成', 'AI图片生成器', 'Seedream', 'Seedream 4.5',
+      'ByteDance AI', '字节跳动AI', 'Z-Image', '文字转图片',
+      'AI图片编辑', '免费AI图片', 'AI艺术', 'AI照片生成', 'AI图片制作',
+    ],
+    ogTitle: 'AI图片生成工具 - Seedream 4.5 · Z-Image | gwanggo',
+    ogDescription: '使用ByteDance Seedream 4.5和Z-Image生成高质量AI图片。',
+  },
+}
+
+/** AI 도구 JSON-LD (WebApplication) */
+export function getToolJsonLd(
+  locale: Locale,
+  siteUrl: string,
+  tool: 'video' | 'image',
+) {
+  const data = tool === 'video' ? videoToolSeoData[locale] : imageToolSeoData[locale]
+  const currency = locale === 'ko' ? 'KRW' : locale === 'ja' ? 'JPY' : locale === 'zh' ? 'CNY' : 'USD'
+
+  const models = tool === 'video'
+    ? [
+        { name: 'Seedance 1.5 Pro', creator: 'ByteDance', description: 'Text/Image to Video, 480p-720p, 4-12s' },
+        { name: 'Vidu Q3', creator: 'Shengshu Technology', description: 'Image to Video, 540p-1080p, 1-16s' },
+      ]
+    : [
+        { name: 'Seedream 4.5', creator: 'ByteDance', description: 'AI Image Edit, multiple aspect ratios' },
+        { name: 'Z-Image', creator: 'gwanggo', description: 'Text to Image, multiple aspect ratios' },
+      ]
+
+  return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: data.ogTitle,
+      applicationCategory: 'MultimediaApplication',
+      operatingSystem: 'Web',
+      description: data.ogDescription,
+      url: `${siteUrl}/${locale}/tools/${tool}`,
+      inLanguage: htmlLang[locale],
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: currency,
+      },
+    },
+    ...models.map((model) => ({
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: model.name,
+      applicationCategory: 'MultimediaApplication',
+      operatingSystem: 'Web',
+      description: model.description,
+      creator: {
+        '@type': 'Organization',
+        name: model.creator,
+      },
+      isPartOf: {
+        '@type': 'WebApplication',
+        name: 'gwanggo',
+        url: `${siteUrl}/${locale}`,
+      },
+    })),
+  ]
+}
+
 /** 언어별 FAQ 데이터 (FAQPage JSON-LD용) */
 export const faqData: Record<Locale, Array<{ question: string; answer: string }>> = {
   ko: [
