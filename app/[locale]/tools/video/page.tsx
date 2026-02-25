@@ -94,8 +94,8 @@ const i18n: Record<Locale, {
   useCasesTitle: string
   useCases: string[]
   comparisonTitle: string
-  comparisonHeaders: [string, string, string, string, string]
-  comparisonRows: [string, string, string, string, string][]
+  comparisonHeaders: [string, string, string, string, string, string]
+  comparisonRows: [string, string, string, string, string, string][]
   faqTitle: string
   faq: Array<{ q: string; a: string }>
   otherToolTitle: string
@@ -109,8 +109,8 @@ const i18n: Record<Locale, {
     breadcrumbHome: '홈',
     badge: 'AI 영상 생성 도구',
     heading: 'AI 영상 생성',
-    subheading: 'ByteDance Seedance 1.5 Pro와 Vidu Q3로 고품질 AI 영상 생성. Sora, Runway 대안. Seedance 2.0 출시.',
-    intro: 'gwanggo의 AI 영상 생성 도구는 ByteDance(바이트댄스)의 Seedance 1.5 Pro와 Shengshu Technology(生数科技)의 Vidu Q3 모델을 지원합니다. OpenAI Sora, Runway Gen-4, Kling 3.0, Hailuo, Pika, Luma Dream Machine 등 주요 AI 영상 모델의 대안으로, 광고 영상 제작에 특화되어 있습니다. 텍스트 프롬프트만으로 영상을 생성하거나, 참조 이미지를 활용하여 더 정밀한 AI 동영상을 만들 수 있습니다. 480p부터 1080p까지 다양한 해상도와 최대 16초 길이의 영상을 지원합니다. ByteDance의 Seedance 2.0도 2026년 2월에 출시되어 곧 지원 예정입니다.',
+    subheading: 'Seedance 1.5 Pro, Kling 3.0, Grok Imagine Video, Wan 2.6, Vidu Q3로 고품질 AI 영상 생성. Sora, Runway 대안.',
+    intro: 'gwanggo의 AI 영상 생성 도구는 ByteDance(바이트댄스)의 Seedance 1.5 Pro, Shengshu Technology(生数科技)의 Vidu Q3 모델을 지원합니다. Kling 3.0(쿠아이쇼우/快手)의 Standard·Pro 등급, xAI의 Grok Imagine Video, 알리바바의 Wan 2.6 모델도 지원합니다. OpenAI Sora, Runway Gen-4, Hailuo, Pika, Luma Dream Machine 등 주요 AI 영상 모델의 대안으로, 광고 영상 제작에 특화되어 있습니다. 텍스트 프롬프트만으로 영상을 생성하거나, 참조 이미지를 활용하여 더 정밀한 AI 동영상을 만들 수 있습니다. 480p부터 1080p까지 다양한 해상도와 최대 16초 길이의 영상을 지원합니다.',
     cta: '무료로 시작하기',
     modelsTitle: '지원 모델',
     models: [
@@ -128,6 +128,27 @@ const i18n: Record<Locale, {
         features: ['이미지 → 영상 (Image to Video)', '최대 1080p Full HD', '1~16초 자유 설정', '움직임 강도 조절 (Auto/Small/Medium/Large)'],
         specs: '해상도: 540p, 720p, 1080p | 길이: 1~16초',
       },
+      {
+        name: 'Kling 3.0',
+        badge: 'Kuaishou (쿠아이쇼우)',
+        desc: 'Kuaishou(쿠아이쇼우/快手)가 개발한 Text-to-Video / Image-to-Video AI 모델입니다. Standard와 Pro 등급을 지원하며, 텍스트만으로 또는 이미지와 함께 5~10초 길이의 영상을 생성합니다.',
+        features: ['텍스트 → 영상 (Text to Video)', '이미지 → 영상 (Image to Video)', 'Standard / Pro 등급 선택', '3가지 화면 비율 (16:9, 9:16, 1:1)'],
+        specs: '해상도: 720p | 길이: 5초, 10초 | Standard: 1크레딧/초, Pro: 3크레딧/초',
+      },
+      {
+        name: 'Grok Imagine Video',
+        badge: 'xAI',
+        desc: 'xAI(일론 머스크)가 개발한 Grok Imagine Video AI 모델입니다. 텍스트만으로 또는 이미지와 함께 최대 15초 길이의 영상을 생성할 수 있습니다.',
+        features: ['텍스트 → 영상 (Text to Video)', '이미지 → 영상 (Image to Video)', '480p / 720p 해상도', '최대 15초 지원'],
+        specs: '해상도: 480p, 720p | 길이: 1~15초 | 480p: 1크레딧/초, 720p: 2크레딧/초',
+      },
+      {
+        name: 'Wan 2.6',
+        badge: 'Alibaba (알리바바)',
+        desc: '알리바바(Alibaba)가 개발한 Wan 2.6 AI 영상 생성 모델입니다. 텍스트만으로 또는 이미지와 함께 최대 1080p, 15초 길이의 고품질 영상을 생성합니다.',
+        features: ['텍스트 → 영상 (Text to Video)', '이미지 → 영상 (Image to Video)', '최대 1080p Full HD', '5가지 화면 비율 지원'],
+        specs: '해상도: 720p, 1080p | 길이: 5초, 10초, 15초 | 720p: 2크레딧/초, 1080p: 3크레딧/초',
+      },
     ],
     howItWorksTitle: '사용 방법',
     steps: [
@@ -144,37 +165,40 @@ const i18n: Record<Locale, {
       '프레젠테이션 · 기획안 시각화',
     ],
     comparisonTitle: '모델 비교',
-    comparisonHeaders: ['항목', 'Seedance 1.5 Pro', 'Vidu Q3', '개발사', '입력 방식'],
+    comparisonHeaders: ['항목', 'Seedance 1.5 Pro', 'Vidu Q3', 'Kling 3.0', 'Grok Video', 'Wan 2.6'],
     comparisonRows: [
-      ['개발사', 'ByteDance (바이트댄스)', 'Shengshu Technology (生数科技)', '', ''],
-      ['입력 방식', '텍스트 / 이미지', '이미지 (필수)', '', ''],
-      ['해상도', '480p, 720p', '540p, 720p, 1080p', '', ''],
-      ['영상 길이', '4초, 8초, 12초', '1~16초 (1초 단위)', '', ''],
-      ['오디오', '자동 생성 지원', '지원', '', ''],
+      ['개발사', 'ByteDance', 'Shengshu', 'Kuaishou (快手)', 'xAI', 'Alibaba'],
+      ['입력 방식', '텍스트 / 이미지', '이미지 (필수)', '텍스트 / 이미지', '텍스트 / 이미지', '텍스트 / 이미지'],
+      ['해상도', '480p, 720p', '540p~1080p', '720p', '480p, 720p', '720p, 1080p'],
+      ['영상 길이', '4~12초', '1~16초', '5초, 10초', '1~15초', '5~15초'],
+      ['비용(크레딧/초)', '1~2', '1~3', '1(Std), 3(Pro)', '1~2', '2~3'],
     ],
     faqTitle: '자주 묻는 질문',
     faq: [
       { q: 'Seedance 1.5 Pro는 어떤 모델인가요?', a: 'Seedance 1.5 Pro는 ByteDance(바이트댄스)가 개발한 최신 AI 영상 생성 모델입니다. Text-to-Video(텍스트에서 영상)와 Image-to-Video(이미지에서 영상) 두 가지 방식을 모두 지원하며, 프롬프트만으로 4~12초 길이의 영상을 자동 생성합니다.' },
       { q: 'Vidu Q3는 어떤 모델인가요?', a: 'Vidu Q3는 Shengshu Technology(生数科技)가 개발한 Image-to-Video AI 모델입니다. 한 장의 이미지에서 최대 1080p, 16초 길이의 고품질 영상을 생성할 수 있으며, 움직임의 강도를 Auto, Small, Medium, Large 4단계로 세밀하게 조절할 수 있습니다.' },
-      { q: 'AI 영상 생성 비용은 얼마인가요?', a: '회원가입 시 15크레딧이 무료로 제공됩니다. Seedance 1.5 Pro는 해상도(480p: 1크레딧/초, 720p: 2크레딧/초)와 길이에 따라, Vidu Q3는 해상도(540p: 1크레딧/초, 720p: 2크레딧/초, 1080p: 3크레딧/초)와 길이에 따라 크레딧이 차감됩니다.' },
+      { q: 'AI 영상 생성 비용은 얼마인가요?', a: '회원가입 시 15크레딧이 무료로 제공됩니다. Seedance 1.5 Pro는 480p: 1크레딧/초, 720p: 2크레딧/초, Vidu Q3는 540p: 1크레딧/초, 720p: 2크레딧/초, 1080p: 3크레딧/초, Kling 3.0은 Standard: 1크레딧/초, Pro: 3크레딧/초, Grok Video는 480p: 1크레딧/초, 720p: 2크레딧/초, Wan 2.6은 720p: 2크레딧/초, 1080p: 3크레딧/초입니다.' },
       { q: '생성된 영상의 저작권은 누구에게 있나요?', a: 'gwanggo에서 생성한 모든 AI 영상의 사용 권리는 사용자에게 있습니다. 상업적 용도(광고, SNS, 쇼핑몰 등)로 자유롭게 사용하실 수 있습니다.' },
-      { q: 'Text-to-Video와 Image-to-Video의 차이는 무엇인가요?', a: 'Text-to-Video는 텍스트 설명만으로 영상을 생성하는 방식이고, Image-to-Video는 참조 이미지를 기반으로 영상을 만드는 방식입니다. Image-to-Video는 원하는 시각적 스타일을 더 정확하게 반영할 수 있습니다. Seedance 1.5 Pro는 두 방식 모두 지원하고, Vidu Q3는 Image-to-Video 전용입니다.' },
-      { q: 'Sora, Runway, Kling과 비교하면 어떤가요?', a: 'Seedance 1.5 Pro는 OpenAI Sora, Runway Gen-4, Kling 3.0(Kuaishou), Hailuo(MiniMax), Pika, Luma Dream Machine, Google Veo 등과 비교해 광고 영상 제작에 특화되어 있습니다. 텍스트와 이미지 모두 입력 가능하고, 오디오 자동 생성을 지원하며, 별도 앱 설치 없이 웹에서 바로 사용할 수 있습니다.' },
+      { q: 'Text-to-Video와 Image-to-Video의 차이는 무엇인가요?', a: 'Text-to-Video는 텍스트 설명만으로 영상을 생성하는 방식이고, Image-to-Video는 참조 이미지를 기반으로 영상을 만드는 방식입니다. Image-to-Video는 원하는 시각적 스타일을 더 정확하게 반영할 수 있습니다. Seedance 1.5 Pro, Kling 3.0, Grok Imagine Video, Wan 2.6은 두 방식 모두 지원하고, Vidu Q3는 Image-to-Video 전용입니다.' },
+      { q: 'Sora, Runway와 비교하면 어떤가요?', a: 'gwanggo는 Seedance 1.5 Pro, Kling 3.0, Grok Imagine Video, Wan 2.6, Vidu Q3 등 5종의 AI 영상 모델을 지원합니다. OpenAI Sora, Runway Gen-4, Hailuo(MiniMax), Pika, Luma Dream Machine, Google Veo 등과 비교해 광고 영상 제작에 특화되어 있습니다. 별도 앱 설치 없이 웹에서 바로 사용할 수 있습니다.' },
       { q: 'Seedance 2.0이란 무엇인가요?', a: 'ByteDance의 Seedance 2.0은 2026년 2월 12일에 공식 출시되었습니다. 멀티모달 오디오-비디오 통합 생성, 최대 15초 멀티샷 출력, 대폭 향상된 영상 품질 등이 특징입니다. 중국에서는 CapCut/剪映을 통해 제공되며, gwanggo에서도 Seedance 2.0 지원을 준비하고 있습니다.' },
+      { q: 'Kling 3.0은 어떤 모델인가요?', a: 'Kling 3.0은 Kuaishou(쿠아이쇼우/快手)가 개발한 AI 영상 생성 모델입니다. Standard와 Pro 두 가지 등급을 지원하며, 텍스트만으로 또는 이미지와 함께 720p, 5~10초 길이의 영상을 생성합니다. Standard는 초당 1크레딧, Pro는 초당 3크레딧입니다.' },
+      { q: 'Grok Imagine Video는 어떤 모델인가요?', a: 'Grok Imagine Video는 xAI(일론 머스크)가 개발한 AI 영상 생성 모델입니다. 텍스트만으로 또는 이미지와 함께 480p~720p, 최대 15초 길이의 영상을 생성할 수 있습니다.' },
+      { q: 'Wan 2.6은 어떤 모델인가요?', a: 'Wan 2.6은 알리바바(Alibaba)가 개발한 AI 영상 생성 모델입니다. 텍스트만으로 또는 이미지와 함께 720p~1080p, 5~15초 길이의 고품질 영상을 생성합니다. 5가지 화면 비율을 지원합니다.' },
     ],
     otherToolTitle: 'AI 이미지 생성도 사용해보세요',
-    otherToolDesc: 'ByteDance Seedream 5와 Z-Image로 고품질 AI 이미지를 생성할 수 있습니다.',
+    otherToolDesc: 'Seedream 5, FLUX.2 Pro, Grok Imagine Image, Z-Image로 고품질 AI 이미지를 생성할 수 있습니다.',
     otherToolCta: 'AI 이미지 생성 바로가기',
     pricingCta: '요금제 보기',
     bottomCta: '지금 바로 AI 영상을 만들어보세요',
-    bottomCtaDesc: '회원가입 시 15크레딧 무료 제공. Seedance 1.5 Pro와 Vidu Q3로 고품질 AI 영상을 생성하세요.',
+    bottomCtaDesc: '회원가입 시 15크레딧 무료 제공. 5종 AI 모델로 고품질 영상을 생성하세요.',
   },
   en: {
     breadcrumbHome: 'Home',
     badge: 'AI Video Generation Tool',
     heading: 'AI Video Generator',
-    subheading: 'Create high-quality AI videos with ByteDance Seedance 1.5 Pro and Vidu Q3. Best Sora & Runway alternative. Seedance 2.0 now available.',
-    intro: 'gwanggo\'s AI video generator supports ByteDance\'s Seedance 1.5 Pro and Shengshu Technology\'s Vidu Q3 models. A powerful alternative to OpenAI Sora, Runway Gen-4, Kling 3.0, Hailuo, Pika, and Luma Dream Machine, optimized for commercial ad video creation. Generate videos from text prompts alone, or use reference images for more precise AI video creation. Supports resolutions from 480p to 1080p and up to 16 seconds. ByteDance\'s Seedance 2.0 has launched in February 2026 and will be supported on gwanggo soon.',
+    subheading: 'Generate AI videos with Seedance 1.5 Pro, Kling 3.0, Grok Video, Wan 2.6 & Vidu Q3. Best Sora & Runway alternative.',
+    intro: 'gwanggo\'s AI video generator supports 5 models: ByteDance\'s Seedance 1.5 Pro, Shengshu Technology\'s Vidu Q3, Kuaishou\'s Kling 3.0 (Standard & Pro tiers), xAI\'s Grok Imagine Video, and Alibaba\'s Wan 2.6. A powerful alternative to OpenAI Sora, Runway Gen-4, Hailuo, Pika, and Luma Dream Machine, optimized for commercial ad video creation. Generate videos from text prompts alone, or use reference images for more precise AI video creation. Supports resolutions from 480p to 1080p and up to 16 seconds.',
     cta: 'Start for Free',
     modelsTitle: 'Supported Models',
     models: [
@@ -192,6 +216,27 @@ const i18n: Record<Locale, {
         features: ['Image → Video (Image to Video)', 'Up to 1080p Full HD', '1–16 seconds freely adjustable', 'Movement amplitude control (Auto/Small/Medium/Large)'],
         specs: 'Resolution: 540p, 720p, 1080p | Duration: 1–16s',
       },
+      {
+        name: 'Kling 3.0',
+        badge: 'Kuaishou',
+        desc: 'Text-to-Video and Image-to-Video AI model by Kuaishou. Supports Standard and Pro tiers, generating 5–10 second videos from text alone or with a reference image.',
+        features: ['Text → Video (Text to Video)', 'Image → Video (Image to Video)', 'Standard / Pro tier selection', '3 aspect ratios (16:9, 9:16, 1:1)'],
+        specs: 'Resolution: 720p | Duration: 5s, 10s | Standard: 1 credit/sec, Pro: 3 credits/sec',
+      },
+      {
+        name: 'Grok Imagine Video',
+        badge: 'xAI',
+        desc: 'Grok Imagine Video AI model by xAI (Elon Musk). Generate videos up to 15 seconds from text alone or with a reference image.',
+        features: ['Text → Video (Text to Video)', 'Image → Video (Image to Video)', '480p / 720p resolution', 'Up to 15 seconds'],
+        specs: 'Resolution: 480p, 720p | Duration: 1–15s | 480p: 1 credit/sec, 720p: 2 credits/sec',
+      },
+      {
+        name: 'Wan 2.6',
+        badge: 'Alibaba',
+        desc: 'Wan 2.6 AI video generation model by Alibaba. Generate high-quality videos up to 1080p and 15 seconds from text alone or with a reference image.',
+        features: ['Text → Video (Text to Video)', 'Image → Video (Image to Video)', 'Up to 1080p Full HD', '5 aspect ratios supported'],
+        specs: 'Resolution: 720p, 1080p | Duration: 5s, 10s, 15s | 720p: 2 credits/sec, 1080p: 3 credits/sec',
+      },
     ],
     howItWorksTitle: 'How It Works',
     steps: [
@@ -208,37 +253,40 @@ const i18n: Record<Locale, {
       'Presentations and concept visualization',
     ],
     comparisonTitle: 'Model Comparison',
-    comparisonHeaders: ['Feature', 'Seedance 1.5 Pro', 'Vidu Q3', '', ''],
+    comparisonHeaders: ['Feature', 'Seedance 1.5 Pro', 'Vidu Q3', 'Kling 3.0', 'Grok Video', 'Wan 2.6'],
     comparisonRows: [
-      ['Developer', 'ByteDance', 'Shengshu Technology', '', ''],
-      ['Input', 'Text / Image', 'Image (required)', '', ''],
-      ['Resolution', '480p, 720p', '540p, 720p, 1080p', '', ''],
-      ['Duration', '4s, 8s, 12s', '1–16s (1s increments)', '', ''],
-      ['Audio', 'Auto generation', 'Supported', '', ''],
+      ['Developer', 'ByteDance', 'Shengshu', 'Kuaishou', 'xAI', 'Alibaba'],
+      ['Input', 'Text / Image', 'Image (required)', 'Text / Image', 'Text / Image', 'Text / Image'],
+      ['Resolution', '480p, 720p', '540p–1080p', '720p', '480p, 720p', '720p, 1080p'],
+      ['Duration', '4–12s', '1–16s', '5s, 10s', '1–15s', '5–15s'],
+      ['Cost (credits/sec)', '1–2', '1–3', '1(Std), 3(Pro)', '1–2', '2–3'],
     ],
     faqTitle: 'Frequently Asked Questions',
     faq: [
       { q: 'What is Seedance 1.5 Pro?', a: 'Seedance 1.5 Pro is the latest AI video generation model developed by ByteDance. It supports both Text-to-Video and Image-to-Video, generating 4–12 second videos automatically from prompts.' },
       { q: 'What is Vidu Q3?', a: 'Vidu Q3 is an Image-to-Video AI model by Shengshu Technology. It creates up to 1080p, 16-second high-quality videos from a single image, with four levels of movement amplitude control (Auto, Small, Medium, Large).' },
-      { q: 'How much does AI video generation cost?', a: 'You get 15 free credits on sign up. Seedance 1.5 Pro costs 1 credit/sec at 480p, 2 credits/sec at 720p. Vidu Q3 costs 1 credit/sec at 540p, 2 at 720p, and 3 at 1080p.' },
+      { q: 'How much does AI video generation cost?', a: 'You get 15 free credits on sign up. Seedance 1.5 Pro: 1 credit/sec at 480p, 2 at 720p. Vidu Q3: 1 credit/sec at 540p, 2 at 720p, 3 at 1080p. Kling 3.0: Standard 1 credit/sec, Pro 3 credits/sec. Grok Video: 1 credit/sec at 480p, 2 at 720p. Wan 2.6: 2 credits/sec at 720p, 3 at 1080p.' },
       { q: 'Who owns the copyright of generated videos?', a: 'You retain full usage rights to all AI videos created on gwanggo. You can freely use them for commercial purposes including ads, social media, and e-commerce.' },
-      { q: 'What is the difference between Text-to-Video and Image-to-Video?', a: 'Text-to-Video generates videos from text descriptions alone, while Image-to-Video creates videos based on a reference image. Image-to-Video allows more precise visual style control. Seedance 1.5 Pro supports both, while Vidu Q3 is Image-to-Video only.' },
-      { q: 'How does Seedance compare to Sora, Runway, Kling, and other AI video tools?', a: 'Seedance 1.5 Pro by ByteDance is optimized for ad video creation, compared to OpenAI Sora, Runway Gen-4, Kling 3.0 (Kuaishou), Hailuo (MiniMax), Pika, Luma Dream Machine, and Google Veo. It supports both text and image input, auto audio generation, and works directly in the browser without any app installation.' },
+      { q: 'What is the difference between Text-to-Video and Image-to-Video?', a: 'Text-to-Video generates videos from text descriptions alone, while Image-to-Video creates videos based on a reference image. Image-to-Video allows more precise visual style control. Seedance 1.5 Pro, Kling 3.0, Grok Imagine Video, and Wan 2.6 support both, while Vidu Q3 is Image-to-Video only.' },
+      { q: 'How does gwanggo compare to Sora, Runway, and other AI video tools?', a: 'gwanggo supports 5 AI video models: Seedance 1.5 Pro, Kling 3.0, Grok Imagine Video, Wan 2.6, and Vidu Q3. Compared to OpenAI Sora, Runway Gen-4, Hailuo (MiniMax), Pika, Luma Dream Machine, and Google Veo, gwanggo is optimized for ad video creation and works directly in the browser without any app installation.' },
       { q: 'What is Seedance 2.0?', a: 'ByteDance officially launched Seedance 2.0 on February 12, 2026, featuring unified multimodal audio-video generation, up to 15-second multi-shot output, and significantly improved video quality. It is available via CapCut/Jianying in China, and gwanggo is preparing to support Seedance 2.0 soon.' },
+      { q: 'What is Kling 3.0?', a: 'Kling 3.0 is an AI video generation model by Kuaishou. It supports Standard and Pro tiers, generating 720p videos of 5–10 seconds from text alone or with a reference image. Standard costs 1 credit/sec and Pro costs 3 credits/sec.' },
+      { q: 'What is Grok Imagine Video?', a: 'Grok Imagine Video is an AI video generation model by xAI (Elon Musk). It generates 480p–720p videos up to 15 seconds from text alone or with a reference image.' },
+      { q: 'What is Wan 2.6?', a: 'Wan 2.6 is an AI video generation model by Alibaba. It generates high-quality 720p–1080p videos of 5–15 seconds from text alone or with a reference image. Supports 5 aspect ratios.' },
     ],
     otherToolTitle: 'Also try AI Image Generation',
-    otherToolDesc: 'Create high-quality AI images with ByteDance Seedream 5 and Z-Image.',
+    otherToolDesc: 'Create AI images with Seedream 5, FLUX.2 Pro, Grok Imagine Image, and Z-Image.',
     otherToolCta: 'Go to AI Image Generator',
     pricingCta: 'View Pricing',
     bottomCta: 'Create AI videos now',
-    bottomCtaDesc: '15 free credits on sign up. Generate high-quality AI videos with Seedance 1.5 Pro and Vidu Q3.',
+    bottomCtaDesc: '15 free credits on sign up. Generate videos with 5 AI models.',
   },
   ja: {
     breadcrumbHome: 'ホーム',
     badge: 'AI動画生成ツール',
     heading: 'AI動画生成',
-    subheading: 'ByteDance Seedance 1.5 ProとVidu Q3で高品質AI動画を生成。Sora・Runway代替。Seedance 2.0リリース。',
-    intro: 'gwanggoのAI動画生成ツールは、ByteDance（バイトダンス）のSeedance 1.5 ProとShengshu Technology（生数科技）のVidu Q3モデルに対応しています。OpenAI Sora、Runway Gen-4、Kling 3.0、Hailuo、Pika、Luma Dream Machineの代替として、広告動画制作に特化しています。テキストプロンプトだけで動画を生成したり、参照画像を活用してより精密なAI動画を作成できます。480pから1080pまでの解像度と最大16秒の動画に対応。ByteDanceのSeedance 2.0も2026年2月にリリースされ、gwanggoでも対応準備中です。',
+    subheading: 'Seedance 1.5 Pro、Kling 3.0、Grok Video、Wan 2.6、Vidu Q3で高品質AI動画を生成。Sora・Runway代替。',
+    intro: 'gwanggoのAI動画生成ツールは、ByteDance（バイトダンス）のSeedance 1.5 Pro、Shengshu Technology（生数科技）のVidu Q3モデルに対応しています。Kling 3.0（Kuaishou/快手）のStandard・Proグレード、xAIのGrok Imagine Video、AlibabaのWan 2.6モデルにも対応。OpenAI Sora、Runway Gen-4、Hailuo、Pika、Luma Dream Machineの代替として、広告動画制作に特化しています。テキストプロンプトだけで動画を生成したり、参照画像を活用してより精密なAI動画を作成できます。480pから1080pまでの解像度と最大16秒の動画に対応。',
     cta: '無料で始める',
     modelsTitle: '対応モデル',
     models: [
@@ -256,6 +304,27 @@ const i18n: Record<Locale, {
         features: ['画像→動画（Image to Video）', '最大1080p Full HD', '1〜16秒自由設定', 'モーション強度調整（Auto/Small/Medium/Large）'],
         specs: '解像度: 540p, 720p, 1080p | 長さ: 1〜16秒',
       },
+      {
+        name: 'Kling 3.0',
+        badge: 'Kuaishou（快手）',
+        desc: 'Kuaishou（快手）が開発したText-to-Video / Image-to-Video AIモデル。StandardとProの2グレードに対応し、テキストのみまたは画像と組み合わせて5〜10秒の動画を生成します。',
+        features: ['テキスト→動画（Text to Video）', '画像→動画（Image to Video）', 'Standard / Proグレード選択', '3種類のアスペクト比（16:9, 9:16, 1:1）'],
+        specs: '解像度: 720p | 長さ: 5秒, 10秒 | Standard: 1クレジット/秒, Pro: 3クレジット/秒',
+      },
+      {
+        name: 'Grok Imagine Video',
+        badge: 'xAI',
+        desc: 'xAI（イーロン・マスク）が開発したGrok Imagine Video AIモデル。テキストのみまたは画像と組み合わせて最大15秒の動画を生成できます。',
+        features: ['テキスト→動画（Text to Video）', '画像→動画（Image to Video）', '480p / 720p解像度', '最大15秒対応'],
+        specs: '解像度: 480p, 720p | 長さ: 1〜15秒 | 480p: 1クレジット/秒, 720p: 2クレジット/秒',
+      },
+      {
+        name: 'Wan 2.6',
+        badge: 'Alibaba（アリババ）',
+        desc: 'Alibaba（アリババ）が開発したWan 2.6 AI動画生成モデル。テキストのみまたは画像と組み合わせて最大1080p、15秒の高品質動画を生成します。',
+        features: ['テキスト→動画（Text to Video）', '画像→動画（Image to Video）', '最大1080p Full HD', '5種類のアスペクト比対応'],
+        specs: '解像度: 720p, 1080p | 長さ: 5秒, 10秒, 15秒 | 720p: 2クレジット/秒, 1080p: 3クレジット/秒',
+      },
     ],
     howItWorksTitle: '使い方',
     steps: [
@@ -272,37 +341,40 @@ const i18n: Record<Locale, {
       'プレゼンテーション・企画の視覚化',
     ],
     comparisonTitle: 'モデル比較',
-    comparisonHeaders: ['項目', 'Seedance 1.5 Pro', 'Vidu Q3', '', ''],
+    comparisonHeaders: ['項目', 'Seedance 1.5 Pro', 'Vidu Q3', 'Kling 3.0', 'Grok Video', 'Wan 2.6'],
     comparisonRows: [
-      ['開発元', 'ByteDance（バイトダンス）', 'Shengshu Technology（生数科技）', '', ''],
-      ['入力方式', 'テキスト / 画像', '画像（必須）', '', ''],
-      ['解像度', '480p, 720p', '540p, 720p, 1080p', '', ''],
-      ['動画長', '4秒, 8秒, 12秒', '1〜16秒（1秒単位）', '', ''],
-      ['オーディオ', '自動生成対応', '対応', '', ''],
+      ['開発元', 'ByteDance', 'Shengshu', 'Kuaishou（快手）', 'xAI', 'Alibaba'],
+      ['入力方式', 'テキスト / 画像', '画像（必須）', 'テキスト / 画像', 'テキスト / 画像', 'テキスト / 画像'],
+      ['解像度', '480p, 720p', '540p〜1080p', '720p', '480p, 720p', '720p, 1080p'],
+      ['動画長', '4〜12秒', '1〜16秒', '5秒, 10秒', '1〜15秒', '5〜15秒'],
+      ['コスト（クレジット/秒）', '1〜2', '1〜3', '1(Std), 3(Pro)', '1〜2', '2〜3'],
     ],
     faqTitle: 'よくある質問',
     faq: [
       { q: 'Seedance 1.5 Proとは何ですか？', a: 'Seedance 1.5 ProはByteDance（バイトダンス）が開発した最新のAI動画生成モデルです。Text-to-Video（テキストから動画）とImage-to-Video（画像から動画）の両方に対応し、プロンプトのみで4〜12秒の動画を自動生成します。' },
       { q: 'Vidu Q3とは何ですか？', a: 'Vidu Q3はShengshu Technology（生数科技）が開発したImage-to-Video AIモデルです。1枚の画像から最大1080p、16秒の高品質動画を生成でき、Auto、Small、Medium、Largeの4段階でモーション強度を細かく調整できます。' },
-      { q: 'AI動画生成の料金はいくらですか？', a: '会員登録時に15クレジットが無料で付与されます。Seedance 1.5 Proは解像度（480p: 1クレジット/秒、720p: 2クレジット/秒）と長さに応じて、Vidu Q3は解像度（540p: 1クレジット/秒、720p: 2クレジット/秒、1080p: 3クレジット/秒）に応じてクレジットが消費されます。' },
+      { q: 'AI動画生成の料金はいくらですか？', a: '会員登録時に15クレジットが無料で付与されます。Seedance 1.5 Pro: 480p 1クレジット/秒、720p 2クレジット/秒。Vidu Q3: 540p 1クレジット/秒、720p 2クレジット/秒、1080p 3クレジット/秒。Kling 3.0: Standard 1クレジット/秒、Pro 3クレジット/秒。Grok Video: 480p 1クレジット/秒、720p 2クレジット/秒。Wan 2.6: 720p 2クレジット/秒、1080p 3クレジット/秒。' },
       { q: '生成された動画の著作権は誰にありますか？', a: 'gwanggoで生成したすべてのAI動画の使用権はユーザーにあります。広告、SNS、ECサイトなど商業目的で自由にご使用いただけます。' },
-      { q: 'Text-to-VideoとImage-to-Videoの違いは？', a: 'Text-to-Videoはテキスト説明のみで動画を生成する方式、Image-to-Videoは参照画像をベースに動画を作る方式です。Seedance 1.5 Proは両方対応、Vidu Q3はImage-to-Video専用です。' },
-      { q: 'Sora、Runway、Klingなど他のAI動画ツールとの比較は？', a: 'Seedance 1.5 ProはByteDance（バイトダンス）が開発した最新モデルで、OpenAI Sora、Runway Gen-4、Kling 3.0（快手）、Hailuo（MiniMax）、Pika、Luma Dream Machine、Google Veoと比較して広告動画制作に特化しています。テキストと画像の両方入力対応、オーディオ自動生成、アプリ不要でブラウザから直接使用可能です。' },
+      { q: 'Text-to-VideoとImage-to-Videoの違いは？', a: 'Text-to-Videoはテキスト説明のみで動画を生成する方式、Image-to-Videoは参照画像をベースに動画を作る方式です。Seedance 1.5 Pro、Kling 3.0、Grok Imagine Video、Wan 2.6は両方対応、Vidu Q3はImage-to-Video専用です。' },
+      { q: 'Sora、Runwayなど他のAI動画ツールとの比較は？', a: 'gwanggoはSeedance 1.5 Pro、Kling 3.0、Grok Imagine Video、Wan 2.6、Vidu Q3の5種類のAI動画モデルに対応しています。OpenAI Sora、Runway Gen-4、Hailuo（MiniMax）、Pika、Luma Dream Machine、Google Veoと比較して広告動画制作に特化しています。アプリ不要でブラウザから直接使用可能です。' },
       { q: 'Seedance 2.0とは何ですか？', a: 'ByteDanceのSeedance 2.0は2026年2月12日に正式リリースされました。マルチモーダル音声動画統合生成、最大15秒のマルチショット出力、大幅に向上した動画品質が特徴です。中国ではCapCut/剪映で提供され、gwanggoでもSeedance 2.0対応を準備中です。' },
+      { q: 'Kling 3.0とは何ですか？', a: 'Kling 3.0はKuaishou（快手）が開発したAI動画生成モデルです。StandardとProの2グレードに対応し、テキストのみまたは画像と組み合わせて720p、5〜10秒の動画を生成します。Standardは1クレジット/秒、Proは3クレジット/秒です。' },
+      { q: 'Grok Imagine Videoとは何ですか？', a: 'Grok Imagine VideoはxAI（イーロン・マスク）が開発したAI動画生成モデルです。テキストのみまたは画像と組み合わせて480p〜720p、最大15秒の動画を生成できます。' },
+      { q: 'Wan 2.6とは何ですか？', a: 'Wan 2.6はAlibaba（アリババ）が開発したAI動画生成モデルです。テキストのみまたは画像と組み合わせて720p〜1080p、5〜15秒の高品質動画を生成します。5種類のアスペクト比に対応しています。' },
     ],
     otherToolTitle: 'AI画像生成もお試しください',
-    otherToolDesc: 'ByteDance Seedream 5とZ-Imageで高品質なAI画像を生成できます。',
+    otherToolDesc: 'Seedream 5、FLUX.2 Pro、Grok Imagine Image、Z-Imageで高品質なAI画像を生成できます。',
     otherToolCta: 'AI画像生成へ',
     pricingCta: '料金プランを見る',
     bottomCta: '今すぐAI動画を作成しましょう',
-    bottomCtaDesc: '会員登録で15クレジット無料。Seedance 1.5 ProとVidu Q3で高品質なAI動画を生成。',
+    bottomCtaDesc: '会員登録で15クレジット無料。5種類のAIモデルで高品質な動画を生成。',
   },
   zh: {
     breadcrumbHome: '首页',
     badge: 'AI视频生成工具',
     heading: 'AI视频生成',
-    subheading: '使用ByteDance Seedance 1.5 Pro和Vidu Q3生成高质量AI视频。Sora、Runway替代方案。Seedance 2.0已发布。',
-    intro: 'gwanggo的AI视频生成工具支持ByteDance（字节跳动）的Seedance 1.5 Pro和Shengshu Technology（生数科技）的Vidu Q3模型。作为OpenAI Sora、Runway Gen-4、Kling 3.0、Hailuo、Pika、Luma Dream Machine的替代方案，专为广告视频制作优化。仅通过文字提示即可生成视频，也可以结合参考图片制作更精确的AI视频。支持480p到1080p多种分辨率，最长16秒。ByteDance的Seedance 2.0已于2026年2月发布，gwanggo即将支持。',
+    subheading: '使用Seedance 1.5 Pro、Kling 3.0、Grok Video、Wan 2.6和Vidu Q3生成高质量AI视频。Sora、Runway替代方案。',
+    intro: 'gwanggo的AI视频生成工具支持ByteDance（字节跳动）的Seedance 1.5 Pro、Shengshu Technology（生数科技）的Vidu Q3模型。同时支持Kling 3.0（快手）的Standard·Pro等级、xAI的Grok Imagine Video、阿里巴巴的Wan 2.6模型。作为OpenAI Sora、Runway Gen-4、Hailuo、Pika、Luma Dream Machine的替代方案，专为广告视频制作优化。仅通过文字提示即可生成视频，也可以结合参考图片制作更精确的AI视频。支持480p到1080p多种分辨率，最长16秒。',
     cta: '免费开始',
     modelsTitle: '支持模型',
     models: [
@@ -320,6 +392,27 @@ const i18n: Record<Locale, {
         features: ['图片→视频（Image to Video）', '最高1080p Full HD', '1~16秒自由设定', '运动幅度控制（Auto/Small/Medium/Large）'],
         specs: '分辨率: 540p, 720p, 1080p | 时长: 1~16秒',
       },
+      {
+        name: 'Kling 3.0',
+        badge: '快手（Kuaishou）',
+        desc: '快手（Kuaishou）开发的Text-to-Video / Image-to-Video AI模型。支持Standard和Pro两个等级，可以仅通过文字或结合图片生成5~10秒的视频。',
+        features: ['文字→视频（Text to Video）', '图片→视频（Image to Video）', 'Standard / Pro等级选择', '3种画面比例（16:9, 9:16, 1:1）'],
+        specs: '分辨率: 720p | 时长: 5秒, 10秒 | Standard: 1积分/秒, Pro: 3积分/秒',
+      },
+      {
+        name: 'Grok Imagine Video',
+        badge: 'xAI',
+        desc: 'xAI（埃隆·马斯克）开发的Grok Imagine Video AI模型。可以仅通过文字或结合图片生成最长15秒的视频。',
+        features: ['文字→视频（Text to Video）', '图片→视频（Image to Video）', '480p / 720p分辨率', '最长15秒'],
+        specs: '分辨率: 480p, 720p | 时长: 1~15秒 | 480p: 1积分/秒, 720p: 2积分/秒',
+      },
+      {
+        name: 'Wan 2.6',
+        badge: '阿里巴巴（Alibaba）',
+        desc: '阿里巴巴（Alibaba）开发的Wan 2.6 AI视频生成模型。可以仅通过文字或结合图片生成最高1080p、15秒的高质量视频。',
+        features: ['文字→视频（Text to Video）', '图片→视频（Image to Video）', '最高1080p Full HD', '支持5种画面比例'],
+        specs: '分辨率: 720p, 1080p | 时长: 5秒, 10秒, 15秒 | 720p: 2积分/秒, 1080p: 3积分/秒',
+      },
     ],
     howItWorksTitle: '使用方法',
     steps: [
@@ -336,30 +429,33 @@ const i18n: Record<Locale, {
       '演示文稿·方案可视化',
     ],
     comparisonTitle: '模型对比',
-    comparisonHeaders: ['项目', 'Seedance 1.5 Pro', 'Vidu Q3', '', ''],
+    comparisonHeaders: ['项目', 'Seedance 1.5 Pro', 'Vidu Q3', 'Kling 3.0', 'Grok Video', 'Wan 2.6'],
     comparisonRows: [
-      ['开发商', 'ByteDance（字节跳动）', 'Shengshu Technology（生数科技）', '', ''],
-      ['输入方式', '文字 / 图片', '图片（必须）', '', ''],
-      ['分辨率', '480p, 720p', '540p, 720p, 1080p', '', ''],
-      ['视频时长', '4秒, 8秒, 12秒', '1~16秒（1秒为单位）', '', ''],
-      ['音频', '自动生成', '支持', '', ''],
+      ['开发商', 'ByteDance', 'Shengshu', '快手（Kuaishou）', 'xAI', 'Alibaba'],
+      ['输入方式', '文字 / 图片', '图片（必须）', '文字 / 图片', '文字 / 图片', '文字 / 图片'],
+      ['分辨率', '480p, 720p', '540p~1080p', '720p', '480p, 720p', '720p, 1080p'],
+      ['视频时长', '4~12秒', '1~16秒', '5秒, 10秒', '1~15秒', '5~15秒'],
+      ['费用（积分/秒）', '1~2', '1~3', '1(Std), 3(Pro)', '1~2', '2~3'],
     ],
     faqTitle: '常见问题',
     faq: [
       { q: 'Seedance 1.5 Pro是什么模型？', a: 'Seedance 1.5 Pro是ByteDance（字节跳动）开发的最新AI视频生成模型。同时支持Text-to-Video（文字转视频）和Image-to-Video（图片转视频），仅通过提示词即可自动生成4~12秒的视频。' },
       { q: 'Vidu Q3是什么模型？', a: 'Vidu Q3是Shengshu Technology（生数科技）开发的Image-to-Video AI模型。可以从一张图片生成最高1080p、16秒的高质量视频，并通过Auto、Small、Medium、Large四个级别精细控制运动幅度。' },
-      { q: 'AI视频生成费用是多少？', a: '注册时免费获得15积分。Seedance 1.5 Pro按分辨率（480p: 1积分/秒, 720p: 2积分/秒）和时长收费，Vidu Q3按分辨率（540p: 1积分/秒, 720p: 2积分/秒, 1080p: 3积分/秒）和时长收费。' },
+      { q: 'AI视频生成费用是多少？', a: '注册时免费获得15积分。Seedance 1.5 Pro: 480p 1积分/秒、720p 2积分/秒。Vidu Q3: 540p 1积分/秒、720p 2积分/秒、1080p 3积分/秒。Kling 3.0: Standard 1积分/秒、Pro 3积分/秒。Grok Video: 480p 1积分/秒、720p 2积分/秒。Wan 2.6: 720p 2积分/秒、1080p 3积分/秒。' },
       { q: '生成视频的版权归谁？', a: '在gwanggo上生成的所有AI视频的使用权归用户所有。可以自由用于广告、社交媒体、电商等商业目的。' },
-      { q: 'Text-to-Video和Image-to-Video有什么区别？', a: 'Text-to-Video仅通过文字描述生成视频，Image-to-Video基于参考图片创建视频。Seedance 1.5 Pro两种方式都支持，Vidu Q3专用于Image-to-Video。' },
-      { q: '与Sora、Runway、Kling等其他AI视频工具相比如何？', a: 'Seedance 1.5 Pro是ByteDance（字节跳动）开发的最新模型，与OpenAI Sora、Runway Gen-4、Kling 3.0（快手）、Hailuo（MiniMax）、Pika、Luma Dream Machine、Google Veo相比，更专注于广告视频制作。支持文本和图像双重输入、自动音频生成，无需安装应用程序即可在浏览器中直接使用。' },
+      { q: 'Text-to-Video和Image-to-Video有什么区别？', a: 'Text-to-Video仅通过文字描述生成视频，Image-to-Video基于参考图片创建视频。Seedance 1.5 Pro、Kling 3.0、Grok Imagine Video、Wan 2.6两种方式都支持，Vidu Q3专用于Image-to-Video。' },
+      { q: '与Sora、Runway等其他AI视频工具相比如何？', a: 'gwanggo支持Seedance 1.5 Pro、Kling 3.0、Grok Imagine Video、Wan 2.6、Vidu Q3等5种AI视频模型。与OpenAI Sora、Runway Gen-4、Hailuo（MiniMax）、Pika、Luma Dream Machine、Google Veo相比，更专注于广告视频制作。无需安装应用程序即可在浏览器中直接使用。' },
       { q: 'Seedance 2.0是什么？', a: 'ByteDance的Seedance 2.0已于2026年2月12日正式发布，提供多模态音视频统合生成、最长15秒多镜头输出、大幅提升的视频质量等重大升级。在中国通过剪映/CapCut提供，gwanggo也正在准备支持Seedance 2.0。' },
+      { q: 'Kling 3.0是什么模型？', a: 'Kling 3.0是快手（Kuaishou）开发的AI视频生成模型。支持Standard和Pro两个等级，可以仅通过文字或结合图片生成720p、5~10秒的视频。Standard 1积分/秒，Pro 3积分/秒。' },
+      { q: 'Grok Imagine Video是什么模型？', a: 'Grok Imagine Video是xAI（埃隆·马斯克）开发的AI视频生成模型。可以仅通过文字或结合图片生成480p~720p、最长15秒的视频。' },
+      { q: 'Wan 2.6是什么模型？', a: 'Wan 2.6是阿里巴巴（Alibaba）开发的AI视频生成模型。可以仅通过文字或结合图片生成720p~1080p、5~15秒的高质量视频。支持5种画面比例。' },
     ],
     otherToolTitle: '也试试AI图片生成',
-    otherToolDesc: '使用ByteDance Seedream 5和Z-Image生成高质量AI图片。',
+    otherToolDesc: '使用Seedream 5、FLUX.2 Pro、Grok Imagine Image和Z-Image生成高质量AI图片。',
     otherToolCta: '前往AI图片生成',
     pricingCta: '查看价格',
     bottomCta: '立即制作AI视频',
-    bottomCtaDesc: '注册即送15免费积分。使用Seedance 1.5 Pro和Vidu Q3生成高质量AI视频。',
+    bottomCtaDesc: '注册即送15免费积分。5种AI模型生成高质量视频。',
   },
 }
 
@@ -481,23 +577,23 @@ export default async function VideoToolPage({ params }: Props) {
         </section>
 
         {/* Comparison Table */}
-        <section className="mx-auto max-w-3xl px-6 pb-16">
+        <section className="mx-auto max-w-5xl px-6 pb-16">
           <h2 className="text-2xl font-bold text-foreground mb-8">{t.comparisonTitle}</h2>
           <div className="overflow-x-auto rounded-xl border border-border/80">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/60 bg-secondary/30">
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t.comparisonHeaders[0]}</th>
-                  <th className="px-4 py-3 text-left font-medium text-foreground">{t.comparisonHeaders[1]}</th>
-                  <th className="px-4 py-3 text-left font-medium text-foreground">{t.comparisonHeaders[2]}</th>
+                  {t.comparisonHeaders.map((header, i) => (
+                    <th key={i} className={`px-4 py-3 text-left font-medium ${i === 0 ? 'text-muted-foreground' : 'text-foreground'}`}>{header}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {t.comparisonRows.map((row, i) => (
                   <tr key={i} className="border-b border-border/40 last:border-0">
-                    <td className="px-4 py-3 font-medium text-muted-foreground">{row[0]}</td>
-                    <td className="px-4 py-3 text-foreground">{row[1]}</td>
-                    <td className="px-4 py-3 text-foreground">{row[2]}</td>
+                    {row.map((cell, j) => (
+                      <td key={j} className={`px-4 py-3 ${j === 0 ? 'font-medium text-muted-foreground' : 'text-foreground'}`}>{cell}</td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
