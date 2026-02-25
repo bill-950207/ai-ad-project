@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { Clock, Download, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Clock, Download, ChevronLeft, ChevronRight, Loader2, XCircle } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 
 interface HistoryItem {
@@ -25,12 +25,37 @@ interface Pagination {
   hasMore: boolean
 }
 
+export interface ActiveGeneration {
+  id: string
+  model: string
+  prompt: string
+  referenceImageUrl?: string
+}
+
 interface GenerationHistoryProps {
   type: 'video' | 'image'
   refreshTrigger?: number
+  activeGeneration?: ActiveGeneration | null
+  onActiveComplete?: () => void
+  onActiveError?: () => void
 }
 
-export default function GenerationHistory({ type, refreshTrigger }: GenerationHistoryProps) {
+function getReferenceImageUrl(params: Record<string, unknown> | null): string | null {
+  if (!params) return null
+  if (typeof params.imageUrl === 'string') return params.imageUrl
+  if (Array.isArray(params.imageUrls) && params.imageUrls.length > 0 && typeof params.imageUrls[0] === 'string')
+    return params.imageUrls[0]
+  if (typeof params.image === 'string') return params.image
+  return null
+}
+
+export default function GenerationHistory({
+  type,
+  refreshTrigger,
+  activeGeneration,
+  onActiveComplete,
+  onActiveError,
+}: GenerationHistoryProps) {
   const { t } = useLanguage()
   const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
 
@@ -40,6 +65,18 @@ export default function GenerationHistory({ type, refreshTrigger }: GenerationHi
   const [page, setPage] = useState(1)
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null)
 
+  // Active generation polling state
+  const [activeStatus, setActiveStatus] = useState<string>('PENDING')
+  const [activeResultUrl, setActiveResultUrl] = useState<string | null>(null)
+  const [activeError, setActiveError] = useState<string | null>(null)
+
+  // Refs for callbacks to avoid stale closures
+  const onActiveCompleteRef = useRef(onActiveComplete)
+  const onActiveErrorRef = useRef(onActiveError)
+  useEffect(() => { onActiveCompleteRef.current = onActiveComplete }, [onActiveComplete])
+  useEffect(() => { onActiveErrorRef.current = onActiveError }, [onActiveError])
+
+  // Fetch history
   const fetchHistory = useCallback(async () => {
     setIsLoading(true)
     try {
@@ -60,6 +97,50 @@ export default function GenerationHistory({ type, refreshTrigger }: GenerationHi
     fetchHistory()
   }, [fetchHistory, refreshTrigger])
 
+  // Active generation polling
+  useEffect(() => {
+    if (!activeGeneration) return
+
+    let active = true
+    let intervalId: ReturnType<typeof setInterval>
+
+    setActiveStatus('PENDING')
+    setActiveResultUrl(null)
+    setActiveError(null)
+
+    const poll = async () => {
+      if (!active) return
+      try {
+        const res = await fetch(`/api/ai-tools/status/${activeGeneration.id}`)
+        if (!res.ok || !active) return
+        const data = await res.json()
+        if (!active) return
+
+        setActiveStatus(data.status)
+        if (data.status === 'COMPLETED' && data.resultUrl) {
+          setActiveResultUrl(data.resultUrl)
+          clearInterval(intervalId)
+          onActiveCompleteRef.current?.()
+        } else if (data.status === 'FAILED') {
+          setActiveError(data.error || '생성에 실패했습니다')
+          clearInterval(intervalId)
+          onActiveErrorRef.current?.()
+        }
+      } catch {
+        // Silently retry on network errors
+      }
+    }
+
+    poll()
+    intervalId = setInterval(poll, 3000)
+
+    return () => {
+      active = false
+      clearInterval(intervalId)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeGeneration?.id])
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
     return date.toLocaleDateString('ko-KR', {
@@ -74,7 +155,7 @@ export default function GenerationHistory({ type, refreshTrigger }: GenerationHi
     'seedance-1.5-pro': 'Seedance 1.5 Pro',
     'vidu-q3': 'Vidu Q3',
     'seedream-5': 'Seedream 5',
-    'seedream-4.5': 'Seedream 4.5', // 하위 호환
+    'seedream-4.5': 'Seedream 4.5',
     'z-image': 'Z-Image',
   }
 
@@ -86,7 +167,18 @@ export default function GenerationHistory({ type, refreshTrigger }: GenerationHi
     PENDING: 'text-muted-foreground',
   }
 
-  if (isLoading && items.length === 0) {
+  const statusMessages: Record<string, string> = {
+    PENDING: aiToolsT.statusPending || '요청 처리 중...',
+    IN_QUEUE: aiToolsT.statusInQueue || '대기열에서 대기 중...',
+    IN_PROGRESS: aiToolsT.statusInProgress || '생성 중...',
+    COMPLETED: aiToolsT.statusCompleted || '완료!',
+    FAILED: aiToolsT.statusFailed || '실패',
+  }
+
+  const isActiveProcessing = activeStatus === 'PENDING' || activeStatus === 'IN_QUEUE' || activeStatus === 'IN_PROGRESS'
+  const hasActiveGeneration = !!activeGeneration
+
+  if (isLoading && items.length === 0 && !hasActiveGeneration) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
@@ -94,7 +186,7 @@ export default function GenerationHistory({ type, refreshTrigger }: GenerationHi
     )
   }
 
-  if (items.length === 0) {
+  if (items.length === 0 && !hasActiveGeneration) {
     return (
       <div className="text-center py-12">
         <Clock className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
@@ -114,59 +206,164 @@ export default function GenerationHistory({ type, refreshTrigger }: GenerationHi
 
       {/* Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {items.map((item) => (
+        {/* Active Generation Card */}
+        {hasActiveGeneration && (
           <div
-            key={item.id}
-            onClick={() => setSelectedItem(item)}
-            className="bg-card border border-border/80 rounded-xl overflow-hidden cursor-pointer hover:border-primary/30 hover:shadow-glow-sm transition-all duration-200"
+            className={`bg-card border rounded-xl overflow-hidden transition-all duration-200 ${
+              isActiveProcessing
+                ? 'border-primary/50 shadow-[0_0_12px_rgba(124,58,237,0.15)]'
+                : activeStatus === 'COMPLETED'
+                  ? 'border-green-500/30 cursor-pointer hover:border-green-500/50'
+                  : 'border-red-500/30'
+            }`}
+            onClick={() => {
+              if (activeStatus === 'COMPLETED' && activeResultUrl) {
+                setSelectedItem({
+                  id: activeGeneration.id,
+                  model: activeGeneration.model,
+                  prompt: activeGeneration.prompt,
+                  input_params: null,
+                  status: 'COMPLETED',
+                  result_url: activeResultUrl,
+                  thumbnail_url: null,
+                  error_message: null,
+                  credits_used: 0,
+                  created_at: new Date().toISOString(),
+                })
+              }
+            }}
           >
-            {/* Thumbnail / Preview */}
+            {/* Thumbnail / Progress */}
             <div className="relative aspect-video bg-secondary/30">
-              {item.status === 'COMPLETED' && item.result_url ? (
+              {activeStatus === 'COMPLETED' && activeResultUrl ? (
                 type === 'video' ? (
                   <video
-                    src={item.result_url}
+                    src={activeResultUrl}
                     className="w-full h-full object-cover"
                     muted
                     preload="metadata"
                   />
                 ) : (
                   <img
-                    src={item.thumbnail_url || item.result_url}
+                    src={activeResultUrl}
                     alt=""
                     className="w-full h-full object-cover"
                   />
                 )
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <span className={`text-xs font-medium ${statusColors[item.status] || ''}`}>
-                    {item.status}
+              ) : activeStatus === 'FAILED' ? (
+                <div className="flex flex-col items-center justify-center h-full gap-1.5 px-2">
+                  <XCircle className="w-5 h-5 text-red-400" />
+                  <span className="text-[10px] text-red-400/70 text-center line-clamp-2">
+                    {activeError}
                   </span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full gap-2">
+                  <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                  <span className="text-[10px] font-medium text-primary">
+                    {statusMessages[activeStatus] || activeStatus}
+                  </span>
+                  <div className="w-3/4 h-1 bg-secondary rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
+                  </div>
                 </div>
               )}
 
               {/* Model badge */}
               <span className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 text-white text-[10px] rounded-md">
-                {modelLabels[item.model] || item.model}
+                {modelLabels[activeGeneration.model] || activeGeneration.model}
               </span>
+
+              {/* Reference image */}
+              {activeGeneration.referenceImageUrl && (
+                <img
+                  src={activeGeneration.referenceImageUrl}
+                  alt=""
+                  className="absolute bottom-2 left-2 w-7 h-7 rounded-md border border-white/30 object-cover shadow-sm"
+                />
+              )}
             </div>
 
             {/* Info */}
             <div className="p-3">
               <p className="text-xs text-muted-foreground truncate">
-                {item.prompt || '-'}
+                {activeGeneration.prompt || '-'}
               </p>
               <div className="flex items-center justify-between mt-2">
-                <span className="text-[10px] text-muted-foreground">
-                  {formatDate(item.created_at)}
-                </span>
-                <span className="text-[10px] text-muted-foreground">
-                  {item.credits_used} {aiToolsT.credits || '크레딧'}
+                <span className="text-[10px] text-primary font-medium">
+                  {isActiveProcessing ? (aiToolsT.generating || '생성 중...') : ''}
                 </span>
               </div>
             </div>
           </div>
-        ))}
+        )}
+
+        {/* History Items */}
+        {items.map((item) => {
+          const refImgUrl = getReferenceImageUrl(item.input_params)
+          return (
+            <div
+              key={item.id}
+              onClick={() => setSelectedItem(item)}
+              className="bg-card border border-border/80 rounded-xl overflow-hidden cursor-pointer hover:border-primary/30 hover:shadow-glow-sm transition-all duration-200"
+            >
+              {/* Thumbnail / Preview */}
+              <div className="relative aspect-video bg-secondary/30">
+                {item.status === 'COMPLETED' && item.result_url ? (
+                  type === 'video' ? (
+                    <video
+                      src={item.result_url}
+                      className="w-full h-full object-cover"
+                      muted
+                      preload="metadata"
+                    />
+                  ) : (
+                    <img
+                      src={item.thumbnail_url || item.result_url}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  )
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <span className={`text-xs font-medium ${statusColors[item.status] || ''}`}>
+                      {item.status}
+                    </span>
+                  </div>
+                )}
+
+                {/* Model badge */}
+                <span className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 text-white text-[10px] rounded-md">
+                  {modelLabels[item.model] || item.model}
+                </span>
+
+                {/* Reference image */}
+                {refImgUrl && (
+                  <img
+                    src={refImgUrl}
+                    alt=""
+                    className="absolute bottom-2 left-2 w-7 h-7 rounded-md border border-white/30 object-cover shadow-sm"
+                  />
+                )}
+              </div>
+
+              {/* Info */}
+              <div className="p-3">
+                <p className="text-xs text-muted-foreground truncate">
+                  {item.prompt || '-'}
+                </p>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-[10px] text-muted-foreground">
+                    {formatDate(item.created_at)}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {item.credits_used} {aiToolsT.credits || '크레딧'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       {/* Pagination */}

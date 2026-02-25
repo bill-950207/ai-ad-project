@@ -4,8 +4,8 @@ import { useState, useCallback } from 'react'
 import ModelSelector from './model-selector'
 import SeedreamForm from './image-forms/seedream-form'
 import ZImageForm from './image-forms/z-image-form'
-import GenerationResult from './generation-result'
 import GenerationHistory from './generation-history'
+import type { ActiveGeneration } from './generation-history'
 import { useLanguage } from '@/contexts/language-context'
 import { useCredits } from '@/contexts/credit-context'
 
@@ -29,13 +29,13 @@ export default function ImageGenerator() {
 
   const [selectedModel, setSelectedModel] = useState('seedream-5')
   const [isGenerating, setIsGenerating] = useState(false)
-  const [generationId, setGenerationId] = useState<string | null>(null)
+  const [activeGeneration, setActiveGeneration] = useState<ActiveGeneration | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSubmit = useCallback(async (data: any) => {
     setIsGenerating(true)
-    setGenerationId(null)
+    setActiveGeneration(null)
 
     try {
       const res = await fetch('/api/ai-tools/image/generate', {
@@ -55,7 +55,12 @@ export default function ImageGenerator() {
       }
 
       const result = await res.json()
-      setGenerationId(result.id)
+      setActiveGeneration({
+        id: result.id,
+        model: data.model,
+        prompt: data.prompt,
+        referenceImageUrl: data.imageUrl,
+      })
       refreshCredits()
     } catch {
       alert('네트워크 오류가 발생했습니다')
@@ -64,7 +69,7 @@ export default function ImageGenerator() {
     }
   }, [refreshCredits])
 
-  const handleComplete = useCallback(() => {
+  const handleActiveComplete = useCallback(() => {
     setRefreshTrigger((v) => v + 1)
   }, [])
 
@@ -82,7 +87,7 @@ export default function ImageGenerator() {
 
       {/* 2-column layout: Form (left) + History (right) */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,560px)_1fr] gap-6">
-        {/* Left: Form + Result */}
+        {/* Left: Form */}
         <div className="space-y-5">
           {/* Model Selector */}
           <ModelSelector
@@ -105,20 +110,15 @@ export default function ImageGenerator() {
               />
             )}
           </div>
-
-          {/* Result */}
-          <GenerationResult
-            generationId={generationId}
-            type="image"
-            onComplete={handleComplete}
-          />
         </div>
 
-        {/* Right: History */}
+        {/* Right: History (with active generation progress) */}
         <div className="min-w-0">
           <GenerationHistory
             type="image"
             refreshTrigger={refreshTrigger}
+            activeGeneration={activeGeneration}
+            onActiveComplete={handleActiveComplete}
           />
         </div>
       </div>
