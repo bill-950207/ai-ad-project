@@ -108,11 +108,27 @@ export default function GenerationHistory({
     setActiveResultUrl(null)
     setActiveError(null)
 
+    let failCount = 0
+
     const poll = async () => {
       if (!active) return
       try {
         const res = await fetch(`/api/ai-tools/status/${activeGeneration.id}`)
-        if (!res.ok || !active) return
+        if (!active) return
+
+        if (!res.ok) {
+          failCount++
+          console.warn(`[poll] status ${res.status} (fail #${failCount})`)
+          if (failCount >= 10) {
+            setActiveStatus('FAILED')
+            setActiveError('상태 확인에 실패했습니다')
+            clearInterval(intervalId)
+            onActiveErrorRef.current?.()
+          }
+          return
+        }
+
+        failCount = 0
         const data = await res.json()
         if (!active) return
 
@@ -126,8 +142,15 @@ export default function GenerationHistory({
           clearInterval(intervalId)
           onActiveErrorRef.current?.()
         }
-      } catch {
-        // Silently retry on network errors
+      } catch (err) {
+        failCount++
+        console.warn('[poll] network error', err)
+        if (failCount >= 10) {
+          setActiveStatus('FAILED')
+          setActiveError('네트워크 오류가 발생했습니다')
+          clearInterval(intervalId)
+          onActiveErrorRef.current?.()
+        }
       }
     }
 
