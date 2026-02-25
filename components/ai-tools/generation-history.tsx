@@ -71,7 +71,7 @@ export default function GenerationHistory({
   // Active generation polling state
   const [activeStatus, setActiveStatus] = useState<string>('PENDING')
   const [activeResultUrl, setActiveResultUrl] = useState<string | null>(null)
-  const [activeError, setActiveError] = useState<string | null>(null)
+  const [, setActiveError] = useState<string | null>(null)
 
   // Refs for callbacks to avoid stale closures
   const onActiveCompleteRef = useRef(onActiveComplete)
