@@ -4,6 +4,8 @@ import { useState, useCallback, useMemo } from 'react'
 import ModelSelector from './model-selector'
 import SeedreamForm from './image-forms/seedream-form'
 import ZImageForm from './image-forms/z-image-form'
+import Flux2ProForm from './image-forms/flux2-pro-form'
+import GrokImageForm from './image-forms/grok-image-form'
 import GenerationHistory from './generation-history'
 import type { ActiveGeneration } from './generation-history'
 import { useLanguage } from '@/contexts/language-context'
@@ -21,11 +23,21 @@ export default function ImageGenerator() {
       description: aiToolsT.modelDescImageEdit || 'Image Edit / Text to Image',
     },
     {
+      id: 'flux-2-pro',
+      name: 'FLUX.2 Pro',
+      description: aiToolsT.modelDescFlux2Pro || 'Text to Image (High Quality)',
+    },
+    {
+      id: 'grok-image',
+      name: 'Grok Imagine',
+      description: aiToolsT.modelDescGrokImage || 'Text to Image',
+    },
+    {
       id: 'z-image',
       name: 'Z-Image',
       description: aiToolsT.modelDescTextToImage || 'Text to Image',
     },
-  ], [aiToolsT.modelDescImageEdit, aiToolsT.modelDescTextToImage])
+  ], [aiToolsT.modelDescImageEdit, aiToolsT.modelDescFlux2Pro, aiToolsT.modelDescGrokImage, aiToolsT.modelDescTextToImage])
 
   const [selectedModel, setSelectedModel] = useState('seedream-5')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -101,6 +113,16 @@ export default function ImageGenerator() {
           <div className="bg-card border border-border/80 rounded-2xl p-5">
             {selectedModel === 'seedream-5' ? (
               <SeedreamForm
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            ) : selectedModel === 'flux-2-pro' ? (
+              <Flux2ProForm
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            ) : selectedModel === 'grok-image' ? (
+              <GrokImageForm
                 onSubmit={handleSubmit}
                 isGenerating={isGenerating}
               />

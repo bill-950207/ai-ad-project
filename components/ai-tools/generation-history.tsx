@@ -211,9 +211,14 @@ export default function GenerationHistory({
   const modelLabels: Record<string, string> = {
     'seedance-1.5-pro': 'Seedance 1.5 Pro',
     'vidu-q3': 'Vidu Q3',
+    'kling-3': 'Kling 3.0',
+    'grok-video': 'Grok Video',
+    'wan-2.6': 'Wan 2.6',
     'seedream-5': 'Seedream 5',
     'seedream-4.5': 'Seedream 4.5',
     'z-image': 'Z-Image',
+    'flux-2-pro': 'FLUX.2 Pro',
+    'grok-image': 'Grok Imagine',
   }
 
 
@@ -349,8 +354,8 @@ export default function GenerationHistory({
           </div>
         )}
 
-        {/* History Items */}
-        {items.map((item) => {
+        {/* History Items (activeGeneration과 중복 방지) */}
+        {items.filter(item => !activeGeneration || item.id !== activeGeneration.id).map((item) => {
           const refImgUrl = getReferenceImageUrl(item.input_params)
           const isProcessing = ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(item.status)
           return (

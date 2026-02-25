@@ -16,6 +16,16 @@
  * - kie-edit:xxx → Kie.ai (Seedream 4.5, 하위 호환)
  * - kie-zimage:xxx → Kie.ai (Z-Image)
  * - kie-seedream-v4:xxx → Kie.ai (Seedream V4, 하위 호환)
+ * - fal-flux2:xxx → FAL.ai (FLUX.2 Pro)
+ * - fal-grok-img:xxx → FAL.ai (Grok Imagine Image)
+ * - fal-kling3s-i2v:xxx → FAL.ai (Kling 3.0 Standard I2V)
+ * - fal-kling3s-t2v:xxx → FAL.ai (Kling 3.0 Standard T2V)
+ * - fal-kling3p-i2v:xxx → FAL.ai (Kling 3.0 Pro I2V)
+ * - fal-kling3p-t2v:xxx → FAL.ai (Kling 3.0 Pro T2V)
+ * - fal-grok-vid-i2v:xxx → FAL.ai (Grok Imagine Video I2V)
+ * - fal-grok-vid-t2v:xxx → FAL.ai (Grok Imagine Video T2V)
+ * - fal-wan26-i2v:xxx → FAL.ai (Wan 2.6 I2V)
+ * - fal-wan26-t2v:xxx → FAL.ai (Wan 2.6 T2V)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -31,6 +41,12 @@ import {
   getSeedreamT2IQueueStatus, getSeedreamT2IQueueResponse,
   getSeedanceQueueStatus, getSeedanceQueueResponse,
   getSeedanceT2VQueueStatus, getSeedanceT2VQueueResponse,
+  getFalQueueStatus, getFalQueueResult,
+  FLUX2_PRO_MODEL, GROK_IMAGE_MODEL,
+  KLING3_STD_I2V_MODEL, KLING3_STD_T2V_MODEL,
+  KLING3_PRO_I2V_MODEL, KLING3_PRO_T2V_MODEL,
+  GROK_VIDEO_I2V_MODEL, GROK_VIDEO_T2V_MODEL,
+  WAN26_I2V_MODEL, WAN26_T2V_MODEL,
 } from '@/lib/fal/client'
 
 // ============================================================
@@ -161,6 +177,108 @@ async function getProviderStatus(providerTaskId: string): Promise<StatusResult> 
           status: 'COMPLETED',
           resultUrl: response.images[0]?.url,
         }
+      }
+      return { status: statusResult.status }
+    }
+
+    // FLUX.2 Pro (이미지)
+    case 'fal-flux2': {
+      const statusResult = await getFalQueueStatus(FLUX2_PRO_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(FLUX2_PRO_MODEL, taskId)
+        return {
+          status: 'COMPLETED',
+          resultUrl: response.images?.[0]?.url,
+        }
+      }
+      return { status: statusResult.status }
+    }
+
+    // Grok Imagine Image (이미지)
+    case 'fal-grok-img': {
+      const statusResult = await getFalQueueStatus(GROK_IMAGE_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(GROK_IMAGE_MODEL, taskId)
+        return {
+          status: 'COMPLETED',
+          resultUrl: response.images?.[0]?.url,
+        }
+      }
+      return { status: statusResult.status }
+    }
+
+    // Kling 3.0 Standard (영상)
+    case 'fal-kling3s-i2v': {
+      const statusResult = await getFalQueueStatus(KLING3_STD_I2V_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(KLING3_STD_I2V_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.video?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    case 'fal-kling3s-t2v': {
+      const statusResult = await getFalQueueStatus(KLING3_STD_T2V_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(KLING3_STD_T2V_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.video?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    // Kling 3.0 Pro (영상)
+    case 'fal-kling3p-i2v': {
+      const statusResult = await getFalQueueStatus(KLING3_PRO_I2V_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(KLING3_PRO_I2V_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.video?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    case 'fal-kling3p-t2v': {
+      const statusResult = await getFalQueueStatus(KLING3_PRO_T2V_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(KLING3_PRO_T2V_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.video?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    // Grok Imagine Video (영상) - I2V/T2V 명시적 prefix
+    case 'fal-grok-vid-i2v': {
+      const statusResult = await getFalQueueStatus(GROK_VIDEO_I2V_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(GROK_VIDEO_I2V_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.video?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    case 'fal-grok-vid-t2v': {
+      const statusResult = await getFalQueueStatus(GROK_VIDEO_T2V_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(GROK_VIDEO_T2V_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.video?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    // Wan 2.6 (영상) - I2V/T2V 명시적 prefix
+    case 'fal-wan26-i2v': {
+      const statusResult = await getFalQueueStatus(WAN26_I2V_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(WAN26_I2V_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.video?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    case 'fal-wan26-t2v': {
+      const statusResult = await getFalQueueStatus(WAN26_T2V_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(WAN26_T2V_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.video?.url }
       }
       return { status: statusResult.status }
     }

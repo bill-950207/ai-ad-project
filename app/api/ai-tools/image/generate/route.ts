@@ -16,9 +16,12 @@ import { recordCreditUse, recordCreditRefund } from '@/lib/credits/history'
 import {
   IMAGE_AD_CREDIT_COST,
   Z_IMAGE_TOOL_CREDIT_COST,
+  FLUX2_PRO_CREDIT_COST,
+  GROK_IMAGE_CREDIT_COST,
   type ImageQuality,
+  type Flux2ProQuality,
 } from '@/lib/credits/constants'
-import { submitSeedreamEditToQueue, submitSeedreamT2IToQueue } from '@/lib/fal/client'
+import { submitSeedreamEditToQueue, submitSeedreamT2IToQueue, submitFlux2ProToQueue, submitGrokImageToQueue } from '@/lib/fal/client'
 import type { SeedreamAspectRatio, SeedreamQuality } from '@/lib/fal/client'
 import { submitZImageToQueue } from '@/lib/kie/client'
 import type { ZImageAspectRatio } from '@/lib/kie/client'
@@ -35,13 +38,26 @@ interface SeedreamRequest {
   quality?: SeedreamQuality
 }
 
+interface Flux2ProRequest {
+  model: 'flux-2-pro'
+  prompt: string
+  aspectRatio?: string
+  quality?: 'basic' | 'high'
+}
+
+interface GrokImageRequest {
+  model: 'grok-image'
+  prompt: string
+  aspectRatio?: string
+}
+
 interface ZImageRequest {
   model: 'z-image'
   prompt: string
   aspectRatio?: ZImageAspectRatio
 }
 
-type ImageGenerateRequest = SeedreamRequest | ZImageRequest
+type ImageGenerateRequest = SeedreamRequest | Flux2ProRequest | GrokImageRequest | ZImageRequest
 
 // ============================================================
 // 크레딧 계산
@@ -51,6 +67,13 @@ function calculateCredits(req: ImageGenerateRequest): number {
   if (req.model === 'seedream-5') {
     const quality: ImageQuality = req.quality === 'high' ? 'high' : 'medium'
     return IMAGE_AD_CREDIT_COST[quality]
+  }
+  if (req.model === 'flux-2-pro') {
+    const quality: Flux2ProQuality = req.quality === 'high' ? 'high' : 'basic'
+    return FLUX2_PRO_CREDIT_COST[quality]
+  }
+  if (req.model === 'grok-image') {
+    return GROK_IMAGE_CREDIT_COST
   }
   return Z_IMAGE_TOOL_CREDIT_COST
 }
@@ -117,6 +140,13 @@ export async function POST(request: NextRequest) {
               aspectRatio: body.aspectRatio,
               quality: body.quality,
             }),
+            ...(body.model === 'flux-2-pro' && {
+              aspectRatio: body.aspectRatio,
+              quality: body.quality,
+            }),
+            ...(body.model === 'grok-image' && {
+              aspectRatio: body.aspectRatio,
+            }),
             ...(body.model === 'z-image' && {
               aspectRatio: body.aspectRatio,
             }),
@@ -148,6 +178,34 @@ export async function POST(request: NextRequest) {
           quality: body.quality,
         })
         providerTaskId = `fal-seedream-v5-t2i:${result.request_id}`
+      } else if (body.model === 'flux-2-pro') {
+        // FLUX.2 Pro (FAL.ai)
+        const SIZES: Record<string, { width: number; height: number }> = {
+          '1:1': { width: 1024, height: 1024 },
+          '4:3': { width: 1024, height: 768 },
+          '3:4': { width: 768, height: 1024 },
+          '16:9': { width: 1024, height: 576 },
+          '9:16': { width: 576, height: 1024 },
+        }
+        const result = await submitFlux2ProToQueue({
+          prompt: body.prompt,
+          image_size: SIZES[body.aspectRatio || '1:1'] || SIZES['1:1'],
+        })
+        providerTaskId = `fal-flux2:${result.request_id}`
+      } else if (body.model === 'grok-image') {
+        // Grok Imagine Image (xAI via FAL.ai)
+        const SIZES: Record<string, { width: number; height: number }> = {
+          '1:1': { width: 1024, height: 1024 },
+          '4:3': { width: 1024, height: 768 },
+          '3:4': { width: 768, height: 1024 },
+          '16:9': { width: 1024, height: 576 },
+          '9:16': { width: 576, height: 1024 },
+        }
+        const result = await submitGrokImageToQueue({
+          prompt: body.prompt,
+          image_size: SIZES[body.aspectRatio || '1:1'] || SIZES['1:1'],
+        })
+        providerTaskId = `fal-grok-img:${result.request_id}`
       } else {
         const zBody = body as ZImageRequest
         const result = await submitZImageToQueue(zBody.prompt, zBody.aspectRatio)

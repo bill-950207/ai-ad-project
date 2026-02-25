@@ -4,6 +4,9 @@ import { useState, useCallback, useMemo } from 'react'
 import ModelSelector from './model-selector'
 import SeedanceForm from './video-forms/seedance-form'
 import ViduQ3Form from './video-forms/vidu-q3-form'
+import Kling3Form from './video-forms/kling3-form'
+import GrokVideoForm from './video-forms/grok-video-form'
+import Wan26Form from './video-forms/wan26-form'
 import GenerationHistory from './generation-history'
 import type { ActiveGeneration } from './generation-history'
 import { useLanguage } from '@/contexts/language-context'
@@ -21,11 +24,26 @@ export default function VideoGenerator() {
       description: aiToolsT.modelDescTextImageToVideo || 'Text/Image to Video',
     },
     {
+      id: 'kling-3',
+      name: 'Kling 3.0',
+      description: aiToolsT.modelDescKling3 || 'Text/Image to Video (Multi-shot)',
+    },
+    {
+      id: 'grok-video',
+      name: 'Grok Imagine',
+      description: aiToolsT.modelDescGrokVideo || 'Text/Image to Video',
+    },
+    {
+      id: 'wan-2.6',
+      name: 'Wan 2.6',
+      description: aiToolsT.modelDescWan26 || 'Text/Image to Video (Cinema)',
+    },
+    {
       id: 'vidu-q3',
       name: 'Vidu Q3',
       description: aiToolsT.modelDescImageToVideo || 'Image to Video',
     },
-  ], [aiToolsT.modelDescTextImageToVideo, aiToolsT.modelDescImageToVideo])
+  ], [aiToolsT.modelDescTextImageToVideo, aiToolsT.modelDescKling3, aiToolsT.modelDescGrokVideo, aiToolsT.modelDescWan26, aiToolsT.modelDescImageToVideo])
 
   const [selectedModel, setSelectedModel] = useState('seedance-1.5-pro')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -102,6 +120,21 @@ export default function VideoGenerator() {
           <div className="bg-card border border-border/80 rounded-2xl p-5">
             {selectedModel === 'seedance-1.5-pro' ? (
               <SeedanceForm
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            ) : selectedModel === 'kling-3' ? (
+              <Kling3Form
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            ) : selectedModel === 'grok-video' ? (
+              <GrokVideoForm
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            ) : selectedModel === 'wan-2.6' ? (
+              <Wan26Form
                 onSubmit={handleSubmit}
                 isGenerating={isGenerating}
               />

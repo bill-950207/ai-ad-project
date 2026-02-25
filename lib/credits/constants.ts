@@ -35,6 +35,15 @@ export const BACKGROUND_CREDIT_COST = 1
 /** Z-Image 도구 크레딧 (Kie.ai Z-Image: ~$0.02) */
 export const Z_IMAGE_TOOL_CREDIT_COST = 1
 
+/** FLUX.2 Pro 크레딧 (Black Forest Labs: ~$0.03/MP) */
+export const FLUX2_PRO_CREDIT_COST = {
+  basic: 1,  // ~$0.03
+  high: 2,   // ~$0.06
+} as const
+
+/** Grok Imagine Image 크레딧 (xAI: ~$0.02) */
+export const GROK_IMAGE_CREDIT_COST = 1
+
 // ============================================================
 // 영상 생성 관련
 // ============================================================
@@ -82,6 +91,28 @@ export const SEEDANCE_CREDIT_COST_PER_SECOND = {
   '720p': 2, // ~$0.05/초
 } as const
 
+/** Kling 3.0 Standard 영상 생성 초당 크레딧 (FAL.ai: ~$0.07/초) */
+export const KLING3_STD_CREDIT_PER_SECOND = {
+  '720p': 1, // ~$0.07/초
+} as const
+
+/** Kling 3.0 Pro 영상 생성 초당 크레딧 (FAL.ai: ~$0.224/초) */
+export const KLING3_PRO_CREDIT_PER_SECOND = {
+  '720p': 3, // ~$0.22/초
+} as const
+
+/** Grok Imagine Video 영상 생성 해상도별 초당 크레딧 (xAI) */
+export const GROK_VIDEO_CREDIT_PER_SECOND = {
+  '480p': 1, // ~$0.05/초
+  '720p': 2, // ~$0.07/초
+} as const
+
+/** Wan 2.6 영상 생성 해상도별 초당 크레딧 (Alibaba) */
+export const WAN26_CREDIT_PER_SECOND = {
+  '720p': 2,  // ~$0.10/초
+  '1080p': 3, // ~$0.15/초
+} as const
+
 // ============================================================
 // 오디오 관련
 // ============================================================
@@ -114,6 +145,10 @@ export const DEFAULT_SIGNUP_CREDITS = 20
 // ============================================================
 
 export type ImageQuality = keyof typeof IMAGE_AD_CREDIT_COST
+export type Flux2ProQuality = keyof typeof FLUX2_PRO_CREDIT_COST
 export type ViduResolution = keyof typeof VIDU_CREDIT_COST_PER_SECOND
 export type SeedanceResolution = keyof typeof SEEDANCE_CREDIT_COST_PER_SECOND
+export type Kling3Resolution = keyof typeof KLING3_PRO_CREDIT_PER_SECOND
+export type GrokVideoResolution = keyof typeof GROK_VIDEO_CREDIT_PER_SECOND
+export type Wan26Resolution = keyof typeof WAN26_CREDIT_PER_SECOND
 export type ProductDescriptionResolution = keyof typeof PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST

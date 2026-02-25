@@ -2812,7 +2812,12 @@
     "uploadFailed": "이미지 업로드에 실패했습니다.",
     "modelDescImageEdit": "이미지 편집 / 텍스트 투 이미지",
     "modelDescTextToImage": "텍스트 투 이미지",
+    "modelDescFlux2Pro": "고품질 텍스트 투 이미지",
+    "modelDescGrokImage": "텍스트 투 이미지",
     "modelDescTextImageToVideo": "텍스트/이미지 투 비디오",
-    "modelDescImageToVideo": "이미지 투 비디오"
+    "modelDescImageToVideo": "이미지 투 비디오",
+    "modelDescKling3": "텍스트/이미지 투 비디오 (멀티샷)",
+    "modelDescGrokVideo": "텍스트/이미지 투 비디오",
+    "modelDescWan26": "텍스트/이미지 투 비디오 (시네마)"
   }
 }
