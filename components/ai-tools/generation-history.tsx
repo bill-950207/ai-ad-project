@@ -97,6 +97,21 @@ export default function GenerationHistory({
     fetchHistory()
   }, [fetchHistory, refreshTrigger])
 
+  // Auto-refresh history when there are in-progress items (e.g., after page refresh)
+  const hasProcessingItems = items.some(item =>
+    ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(item.status)
+  )
+
+  useEffect(() => {
+    if (!hasProcessingItems) return
+
+    const intervalId = setInterval(() => {
+      fetchHistory()
+    }, 3000)
+
+    return () => clearInterval(intervalId)
+  }, [hasProcessingItems, fetchHistory])
+
   // Active generation polling
   useEffect(() => {
     if (!activeGeneration) return
