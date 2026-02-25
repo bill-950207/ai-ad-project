@@ -164,51 +164,51 @@ export const imageToolSeoData: Record<Locale, {
   ogDescription: string
 }> = {
   ko: {
-    title: 'AI 이미지 생성 - Seedream 4.5 · Z-Image | 무료 AI 그림 생성기',
-    description: 'ByteDance Seedream 4.5로 이미지 편집, Z-Image로 텍스트에서 고품질 AI 이미지 생성. 다양한 비율과 화질 지원. 무료 크레딧으로 지금 시작.',
+    title: 'AI 이미지 생성 - Seedream 5 · Z-Image | 무료 AI 그림 생성기',
+    description: 'ByteDance Seedream 5로 이미지 편집, Z-Image로 텍스트에서 고품질 AI 이미지 생성. 다양한 비율과 화질 지원. 무료 크레딧으로 지금 시작.',
     keywords: [
-      'AI 이미지 생성', 'AI 그림 생성기', 'AI 이미지 편집', 'Seedream', 'Seedream 4.5',
+      'AI 이미지 생성', 'AI 그림 생성기', 'AI 이미지 편집', 'Seedream', 'Seedream 5',
       'ByteDance AI', 'ByteDance Seedream', 'Z-Image', 'Text to Image', 'Image Edit',
       '텍스트 이미지 생성', 'AI 사진 생성', '무료 AI 이미지', 'AI image generator',
       'AI 그림 그리기', 'AI 이미지 만들기', '무료 AI 그림', '바이트댄스 AI',
       'AI 이미지 제작', 'AI 사진 편집', 'Seedream Pro',
     ],
-    ogTitle: 'AI 이미지 생성 도구 - Seedream 4.5 · Z-Image | gwanggo',
-    ogDescription: 'ByteDance Seedream 4.5와 Z-Image로 고품질 AI 이미지를 생성하세요.',
+    ogTitle: 'AI 이미지 생성 도구 - Seedream 5 · Z-Image | gwanggo',
+    ogDescription: 'ByteDance Seedream 5와 Z-Image로 고품질 AI 이미지를 생성하세요.',
   },
   en: {
-    title: 'AI Image Generator - Seedream 4.5 · Z-Image | Free AI Image Maker',
-    description: 'Edit images with ByteDance Seedream 4.5 and generate from text with Z-Image. Multiple aspect ratios and quality options. Start free.',
+    title: 'AI Image Generator - Seedream 5 · Z-Image | Free AI Image Maker',
+    description: 'Edit images with ByteDance Seedream 5 and generate from text with Z-Image. Multiple aspect ratios and quality options. Start free.',
     keywords: [
-      'AI image generator', 'AI image maker', 'Seedream', 'Seedream 4.5',
+      'AI image generator', 'AI image maker', 'Seedream', 'Seedream 5',
       'ByteDance AI', 'ByteDance Seedream', 'Z-Image', 'text to image',
       'AI image editing', 'free AI image generator', 'AI art generator',
       'AI photo generator', 'AI image creation', 'Seedream Pro',
     ],
-    ogTitle: 'AI Image Generator - Seedream 4.5 · Z-Image | gwanggo',
-    ogDescription: 'Create high-quality AI images with ByteDance Seedream 4.5 and Z-Image.',
+    ogTitle: 'AI Image Generator - Seedream 5 · Z-Image | gwanggo',
+    ogDescription: 'Create high-quality AI images with ByteDance Seedream 5 and Z-Image.',
   },
   ja: {
-    title: 'AI画像生成 - Seedream 4.5 · Z-Image | 無料AI画像メーカー',
-    description: 'ByteDance Seedream 4.5で画像編集、Z-Imageでテキストから高品質AI画像を生成。多様な比率と画質に対応。無料クレジットで今すぐ開始。',
+    title: 'AI画像生成 - Seedream 5 · Z-Image | 無料AI画像メーカー',
+    description: 'ByteDance Seedream 5で画像編集、Z-Imageでテキストから高品質AI画像を生成。多様な比率と画質に対応。無料クレジットで今すぐ開始。',
     keywords: [
-      'AI画像生成', 'AI画像メーカー', 'Seedream', 'Seedream 4.5',
+      'AI画像生成', 'AI画像メーカー', 'Seedream', 'Seedream 5',
       'ByteDance AI', 'Z-Image', 'テキストから画像', 'AI画像編集',
       '無料AI画像', 'AIアート', 'AI写真生成', 'AI画像制作', 'バイトダンスAI',
     ],
-    ogTitle: 'AI画像生成ツール - Seedream 4.5 · Z-Image | gwanggo',
-    ogDescription: 'ByteDance Seedream 4.5とZ-Imageで高品質なAI画像を生成。',
+    ogTitle: 'AI画像生成ツール - Seedream 5 · Z-Image | gwanggo',
+    ogDescription: 'ByteDance Seedream 5とZ-Imageで高品質なAI画像を生成。',
   },
   zh: {
-    title: 'AI图片生成 - Seedream 4.5 · Z-Image | 免费AI图片生成器',
-    description: '使用ByteDance Seedream 4.5编辑图片，Z-Image从文字生成高质量AI图片。支持多种比例和画质。免费积分立即开始。',
+    title: 'AI图片生成 - Seedream 5 · Z-Image | 免费AI图片生成器',
+    description: '使用ByteDance Seedream 5编辑图片，Z-Image从文字生成高质量AI图片。支持多种比例和画质。免费积分立即开始。',
     keywords: [
-      'AI图片生成', 'AI图片生成器', 'Seedream', 'Seedream 4.5',
+      'AI图片生成', 'AI图片生成器', 'Seedream', 'Seedream 5',
       'ByteDance AI', '字节跳动AI', 'Z-Image', '文字转图片',
       'AI图片编辑', '免费AI图片', 'AI艺术', 'AI照片生成', 'AI图片制作',
     ],
-    ogTitle: 'AI图片生成工具 - Seedream 4.5 · Z-Image | gwanggo',
-    ogDescription: '使用ByteDance Seedream 4.5和Z-Image生成高质量AI图片。',
+    ogTitle: 'AI图片生成工具 - Seedream 5 · Z-Image | gwanggo',
+    ogDescription: '使用ByteDance Seedream 5和Z-Image生成高质量AI图片。',
   },
 }
 
@@ -227,7 +227,7 @@ export function getToolJsonLd(
         { name: 'Vidu Q3', creator: 'Shengshu Technology', description: 'Image to Video, 540p-1080p, 1-16s' },
       ]
     : [
-        { name: 'Seedream 4.5', creator: 'ByteDance', description: 'AI Image Edit, multiple aspect ratios' },
+        { name: 'Seedream 5', creator: 'ByteDance', description: 'AI Image Edit, multiple aspect ratios' },
         { name: 'Z-Image', creator: 'gwanggo', description: 'Text to Image, multiple aspect ratios' },
       ]
 

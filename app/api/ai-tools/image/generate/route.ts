@@ -4,7 +4,7 @@
  * POST /api/ai-tools/image/generate
  *
  * 지원 모델:
- * - seedream-4.5: Kie.ai Seedream 4.5 (이미지 편집/변환)
+ * - seedream-5: FAL.ai Seedream 5.0 Lite (이미지 편집/텍스트→이미지)
  * - z-image: Kie.ai Z-Image (텍스트 → 이미지)
  */
 
@@ -18,31 +18,22 @@ import {
   Z_IMAGE_TOOL_CREDIT_COST,
   type ImageQuality,
 } from '@/lib/credits/constants'
-import { createEditTask, submitZImageToQueue, submitSeedreamV4ToQueue } from '@/lib/kie/client'
-import type { EditAspectRatio, EditQuality, ZImageAspectRatio, SeedreamV4ImageSize } from '@/lib/kie/client'
+import { submitSeedreamEditToQueue, submitSeedreamT2IToQueue } from '@/lib/fal/client'
+import type { SeedreamAspectRatio, SeedreamQuality } from '@/lib/fal/client'
+import { submitZImageToQueue } from '@/lib/kie/client'
+import type { ZImageAspectRatio } from '@/lib/kie/client'
 
 // ============================================================
 // 요청 타입
 // ============================================================
 
 interface SeedreamRequest {
-  model: 'seedream-4.5'
+  model: 'seedream-5'
   prompt: string
   imageUrl?: string // 있으면 Image Edit, 없으면 Text to Image
-  aspectRatio?: EditAspectRatio
-  quality?: EditQuality
-}
-
-// Aspect ratio → Seedream V4 image_size 매핑
-const ASPECT_TO_V4_SIZE: Record<string, SeedreamV4ImageSize> = {
-  '1:1': 'square_hd',
-  '4:3': 'landscape_4_3',
-  '3:4': 'portrait_4_3',
-  '16:9': 'landscape_16_9',
-  '9:16': 'portrait_16_9',
-  '2:3': 'portrait_3_2',
-  '3:2': 'landscape_3_2',
-  '21:9': 'landscape_21_9',
+  aspectRatio?: SeedreamAspectRatio
+  quality?: SeedreamQuality
+  strength?: number // Image Edit 강도 (0.0~1.0, 5.0 Lite 전용)
 }
 
 interface ZImageRequest {
@@ -58,7 +49,7 @@ type ImageGenerateRequest = SeedreamRequest | ZImageRequest
 // ============================================================
 
 function calculateCredits(req: ImageGenerateRequest): number {
-  if (req.model === 'seedream-4.5') {
+  if (req.model === 'seedream-5') {
     const quality: ImageQuality = req.quality === 'high' ? 'high' : 'medium'
     return IMAGE_AD_CREDIT_COST[quality]
   }
@@ -122,10 +113,11 @@ export async function POST(request: NextRequest) {
           model: body.model,
           prompt: body.prompt,
           input_params: {
-            ...(body.model === 'seedream-4.5' && {
+            ...(body.model === 'seedream-5' && {
               imageUrl: body.imageUrl,
               aspectRatio: body.aspectRatio,
               quality: body.quality,
+              strength: body.strength,
             }),
             ...(body.model === 'z-image' && {
               aspectRatio: body.aspectRatio,
@@ -141,24 +133,24 @@ export async function POST(request: NextRequest) {
     let providerTaskId: string
 
     try {
-      if (body.model === 'seedream-4.5' && body.imageUrl) {
-        // Image Edit 모드
-        const result = await createEditTask({
+      if (body.model === 'seedream-5' && body.imageUrl) {
+        // Image Edit 모드 (FAL.ai Seedream 5.0 Lite)
+        const result = await submitSeedreamEditToQueue({
           prompt: body.prompt,
           image_urls: [body.imageUrl],
           aspect_ratio: body.aspectRatio,
           quality: body.quality,
+          strength: body.strength,
         })
-        providerTaskId = `kie-edit:${result.taskId}`
-      } else if (body.model === 'seedream-4.5' && !body.imageUrl) {
-        // Text to Image 모드 (Seedream V4)
-        const imageSize = ASPECT_TO_V4_SIZE[body.aspectRatio || '1:1'] || 'square_hd'
-        const imageResolution = body.quality === 'high' ? '2K' : '1K'
-        const result = await submitSeedreamV4ToQueue(body.prompt, {
-          imageSize,
-          imageResolution,
+        providerTaskId = `fal-seedream-v5:${result.request_id}`
+      } else if (body.model === 'seedream-5' && !body.imageUrl) {
+        // Text to Image 모드 (FAL.ai Seedream 5.0 Lite)
+        const result = await submitSeedreamT2IToQueue({
+          prompt: body.prompt,
+          aspect_ratio: body.aspectRatio,
+          quality: body.quality,
         })
-        providerTaskId = `kie-seedream-v4:${result.request_id}`
+        providerTaskId = `fal-seedream-v5-t2i:${result.request_id}`
       } else {
         const zBody = body as ZImageRequest
         const result = await submitZImageToQueue(zBody.prompt, zBody.aspectRatio)

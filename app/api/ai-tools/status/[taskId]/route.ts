@@ -9,9 +9,11 @@
  * 프로바이더 접두사:
  * - byteplus:xxx → BytePlus (Seedance)
  * - wavespeed-vidu:xxx → WaveSpeed (Vidu Q3)
- * - kie-edit:xxx → Kie.ai (Seedream 4.5)
+ * - fal-seedream-v5:xxx → FAL.ai (Seedream 5.0 Lite Edit)
+ * - fal-seedream-v5-t2i:xxx → FAL.ai (Seedream 5.0 Lite T2I)
+ * - kie-edit:xxx → Kie.ai (Seedream 4.5, 하위 호환)
  * - kie-zimage:xxx → Kie.ai (Z-Image)
- * - kie-seedream-v4:xxx → Kie.ai (Seedream V4 Text-to-Image)
+ * - kie-seedream-v4:xxx → Kie.ai (Seedream V4, 하위 호환)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -20,6 +22,7 @@ import { prisma } from '@/lib/db'
 import { getVideoTaskStatus } from '@/lib/byteplus/client'
 import { getViduQueueStatus, getViduQueueResponse } from '@/lib/wavespeed/client'
 import { getEditQueueStatus, getEditQueueResponse, getZImageQueueStatus, getZImageQueueResponse, getSeedreamV4QueueStatus, getSeedreamV4QueueResponse } from '@/lib/kie/client'
+import { getSeedreamEditQueueStatus, getSeedreamEditQueueResponse, getSeedreamT2IQueueStatus, getSeedreamT2IQueueResponse } from '@/lib/fal/client'
 
 // ============================================================
 // 상태 조회 결과 타입
@@ -66,7 +69,32 @@ async function getProviderStatus(providerTaskId: string): Promise<StatusResult> 
       return { status: statusResult.status }
     }
 
+    case 'fal-seedream-v5': {
+      const statusResult = await getSeedreamEditQueueStatus(taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getSeedreamEditQueueResponse(taskId)
+        return {
+          status: 'COMPLETED',
+          resultUrl: response.images[0]?.url,
+        }
+      }
+      return { status: statusResult.status }
+    }
+
+    case 'fal-seedream-v5-t2i': {
+      const statusResult = await getSeedreamT2IQueueStatus(taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getSeedreamT2IQueueResponse(taskId)
+        return {
+          status: 'COMPLETED',
+          resultUrl: response.images[0]?.url,
+        }
+      }
+      return { status: statusResult.status }
+    }
+
     case 'kie-edit': {
+      // 하위 호환: 기존 진행 중인 Kie.ai 작업 지원
       const statusResult = await getEditQueueStatus(taskId)
       if (statusResult.status === 'COMPLETED') {
         const response = await getEditQueueResponse(taskId)
@@ -91,6 +119,7 @@ async function getProviderStatus(providerTaskId: string): Promise<StatusResult> 
     }
 
     case 'kie-seedream-v4': {
+      // 하위 호환: 기존 진행 중인 Kie.ai Seedream V4 작업 지원
       const statusResult = await getSeedreamV4QueueStatus(taskId)
       if (statusResult.status === 'COMPLETED') {
         const response = await getSeedreamV4QueueResponse(taskId)

@@ -17,10 +17,10 @@
 /** 아바타 생성 크레딧 (무료 - 신규 사용자 유치) */
 export const AVATAR_CREDIT_COST = 0
 
-/** 의상 교체 크레딧 (Kie.ai Seedream 4.5: ~$0.05) */
+/** 의상 교체 크레딧 (FAL.ai Seedream 5.0 Lite: ~$0.035) */
 export const OUTFIT_CREDIT_COST = 2
 
-/** 이미지 광고 품질별 크레딧 (Kie.ai Seedream 4.5) */
+/** 이미지 광고 품질별 크레딧 (FAL.ai Seedream 5.0 Lite) */
 export const IMAGE_AD_CREDIT_COST = {
   medium: 2, // ~$0.05
   high: 3, // ~$0.08
@@ -63,8 +63,8 @@ export const PRODUCT_AD_VIDEO_CREDIT_COST = {
   },
 } as const
 
-/** 키프레임 이미지 생성 크레딧 (Seedream 4.5, 이미지당) */
-export const KEYFRAME_CREDIT_COST = 1 // ~$0.03/장
+/** 키프레임 이미지 생성 크레딧 (Seedream 5.0 Lite, 이미지당) */
+export const KEYFRAME_CREDIT_COST = 1 // ~$0.035/장
 
 /** @deprecated 씬 전환 영상 (Kling O1) - 현재 서비스에서 미사용 */
 export const TRANSITION_CREDIT_COST = 12

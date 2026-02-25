@@ -748,7 +748,7 @@ export async function POST(request: NextRequest) {
     let promptToSave = finalPrompt
 
     if (isAiGeneratedAvatar) {
-      // AI 생성 아바타: fal.ai Seedream 4.5 Edit 사용 (제품 이미지를 참조로 활용)
+      // AI 생성 아바타: fal.ai Seedream 5.0 Lite Edit 사용 (제품 이미지를 참조로 활용)
       // aiAvatarDescription은 이미 Gemini 호출 전에 생성됨
 
       // AI 아바타 프롬프트를 DB에 저장 (Gemini가 이미 아바타 설명을 포함한 프롬프트 생성)
@@ -758,7 +758,7 @@ export async function POST(request: NextRequest) {
       const aiInputUrls = productImageUrl ? [productImageUrl] : []
       const seedreamQuality = effectiveQuality === 'high' ? 'high' : 'basic'
 
-      console.log('AI 아바타 이미지 광고 생성 (fal.ai Seedream 4.5):', { aiAvatarDescription, aspectRatio, inputUrls: aiInputUrls })
+      console.log('AI 아바타 이미지 광고 생성 (fal.ai Seedream 5.0 Lite):', { aiAvatarDescription, aspectRatio, inputUrls: aiInputUrls })
 
       const queuePromises = Array.from({ length: validNumImages }, async () => {
         const response = await submitSeedreamEditToQueue({
@@ -781,7 +781,7 @@ export async function POST(request: NextRequest) {
       // })
       // queueResponses = await Promise.all(queuePromises)
     } else {
-      // 기존 아바타: fal.ai Seedream 4.5 Edit 사용
+      // 기존 아바타: fal.ai Seedream 5.0 Lite Edit 사용
       const seedreamQuality = effectiveQuality === 'high' ? 'high' : 'basic'
 
       const queuePromises = Array.from({ length: validNumImages }, async () => {

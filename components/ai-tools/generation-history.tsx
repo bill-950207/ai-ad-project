@@ -73,7 +73,8 @@ export default function GenerationHistory({ type, refreshTrigger }: GenerationHi
   const modelLabels: Record<string, string> = {
     'seedance-1.5-pro': 'Seedance 1.5 Pro',
     'vidu-q3': 'Vidu Q3',
-    'seedream-4.5': 'Seedream 4.5',
+    'seedream-5': 'Seedream 5',
+    'seedream-4.5': 'Seedream 4.5', // 하위 호환
     'z-image': 'Z-Image',
   }
 

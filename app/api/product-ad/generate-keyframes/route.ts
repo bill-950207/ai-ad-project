@@ -2,16 +2,16 @@
  * 멀티씬 키프레임 이미지 생성 API
  *
  * POST: 각 씬의 프롬프트를 기반으로 키프레임 이미지들을 생성합니다.
- * Seedream 4.5 (kie.ai)를 사용하여 제품 이미지와 프롬프트로 씬 이미지 생성
+ * Seedream 5.0 Lite (fal.ai)를 사용하여 제품 이미지와 프롬프트로 씬 이미지 생성
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import {
-  createEditTask,
-  type EditAspectRatio,
-} from '@/lib/kie/client'
+  submitSeedreamEditToQueue,
+  type SeedreamAspectRatio,
+} from '@/lib/fal/client'
 import { KEYFRAME_CREDIT_COST } from '@/lib/credits'
 import { recordCreditUse, recordCreditRefund } from '@/lib/credits/history'
 import { isAdminUser } from '@/lib/auth/admin'
@@ -28,9 +28,9 @@ interface GenerateKeyframesRequest {
   aspectRatio: '16:9' | '9:16' | '1:1'
 }
 
-// 비율 매핑 (Seedream 4.5용)
-function mapAspectRatio(ratio: '16:9' | '9:16' | '1:1'): EditAspectRatio {
-  const mapping: Record<string, EditAspectRatio> = {
+// 비율 매핑 (Seedream 5.0 Lite용)
+function mapAspectRatio(ratio: '16:9' | '9:16' | '1:1'): SeedreamAspectRatio {
+  const mapping: Record<string, SeedreamAspectRatio> = {
     '16:9': '16:9',
     '9:16': '9:16',
     '1:1': '1:1',
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
         // 프롬프트에서 금지 단어 제거 (카메라/촬영장비 등장 방지)
         const sanitizedPrompt = sanitizePrompt(scene.scenePrompt)
 
-        const result = await createEditTask({
+        const result = await submitSeedreamEditToQueue({
           prompt: sanitizedPrompt,
           image_urls: [productImageUrl],
           aspect_ratio: mapAspectRatio(aspectRatio),
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
         })
         requests.push({
           sceneIndex: scene.index,
-          requestId: `kie:${result.taskId}`,
+          requestId: `fal-seedream:${result.request_id}`,
           prompt: sanitizedPrompt,  // 정제된 프롬프트 반환
         })
       } catch (sceneError) {

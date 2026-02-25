@@ -14,10 +14,11 @@ interface SeedreamFormData {
   imageUrl?: string
   aspectRatio: typeof ASPECT_RATIOS[number]
   quality: typeof QUALITIES[number]
+  strength?: number
 }
 
 interface SeedreamFormProps {
-  onSubmit: (data: SeedreamFormData & { model: 'seedream-4.5' }) => void
+  onSubmit: (data: SeedreamFormData & { model: 'seedream-5' }) => void
   isGenerating: boolean
 }
 
@@ -29,6 +30,7 @@ export default function SeedreamForm({ onSubmit, isGenerating }: SeedreamFormPro
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [aspectRatio, setAspectRatio] = useState<typeof ASPECT_RATIOS[number]>('1:1')
   const [quality, setQuality] = useState<typeof QUALITIES[number]>('basic')
+  const [strength, setStrength] = useState(0.5)
 
   const isEditMode = !!imageUrl
 
@@ -42,9 +44,9 @@ export default function SeedreamForm({ onSubmit, isGenerating }: SeedreamFormPro
     if (!prompt.trim()) return
 
     onSubmit({
-      model: 'seedream-4.5',
+      model: 'seedream-5',
       prompt: prompt.trim(),
-      ...(imageUrl ? { imageUrl } : {}),
+      ...(imageUrl ? { imageUrl, strength } : {}),
       aspectRatio,
       quality,
     })
@@ -95,6 +97,31 @@ export default function SeedreamForm({ onSubmit, isGenerating }: SeedreamFormPro
         onImageChange={setImageUrl}
         label={aiToolsT.referenceImageOptional || '참조 이미지 (선택)'}
       />
+
+      {/* 편집 강도 (Image Edit 모드에서만 표시) */}
+      {isEditMode && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-foreground">
+              {aiToolsT.strength || '편집 강도'}
+            </label>
+            <span className="text-xs text-muted-foreground">{strength.toFixed(1)}</span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.1"
+            value={strength}
+            onChange={(e) => setStrength(parseFloat(e.target.value))}
+            disabled={isGenerating}
+            className="w-full h-2 bg-secondary/50 rounded-lg appearance-none cursor-pointer accent-primary"
+          />
+          <p className="text-xs text-muted-foreground">
+            {aiToolsT.strengthDescription || '낮을수록 원본에 가깝고, 높을수록 프롬프트에 충실합니다'}
+          </p>
+        </div>
+      )}
 
       {/* 화면 비율 */}
       <div className="space-y-2">

@@ -11,8 +11,8 @@ import { useCredits } from '@/contexts/credit-context'
 
 const IMAGE_MODELS = [
   {
-    id: 'seedream-4.5',
-    name: 'Seedream 4.5',
+    id: 'seedream-5',
+    name: 'Seedream 5',
     description: 'Image Edit / Text to Image',
   },
   {
@@ -27,7 +27,7 @@ export default function ImageGenerator() {
   const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
   const { refreshCredits } = useCredits()
 
-  const [selectedModel, setSelectedModel] = useState('seedream-4.5')
+  const [selectedModel, setSelectedModel] = useState('seedream-5')
   const [isGenerating, setIsGenerating] = useState(false)
   const [generationId, setGenerationId] = useState<string | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
@@ -93,7 +93,7 @@ export default function ImageGenerator() {
 
           {/* Form */}
           <div className="bg-card border border-border/80 rounded-2xl p-5">
-            {selectedModel === 'seedream-4.5' ? (
+            {selectedModel === 'seedream-5' ? (
               <SeedreamForm
                 onSubmit={handleSubmit}
                 isGenerating={isGenerating}
