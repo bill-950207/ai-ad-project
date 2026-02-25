@@ -130,9 +130,9 @@ export default function GenerationHistory({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [processingIdsKey, fetchHistory])
 
-  // Active generation polling
+  // Active generation polling (id가 빈 문자열이면 API 응답 대기 중이므로 폴링 생략)
   useEffect(() => {
-    if (!activeGeneration) return
+    if (!activeGeneration || !activeGeneration.id) return
 
     let active = true
     let intervalId: ReturnType<typeof setInterval>

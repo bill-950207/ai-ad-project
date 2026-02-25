@@ -21,6 +21,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
+import { refundCredits, getUserCredits } from '@/lib/credits/utils'
+import { recordCreditRefund } from '@/lib/credits/history'
 import { getVideoTaskStatus } from '@/lib/byteplus/client'
 import { getViduQueueStatus, getViduQueueResponse } from '@/lib/wavespeed/client'
 import { getEditQueueStatus, getEditQueueResponse, getZImageQueueStatus, getZImageQueueResponse, getSeedreamV4QueueStatus, getSeedreamV4QueueResponse } from '@/lib/kie/client'
@@ -231,7 +233,7 @@ export async function GET(
       })
     }
 
-    // FAILED 시 DB 업데이트
+    // FAILED 시 DB 업데이트 + 크레딧 환불
     if (result.status === 'FAILED') {
       await prisma.tool_generations.update({
         where: { id: generation.id },
@@ -240,6 +242,25 @@ export async function GET(
           error_message: result.error || '생성에 실패했습니다',
         },
       })
+
+      // 크레딧 환불 (이미 차감된 상태에서 provider가 실패한 경우)
+      if (generation.credits_used > 0) {
+        try {
+          await refundCredits(user.id, generation.credits_used)
+          const currentCredits = await getUserCredits(user.id)
+          const featureType = generation.type === 'video' ? 'TOOL_VIDEO' as const : 'TOOL_IMAGE' as const
+          await recordCreditRefund({
+            userId: user.id,
+            featureType,
+            amount: generation.credits_used,
+            balanceAfter: currentCredits,
+            relatedEntityId: generation.id,
+            description: `${generation.model} 생성 실패 - 환불`,
+          })
+        } catch (refundError) {
+          console.error('[AI Tools Status] 크레딧 환불 실패:', refundError)
+        }
+      }
     }
 
     // IN_PROGRESS 상태 업데이트

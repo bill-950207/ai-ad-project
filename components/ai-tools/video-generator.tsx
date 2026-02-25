@@ -35,7 +35,15 @@ export default function VideoGenerator() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSubmit = useCallback(async (data: any) => {
     setIsGenerating(true)
-    setActiveGeneration(null)
+
+    // 즉시 프로그래스 카드 표시 (API 응답 전)
+    const referenceImageUrl = data.imageUrl || data.image || (data.imageUrls?.[0]) || undefined
+    setActiveGeneration({
+      id: '',
+      model: data.model,
+      prompt: data.prompt,
+      referenceImageUrl,
+    })
 
     try {
       const res = await fetch('/api/ai-tools/video/generate', {
@@ -46,6 +54,7 @@ export default function VideoGenerator() {
 
       if (!res.ok) {
         const error = await res.json()
+        setActiveGeneration(null)
         if (res.status === 402) {
           alert(error.error || '크레딧이 부족합니다')
         } else {
@@ -55,8 +64,7 @@ export default function VideoGenerator() {
       }
 
       const result = await res.json()
-      // Extract reference image URL from different video form data shapes
-      const referenceImageUrl = data.imageUrl || data.image || (data.imageUrls?.[0]) || undefined
+      // ID가 생기면 업데이트 → 폴링 시작
       setActiveGeneration({
         id: result.id,
         model: data.model,
@@ -65,6 +73,7 @@ export default function VideoGenerator() {
       })
       refreshCredits()
     } catch {
+      setActiveGeneration(null)
       alert('네트워크 오류가 발생했습니다')
     } finally {
       setIsGenerating(false)
