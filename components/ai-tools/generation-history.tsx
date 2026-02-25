@@ -97,20 +97,35 @@ export default function GenerationHistory({
     fetchHistory()
   }, [fetchHistory, refreshTrigger])
 
-  // Auto-refresh history when there are in-progress items (e.g., after page refresh)
-  const hasProcessingItems = items.some(item =>
-    ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(item.status)
-  )
+  // Poll provider status for in-progress items, then refresh history
+  const processingItemIds = items
+    .filter(item => ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(item.status))
+    .map(item => item.id)
+
+  const processingIdsKey = processingItemIds.join(',')
 
   useEffect(() => {
-    if (!hasProcessingItems) return
+    if (!processingIdsKey) return
 
-    const intervalId = setInterval(() => {
+    const ids = processingIdsKey.split(',')
+
+    const pollAndRefresh = async () => {
+      // 각 아이템의 status API 호출 → FAL.ai 등 provider 상태 확인 후 DB 업데이트
+      await Promise.all(
+        ids.map(id =>
+          fetch(`/api/ai-tools/status/${id}`).catch(() => {})
+        )
+      )
+      // DB 업데이트 반영을 위해 히스토리 다시 조회
       fetchHistory()
-    }, 3000)
+    }
+
+    pollAndRefresh()
+    const intervalId = setInterval(pollAndRefresh, 3000)
 
     return () => clearInterval(intervalId)
-  }, [hasProcessingItems, fetchHistory])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [processingIdsKey, fetchHistory])
 
   // Active generation polling
   useEffect(() => {
