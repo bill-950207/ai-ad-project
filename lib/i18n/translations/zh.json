@@ -2797,8 +2797,6 @@
     "statusFailed": "失败",
     "download": "下载",
     "history": "生成历史",
-    "noHistory": "暂无生成历史",
-    "strength": "编辑强度",
-    "strengthDescription": "值越低越接近原图，值越高越忠实于提示词"
+    "noHistory": "暂无生成历史"
   }
 }

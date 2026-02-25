@@ -2797,8 +2797,6 @@
     "statusFailed": "Failed",
     "download": "Download",
     "history": "Generation History",
-    "noHistory": "No generation history yet",
-    "strength": "Edit Strength",
-    "strengthDescription": "Lower values stay closer to the original, higher values follow the prompt more"
+    "noHistory": "No generation history yet"
   }
 }

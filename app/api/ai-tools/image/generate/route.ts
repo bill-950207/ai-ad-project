@@ -33,7 +33,6 @@ interface SeedreamRequest {
   imageUrl?: string // 있으면 Image Edit, 없으면 Text to Image
   aspectRatio?: SeedreamAspectRatio
   quality?: SeedreamQuality
-  strength?: number // Image Edit 강도 (0.0~1.0, 5.0 Lite 전용)
 }
 
 interface ZImageRequest {
@@ -117,7 +116,6 @@ export async function POST(request: NextRequest) {
               imageUrl: body.imageUrl,
               aspectRatio: body.aspectRatio,
               quality: body.quality,
-              strength: body.strength,
             }),
             ...(body.model === 'z-image' && {
               aspectRatio: body.aspectRatio,
@@ -140,7 +138,6 @@ export async function POST(request: NextRequest) {
           image_urls: [body.imageUrl],
           aspect_ratio: body.aspectRatio,
           quality: body.quality,
-          strength: body.strength,
         })
         providerTaskId = `fal-seedream-v5:${result.request_id}`
       } else if (body.model === 'seedream-5' && !body.imageUrl) {

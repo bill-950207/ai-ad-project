@@ -2797,8 +2797,6 @@
     "statusFailed": "실패",
     "download": "다운로드",
     "history": "생성 히스토리",
-    "noHistory": "생성 히스토리가 없습니다",
-    "strength": "편집 강도",
-    "strengthDescription": "낮을수록 원본에 가깝고, 높을수록 프롬프트에 충실합니다"
+    "noHistory": "생성 히스토리가 없습니다"
   }
 }

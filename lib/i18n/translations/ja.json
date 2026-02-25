@@ -2797,8 +2797,6 @@
     "statusFailed": "失敗",
     "download": "ダウンロード",
     "history": "生成履歴",
-    "noHistory": "生成履歴がありません",
-    "strength": "編集強度",
-    "strengthDescription": "低いほど元画像に近く、高いほどプロンプトに忠実になります"
+    "noHistory": "生成履歴がありません"
   }
 }

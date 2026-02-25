@@ -735,34 +735,39 @@ export interface SeedreamImageSize {
 }
 
 /**
- * Seedream의 aspect_ratio를 width/height로 변환
- * 최대 차원은 4096, 최소는 1920
+ * Seedream의 aspect_ratio + quality를 width/height로 변환
+ *
+ * quality에 따라 해상도가 결정:
+ * - basic → 2K (최대 차원 2048)
+ * - high  → 3K (최대 차원 3072)
  *
  * @param aspectRatio - 화면 비율
+ * @param quality - 품질 (basic=2K, high=3K, 기본값: high)
  * @returns width, height 객체
  */
-export function convertAspectRatioToImageSize(aspectRatio: SeedreamAspectRatio): SeedreamImageSize {
-  const MAX_SIZE = 4096
-  const MIN_SIZE = 1920
+export function convertAspectRatioToImageSize(
+  aspectRatio: SeedreamAspectRatio,
+  quality?: SeedreamQuality,
+): SeedreamImageSize {
+  const MAX_SIZE = quality === 'basic' ? 2048 : 3072
 
   switch (aspectRatio) {
     case '1:1':
       return { width: MAX_SIZE, height: MAX_SIZE }
     case '16:9':
-      return { width: MAX_SIZE, height: Math.round(MAX_SIZE * 9 / 16) }  // 4096 x 2304
+      return { width: MAX_SIZE, height: Math.round(MAX_SIZE * 9 / 16) }
     case '9:16':
-      return { width: Math.round(MAX_SIZE * 9 / 16), height: MAX_SIZE }  // 2304 x 4096
+      return { width: Math.round(MAX_SIZE * 9 / 16), height: MAX_SIZE }
     case '4:3':
-      return { width: MAX_SIZE, height: Math.round(MAX_SIZE * 3 / 4) }   // 4096 x 3072
+      return { width: MAX_SIZE, height: Math.round(MAX_SIZE * 3 / 4) }
     case '3:4':
-      return { width: Math.round(MAX_SIZE * 3 / 4), height: MAX_SIZE }   // 3072 x 4096
+      return { width: Math.round(MAX_SIZE * 3 / 4), height: MAX_SIZE }
     case '21:9':
-      // 21:9 with height at min would need width 4480 (exceeds max), so use max width
-      return { width: MAX_SIZE, height: MIN_SIZE }  // 4096 x 1920 (approximately 21:9)
+      return { width: MAX_SIZE, height: Math.round(MAX_SIZE * 9 / 21) }
     case '2:3':
-      return { width: Math.round(MAX_SIZE * 2 / 3), height: MAX_SIZE }   // 2731 x 4096
+      return { width: Math.round(MAX_SIZE * 2 / 3), height: MAX_SIZE }
     case '3:2':
-      return { width: MAX_SIZE, height: Math.round(MAX_SIZE * 2 / 3) }   // 4096 x 2731
+      return { width: MAX_SIZE, height: Math.round(MAX_SIZE * 2 / 3) }
     default:
       return { width: MAX_SIZE, height: MAX_SIZE }
   }
@@ -776,8 +781,7 @@ export interface SeedreamEditInput {
   prompt: string                        // 편집 프롬프트
   image_urls: string[]                  // 입력 이미지 URL 배열
   aspect_ratio?: SeedreamAspectRatio    // 화면 비율 (기본값: 1:1)
-  quality?: SeedreamQuality             // 품질 (기본값: high)
-  strength?: number                     // 편집 강도 (0.0~1.0, 기본값: 0.5, 5.0 Lite 전용)
+  quality?: SeedreamQuality             // 품질 → 해상도 매핑 (basic=2K, high=3K)
   seed?: number                         // 시드값 (재현성)
 }
 
@@ -791,7 +795,7 @@ export interface SeedreamEditOutput {
 export interface SeedreamT2IInput {
   prompt: string                        // 생성 프롬프트
   aspect_ratio?: SeedreamAspectRatio    // 화면 비율 (기본값: 1:1)
-  quality?: SeedreamQuality             // 품질 (기본값: high)
+  quality?: SeedreamQuality             // 품질 → 해상도 매핑 (basic=2K, high=3K)
   seed?: number                         // 시드값 (재현성)
 }
 
@@ -808,20 +812,14 @@ export interface SeedreamT2IOutput {
  * @returns 큐 제출 응답 (request_id 포함)
  */
 export async function submitSeedreamEditToQueue(input: SeedreamEditInput): Promise<FalQueueSubmitResponse> {
-  const imageSize = convertAspectRatioToImageSize(input.aspect_ratio || '1:1')
+  const imageSize = convertAspectRatioToImageSize(input.aspect_ratio || '1:1', input.quality)
 
-  const falInput: Record<string, unknown> = {
+  const falInput = {
     prompt: input.prompt,
     image_urls: input.image_urls,
     image_size: imageSize,
-    quality: input.quality || 'high',
     seed: input.seed,
     enable_safety_checker: false,
-  }
-
-  // strength 파라미터 (5.0 Lite 전용, 0.0~1.0)
-  if (input.strength !== undefined) {
-    falInput.strength = input.strength
   }
 
   const { request_id } = await fal.queue.submit(SEEDREAM_EDIT_MODEL_ID, {
@@ -843,12 +841,11 @@ export async function submitSeedreamEditToQueue(input: SeedreamEditInput): Promi
  * @returns 큐 제출 응답 (request_id 포함)
  */
 export async function submitSeedreamT2IToQueue(input: SeedreamT2IInput): Promise<FalQueueSubmitResponse> {
-  const imageSize = convertAspectRatioToImageSize(input.aspect_ratio || '1:1')
+  const imageSize = convertAspectRatioToImageSize(input.aspect_ratio || '1:1', input.quality)
 
   const falInput = {
     prompt: input.prompt,
     image_size: imageSize,
-    quality: input.quality || 'high',
     seed: input.seed,
     enable_safety_checker: false,
   }
