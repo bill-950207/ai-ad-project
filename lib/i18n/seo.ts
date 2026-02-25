@@ -98,6 +98,201 @@ export const seoData: Record<Locale, {
   },
 }
 
+/** AI 영상 생성 도구 SEO */
+export const videoToolSeoData: Record<Locale, {
+  title: string
+  description: string
+  keywords: string[]
+  ogTitle: string
+  ogDescription: string
+}> = {
+  ko: {
+    title: 'AI 영상 생성 - Seedance · Vidu Q3 | Sora·Runway 대안 무료',
+    description: 'ByteDance Seedance 1.5 Pro와 Vidu Q3로 텍스트·이미지에서 고품질 AI 영상 생성. Sora, Runway, Kling 대안. Seedance 2.0 출시. 무료 크레딧으로 시작.',
+    keywords: [
+      'AI 영상 생성', 'AI 동영상 만들기', 'AI 비디오 생성기', 'Seedance', 'Seedance 1.5 Pro',
+      'Seedance 2.0', 'ByteDance AI', 'ByteDance Seedance', 'Vidu Q3', 'Vidu AI',
+      'Text to Video', 'Image to Video', '텍스트 영상 변환', '이미지 영상 변환', '무료 AI 영상',
+      'AI video generator', 'AI 숏폼 영상', 'AI 동영상 생성기', '바이트댄스 AI',
+      'AI 영상 제작', 'AI 영상 편집', '무료 동영상 만들기', 'Seedance Pro',
+      'Sora 대안', 'Runway 대안', 'Kling 대안', 'Sora 대체', 'Runway Gen-4 대안',
+      'Kling 3.0', 'Hailuo AI', 'Pika AI', 'Luma Dream Machine', 'Veo 대안',
+      'OpenAI Sora', 'Google Veo', '무료 AI 비디오', 'AI 광고 영상',
+    ],
+    ogTitle: 'AI 영상 생성 도구 - Seedance 1.5 Pro · Vidu Q3 | gwanggo',
+    ogDescription: 'ByteDance Seedance 1.5 Pro와 Vidu Q3로 텍스트·이미지에서 고품질 AI 영상을 생성하세요. Sora, Runway 대안.',
+  },
+  en: {
+    title: 'AI Video Generator - Seedance · Vidu Q3 | Sora & Runway Alternative',
+    description: 'Generate AI videos with ByteDance Seedance 1.5 Pro and Vidu Q3. Best Sora, Runway, Kling alternative. Seedance 2.0 now available. Start free.',
+    keywords: [
+      'AI video generator', 'AI video maker', 'Seedance', 'Seedance 1.5 Pro', 'Seedance 2.0',
+      'ByteDance AI', 'ByteDance Seedance', 'Vidu Q3', 'Vidu AI', 'text to video',
+      'image to video', 'free AI video generator', 'AI short video', 'AI video creation',
+      'AI video editing', 'text to video AI', 'image to video AI', 'Seedance Pro',
+      'Sora alternative', 'Runway alternative', 'Kling alternative', 'Runway Gen-4 alternative',
+      'OpenAI Sora alternative', 'Kling 3.0', 'Hailuo AI', 'Pika alternative',
+      'Luma Dream Machine', 'Google Veo alternative', 'free AI video maker',
+      'AI ad video', 'AI commercial video', 'best AI video generator 2026',
+    ],
+    ogTitle: 'AI Video Generator - Seedance 1.5 Pro · Vidu Q3 | gwanggo',
+    ogDescription: 'Generate high-quality AI videos with ByteDance Seedance 1.5 Pro and Vidu Q3. Best Sora & Runway alternative.',
+  },
+  ja: {
+    title: 'AI動画生成 - Seedance · Vidu Q3 | Sora・Runway代替 無料',
+    description: 'ByteDance Seedance 1.5 ProとVidu Q3でテキスト・画像から高品質AI動画を生成。Sora、Runway、Kling代替。Seedance 2.0リリース済み。無料クレジットで開始。',
+    keywords: [
+      'AI動画生成', 'AI動画メーカー', 'Seedance', 'Seedance 1.5 Pro', 'Seedance 2.0',
+      'ByteDance AI', 'Vidu Q3', 'Vidu AI', 'テキストから動画', '画像から動画',
+      '無料AI動画', 'AIショート動画', 'AI動画制作', 'AI動画編集', 'バイトダンスAI',
+      'Sora代替', 'Runway代替', 'Kling代替', 'Kling 3.0', 'Hailuo AI',
+      'Pika代替', 'Luma Dream Machine', 'Google Veo', 'OpenAI Sora',
+    ],
+    ogTitle: 'AI動画生成ツール - Seedance 1.5 Pro · Vidu Q3 | gwanggo',
+    ogDescription: 'ByteDance Seedance 1.5 ProとVidu Q3で高品質AI動画を生成。Sora・Runway代替。',
+  },
+  zh: {
+    title: 'AI视频生成 - Seedance · Vidu Q3 | Sora·Runway替代 免费',
+    description: '使用ByteDance Seedance 1.5 Pro和Vidu Q3生成高质量AI视频。Sora、Runway、Kling替代方案。Seedance 2.0已发布。免费积分立即开始。',
+    keywords: [
+      'AI视频生成', 'AI视频制作', 'Seedance', 'Seedance 1.5 Pro', 'Seedance 2.0',
+      'ByteDance AI', '字节跳动AI', 'Vidu Q3', 'Vidu AI', '文字转视频',
+      '图片转视频', '免费AI视频', 'AI短视频', 'AI视频创作', 'AI视频编辑',
+      'Sora替代', 'Runway替代', 'Kling替代', 'Kling 3.0', 'Hailuo AI',
+      'Pika替代', 'Luma Dream Machine', 'Google Veo', 'OpenAI Sora',
+    ],
+    ogTitle: 'AI视频生成工具 - Seedance 1.5 Pro · Vidu Q3 | gwanggo',
+    ogDescription: '使用Seedance 1.5 Pro和Vidu Q3生成高质量AI视频。Sora·Runway替代方案。',
+  },
+}
+
+/** AI 이미지 생성 도구 SEO */
+export const imageToolSeoData: Record<Locale, {
+  title: string
+  description: string
+  keywords: string[]
+  ogTitle: string
+  ogDescription: string
+}> = {
+  ko: {
+    title: 'AI 이미지 생성 - Seedream 5 · Z-Image | Midjourney 대안 무료',
+    description: 'ByteDance Seedream 5로 이미지 편집, Z-Image로 텍스트에서 AI 이미지 생성. Midjourney, DALL-E, Stable Diffusion 대안. 다양한 비율과 화질 지원. 무료 크레딧으로 시작.',
+    keywords: [
+      'AI 이미지 생성', 'AI 그림 생성기', 'AI 이미지 편집', 'Seedream', 'Seedream 5',
+      'ByteDance AI', 'ByteDance Seedream', 'Z-Image', 'Text to Image', 'Image Edit',
+      '텍스트 이미지 생성', 'AI 사진 생성', '무료 AI 이미지', 'AI image generator',
+      'AI 그림 그리기', 'AI 이미지 만들기', '무료 AI 그림', '바이트댄스 AI',
+      'AI 이미지 제작', 'AI 사진 편집', 'Seedream Pro',
+      'Midjourney 대안', 'DALL-E 대안', 'Stable Diffusion 대안', 'Midjourney 대체',
+      'GPT Image', 'Flux 대안', 'Ideogram 대안', 'Adobe Firefly 대안',
+      'Leonardo AI 대안', 'Recraft 대안', 'Imagen 대안', 'SD4 대안',
+      '무료 AI 그림 생성기', 'AI 광고 이미지', 'AI 제품 사진',
+    ],
+    ogTitle: 'AI 이미지 생성 도구 - Seedream 5 · Z-Image | gwanggo',
+    ogDescription: 'ByteDance Seedream 5와 Z-Image로 고품질 AI 이미지를 생성하세요. Midjourney, DALL-E 대안.',
+  },
+  en: {
+    title: 'AI Image Generator - Seedream 5 · Z-Image | Midjourney Alternative',
+    description: 'Edit images with ByteDance Seedream 5 and generate from text with Z-Image. Best Midjourney, DALL-E, Stable Diffusion alternative. Multiple aspect ratios. Start free.',
+    keywords: [
+      'AI image generator', 'AI image maker', 'Seedream', 'Seedream 5',
+      'ByteDance AI', 'ByteDance Seedream', 'Z-Image', 'text to image',
+      'AI image editing', 'free AI image generator', 'AI art generator',
+      'AI photo generator', 'AI image creation', 'Seedream Pro',
+      'Midjourney alternative', 'DALL-E alternative', 'Stable Diffusion alternative',
+      'GPT Image alternative', 'Flux alternative', 'Ideogram alternative',
+      'Adobe Firefly alternative', 'Leonardo AI alternative', 'Recraft alternative',
+      'Imagen alternative', 'free AI art generator', 'AI ad image', 'AI product photo',
+      'best AI image generator 2026',
+    ],
+    ogTitle: 'AI Image Generator - Seedream 5 · Z-Image | gwanggo',
+    ogDescription: 'Create high-quality AI images with ByteDance Seedream 5 and Z-Image. Best Midjourney & DALL-E alternative.',
+  },
+  ja: {
+    title: 'AI画像生成 - Seedream 5 · Z-Image | Midjourney代替 無料',
+    description: 'ByteDance Seedream 5で画像編集、Z-Imageでテキストから高品質AI画像を生成。Midjourney、DALL-E、Stable Diffusion代替。無料クレジットで開始。',
+    keywords: [
+      'AI画像生成', 'AI画像メーカー', 'Seedream', 'Seedream 5',
+      'ByteDance AI', 'Z-Image', 'テキストから画像', 'AI画像編集',
+      '無料AI画像', 'AIアート', 'AI写真生成', 'AI画像制作', 'バイトダンスAI',
+      'Midjourney代替', 'DALL-E代替', 'Stable Diffusion代替',
+      'GPT Image', 'Flux代替', 'Ideogram代替', 'Adobe Firefly代替',
+      'Leonardo AI代替', 'Recraft代替',
+    ],
+    ogTitle: 'AI画像生成ツール - Seedream 5 · Z-Image | gwanggo',
+    ogDescription: 'ByteDance Seedream 5とZ-Imageで高品質AI画像を生成。Midjourney・DALL-E代替。',
+  },
+  zh: {
+    title: 'AI图片生成 - Seedream 5 · Z-Image | Midjourney替代 免费',
+    description: '使用ByteDance Seedream 5编辑图片，Z-Image从文字生成AI图片。Midjourney、DALL-E、Stable Diffusion替代方案。免费积分立即开始。',
+    keywords: [
+      'AI图片生成', 'AI图片生成器', 'Seedream', 'Seedream 5',
+      'ByteDance AI', '字节跳动AI', 'Z-Image', '文字转图片',
+      'AI图片编辑', '免费AI图片', 'AI艺术', 'AI照片生成', 'AI图片制作',
+      'Midjourney替代', 'DALL-E替代', 'Stable Diffusion替代',
+      'GPT Image', 'Flux替代', 'Ideogram替代', 'Adobe Firefly替代',
+      'Leonardo AI替代', 'Recraft替代',
+    ],
+    ogTitle: 'AI图片生成工具 - Seedream 5 · Z-Image | gwanggo',
+    ogDescription: '使用Seedream 5和Z-Image生成高质量AI图片。Midjourney·DALL-E替代方案。',
+  },
+}
+
+/** AI 도구 JSON-LD (WebApplication) */
+export function getToolJsonLd(
+  locale: Locale,
+  siteUrl: string,
+  tool: 'video' | 'image',
+) {
+  const data = tool === 'video' ? videoToolSeoData[locale] : imageToolSeoData[locale]
+  const currency = locale === 'ko' ? 'KRW' : locale === 'ja' ? 'JPY' : locale === 'zh' ? 'CNY' : 'USD'
+
+  const models = tool === 'video'
+    ? [
+        { name: 'Seedance 1.5 Pro', creator: 'ByteDance', description: 'Text/Image to Video, 480p-720p, 4-12s' },
+        { name: 'Vidu Q3', creator: 'Shengshu Technology', description: 'Image to Video, 540p-1080p, 1-16s' },
+      ]
+    : [
+        { name: 'Seedream 5', creator: 'ByteDance', description: 'AI Image Edit, multiple aspect ratios' },
+        { name: 'Z-Image', creator: 'gwanggo', description: 'Text to Image, multiple aspect ratios' },
+      ]
+
+  return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: data.ogTitle,
+      applicationCategory: 'MultimediaApplication',
+      operatingSystem: 'Web',
+      description: data.ogDescription,
+      url: `${siteUrl}/${locale}/tools/${tool}`,
+      inLanguage: htmlLang[locale],
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: currency,
+      },
+    },
+    ...models.map((model) => ({
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: model.name,
+      applicationCategory: 'MultimediaApplication',
+      operatingSystem: 'Web',
+      description: model.description,
+      creator: {
+        '@type': 'Organization',
+        name: model.creator,
+      },
+      isPartOf: {
+        '@type': 'WebApplication',
+        name: 'gwanggo',
+        url: `${siteUrl}/${locale}`,
+      },
+    })),
+  ]
+}
+
 /** 언어별 FAQ 데이터 (FAQPage JSON-LD용) */
 export const faqData: Record<Locale, Array<{ question: string; answer: string }>> = {
   ko: [

@@ -17,10 +17,10 @@
 /** 아바타 생성 크레딧 (무료 - 신규 사용자 유치) */
 export const AVATAR_CREDIT_COST = 0
 
-/** 의상 교체 크레딧 (Kie.ai Seedream 4.5: ~$0.05) */
+/** 의상 교체 크레딧 (FAL.ai Seedream 5.0 Lite: ~$0.035) */
 export const OUTFIT_CREDIT_COST = 2
 
-/** 이미지 광고 품질별 크레딧 (Kie.ai Seedream 4.5) */
+/** 이미지 광고 품질별 크레딧 (FAL.ai Seedream 5.0 Lite) */
 export const IMAGE_AD_CREDIT_COST = {
   medium: 2, // ~$0.05
   high: 3, // ~$0.08
@@ -31,6 +31,9 @@ export const IMAGE_EDIT_CREDIT_COST = IMAGE_AD_CREDIT_COST
 
 /** 배경 이미지 생성 크레딧 (Kie.ai Z-Image: ~$0.02) */
 export const BACKGROUND_CREDIT_COST = 1
+
+/** Z-Image 도구 크레딧 (Kie.ai Z-Image: ~$0.02) */
+export const Z_IMAGE_TOOL_CREDIT_COST = 1
 
 // ============================================================
 // 영상 생성 관련
@@ -60,8 +63,8 @@ export const PRODUCT_AD_VIDEO_CREDIT_COST = {
   },
 } as const
 
-/** 키프레임 이미지 생성 크레딧 (Seedream 4.5, 이미지당) */
-export const KEYFRAME_CREDIT_COST = 1 // ~$0.03/장
+/** 키프레임 이미지 생성 크레딧 (Seedream 5.0 Lite, 이미지당) */
+export const KEYFRAME_CREDIT_COST = 1 // ~$0.035/장
 
 /** @deprecated 씬 전환 영상 (Kling O1) - 현재 서비스에서 미사용 */
 export const TRANSITION_CREDIT_COST = 12
@@ -71,6 +74,12 @@ export const VIDU_CREDIT_COST_PER_SECOND = {
   '540p': 1, // SD: ~$0.03/초
   '720p': 2, // HD: ~$0.05/초
   '1080p': 3, // FHD: ~$0.07/초
+} as const
+
+/** Seedance 1.5 Pro 영상 생성 해상도별 초당 크레딧 (FAL.ai) */
+export const SEEDANCE_CREDIT_COST_PER_SECOND = {
+  '480p': 1, // ~$0.03/초
+  '720p': 2, // ~$0.05/초
 } as const
 
 // ============================================================
@@ -106,4 +115,5 @@ export const DEFAULT_SIGNUP_CREDITS = 20
 
 export type ImageQuality = keyof typeof IMAGE_AD_CREDIT_COST
 export type ViduResolution = keyof typeof VIDU_CREDIT_COST_PER_SECOND
+export type SeedanceResolution = keyof typeof SEEDANCE_CREDIT_COST_PER_SECOND
 export type ProductDescriptionResolution = keyof typeof PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST

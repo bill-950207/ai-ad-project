@@ -9,7 +9,7 @@
 import Link from 'next/link'
 import NextImage from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
@@ -35,7 +35,10 @@ import {
   Menu,
   X,
   Home,
-  Shield
+  Shield,
+  Cpu,
+  Film,
+  ImagePlus,
 } from 'lucide-react'
 
 // ============================================================
@@ -43,7 +46,7 @@ import {
 // ============================================================
 
 interface NavItem {
-  labelKey: 'adCreationTools' | 'adWorkflow'
+  labelKey: 'adCreationTools' | 'adWorkflow' | 'aiTools'
   icon: React.ReactNode
   children: { labelKey: string; href: string; icon: React.ReactNode }[]
 }
@@ -52,7 +55,7 @@ interface NavItem {
 // 상수 정의
 // ============================================================
 
-const navItems: NavItem[] = [
+const getNavItems = (lang: string): NavItem[] => [
   {
     labelKey: 'adCreationTools',
     icon: <Wand2 className="w-4 h-4" />,
@@ -68,6 +71,14 @@ const navItems: NavItem[] = [
     children: [
       { labelKey: 'imageAd', href: '/dashboard/image-ad', icon: <Image className="w-4 h-4" /> },
       { labelKey: 'videoAd', href: '/dashboard/video-ad', icon: <Video className="w-4 h-4" /> },
+    ]
+  },
+  {
+    labelKey: 'aiTools',
+    icon: <Cpu className="w-4 h-4" />,
+    children: [
+      { labelKey: 'videoGeneration', href: `/dashboard/ai-tools/${lang}/video`, icon: <Film className="w-4 h-4" /> },
+      { labelKey: 'imageGeneration', href: `/dashboard/ai-tools/${lang}/image`, icon: <ImagePlus className="w-4 h-4" /> },
     ]
   }
 ]
@@ -158,10 +169,28 @@ export function Sidebar() {
     router.push('/login')
   }
 
+  const navItems = useMemo(() => getNavItems(language), [language])
+
+  const isChildActive = (href: string) => {
+    if (!pathname) return false
+    if (pathname === href || pathname.startsWith(href + '/')) return true
+    // AI tools: match tool type regardless of language segment
+    const aiMatch = href.match(/\/ai-tools\/[^/]+\/(video|image)$/)
+    if (aiMatch) {
+      return new RegExp(`/ai-tools/[^/]+/${aiMatch[1]}$`).test(pathname)
+    }
+    return false
+  }
+
   const handleLanguageChange = (code: Language) => {
     setLanguage(code)
     setShowLanguageMenu(false)
     setShowProfileMenu(false)
+    // Navigate to new language URL if on AI tools page
+    const aiToolsMatch = pathname?.match(/\/dashboard\/ai-tools\/[^/]+\/(video|image)/)
+    if (aiToolsMatch) {
+      router.push(pathname!.replace(/\/ai-tools\/[^/]+\//, `/ai-tools/${code}/`))
+    }
   }
 
   const getUserDisplayName = () => {
@@ -422,7 +451,7 @@ export function Sidebar() {
                         "relative flex items-center gap-3 rounded-xl text-sm overflow-hidden",
                         "transition-all duration-200 ease-out",
                         isCollapsed ? "p-3 justify-center" : "px-3 py-2.5",
-                        pathname === child.href || pathname?.startsWith(child.href + '/')
+                        isChildActive(child.href)
                           ? "bg-primary/15 text-primary font-medium"
                           : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                       )}
@@ -431,11 +460,11 @@ export function Sidebar() {
                       <div className={cn(
                         "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300",
                         "bg-gradient-to-r from-primary/10 via-transparent to-transparent",
-                        (pathname === child.href || pathname?.startsWith(child.href + '/')) && "opacity-0"
+                        (isChildActive(child.href)) && "opacity-0"
                       )} />
 
                       {/* 활성 인디케이터 */}
-                      {(pathname === child.href || pathname?.startsWith(child.href + '/')) && (
+                      {(isChildActive(child.href)) && (
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-primary rounded-r-full" />
                       )}
 

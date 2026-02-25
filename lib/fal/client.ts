@@ -594,11 +594,14 @@ export async function cancelVideoAdQueueRequest(requestId: string): Promise<bool
 }
 
 // ============================================================
-// Seedance 1.5 Pro Image-to-Video (UGC 영상 생성)
+// Seedance 1.5 Pro (UGC 영상 생성)
 // ============================================================
 
-/** Seedance 1.5 Pro 모델 ID */
+/** Seedance 1.5 Pro Image-to-Video 모델 ID */
 const SEEDANCE_MODEL_ID = 'fal-ai/bytedance/seedance/v1.5/pro/image-to-video'
+
+/** Seedance 1.5 Pro Text-to-Video 모델 ID */
+const SEEDANCE_T2V_MODEL_ID = 'fal-ai/bytedance/seedance/v1.5/pro/text-to-video'
 
 /** Seedance 화면 비율 타입 */
 export type SeedanceAspectRatio = '21:9' | '16:9' | '4:3' | '1:1' | '3:4' | '9:16'
@@ -715,12 +718,82 @@ export async function cancelSeedanceQueueRequest(requestId: string): Promise<boo
   }
 }
 
+/** Seedance Text-to-Video 입력 타입 */
+export interface SeedanceT2VInput {
+  prompt: string                      // 영상 설명
+  aspect_ratio?: SeedanceAspectRatio  // 화면 비율 (기본값: 16:9)
+  resolution?: '480p' | '720p'       // 해상도 (T2V는 720p까지)
+  duration?: number                   // 영상 길이 4-12초
+  camera_fixed?: boolean              // 카메라 고정 여부
+  generate_audio?: boolean            // 오디오 자동 생성
+  seed?: number                       // 시드값
+}
+
+/**
+ * Seedance Text-to-Video 요청을 fal.ai 큐에 제출
+ */
+export async function submitSeedanceT2VToQueue(input: SeedanceT2VInput): Promise<FalQueueSubmitResponse> {
+  const falInput = {
+    prompt: input.prompt,
+    aspect_ratio: input.aspect_ratio || '16:9',
+    resolution: input.resolution || '720p',
+    duration: input.duration || 5,
+    camera_fixed: input.camera_fixed,
+    generate_audio: input.generate_audio ?? true,
+    seed: input.seed,
+    enable_safety_checker: false,
+  }
+
+  const { request_id } = await fal.queue.submit(SEEDANCE_T2V_MODEL_ID, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${SEEDANCE_T2V_MODEL_ID}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${SEEDANCE_T2V_MODEL_ID}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${SEEDANCE_T2V_MODEL_ID}/requests/${request_id}/cancel`,
+  }
+}
+
+/**
+ * Seedance T2V 큐 상태 조회
+ */
+export async function getSeedanceT2VQueueStatus(requestId: string): Promise<FalQueueStatusResponse> {
+  const status = await fal.queue.status(SEEDANCE_T2V_MODEL_ID, {
+    requestId,
+    logs: true,
+  })
+
+  const statusObj = status as unknown as Record<string, unknown>
+
+  return {
+    status: status.status as 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED',
+    queue_position: statusObj.queue_position as number | undefined,
+    logs: statusObj.logs as FalLog[] | undefined,
+  }
+}
+
+/**
+ * Seedance T2V 결과 조회
+ */
+export async function getSeedanceT2VQueueResponse(requestId: string): Promise<SeedanceOutput> {
+  const result = await fal.queue.result(SEEDANCE_T2V_MODEL_ID, {
+    requestId,
+  })
+
+  return result.data as SeedanceOutput
+}
+
 // ============================================================
-// Seedream 4.5 Edit (이미지 편집/합성)
+// Seedream 5.0 Lite (이미지 편집/합성 + 텍스트→이미지)
 // ============================================================
 
-/** Seedream 4.5 Edit 모델 ID */
-const SEEDREAM_EDIT_MODEL_ID = 'fal-ai/bytedance/seedream/v4.5/edit'
+/** Seedream 5.0 Lite Edit 모델 ID */
+const SEEDREAM_EDIT_MODEL_ID = 'fal-ai/bytedance/seedream/v5/lite/edit'
+
+/** Seedream 5.0 Lite Text-to-Image 모델 ID */
+const SEEDREAM_T2I_MODEL_ID = 'fal-ai/bytedance/seedream/v5/lite/text-to-image'
 
 /** Seedream 화면 비율 타입 */
 export type SeedreamAspectRatio = '21:9' | '16:9' | '4:3' | '1:1' | '3:4' | '9:16' | '2:3' | '3:2'
@@ -732,34 +805,39 @@ export interface SeedreamImageSize {
 }
 
 /**
- * Seedream 4.5의 aspect_ratio를 width/height로 변환
- * 최대 차원은 4096, 최소는 1920
+ * Seedream의 aspect_ratio + quality를 width/height로 변환
+ *
+ * quality에 따라 해상도가 결정:
+ * - basic → 2K (최대 차원 2048)
+ * - high  → 3K (최대 차원 3072)
  *
  * @param aspectRatio - 화면 비율
+ * @param quality - 품질 (basic=2K, high=3K, 기본값: high)
  * @returns width, height 객체
  */
-export function convertAspectRatioToImageSize(aspectRatio: SeedreamAspectRatio): SeedreamImageSize {
-  const MAX_SIZE = 4096
-  const MIN_SIZE = 1920
+export function convertAspectRatioToImageSize(
+  aspectRatio: SeedreamAspectRatio,
+  quality?: SeedreamQuality,
+): SeedreamImageSize {
+  const MAX_SIZE = quality === 'basic' ? 2048 : 3072
 
   switch (aspectRatio) {
     case '1:1':
       return { width: MAX_SIZE, height: MAX_SIZE }
     case '16:9':
-      return { width: MAX_SIZE, height: Math.round(MAX_SIZE * 9 / 16) }  // 4096 x 2304
+      return { width: MAX_SIZE, height: Math.round(MAX_SIZE * 9 / 16) }
     case '9:16':
-      return { width: Math.round(MAX_SIZE * 9 / 16), height: MAX_SIZE }  // 2304 x 4096
+      return { width: Math.round(MAX_SIZE * 9 / 16), height: MAX_SIZE }
     case '4:3':
-      return { width: MAX_SIZE, height: Math.round(MAX_SIZE * 3 / 4) }   // 4096 x 3072
+      return { width: MAX_SIZE, height: Math.round(MAX_SIZE * 3 / 4) }
     case '3:4':
-      return { width: Math.round(MAX_SIZE * 3 / 4), height: MAX_SIZE }   // 3072 x 4096
+      return { width: Math.round(MAX_SIZE * 3 / 4), height: MAX_SIZE }
     case '21:9':
-      // 21:9 with height at min would need width 4480 (exceeds max), so use max width
-      return { width: MAX_SIZE, height: MIN_SIZE }  // 4096 x 1920 (approximately 21:9)
+      return { width: MAX_SIZE, height: Math.round(MAX_SIZE * 9 / 21) }
     case '2:3':
-      return { width: Math.round(MAX_SIZE * 2 / 3), height: MAX_SIZE }   // 2731 x 4096
+      return { width: Math.round(MAX_SIZE * 2 / 3), height: MAX_SIZE }
     case '3:2':
-      return { width: MAX_SIZE, height: Math.round(MAX_SIZE * 2 / 3) }   // 4096 x 2731
+      return { width: MAX_SIZE, height: Math.round(MAX_SIZE * 2 / 3) }
     default:
       return { width: MAX_SIZE, height: MAX_SIZE }
   }
@@ -768,36 +846,48 @@ export function convertAspectRatioToImageSize(aspectRatio: SeedreamAspectRatio):
 /** Seedream 품질 타입 */
 export type SeedreamQuality = 'basic' | 'high'
 
-/** Seedream 4.5 Edit 입력 타입 */
+/** Seedream Edit 입력 타입 */
 export interface SeedreamEditInput {
   prompt: string                        // 편집 프롬프트
   image_urls: string[]                  // 입력 이미지 URL 배열
   aspect_ratio?: SeedreamAspectRatio    // 화면 비율 (기본값: 1:1)
-  quality?: SeedreamQuality             // 품질 (기본값: high)
+  quality?: SeedreamQuality             // 품질 → 해상도 매핑 (basic=2K, high=3K)
   seed?: number                         // 시드값 (재현성)
 }
 
-/** Seedream 4.5 Edit 출력 타입 */
+/** Seedream Edit 출력 타입 */
 export interface SeedreamEditOutput {
   images: FalImageOutput[]
   seed?: number
 }
 
+/** Seedream Text-to-Image 입력 타입 */
+export interface SeedreamT2IInput {
+  prompt: string                        // 생성 프롬프트
+  aspect_ratio?: SeedreamAspectRatio    // 화면 비율 (기본값: 1:1)
+  quality?: SeedreamQuality             // 품질 → 해상도 매핑 (basic=2K, high=3K)
+  seed?: number                         // 시드값 (재현성)
+}
+
+/** Seedream Text-to-Image 출력 타입 */
+export interface SeedreamT2IOutput {
+  images: FalImageOutput[]
+  seed?: number
+}
+
 /**
- * Seedream 4.5 Edit 요청을 fal.ai 큐에 제출
+ * Seedream 5.0 Lite Edit 요청을 fal.ai 큐에 제출
  *
  * @param input - Seedream 편집 입력 데이터
  * @returns 큐 제출 응답 (request_id 포함)
  */
 export async function submitSeedreamEditToQueue(input: SeedreamEditInput): Promise<FalQueueSubmitResponse> {
-  // aspect_ratio를 width/height로 변환 (최대 4096)
-  const imageSize = convertAspectRatioToImageSize(input.aspect_ratio || '1:1')
+  const imageSize = convertAspectRatioToImageSize(input.aspect_ratio || '1:1', input.quality)
 
   const falInput = {
     prompt: input.prompt,
     image_urls: input.image_urls,
     image_size: imageSize,
-    quality: input.quality || 'high',
     seed: input.seed,
     enable_safety_checker: false,
   }
@@ -815,7 +905,35 @@ export async function submitSeedreamEditToQueue(input: SeedreamEditInput): Promi
 }
 
 /**
- * Seedream 4.5 Edit 큐 상태 조회
+ * Seedream 5.0 Lite Text-to-Image 요청을 fal.ai 큐에 제출
+ *
+ * @param input - Seedream T2I 입력 데이터
+ * @returns 큐 제출 응답 (request_id 포함)
+ */
+export async function submitSeedreamT2IToQueue(input: SeedreamT2IInput): Promise<FalQueueSubmitResponse> {
+  const imageSize = convertAspectRatioToImageSize(input.aspect_ratio || '1:1', input.quality)
+
+  const falInput = {
+    prompt: input.prompt,
+    image_size: imageSize,
+    seed: input.seed,
+    enable_safety_checker: false,
+  }
+
+  const { request_id } = await fal.queue.submit(SEEDREAM_T2I_MODEL_ID, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${SEEDREAM_T2I_MODEL_ID}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${SEEDREAM_T2I_MODEL_ID}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${SEEDREAM_T2I_MODEL_ID}/requests/${request_id}/cancel`,
+  }
+}
+
+/**
+ * Seedream Edit 큐 상태 조회
  *
  * @param requestId - 요청 ID
  * @returns 현재 상태 정보
@@ -836,7 +954,7 @@ export async function getSeedreamEditQueueStatus(requestId: string): Promise<Fal
 }
 
 /**
- * Seedream 4.5 Edit 결과 조회
+ * Seedream Edit 결과 조회
  *
  * @param requestId - 요청 ID
  * @returns 생성된 이미지 정보
@@ -850,7 +968,42 @@ export async function getSeedreamEditQueueResponse(requestId: string): Promise<S
 }
 
 /**
- * Seedream 4.5 Edit 요청 취소
+ * Seedream T2I 큐 상태 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 현재 상태 정보
+ */
+export async function getSeedreamT2IQueueStatus(requestId: string): Promise<FalQueueStatusResponse> {
+  const status = await fal.queue.status(SEEDREAM_T2I_MODEL_ID, {
+    requestId,
+    logs: true,
+  })
+
+  const statusObj = status as unknown as Record<string, unknown>
+
+  return {
+    status: status.status as 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED',
+    queue_position: statusObj.queue_position as number | undefined,
+    logs: statusObj.logs as FalLog[] | undefined,
+  }
+}
+
+/**
+ * Seedream T2I 결과 조회
+ *
+ * @param requestId - 요청 ID
+ * @returns 생성된 이미지 정보
+ */
+export async function getSeedreamT2IQueueResponse(requestId: string): Promise<SeedreamT2IOutput> {
+  const result = await fal.queue.result(SEEDREAM_T2I_MODEL_ID, {
+    requestId,
+  })
+
+  return result.data as SeedreamT2IOutput
+}
+
+/**
+ * Seedream Edit 요청 취소
  *
  * @param requestId - 요청 ID
  * @returns 취소 성공 여부
@@ -872,7 +1025,7 @@ export function buildOutfitChangePrompt(): string {
 }
 
 /**
- * 의상 교체 요청을 fal.ai Seedream 4.5로 제출
+ * 의상 교체 요청을 fal.ai Seedream 5.0 Lite로 제출
  *
  * @param humanImageUrl - 사람 이미지 URL
  * @param garmentImageUrl - 의상 이미지 URL
@@ -893,7 +1046,7 @@ export async function submitSeedreamOutfitEditToQueue(
 }
 
 /**
- * 첫 프레임 이미지 생성 요청을 fal.ai Seedream 4.5로 제출
+ * 첫 프레임 이미지 생성 요청을 fal.ai Seedream 5.0 Lite로 제출
  *
  * @param imageUrls - 입력 이미지 URL 배열 (아바타, 제품 등)
  * @param prompt - 이미지 생성 프롬프트
