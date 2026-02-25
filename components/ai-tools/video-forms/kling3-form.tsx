@@ -3,11 +3,12 @@
 import { useState, useMemo } from 'react'
 import { Sparkles } from 'lucide-react'
 import ImageDropzone from '../image-dropzone'
-import { KLING3_CREDIT_PER_SECOND } from '@/lib/credits/constants'
+import { KLING3_STD_CREDIT_PER_SECOND, KLING3_PRO_CREDIT_PER_SECOND } from '@/lib/credits/constants'
 import { useLanguage } from '@/contexts/language-context'
 
 const ASPECT_RATIOS = ['16:9', '9:16', '1:1'] as const
 const DURATIONS = ['5', '10'] as const
+const TIERS = ['standard', 'pro'] as const
 
 interface Kling3FormProps {
   onSubmit: (data: {
@@ -17,6 +18,7 @@ interface Kling3FormProps {
     duration: number
     resolution: '720p'
     aspectRatio: typeof ASPECT_RATIOS[number]
+    tier: typeof TIERS[number]
   }) => void
   isGenerating: boolean
 }
@@ -29,10 +31,14 @@ export default function Kling3Form({ onSubmit, isGenerating }: Kling3FormProps) 
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [aspectRatio, setAspectRatio] = useState<typeof ASPECT_RATIOS[number]>('16:9')
   const [duration, setDuration] = useState<typeof DURATIONS[number]>('5')
+  const [tier, setTier] = useState<typeof TIERS[number]>('standard')
 
   const estimatedCredits = useMemo(() => {
-    return KLING3_CREDIT_PER_SECOND['720p'] * Number(duration)
-  }, [duration])
+    const perSecond = tier === 'pro'
+      ? KLING3_PRO_CREDIT_PER_SECOND['720p']
+      : KLING3_STD_CREDIT_PER_SECOND['720p']
+    return perSecond * Number(duration)
+  }, [duration, tier])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,6 +51,7 @@ export default function Kling3Form({ onSubmit, isGenerating }: Kling3FormProps) 
       duration: Number(duration),
       resolution: '720p',
       aspectRatio,
+      tier,
     })
   }
 
@@ -71,6 +78,36 @@ export default function Kling3Form({ onSubmit, isGenerating }: Kling3FormProps) 
         onImageChange={setImageUrl}
         label={aiToolsT.referenceImage || '참조 이미지 (선택)'}
       />
+
+      {/* 티어 선택 (Standard / Pro) */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">
+          {aiToolsT.tier || '모델 등급'}
+        </label>
+        <div className="flex gap-2">
+          {TIERS.map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTier(t)}
+              disabled={isGenerating}
+              className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors ${
+                tier === t
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+              }`}
+            >
+              {t === 'standard' ? 'Standard' : 'Pro'}
+              <span className="ml-1 text-xs opacity-70">
+                ({t === 'pro'
+                  ? `${KLING3_PRO_CREDIT_PER_SECOND['720p']}/${aiToolsT.perSecond || '초'}`
+                  : `${KLING3_STD_CREDIT_PER_SECOND['720p']}/${aiToolsT.perSecond || '초'}`
+                })
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* 화면 비율 + 길이 */}
       <div className="grid grid-cols-2 gap-4">

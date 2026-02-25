@@ -1583,7 +1583,7 @@ export async function submitFlux2ProToQueue(input: Flux2ProInput): Promise<FalQu
     num_images: input.num_images || 1,
     guidance_scale: input.guidance_scale ?? 3.5,
     ...(input.seed !== undefined && { seed: input.seed }),
-    safety_tolerance: '6',
+    safety_tolerance: '5',
     output_format: 'jpeg' as const,
   }
 
@@ -1649,8 +1649,10 @@ export const GROK_IMAGE_MODEL = GROK_IMAGE_MODEL_ID
 // Kling 3.0 Pro (Kuaishou - 영상 생성)
 // ============================================================
 
-const KLING3_I2V_MODEL_ID = 'fal-ai/kling-video/v3/pro/image-to-video'
-const KLING3_T2V_MODEL_ID = 'fal-ai/kling-video/v3/pro/text-to-video'
+const KLING3_STD_I2V_MODEL_ID = 'fal-ai/kling-video/v3/standard/image-to-video'
+const KLING3_STD_T2V_MODEL_ID = 'fal-ai/kling-video/v3/standard/text-to-video'
+const KLING3_PRO_I2V_MODEL_ID = 'fal-ai/kling-video/v3/pro/image-to-video'
+const KLING3_PRO_T2V_MODEL_ID = 'fal-ai/kling-video/v3/pro/text-to-video'
 
 /** Kling 3.0 입력 타입 */
 export interface Kling3Input {
@@ -1658,6 +1660,7 @@ export interface Kling3Input {
   image_url?: string
   duration?: '5' | '10'
   aspect_ratio?: '16:9' | '9:16' | '1:1'
+  tier?: 'standard' | 'pro'
 }
 
 /** Kling 3.0 출력 타입 */
@@ -1670,7 +1673,10 @@ export interface Kling3Output {
  * image_url이 있으면 I2V, 없으면 T2V
  */
 export async function submitKling3ToQueue(input: Kling3Input): Promise<FalQueueSubmitResponse> {
-  const modelId = input.image_url ? KLING3_I2V_MODEL_ID : KLING3_T2V_MODEL_ID
+  const isPro = input.tier === 'pro'
+  const modelId = input.image_url
+    ? (isPro ? KLING3_PRO_I2V_MODEL_ID : KLING3_STD_I2V_MODEL_ID)
+    : (isPro ? KLING3_PRO_T2V_MODEL_ID : KLING3_STD_T2V_MODEL_ID)
 
   const falInput = {
     prompt: input.prompt,
@@ -1692,8 +1698,10 @@ export async function submitKling3ToQueue(input: Kling3Input): Promise<FalQueueS
   }
 }
 
-export const KLING3_I2V_MODEL = KLING3_I2V_MODEL_ID
-export const KLING3_T2V_MODEL = KLING3_T2V_MODEL_ID
+export const KLING3_STD_I2V_MODEL = KLING3_STD_I2V_MODEL_ID
+export const KLING3_STD_T2V_MODEL = KLING3_STD_T2V_MODEL_ID
+export const KLING3_PRO_I2V_MODEL = KLING3_PRO_I2V_MODEL_ID
+export const KLING3_PRO_T2V_MODEL = KLING3_PRO_T2V_MODEL_ID
 
 // ============================================================
 // Grok Imagine Video (xAI - 영상 생성)
