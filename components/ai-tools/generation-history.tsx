@@ -251,11 +251,11 @@ export default function GenerationHistory({
         {hasActiveGeneration && (
           <div
             className={`bg-card border rounded-xl overflow-hidden transition-all duration-200 ${
-              isActiveProcessing
-                ? 'border-primary/50 shadow-[0_0_12px_rgba(124,58,237,0.15)]'
-                : activeStatus === 'COMPLETED'
-                  ? 'border-green-500/30 cursor-pointer hover:border-green-500/50'
-                  : 'border-red-500/30'
+              activeStatus === 'COMPLETED'
+                ? 'border-border/80 cursor-pointer hover:border-primary/30 hover:shadow-glow-sm'
+                : activeStatus === 'FAILED'
+                  ? 'border-red-500/30'
+                  : 'border-border/80'
             }`}
             onClick={() => {
               if (activeStatus === 'COMPLETED' && activeResultUrl) {
@@ -316,11 +316,10 @@ export default function GenerationHistory({
                   )}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full gap-2">
-                  <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                  <div className="w-3/4 h-1 bg-secondary rounded-full overflow-hidden">
-                    <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
-                  </div>
+                <div className="flex items-center justify-center h-full">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Generating...
+                  </span>
                 </div>
               )}
 
@@ -344,11 +343,6 @@ export default function GenerationHistory({
               <p className="text-xs text-muted-foreground truncate">
                 {activeGeneration.prompt || '-'}
               </p>
-              {isActiveProcessing && (
-                <p className="text-[10px] text-primary font-medium mt-2">
-                  {aiToolsT.generating || '생성 중...'}
-                </p>
-              )}
             </div>
           </div>
         )}
@@ -363,7 +357,7 @@ export default function GenerationHistory({
               onClick={() => setSelectedItem(item)}
               className={`bg-card border rounded-xl overflow-hidden transition-all duration-200 ${
                 isProcessing
-                  ? 'border-primary/50 shadow-[0_0_12px_rgba(124,58,237,0.15)]'
+                  ? 'border-border/80'
                   : 'border-border/80 cursor-pointer hover:border-primary/30 hover:shadow-glow-sm'
               }`}
             >
@@ -409,11 +403,10 @@ export default function GenerationHistory({
                     )}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full gap-2">
-                    <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                    <div className="w-3/4 h-1 bg-secondary rounded-full overflow-hidden">
-                      <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
-                    </div>
+                  <div className="flex items-center justify-center h-full">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Generating...
+                    </span>
                   </div>
                 )}
 
@@ -437,11 +430,7 @@ export default function GenerationHistory({
                 <p className="text-xs text-muted-foreground truncate">
                   {item.prompt || '-'}
                 </p>
-                {isProcessing ? (
-                  <p className="text-[10px] text-primary font-medium mt-2">
-                    {aiToolsT.generating || '생성 중...'}
-                  </p>
-                ) : (
+                {isProcessing ? null : (
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-[10px] text-muted-foreground">
                       {formatDate(item.created_at)}
