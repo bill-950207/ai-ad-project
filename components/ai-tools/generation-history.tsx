@@ -336,11 +336,16 @@ export default function GenerationHistory({
         {/* History Items */}
         {items.map((item) => {
           const refImgUrl = getReferenceImageUrl(item.input_params)
+          const isProcessing = ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(item.status)
           return (
             <div
               key={item.id}
               onClick={() => setSelectedItem(item)}
-              className="bg-card border border-border/80 rounded-xl overflow-hidden cursor-pointer hover:border-primary/30 hover:shadow-glow-sm transition-all duration-200"
+              className={`bg-card border rounded-xl overflow-hidden transition-all duration-200 ${
+                isProcessing
+                  ? 'border-primary/50 shadow-[0_0_12px_rgba(124,58,237,0.15)]'
+                  : 'border-border/80 cursor-pointer hover:border-primary/30 hover:shadow-glow-sm'
+              }`}
             >
               {/* Thumbnail / Preview */}
               <div className="relative aspect-video bg-secondary/30">
@@ -360,18 +365,18 @@ export default function GenerationHistory({
                     />
                   )
                 ) : item.status === 'FAILED' ? (
-                  <div className="flex flex-col items-center justify-center h-full gap-1">
-                    <XCircle className="w-4 h-4 text-red-400" />
+                  <div className="flex flex-col items-center justify-center h-full gap-1.5">
+                    <XCircle className="w-5 h-5 text-red-400" />
                     <span className="text-[10px] text-red-400/70">
                       {aiToolsT.generationFailed || '생성 실패'}
                     </span>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full gap-1.5">
-                    <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
-                    <span className="text-[10px] text-muted-foreground">
-                      {aiToolsT.generating || '생성 중...'}
-                    </span>
+                  <div className="flex flex-col items-center justify-center h-full gap-2">
+                    <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                    <div className="w-3/4 h-1 bg-secondary rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
+                    </div>
                   </div>
                 )}
 
@@ -395,14 +400,20 @@ export default function GenerationHistory({
                 <p className="text-xs text-muted-foreground truncate">
                   {item.prompt || '-'}
                 </p>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-[10px] text-muted-foreground">
-                    {formatDate(item.created_at)}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {item.credits_used} {aiToolsT.credits || '크레딧'}
-                  </span>
-                </div>
+                {isProcessing ? (
+                  <p className="text-[10px] text-primary font-medium mt-2">
+                    {aiToolsT.generating || '생성 중...'}
+                  </p>
+                ) : (
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-[10px] text-muted-foreground">
+                      {formatDate(item.created_at)}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {item.credits_used} {aiToolsT.credits || '크레딧'}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           )
