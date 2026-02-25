@@ -2812,7 +2812,12 @@
     "uploadFailed": "图片上传失败。",
     "modelDescImageEdit": "图片编辑 / 文本生成图片",
     "modelDescTextToImage": "文本生成图片",
+    "modelDescFlux2Pro": "高质量文本生成图片",
+    "modelDescGrokImage": "文本生成图片",
     "modelDescTextImageToVideo": "文本/图片生成视频",
-    "modelDescImageToVideo": "图片生成视频"
+    "modelDescImageToVideo": "图片生成视频",
+    "modelDescKling3": "文本/图片生成视频（多镜头）",
+    "modelDescGrokVideo": "文本/图片生成视频",
+    "modelDescWan26": "文本/图片生成视频（电影级）"
   }
 }

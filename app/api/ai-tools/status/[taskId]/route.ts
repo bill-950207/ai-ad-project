@@ -16,6 +16,11 @@
  * - kie-edit:xxx → Kie.ai (Seedream 4.5, 하위 호환)
  * - kie-zimage:xxx → Kie.ai (Z-Image)
  * - kie-seedream-v4:xxx → Kie.ai (Seedream V4, 하위 호환)
+ * - fal-flux2:xxx → FAL.ai (FLUX.2 Pro)
+ * - fal-grok-img:xxx → FAL.ai (Grok Imagine Image)
+ * - fal-kling3:xxx → FAL.ai (Kling 3.0 Pro)
+ * - fal-grok-vid:xxx → FAL.ai (Grok Imagine Video)
+ * - fal-wan26:xxx → FAL.ai (Wan 2.6)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -31,6 +36,11 @@ import {
   getSeedreamT2IQueueStatus, getSeedreamT2IQueueResponse,
   getSeedanceQueueStatus, getSeedanceQueueResponse,
   getSeedanceT2VQueueStatus, getSeedanceT2VQueueResponse,
+  getFalQueueStatus, getFalQueueResult,
+  FLUX2_PRO_MODEL, GROK_IMAGE_MODEL,
+  KLING3_I2V_MODEL, KLING3_T2V_MODEL,
+  GROK_VIDEO_I2V_MODEL, GROK_VIDEO_T2V_MODEL,
+  WAN26_I2V_MODEL, WAN26_T2V_MODEL,
 } from '@/lib/fal/client'
 
 // ============================================================
@@ -163,6 +173,110 @@ async function getProviderStatus(providerTaskId: string): Promise<StatusResult> 
         }
       }
       return { status: statusResult.status }
+    }
+
+    // FLUX.2 Pro (이미지)
+    case 'fal-flux2': {
+      const statusResult = await getFalQueueStatus(FLUX2_PRO_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(FLUX2_PRO_MODEL, taskId)
+        return {
+          status: 'COMPLETED',
+          resultUrl: response.images?.[0]?.url,
+        }
+      }
+      return { status: statusResult.status }
+    }
+
+    // Grok Imagine Image (이미지)
+    case 'fal-grok-img': {
+      const statusResult = await getFalQueueStatus(GROK_IMAGE_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(GROK_IMAGE_MODEL, taskId)
+        return {
+          status: 'COMPLETED',
+          resultUrl: response.images?.[0]?.url,
+        }
+      }
+      return { status: statusResult.status }
+    }
+
+    // Kling 3.0 Pro (영상)
+    case 'fal-kling3': {
+      // Kling 3.0은 I2V/T2V 모두 같은 출력 형식 → 모델 ID 추적이 필요하지만
+      // 결과 조회 시에는 어느 모델이든 request_id로 조회 가능
+      // I2V 모델 ID로 시도, 실패하면 T2V로 시도
+      try {
+        const statusResult = await getFalQueueStatus(KLING3_I2V_MODEL, taskId)
+        if (statusResult.status === 'COMPLETED') {
+          const response = await getFalQueueResult(KLING3_I2V_MODEL, taskId)
+          return {
+            status: 'COMPLETED',
+            resultUrl: response.video?.url,
+          }
+        }
+        return { status: statusResult.status }
+      } catch {
+        const statusResult = await getFalQueueStatus(KLING3_T2V_MODEL, taskId)
+        if (statusResult.status === 'COMPLETED') {
+          const response = await getFalQueueResult(KLING3_T2V_MODEL, taskId)
+          return {
+            status: 'COMPLETED',
+            resultUrl: response.video?.url,
+          }
+        }
+        return { status: statusResult.status }
+      }
+    }
+
+    // Grok Imagine Video (영상)
+    case 'fal-grok-vid': {
+      try {
+        const statusResult = await getFalQueueStatus(GROK_VIDEO_I2V_MODEL, taskId)
+        if (statusResult.status === 'COMPLETED') {
+          const response = await getFalQueueResult(GROK_VIDEO_I2V_MODEL, taskId)
+          return {
+            status: 'COMPLETED',
+            resultUrl: response.video?.url,
+          }
+        }
+        return { status: statusResult.status }
+      } catch {
+        const statusResult = await getFalQueueStatus(GROK_VIDEO_T2V_MODEL, taskId)
+        if (statusResult.status === 'COMPLETED') {
+          const response = await getFalQueueResult(GROK_VIDEO_T2V_MODEL, taskId)
+          return {
+            status: 'COMPLETED',
+            resultUrl: response.video?.url,
+          }
+        }
+        return { status: statusResult.status }
+      }
+    }
+
+    // Wan 2.6 (영상)
+    case 'fal-wan26': {
+      try {
+        const statusResult = await getFalQueueStatus(WAN26_I2V_MODEL, taskId)
+        if (statusResult.status === 'COMPLETED') {
+          const response = await getFalQueueResult(WAN26_I2V_MODEL, taskId)
+          return {
+            status: 'COMPLETED',
+            resultUrl: response.video?.url,
+          }
+        }
+        return { status: statusResult.status }
+      } catch {
+        const statusResult = await getFalQueueStatus(WAN26_T2V_MODEL, taskId)
+        if (statusResult.status === 'COMPLETED') {
+          const response = await getFalQueueResult(WAN26_T2V_MODEL, taskId)
+          return {
+            status: 'COMPLETED',
+            resultUrl: response.video?.url,
+          }
+        }
+        return { status: statusResult.status }
+      }
     }
 
     default:

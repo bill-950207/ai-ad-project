@@ -2812,7 +2812,12 @@
     "uploadFailed": "画像のアップロードに失敗しました。",
     "modelDescImageEdit": "画像編集 / テキストから画像",
     "modelDescTextToImage": "テキストから画像",
+    "modelDescFlux2Pro": "高品質テキストから画像",
+    "modelDescGrokImage": "テキストから画像",
     "modelDescTextImageToVideo": "テキスト/画像から動画",
-    "modelDescImageToVideo": "画像から動画"
+    "modelDescImageToVideo": "画像から動画",
+    "modelDescKling3": "テキスト/画像から動画（マルチショット）",
+    "modelDescGrokVideo": "テキスト/画像から動画",
+    "modelDescWan26": "テキスト/画像から動画（シネマ）"
   }
 }

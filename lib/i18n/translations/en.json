@@ -2812,7 +2812,12 @@
     "uploadFailed": "Image upload failed.",
     "modelDescImageEdit": "Image Edit / Text to Image",
     "modelDescTextToImage": "Text to Image",
+    "modelDescFlux2Pro": "High Quality Text to Image",
+    "modelDescGrokImage": "Text to Image",
     "modelDescTextImageToVideo": "Text/Image to Video",
-    "modelDescImageToVideo": "Image to Video"
+    "modelDescImageToVideo": "Image to Video",
+    "modelDescKling3": "Text/Image to Video (Multi-shot)",
+    "modelDescGrokVideo": "Text/Image to Video",
+    "modelDescWan26": "Text/Image to Video (Cinema)"
   }
 }

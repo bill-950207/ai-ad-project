@@ -1515,3 +1515,284 @@ export async function cancelViduQ2QueueRequest(requestId: string): Promise<boole
     return false
   }
 }
+
+// ============================================================
+// 범용 FAL.ai 큐 헬퍼 (신규 모델 공용)
+// ============================================================
+
+/**
+ * FAL.ai 큐 상태 조회 (모델 ID 기반 범용)
+ */
+export async function getFalQueueStatus(modelId: string, requestId: string): Promise<FalQueueStatusResponse> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const status = await fal.queue.status(modelId as any, {
+    requestId,
+    logs: true,
+  })
+
+  const statusObj = status as unknown as Record<string, unknown>
+
+  return {
+    status: status.status as 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED',
+    queue_position: statusObj.queue_position as number | undefined,
+    logs: statusObj.logs as FalLog[] | undefined,
+  }
+}
+
+/**
+ * FAL.ai 큐 결과 조회 (모델 ID 기반 범용)
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getFalQueueResult(modelId: string, requestId: string): Promise<any> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result = await fal.queue.result(modelId as any, {
+    requestId,
+  })
+
+  return result.data
+}
+
+// ============================================================
+// FLUX.2 Pro (Black Forest Labs - 이미지 생성)
+// ============================================================
+
+const FLUX2_PRO_MODEL_ID = 'fal-ai/flux-2-pro'
+
+/** FLUX.2 Pro 입력 타입 */
+export interface Flux2ProInput {
+  prompt: string
+  image_size?: { width: number; height: number }
+  num_images?: number
+  guidance_scale?: number
+  seed?: number
+}
+
+/** FLUX.2 Pro 출력 타입 */
+export interface Flux2ProOutput {
+  images: FalImageOutput[]
+  seed?: number
+}
+
+/**
+ * FLUX.2 Pro 이미지 생성 요청을 fal.ai 큐에 제출
+ */
+export async function submitFlux2ProToQueue(input: Flux2ProInput): Promise<FalQueueSubmitResponse> {
+  const falInput = {
+    prompt: input.prompt,
+    image_size: input.image_size || { width: 1024, height: 1024 },
+    num_images: input.num_images || 1,
+    guidance_scale: input.guidance_scale ?? 3.5,
+    ...(input.seed !== undefined && { seed: input.seed }),
+    safety_tolerance: '6',
+    output_format: 'jpeg' as const,
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(FLUX2_PRO_MODEL_ID as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${FLUX2_PRO_MODEL_ID}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${FLUX2_PRO_MODEL_ID}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${FLUX2_PRO_MODEL_ID}/requests/${request_id}/cancel`,
+  }
+}
+
+export const FLUX2_PRO_MODEL = FLUX2_PRO_MODEL_ID
+
+// ============================================================
+// Grok Imagine Image (xAI - 이미지 생성)
+// ============================================================
+
+const GROK_IMAGE_MODEL_ID = 'xai/grok-imagine-image'
+
+/** Grok Imagine Image 입력 타입 */
+export interface GrokImageInput {
+  prompt: string
+  image_size?: { width: number; height: number }
+  num_images?: number
+}
+
+/** Grok Imagine Image 출력 타입 */
+export interface GrokImageOutput {
+  images: FalImageOutput[]
+}
+
+/**
+ * Grok Imagine Image 생성 요청을 fal.ai 큐에 제출
+ */
+export async function submitGrokImageToQueue(input: GrokImageInput): Promise<FalQueueSubmitResponse> {
+  const falInput = {
+    prompt: input.prompt,
+    image_size: input.image_size || { width: 1024, height: 1024 },
+    num_images: input.num_images || 1,
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(GROK_IMAGE_MODEL_ID as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${GROK_IMAGE_MODEL_ID}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${GROK_IMAGE_MODEL_ID}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${GROK_IMAGE_MODEL_ID}/requests/${request_id}/cancel`,
+  }
+}
+
+export const GROK_IMAGE_MODEL = GROK_IMAGE_MODEL_ID
+
+// ============================================================
+// Kling 3.0 Pro (Kuaishou - 영상 생성)
+// ============================================================
+
+const KLING3_I2V_MODEL_ID = 'fal-ai/kling-video/v3/pro/image-to-video'
+const KLING3_T2V_MODEL_ID = 'fal-ai/kling-video/v3/pro/text-to-video'
+
+/** Kling 3.0 입력 타입 */
+export interface Kling3Input {
+  prompt: string
+  image_url?: string
+  duration?: '5' | '10'
+  aspect_ratio?: '16:9' | '9:16' | '1:1'
+}
+
+/** Kling 3.0 출력 타입 */
+export interface Kling3Output {
+  video: { url: string; content_type?: string }
+}
+
+/**
+ * Kling 3.0 Pro 영상 생성 요청을 fal.ai 큐에 제출
+ * image_url이 있으면 I2V, 없으면 T2V
+ */
+export async function submitKling3ToQueue(input: Kling3Input): Promise<FalQueueSubmitResponse> {
+  const modelId = input.image_url ? KLING3_I2V_MODEL_ID : KLING3_T2V_MODEL_ID
+
+  const falInput = {
+    prompt: input.prompt,
+    ...(input.image_url && { image_url: input.image_url }),
+    duration: input.duration || '5',
+    aspect_ratio: input.aspect_ratio || '16:9',
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(modelId as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${modelId}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${modelId}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${modelId}/requests/${request_id}/cancel`,
+  }
+}
+
+export const KLING3_I2V_MODEL = KLING3_I2V_MODEL_ID
+export const KLING3_T2V_MODEL = KLING3_T2V_MODEL_ID
+
+// ============================================================
+// Grok Imagine Video (xAI - 영상 생성)
+// ============================================================
+
+const GROK_VIDEO_I2V_MODEL_ID = 'xai/grok-imagine-video/image-to-video'
+const GROK_VIDEO_T2V_MODEL_ID = 'xai/grok-imagine-video/text-to-video'
+
+/** Grok Imagine Video 입력 타입 */
+export interface GrokVideoInput {
+  prompt: string
+  image_url?: string
+  duration?: number // 1-15초
+  resolution?: '480p' | '720p'
+}
+
+/** Grok Imagine Video 출력 타입 */
+export interface GrokVideoOutput {
+  video: { url: string; content_type?: string }
+}
+
+/**
+ * Grok Imagine Video 생성 요청을 fal.ai 큐에 제출
+ * image_url이 있으면 I2V, 없으면 T2V
+ */
+export async function submitGrokVideoToQueue(input: GrokVideoInput): Promise<FalQueueSubmitResponse> {
+  const modelId = input.image_url ? GROK_VIDEO_I2V_MODEL_ID : GROK_VIDEO_T2V_MODEL_ID
+
+  const falInput = {
+    prompt: input.prompt,
+    ...(input.image_url && { image_url: input.image_url }),
+    duration: input.duration || 6,
+    resolution: input.resolution || '480p',
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(modelId as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${modelId}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${modelId}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${modelId}/requests/${request_id}/cancel`,
+  }
+}
+
+export const GROK_VIDEO_I2V_MODEL = GROK_VIDEO_I2V_MODEL_ID
+export const GROK_VIDEO_T2V_MODEL = GROK_VIDEO_T2V_MODEL_ID
+
+// ============================================================
+// Wan 2.6 (Alibaba - 영상 생성)
+// ============================================================
+
+const WAN26_I2V_MODEL_ID = 'wan/v2.6/image-to-video'
+const WAN26_T2V_MODEL_ID = 'wan/v2.6/text-to-video'
+
+/** Wan 2.6 입력 타입 */
+export interface Wan26Input {
+  prompt: string
+  image_url?: string
+  duration?: 5 | 10 | 15
+  resolution?: '720p' | '1080p'
+  aspect_ratio?: '16:9' | '9:16' | '1:1' | '4:3' | '3:4'
+}
+
+/** Wan 2.6 출력 타입 */
+export interface Wan26Output {
+  video: { url: string; content_type?: string }
+}
+
+/**
+ * Wan 2.6 영상 생성 요청을 fal.ai 큐에 제출
+ * image_url이 있으면 I2V, 없으면 T2V
+ */
+export async function submitWan26ToQueue(input: Wan26Input): Promise<FalQueueSubmitResponse> {
+  const modelId = input.image_url ? WAN26_I2V_MODEL_ID : WAN26_T2V_MODEL_ID
+
+  const falInput = {
+    prompt: input.prompt,
+    ...(input.image_url && { image_url: input.image_url }),
+    duration: input.duration || 5,
+    resolution: input.resolution || '720p',
+    aspect_ratio: input.aspect_ratio || '16:9',
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(modelId as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${modelId}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${modelId}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${modelId}/requests/${request_id}/cancel`,
+  }
+}
+
+export const WAN26_I2V_MODEL = WAN26_I2V_MODEL_ID
+export const WAN26_T2V_MODEL = WAN26_T2V_MODEL_ID

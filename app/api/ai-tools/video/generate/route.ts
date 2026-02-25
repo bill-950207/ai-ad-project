@@ -16,10 +16,16 @@ import { recordCreditUse, recordCreditRefund } from '@/lib/credits/history'
 import {
   SEEDANCE_CREDIT_COST_PER_SECOND,
   VIDU_CREDIT_COST_PER_SECOND,
+  KLING3_CREDIT_PER_SECOND,
+  GROK_VIDEO_CREDIT_PER_SECOND,
+  WAN26_CREDIT_PER_SECOND,
   type SeedanceResolution,
   type ViduResolution,
+  type Kling3Resolution,
+  type GrokVideoResolution,
+  type Wan26Resolution,
 } from '@/lib/credits/constants'
-import { submitSeedanceToQueue, submitSeedanceT2VToQueue } from '@/lib/fal/client'
+import { submitSeedanceToQueue, submitSeedanceT2VToQueue, submitKling3ToQueue, submitGrokVideoToQueue, submitWan26ToQueue } from '@/lib/fal/client'
 import { submitViduImageToVideoTask } from '@/lib/wavespeed/client'
 import type { ViduImageToVideoInput } from '@/lib/wavespeed/client'
 
@@ -47,7 +53,33 @@ interface ViduQ3Request {
   movementAmplitude?: 'auto' | 'small' | 'medium' | 'large'
 }
 
-type VideoGenerateRequest = SeedanceRequest | ViduQ3Request
+interface Kling3Request {
+  model: 'kling-3'
+  prompt: string
+  imageUrl?: string
+  resolution: '720p'
+  duration: number
+  aspectRatio?: '16:9' | '9:16' | '1:1'
+}
+
+interface GrokVideoRequest {
+  model: 'grok-video'
+  prompt: string
+  imageUrl?: string
+  resolution: '480p' | '720p'
+  duration: number
+}
+
+interface Wan26Request {
+  model: 'wan-2.6'
+  prompt: string
+  imageUrl?: string
+  resolution: '720p' | '1080p'
+  duration: number
+  aspectRatio?: '16:9' | '9:16' | '1:1' | '4:3' | '3:4'
+}
+
+type VideoGenerateRequest = SeedanceRequest | ViduQ3Request | Kling3Request | GrokVideoRequest | Wan26Request
 
 // ============================================================
 // 크레딧 계산
@@ -56,6 +88,18 @@ type VideoGenerateRequest = SeedanceRequest | ViduQ3Request
 function calculateCredits(req: VideoGenerateRequest): number {
   if (req.model === 'seedance-1.5-pro') {
     const perSecond = SEEDANCE_CREDIT_COST_PER_SECOND[req.resolution as SeedanceResolution]
+    return perSecond * req.duration
+  }
+  if (req.model === 'kling-3') {
+    const perSecond = KLING3_CREDIT_PER_SECOND[req.resolution as Kling3Resolution]
+    return perSecond * req.duration
+  }
+  if (req.model === 'grok-video') {
+    const perSecond = GROK_VIDEO_CREDIT_PER_SECOND[req.resolution as GrokVideoResolution]
+    return perSecond * req.duration
+  }
+  if (req.model === 'wan-2.6') {
+    const perSecond = WAN26_CREDIT_PER_SECOND[req.resolution as Wan26Resolution]
     return perSecond * req.duration
   }
   const perSecond = VIDU_CREDIT_COST_PER_SECOND[req.resolution as ViduResolution]
@@ -87,8 +131,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Vidu Q3는 이미지가 필수입니다' }, { status: 400 })
     }
 
-    if (body.duration < 1 || body.duration > 16) {
-      return NextResponse.json({ error: '영상 길이는 1~16초입니다' }, { status: 400 })
+    const maxDuration = body.model === 'wan-2.6' ? 15 : body.model === 'grok-video' ? 15 : 16
+    if (body.duration < 1 || body.duration > maxDuration) {
+      return NextResponse.json({ error: `영상 길이는 1~${maxDuration}초입니다` }, { status: 400 })
     }
 
     // 크레딧 계산 및 확인
@@ -137,6 +182,17 @@ export async function POST(request: NextRequest) {
               generateAudio: body.generateAudio,
               movementAmplitude: (body as ViduQ3Request).movementAmplitude,
             }),
+            ...(body.model === 'kling-3' && {
+              imageUrl: (body as Kling3Request).imageUrl,
+              aspectRatio: (body as Kling3Request).aspectRatio,
+            }),
+            ...(body.model === 'grok-video' && {
+              imageUrl: (body as GrokVideoRequest).imageUrl,
+            }),
+            ...(body.model === 'wan-2.6' && {
+              imageUrl: (body as Wan26Request).imageUrl,
+              aspectRatio: (body as Wan26Request).aspectRatio,
+            }),
           },
           status: 'PENDING',
           credits_used: creditsRequired,
@@ -173,6 +229,34 @@ export async function POST(request: NextRequest) {
           })
           providerTaskId = `fal-seedance-t2v:${result.request_id}`
         }
+      } else if (body.model === 'kling-3') {
+        // Kling 3.0 Pro (FAL.ai)
+        const result = await submitKling3ToQueue({
+          prompt: body.prompt,
+          image_url: body.imageUrl,
+          duration: String(body.duration) as '5' | '10',
+          aspect_ratio: body.aspectRatio,
+        })
+        providerTaskId = `fal-kling3:${result.request_id}`
+      } else if (body.model === 'grok-video') {
+        // Grok Imagine Video (xAI via FAL.ai)
+        const result = await submitGrokVideoToQueue({
+          prompt: body.prompt,
+          image_url: body.imageUrl,
+          duration: body.duration,
+          resolution: body.resolution as '480p' | '720p',
+        })
+        providerTaskId = `fal-grok-vid:${result.request_id}`
+      } else if (body.model === 'wan-2.6') {
+        // Wan 2.6 (Alibaba via FAL.ai)
+        const result = await submitWan26ToQueue({
+          prompt: body.prompt,
+          image_url: body.imageUrl,
+          duration: body.duration as 5 | 10 | 15,
+          resolution: body.resolution as '720p' | '1080p',
+          aspect_ratio: body.aspectRatio,
+        })
+        providerTaskId = `fal-wan26:${result.request_id}`
       } else {
         const input: ViduImageToVideoInput = {
           prompt: body.prompt,
