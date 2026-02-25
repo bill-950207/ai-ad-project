@@ -72,6 +72,7 @@ export default function VideoGenerator() {
   }, [refreshCredits])
 
   const handleActiveComplete = useCallback(() => {
+    setActiveGeneration(null)
     setRefreshTrigger((v) => v + 1)
   }, [])
 

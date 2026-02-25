@@ -70,6 +70,7 @@ export default function ImageGenerator() {
   }, [refreshCredits])
 
   const handleActiveComplete = useCallback(() => {
+    setActiveGeneration(null)
     setRefreshTrigger((v) => v + 1)
   }, [])
 
