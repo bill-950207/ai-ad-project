@@ -160,7 +160,7 @@ const i18n: Record<Locale, {
       { q: '생성된 영상의 저작권은 누구에게 있나요?', a: 'gwanggo에서 생성한 모든 AI 영상의 사용 권리는 사용자에게 있습니다. 상업적 용도(광고, SNS, 쇼핑몰 등)로 자유롭게 사용하실 수 있습니다.' },
       { q: 'Text-to-Video와 Image-to-Video의 차이는 무엇인가요?', a: 'Text-to-Video는 텍스트 설명만으로 영상을 생성하는 방식이고, Image-to-Video는 참조 이미지를 기반으로 영상을 만드는 방식입니다. Image-to-Video는 원하는 시각적 스타일을 더 정확하게 반영할 수 있습니다. Seedance 1.5 Pro는 두 방식 모두 지원하고, Vidu Q3는 Image-to-Video 전용입니다.' },
       { q: 'Sora, Runway, Kling과 비교하면 어떤가요?', a: 'Seedance 1.5 Pro는 OpenAI Sora, Runway Gen-4, Kling 3.0(Kuaishou), Hailuo(MiniMax), Pika, Luma Dream Machine, Google Veo 등과 비교해 광고 영상 제작에 특화되어 있습니다. 텍스트와 이미지 모두 입력 가능하고, 오디오 자동 생성을 지원하며, 별도 앱 설치 없이 웹에서 바로 사용할 수 있습니다.' },
-      { q: 'Seedance 2.0은 언제 출시되나요?', a: 'ByteDance의 Seedance 2.0은 2026년 2월 12일에 공식 출시되었습니다. 멀티모달 오디오-비디오 통합 생성, 최대 15초 멀티샷 출력, 대폭 향상된 영상 품질 등이 특징입니다. 중국에서는 CapCut/剪映을 통해 제공되며, gwanggo에서도 Seedance 2.0 지원을 준비하고 있습니다.' },
+      { q: 'Seedance 2.0이란 무엇인가요?', a: 'ByteDance의 Seedance 2.0은 2026년 2월 12일에 공식 출시되었습니다. 멀티모달 오디오-비디오 통합 생성, 최대 15초 멀티샷 출력, 대폭 향상된 영상 품질 등이 특징입니다. 중국에서는 CapCut/剪映을 통해 제공되며, gwanggo에서도 Seedance 2.0 지원을 준비하고 있습니다.' },
     ],
     otherToolTitle: 'AI 이미지 생성도 사용해보세요',
     otherToolDesc: 'ByteDance Seedream 5와 Z-Image로 고품질 AI 이미지를 생성할 수 있습니다.',

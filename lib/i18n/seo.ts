@@ -107,8 +107,8 @@ export const videoToolSeoData: Record<Locale, {
   ogDescription: string
 }> = {
   ko: {
-    title: 'AI 영상 생성 - Seedance 1.5 Pro · Vidu Q3 | Sora·Runway 대안 무료 AI 동영상',
-    description: 'ByteDance Seedance 1.5 Pro와 Vidu Q3로 텍스트·이미지에서 고품질 AI 영상 생성. Sora, Runway, Kling 대안. 480p~1080p, 최대 16초. Seedance 2.0 곧 출시. 무료 크레딧으로 시작.',
+    title: 'AI 영상 생성 - Seedance · Vidu Q3 | Sora·Runway 대안 무료',
+    description: 'ByteDance Seedance 1.5 Pro와 Vidu Q3로 텍스트·이미지에서 고품질 AI 영상 생성. Sora, Runway, Kling 대안. Seedance 2.0 출시. 무료 크레딧으로 시작.',
     keywords: [
       'AI 영상 생성', 'AI 동영상 만들기', 'AI 비디오 생성기', 'Seedance', 'Seedance 1.5 Pro',
       'Seedance 2.0', 'ByteDance AI', 'ByteDance Seedance', 'Vidu Q3', 'Vidu AI',
@@ -123,8 +123,8 @@ export const videoToolSeoData: Record<Locale, {
     ogDescription: 'ByteDance Seedance 1.5 Pro와 Vidu Q3로 텍스트·이미지에서 고품질 AI 영상을 생성하세요. Sora, Runway 대안.',
   },
   en: {
-    title: 'AI Video Generator - Seedance 1.5 Pro · Vidu Q3 | Sora & Runway Alternative',
-    description: 'Generate AI videos with ByteDance Seedance 1.5 Pro and Vidu Q3. Best Sora, Runway, Kling alternative. 480p–1080p, up to 16s. Seedance 2.0 coming soon. Start free.',
+    title: 'AI Video Generator - Seedance · Vidu Q3 | Sora & Runway Alternative',
+    description: 'Generate AI videos with ByteDance Seedance 1.5 Pro and Vidu Q3. Best Sora, Runway, Kling alternative. Seedance 2.0 now available. Start free.',
     keywords: [
       'AI video generator', 'AI video maker', 'Seedance', 'Seedance 1.5 Pro', 'Seedance 2.0',
       'ByteDance AI', 'ByteDance Seedance', 'Vidu Q3', 'Vidu AI', 'text to video',
@@ -139,8 +139,8 @@ export const videoToolSeoData: Record<Locale, {
     ogDescription: 'Generate high-quality AI videos with ByteDance Seedance 1.5 Pro and Vidu Q3. Best Sora & Runway alternative.',
   },
   ja: {
-    title: 'AI動画生成 - Seedance 1.5 Pro · Vidu Q3 | Sora・Runway代替 無料AI動画',
-    description: 'ByteDance Seedance 1.5 ProとVidu Q3でテキスト・画像から高品質AI動画を生成。Sora、Runway、Kling代替。Seedance 2.0近日公開。無料クレジットで開始。',
+    title: 'AI動画生成 - Seedance · Vidu Q3 | Sora・Runway代替 無料',
+    description: 'ByteDance Seedance 1.5 ProとVidu Q3でテキスト・画像から高品質AI動画を生成。Sora、Runway、Kling代替。Seedance 2.0リリース済み。無料クレジットで開始。',
     keywords: [
       'AI動画生成', 'AI動画メーカー', 'Seedance', 'Seedance 1.5 Pro', 'Seedance 2.0',
       'ByteDance AI', 'Vidu Q3', 'Vidu AI', 'テキストから動画', '画像から動画',
@@ -152,8 +152,8 @@ export const videoToolSeoData: Record<Locale, {
     ogDescription: 'ByteDance Seedance 1.5 ProとVidu Q3で高品質AI動画を生成。Sora・Runway代替。',
   },
   zh: {
-    title: 'AI视频生成 - Seedance 1.5 Pro · Vidu Q3 | Sora·Runway替代 免费AI视频',
-    description: '使用ByteDance Seedance 1.5 Pro和Vidu Q3生成高质量AI视频。Sora、Runway、Kling替代方案。Seedance 2.0即将推出。免费积分立即开始。',
+    title: 'AI视频生成 - Seedance · Vidu Q3 | Sora·Runway替代 免费',
+    description: '使用ByteDance Seedance 1.5 Pro和Vidu Q3生成高质量AI视频。Sora、Runway、Kling替代方案。Seedance 2.0已发布。免费积分立即开始。',
     keywords: [
       'AI视频生成', 'AI视频制作', 'Seedance', 'Seedance 1.5 Pro', 'Seedance 2.0',
       'ByteDance AI', '字节跳动AI', 'Vidu Q3', 'Vidu AI', '文字转视频',
@@ -175,7 +175,7 @@ export const imageToolSeoData: Record<Locale, {
   ogDescription: string
 }> = {
   ko: {
-    title: 'AI 이미지 생성 - Seedream 5 · Z-Image | Midjourney·DALL-E 대안 무료 AI 그림',
+    title: 'AI 이미지 생성 - Seedream 5 · Z-Image | Midjourney 대안 무료',
     description: 'ByteDance Seedream 5로 이미지 편집, Z-Image로 텍스트에서 AI 이미지 생성. Midjourney, DALL-E, Stable Diffusion 대안. 다양한 비율과 화질 지원. 무료 크레딧으로 시작.',
     keywords: [
       'AI 이미지 생성', 'AI 그림 생성기', 'AI 이미지 편집', 'Seedream', 'Seedream 5',
@@ -192,7 +192,7 @@ export const imageToolSeoData: Record<Locale, {
     ogDescription: 'ByteDance Seedream 5와 Z-Image로 고품질 AI 이미지를 생성하세요. Midjourney, DALL-E 대안.',
   },
   en: {
-    title: 'AI Image Generator - Seedream 5 · Z-Image | Midjourney & DALL-E Alternative',
+    title: 'AI Image Generator - Seedream 5 · Z-Image | Midjourney Alternative',
     description: 'Edit images with ByteDance Seedream 5 and generate from text with Z-Image. Best Midjourney, DALL-E, Stable Diffusion alternative. Multiple aspect ratios. Start free.',
     keywords: [
       'AI image generator', 'AI image maker', 'Seedream', 'Seedream 5',
@@ -209,7 +209,7 @@ export const imageToolSeoData: Record<Locale, {
     ogDescription: 'Create high-quality AI images with ByteDance Seedream 5 and Z-Image. Best Midjourney & DALL-E alternative.',
   },
   ja: {
-    title: 'AI画像生成 - Seedream 5 · Z-Image | Midjourney・DALL-E代替 無料AI画像',
+    title: 'AI画像生成 - Seedream 5 · Z-Image | Midjourney代替 無料',
     description: 'ByteDance Seedream 5で画像編集、Z-Imageでテキストから高品質AI画像を生成。Midjourney、DALL-E、Stable Diffusion代替。無料クレジットで開始。',
     keywords: [
       'AI画像生成', 'AI画像メーカー', 'Seedream', 'Seedream 5',
@@ -223,7 +223,7 @@ export const imageToolSeoData: Record<Locale, {
     ogDescription: 'ByteDance Seedream 5とZ-Imageで高品質AI画像を生成。Midjourney・DALL-E代替。',
   },
   zh: {
-    title: 'AI图片生成 - Seedream 5 · Z-Image | Midjourney·DALL-E替代 免费AI图片',
+    title: 'AI图片生成 - Seedream 5 · Z-Image | Midjourney替代 免费',
     description: '使用ByteDance Seedream 5编辑图片，Z-Image从文字生成AI图片。Midjourney、DALL-E、Stable Diffusion替代方案。免费积分立即开始。',
     keywords: [
       'AI图片生成', 'AI图片生成器', 'Seedream', 'Seedream 5',
