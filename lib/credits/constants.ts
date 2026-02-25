@@ -91,26 +91,26 @@ export const SEEDANCE_CREDIT_COST_PER_SECOND = {
   '720p': 2, // ~$0.05/초
 } as const
 
-/** Kling 3.0 Standard 영상 생성 초당 크레딧 (FAL.ai: ~$0.07/초) */
+/** Kling 3.0 Standard 영상 생성 초당 크레딧 (FAL.ai: ~$0.168/초) */
 export const KLING3_STD_CREDIT_PER_SECOND = {
-  '720p': 1, // ~$0.07/초
+  '720p': 6, // $0.168/초 × 2.5 = $0.42 → 6cr
 } as const
 
 /** Kling 3.0 Pro 영상 생성 초당 크레딧 (FAL.ai: ~$0.224/초) */
 export const KLING3_PRO_CREDIT_PER_SECOND = {
-  '720p': 3, // ~$0.22/초
+  '720p': 8, // $0.224/초 × 2.5 = $0.56 → 8cr
 } as const
 
 /** Grok Imagine Video 영상 생성 해상도별 초당 크레딧 (xAI) */
 export const GROK_VIDEO_CREDIT_PER_SECOND = {
-  '480p': 1, // ~$0.05/초
-  '720p': 2, // ~$0.07/초
+  '480p': 2, // $0.05/초 × 2.5 = $0.125 → 2cr
+  '720p': 3, // $0.07/초 × 2.5 = $0.175 → 3cr
 } as const
 
 /** Wan 2.6 영상 생성 해상도별 초당 크레딧 (Alibaba) */
 export const WAN26_CREDIT_PER_SECOND = {
-  '720p': 2,  // ~$0.10/초
-  '1080p': 3, // ~$0.15/초
+  '720p': 4,  // $0.10/초 × 2.5 = $0.25 → 4cr
+  '1080p': 5, // $0.15/초 × 2.5 = $0.375 → 5cr
 } as const
 
 // ============================================================
