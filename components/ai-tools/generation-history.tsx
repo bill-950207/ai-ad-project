@@ -159,21 +159,6 @@ export default function GenerationHistory({
     'z-image': 'Z-Image',
   }
 
-  const statusColors: Record<string, string> = {
-    COMPLETED: 'text-green-400',
-    FAILED: 'text-red-400',
-    IN_PROGRESS: 'text-yellow-400',
-    IN_QUEUE: 'text-blue-400',
-    PENDING: 'text-muted-foreground',
-  }
-
-  const statusMessages: Record<string, string> = {
-    PENDING: aiToolsT.statusPending || '요청 처리 중...',
-    IN_QUEUE: aiToolsT.statusInQueue || '대기열에서 대기 중...',
-    IN_PROGRESS: aiToolsT.statusInProgress || '생성 중...',
-    COMPLETED: aiToolsT.statusCompleted || '완료!',
-    FAILED: aiToolsT.statusFailed || '실패',
-  }
 
   const isActiveProcessing = activeStatus === 'PENDING' || activeStatus === 'IN_QUEUE' || activeStatus === 'IN_PROGRESS'
   const hasActiveGeneration = !!activeGeneration
@@ -251,18 +236,15 @@ export default function GenerationHistory({
                   />
                 )
               ) : activeStatus === 'FAILED' ? (
-                <div className="flex flex-col items-center justify-center h-full gap-1.5 px-2">
+                <div className="flex flex-col items-center justify-center h-full gap-1.5">
                   <XCircle className="w-5 h-5 text-red-400" />
-                  <span className="text-[10px] text-red-400/70 text-center line-clamp-2">
-                    {activeError}
+                  <span className="text-[10px] text-red-400/70">
+                    {aiToolsT.generationFailed || '생성 실패'}
                   </span>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full gap-2">
                   <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                  <span className="text-[10px] font-medium text-primary">
-                    {statusMessages[activeStatus] || activeStatus}
-                  </span>
                   <div className="w-3/4 h-1 bg-secondary rounded-full overflow-hidden">
                     <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
                   </div>
@@ -289,11 +271,11 @@ export default function GenerationHistory({
               <p className="text-xs text-muted-foreground truncate">
                 {activeGeneration.prompt || '-'}
               </p>
-              <div className="flex items-center justify-between mt-2">
-                <span className="text-[10px] text-primary font-medium">
-                  {isActiveProcessing ? (aiToolsT.generating || '생성 중...') : ''}
-                </span>
-              </div>
+              {isActiveProcessing && (
+                <p className="text-[10px] text-primary font-medium mt-2">
+                  {aiToolsT.generating || '생성 중...'}
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -324,10 +306,18 @@ export default function GenerationHistory({
                       className="w-full h-full object-cover"
                     />
                   )
+                ) : item.status === 'FAILED' ? (
+                  <div className="flex flex-col items-center justify-center h-full gap-1">
+                    <XCircle className="w-4 h-4 text-red-400" />
+                    <span className="text-[10px] text-red-400/70">
+                      {aiToolsT.generationFailed || '생성 실패'}
+                    </span>
+                  </div>
                 ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <span className={`text-xs font-medium ${statusColors[item.status] || ''}`}>
-                      {item.status}
+                  <div className="flex flex-col items-center justify-center h-full gap-1.5">
+                    <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
+                    <span className="text-[10px] text-muted-foreground">
+                      {aiToolsT.generating || '생성 중...'}
                     </span>
                   </div>
                 )}
