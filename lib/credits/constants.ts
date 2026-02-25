@@ -76,7 +76,7 @@ export const VIDU_CREDIT_COST_PER_SECOND = {
   '1080p': 3, // FHD: ~$0.07/초
 } as const
 
-/** Seedance 1.5 Pro 영상 생성 해상도별 초당 크레딧 (BytePlus) */
+/** Seedance 1.5 Pro 영상 생성 해상도별 초당 크레딧 (FAL.ai) */
 export const SEEDANCE_CREDIT_COST_PER_SECOND = {
   '480p': 1, // ~$0.03/초
   '720p': 2, // ~$0.05/초

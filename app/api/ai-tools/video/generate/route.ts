@@ -4,7 +4,7 @@
  * POST /api/ai-tools/video/generate
  *
  * 지원 모델:
- * - seedance-1.5-pro: BytePlus (텍스트/이미지 → 영상)
+ * - seedance-1.5-pro: FAL.ai Seedance 1.5 Pro (텍스트/이미지 → 영상)
  * - vidu-q3: WaveSpeed (이미지 → 영상)
  */
 
@@ -19,8 +19,7 @@ import {
   type SeedanceResolution,
   type ViduResolution,
 } from '@/lib/credits/constants'
-import { createVideoTask } from '@/lib/byteplus/client'
-import type { BytePlusVideoInput } from '@/lib/byteplus/types'
+import { submitSeedanceToQueue, submitSeedanceT2VToQueue } from '@/lib/fal/client'
 import { submitViduImageToVideoTask } from '@/lib/wavespeed/client'
 import type { ViduImageToVideoInput } from '@/lib/wavespeed/client'
 
@@ -150,16 +149,30 @@ export async function POST(request: NextRequest) {
 
     try {
       if (body.model === 'seedance-1.5-pro') {
-        const input: BytePlusVideoInput = {
-          prompt: body.prompt,
-          imageUrls: body.imageUrls,
-          aspectRatio: body.aspectRatio,
-          resolution: body.resolution,
-          duration: body.duration,
-          generateAudio: body.generateAudio,
+        const imageUrl = body.imageUrls?.[0]
+
+        if (imageUrl) {
+          // Image-to-Video (FAL.ai Seedance 1.5 Pro)
+          const result = await submitSeedanceToQueue({
+            prompt: body.prompt,
+            image_url: imageUrl,
+            aspect_ratio: body.aspectRatio,
+            resolution: body.resolution,
+            duration: body.duration,
+            generate_audio: body.generateAudio,
+          })
+          providerTaskId = `fal-seedance:${result.request_id}`
+        } else {
+          // Text-to-Video (FAL.ai Seedance 1.5 Pro)
+          const result = await submitSeedanceT2VToQueue({
+            prompt: body.prompt,
+            aspect_ratio: body.aspectRatio,
+            resolution: body.resolution,
+            duration: body.duration,
+            generate_audio: body.generateAudio,
+          })
+          providerTaskId = `fal-seedance-t2v:${result.request_id}`
         }
-        const result = await createVideoTask(input)
-        providerTaskId = `byteplus:${result.taskId}`
       } else {
         const input: ViduImageToVideoInput = {
           prompt: body.prompt,

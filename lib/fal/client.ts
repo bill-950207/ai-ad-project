@@ -594,11 +594,14 @@ export async function cancelVideoAdQueueRequest(requestId: string): Promise<bool
 }
 
 // ============================================================
-// Seedance 1.5 Pro Image-to-Video (UGC 영상 생성)
+// Seedance 1.5 Pro (UGC 영상 생성)
 // ============================================================
 
-/** Seedance 1.5 Pro 모델 ID */
+/** Seedance 1.5 Pro Image-to-Video 모델 ID */
 const SEEDANCE_MODEL_ID = 'fal-ai/bytedance/seedance/v1.5/pro/image-to-video'
+
+/** Seedance 1.5 Pro Text-to-Video 모델 ID */
+const SEEDANCE_T2V_MODEL_ID = 'fal-ai/bytedance/seedance/v1.5/pro/text-to-video'
 
 /** Seedance 화면 비율 타입 */
 export type SeedanceAspectRatio = '21:9' | '16:9' | '4:3' | '1:1' | '3:4' | '9:16'
@@ -713,6 +716,73 @@ export async function cancelSeedanceQueueRequest(requestId: string): Promise<boo
   } catch {
     return false
   }
+}
+
+/** Seedance Text-to-Video 입력 타입 */
+export interface SeedanceT2VInput {
+  prompt: string                      // 영상 설명
+  aspect_ratio?: SeedanceAspectRatio  // 화면 비율 (기본값: 16:9)
+  resolution?: '480p' | '720p'       // 해상도 (T2V는 720p까지)
+  duration?: number                   // 영상 길이 4-12초
+  camera_fixed?: boolean              // 카메라 고정 여부
+  generate_audio?: boolean            // 오디오 자동 생성
+  seed?: number                       // 시드값
+}
+
+/**
+ * Seedance Text-to-Video 요청을 fal.ai 큐에 제출
+ */
+export async function submitSeedanceT2VToQueue(input: SeedanceT2VInput): Promise<FalQueueSubmitResponse> {
+  const falInput = {
+    prompt: input.prompt,
+    aspect_ratio: input.aspect_ratio || '16:9',
+    resolution: input.resolution || '720p',
+    duration: input.duration || 5,
+    camera_fixed: input.camera_fixed,
+    generate_audio: input.generate_audio ?? true,
+    seed: input.seed,
+    enable_safety_checker: false,
+  }
+
+  const { request_id } = await fal.queue.submit(SEEDANCE_T2V_MODEL_ID, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${SEEDANCE_T2V_MODEL_ID}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${SEEDANCE_T2V_MODEL_ID}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${SEEDANCE_T2V_MODEL_ID}/requests/${request_id}/cancel`,
+  }
+}
+
+/**
+ * Seedance T2V 큐 상태 조회
+ */
+export async function getSeedanceT2VQueueStatus(requestId: string): Promise<FalQueueStatusResponse> {
+  const status = await fal.queue.status(SEEDANCE_T2V_MODEL_ID, {
+    requestId,
+    logs: true,
+  })
+
+  const statusObj = status as unknown as Record<string, unknown>
+
+  return {
+    status: status.status as 'IN_QUEUE' | 'IN_PROGRESS' | 'COMPLETED',
+    queue_position: statusObj.queue_position as number | undefined,
+    logs: statusObj.logs as FalLog[] | undefined,
+  }
+}
+
+/**
+ * Seedance T2V 결과 조회
+ */
+export async function getSeedanceT2VQueueResponse(requestId: string): Promise<SeedanceOutput> {
+  const result = await fal.queue.result(SEEDANCE_T2V_MODEL_ID, {
+    requestId,
+  })
+
+  return result.data as SeedanceOutput
 }
 
 // ============================================================

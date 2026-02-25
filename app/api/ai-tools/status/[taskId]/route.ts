@@ -7,7 +7,9 @@
  * provider_task_id에서 프로바이더를 추출하여 해당 API로 상태 조회
  *
  * 프로바이더 접두사:
- * - byteplus:xxx → BytePlus (Seedance)
+ * - fal-seedance:xxx → FAL.ai (Seedance 1.5 Pro I2V)
+ * - fal-seedance-t2v:xxx → FAL.ai (Seedance 1.5 Pro T2V)
+ * - byteplus:xxx → BytePlus (Seedance, 하위 호환)
  * - wavespeed-vidu:xxx → WaveSpeed (Vidu Q3)
  * - fal-seedream-v5:xxx → FAL.ai (Seedream 5.0 Lite Edit)
  * - fal-seedream-v5-t2i:xxx → FAL.ai (Seedream 5.0 Lite T2I)
@@ -22,7 +24,12 @@ import { prisma } from '@/lib/db'
 import { getVideoTaskStatus } from '@/lib/byteplus/client'
 import { getViduQueueStatus, getViduQueueResponse } from '@/lib/wavespeed/client'
 import { getEditQueueStatus, getEditQueueResponse, getZImageQueueStatus, getZImageQueueResponse, getSeedreamV4QueueStatus, getSeedreamV4QueueResponse } from '@/lib/kie/client'
-import { getSeedreamEditQueueStatus, getSeedreamEditQueueResponse, getSeedreamT2IQueueStatus, getSeedreamT2IQueueResponse } from '@/lib/fal/client'
+import {
+  getSeedreamEditQueueStatus, getSeedreamEditQueueResponse,
+  getSeedreamT2IQueueStatus, getSeedreamT2IQueueResponse,
+  getSeedanceQueueStatus, getSeedanceQueueResponse,
+  getSeedanceT2VQueueStatus, getSeedanceT2VQueueResponse,
+} from '@/lib/fal/client'
 
 // ============================================================
 // 상태 조회 결과 타입
@@ -48,7 +55,32 @@ async function getProviderStatus(providerTaskId: string): Promise<StatusResult> 
   const taskId = providerTaskId.substring(colonIndex + 1)
 
   switch (provider) {
+    case 'fal-seedance': {
+      const statusResult = await getSeedanceQueueStatus(taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getSeedanceQueueResponse(taskId)
+        return {
+          status: 'COMPLETED',
+          resultUrl: response.video?.url,
+        }
+      }
+      return { status: statusResult.status }
+    }
+
+    case 'fal-seedance-t2v': {
+      const statusResult = await getSeedanceT2VQueueStatus(taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getSeedanceT2VQueueResponse(taskId)
+        return {
+          status: 'COMPLETED',
+          resultUrl: response.video?.url,
+        }
+      }
+      return { status: statusResult.status }
+    }
+
     case 'byteplus': {
+      // 하위 호환: 기존 BytePlus Seedance 작업
       const result = await getVideoTaskStatus(taskId)
       return {
         status: result.status,
