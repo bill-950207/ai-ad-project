@@ -2797,6 +2797,22 @@
     "statusFailed": "失敗",
     "download": "ダウンロード",
     "history": "生成履歴",
-    "noHistory": "生成履歴がありません"
+    "noHistory": "生成履歴がありません",
+    "modeEdit": "画像編集",
+    "modeTextToImage": "テキストから画像",
+    "movementAuto": "自動",
+    "generationFailed": "生成失敗",
+    "retry": "再試行",
+    "insufficientCredits": "クレジットが不足しています",
+    "generateRequestFailed": "生成リクエストに失敗しました",
+    "networkError": "ネットワークエラーが発生しました",
+    "uploading": "アップロード中...",
+    "dropzoneText": "クリックまたは画像をドラッグ",
+    "unsupportedFormat": "PNG、JPG、WebP画像のみ対応しています。",
+    "uploadFailed": "画像のアップロードに失敗しました。",
+    "modelDescImageEdit": "画像編集 / テキストから画像",
+    "modelDescTextToImage": "テキストから画像",
+    "modelDescTextImageToVideo": "テキスト/画像から動画",
+    "modelDescImageToVideo": "画像から動画"
   }
 }

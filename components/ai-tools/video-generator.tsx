@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import ModelSelector from './model-selector'
 import SeedanceForm from './video-forms/seedance-form'
 import ViduQ3Form from './video-forms/vidu-q3-form'
@@ -9,23 +9,23 @@ import type { ActiveGeneration } from './generation-history'
 import { useLanguage } from '@/contexts/language-context'
 import { useCredits } from '@/contexts/credit-context'
 
-const VIDEO_MODELS = [
-  {
-    id: 'seedance-1.5-pro',
-    name: 'Seedance 1.5 Pro',
-    description: 'Text/Image to Video',
-  },
-  {
-    id: 'vidu-q3',
-    name: 'Vidu Q3',
-    description: 'Image to Video',
-  },
-]
-
 export default function VideoGenerator() {
   const { t } = useLanguage()
   const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
   const { refreshCredits } = useCredits()
+
+  const VIDEO_MODELS = useMemo(() => [
+    {
+      id: 'seedance-1.5-pro',
+      name: 'Seedance 1.5 Pro',
+      description: aiToolsT.modelDescTextImageToVideo || 'Text/Image to Video',
+    },
+    {
+      id: 'vidu-q3',
+      name: 'Vidu Q3',
+      description: aiToolsT.modelDescImageToVideo || 'Image to Video',
+    },
+  ], [aiToolsT.modelDescTextImageToVideo, aiToolsT.modelDescImageToVideo])
 
   const [selectedModel, setSelectedModel] = useState('seedance-1.5-pro')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -56,9 +56,9 @@ export default function VideoGenerator() {
         const error = await res.json()
         setActiveGeneration(null)
         if (res.status === 402) {
-          alert(error.error || '크레딧이 부족합니다')
+          alert(error.error || aiToolsT.insufficientCredits || '크레딧이 부족합니다')
         } else {
-          alert(error.error || '생성 요청에 실패했습니다')
+          alert(error.error || aiToolsT.generateRequestFailed || '생성 요청에 실패했습니다')
         }
         return
       }
@@ -74,7 +74,7 @@ export default function VideoGenerator() {
       refreshCredits()
     } catch {
       setActiveGeneration(null)
-      alert('네트워크 오류가 발생했습니다')
+      alert(aiToolsT.networkError || '네트워크 오류가 발생했습니다')
     } finally {
       setIsGenerating(false)
     }
@@ -87,16 +87,6 @@ export default function VideoGenerator() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground mb-2">
-          {aiToolsT.videoTitle || 'AI 영상 생성'}
-        </h1>
-        <p className="text-muted-foreground">
-          {aiToolsT.videoDescription || 'AI 모델을 선택하고 영상을 생성하세요'}
-        </p>
-      </div>
-
       {/* 2-column layout: Form (left) + History (right) */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,560px)_1fr] gap-6">
         {/* Left: Form */}

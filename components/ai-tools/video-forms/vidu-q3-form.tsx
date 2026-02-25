@@ -54,7 +54,7 @@ export default function ViduQ3Form({ onSubmit, isGenerating }: ViduQ3FormProps) 
   }
 
   const movementLabels: Record<string, string> = {
-    auto: 'Auto',
+    auto: aiToolsT.movementAuto || 'Auto',
     small: aiToolsT.movementSmall || '작음',
     medium: aiToolsT.movementMedium || '보통',
     large: aiToolsT.movementLarge || '큼',

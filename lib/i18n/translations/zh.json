@@ -2797,6 +2797,22 @@
     "statusFailed": "失败",
     "download": "下载",
     "history": "生成历史",
-    "noHistory": "暂无生成历史"
+    "noHistory": "暂无生成历史",
+    "modeEdit": "图片编辑",
+    "modeTextToImage": "文本生成图片",
+    "movementAuto": "自动",
+    "generationFailed": "生成失败",
+    "retry": "重试",
+    "insufficientCredits": "积分不足",
+    "generateRequestFailed": "生成请求失败",
+    "networkError": "网络错误",
+    "uploading": "上传中...",
+    "dropzoneText": "点击或拖拽图片",
+    "unsupportedFormat": "仅支持 PNG、JPG、WebP 图片。",
+    "uploadFailed": "图片上传失败。",
+    "modelDescImageEdit": "图片编辑 / 文本生成图片",
+    "modelDescTextToImage": "文本生成图片",
+    "modelDescTextImageToVideo": "文本/图片生成视频",
+    "modelDescImageToVideo": "图片生成视频"
   }
 }

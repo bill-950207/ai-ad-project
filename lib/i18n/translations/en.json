@@ -2797,6 +2797,22 @@
     "statusFailed": "Failed",
     "download": "Download",
     "history": "Generation History",
-    "noHistory": "No generation history yet"
+    "noHistory": "No generation history yet",
+    "modeEdit": "Image Edit",
+    "modeTextToImage": "Text to Image",
+    "movementAuto": "Auto",
+    "generationFailed": "Generation Failed",
+    "retry": "Retry",
+    "insufficientCredits": "Insufficient credits",
+    "generateRequestFailed": "Generation request failed",
+    "networkError": "A network error occurred",
+    "uploading": "Uploading...",
+    "dropzoneText": "Click or drag image here",
+    "unsupportedFormat": "Only PNG, JPG, WebP images are supported.",
+    "uploadFailed": "Image upload failed.",
+    "modelDescImageEdit": "Image Edit / Text to Image",
+    "modelDescTextToImage": "Text to Image",
+    "modelDescTextImageToVideo": "Text/Image to Video",
+    "modelDescImageToVideo": "Image to Video"
   }
 }

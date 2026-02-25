@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react'
 import { Upload, X, Loader2 } from 'lucide-react'
+import { useLanguage } from '@/contexts/language-context'
 
 interface ImageDropzoneProps {
   imageUrl: string | null
@@ -14,9 +15,12 @@ interface ImageDropzoneProps {
 export default function ImageDropzone({
   imageUrl,
   onImageChange,
-  label = '이미지 업로드',
+  label,
   required = false,
 }: ImageDropzoneProps) {
+  const { t } = useLanguage()
+  const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
+  const displayLabel = label || aiToolsT.referenceImage || '참조 이미지'
   const [isUploading, setIsUploading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
 
@@ -24,7 +28,7 @@ export default function ImageDropzone({
     const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
     const validExts = ['png', 'jpg', 'jpeg', 'webp']
     if (!validExts.includes(ext)) {
-      alert('PNG, JPG, WebP 이미지만 지원합니다.')
+      alert(aiToolsT.unsupportedFormat || 'PNG, JPG, WebP 이미지만 지원합니다.')
       return
     }
 
@@ -52,7 +56,7 @@ export default function ImageDropzone({
       onImageChange(publicUrl)
     } catch (error) {
       console.error('Upload error:', error)
-      alert('이미지 업로드에 실패했습니다.')
+      alert(aiToolsT.uploadFailed || '이미지 업로드에 실패했습니다.')
     } finally {
       setIsUploading(false)
     }
@@ -79,7 +83,7 @@ export default function ImageDropzone({
     return (
       <div className="space-y-2">
         <label className="text-sm font-medium text-foreground">
-          {label} {required && <span className="text-red-400">*</span>}
+          {displayLabel} {required && <span className="text-red-400">*</span>}
         </label>
         <div className="relative group rounded-xl overflow-hidden border border-border/80 bg-card">
           <img
@@ -120,7 +124,7 @@ export default function ImageDropzone({
         )}
         <div className="text-center">
           <p className="text-sm font-medium text-foreground">
-            {isUploading ? '업로드 중...' : '클릭하거나 이미지를 드래그하세요'}
+            {isUploading ? (aiToolsT.uploading || '업로드 중...') : (aiToolsT.dropzoneText || '클릭하거나 이미지를 드래그하세요')}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             PNG, JPG, WebP

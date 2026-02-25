@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import ModelSelector from './model-selector'
 import SeedreamForm from './image-forms/seedream-form'
 import ZImageForm from './image-forms/z-image-form'
@@ -9,23 +9,23 @@ import type { ActiveGeneration } from './generation-history'
 import { useLanguage } from '@/contexts/language-context'
 import { useCredits } from '@/contexts/credit-context'
 
-const IMAGE_MODELS = [
-  {
-    id: 'seedream-5',
-    name: 'Seedream 5',
-    description: 'Image Edit / Text to Image',
-  },
-  {
-    id: 'z-image',
-    name: 'Z-Image',
-    description: 'Text to Image',
-  },
-]
-
 export default function ImageGenerator() {
   const { t } = useLanguage()
   const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
   const { refreshCredits } = useCredits()
+
+  const IMAGE_MODELS = useMemo(() => [
+    {
+      id: 'seedream-5',
+      name: 'Seedream 5',
+      description: aiToolsT.modelDescImageEdit || 'Image Edit / Text to Image',
+    },
+    {
+      id: 'z-image',
+      name: 'Z-Image',
+      description: aiToolsT.modelDescTextToImage || 'Text to Image',
+    },
+  ], [aiToolsT.modelDescImageEdit, aiToolsT.modelDescTextToImage])
 
   const [selectedModel, setSelectedModel] = useState('seedream-5')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -55,9 +55,9 @@ export default function ImageGenerator() {
         const error = await res.json()
         setActiveGeneration(null)
         if (res.status === 402) {
-          alert(error.error || '크레딧이 부족합니다')
+          alert(error.error || aiToolsT.insufficientCredits || '크레딧이 부족합니다')
         } else {
-          alert(error.error || '생성 요청에 실패했습니다')
+          alert(error.error || aiToolsT.generateRequestFailed || '생성 요청에 실패했습니다')
         }
         return
       }
@@ -73,7 +73,7 @@ export default function ImageGenerator() {
       refreshCredits()
     } catch {
       setActiveGeneration(null)
-      alert('네트워크 오류가 발생했습니다')
+      alert(aiToolsT.networkError || '네트워크 오류가 발생했습니다')
     } finally {
       setIsGenerating(false)
     }
@@ -86,16 +86,6 @@ export default function ImageGenerator() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground mb-2">
-          {aiToolsT.imageTitle || 'AI 이미지 생성'}
-        </h1>
-        <p className="text-muted-foreground">
-          {aiToolsT.imageDescription || 'AI 모델을 선택하고 이미지를 생성하세요'}
-        </p>
-      </div>
-
       {/* 2-column layout: Form (left) + History (right) */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,560px)_1fr] gap-6">
         {/* Left: Form */}

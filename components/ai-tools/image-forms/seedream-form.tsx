@@ -80,7 +80,7 @@ export default function SeedreamForm({ onSubmit, isGenerating }: SeedreamFormPro
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           placeholder={isEditMode
-            ? (aiToolsT.imageEditPlaceholder || '이미지 편집 지시를 입력하세요...')
+            ? (aiToolsT.imagePromptPlaceholder || '이미지 편집 지시를 입력하세요...')
             : (aiToolsT.textToImagePlaceholder || '생성할 이미지를 설명하세요...')
           }
           rows={3}
@@ -93,7 +93,7 @@ export default function SeedreamForm({ onSubmit, isGenerating }: SeedreamFormPro
       <ImageDropzone
         imageUrl={imageUrl}
         onImageChange={setImageUrl}
-        label={aiToolsT.referenceImageOptional || '참조 이미지 (선택)'}
+        label={aiToolsT.referenceImage || '참조 이미지 (선택)'}
       />
 
       {/* 화면 비율 */}

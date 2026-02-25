@@ -59,7 +59,7 @@ export default function GenerationHistory({
   onActiveError,
   onRetry,
 }: GenerationHistoryProps) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
 
   const [items, setItems] = useState<HistoryItem[]>([])
@@ -197,9 +197,10 @@ export default function GenerationHistory({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeGeneration?.id])
 
+  const localeMap: Record<string, string> = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN' }
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
-    return date.toLocaleDateString('ko-KR', {
+    return date.toLocaleDateString(localeMap[language] || 'ko-KR', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -319,7 +320,7 @@ export default function GenerationHistory({
                 <div className="flex flex-col items-center justify-center h-full gap-2">
                   <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
                   <span className="text-xs font-medium text-muted-foreground">
-                    Generating...
+                    {aiToolsT.generating || 'Generating...'}
                   </span>
                 </div>
               )}
@@ -407,7 +408,7 @@ export default function GenerationHistory({
                   <div className="flex flex-col items-center justify-center h-full gap-2">
                     <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
                     <span className="text-xs font-medium text-muted-foreground">
-                      Generating...
+                      {aiToolsT.generating || 'Generating...'}
                     </span>
                   </div>
                 )}
