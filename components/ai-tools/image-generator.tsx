@@ -119,6 +119,7 @@ export default function ImageGenerator() {
             refreshTrigger={refreshTrigger}
             activeGeneration={activeGeneration}
             onActiveComplete={handleActiveComplete}
+            onRetry={handleSubmit}
           />
         </div>
       </div>

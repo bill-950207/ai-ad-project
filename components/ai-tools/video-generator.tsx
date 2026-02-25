@@ -121,6 +121,7 @@ export default function VideoGenerator() {
             refreshTrigger={refreshTrigger}
             activeGeneration={activeGeneration}
             onActiveComplete={handleActiveComplete}
+            onRetry={handleSubmit}
           />
         </div>
       </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Clock, Download, ChevronLeft, ChevronRight, Loader2, XCircle } from 'lucide-react'
+import { Clock, Download, ChevronLeft, ChevronRight, Loader2, XCircle, RotateCcw } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 
 interface HistoryItem {
@@ -38,6 +38,8 @@ interface GenerationHistoryProps {
   activeGeneration?: ActiveGeneration | null
   onActiveComplete?: () => void
   onActiveError?: () => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onRetry?: (data: any) => void
 }
 
 function getReferenceImageUrl(params: Record<string, unknown> | null): string | null {
@@ -55,6 +57,7 @@ export default function GenerationHistory({
   activeGeneration,
   onActiveComplete,
   onActiveError,
+  onRetry,
 }: GenerationHistoryProps) {
   const { t } = useLanguage()
   const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
@@ -289,11 +292,28 @@ export default function GenerationHistory({
                   />
                 )
               ) : activeStatus === 'FAILED' ? (
-                <div className="flex flex-col items-center justify-center h-full gap-1.5">
+                <div className="flex flex-col items-center justify-center h-full gap-2">
                   <XCircle className="w-5 h-5 text-red-400" />
                   <span className="text-[10px] text-red-400/70">
                     {aiToolsT.generationFailed || '생성 실패'}
                   </span>
+                  {onRetry && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onRetry({
+                          model: activeGeneration.model,
+                          prompt: activeGeneration.prompt,
+                          ...(activeGeneration.referenceImageUrl ? { imageUrl: activeGeneration.referenceImageUrl } : {}),
+                        })
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-1 bg-primary/10 hover:bg-primary/20 text-primary text-[10px] font-medium rounded-md transition-colors"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      {aiToolsT.retry || '재시도'}
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full gap-2">
@@ -365,11 +385,28 @@ export default function GenerationHistory({
                     />
                   )
                 ) : item.status === 'FAILED' ? (
-                  <div className="flex flex-col items-center justify-center h-full gap-1.5">
+                  <div className="flex flex-col items-center justify-center h-full gap-2">
                     <XCircle className="w-5 h-5 text-red-400" />
                     <span className="text-[10px] text-red-400/70">
                       {aiToolsT.generationFailed || '생성 실패'}
                     </span>
+                    {onRetry && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onRetry({
+                            model: item.model,
+                            prompt: item.prompt,
+                            ...item.input_params,
+                          })
+                        }}
+                        className="flex items-center gap-1 px-2.5 py-1 bg-primary/10 hover:bg-primary/20 text-primary text-[10px] font-medium rounded-md transition-colors"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        {aiToolsT.retry || '재시도'}
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full gap-2">
