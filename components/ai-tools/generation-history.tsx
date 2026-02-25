@@ -316,7 +316,8 @@ export default function GenerationHistory({
                   )}
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-full">
+                <div className="flex flex-col items-center justify-center h-full gap-2">
+                  <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
                   <span className="text-xs font-medium text-muted-foreground">
                     Generating...
                   </span>
