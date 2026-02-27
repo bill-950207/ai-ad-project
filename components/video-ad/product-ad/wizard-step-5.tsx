@@ -34,16 +34,17 @@ import { useProductAdWizard, SceneVideoSegment, VideoResolution } from './wizard
 import { VIDU_CREDIT_COST_PER_SECOND } from '@/lib/credits'
 import { useUserPlan } from '@/lib/hooks/use-user-plan'
 
-// FREE 사용자 제한 (Vidu Q2 Turbo는 540p 미지원)
+// FREE 사용자 제한
 const FREE_USER_LIMITS = {
-  maxResolution: '720p' as VideoResolution,
+  maxResolution: '540p' as VideoResolution,
 }
 
-// 번역된 해상도 옵션을 가져오는 함수 (Vidu Q2: 720p, 1080p만 지원)
+// 번역된 해상도 옵션을 가져오는 함수 (Vidu Q3: 540p, 720p, 1080p)
 function getResolutionOptions(t: Record<string, unknown>) {
   const step5T = (t.productAdWizard as Record<string, unknown>)?.step5 as Record<string, unknown> || {}
   const resT = step5T.resolutionOptions as Record<string, string> || {}
   return [
+    { value: '540p' as VideoResolution, label: 'SD (540p)', desc: resT.sdDesc || 'Economy quality', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['540p'] },
     { value: '720p' as VideoResolution, label: 'HD (720p)', desc: resT.hdDesc || 'Standard quality', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['720p'] },
     { value: '1080p' as VideoResolution, label: 'FHD (1080p)', desc: resT.fhdDesc || 'High quality', creditsPerSecond: VIDU_CREDIT_COST_PER_SECOND['1080p'] },
   ]
@@ -1984,7 +1985,7 @@ export function WizardStep5() {
                     </div>
                   ) : (
                     <>
-                      <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
+                      <div className="grid grid-cols-3 gap-3 max-w-md mx-auto">
                         {resolutionOptions.map((option) => {
                           const isLocked = isFreeUser && option.value !== FREE_USER_LIMITS.maxResolution
                           return (
