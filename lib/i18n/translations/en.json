@@ -835,6 +835,12 @@
       "generatingDesc": "AI is generating {count} images...",
       "progress": "Progress",
       "almostDone": "Almost done...",
+      "steps": {
+        "analyzing": "Analyzing product and style...",
+        "composing": "Designing composition and atmosphere...",
+        "rendering": "Generating high-quality images...",
+        "finalizing": "Almost done..."
+      },
       "preview": "Generation Preview",
       "product": "Product",
       "avatar": "Avatar",

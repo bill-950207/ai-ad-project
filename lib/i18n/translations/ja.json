@@ -835,6 +835,12 @@
       "generatingDesc": "AIが{count}枚の画像を生成中...",
       "progress": "進捗",
       "almostDone": "もうすぐ完了...",
+      "steps": {
+        "analyzing": "商品とスタイルを分析中...",
+        "composing": "構図と雰囲気を設計中...",
+        "rendering": "高品質な画像を生成中...",
+        "finalizing": "最終仕上げ中..."
+      },
       "preview": "生成プレビュー",
       "product": "商品",
       "avatar": "アバター",

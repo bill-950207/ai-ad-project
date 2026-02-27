@@ -835,6 +835,12 @@
       "generatingDesc": "AI가 {count}개의 이미지를 생성하고 있습니다...",
       "progress": "진행률",
       "almostDone": "거의 완료되었습니다...",
+      "steps": {
+        "analyzing": "제품과 스타일을 분석하고 있습니다...",
+        "composing": "구도와 분위기를 설계하고 있습니다...",
+        "rendering": "고품질 이미지를 생성하고 있습니다...",
+        "finalizing": "마무리 작업 중입니다..."
+      },
       "preview": "생성 미리보기",
       "product": "제품",
       "avatar": "아바타",

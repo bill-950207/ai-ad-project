@@ -557,6 +557,15 @@ export function WizardStep4() {
     )
   }
 
+  // 생성 중 단계별 메시지
+  const getGenerationStepMessage = () => {
+    const steps = t.imageAd?.generate?.steps
+    if (generationProgress < 20) return steps?.analyzing || 'Analyzing product and style...'
+    if (generationProgress < 50) return steps?.composing || 'Designing composition and atmosphere...'
+    if (generationProgress < 80) return steps?.rendering || 'Generating high-quality images...'
+    return steps?.finalizing || 'Almost done...'
+  }
+
   // 생성 중 화면
   if (isGenerating) {
     return (
@@ -567,8 +576,8 @@ export function WizardStep4() {
               <Loader2 className="w-10 h-10 text-primary animate-spin" />
             </div>
             <h2 className="text-xl font-bold text-foreground mb-2">{t.imageAd?.generate?.generating || 'Generating Image Ad'}</h2>
-            <p className="text-muted-foreground">
-              {(t.imageAd?.generate?.generatingDesc || 'AI is generating {count} images...').replace('{count}', String(numImages))}
+            <p className="text-muted-foreground transition-opacity duration-300">
+              {getGenerationStepMessage()}
             </p>
           </div>
 
@@ -584,11 +593,6 @@ export function WizardStep4() {
                 style={{ width: `${generationProgress}%` }}
               />
             </div>
-            {generationProgress >= 99 && (
-              <p className="text-xs text-muted-foreground text-center mt-2">
-                {t.imageAd?.generate?.almostDone || 'Almost done...'}
-              </p>
-            )}
           </div>
         </div>
       </div>
