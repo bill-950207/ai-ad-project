@@ -6,9 +6,9 @@ import ImageDropzone from '../image-dropzone'
 import { LTX23_CREDIT_PER_SECOND } from '@/lib/credits/constants'
 import { useLanguage } from '@/contexts/language-context'
 
-const ASPECT_RATIOS = ['16:9', '9:16', '1:1', '4:3', '3:4'] as const
-const RESOLUTIONS = ['720p', '1080p'] as const
-const DURATIONS = [3, 5, 10, 15, 20] as const
+const ASPECT_RATIOS = ['16:9', '9:16'] as const
+const RESOLUTIONS = ['1080p'] as const
+const DURATIONS = [6, 8, 10] as const
 
 interface Ltx23FormProps {
   onSubmit: (data: {
@@ -29,8 +29,8 @@ export default function Ltx23Form({ onSubmit, isGenerating }: Ltx23FormProps) {
   const [prompt, setPrompt] = useState('')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [aspectRatio, setAspectRatio] = useState<typeof ASPECT_RATIOS[number]>('16:9')
-  const [resolution, setResolution] = useState<typeof RESOLUTIONS[number]>('720p')
-  const [duration, setDuration] = useState<typeof DURATIONS[number]>(5)
+  const [resolution, setResolution] = useState<typeof RESOLUTIONS[number]>('1080p')
+  const [duration, setDuration] = useState<typeof DURATIONS[number]>(6)
 
   const estimatedCredits = useMemo(() => {
     return LTX23_CREDIT_PER_SECOND[resolution] * duration

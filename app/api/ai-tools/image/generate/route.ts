@@ -212,50 +212,29 @@ export async function POST(request: NextRequest) {
         })
         providerTaskId = `fal-flux2:${result.request_id}`
       } else if (body.model === 'grok-image') {
-        // Grok Imagine Image (xAI via FAL.ai)
-        const SIZES: Record<string, { width: number; height: number }> = {
-          '1:1': { width: 1024, height: 1024 },
-          '4:3': { width: 1024, height: 768 },
-          '3:4': { width: 768, height: 1024 },
-          '16:9': { width: 1024, height: 576 },
-          '9:16': { width: 576, height: 1024 },
-        }
+        // Grok Imagine Image (xAI via FAL.ai) — uses aspect_ratio string
         const result = await submitGrokImageToQueue({
           prompt: body.prompt,
-          image_size: SIZES[body.aspectRatio || '1:1'] || SIZES['1:1'],
+          aspect_ratio: body.aspectRatio || '1:1',
         })
         providerTaskId = `fal-grok-img:${result.request_id}`
       } else if (body.model === 'nano-banana-2' && body.imageUrl) {
-        const SIZES: Record<string, { width: number; height: number }> = {
-          '1:1': { width: 1024, height: 1024 },
-          '4:3': { width: 1024, height: 768 },
-          '3:4': { width: 768, height: 1024 },
-          '16:9': { width: 1024, height: 576 },
-          '9:16': { width: 576, height: 1024 },
-        }
-        const size = body.quality === 'high'
-          ? { width: (SIZES[body.aspectRatio || '1:1'] || SIZES['1:1']).width * 2, height: (SIZES[body.aspectRatio || '1:1'] || SIZES['1:1']).height * 2 }
-          : SIZES[body.aspectRatio || '1:1'] || SIZES['1:1']
+        // Nano Banana 2 Edit — uses resolution enum + aspect_ratio + image_urls array
+        const resolution = body.quality === 'high' ? '4K' as const : '1K' as const
         const result = await submitNanoBanana2EditToQueue({
           prompt: body.prompt,
           image_url: body.imageUrl,
-          image_size: size,
+          resolution,
+          aspect_ratio: body.aspectRatio || '1:1',
         })
         providerTaskId = `fal-nanobanana2-edit:${result.request_id}`
       } else if (body.model === 'nano-banana-2' && !body.imageUrl) {
-        const SIZES: Record<string, { width: number; height: number }> = {
-          '1:1': { width: 1024, height: 1024 },
-          '4:3': { width: 1024, height: 768 },
-          '3:4': { width: 768, height: 1024 },
-          '16:9': { width: 1024, height: 576 },
-          '9:16': { width: 576, height: 1024 },
-        }
-        const size = body.quality === 'high'
-          ? { width: (SIZES[body.aspectRatio || '1:1'] || SIZES['1:1']).width * 2, height: (SIZES[body.aspectRatio || '1:1'] || SIZES['1:1']).height * 2 }
-          : SIZES[body.aspectRatio || '1:1'] || SIZES['1:1']
+        // Nano Banana 2 T2I — uses resolution enum + aspect_ratio
+        const resolution = body.quality === 'high' ? '4K' as const : '1K' as const
         const result = await submitNanoBanana2ToQueue({
           prompt: body.prompt,
-          image_size: size,
+          resolution,
+          aspect_ratio: body.aspectRatio || '1:1',
         })
         providerTaskId = `fal-nanobanana2:${result.request_id}`
       } else {

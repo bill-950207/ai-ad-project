@@ -7,7 +7,7 @@ import { HAILUO02_CREDIT_PER_SECOND } from '@/lib/credits/constants'
 import { useLanguage } from '@/contexts/language-context'
 
 const TIERS = ['standard', 'pro'] as const
-const DURATIONS = [2, 4, 6] as const
+const STANDARD_DURATIONS = [6, 10] as const
 
 const TIER_RESOLUTION: Record<typeof TIERS[number], '768p' | '1080p'> = {
   standard: '768p',
@@ -20,7 +20,7 @@ interface Hailuo02FormProps {
     prompt: string
     imageUrl?: string
     duration: number
-    tier: typeof TIERS[number]
+    resolution: '768p' | '1080p'
   }) => void
   isGenerating: boolean
 }
@@ -32,13 +32,15 @@ export default function Hailuo02Form({ onSubmit, isGenerating }: Hailuo02FormPro
   const [prompt, setPrompt] = useState('')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [tier, setTier] = useState<typeof TIERS[number]>('standard')
-  const [duration, setDuration] = useState<typeof DURATIONS[number]>(4)
+  const [duration, setDuration] = useState<typeof STANDARD_DURATIONS[number]>(6)
 
   const resolution = TIER_RESOLUTION[tier]
 
   const estimatedCredits = useMemo(() => {
-    return HAILUO02_CREDIT_PER_SECOND[resolution] * duration
-  }, [resolution, duration])
+    // Pro tier has no duration control, assume ~6s output
+    const dur = tier === 'pro' ? 6 : duration
+    return HAILUO02_CREDIT_PER_SECOND[resolution] * dur
+  }, [resolution, duration, tier])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,8 +50,8 @@ export default function Hailuo02Form({ onSubmit, isGenerating }: Hailuo02FormPro
       model: 'hailuo-02',
       prompt: prompt.trim(),
       ...(imageUrl && { imageUrl }),
-      duration,
-      tier,
+      duration: tier === 'pro' ? 6 : duration, // Pro has no duration control
+      resolution,
     })
   }
 
@@ -77,37 +79,38 @@ export default function Hailuo02Form({ onSubmit, isGenerating }: Hailuo02FormPro
         label={aiToolsT.referenceImage || '참조 이미지 (선택)'}
       />
 
-      {/* 품질 티어 + 길이 */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">
-            {aiToolsT.quality || '품질'}
-          </label>
-          <div className="flex gap-2">
-            {TIERS.map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setTier(t)}
-                disabled={isGenerating}
-                className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors ${
-                  tier === t
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
-                }`}
-              >
-                {t === 'standard' ? `Standard (${TIER_RESOLUTION.standard})` : `Pro (${TIER_RESOLUTION.pro})`}
-              </button>
-            ))}
-          </div>
+      {/* 품질 티어 */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">
+          {aiToolsT.quality || '품질'}
+        </label>
+        <div className="flex gap-2">
+          {TIERS.map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTier(t)}
+              disabled={isGenerating}
+              className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors ${
+                tier === t
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+              }`}
+            >
+              {t === 'standard' ? `Standard (${TIER_RESOLUTION.standard})` : `Pro (${TIER_RESOLUTION.pro})`}
+            </button>
+          ))}
         </div>
+      </div>
 
+      {/* 길이 (Standard only — Pro has no duration control) */}
+      {tier === 'standard' && (
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">
             {aiToolsT.duration || '길이'}
           </label>
           <div className="flex gap-2">
-            {DURATIONS.map((d) => (
+            {STANDARD_DURATIONS.map((d) => (
               <button
                 key={d}
                 type="button"
@@ -124,7 +127,7 @@ export default function Hailuo02Form({ onSubmit, isGenerating }: Hailuo02FormPro
             ))}
           </div>
         </div>
-      </div>
+      )}
 
       {/* 생성 버튼 */}
       <button

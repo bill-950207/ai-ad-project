@@ -159,8 +159,7 @@ export const HAILUO02_CREDIT_PER_SECOND = {
 
 /** LTX-2.3 영상 생성 해상도별 초당 크레딧 (FAL.ai) */
 export const LTX23_CREDIT_PER_SECOND = {
-  '720p': 4,   // ~$0.10/초
-  '1080p': 5,  // ~$0.15/초
+  '1080p': 4,  // ~$0.10/초
 } as const
 
 // ============================================================

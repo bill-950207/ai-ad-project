@@ -8,6 +8,7 @@ import { useLanguage } from '@/contexts/language-context'
 
 const RESOLUTIONS = ['480p', '720p'] as const
 const DURATIONS = [4, 6, 10, 15] as const
+const ASPECT_RATIOS = ['16:9', '9:16', '1:1'] as const
 
 interface GrokVideoFormProps {
   onSubmit: (data: {
@@ -16,6 +17,7 @@ interface GrokVideoFormProps {
     imageUrl?: string
     duration: number
     resolution: typeof RESOLUTIONS[number]
+    aspectRatio?: typeof ASPECT_RATIOS[number]
   }) => void
   isGenerating: boolean
 }
@@ -28,6 +30,7 @@ export default function GrokVideoForm({ onSubmit, isGenerating }: GrokVideoFormP
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [resolution, setResolution] = useState<typeof RESOLUTIONS[number]>('480p')
   const [duration, setDuration] = useState<typeof DURATIONS[number]>(6)
+  const [aspectRatio, setAspectRatio] = useState<typeof ASPECT_RATIOS[number]>('16:9')
 
   const estimatedCredits = useMemo(() => {
     return GROK_VIDEO_CREDIT_PER_SECOND[resolution] * duration
@@ -43,6 +46,7 @@ export default function GrokVideoForm({ onSubmit, isGenerating }: GrokVideoFormP
       ...(imageUrl && { imageUrl }),
       duration,
       resolution,
+      aspectRatio,
     })
   }
 
@@ -69,6 +73,30 @@ export default function GrokVideoForm({ onSubmit, isGenerating }: GrokVideoFormP
         onImageChange={setImageUrl}
         label={aiToolsT.referenceImage || '참조 이미지 (선택)'}
       />
+
+      {/* 화면 비율 */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">
+          {aiToolsT.aspectRatio || '화면 비율'}
+        </label>
+        <div className="flex gap-2">
+          {ASPECT_RATIOS.map((ratio) => (
+            <button
+              key={ratio}
+              type="button"
+              onClick={() => setAspectRatio(ratio)}
+              disabled={isGenerating}
+              className={`flex-1 px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                aspectRatio === ratio
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+              }`}
+            >
+              {ratio}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* 해상도 + 길이 */}
       <div className="grid grid-cols-2 gap-4">

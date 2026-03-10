@@ -7,7 +7,7 @@ import { KLING3_STD_CREDIT_PER_SECOND, KLING3_PRO_CREDIT_PER_SECOND } from '@/li
 import { useLanguage } from '@/contexts/language-context'
 
 const ASPECT_RATIOS = ['16:9', '9:16', '1:1'] as const
-const DURATIONS = ['5', '10'] as const
+const DURATIONS = ['5', '8', '10', '15'] as const
 const TIERS = ['standard', 'pro'] as const
 
 interface Kling3FormProps {

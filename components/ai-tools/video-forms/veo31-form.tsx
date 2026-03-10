@@ -6,9 +6,9 @@ import ImageDropzone from '../image-dropzone'
 import { VEO31_CREDIT_PER_SECOND } from '@/lib/credits/constants'
 import { useLanguage } from '@/contexts/language-context'
 
-const ASPECT_RATIOS = ['16:9', '9:16', '1:1', '4:3', '3:4'] as const
+const ASPECT_RATIOS = ['16:9', '9:16'] as const
 const RESOLUTIONS = ['720p', '1080p'] as const
-const DURATIONS = [2, 4, 6, 8] as const
+const DURATIONS = [4, 6, 8] as const
 
 interface Veo31FormProps {
   onSubmit: (data: {
