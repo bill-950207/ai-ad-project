@@ -236,6 +236,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Hailuo-02 Standard는 6초 또는 10초만 지원합니다' }, { status: 400 })
       }
     } else if (body.model === 'ltx-2.3') {
+      if (body.resolution !== '1080p') {
+        return NextResponse.json({ error: 'LTX-2.3은 1080p만 지원합니다' }, { status: 400 })
+      }
       if (![6, 8, 10].includes(body.duration)) {
         return NextResponse.json({ error: 'LTX-2.3은 6초, 8초, 10초만 지원합니다' }, { status: 400 })
       }
