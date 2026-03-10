@@ -14,6 +14,15 @@ import {
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gwanggo.jocoding.io'
 
+/** 모델명 → 상세 페이지 slug 매핑 */
+const modelSlugMap: Record<string, string> = {
+  'Seedance 1.5 Pro': 'seedance',
+  'Vidu Q3': 'vidu-q3',
+  'Kling 3.0': 'kling-3',
+  'Grok Imagine Video': 'grok-video',
+  'Wan 2.6': 'wan-26',
+}
+
 interface Props {
   params: Promise<{ locale: string }>
 }
@@ -552,6 +561,14 @@ export default async function VideoToolPage({ params }: Props) {
                   ))}
                 </ul>
                 <p className="text-xs text-muted-foreground border-t border-border/50 pt-3">{model.specs}</p>
+                {modelSlugMap[model.name] && (
+                  <Link
+                    href={`/${locale}/tools/video/${modelSlugMap[model.name]}`}
+                    className="inline-flex items-center gap-1 mt-3 text-sm text-primary hover:text-primary/80 transition-colors"
+                  >
+                    {model.name} {locale === 'ko' ? '자세히 보기' : locale === 'ja' ? '詳しく見る' : locale === 'zh' ? '了解更多' : 'Learn more'} <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                )}
               </article>
             ))}
           </div>

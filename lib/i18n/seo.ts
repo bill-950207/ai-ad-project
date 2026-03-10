@@ -487,3 +487,71 @@ export function getOrganizationJsonLd(siteUrl: string) {
     logo: `${siteUrl}/og-image.png`,
   }
 }
+
+/** WebSite JSON-LD 생성 (Google 사이트링크 핵심) */
+export function getWebSiteJsonLd(siteUrl: string) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'gwanggo',
+    alternateName: ['광고', 'gwanggo AI', 'AI 광고 생성기'],
+    url: siteUrl,
+    description: 'AI 광고 이미지·영상 자동 생성 플랫폼',
+    inLanguage: ['ko', 'en', 'ja', 'zh-CN'],
+    publisher: {
+      '@type': 'Organization',
+      name: 'gwanggo',
+      url: siteUrl,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${siteUrl}/og-image.png`,
+      },
+    },
+  }
+}
+
+/** SiteNavigationElement JSON-LD 생성 (사이트링크 후보 명시) */
+export function getSiteNavigationJsonLd(locale: Locale, siteUrl: string) {
+  const navItems: Record<Locale, Array<{ name: string; description: string; url: string }>> = {
+    ko: [
+      { name: 'AI 이미지 생성', description: 'Seedream 5, FLUX.2 Pro, Grok Imagine 등 AI 이미지 생성', url: `${siteUrl}/ko/tools/image` },
+      { name: 'AI 영상 생성', description: 'Seedance, Kling 3.0, Grok Video, Wan 2.6 등 AI 영상 생성', url: `${siteUrl}/ko/tools/video` },
+      { name: '요금제', description: 'Free, Starter, Pro, Business 요금제 비교', url: `${siteUrl}/pricing` },
+      { name: '무료 시작', description: '회원가입 후 무료 크레딧으로 AI 광고 생성', url: `${siteUrl}/signup` },
+      { name: '대시보드', description: 'AI 광고 이미지·영상 생성 대시보드', url: `${siteUrl}/dashboard` },
+    ],
+    en: [
+      { name: 'AI Image Generator', description: 'Generate images with Seedream 5, FLUX.2 Pro, Grok Imagine', url: `${siteUrl}/en/tools/image` },
+      { name: 'AI Video Generator', description: 'Create videos with Seedance, Kling 3.0, Grok Video, Wan 2.6', url: `${siteUrl}/en/tools/video` },
+      { name: 'Pricing', description: 'Compare Free, Starter, Pro, Business plans', url: `${siteUrl}/pricing` },
+      { name: 'Start Free', description: 'Sign up and get free credits for AI ad generation', url: `${siteUrl}/signup` },
+      { name: 'Dashboard', description: 'AI ad image & video generation dashboard', url: `${siteUrl}/dashboard` },
+    ],
+    ja: [
+      { name: 'AI画像生成', description: 'Seedream 5、FLUX.2 Pro、Grok ImagineでAI画像生成', url: `${siteUrl}/ja/tools/image` },
+      { name: 'AI動画生成', description: 'Seedance、Kling 3.0、Grok Video、Wan 2.6でAI動画生成', url: `${siteUrl}/ja/tools/video` },
+      { name: '料金プラン', description: 'Free、Starter、Pro、Businessプラン比較', url: `${siteUrl}/pricing` },
+      { name: '無料で始める', description: '登録して無料クレジットでAI広告を生成', url: `${siteUrl}/signup` },
+      { name: 'ダッシュボード', description: 'AI広告画像・動画生成ダッシュボード', url: `${siteUrl}/dashboard` },
+    ],
+    zh: [
+      { name: 'AI图片生成', description: '使用Seedream 5、FLUX.2 Pro、Grok Imagine生成AI图片', url: `${siteUrl}/zh/tools/image` },
+      { name: 'AI视频生成', description: '使用Seedance、Kling 3.0、Grok Video、Wan 2.6生成AI视频', url: `${siteUrl}/zh/tools/video` },
+      { name: '定价', description: '比较Free、Starter、Pro、Business套餐', url: `${siteUrl}/pricing` },
+      { name: '免费开始', description: '注册获取免费积分生成AI广告', url: `${siteUrl}/signup` },
+      { name: '控制台', description: 'AI广告图片·视频生成控制台', url: `${siteUrl}/dashboard` },
+    ],
+  }
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: navItems[locale].map((item, index) => ({
+      '@type': 'SiteNavigationElement',
+      position: index + 1,
+      name: item.name,
+      description: item.description,
+      url: item.url,
+    })),
+  }
+}

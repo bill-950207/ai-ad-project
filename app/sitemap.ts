@@ -1,5 +1,7 @@
 import { MetadataRoute } from 'next'
 import { locales } from '@/lib/i18n/seo'
+import { IMAGE_MODEL_SLUGS } from '@/lib/i18n/model-pages'
+import { VIDEO_MODEL_SLUGS } from '@/lib/i18n/model-pages'
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gwanggo.jocoding.io'
 
@@ -66,6 +68,31 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }))
   )
 
+  // AI 모델별 전용 페이지 (다국어)
+  const imageModelPages: MetadataRoute.Sitemap = IMAGE_MODEL_SLUGS.flatMap((model) =>
+    locales.map((locale) => ({
+      url: `${siteUrl}/${locale}/tools/image/${model}`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+      alternates: {
+        languages: getLanguageAlternates(`/tools/image/${model}`),
+      },
+    }))
+  )
+
+  const videoModelPages: MetadataRoute.Sitemap = VIDEO_MODEL_SLUGS.flatMap((model) =>
+    locales.map((locale) => ({
+      url: `${siteUrl}/${locale}/tools/video/${model}`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+      alternates: {
+        languages: getLanguageAlternates(`/tools/video/${model}`),
+      },
+    }))
+  )
+
   // 기타 페이지 (언어 독립적 - locale 라우트가 없으므로 alternates 미포함)
   const otherPages: MetadataRoute.Sitemap = [
     {
@@ -88,5 +115,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ]
 
-  return [...landingPages, ...toolPages, ...dashboardToolPages, ...otherPages]
+  return [...landingPages, ...toolPages, ...imageModelPages, ...videoModelPages, ...dashboardToolPages, ...otherPages]
 }
