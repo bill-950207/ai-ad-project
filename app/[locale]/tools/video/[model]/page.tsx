@@ -27,7 +27,8 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, model } = await params
-  if (!isValidLocale(locale) || !isValidVideoModelSlug(model)) notFound()
+  if (!isValidLocale(locale)) notFound()
+  if (!isValidVideoModelSlug(model)) notFound()
 
   const data = VIDEO_MODELS[model]
   const seo = data.seo[locale]
@@ -116,7 +117,7 @@ const i18nLabels: Record<Locale, {
     faqTitle: '자주 묻는 질문',
     ctaTitle: '지금 바로 시작하세요',
     ctaButton: '무료로 시작하기',
-    ctaDesc: '회원가입 시 15크레딧 무료 제공',
+    ctaDesc: '회원가입 시 20크레딧 무료 제공',
     otherModelsTitle: '다른 AI 영상 모델',
     overviewLink: '모든 AI 영상 모델 비교하기',
     pricingCta: '요금제 보기',
@@ -135,7 +136,7 @@ const i18nLabels: Record<Locale, {
     faqTitle: 'Frequently Asked Questions',
     ctaTitle: 'Get started now',
     ctaButton: 'Start for Free',
-    ctaDesc: '15 free credits on sign up',
+    ctaDesc: '20 free credits on sign up',
     otherModelsTitle: 'Other AI Video Models',
     overviewLink: 'Compare all AI video models',
     pricingCta: 'View Pricing',
@@ -154,7 +155,7 @@ const i18nLabels: Record<Locale, {
     faqTitle: 'よくある質問',
     ctaTitle: '今すぐ始めましょう',
     ctaButton: '無料で始める',
-    ctaDesc: '会員登録で15クレジット無料',
+    ctaDesc: '会員登録で20クレジット無料',
     otherModelsTitle: '他のAI動画モデル',
     overviewLink: 'すべてのAI動画モデルを比較する',
     pricingCta: '料金プランを見る',
@@ -173,7 +174,7 @@ const i18nLabels: Record<Locale, {
     faqTitle: '常见问题',
     ctaTitle: '立即开始',
     ctaButton: '免费开始',
-    ctaDesc: '注册即送15免费积分',
+    ctaDesc: '注册即送20免费积分',
     otherModelsTitle: '其他AI视频模型',
     overviewLink: '比较所有AI视频模型',
     pricingCta: '查看价格',
@@ -189,7 +190,8 @@ const featureIcons = [Film, Play, Monitor, Clock, Wand2, Layers]
 
 export default async function VideoModelPage({ params }: Props) {
   const { locale, model: modelSlug } = await params
-  if (!isValidLocale(locale) || !isValidVideoModelSlug(modelSlug)) notFound()
+  if (!isValidLocale(locale)) notFound()
+  if (!isValidVideoModelSlug(modelSlug)) notFound()
 
   const model = VIDEO_MODELS[modelSlug]
   const seo = model.seo[locale]
@@ -261,13 +263,13 @@ export default async function VideoModelPage({ params }: Props) {
                   {t.breadcrumbHome}
                 </Link>
               </li>
-              <li><ChevronRight className="w-3.5 h-3.5" /></li>
+              <li aria-hidden="true"><ChevronRight className="w-3.5 h-3.5" /></li>
               <li>
                 <Link href={`/${locale}/tools/video`} className="hover:text-foreground transition-colors">
                   {t.breadcrumbVideo}
                 </Link>
               </li>
-              <li><ChevronRight className="w-3.5 h-3.5" /></li>
+              <li aria-hidden="true"><ChevronRight className="w-3.5 h-3.5" /></li>
               <li className="text-foreground font-medium">{model.name}</li>
             </ol>
             <Link

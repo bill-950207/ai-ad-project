@@ -108,7 +108,7 @@ export const IMAGE_MODELS: Record<ImageModelSlug, ModelPageData> = {
           '多言語プロンプト対応',
         ],
         faq: [
-          { q: 'Seedream 5とは？', a: 'Seedream 5はByteD anceが開発した最新のAI画像生成モデルです。テキスト説明から高品質画像を生成したり、既存画像をAIで編集できます。gwanggoで無料で利用可能です。' },
+          { q: 'Seedream 5とは？', a: 'Seedream 5はByteDanceが開発した最新のAI画像生成モデルです。テキスト説明から高品質画像を生成したり、既存画像をAIで編集できます。gwanggoで無料で利用可能です。' },
           { q: 'Seedream 5は無料ですか？', a: 'はい、会員登録時に提供される無料クレジットですぐにSeedream 5を使用できます。中画質は2クレジット、高画質は3クレジットです。' },
           { q: 'Seedream 5とMidjourneyの違いは？', a: 'Seedream 5はWebブラウザで直接使用可能で、Discordなどの追加ソフトは不要です。画像編集機能も内蔵。広告用画像制作に特に最適化されています。' },
           { q: 'Seedream 5でどんな画像が作れますか？', a: '商品広告、SNS投稿、ECサイト詳細ページ、バナー、ブランドコンテンツなど。5種類のアスペクト比でInstagram、Facebookなど各プラットフォームに最適化可能。' },
@@ -402,7 +402,7 @@ export const VIDEO_MODELS: Record<VideoModelSlug, ModelPageData> = {
     type: 'video',
     modes: ['Text to Video', 'Image to Video'],
     resolutions: ['480p', '720p'],
-    duration: '4-12초',
+    duration: '4-12s',
     creditSummary: {
       ko: '480p: 1크레딧/초, 720p: 2크레딧/초',
       en: '480p: 1 cr/sec, 720p: 2 cr/sec',
@@ -479,7 +479,7 @@ export const VIDEO_MODELS: Record<VideoModelSlug, ModelPageData> = {
     type: 'video',
     modes: ['Image to Video'],
     resolutions: ['540p', '720p', '1080p'],
-    duration: '1-16초',
+    duration: '1-16s',
     creditSummary: {
       ko: '540p: 1cr/초, 720p: 2cr/초, 1080p: 3cr/초',
       en: '540p: 1cr/s, 720p: 2cr/s, 1080p: 3cr/s',
@@ -549,7 +549,7 @@ export const VIDEO_MODELS: Record<VideoModelSlug, ModelPageData> = {
     type: 'video',
     modes: ['Text to Video', 'Image to Video'],
     resolutions: ['720p'],
-    duration: '5-10초',
+    duration: '5-10s',
     creditSummary: {
       ko: 'Standard: 6cr/초, Pro: 8cr/초',
       en: 'Standard: 6cr/s, Pro: 8cr/s',
@@ -626,7 +626,7 @@ export const VIDEO_MODELS: Record<VideoModelSlug, ModelPageData> = {
     type: 'video',
     modes: ['Text to Video', 'Image to Video'],
     resolutions: ['480p', '720p'],
-    duration: '1-15초',
+    duration: '1-15s',
     creditSummary: {
       ko: '480p: 2cr/초, 720p: 3cr/초',
       en: '480p: 2cr/s, 720p: 3cr/s',
@@ -696,7 +696,7 @@ export const VIDEO_MODELS: Record<VideoModelSlug, ModelPageData> = {
     type: 'video',
     modes: ['Text to Video', 'Image to Video'],
     resolutions: ['720p', '1080p'],
-    duration: '5-15초',
+    duration: '5-15s',
     creditSummary: {
       ko: '720p: 4cr/초, 1080p: 5cr/초',
       en: '720p: 4cr/s, 1080p: 5cr/s',

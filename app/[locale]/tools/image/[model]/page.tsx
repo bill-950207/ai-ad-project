@@ -31,7 +31,8 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, model } = await params
-  if (!isValidLocale(locale) || !isValidImageModelSlug(model)) notFound()
+  if (!isValidLocale(locale)) notFound()
+  if (!isValidImageModelSlug(model)) notFound()
 
   const modelData = IMAGE_MODELS[model]
   const seo = modelData.seo[locale]
@@ -121,7 +122,7 @@ const i18nLabels: Record<Locale, {
     overviewLink: 'AI 이미지 생성 전체 보기',
     backToOverview: 'AI 이미지 생성 도구로 돌아가기',
     ctaTitle: '지금 바로 시작하세요',
-    ctaDesc: '회원가입 시 15크레딧 무료 제공. 웹 브라우저에서 바로 사용 가능합니다.',
+    ctaDesc: '회원가입 시 20크레딧 무료 제공. 웹 브라우저에서 바로 사용 가능합니다.',
     ctaButton: '무료로 시작하기',
     pricingCta: '요금제 보기',
   },
@@ -140,7 +141,7 @@ const i18nLabels: Record<Locale, {
     overviewLink: 'View all AI image models',
     backToOverview: 'Back to AI Image Generator',
     ctaTitle: 'Get started now',
-    ctaDesc: '15 free credits on sign up. Works directly in your browser.',
+    ctaDesc: '20 free credits on sign up. Works directly in your browser.',
     ctaButton: 'Start for Free',
     pricingCta: 'View Pricing',
   },
@@ -159,7 +160,7 @@ const i18nLabels: Record<Locale, {
     overviewLink: 'AI画像生成モデル一覧',
     backToOverview: 'AI画像生成ツールに戻る',
     ctaTitle: '今すぐ始めましょう',
-    ctaDesc: '会員登録で15クレジット無料。ブラウザで直接使用可能。',
+    ctaDesc: '会員登録で20クレジット無料。ブラウザで直接使用可能。',
     ctaButton: '無料で始める',
     pricingCta: '料金プランを見る',
   },
@@ -178,7 +179,7 @@ const i18nLabels: Record<Locale, {
     overviewLink: '查看所有AI图片模型',
     backToOverview: '返回AI图片生成工具',
     ctaTitle: '立即开始',
-    ctaDesc: '注册即送15免费积分。网页浏览器直接使用。',
+    ctaDesc: '注册即送20免费积分。网页浏览器直接使用。',
     ctaButton: '免费开始',
     pricingCta: '查看价格',
   },
@@ -190,7 +191,8 @@ const i18nLabels: Record<Locale, {
 
 export default async function ImageModelPage({ params }: Props) {
   const { locale, model } = await params
-  if (!isValidLocale(locale) || !isValidImageModelSlug(model)) notFound()
+  if (!isValidLocale(locale)) notFound()
+  if (!isValidImageModelSlug(model)) notFound()
 
   const modelData = IMAGE_MODELS[model]
   const seo = modelData.seo[locale]
@@ -265,13 +267,13 @@ export default async function ImageModelPage({ params }: Props) {
                 {t.home}
               </Link>
             </li>
-            <li><ChevronRight className="w-3.5 h-3.5" /></li>
+            <li aria-hidden="true"><ChevronRight className="w-3.5 h-3.5" /></li>
             <li>
               <Link href={`/${locale}/tools/image`} className="hover:text-foreground transition-colors">
                 {t.imageGenerator}
               </Link>
             </li>
-            <li><ChevronRight className="w-3.5 h-3.5" /></li>
+            <li aria-hidden="true"><ChevronRight className="w-3.5 h-3.5" /></li>
             <li className="text-foreground font-medium">{modelData.name}</li>
           </ol>
         </nav>

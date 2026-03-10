@@ -61,26 +61,16 @@ function getAllUrls() {
 }
 
 // ============================================================
-// Google Sitemap Ping
+// Google Sitemap Ping (deprecated since Dec 2023, kept for reference)
+// Google now discovers sitemaps via robots.txt and Search Console.
 // ============================================================
 
 async function pingGoogle() {
   const sitemapUrl = `${SITE_URL}/sitemap.xml`
-  const pingUrl = `https://www.google.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`
-
-  console.log(`[Google] Pinging sitemap: ${sitemapUrl}`)
-
-  if (isDryRun) {
-    console.log(`[Google] (dry run) Would GET ${pingUrl}`)
-    return
-  }
-
-  try {
-    const res = await fetch(pingUrl)
-    console.log(`[Google] Response: ${res.status} ${res.statusText}`)
-  } catch (err) {
-    console.error(`[Google] Error: ${err.message}`)
-  }
+  console.log(`[Google] Sitemap: ${sitemapUrl}`)
+  console.log(`[Google] NOTE: Google sitemap ping API was deprecated in Dec 2023.`)
+  console.log(`[Google] Google discovers sitemaps via robots.txt and Search Console.`)
+  console.log(`[Google] Skipping ping — submit sitemap via Google Search Console instead.`)
 }
 
 // ============================================================

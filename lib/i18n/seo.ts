@@ -325,7 +325,7 @@ export const faqData: Record<Locale, Array<{ question: string; answer: string }>
   ko: [
     {
       question: 'gwanggo는 무료인가요?',
-      answer: '네, 회원가입 시 15크레딧이 무료로 제공되어 바로 AI 광고 이미지와 영상을 생성해볼 수 있습니다. 추가 크레딧이 필요하면 Starter, Pro, Business 요금제를 선택할 수 있습니다.',
+      answer: '네, 회원가입 시 20크레딧이 무료로 제공되어 바로 AI 광고 이미지와 영상을 생성해볼 수 있습니다. 추가 크레딧이 필요하면 Starter, Pro, Business 요금제를 선택할 수 있습니다.',
     },
     {
       question: 'AI 광고 이미지는 어떻게 만드나요?',
@@ -343,7 +343,7 @@ export const faqData: Record<Locale, Array<{ question: string; answer: string }>
   en: [
     {
       question: 'Is gwanggo free to use?',
-      answer: 'Yes, you get 15 free credits when you sign up, allowing you to create AI ad images and videos right away. For more credits, you can choose from Starter, Pro, or Business plans.',
+      answer: 'Yes, you get 20 free credits when you sign up, allowing you to create AI ad images and videos right away. For more credits, you can choose from Starter, Pro, or Business plans.',
     },
     {
       question: 'How do I create AI ad images?',
@@ -361,7 +361,7 @@ export const faqData: Record<Locale, Array<{ question: string; answer: string }>
   ja: [
     {
       question: 'gwanggoは無料ですか？',
-      answer: 'はい、会員登録時に15クレジットが無料で提供され、すぐにAI広告画像と動画を作成できます。追加クレジットが必要な場合は、Starter、Pro、Businessプランを選択できます。',
+      answer: 'はい、会員登録時に20クレジットが無料で提供され、すぐにAI広告画像と動画を作成できます。追加クレジットが必要な場合は、Starter、Pro、Businessプランを選択できます。',
     },
     {
       question: 'AI広告画像はどのように作りますか？',
@@ -379,7 +379,7 @@ export const faqData: Record<Locale, Array<{ question: string; answer: string }>
   zh: [
     {
       question: 'gwanggo免费吗？',
-      answer: '是的，注册时免费获得15积分，可以立即创建AI广告图片和视频。需要更多积分可以选择Starter、Pro或Business套餐。',
+      answer: '是的，注册时免费获得20积分，可以立即创建AI广告图片和视频。需要更多积分可以选择Starter、Pro或Business套餐。',
     },
     {
       question: '如何制作AI广告图片？',
@@ -543,12 +543,11 @@ export function getSiteNavigationJsonLd(locale: Locale, siteUrl: string) {
     ],
   }
 
+  // @graph 배열로 개별 SiteNavigationElement를 나열 (ItemList에 중첩하면 유효하지 않음)
   return {
     '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    itemListElement: navItems[locale].map((item, index) => ({
+    '@graph': navItems[locale].map((item) => ({
       '@type': 'SiteNavigationElement',
-      position: index + 1,
       name: item.name,
       description: item.description,
       url: item.url,
