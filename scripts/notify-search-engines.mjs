@@ -21,8 +21,8 @@ const isDryRun = process.argv.includes('--dry')
 // ============================================================
 
 const locales = ['ko', 'en', 'ja', 'zh']
-const imageModels = ['seedream-5', 'flux-2-pro', 'grok-imagine', 'z-image']
-const videoModels = ['seedance', 'vidu-q3', 'kling-3', 'grok-video', 'wan-26']
+const imageModels = ['seedream-5', 'flux-2-pro', 'grok-imagine', 'z-image', 'nano-banana-2', 'recraft-v4', 'qwen-image-2', 'flux-kontext']
+const videoModels = ['seedance', 'vidu-q3', 'kling-3', 'grok-video', 'wan-26', 'veo-31', 'hailuo-02', 'ltx-23']
 
 function getAllUrls() {
   const urls = []
