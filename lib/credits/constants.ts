@@ -173,6 +173,30 @@ export const NANO_BANANA2_CREDIT_COST = {
 } as const
 
 // ============================================================
+// Recraft V4 (Recraft) 이미지 생성 크레딧
+// ============================================================
+
+/** Recraft V4 이미지 생성 크레딧 (FAL.ai: ~$0.25/img) */
+export const RECRAFT_V4_CREDIT_COST = 9
+
+// ============================================================
+// Qwen Image 2.0 (Alibaba) 이미지 생성 크레딧
+// ============================================================
+
+/** Qwen Image 2.0 이미지 생성 품질별 크레딧 (FAL.ai) */
+export const QWEN_IMAGE2_CREDIT_COST = {
+  basic: 1,   // $0.035/img (standard)
+  pro: 3,     // $0.075/img (pro)
+} as const
+
+// ============================================================
+// FLUX Kontext (BFL) 이미지 생성 크레딧
+// ============================================================
+
+/** FLUX Kontext 이미지 생성 크레딧 (FAL.ai: ~$0.04/img) */
+export const FLUX_KONTEXT_CREDIT_COST = 2
+
+// ============================================================
 // 회원가입 관련
 // ============================================================
 
@@ -206,3 +230,4 @@ export type Veo31Resolution = keyof typeof VEO31_CREDIT_PER_SECOND
 export type Hailuo02Resolution = keyof typeof HAILUO02_CREDIT_PER_SECOND
 export type Ltx23Resolution = keyof typeof LTX23_CREDIT_PER_SECOND
 export type NanoBanana2Quality = keyof typeof NANO_BANANA2_CREDIT_COST
+export type QwenImage2Quality = keyof typeof QWEN_IMAGE2_CREDIT_COST

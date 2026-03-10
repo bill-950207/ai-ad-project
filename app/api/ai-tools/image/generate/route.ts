@@ -19,11 +19,15 @@ import {
   FLUX2_PRO_CREDIT_COST,
   GROK_IMAGE_CREDIT_COST,
   NANO_BANANA2_CREDIT_COST,
+  RECRAFT_V4_CREDIT_COST,
+  QWEN_IMAGE2_CREDIT_COST,
+  FLUX_KONTEXT_CREDIT_COST,
   type ImageQuality,
   type Flux2ProQuality,
   type NanoBanana2Quality,
+  type QwenImage2Quality,
 } from '@/lib/credits/constants'
-import { submitSeedreamEditToQueue, submitSeedreamT2IToQueue, submitFlux2ProToQueue, submitGrokImageToQueue, submitNanoBanana2ToQueue, submitNanoBanana2EditToQueue } from '@/lib/fal/client'
+import { submitSeedreamEditToQueue, submitSeedreamT2IToQueue, submitFlux2ProToQueue, submitGrokImageToQueue, submitNanoBanana2ToQueue, submitNanoBanana2EditToQueue, submitRecraftV4ToQueue, submitQwenImage2ToQueue, submitQwenImage2EditToQueue, submitFluxKontextToQueue } from '@/lib/fal/client'
 import type { SeedreamAspectRatio, SeedreamQuality } from '@/lib/fal/client'
 import { submitZImageToQueue } from '@/lib/kie/client'
 import type { ZImageAspectRatio } from '@/lib/kie/client'
@@ -67,7 +71,28 @@ interface NanoBanana2Request {
   quality?: 'basic' | 'high'
 }
 
-type ImageGenerateRequest = SeedreamRequest | Flux2ProRequest | GrokImageRequest | ZImageRequest | NanoBanana2Request
+interface RecraftV4Request {
+  model: 'recraft-v4'
+  prompt: string
+  aspectRatio?: string
+}
+
+interface QwenImage2Request {
+  model: 'qwen-image-2'
+  prompt: string
+  imageUrl?: string // edit mode
+  aspectRatio?: string
+  quality?: 'basic' | 'pro'
+}
+
+interface FluxKontextRequest {
+  model: 'flux-kontext'
+  prompt: string
+  imageUrl?: string // edit mode
+  aspectRatio?: string
+}
+
+type ImageGenerateRequest = SeedreamRequest | Flux2ProRequest | GrokImageRequest | ZImageRequest | NanoBanana2Request | RecraftV4Request | QwenImage2Request | FluxKontextRequest
 
 // ============================================================
 // 크레딧 계산
@@ -88,6 +113,16 @@ function calculateCredits(req: ImageGenerateRequest): number {
   if (req.model === 'nano-banana-2') {
     const quality: NanoBanana2Quality = req.quality === 'high' ? 'high' : 'basic'
     return NANO_BANANA2_CREDIT_COST[quality]
+  }
+  if (req.model === 'recraft-v4') {
+    return RECRAFT_V4_CREDIT_COST
+  }
+  if (req.model === 'qwen-image-2') {
+    const quality: QwenImage2Quality = req.quality === 'pro' ? 'pro' : 'basic'
+    return QWEN_IMAGE2_CREDIT_COST[quality]
+  }
+  if (req.model === 'flux-kontext') {
+    return FLUX_KONTEXT_CREDIT_COST
   }
   return Z_IMAGE_TOOL_CREDIT_COST
 }
@@ -169,6 +204,18 @@ export async function POST(request: NextRequest) {
               aspectRatio: body.aspectRatio,
               quality: body.quality,
             }),
+            ...(body.model === 'recraft-v4' && {
+              aspectRatio: body.aspectRatio,
+            }),
+            ...(body.model === 'qwen-image-2' && {
+              imageUrl: body.imageUrl,
+              aspectRatio: body.aspectRatio,
+              quality: body.quality,
+            }),
+            ...(body.model === 'flux-kontext' && {
+              imageUrl: body.imageUrl,
+              aspectRatio: body.aspectRatio,
+            }),
           },
           status: 'PENDING',
           credits_used: creditsRequired,
@@ -237,6 +284,59 @@ export async function POST(request: NextRequest) {
           aspect_ratio: body.aspectRatio || '1:1',
         })
         providerTaskId = `fal-nanobanana2:${result.request_id}`
+      } else if (body.model === 'recraft-v4') {
+        // Recraft V4 (FAL.ai)
+        const SIZES: Record<string, { width: number; height: number }> = {
+          '1:1': { width: 1024, height: 1024 },
+          '4:3': { width: 1365, height: 1024 },
+          '3:4': { width: 1024, height: 1365 },
+          '16:9': { width: 1365, height: 768 },
+          '9:16': { width: 768, height: 1365 },
+        }
+        const result = await submitRecraftV4ToQueue({
+          prompt: body.prompt,
+          image_size: SIZES[body.aspectRatio || '1:1'] || SIZES['1:1'],
+        })
+        providerTaskId = `fal-recraft4:${result.request_id}`
+      } else if (body.model === 'qwen-image-2' && body.imageUrl) {
+        // Qwen Image 2.0 Edit (FAL.ai)
+        const SIZES: Record<string, { width: number; height: number }> = {
+          '1:1': { width: 1024, height: 1024 },
+          '4:3': { width: 1024, height: 768 },
+          '3:4': { width: 768, height: 1024 },
+          '16:9': { width: 1024, height: 576 },
+          '9:16': { width: 576, height: 1024 },
+        }
+        const result = await submitQwenImage2EditToQueue({
+          prompt: body.prompt,
+          image_urls: [body.imageUrl],
+          image_size: SIZES[body.aspectRatio || '1:1'] || SIZES['1:1'],
+        })
+        providerTaskId = `fal-qwen2-edit:${result.request_id}`
+      } else if (body.model === 'qwen-image-2' && !body.imageUrl) {
+        // Qwen Image 2.0 T2I (FAL.ai)
+        const SIZES: Record<string, { width: number; height: number }> = {
+          '1:1': { width: 1024, height: 1024 },
+          '4:3': { width: 1024, height: 768 },
+          '3:4': { width: 768, height: 1024 },
+          '16:9': { width: 1024, height: 576 },
+          '9:16': { width: 576, height: 1024 },
+        }
+        const result = await submitQwenImage2ToQueue({
+          prompt: body.prompt,
+          image_size: SIZES[body.aspectRatio || '1:1'] || SIZES['1:1'],
+        })
+        providerTaskId = `fal-qwen2:${result.request_id}`
+      } else if (body.model === 'flux-kontext') {
+        // FLUX Kontext (FAL.ai) — uses aspect_ratio string + optional image_url
+        const result = await submitFluxKontextToQueue({
+          prompt: body.prompt,
+          ...(body.imageUrl && { image_url: body.imageUrl }),
+          aspect_ratio: body.aspectRatio || '1:1',
+        })
+        providerTaskId = body.imageUrl
+          ? `fal-fluxkontext-edit:${result.request_id}`
+          : `fal-fluxkontext:${result.request_id}`
       } else {
         const zBody = body as ZImageRequest
         const result = await submitZImageToQueue(zBody.prompt, zBody.aspectRatio)

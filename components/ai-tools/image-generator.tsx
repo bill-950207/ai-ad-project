@@ -7,6 +7,9 @@ import ZImageForm from './image-forms/z-image-form'
 import Flux2ProForm from './image-forms/flux2-pro-form'
 import GrokImageForm from './image-forms/grok-image-form'
 import NanoBanana2Form from './image-forms/nano-banana2-form'
+import RecraftV4Form from './image-forms/recraft-v4-form'
+import QwenImage2Form from './image-forms/qwen-image2-form'
+import FluxKontextForm from './image-forms/flux-kontext-form'
 import GenerationHistory from './generation-history'
 import type { ActiveGeneration } from './generation-history'
 import { useLanguage } from '@/contexts/language-context'
@@ -62,7 +65,31 @@ export default function ImageGenerator({ initialModel }: ImageGeneratorProps) {
       creatorColor: '#4285F4',
       href: `/dashboard/ai-tools/${language}/image/nano-banana-2`,
     },
-  ], [language, aiToolsT.modelDescImageEdit, aiToolsT.modelDescFlux2Pro, aiToolsT.modelDescGrokImage, aiToolsT.modelDescTextToImage, aiToolsT.modelDescNanoBanana2])
+    {
+      id: 'recraft-v4',
+      name: 'Recraft V4',
+      description: aiToolsT.modelDescRecraftV4 || 'Professional Design Image',
+      creator: 'Recraft',
+      creatorColor: '#FF6B35',
+      href: `/dashboard/ai-tools/${language}/image/recraft-v4`,
+    },
+    {
+      id: 'qwen-image-2',
+      name: 'Qwen Image 2.0',
+      description: aiToolsT.modelDescQwenImage2 || 'Alibaba AI Image (Edit)',
+      creator: 'Alibaba',
+      creatorColor: '#FF6A00',
+      href: `/dashboard/ai-tools/${language}/image/qwen-image-2`,
+    },
+    {
+      id: 'flux-kontext',
+      name: 'FLUX Kontext',
+      description: aiToolsT.modelDescFluxKontext || 'Context-Aware Image Edit',
+      creator: 'BFL',
+      creatorColor: '#1F2937',
+      href: `/dashboard/ai-tools/${language}/image/flux-kontext`,
+    },
+  ], [language, aiToolsT.modelDescImageEdit, aiToolsT.modelDescFlux2Pro, aiToolsT.modelDescGrokImage, aiToolsT.modelDescTextToImage, aiToolsT.modelDescNanoBanana2, aiToolsT.modelDescRecraftV4, aiToolsT.modelDescQwenImage2, aiToolsT.modelDescFluxKontext])
 
   const [selectedModel, setSelectedModel] = useState(initialModel || 'seedream-5')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -153,6 +180,21 @@ export default function ImageGenerator({ initialModel }: ImageGeneratorProps) {
               />
             ) : selectedModel === 'nano-banana-2' ? (
               <NanoBanana2Form
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            ) : selectedModel === 'recraft-v4' ? (
+              <RecraftV4Form
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            ) : selectedModel === 'qwen-image-2' ? (
+              <QwenImage2Form
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            ) : selectedModel === 'flux-kontext' ? (
+              <FluxKontextForm
                 onSubmit={handleSubmit}
                 isGenerating={isGenerating}
               />

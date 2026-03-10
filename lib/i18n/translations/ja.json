@@ -2822,6 +2822,9 @@
     "modelDescVeo31": "Google AI動画（オーディオ）",
     "modelDescHailuo02": "MiniMax AI動画",
     "modelDescLtx23": "Lightricksオープンソース動画",
-    "modelDescNanoBanana2": "Google Gemini画像（4K）"
+    "modelDescNanoBanana2": "Google Gemini画像（4K）",
+    "modelDescRecraftV4": "プロフェッショナルデザイン画像",
+    "modelDescQwenImage2": "Alibaba AI画像（編集）",
+    "modelDescFluxKontext": "コンテキスト対応画像編集"
   }
 }

@@ -2822,6 +2822,9 @@
     "modelDescVeo31": "Google AI Video (Audio)",
     "modelDescHailuo02": "MiniMax AI Video",
     "modelDescLtx23": "Lightricks Open Source Video",
-    "modelDescNanoBanana2": "Google Gemini Image (4K)"
+    "modelDescNanoBanana2": "Google Gemini Image (4K)",
+    "modelDescRecraftV4": "Professional Design Image",
+    "modelDescQwenImage2": "Alibaba AI Image (Edit)",
+    "modelDescFluxKontext": "Context-Aware Image Edit"
   }
 }

@@ -2822,6 +2822,9 @@
     "modelDescVeo31": "Google AI视频（音频）",
     "modelDescHailuo02": "MiniMax AI视频",
     "modelDescLtx23": "Lightricks开源视频",
-    "modelDescNanoBanana2": "Google Gemini图片（4K）"
+    "modelDescNanoBanana2": "Google Gemini图片（4K）",
+    "modelDescRecraftV4": "专业设计图片",
+    "modelDescQwenImage2": "阿里巴巴AI图片（编辑）",
+    "modelDescFluxKontext": "上下文感知图片编辑"
   }
 }
