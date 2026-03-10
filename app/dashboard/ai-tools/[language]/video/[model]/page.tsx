@@ -13,7 +13,7 @@ const ogLocale: Record<Lang, string> = {
 }
 
 const VIDEO_MODEL_SLUGS = [
-  'seedance-1.5-pro', 'kling-3', 'grok-video', 'wan-2.6',
+  'seedance-1.5-pro', 'kling-3', 'kling-3-mc', 'grok-video', 'wan-2.6',
   'vidu-q3', 'veo-3.1', 'hailuo-02', 'ltx-2.3',
 ] as const
 type ModelSlug = (typeof VIDEO_MODEL_SLUGS)[number]
@@ -82,6 +82,34 @@ const MODELS: Record<ModelSlug, ModelMeta> = {
       en: 'Text/Image to Video AI model by Kuaishou. Standard/Pro tiers, 720p, 5-10s.',
       ja: 'Kuaishouが開発したText/Image to Video AIモデル。Standard/Proティア、720p、5〜10秒。',
       zh: 'Kuaishou（快手）开发的Text/Image to Video AI模型。Standard/Pro等级，720p，5~10秒。',
+    },
+  },
+  'kling-3-mc': {
+    name: 'Kling 3.0 Motion Control',
+    creator: 'Kuaishou',
+    description: {
+      ko: 'Kuaishou Kling 3.0 Motion Control로 모션 경로 기반 AI 영상 생성. 카메라/객체 움직임 제어.',
+      en: 'Generate motion-controlled AI videos with Kuaishou Kling 3.0. Camera and object trajectory control.',
+      ja: 'Kuaishou Kling 3.0 Motion Controlでモーション経路ベースのAI動画を生成。カメラ/オブジェクトの動き制御。',
+      zh: '使用Kuaishou Kling 3.0 Motion Control生成运动控制AI视频。相机和物体轨迹控制。',
+    },
+    title: {
+      ko: 'Kling 3.0 Motion Control AI 영상 생성 | gwanggo',
+      en: 'Kling 3.0 Motion Control AI Video Generator | gwanggo',
+      ja: 'Kling 3.0 Motion Control AI動画生成 | gwanggo',
+      zh: 'Kling 3.0 Motion Control AI视频生成 | gwanggo',
+    },
+    keywords: {
+      ko: ['Kling 3.0 Motion Control', 'Kuaishou', '모션 컨트롤', 'AI 영상 생성', '카메라 경로'],
+      en: ['Kling 3.0 Motion Control', 'Kuaishou', 'motion control', 'AI video generator', 'camera trajectory'],
+      ja: ['Kling 3.0 Motion Control', 'Kuaishou', 'モーションコントロール', 'AI動画生成', 'カメラ経路'],
+      zh: ['Kling 3.0 Motion Control', 'Kuaishou', '运动控制', 'AI视频生成', '相机轨迹'],
+    },
+    jsonLdDescription: {
+      ko: 'Kuaishou가 개발한 모션 컨트롤 AI 영상 생성 모델. 카메라/객체 움직임 경로 제어.',
+      en: 'Motion Control AI video generation model by Kuaishou. Camera and object trajectory control.',
+      ja: 'Kuaishouが開発したモーションコントロールAI動画生成モデル。カメラ/オブジェクトの動き経路制御。',
+      zh: 'Kuaishou开发的运动控制AI视频生成模型。相机和物体轨迹控制。',
     },
   },
   'grok-video': {

@@ -9,6 +9,7 @@ interface Model {
   creator?: string
   creatorColor?: string
   href?: string
+  comingSoon?: boolean
 }
 
 interface ModelSelectorProps {
@@ -52,8 +53,24 @@ export default function ModelSelector({ models, selectedModel, onSelect }: Model
               <div className="text-[10px] opacity-60 leading-tight">{model.creator}</div>
             )}
             <div className="text-[10px] opacity-50 leading-tight">{model.description}</div>
+            {model.comingSoon && (
+              <div className="mt-0.5 px-1.5 py-0.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[9px] font-semibold rounded-full leading-none">
+                COMING SOON
+              </div>
+            )}
           </>
         )
+
+        if (model.comingSoon) {
+          return (
+            <div
+              key={model.id}
+              className="snap-start shrink-0 w-[120px] flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl text-center border-2 border-dashed border-border/60 bg-secondary/20 text-muted-foreground opacity-70 cursor-default"
+            >
+              {cardContent}
+            </div>
+          )
+        }
 
         const cardClassName = `snap-start shrink-0 w-[120px] flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl text-center transition-all duration-200 cursor-pointer ${
           isSelected

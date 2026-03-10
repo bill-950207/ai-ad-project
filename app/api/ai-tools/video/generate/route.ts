@@ -9,6 +9,7 @@
  * - veo-3.1: FAL.ai Veo 3.1 (텍스트/이미지 → 영상)
  * - hailuo-02: FAL.ai Hailuo-02 (텍스트/이미지 → 영상)
  * - ltx-2.3: FAL.ai LTX-2.3 (텍스트/이미지 → 영상)
+ * - kling-3-mc: FAL.ai Kling 3.0 Motion Control (이미지 → 영상, 궤적 기반)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -21,6 +22,8 @@ import {
   VIDU_CREDIT_COST_PER_SECOND,
   KLING3_STD_CREDIT_PER_SECOND,
   KLING3_PRO_CREDIT_PER_SECOND,
+  KLING3_MC_STD_CREDIT_PER_SECOND,
+  KLING3_MC_PRO_CREDIT_PER_SECOND,
   GROK_VIDEO_CREDIT_PER_SECOND,
   WAN26_CREDIT_PER_SECOND,
   VEO31_CREDIT_PER_SECOND,
@@ -29,13 +32,14 @@ import {
   type SeedanceResolution,
   type ViduResolution,
   type Kling3Resolution,
+  type Kling3McResolution,
   type GrokVideoResolution,
   type Wan26Resolution,
   type Veo31Resolution,
   type Hailuo02Resolution,
   type Ltx23Resolution,
 } from '@/lib/credits/constants'
-import { submitSeedanceToQueue, submitSeedanceT2VToQueue, submitKling3ToQueue, submitGrokVideoToQueue, submitWan26ToQueue, submitVeo31ToQueue, submitHailuo02ToQueue, submitLtx23ToQueue } from '@/lib/fal/client'
+import { submitSeedanceToQueue, submitSeedanceT2VToQueue, submitKling3ToQueue, submitKling3McToQueue, submitGrokVideoToQueue, submitWan26ToQueue, submitVeo31ToQueue, submitHailuo02ToQueue, submitLtx23ToQueue } from '@/lib/fal/client'
 import { submitViduImageToVideoTask } from '@/lib/wavespeed/client'
 import type { ViduImageToVideoInput } from '@/lib/wavespeed/client'
 
@@ -71,6 +75,17 @@ interface Kling3Request {
   duration: number
   aspectRatio?: '16:9' | '9:16' | '1:1'
   tier?: 'standard' | 'pro'
+}
+
+interface Kling3McRequest {
+  model: 'kling-3-mc'
+  prompt: string
+  imageUrl: string  // Required
+  resolution: '720p'
+  duration: number
+  aspectRatio?: '16:9' | '9:16' | '1:1'
+  tier?: 'standard' | 'pro'
+  trajectory?: { x: number; y: number; timestamp: number }[]
 }
 
 interface GrokVideoRequest {
@@ -116,7 +131,7 @@ interface Ltx23Request {
   duration: number
 }
 
-type VideoGenerateRequest = SeedanceRequest | ViduQ3Request | Kling3Request | GrokVideoRequest | Wan26Request | Veo31Request | Hailuo02Request | Ltx23Request
+type VideoGenerateRequest = SeedanceRequest | ViduQ3Request | Kling3Request | Kling3McRequest | GrokVideoRequest | Wan26Request | Veo31Request | Hailuo02Request | Ltx23Request
 
 // ============================================================
 // 크레딧 계산
@@ -130,6 +145,11 @@ function calculateCredits(req: VideoGenerateRequest): number {
   if (req.model === 'kling-3') {
     const creditTable = req.tier === 'pro' ? KLING3_PRO_CREDIT_PER_SECOND : KLING3_STD_CREDIT_PER_SECOND
     const perSecond = creditTable[req.resolution as Kling3Resolution]
+    return perSecond * req.duration
+  }
+  if (req.model === 'kling-3-mc') {
+    const creditTable = req.tier === 'pro' ? KLING3_MC_PRO_CREDIT_PER_SECOND : KLING3_MC_STD_CREDIT_PER_SECOND
+    const perSecond = creditTable[req.resolution as Kling3McResolution]
     return perSecond * req.duration
   }
   if (req.model === 'grok-video') {
@@ -182,9 +202,12 @@ export async function POST(request: NextRequest) {
     }
 
     // 모델별 duration 유효성 검증
-    if (body.model === 'kling-3') {
+    if (body.model === 'kling-3' || body.model === 'kling-3-mc') {
       if (body.duration !== 5 && body.duration !== 10) {
         return NextResponse.json({ error: 'Kling 3.0은 5초 또는 10초만 지원합니다' }, { status: 400 })
+      }
+      if (body.model === 'kling-3-mc' && !body.imageUrl) {
+        return NextResponse.json({ error: 'Motion Control requires an image' }, { status: 400 })
       }
     } else {
       let maxDuration = 16 // default (vidu-q3)
@@ -247,6 +270,12 @@ export async function POST(request: NextRequest) {
               imageUrl: (body as Kling3Request).imageUrl,
               aspectRatio: (body as Kling3Request).aspectRatio,
               tier: (body as Kling3Request).tier || 'standard',
+            }),
+            ...(body.model === 'kling-3-mc' && {
+              imageUrl: (body as Kling3McRequest).imageUrl,
+              aspectRatio: (body as Kling3McRequest).aspectRatio,
+              tier: (body as Kling3McRequest).tier || 'standard',
+              trajectory: (body as Kling3McRequest).trajectory,
             }),
             ...(body.model === 'grok-video' && {
               imageUrl: (body as GrokVideoRequest).imageUrl,
@@ -316,6 +345,23 @@ export async function POST(request: NextRequest) {
         const tierTag = kling3Tier === 'pro' ? 'kling3p' : 'kling3s'
         const modeTag = body.imageUrl ? 'i2v' : 't2v'
         providerTaskId = `fal-${tierTag}-${modeTag}:${result.request_id}`
+      } else if (body.model === 'kling-3-mc') {
+        // Kling 3.0 Motion Control (FAL.ai)
+        if (!body.imageUrl) {
+          return NextResponse.json({ error: 'Motion Control requires an image' }, { status: 400 })
+        }
+        const kling3Duration = body.duration === 10 ? '10' : '5'
+        const kling3Tier = body.tier || 'standard'
+        const result = await submitKling3McToQueue({
+          prompt: body.prompt,
+          image_url: body.imageUrl,
+          duration: kling3Duration,
+          aspect_ratio: body.aspectRatio,
+          tier: kling3Tier,
+          trajectory: body.trajectory,
+        })
+        const tierTag = kling3Tier === 'pro' ? 'kling3mcp' : 'kling3mcs'
+        providerTaskId = `fal-${tierTag}:${result.request_id}`
       } else if (body.model === 'grok-video') {
         // Grok Imagine Video (xAI via FAL.ai)
         const result = await submitGrokVideoToQueue({

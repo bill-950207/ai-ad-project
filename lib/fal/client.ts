@@ -1704,6 +1704,54 @@ export const KLING3_PRO_I2V_MODEL = KLING3_PRO_I2V_MODEL_ID
 export const KLING3_PRO_T2V_MODEL = KLING3_PRO_T2V_MODEL_ID
 
 // ============================================================
+// Kling 3.0 Motion Control (Kuaishou - 모션 컨트롤 영상)
+// ============================================================
+
+const KLING3_MC_STD_MODEL_ID = 'fal-ai/kling-video/v3/standard/motion-control'
+const KLING3_MC_PRO_MODEL_ID = 'fal-ai/kling-video/v3/pro/motion-control'
+
+export interface Kling3McInput {
+  prompt: string
+  image_url: string  // Required for motion control
+  duration?: '5' | '10'
+  aspect_ratio?: '16:9' | '9:16' | '1:1'
+  tier?: 'standard' | 'pro'
+  trajectory?: { x: number; y: number; timestamp: number }[]
+}
+
+export interface Kling3McOutput {
+  video: { url: string; content_type?: string }
+}
+
+export async function submitKling3McToQueue(input: Kling3McInput): Promise<FalQueueSubmitResponse> {
+  const isPro = input.tier === 'pro'
+  const modelId = isPro ? KLING3_MC_PRO_MODEL_ID : KLING3_MC_STD_MODEL_ID
+
+  const falInput = {
+    prompt: input.prompt,
+    image_url: input.image_url,
+    duration: input.duration || '5',
+    aspect_ratio: input.aspect_ratio || '16:9',
+    ...(input.trajectory && { trajectory: input.trajectory }),
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(modelId as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${modelId}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${modelId}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${modelId}/requests/${request_id}/cancel`,
+  }
+}
+
+export const KLING3_MC_STD_MODEL = KLING3_MC_STD_MODEL_ID
+export const KLING3_MC_PRO_MODEL = KLING3_MC_PRO_MODEL_ID
+
+// ============================================================
 // Grok Imagine Video (xAI - 영상 생성)
 // ============================================================
 

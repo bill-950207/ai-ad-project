@@ -34,6 +34,8 @@
  * - fal-hailuo02p-i2v:xxx → FAL.ai (Hailuo-02 Pro I2V)
  * - fal-ltx23-t2v:xxx → FAL.ai (LTX-2.3 T2V)
  * - fal-ltx23-i2v:xxx → FAL.ai (LTX-2.3 I2V)
+ * - fal-kling3mcs:xxx → FAL.ai (Kling 3.0 Motion Control Standard)
+ * - fal-kling3mcp:xxx → FAL.ai (Kling 3.0 Motion Control Pro)
  * - fal-nanobanana2:xxx → FAL.ai (Nano Banana 2 T2I)
  * - fal-nanobanana2-edit:xxx → FAL.ai (Nano Banana 2 Edit)
  */
@@ -55,6 +57,7 @@ import {
   FLUX2_PRO_MODEL, GROK_IMAGE_MODEL,
   KLING3_STD_I2V_MODEL, KLING3_STD_T2V_MODEL,
   KLING3_PRO_I2V_MODEL, KLING3_PRO_T2V_MODEL,
+  KLING3_MC_STD_MODEL, KLING3_MC_PRO_MODEL,
   GROK_VIDEO_I2V_MODEL, GROK_VIDEO_T2V_MODEL,
   WAN26_I2V_MODEL, WAN26_T2V_MODEL,
   VEO31_MODEL,
@@ -255,6 +258,26 @@ async function getProviderStatus(providerTaskId: string): Promise<StatusResult> 
       const statusResult = await getFalQueueStatus(KLING3_PRO_T2V_MODEL, taskId)
       if (statusResult.status === 'COMPLETED') {
         const response = await getFalQueueResult(KLING3_PRO_T2V_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.video?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    // Kling 3.0 Motion Control Standard
+    case 'fal-kling3mcs': {
+      const statusResult = await getFalQueueStatus(KLING3_MC_STD_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(KLING3_MC_STD_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.video?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    // Kling 3.0 Motion Control Pro
+    case 'fal-kling3mcp': {
+      const statusResult = await getFalQueueStatus(KLING3_MC_PRO_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(KLING3_MC_PRO_MODEL, taskId)
         return { status: 'COMPLETED', resultUrl: response.video?.url }
       }
       return { status: statusResult.status }

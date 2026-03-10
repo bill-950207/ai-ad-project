@@ -188,7 +188,18 @@ export type ImageQuality = keyof typeof IMAGE_AD_CREDIT_COST
 export type Flux2ProQuality = keyof typeof FLUX2_PRO_CREDIT_COST
 export type ViduResolution = keyof typeof VIDU_CREDIT_COST_PER_SECOND
 export type SeedanceResolution = keyof typeof SEEDANCE_CREDIT_COST_PER_SECOND
+/** Kling 3.0 Motion Control Standard 영상 생성 초당 크레딧 */
+export const KLING3_MC_STD_CREDIT_PER_SECOND = {
+  '720p': 6,
+} as const
+
+/** Kling 3.0 Motion Control Pro 영상 생성 초당 크레딧 */
+export const KLING3_MC_PRO_CREDIT_PER_SECOND = {
+  '720p': 8,
+} as const
+
 export type Kling3Resolution = keyof typeof KLING3_PRO_CREDIT_PER_SECOND
+export type Kling3McResolution = keyof typeof KLING3_MC_PRO_CREDIT_PER_SECOND
 export type GrokVideoResolution = keyof typeof GROK_VIDEO_CREDIT_PER_SECOND
 export type Wan26Resolution = keyof typeof WAN26_CREDIT_PER_SECOND
 export type ProductDescriptionResolution = keyof typeof PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST

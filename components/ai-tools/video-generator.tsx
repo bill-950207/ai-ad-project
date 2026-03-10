@@ -5,6 +5,7 @@ import ModelSelector from './model-selector'
 import SeedanceForm from './video-forms/seedance-form'
 import ViduQ3Form from './video-forms/vidu-q3-form'
 import Kling3Form from './video-forms/kling3-form'
+import Kling3McForm from './video-forms/kling3-mc-form'
 import GrokVideoForm from './video-forms/grok-video-form'
 import Wan26Form from './video-forms/wan26-form'
 import Veo31Form from './video-forms/veo31-form'
@@ -36,6 +37,13 @@ export default function VideoGenerator({ initialModel }: VideoGeneratorProps) {
       id: 'kling-3',
       name: 'Kling 3.0',
       description: aiToolsT.modelDescKling3 || 'Text/Image to Video (Multi-shot)',
+      creator: 'Kuaishou',
+      creatorColor: '#FF4906',
+    },
+    {
+      id: 'kling-3-mc',
+      name: 'Kling 3.0 MC',
+      description: aiToolsT.modelDescKling3Mc || 'Motion Control Video',
       creator: 'Kuaishou',
       creatorColor: '#FF4906',
     },
@@ -81,7 +89,15 @@ export default function VideoGenerator({ initialModel }: VideoGeneratorProps) {
       creator: 'Lightricks',
       creatorColor: '#F59E0B',
     },
-  ], [aiToolsT.modelDescTextImageToVideo, aiToolsT.modelDescKling3, aiToolsT.modelDescGrokVideo, aiToolsT.modelDescWan26, aiToolsT.modelDescImageToVideo, aiToolsT.modelDescVeo31, aiToolsT.modelDescHailuo02, aiToolsT.modelDescLtx23])
+    {
+      id: 'seedance-2.0',
+      name: 'Seedance 2.0',
+      description: aiToolsT.modelDescSeedance2 || 'Multi-modal Audio+Video',
+      creator: 'ByteDance',
+      creatorColor: '#0052FF',
+      comingSoon: true,
+    },
+  ], [aiToolsT.modelDescTextImageToVideo, aiToolsT.modelDescKling3, aiToolsT.modelDescKling3Mc, aiToolsT.modelDescGrokVideo, aiToolsT.modelDescWan26, aiToolsT.modelDescImageToVideo, aiToolsT.modelDescVeo31, aiToolsT.modelDescHailuo02, aiToolsT.modelDescLtx23])
 
   const [selectedModel, setSelectedModel] = useState(initialModel || 'seedance-1.5-pro')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -163,6 +179,11 @@ export default function VideoGenerator({ initialModel }: VideoGeneratorProps) {
               />
             ) : selectedModel === 'kling-3' ? (
               <Kling3Form
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            ) : selectedModel === 'kling-3-mc' ? (
+              <Kling3McForm
                 onSubmit={handleSubmit}
                 isGenerating={isGenerating}
               />
