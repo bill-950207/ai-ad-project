@@ -18,10 +18,12 @@ import {
   Z_IMAGE_TOOL_CREDIT_COST,
   FLUX2_PRO_CREDIT_COST,
   GROK_IMAGE_CREDIT_COST,
+  NANO_BANANA2_CREDIT_COST,
   type ImageQuality,
   type Flux2ProQuality,
+  type NanoBanana2Quality,
 } from '@/lib/credits/constants'
-import { submitSeedreamEditToQueue, submitSeedreamT2IToQueue, submitFlux2ProToQueue, submitGrokImageToQueue } from '@/lib/fal/client'
+import { submitSeedreamEditToQueue, submitSeedreamT2IToQueue, submitFlux2ProToQueue, submitGrokImageToQueue, submitNanoBanana2ToQueue, submitNanoBanana2EditToQueue } from '@/lib/fal/client'
 import type { SeedreamAspectRatio, SeedreamQuality } from '@/lib/fal/client'
 import { submitZImageToQueue } from '@/lib/kie/client'
 import type { ZImageAspectRatio } from '@/lib/kie/client'
@@ -57,7 +59,15 @@ interface ZImageRequest {
   aspectRatio?: ZImageAspectRatio
 }
 
-type ImageGenerateRequest = SeedreamRequest | Flux2ProRequest | GrokImageRequest | ZImageRequest
+interface NanoBanana2Request {
+  model: 'nano-banana-2'
+  prompt: string
+  imageUrl?: string // edit mode
+  aspectRatio?: string
+  quality?: 'basic' | 'high'
+}
+
+type ImageGenerateRequest = SeedreamRequest | Flux2ProRequest | GrokImageRequest | ZImageRequest | NanoBanana2Request
 
 // ============================================================
 // 크레딧 계산
@@ -74,6 +84,10 @@ function calculateCredits(req: ImageGenerateRequest): number {
   }
   if (req.model === 'grok-image') {
     return GROK_IMAGE_CREDIT_COST
+  }
+  if (req.model === 'nano-banana-2') {
+    const quality: NanoBanana2Quality = req.quality === 'high' ? 'high' : 'basic'
+    return NANO_BANANA2_CREDIT_COST[quality]
   }
   return Z_IMAGE_TOOL_CREDIT_COST
 }
@@ -150,6 +164,11 @@ export async function POST(request: NextRequest) {
             ...(body.model === 'z-image' && {
               aspectRatio: body.aspectRatio,
             }),
+            ...(body.model === 'nano-banana-2' && {
+              imageUrl: body.imageUrl,
+              aspectRatio: body.aspectRatio,
+              quality: body.quality,
+            }),
           },
           status: 'PENDING',
           credits_used: creditsRequired,
@@ -206,6 +225,39 @@ export async function POST(request: NextRequest) {
           image_size: SIZES[body.aspectRatio || '1:1'] || SIZES['1:1'],
         })
         providerTaskId = `fal-grok-img:${result.request_id}`
+      } else if (body.model === 'nano-banana-2' && body.imageUrl) {
+        const SIZES: Record<string, { width: number; height: number }> = {
+          '1:1': { width: 1024, height: 1024 },
+          '4:3': { width: 1024, height: 768 },
+          '3:4': { width: 768, height: 1024 },
+          '16:9': { width: 1024, height: 576 },
+          '9:16': { width: 576, height: 1024 },
+        }
+        const size = body.quality === 'high'
+          ? { width: (SIZES[body.aspectRatio || '1:1'] || SIZES['1:1']).width * 2, height: (SIZES[body.aspectRatio || '1:1'] || SIZES['1:1']).height * 2 }
+          : SIZES[body.aspectRatio || '1:1'] || SIZES['1:1']
+        const result = await submitNanoBanana2EditToQueue({
+          prompt: body.prompt,
+          image_url: body.imageUrl,
+          image_size: size,
+        })
+        providerTaskId = `fal-nanobanana2-edit:${result.request_id}`
+      } else if (body.model === 'nano-banana-2' && !body.imageUrl) {
+        const SIZES: Record<string, { width: number; height: number }> = {
+          '1:1': { width: 1024, height: 1024 },
+          '4:3': { width: 1024, height: 768 },
+          '3:4': { width: 768, height: 1024 },
+          '16:9': { width: 1024, height: 576 },
+          '9:16': { width: 576, height: 1024 },
+        }
+        const size = body.quality === 'high'
+          ? { width: (SIZES[body.aspectRatio || '1:1'] || SIZES['1:1']).width * 2, height: (SIZES[body.aspectRatio || '1:1'] || SIZES['1:1']).height * 2 }
+          : SIZES[body.aspectRatio || '1:1'] || SIZES['1:1']
+        const result = await submitNanoBanana2ToQueue({
+          prompt: body.prompt,
+          image_size: size,
+        })
+        providerTaskId = `fal-nanobanana2:${result.request_id}`
       } else {
         const zBody = body as ZImageRequest
         const result = await submitZImageToQueue(zBody.prompt, zBody.aspectRatio)

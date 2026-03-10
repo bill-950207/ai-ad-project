@@ -6,6 +6,9 @@
  * 지원 모델:
  * - seedance-1.5-pro: FAL.ai Seedance 1.5 Pro (텍스트/이미지 → 영상)
  * - vidu-q3: WaveSpeed (이미지 → 영상)
+ * - veo-3.1: FAL.ai Veo 3.1 (텍스트/이미지 → 영상)
+ * - hailuo-02: FAL.ai Hailuo-02 (텍스트/이미지 → 영상)
+ * - ltx-2.3: FAL.ai LTX-2.3 (텍스트/이미지 → 영상)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -20,13 +23,19 @@ import {
   KLING3_PRO_CREDIT_PER_SECOND,
   GROK_VIDEO_CREDIT_PER_SECOND,
   WAN26_CREDIT_PER_SECOND,
+  VEO31_CREDIT_PER_SECOND,
+  HAILUO02_CREDIT_PER_SECOND,
+  LTX23_CREDIT_PER_SECOND,
   type SeedanceResolution,
   type ViduResolution,
   type Kling3Resolution,
   type GrokVideoResolution,
   type Wan26Resolution,
+  type Veo31Resolution,
+  type Hailuo02Resolution,
+  type Ltx23Resolution,
 } from '@/lib/credits/constants'
-import { submitSeedanceToQueue, submitSeedanceT2VToQueue, submitKling3ToQueue, submitGrokVideoToQueue, submitWan26ToQueue } from '@/lib/fal/client'
+import { submitSeedanceToQueue, submitSeedanceT2VToQueue, submitKling3ToQueue, submitGrokVideoToQueue, submitWan26ToQueue, submitVeo31ToQueue, submitHailuo02ToQueue, submitLtx23ToQueue } from '@/lib/fal/client'
 import { submitViduImageToVideoTask } from '@/lib/wavespeed/client'
 import type { ViduImageToVideoInput } from '@/lib/wavespeed/client'
 
@@ -81,7 +90,33 @@ interface Wan26Request {
   aspectRatio?: '16:9' | '9:16' | '1:1' | '4:3' | '3:4'
 }
 
-type VideoGenerateRequest = SeedanceRequest | ViduQ3Request | Kling3Request | GrokVideoRequest | Wan26Request
+interface Veo31Request {
+  model: 'veo-3.1'
+  prompt: string
+  imageUrl?: string
+  resolution: '720p' | '1080p'
+  duration: number
+  aspectRatio?: '16:9' | '9:16' | '1:1'
+  generateAudio?: boolean
+}
+
+interface Hailuo02Request {
+  model: 'hailuo-02'
+  prompt: string
+  imageUrl?: string
+  resolution: '768p' | '1080p'
+  duration: number
+}
+
+interface Ltx23Request {
+  model: 'ltx-2.3'
+  prompt: string
+  imageUrl?: string
+  resolution: '720p' | '1080p'
+  duration: number
+}
+
+type VideoGenerateRequest = SeedanceRequest | ViduQ3Request | Kling3Request | GrokVideoRequest | Wan26Request | Veo31Request | Hailuo02Request | Ltx23Request
 
 // ============================================================
 // 크레딧 계산
@@ -103,6 +138,18 @@ function calculateCredits(req: VideoGenerateRequest): number {
   }
   if (req.model === 'wan-2.6') {
     const perSecond = WAN26_CREDIT_PER_SECOND[req.resolution as Wan26Resolution]
+    return perSecond * req.duration
+  }
+  if (req.model === 'veo-3.1') {
+    const perSecond = VEO31_CREDIT_PER_SECOND[req.resolution as Veo31Resolution]
+    return perSecond * req.duration
+  }
+  if (req.model === 'hailuo-02') {
+    const perSecond = HAILUO02_CREDIT_PER_SECOND[req.resolution as Hailuo02Resolution]
+    return perSecond * req.duration
+  }
+  if (req.model === 'ltx-2.3') {
+    const perSecond = LTX23_CREDIT_PER_SECOND[req.resolution as Ltx23Resolution]
     return perSecond * req.duration
   }
   const perSecond = VIDU_CREDIT_COST_PER_SECOND[req.resolution as ViduResolution]
@@ -140,7 +187,11 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Kling 3.0은 5초 또는 10초만 지원합니다' }, { status: 400 })
       }
     } else {
-      const maxDuration = body.model === 'wan-2.6' ? 15 : body.model === 'grok-video' ? 15 : 16
+      let maxDuration = 16 // default (vidu-q3)
+      if (body.model === 'wan-2.6' || body.model === 'grok-video') maxDuration = 15
+      else if (body.model === 'veo-3.1') maxDuration = 8
+      else if (body.model === 'hailuo-02') maxDuration = 6
+      else if (body.model === 'ltx-2.3') maxDuration = 20
       if (body.duration < 1 || body.duration > maxDuration) {
         return NextResponse.json({ error: `영상 길이는 1~${maxDuration}초입니다` }, { status: 400 })
       }
@@ -203,6 +254,17 @@ export async function POST(request: NextRequest) {
             ...(body.model === 'wan-2.6' && {
               imageUrl: (body as Wan26Request).imageUrl,
               aspectRatio: (body as Wan26Request).aspectRatio,
+            }),
+            ...(body.model === 'veo-3.1' && {
+              imageUrl: (body as Veo31Request).imageUrl,
+              aspectRatio: (body as Veo31Request).aspectRatio,
+              generateAudio: (body as Veo31Request).generateAudio,
+            }),
+            ...(body.model === 'hailuo-02' && {
+              imageUrl: (body as Hailuo02Request).imageUrl,
+            }),
+            ...(body.model === 'ltx-2.3' && {
+              imageUrl: (body as Ltx23Request).imageUrl,
             }),
           },
           status: 'PENDING',
@@ -275,6 +337,37 @@ export async function POST(request: NextRequest) {
         })
         const wan26Prefix = body.imageUrl ? 'fal-wan26-i2v' : 'fal-wan26-t2v'
         providerTaskId = `${wan26Prefix}:${result.request_id}`
+      } else if (body.model === 'veo-3.1') {
+        const result = await submitVeo31ToQueue({
+          prompt: body.prompt,
+          image_url: body.imageUrl,
+          duration: body.duration,
+          aspect_ratio: body.aspectRatio,
+          generate_audio: body.generateAudio,
+        })
+        const veo31Prefix = body.imageUrl ? 'fal-veo31-i2v' : 'fal-veo31-t2v'
+        providerTaskId = `${veo31Prefix}:${result.request_id}`
+      } else if (body.model === 'hailuo-02') {
+        const tier = body.resolution === '1080p' ? 'pro' : 'standard'
+        const result = await submitHailuo02ToQueue({
+          prompt: body.prompt,
+          image_url: body.imageUrl,
+          duration: body.duration,
+          tier,
+        })
+        const hailuoPrefix = body.imageUrl
+          ? (tier === 'pro' ? 'fal-hailuo02p-i2v' : 'fal-hailuo02s-i2v')
+          : (tier === 'pro' ? 'fal-hailuo02p-t2v' : 'fal-hailuo02s-t2v')
+        providerTaskId = `${hailuoPrefix}:${result.request_id}`
+      } else if (body.model === 'ltx-2.3') {
+        const result = await submitLtx23ToQueue({
+          prompt: body.prompt,
+          image_url: body.imageUrl,
+          duration: body.duration,
+          resolution: body.resolution,
+        })
+        const ltx23Prefix = body.imageUrl ? 'fal-ltx23-i2v' : 'fal-ltx23-t2v'
+        providerTaskId = `${ltx23Prefix}:${result.request_id}`
       } else {
         const input: ViduImageToVideoInput = {
           prompt: body.prompt,

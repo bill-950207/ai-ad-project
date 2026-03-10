@@ -7,6 +7,9 @@ import ViduQ3Form from './video-forms/vidu-q3-form'
 import Kling3Form from './video-forms/kling3-form'
 import GrokVideoForm from './video-forms/grok-video-form'
 import Wan26Form from './video-forms/wan26-form'
+import Veo31Form from './video-forms/veo31-form'
+import Hailuo02Form from './video-forms/hailuo02-form'
+import Ltx23Form from './video-forms/ltx23-form'
 import GenerationHistory from './generation-history'
 import type { ActiveGeneration } from './generation-history'
 import { useLanguage } from '@/contexts/language-context'
@@ -43,7 +46,22 @@ export default function VideoGenerator() {
       name: 'Vidu Q3',
       description: aiToolsT.modelDescImageToVideo || 'Image to Video',
     },
-  ], [aiToolsT.modelDescTextImageToVideo, aiToolsT.modelDescKling3, aiToolsT.modelDescGrokVideo, aiToolsT.modelDescWan26, aiToolsT.modelDescImageToVideo])
+    {
+      id: 'veo-3.1',
+      name: 'Veo 3.1',
+      description: aiToolsT.modelDescVeo31 || 'Google AI Video (Audio)',
+    },
+    {
+      id: 'hailuo-02',
+      name: 'Hailuo-02',
+      description: aiToolsT.modelDescHailuo02 || 'MiniMax AI Video',
+    },
+    {
+      id: 'ltx-2.3',
+      name: 'LTX 2.3',
+      description: aiToolsT.modelDescLtx23 || 'Lightricks Open Source Video',
+    },
+  ], [aiToolsT.modelDescTextImageToVideo, aiToolsT.modelDescKling3, aiToolsT.modelDescGrokVideo, aiToolsT.modelDescWan26, aiToolsT.modelDescImageToVideo, aiToolsT.modelDescVeo31, aiToolsT.modelDescHailuo02, aiToolsT.modelDescLtx23])
 
   const [selectedModel, setSelectedModel] = useState('seedance-1.5-pro')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -135,6 +153,21 @@ export default function VideoGenerator() {
               />
             ) : selectedModel === 'wan-2.6' ? (
               <Wan26Form
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            ) : selectedModel === 'veo-3.1' ? (
+              <Veo31Form
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            ) : selectedModel === 'hailuo-02' ? (
+              <Hailuo02Form
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            ) : selectedModel === 'ltx-2.3' ? (
+              <Ltx23Form
                 onSubmit={handleSubmit}
                 isGenerating={isGenerating}
               />

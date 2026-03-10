@@ -1804,3 +1804,238 @@ export async function submitWan26ToQueue(input: Wan26Input): Promise<FalQueueSub
 
 export const WAN26_I2V_MODEL = WAN26_I2V_MODEL_ID
 export const WAN26_T2V_MODEL = WAN26_T2V_MODEL_ID
+
+// ============================================================
+// Veo 3.1 (Google - 영상 생성)
+// ============================================================
+
+const VEO31_MODEL_ID = 'fal-ai/veo3.1'
+const VEO31_FAST_MODEL_ID = 'fal-ai/veo3.1/fast'
+
+/** Veo 3.1 입력 타입 */
+export interface Veo31Input {
+  prompt: string
+  image_url?: string
+  duration?: number // 1-8초
+  aspect_ratio?: '16:9' | '9:16' | '1:1'
+  generate_audio?: boolean
+}
+
+/** Veo 3.1 출력 타입 */
+export interface Veo31Output {
+  video: { url: string; content_type?: string }
+}
+
+/**
+ * Veo 3.1 영상 생성 요청을 fal.ai 큐에 제출
+ * image_url이 있으면 I2V, 없으면 T2V
+ */
+export async function submitVeo31ToQueue(input: Veo31Input): Promise<FalQueueSubmitResponse> {
+  const modelId = VEO31_MODEL_ID
+
+  const falInput = {
+    prompt: input.prompt,
+    ...(input.image_url && { image_url: input.image_url }),
+    duration: input.duration || 5,
+    aspect_ratio: input.aspect_ratio || '16:9',
+    generate_audio: input.generate_audio ?? false,
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(modelId as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${modelId}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${modelId}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${modelId}/requests/${request_id}/cancel`,
+  }
+}
+
+export const VEO31_MODEL = VEO31_MODEL_ID
+export const VEO31_FAST_MODEL = VEO31_FAST_MODEL_ID
+
+// ============================================================
+// Hailuo-02 (MiniMax - 영상 생성)
+// ============================================================
+
+const HAILUO02_PRO_I2V_MODEL_ID = 'fal-ai/minimax/hailuo-02/pro/image-to-video'
+const HAILUO02_PRO_T2V_MODEL_ID = 'fal-ai/minimax/hailuo-02/pro/text-to-video'
+const HAILUO02_STD_I2V_MODEL_ID = 'fal-ai/minimax/hailuo-02/standard/image-to-video'
+const HAILUO02_STD_T2V_MODEL_ID = 'fal-ai/minimax/hailuo-02/standard/text-to-video'
+
+/** Hailuo-02 입력 타입 */
+export interface Hailuo02Input {
+  prompt: string
+  image_url?: string
+  duration?: number // 1-6초
+  tier?: 'standard' | 'pro'
+}
+
+/** Hailuo-02 출력 타입 */
+export interface Hailuo02Output {
+  video: { url: string; content_type?: string }
+}
+
+/**
+ * Hailuo-02 영상 생성 요청을 fal.ai 큐에 제출
+ * tier로 Standard(768p)/Pro(1080p) 선택, image_url로 I2V/T2V 자동 분기
+ */
+export async function submitHailuo02ToQueue(input: Hailuo02Input): Promise<FalQueueSubmitResponse> {
+  const tier = input.tier || 'standard'
+  const hasImage = !!input.image_url
+
+  let modelId: string
+  if (tier === 'pro') {
+    modelId = hasImage ? HAILUO02_PRO_I2V_MODEL_ID : HAILUO02_PRO_T2V_MODEL_ID
+  } else {
+    modelId = hasImage ? HAILUO02_STD_I2V_MODEL_ID : HAILUO02_STD_T2V_MODEL_ID
+  }
+
+  const falInput = {
+    prompt: input.prompt,
+    ...(input.image_url && { image_url: input.image_url }),
+    duration: input.duration || 5,
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(modelId as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${modelId}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${modelId}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${modelId}/requests/${request_id}/cancel`,
+  }
+}
+
+export const HAILUO02_PRO_I2V_MODEL = HAILUO02_PRO_I2V_MODEL_ID
+export const HAILUO02_PRO_T2V_MODEL = HAILUO02_PRO_T2V_MODEL_ID
+export const HAILUO02_STD_I2V_MODEL = HAILUO02_STD_I2V_MODEL_ID
+export const HAILUO02_STD_T2V_MODEL = HAILUO02_STD_T2V_MODEL_ID
+
+// ============================================================
+// LTX-2.3 (Lightricks - 영상 생성)
+// ============================================================
+
+const LTX23_T2V_MODEL_ID = 'fal-ai/ltx-2.3/text-to-video'
+const LTX23_I2V_MODEL_ID = 'fal-ai/ltx-2.3/image-to-video/fast'
+
+/** LTX-2.3 입력 타입 */
+export interface Ltx23Input {
+  prompt: string
+  image_url?: string
+  duration?: number // 1-20초
+  resolution?: '720p' | '1080p'
+}
+
+/** LTX-2.3 출력 타입 */
+export interface Ltx23Output {
+  video: { url: string; content_type?: string }
+}
+
+/**
+ * LTX-2.3 영상 생성 요청을 fal.ai 큐에 제출
+ * image_url이 있으면 I2V, 없으면 T2V
+ */
+export async function submitLtx23ToQueue(input: Ltx23Input): Promise<FalQueueSubmitResponse> {
+  const modelId = input.image_url ? LTX23_I2V_MODEL_ID : LTX23_T2V_MODEL_ID
+
+  const falInput = {
+    prompt: input.prompt,
+    ...(input.image_url && { image_url: input.image_url }),
+    duration: input.duration || 5,
+    ...(input.resolution && { resolution: input.resolution }),
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(modelId as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${modelId}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${modelId}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${modelId}/requests/${request_id}/cancel`,
+  }
+}
+
+export const LTX23_T2V_MODEL = LTX23_T2V_MODEL_ID
+export const LTX23_I2V_MODEL = LTX23_I2V_MODEL_ID
+
+// ============================================================
+// Nano Banana 2 (Google - 이미지 생성)
+// ============================================================
+
+const NANO_BANANA2_MODEL_ID = 'fal-ai/nano-banana-2'
+const NANO_BANANA2_EDIT_MODEL_ID = 'fal-ai/nano-banana-2/edit'
+
+/** Nano Banana 2 입력 타입 */
+export interface NanoBanana2Input {
+  prompt: string
+  image_size?: { width: number; height: number }
+}
+
+/** Nano Banana 2 Edit 입력 타입 */
+export interface NanoBanana2EditInput {
+  prompt: string
+  image_url: string
+  image_size?: { width: number; height: number }
+}
+
+/**
+ * Nano Banana 2 텍스트→이미지 생성 요청을 fal.ai 큐에 제출
+ */
+export async function submitNanoBanana2ToQueue(input: NanoBanana2Input): Promise<FalQueueSubmitResponse> {
+  const modelId = NANO_BANANA2_MODEL_ID
+
+  const falInput = {
+    prompt: input.prompt,
+    ...(input.image_size && { image_size: input.image_size }),
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(modelId as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${modelId}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${modelId}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${modelId}/requests/${request_id}/cancel`,
+  }
+}
+
+/**
+ * Nano Banana 2 이미지 편집 요청을 fal.ai 큐에 제출
+ */
+export async function submitNanoBanana2EditToQueue(input: NanoBanana2EditInput): Promise<FalQueueSubmitResponse> {
+  const modelId = NANO_BANANA2_EDIT_MODEL_ID
+
+  const falInput = {
+    prompt: input.prompt,
+    image_url: input.image_url,
+    ...(input.image_size && { image_size: input.image_size }),
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(modelId as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${modelId}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${modelId}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${modelId}/requests/${request_id}/cancel`,
+  }
+}
+
+export const NANO_BANANA2_MODEL = NANO_BANANA2_MODEL_ID
+export const NANO_BANANA2_EDIT_MODEL = NANO_BANANA2_EDIT_MODEL_ID

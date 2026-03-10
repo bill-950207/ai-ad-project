@@ -36,7 +36,7 @@ export interface ModelPageData {
 // 이미지 모델
 // ============================================================
 
-export const IMAGE_MODEL_SLUGS = ['seedream-5', 'flux-2-pro', 'grok-imagine', 'z-image'] as const
+export const IMAGE_MODEL_SLUGS = ['seedream-5', 'flux-2-pro', 'grok-imagine', 'z-image', 'nano-banana-2'] as const
 export type ImageModelSlug = (typeof IMAGE_MODEL_SLUGS)[number]
 
 export const IMAGE_MODELS: Record<ImageModelSlug, ModelPageData> = {
@@ -385,13 +385,110 @@ export const IMAGE_MODELS: Record<ImageModelSlug, ModelPageData> = {
       },
     },
   },
+
+  'nano-banana-2': {
+    slug: 'nano-banana-2',
+    name: 'Nano Banana 2',
+    creator: 'Google',
+    type: 'image',
+    modes: ['Text to Image', 'Image Edit'],
+    resolutions: ['1:1', '4:3', '3:4', '16:9', '9:16'],
+    creditSummary: {
+      ko: '기본 2크레딧, 고화질 6크레딧',
+      en: '2 credits (basic), 6 credits (high)',
+      ja: '基本2クレジット、高画質6クレジット',
+      zh: '基本2积分，高画质6积分',
+    },
+    seo: {
+      ko: {
+        title: 'Nano Banana 2 AI 이미지 생성기 - Google 최신 모델 무료 사용',
+        description: 'Google의 Nano Banana 2로 고품질 AI 이미지를 생성하세요. 텍스트-이미지, 이미지 편집 지원. 다양한 비율, 기본/고화질 선택. Midjourney, DALL-E 대안. 무료 크레딧으로 시작.',
+        keywords: ['Nano Banana 2', 'Nano Banana', 'Google AI', 'Google Nano Banana', '구글 AI', 'Nano Banana 2 사용법', 'Nano Banana 2 무료', 'Nano Banana AI 이미지', 'Google 이미지 생성', 'AI 이미지 생성', 'Midjourney 대안', 'DALL-E 대안', '무료 AI 이미지 생성기', 'Google AI 이미지'],
+        subtitle: 'Google이 개발한 최신 AI 이미지 생성 모델',
+        features: [
+          '텍스트로 고품질 이미지 생성 (Text to Image)',
+          '기존 이미지 편집 및 변환 (Image Edit)',
+          '5가지 종횡비 지원 (1:1, 4:3, 3:4, 16:9, 9:16)',
+          '기본/고화질 품질 선택 가능',
+          '광고, SNS, 상세페이지용 이미지 최적화',
+          'Google의 최신 AI 기술 적용',
+        ],
+        faq: [
+          { q: 'Nano Banana 2란 무엇인가요?', a: 'Nano Banana 2는 Google이 개발한 최신 AI 이미지 생성 모델입니다. 텍스트 설명만으로 고품질 이미지를 생성하거나, 기존 이미지를 AI로 편집할 수 있습니다. gwanggo에서 무료로 사용할 수 있습니다.' },
+          { q: 'Nano Banana 2는 무료인가요?', a: '네, gwanggo 회원가입 시 제공되는 무료 크레딧으로 Nano Banana 2를 바로 사용할 수 있습니다. 기본 화질은 2크레딧, 고화질은 6크레딧이 소모됩니다.' },
+          { q: 'Nano Banana 2와 Midjourney의 차이점은?', a: 'Nano Banana 2는 웹 브라우저에서 바로 사용 가능하며, Discord 등 별도 프로그램이 필요 없습니다. 이미지 편집 기능도 내장되어 있어 생성 후 바로 수정할 수 있습니다. Google의 최신 AI 기술이 적용되어 높은 품질을 제공합니다.' },
+          { q: 'Nano Banana 2로 어떤 이미지를 만들 수 있나요?', a: '제품 광고 이미지, SNS 포스트, 쇼핑몰 상세페이지, 배너, 브랜드 콘텐츠 등 다양한 이미지를 만들 수 있습니다. 5가지 종횡비를 지원하여 인스타그램, 페이스북 등 각 플랫폼에 최적화된 크기로 생성 가능합니다.' },
+        ],
+      },
+      en: {
+        title: 'Nano Banana 2 AI Image Generator - Google Latest Model Free',
+        description: 'Generate high-quality AI images with Google\'s Nano Banana 2. Text-to-image and image editing. Multiple aspect ratios. Midjourney, DALL-E alternative. Start free.',
+        keywords: ['Nano Banana 2', 'Nano Banana', 'Google AI', 'Google Nano Banana', 'Nano Banana 2 free', 'Nano Banana AI image', 'Nano Banana image generator', 'Google image generator', 'AI image generator', 'Midjourney alternative', 'DALL-E alternative', 'free AI image generator'],
+        subtitle: 'Latest AI image generation model by Google',
+        features: [
+          'Generate high-quality images from text (Text to Image)',
+          'Edit and transform existing images (Image Edit)',
+          '5 aspect ratios (1:1, 4:3, 3:4, 16:9, 9:16)',
+          'Basic and high quality options',
+          'Optimized for ads, social media, and e-commerce',
+          'Powered by Google\'s latest AI technology',
+        ],
+        faq: [
+          { q: 'What is Nano Banana 2?', a: 'Nano Banana 2 is the latest AI image generation model developed by Google. It can generate high-quality images from text descriptions or edit existing images with AI. Available for free on gwanggo.' },
+          { q: 'Is Nano Banana 2 free?', a: 'Yes, you can use Nano Banana 2 immediately with free credits provided at sign-up. Basic quality costs 2 credits, high quality costs 6 credits per image.' },
+          { q: 'How does Nano Banana 2 compare to Midjourney?', a: 'Nano Banana 2 works directly in your web browser with no Discord or additional software needed. It includes built-in image editing capabilities and is powered by Google\'s latest AI technology for superior quality.' },
+          { q: 'What images can I create with Nano Banana 2?', a: 'Product ads, social media posts, e-commerce detail pages, banners, and brand content. Supports 5 aspect ratios for Instagram, Facebook, and other platforms.' },
+        ],
+      },
+      ja: {
+        title: 'Nano Banana 2 AI画像生成 - Google最新モデル 無料で使える',
+        description: 'GoogleのNano Banana 2で高品質AI画像を生成。テキストから画像生成、画像編集対応。複数のアスペクト比。Midjourney、DALL-E代替。無料クレジットで開始。',
+        keywords: ['Nano Banana 2', 'Nano Banana', 'Google AI', 'グーグルAI', 'Nano Banana 2 無料', 'Nano Banana AI画像', 'Google 画像生成', 'AI画像生成', 'Midjourney代替', 'DALL-E代替', '無料AI画像生成'],
+        subtitle: 'Googleが開発した最新AI画像生成モデル',
+        features: [
+          'テキストから高品質画像を生成（Text to Image）',
+          '既存画像の編集・変換（Image Edit）',
+          '5種類のアスペクト比対応（1:1, 4:3, 3:4, 16:9, 9:16）',
+          '基本・高画質の選択可能',
+          '広告、SNS、ECサイト向け最適化',
+          'Googleの最新AI技術搭載',
+        ],
+        faq: [
+          { q: 'Nano Banana 2とは？', a: 'Nano Banana 2はGoogleが開発した最新のAI画像生成モデルです。テキスト説明から高品質画像を生成したり、既存画像をAIで編集できます。gwanggoで無料で利用可能です。' },
+          { q: 'Nano Banana 2は無料ですか？', a: 'はい、会員登録時に提供される無料クレジットですぐにNano Banana 2を使用できます。基本画質は2クレジット、高画質は6クレジットです。' },
+          { q: 'Nano Banana 2とMidjourneyの違いは？', a: 'Nano Banana 2はWebブラウザで直接使用可能で、Discordなどの追加ソフトは不要です。画像編集機能も内蔵。Googleの最新AI技術で高品質な画像を生成します。' },
+          { q: 'Nano Banana 2でどんな画像が作れますか？', a: '商品広告、SNS投稿、ECサイト詳細ページ、バナー、ブランドコンテンツなど。5種類のアスペクト比でInstagram、Facebookなど各プラットフォームに最適化可能。' },
+        ],
+      },
+      zh: {
+        title: 'Nano Banana 2 AI图片生成器 - Google最新模型 免费使用',
+        description: '使用Google的Nano Banana 2生成高质量AI图片。支持文字生图、图片编辑。多种宽高比。Midjourney、DALL-E替代。免费积分立即开始。',
+        keywords: ['Nano Banana 2', 'Nano Banana', 'Google AI', '谷歌AI', 'Nano Banana 2 免费', 'Nano Banana AI图片', 'Google 图片生成', 'AI图片生成', 'Midjourney替代', 'DALL-E替代', '免费AI图片生成'],
+        subtitle: 'Google开发的最新AI图片生成模型',
+        features: [
+          '文字生成高质量图片（Text to Image）',
+          '编辑和变换现有图片（Image Edit）',
+          '支持5种宽高比（1:1, 4:3, 3:4, 16:9, 9:16）',
+          '可选基本/高画质',
+          '广告、社交媒体、电商优化',
+          '搭载Google最新AI技术',
+        ],
+        faq: [
+          { q: '什么是Nano Banana 2？', a: 'Nano Banana 2是Google开发的最新AI图片生成模型。可以从文字描述生成高质量图片，也可以用AI编辑现有图片。在gwanggo上免费使用。' },
+          { q: 'Nano Banana 2免费吗？', a: '是的，注册时获得的免费积分可以立即使用Nano Banana 2。基本画质2积分，高画质6积分。' },
+          { q: 'Nano Banana 2和Midjourney有什么区别？', a: 'Nano Banana 2在网页浏览器中直接使用，无需Discord等额外软件。内置图片编辑功能。搭载Google最新AI技术，提供卓越画质。' },
+          { q: 'Nano Banana 2能创建什么图片？', a: '产品广告、社交媒体帖子、电商详情页、横幅、品牌内容等。支持5种宽高比，适配Instagram、Facebook等各平台。' },
+        ],
+      },
+    },
+  },
 }
 
 // ============================================================
 // 영상 모델
 // ============================================================
 
-export const VIDEO_MODEL_SLUGS = ['seedance', 'vidu-q3', 'kling-3', 'grok-video', 'wan-26'] as const
+export const VIDEO_MODEL_SLUGS = ['seedance', 'vidu-q3', 'kling-3', 'grok-video', 'wan-26', 'veo-31', 'hailuo-02', 'ltx-23'] as const
 export type VideoModelSlug = (typeof VIDEO_MODEL_SLUGS)[number]
 
 export const VIDEO_MODELS: Record<VideoModelSlug, ModelPageData> = {
@@ -761,6 +858,300 @@ export const VIDEO_MODELS: Record<VideoModelSlug, ModelPageData> = {
           { q: 'Wan 2.6费用多少？', a: '720p: 4积分/秒，1080p: 5积分/秒。例：1080p 5秒 = 25积分。注册送免费积分。' },
           { q: 'Wan 2.6有什么优势？', a: '支持1080p和最长15秒。5种宽高比，从竖屏短视频到横屏广告都能制作。' },
           { q: 'Wan 2.6能创建什么视频？', a: '产品广告、Instagram Reels、YouTube Shorts、TikTok视频等。专业1080p画质。' },
+        ],
+      },
+    },
+  },
+
+  'veo-31': {
+    slug: 'veo-31',
+    name: 'Google Veo 3.1',
+    creator: 'Google',
+    type: 'video',
+    modes: ['Text to Video', 'Image to Video'],
+    resolutions: ['720p', '1080p'],
+    duration: '1-8s',
+    creditSummary: {
+      ko: '720p: 4cr/초, 1080p: 7cr/초',
+      en: '720p: 4cr/s, 1080p: 7cr/s',
+      ja: '720p: 4cr/秒, 1080p: 7cr/秒',
+      zh: '720p: 4积分/秒, 1080p: 7积分/秒',
+    },
+    seo: {
+      ko: {
+        title: 'Google Veo 3.1 AI 영상 생성기 - 오디오 포함 영상 생성 무료',
+        description: 'Google의 Veo 3.1로 오디오가 포함된 AI 영상을 생성하세요. T2V/I2V, 720p-1080p, 최대 8초. 오디오 자동 생성, 다양한 종횡비 지원. 무료 크레딧으로 시작.',
+        keywords: ['Google Veo 3.1', 'Veo 3.1', 'Veo 3', 'Google AI 영상', 'Google Veo', 'Veo AI', 'Veo 3.1 무료', 'Veo 3.1 사용법', 'AI 영상 생성', 'AI 오디오 영상', '1080p AI 영상', 'Sora 대안', 'Runway 대안', 'Google AI Video'],
+        subtitle: 'Google이 개발한 오디오 포함 AI 영상 생성 모델',
+        features: [
+          '텍스트/이미지 → 영상 변환 (T2V, I2V)',
+          '오디오 자동 생성 (영상에 맞는 사운드)',
+          '720p, 1080p 고해상도 지원',
+          '다양한 종횡비 선택 (16:9, 9:16 등)',
+          '최대 8초 길이',
+          'Google의 최첨단 AI 기술 기반',
+        ],
+        faq: [
+          { q: 'Google Veo 3.1이란?', a: 'Google Veo 3.1은 Google이 개발한 최신 AI 영상 생성 모델입니다. 텍스트나 이미지를 입력하면 오디오가 포함된 고품질 AI 영상을 생성합니다. gwanggo에서 무료로 사용 가능합니다.' },
+          { q: 'Veo 3.1 비용은?', a: '720p: 초당 4크레딧, 1080p: 초당 7크레딧입니다. 예: 1080p 5초 영상 = 35크레딧. 무료 회원가입 크레딧으로 체험 가능합니다.' },
+          { q: 'Veo 3.1의 오디오 생성 기능이란?', a: 'Veo 3.1은 영상을 생성할 때 영상 내용에 맞는 오디오(음향 효과, 배경음 등)를 자동으로 함께 생성합니다. 별도의 오디오 작업 없이 완성된 영상을 바로 얻을 수 있습니다.' },
+          { q: 'Veo 3.1과 Sora의 차이점은?', a: 'Veo 3.1은 Google의 최첨단 AI 기술 기반으로 오디오 자동 생성이 특징입니다. gwanggo에서 웹 브라우저로 바로 사용 가능하며, T2V와 I2V를 모두 지원합니다.' },
+        ],
+      },
+      en: {
+        title: 'Google Veo 3.1 AI Video Generator - Video with Audio Free',
+        description: 'Generate AI videos with audio using Google\'s Veo 3.1. T2V/I2V, 720p-1080p, up to 8 seconds. Auto audio generation, multiple aspect ratios. Start free.',
+        keywords: ['Google Veo 3.1', 'Veo 3.1', 'Veo 3', 'Google AI video', 'Google Veo', 'Veo AI', 'Veo 3.1 free', 'AI video generator', 'AI video with audio', '1080p AI video', 'Sora alternative', 'Runway alternative', 'Google AI Video'],
+        subtitle: 'AI video generation with audio by Google',
+        features: [
+          'Text/Image to Video (T2V, I2V)',
+          'Automatic audio generation (matching sound)',
+          '720p and 1080p resolution',
+          'Multiple aspect ratios (16:9, 9:16, etc.)',
+          'Up to 8 seconds',
+          'Powered by Google\'s cutting-edge AI',
+        ],
+        faq: [
+          { q: 'What is Google Veo 3.1?', a: 'Google Veo 3.1 is Google\'s latest AI video generation model. Generate high-quality videos with audio from text or images. Available for free on gwanggo.' },
+          { q: 'How much does Veo 3.1 cost?', a: '720p: 4 cr/sec, 1080p: 7 cr/sec. Example: 1080p 5s = 35 credits. Free credits at sign-up.' },
+          { q: 'What is the audio generation feature?', a: 'Veo 3.1 automatically generates matching audio (sound effects, ambient sounds) along with the video. Get complete videos without separate audio work.' },
+          { q: 'How does Veo 3.1 compare to Sora?', a: 'Veo 3.1 is built on Google\'s cutting-edge AI and uniquely offers automatic audio generation. Works directly in browsers on gwanggo with both T2V and I2V support.' },
+        ],
+      },
+      ja: {
+        title: 'Google Veo 3.1 AI動画生成 - オーディオ付き動画 無料',
+        description: 'GoogleのVeo 3.1でオーディオ付きAI動画を生成。T2V/I2V、720p-1080p、最大8秒。オーディオ自動生成、複数アスペクト比対応。無料クレジットで開始。',
+        keywords: ['Google Veo 3.1', 'Veo 3.1', 'Veo 3', 'Google AI動画', 'Google Veo', 'Veo AI', 'Veo 3.1 無料', 'AI動画生成', 'オーディオ付きAI動画', '1080p AI動画', 'Sora代替', 'Runway代替'],
+        subtitle: 'Googleが開発したオーディオ付きAI動画生成モデル',
+        features: [
+          'テキスト/画像→動画（T2V、I2V）',
+          'オーディオ自動生成（映像に合ったサウンド）',
+          '720p、1080p対応',
+          '複数のアスペクト比対応',
+          '最大8秒',
+          'Googleの最先端AI技術',
+        ],
+        faq: [
+          { q: 'Google Veo 3.1とは？', a: 'Googleが開発した最新AI動画生成モデル。テキストや画像からオーディオ付き高品質動画を生成。gwanggoで無料で利用可能。' },
+          { q: 'Veo 3.1の料金は？', a: '720p: 4cr/秒、1080p: 7cr/秒。例：1080p 5秒 = 35クレジット。無料クレジットで体験。' },
+          { q: 'オーディオ生成機能とは？', a: 'Veo 3.1は動画生成時に映像内容に合ったオーディオ（効果音、環境音など）を自動生成。別途オーディオ作業なしで完成動画が得られます。' },
+          { q: 'Veo 3.1とSoraの違いは？', a: 'Googleの最先端AI基盤で、オーディオ自動生成が特徴。Webブラウザで直接使用可能。T2VとI2V両方対応。' },
+        ],
+      },
+      zh: {
+        title: 'Google Veo 3.1 AI视频生成 - 含音频视频 免费',
+        description: '使用Google的Veo 3.1生成含音频的AI视频。T2V/I2V，720p-1080p，最长8秒。自动生成音频，多种宽高比。免费积分开始。',
+        keywords: ['Google Veo 3.1', 'Veo 3.1', 'Veo 3', 'Google AI视频', 'Google Veo', 'Veo AI', 'Veo 3.1 免费', 'AI视频生成', '含音频AI视频', '1080p AI视频', 'Sora替代', 'Runway替代'],
+        subtitle: 'Google开发的含音频AI视频生成模型',
+        features: [
+          '文字/图片→视频（T2V、I2V）',
+          '自动生成音频（匹配画面的音效）',
+          '720p、1080p分辨率',
+          '多种宽高比支持',
+          '最长8秒',
+          'Google尖端AI技术驱动',
+        ],
+        faq: [
+          { q: '什么是Google Veo 3.1？', a: 'Google开发的最新AI视频生成模型。从文字或图片生成含音频的高质量视频。在gwanggo上免费使用。' },
+          { q: 'Veo 3.1费用多少？', a: '720p: 4积分/秒，1080p: 7积分/秒。例：1080p 5秒 = 35积分。注册送免费积分。' },
+          { q: '音频生成功能是什么？', a: 'Veo 3.1在生成视频时会自动生成匹配画面的音频（音效、环境音等）。无需额外音频处理即可获得完整视频。' },
+          { q: 'Veo 3.1和Sora有什么区别？', a: '基于Google尖端AI技术，独特的自动音频生成功能。网页浏览器直接使用，支持T2V和I2V。' },
+        ],
+      },
+    },
+  },
+
+  'hailuo-02': {
+    slug: 'hailuo-02',
+    name: 'MiniMax Hailuo-02',
+    creator: 'MiniMax',
+    type: 'video',
+    modes: ['Text to Video', 'Image to Video'],
+    resolutions: ['768p', '1080p'],
+    duration: '1-6s',
+    creditSummary: {
+      ko: 'Standard(768p): 2cr/초, Pro(1080p): 3cr/초',
+      en: 'Standard(768p): 2cr/s, Pro(1080p): 3cr/s',
+      ja: 'Standard(768p): 2cr/秒, Pro(1080p): 3cr/秒',
+      zh: 'Standard(768p): 2积分/秒, Pro(1080p): 3积分/秒',
+    },
+    seo: {
+      ko: {
+        title: 'MiniMax Hailuo-02 AI 영상 생성기 - Standard/Pro 무료',
+        description: 'MiniMax의 Hailuo-02로 AI 영상을 생성하세요. T2V/I2V, Standard(768p)/Pro(1080p), 최대 6초. 경제적인 가격의 고품질 영상. 무료 크레딧으로 시작.',
+        keywords: ['Hailuo-02', 'Hailuo 02', 'MiniMax Hailuo', 'MiniMax AI', 'Hailuo AI', 'Hailuo 영상', 'Hailuo 무료', 'Hailuo-02 사용법', 'AI 영상 생성', 'MiniMax 영상', 'Sora 대안', 'Runway 대안', 'Hailuo Video', 'AI 동영상 만들기'],
+        subtitle: 'MiniMax가 개발한 경제적인 AI 영상 생성 모델',
+        features: [
+          '텍스트/이미지 → 영상 변환 (T2V, I2V)',
+          'Standard(768p)와 Pro(1080p) 두 가지 티어',
+          '최대 6초 길이',
+          '경제적인 크레딧 가격',
+          '자연스러운 모션 표현',
+          '빠른 생성 속도',
+        ],
+        faq: [
+          { q: 'MiniMax Hailuo-02란?', a: 'Hailuo-02는 MiniMax가 개발한 AI 영상 생성 모델입니다. 텍스트나 이미지를 입력하면 고품질 AI 영상을 생성합니다. Standard(768p)와 Pro(1080p) 두 가지 티어를 제공합니다.' },
+          { q: 'Hailuo-02 비용은?', a: 'Standard(768p): 초당 2크레딧, Pro(1080p): 초당 3크레딧입니다. 예: Pro 5초 영상 = 15크레딧. 무료 회원가입 크레딧으로 바로 체험 가능합니다.' },
+          { q: 'Hailuo-02 Standard와 Pro의 차이점은?', a: 'Standard는 768p 해상도로 초당 2크레딧의 경제적인 가격입니다. Pro는 1080p 고해상도로 초당 3크레딧이며 더 높은 품질을 제공합니다.' },
+          { q: 'Hailuo-02로 어떤 영상을 만들 수 있나요?', a: '제품 광고, SNS 숏폼, 브랜드 콘텐츠 등 다양한 영상을 만들 수 있습니다. T2V와 I2V를 모두 지원하여 텍스트 또는 이미지 기반으로 영상을 생성할 수 있습니다.' },
+        ],
+      },
+      en: {
+        title: 'MiniMax Hailuo-02 AI Video Generator - Standard/Pro Free',
+        description: 'Generate AI videos with MiniMax\'s Hailuo-02. T2V/I2V, Standard(768p)/Pro(1080p), up to 6 seconds. Affordable high-quality video. Start free.',
+        keywords: ['Hailuo-02', 'Hailuo 02', 'MiniMax Hailuo', 'MiniMax AI', 'Hailuo AI', 'Hailuo video', 'Hailuo free', 'AI video generator', 'MiniMax video', 'Sora alternative', 'Runway alternative', 'Hailuo Video', 'affordable AI video'],
+        subtitle: 'Affordable AI video generation model by MiniMax',
+        features: [
+          'Text/Image to Video (T2V, I2V)',
+          'Standard(768p) and Pro(1080p) tiers',
+          'Up to 6 seconds',
+          'Affordable credit pricing',
+          'Natural motion',
+          'Fast generation speed',
+        ],
+        faq: [
+          { q: 'What is MiniMax Hailuo-02?', a: 'Hailuo-02 is an AI video generation model by MiniMax. Generate high-quality videos from text or images. Standard(768p) and Pro(1080p) tiers available.' },
+          { q: 'How much does Hailuo-02 cost?', a: 'Standard(768p): 2 cr/sec, Pro(1080p): 3 cr/sec. Example: Pro 5s = 15 credits. Free credits at sign-up.' },
+          { q: 'What\'s the difference between Standard and Pro?', a: 'Standard offers 768p at 2 credits/sec for affordable generation. Pro offers 1080p at 3 credits/sec for higher quality.' },
+          { q: 'What videos can I create with Hailuo-02?', a: 'Product ads, social media shorts, brand content, and more. Supports both T2V and I2V for text or image-based video generation.' },
+        ],
+      },
+      ja: {
+        title: 'MiniMax Hailuo-02 AI動画生成 - Standard/Pro 無料',
+        description: 'MiniMaxのHailuo-02でAI動画を生成。T2V/I2V、Standard(768p)/Pro(1080p)、最大6秒。手頃な価格の高品質動画。無料クレジットで開始。',
+        keywords: ['Hailuo-02', 'Hailuo 02', 'MiniMax Hailuo', 'MiniMax AI', 'Hailuo AI', 'Hailuo 動画', 'Hailuo 無料', 'AI動画生成', 'MiniMax動画', 'Sora代替', 'Runway代替'],
+        subtitle: 'MiniMaxが開発した手頃なAI動画生成モデル',
+        features: [
+          'テキスト/画像→動画（T2V、I2V）',
+          'Standard(768p)とPro(1080p)の2ティア',
+          '最大6秒',
+          '手頃なクレジット価格',
+          '自然なモーション',
+          '高速生成',
+        ],
+        faq: [
+          { q: 'MiniMax Hailuo-02とは？', a: 'MiniMaxが開発したAI動画生成モデル。テキストや画像から高品質動画を生成。Standard(768p)とPro(1080p)の2ティア。' },
+          { q: 'Hailuo-02の料金は？', a: 'Standard(768p): 2cr/秒、Pro(1080p): 3cr/秒。例：Pro 5秒 = 15クレジット。無料クレジットで体験。' },
+          { q: 'StandardとProの違いは？', a: 'Standardは768pで2cr/秒の手頃な価格。Proは1080pで3cr/秒の高品質。' },
+          { q: 'Hailuo-02でどんな動画が作れますか？', a: '商品広告、SNSショート動画、ブランドコンテンツなど。T2VとI2V両方対応。' },
+        ],
+      },
+      zh: {
+        title: 'MiniMax Hailuo-02 AI视频生成 - Standard/Pro 免费',
+        description: '使用MiniMax的Hailuo-02生成AI视频。T2V/I2V，Standard(768p)/Pro(1080p)，最长6秒。经济实惠的高质量视频。免费积分开始。',
+        keywords: ['Hailuo-02', 'Hailuo 02', 'MiniMax Hailuo', 'MiniMax AI', 'Hailuo AI', 'Hailuo 视频', 'Hailuo 免费', 'AI视频生成', 'MiniMax视频', 'Sora替代', 'Runway替代'],
+        subtitle: 'MiniMax开发的经济实惠AI视频生成模型',
+        features: [
+          '文字/图片→视频（T2V、I2V）',
+          'Standard(768p)和Pro(1080p)两个等级',
+          '最长6秒',
+          '经济实惠的积分价格',
+          '自然流畅的动效',
+          '快速生成',
+        ],
+        faq: [
+          { q: '什么是MiniMax Hailuo-02？', a: 'MiniMax开发的AI视频生成模型。从文字或图片生成高质量视频。提供Standard(768p)和Pro(1080p)两个等级。' },
+          { q: 'Hailuo-02费用多少？', a: 'Standard(768p): 2积分/秒，Pro(1080p): 3积分/秒。例：Pro 5秒 = 15积分。注册送免费积分。' },
+          { q: 'Standard和Pro有什么区别？', a: 'Standard是768p，2积分/秒，经济实惠。Pro是1080p，3积分/秒，更高质量。' },
+          { q: 'Hailuo-02能创建什么视频？', a: '产品广告、社交媒体短视频、品牌内容等。支持T2V和I2V两种模式。' },
+        ],
+      },
+    },
+  },
+
+  'ltx-23': {
+    slug: 'ltx-23',
+    name: 'Lightricks LTX-2.3',
+    creator: 'Lightricks',
+    type: 'video',
+    modes: ['Text to Video', 'Image to Video'],
+    resolutions: ['720p', '1080p'],
+    duration: '1-20s',
+    creditSummary: {
+      ko: '720p: 4cr/초, 1080p: 5cr/초',
+      en: '720p: 4cr/s, 1080p: 5cr/s',
+      ja: '720p: 4cr/秒, 1080p: 5cr/秒',
+      zh: '720p: 4积分/秒, 1080p: 5积分/秒',
+    },
+    seo: {
+      ko: {
+        title: 'LTX-2.3 AI 영상 생성기 - Lightricks 오픈소스 최대 20초 무료',
+        description: 'Lightricks의 LTX-2.3으로 AI 영상을 생성하세요. T2V/I2V, 720p-1080p, 최대 20초. 오픈소스 기반, 다양한 종횡비. 무료 크레딧으로 시작.',
+        keywords: ['LTX-2.3', 'LTX 2.3', 'Lightricks LTX', 'Lightricks AI', 'LTX Video', 'LTX-2.3 무료', 'LTX-2.3 사용법', 'AI 영상 생성', '20초 AI 영상', '오픈소스 AI 영상', '1080p AI 영상', 'Sora 대안', 'Runway 대안', 'Lightricks 영상'],
+        subtitle: 'Lightricks가 개발한 오픈소스 기반 장시간 AI 영상 생성 모델',
+        features: [
+          '텍스트/이미지 → 영상 변환 (T2V, I2V)',
+          '최대 20초 길이 (업계 최장급)',
+          '720p, 1080p 고해상도 지원',
+          '다양한 종횡비 선택 가능',
+          '오픈소스 기반의 투명한 기술',
+          '긴 영상에 적합한 일관된 품질',
+        ],
+        faq: [
+          { q: 'LTX-2.3이란?', a: 'LTX-2.3은 Lightricks가 개발한 오픈소스 기반 AI 영상 생성 모델입니다. 텍스트나 이미지를 입력하면 최대 1080p, 20초 길이의 AI 영상을 생성합니다. gwanggo에서 무료로 사용 가능합니다.' },
+          { q: 'LTX-2.3 비용은?', a: '720p: 초당 4크레딧, 1080p: 초당 5크레딧입니다. 예: 1080p 10초 영상 = 50크레딧. 무료 회원가입 크레딧으로 체험 가능합니다.' },
+          { q: 'LTX-2.3의 최대 영상 길이는?', a: 'LTX-2.3은 최대 20초까지의 영상을 생성할 수 있어 업계에서 가장 긴 영상을 지원하는 모델 중 하나입니다. 제품 소개, 광고 등 긴 콘텐츠 제작에 적합합니다.' },
+          { q: 'LTX-2.3이 오픈소스라는 의미는?', a: 'LTX-2.3은 오픈소스로 공개된 모델을 기반으로 하여 기술의 투명성이 보장됩니다. gwanggo에서는 별도 설치 없이 웹 브라우저에서 바로 사용할 수 있습니다.' },
+        ],
+      },
+      en: {
+        title: 'LTX-2.3 AI Video Generator - Lightricks Open Source Up to 20s Free',
+        description: 'Generate AI videos with Lightricks\' LTX-2.3. T2V/I2V, 720p-1080p, up to 20 seconds. Open source, multiple aspect ratios. Start free.',
+        keywords: ['LTX-2.3', 'LTX 2.3', 'Lightricks LTX', 'Lightricks AI', 'LTX Video', 'LTX-2.3 free', 'AI video generator', '20 second AI video', 'open source AI video', '1080p AI video', 'Sora alternative', 'Runway alternative', 'Lightricks video'],
+        subtitle: 'Open-source long-form AI video generation model by Lightricks',
+        features: [
+          'Text/Image to Video (T2V, I2V)',
+          'Up to 20 seconds (industry leading)',
+          '720p and 1080p resolution',
+          'Multiple aspect ratios',
+          'Open-source transparency',
+          'Consistent quality for long videos',
+        ],
+        faq: [
+          { q: 'What is LTX-2.3?', a: 'LTX-2.3 is an open-source AI video generation model by Lightricks. Generate up to 1080p, 20-second videos from text or images. Available for free on gwanggo.' },
+          { q: 'How much does LTX-2.3 cost?', a: '720p: 4 cr/sec, 1080p: 5 cr/sec. Example: 1080p 10s = 50 credits. Free credits at sign-up.' },
+          { q: 'What is the maximum video length?', a: 'LTX-2.3 supports up to 20 seconds, making it one of the longest video generators available. Ideal for product intros and ads.' },
+          { q: 'What does open source mean for LTX-2.3?', a: 'LTX-2.3 is built on an open-source model ensuring technology transparency. On gwanggo, use it directly in your browser with no setup required.' },
+        ],
+      },
+      ja: {
+        title: 'LTX-2.3 AI動画生成 - Lightricks オープンソース 最大20秒 無料',
+        description: 'LightricksのLTX-2.3でAI動画を生成。T2V/I2V、720p-1080p、最大20秒。オープンソース、複数アスペクト比対応。無料クレジットで開始。',
+        keywords: ['LTX-2.3', 'LTX 2.3', 'Lightricks LTX', 'Lightricks AI', 'LTX Video', 'LTX-2.3 無料', 'AI動画生成', '20秒AI動画', 'オープンソースAI動画', '1080p AI動画', 'Sora代替', 'Runway代替'],
+        subtitle: 'Lightricksが開発したオープンソース長時間AI動画生成モデル',
+        features: [
+          'テキスト/画像→動画（T2V、I2V）',
+          '最大20秒（業界最長級）',
+          '720p、1080p対応',
+          '複数のアスペクト比',
+          'オープンソースの透明性',
+          '長尺でも一貫した品質',
+        ],
+        faq: [
+          { q: 'LTX-2.3とは？', a: 'Lightricksが開発したオープンソースAI動画生成モデル。テキストや画像から最大1080p、20秒の動画を生成。gwanggoで無料で利用可能。' },
+          { q: 'LTX-2.3の料金は？', a: '720p: 4cr/秒、1080p: 5cr/秒。例：1080p 10秒 = 50クレジット。無料クレジットで体験。' },
+          { q: '最大動画長は？', a: '最大20秒で、業界最長級。商品紹介や広告などの長尺コンテンツに最適。' },
+          { q: 'オープンソースとはどういう意味ですか？', a: 'LTX-2.3はオープンソースモデルを基盤とし、技術の透明性を確保。gwanggoではインストール不要でWebブラウザから直接使用可能。' },
+        ],
+      },
+      zh: {
+        title: 'LTX-2.3 AI视频生成 - Lightricks 开源 最长20秒 免费',
+        description: '使用Lightricks的LTX-2.3生成AI视频。T2V/I2V，720p-1080p，最长20秒。开源，多种宽高比。免费积分开始。',
+        keywords: ['LTX-2.3', 'LTX 2.3', 'Lightricks LTX', 'Lightricks AI', 'LTX Video', 'LTX-2.3 免费', 'AI视频生成', '20秒AI视频', '开源AI视频', '1080p AI视频', 'Sora替代', 'Runway替代'],
+        subtitle: 'Lightricks开发的开源长视频AI视频生成模型',
+        features: [
+          '文字/图片→视频（T2V、I2V）',
+          '最长20秒（业内领先）',
+          '720p、1080p分辨率',
+          '多种宽高比',
+          '开源技术透明',
+          '长视频一致的质量',
+        ],
+        faq: [
+          { q: '什么是LTX-2.3？', a: 'Lightricks开发的开源AI视频生成模型。从文字或图片生成最高1080p、20秒的视频。在gwanggo上免费使用。' },
+          { q: 'LTX-2.3费用多少？', a: '720p: 4积分/秒，1080p: 5积分/秒。例：1080p 10秒 = 50积分。注册送免费积分。' },
+          { q: '最长视频时长是多少？', a: '最长20秒，业内领先。适合产品介绍和广告等长内容。' },
+          { q: '开源意味着什么？', a: 'LTX-2.3基于开源模型，确保技术透明。在gwanggo无需安装，网页浏览器直接使用。' },
         ],
       },
     },

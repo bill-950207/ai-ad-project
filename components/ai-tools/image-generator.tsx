@@ -6,6 +6,7 @@ import SeedreamForm from './image-forms/seedream-form'
 import ZImageForm from './image-forms/z-image-form'
 import Flux2ProForm from './image-forms/flux2-pro-form'
 import GrokImageForm from './image-forms/grok-image-form'
+import NanoBanana2Form from './image-forms/nano-banana2-form'
 import GenerationHistory from './generation-history'
 import type { ActiveGeneration } from './generation-history'
 import { useLanguage } from '@/contexts/language-context'
@@ -37,7 +38,12 @@ export default function ImageGenerator() {
       name: 'Z-Image',
       description: aiToolsT.modelDescTextToImage || 'Text to Image',
     },
-  ], [aiToolsT.modelDescImageEdit, aiToolsT.modelDescFlux2Pro, aiToolsT.modelDescGrokImage, aiToolsT.modelDescTextToImage])
+    {
+      id: 'nano-banana-2',
+      name: 'Nano Banana 2',
+      description: aiToolsT.modelDescNanoBanana2 || 'Google Gemini Image (4K)',
+    },
+  ], [aiToolsT.modelDescImageEdit, aiToolsT.modelDescFlux2Pro, aiToolsT.modelDescGrokImage, aiToolsT.modelDescTextToImage, aiToolsT.modelDescNanoBanana2])
 
   const [selectedModel, setSelectedModel] = useState('seedream-5')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -123,6 +129,11 @@ export default function ImageGenerator() {
               />
             ) : selectedModel === 'grok-image' ? (
               <GrokImageForm
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            ) : selectedModel === 'nano-banana-2' ? (
+              <NanoBanana2Form
                 onSubmit={handleSubmit}
                 isGenerating={isGenerating}
               />

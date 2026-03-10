@@ -2818,6 +2818,10 @@
     "modelDescImageToVideo": "画像から動画",
     "modelDescKling3": "テキスト/画像から動画（マルチショット）",
     "modelDescGrokVideo": "テキスト/画像から動画",
-    "modelDescWan26": "テキスト/画像から動画（シネマ）"
+    "modelDescWan26": "テキスト/画像から動画（シネマ）",
+    "modelDescVeo31": "Google AI動画（オーディオ）",
+    "modelDescHailuo02": "MiniMax AI動画",
+    "modelDescLtx23": "Lightricksオープンソース動画",
+    "modelDescNanoBanana2": "Google Gemini画像（4K）"
   }
 }

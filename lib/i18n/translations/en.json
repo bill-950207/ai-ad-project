@@ -2818,6 +2818,10 @@
     "modelDescImageToVideo": "Image to Video",
     "modelDescKling3": "Text/Image to Video (Multi-shot)",
     "modelDescGrokVideo": "Text/Image to Video",
-    "modelDescWan26": "Text/Image to Video (Cinema)"
+    "modelDescWan26": "Text/Image to Video (Cinema)",
+    "modelDescVeo31": "Google AI Video (Audio)",
+    "modelDescHailuo02": "MiniMax AI Video",
+    "modelDescLtx23": "Lightricks Open Source Video",
+    "modelDescNanoBanana2": "Google Gemini Image (4K)"
   }
 }
