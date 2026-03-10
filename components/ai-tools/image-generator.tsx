@@ -12,7 +12,11 @@ import type { ActiveGeneration } from './generation-history'
 import { useLanguage } from '@/contexts/language-context'
 import { useCredits } from '@/contexts/credit-context'
 
-export default function ImageGenerator() {
+interface ImageGeneratorProps {
+  initialModel?: string
+}
+
+export default function ImageGenerator({ initialModel }: ImageGeneratorProps) {
   const { t } = useLanguage()
   const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
   const { refreshCredits } = useCredits()
@@ -22,30 +26,40 @@ export default function ImageGenerator() {
       id: 'seedream-5',
       name: 'Seedream 5',
       description: aiToolsT.modelDescImageEdit || 'Image Edit / Text to Image',
+      creator: 'ByteDance',
+      creatorColor: '#0052FF',
     },
     {
       id: 'flux-2-pro',
       name: 'FLUX.2 Pro',
       description: aiToolsT.modelDescFlux2Pro || 'Text to Image (High Quality)',
+      creator: 'BFL',
+      creatorColor: '#1F2937',
     },
     {
       id: 'grok-image',
       name: 'Grok Imagine',
       description: aiToolsT.modelDescGrokImage || 'Text to Image',
+      creator: 'xAI',
+      creatorColor: '#000000',
     },
     {
       id: 'z-image',
       name: 'Z-Image',
       description: aiToolsT.modelDescTextToImage || 'Text to Image',
+      creator: 'gwanggo',
+      creatorColor: '#8B5CF6',
     },
     {
       id: 'nano-banana-2',
       name: 'Nano Banana 2',
       description: aiToolsT.modelDescNanoBanana2 || 'Google Gemini Image (4K)',
+      creator: 'Google',
+      creatorColor: '#4285F4',
     },
   ], [aiToolsT.modelDescImageEdit, aiToolsT.modelDescFlux2Pro, aiToolsT.modelDescGrokImage, aiToolsT.modelDescTextToImage, aiToolsT.modelDescNanoBanana2])
 
-  const [selectedModel, setSelectedModel] = useState('seedream-5')
+  const [selectedModel, setSelectedModel] = useState(initialModel || 'seedream-5')
   const [isGenerating, setIsGenerating] = useState(false)
   const [activeGeneration, setActiveGeneration] = useState<ActiveGeneration | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)

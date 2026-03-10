@@ -15,7 +15,11 @@ import type { ActiveGeneration } from './generation-history'
 import { useLanguage } from '@/contexts/language-context'
 import { useCredits } from '@/contexts/credit-context'
 
-export default function VideoGenerator() {
+interface VideoGeneratorProps {
+  initialModel?: string
+}
+
+export default function VideoGenerator({ initialModel }: VideoGeneratorProps) {
   const { t } = useLanguage()
   const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
   const { refreshCredits } = useCredits()
@@ -25,45 +29,61 @@ export default function VideoGenerator() {
       id: 'seedance-1.5-pro',
       name: 'Seedance 1.5 Pro',
       description: aiToolsT.modelDescTextImageToVideo || 'Text/Image to Video',
+      creator: 'ByteDance',
+      creatorColor: '#0052FF',
     },
     {
       id: 'kling-3',
       name: 'Kling 3.0',
       description: aiToolsT.modelDescKling3 || 'Text/Image to Video (Multi-shot)',
+      creator: 'Kuaishou',
+      creatorColor: '#FF4906',
     },
     {
       id: 'grok-video',
       name: 'Grok Imagine',
       description: aiToolsT.modelDescGrokVideo || 'Text/Image to Video',
+      creator: 'xAI',
+      creatorColor: '#000000',
     },
     {
       id: 'wan-2.6',
       name: 'Wan 2.6',
       description: aiToolsT.modelDescWan26 || 'Text/Image to Video (Cinema)',
+      creator: 'Alibaba',
+      creatorColor: '#FF6A00',
     },
     {
       id: 'vidu-q3',
       name: 'Vidu Q3',
       description: aiToolsT.modelDescImageToVideo || 'Image to Video',
+      creator: 'Shengshu',
+      creatorColor: '#7C3AED',
     },
     {
       id: 'veo-3.1',
       name: 'Veo 3.1',
       description: aiToolsT.modelDescVeo31 || 'Google AI Video (Audio)',
+      creator: 'Google',
+      creatorColor: '#4285F4',
     },
     {
       id: 'hailuo-02',
       name: 'Hailuo-02',
       description: aiToolsT.modelDescHailuo02 || 'MiniMax AI Video',
+      creator: 'MiniMax',
+      creatorColor: '#10B981',
     },
     {
       id: 'ltx-2.3',
       name: 'LTX 2.3',
       description: aiToolsT.modelDescLtx23 || 'Lightricks Open Source Video',
+      creator: 'Lightricks',
+      creatorColor: '#F59E0B',
     },
   ], [aiToolsT.modelDescTextImageToVideo, aiToolsT.modelDescKling3, aiToolsT.modelDescGrokVideo, aiToolsT.modelDescWan26, aiToolsT.modelDescImageToVideo, aiToolsT.modelDescVeo31, aiToolsT.modelDescHailuo02, aiToolsT.modelDescLtx23])
 
-  const [selectedModel, setSelectedModel] = useState('seedance-1.5-pro')
+  const [selectedModel, setSelectedModel] = useState(initialModel || 'seedance-1.5-pro')
   const [isGenerating, setIsGenerating] = useState(false)
   const [activeGeneration, setActiveGeneration] = useState<ActiveGeneration | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
