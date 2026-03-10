@@ -83,7 +83,11 @@ export default function ModelSelector({ models, selectedModel, onSelect }: Model
             <Link
               key={model.id}
               href={model.href}
-              onClick={() => onSelect(model.id)}
+              onClick={(e) => {
+                e.preventDefault()
+                onSelect(model.id)
+                window.history.replaceState(null, '', model.href)
+              }}
               className={cardClassName}
             >
               {cardContent}
