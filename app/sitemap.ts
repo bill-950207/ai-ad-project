@@ -55,6 +55,50 @@ export default function sitemap(): MetadataRoute.Sitemap {
     return languages
   }
 
+  // 대시보드 AI 모델별 페이지 (다국어)
+  const getDashboardModelAlternates = (tool: string, model: string) => {
+    const languages: Record<string, string> = {}
+    locales.forEach((locale) => {
+      const langCode = locale === 'ko' ? 'ko-KR' : locale === 'en' ? 'en-US' : locale === 'ja' ? 'ja-JP' : 'zh-CN'
+      languages[langCode] = `${siteUrl}/dashboard/ai-tools/${locale}/${tool}/${model}`
+    })
+    languages['x-default'] = `${siteUrl}/dashboard/ai-tools/ko/${tool}/${model}`
+    return languages
+  }
+
+  const DASHBOARD_VIDEO_MODEL_SLUGS = [
+    'seedance-1.5-pro', 'kling-3', 'kling-3-mc', 'grok-video', 'wan-2.6',
+    'vidu-q3', 'veo-3.1', 'hailuo-02', 'ltx-2.3',
+  ] as const
+
+  const DASHBOARD_IMAGE_MODEL_SLUGS = [
+    'seedream-5', 'flux-2-pro', 'grok-image', 'z-image', 'nano-banana-2',
+  ] as const
+
+  const dashboardVideoModelPages: MetadataRoute.Sitemap = DASHBOARD_VIDEO_MODEL_SLUGS.flatMap((model) =>
+    locales.map((locale) => ({
+      url: `${siteUrl}/dashboard/ai-tools/${locale}/video/${model}`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+      alternates: {
+        languages: getDashboardModelAlternates('video', model),
+      },
+    }))
+  )
+
+  const dashboardImageModelPages: MetadataRoute.Sitemap = DASHBOARD_IMAGE_MODEL_SLUGS.flatMap((model) =>
+    locales.map((locale) => ({
+      url: `${siteUrl}/dashboard/ai-tools/${locale}/image/${model}`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+      alternates: {
+        languages: getDashboardModelAlternates('image', model),
+      },
+    }))
+  )
+
   const dashboardToolTypes = ['video', 'image']
   const dashboardToolPages: MetadataRoute.Sitemap = dashboardToolTypes.flatMap((tool) =>
     locales.map((locale) => ({
@@ -115,5 +159,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ]
 
-  return [...landingPages, ...toolPages, ...imageModelPages, ...videoModelPages, ...dashboardToolPages, ...otherPages]
+  return [...landingPages, ...toolPages, ...imageModelPages, ...videoModelPages, ...dashboardToolPages, ...dashboardVideoModelPages, ...dashboardImageModelPages, ...otherPages]
 }

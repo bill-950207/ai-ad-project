@@ -21,7 +21,7 @@ interface VideoGeneratorProps {
 }
 
 export default function VideoGenerator({ initialModel }: VideoGeneratorProps) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
   const { refreshCredits } = useCredits()
 
@@ -32,6 +32,7 @@ export default function VideoGenerator({ initialModel }: VideoGeneratorProps) {
       description: aiToolsT.modelDescTextImageToVideo || 'Text/Image to Video',
       creator: 'ByteDance',
       creatorColor: '#0052FF',
+      href: `/dashboard/ai-tools/${language}/video/seedance-1.5-pro`,
     },
     {
       id: 'kling-3',
@@ -39,6 +40,7 @@ export default function VideoGenerator({ initialModel }: VideoGeneratorProps) {
       description: aiToolsT.modelDescKling3 || 'Text/Image to Video (Multi-shot)',
       creator: 'Kuaishou',
       creatorColor: '#FF4906',
+      href: `/dashboard/ai-tools/${language}/video/kling-3`,
     },
     {
       id: 'kling-3-mc',
@@ -46,6 +48,7 @@ export default function VideoGenerator({ initialModel }: VideoGeneratorProps) {
       description: aiToolsT.modelDescKling3Mc || 'Motion Control Video',
       creator: 'Kuaishou',
       creatorColor: '#FF4906',
+      href: `/dashboard/ai-tools/${language}/video/kling-3-mc`,
     },
     {
       id: 'grok-video',
@@ -53,6 +56,7 @@ export default function VideoGenerator({ initialModel }: VideoGeneratorProps) {
       description: aiToolsT.modelDescGrokVideo || 'Text/Image to Video',
       creator: 'xAI',
       creatorColor: '#000000',
+      href: `/dashboard/ai-tools/${language}/video/grok-video`,
     },
     {
       id: 'wan-2.6',
@@ -60,6 +64,7 @@ export default function VideoGenerator({ initialModel }: VideoGeneratorProps) {
       description: aiToolsT.modelDescWan26 || 'Text/Image to Video (Cinema)',
       creator: 'Alibaba',
       creatorColor: '#FF6A00',
+      href: `/dashboard/ai-tools/${language}/video/wan-2.6`,
     },
     {
       id: 'vidu-q3',
@@ -67,6 +72,7 @@ export default function VideoGenerator({ initialModel }: VideoGeneratorProps) {
       description: aiToolsT.modelDescImageToVideo || 'Image to Video',
       creator: 'Shengshu',
       creatorColor: '#7C3AED',
+      href: `/dashboard/ai-tools/${language}/video/vidu-q3`,
     },
     {
       id: 'veo-3.1',
@@ -74,6 +80,7 @@ export default function VideoGenerator({ initialModel }: VideoGeneratorProps) {
       description: aiToolsT.modelDescVeo31 || 'Google AI Video (Audio)',
       creator: 'Google',
       creatorColor: '#4285F4',
+      href: `/dashboard/ai-tools/${language}/video/veo-3.1`,
     },
     {
       id: 'hailuo-02',
@@ -81,6 +88,7 @@ export default function VideoGenerator({ initialModel }: VideoGeneratorProps) {
       description: aiToolsT.modelDescHailuo02 || 'MiniMax AI Video',
       creator: 'MiniMax',
       creatorColor: '#10B981',
+      href: `/dashboard/ai-tools/${language}/video/hailuo-02`,
     },
     {
       id: 'ltx-2.3',
@@ -88,6 +96,7 @@ export default function VideoGenerator({ initialModel }: VideoGeneratorProps) {
       description: aiToolsT.modelDescLtx23 || 'Lightricks Open Source Video',
       creator: 'Lightricks',
       creatorColor: '#F59E0B',
+      href: `/dashboard/ai-tools/${language}/video/ltx-2.3`,
     },
     {
       id: 'seedance-2.0',
@@ -97,7 +106,7 @@ export default function VideoGenerator({ initialModel }: VideoGeneratorProps) {
       creatorColor: '#0052FF',
       comingSoon: true,
     },
-  ], [aiToolsT.modelDescTextImageToVideo, aiToolsT.modelDescKling3, aiToolsT.modelDescKling3Mc, aiToolsT.modelDescGrokVideo, aiToolsT.modelDescWan26, aiToolsT.modelDescImageToVideo, aiToolsT.modelDescVeo31, aiToolsT.modelDescHailuo02, aiToolsT.modelDescLtx23])
+  ], [language, aiToolsT.modelDescTextImageToVideo, aiToolsT.modelDescKling3, aiToolsT.modelDescKling3Mc, aiToolsT.modelDescGrokVideo, aiToolsT.modelDescWan26, aiToolsT.modelDescImageToVideo, aiToolsT.modelDescVeo31, aiToolsT.modelDescHailuo02, aiToolsT.modelDescLtx23])
 
   const [selectedModel, setSelectedModel] = useState(initialModel || 'seedance-1.5-pro')
   const [isGenerating, setIsGenerating] = useState(false)

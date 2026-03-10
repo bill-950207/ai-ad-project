@@ -17,7 +17,7 @@ interface ImageGeneratorProps {
 }
 
 export default function ImageGenerator({ initialModel }: ImageGeneratorProps) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
   const { refreshCredits } = useCredits()
 
@@ -28,6 +28,7 @@ export default function ImageGenerator({ initialModel }: ImageGeneratorProps) {
       description: aiToolsT.modelDescImageEdit || 'Image Edit / Text to Image',
       creator: 'ByteDance',
       creatorColor: '#0052FF',
+      href: `/dashboard/ai-tools/${language}/image/seedream-5`,
     },
     {
       id: 'flux-2-pro',
@@ -35,6 +36,7 @@ export default function ImageGenerator({ initialModel }: ImageGeneratorProps) {
       description: aiToolsT.modelDescFlux2Pro || 'Text to Image (High Quality)',
       creator: 'BFL',
       creatorColor: '#1F2937',
+      href: `/dashboard/ai-tools/${language}/image/flux-2-pro`,
     },
     {
       id: 'grok-image',
@@ -42,6 +44,7 @@ export default function ImageGenerator({ initialModel }: ImageGeneratorProps) {
       description: aiToolsT.modelDescGrokImage || 'Text to Image',
       creator: 'xAI',
       creatorColor: '#000000',
+      href: `/dashboard/ai-tools/${language}/image/grok-image`,
     },
     {
       id: 'z-image',
@@ -49,6 +52,7 @@ export default function ImageGenerator({ initialModel }: ImageGeneratorProps) {
       description: aiToolsT.modelDescTextToImage || 'Text to Image',
       creator: 'gwanggo',
       creatorColor: '#8B5CF6',
+      href: `/dashboard/ai-tools/${language}/image/z-image`,
     },
     {
       id: 'nano-banana-2',
@@ -56,8 +60,9 @@ export default function ImageGenerator({ initialModel }: ImageGeneratorProps) {
       description: aiToolsT.modelDescNanoBanana2 || 'Google Gemini Image (4K)',
       creator: 'Google',
       creatorColor: '#4285F4',
+      href: `/dashboard/ai-tools/${language}/image/nano-banana-2`,
     },
-  ], [aiToolsT.modelDescImageEdit, aiToolsT.modelDescFlux2Pro, aiToolsT.modelDescGrokImage, aiToolsT.modelDescTextToImage, aiToolsT.modelDescNanoBanana2])
+  ], [language, aiToolsT.modelDescImageEdit, aiToolsT.modelDescFlux2Pro, aiToolsT.modelDescGrokImage, aiToolsT.modelDescTextToImage, aiToolsT.modelDescNanoBanana2])
 
   const [selectedModel, setSelectedModel] = useState(initialModel || 'seedream-5')
   const [isGenerating, setIsGenerating] = useState(false)
