@@ -20,14 +20,19 @@ export async function POST(request: NextRequest) {
 
     const { ext = 'png' } = await request.json()
 
-    const validExts = ['png', 'jpg', 'jpeg', 'webp']
+    const imageExts = ['png', 'jpg', 'jpeg', 'webp']
+    const videoExts = ['mp4', 'webm', 'mov']
+    const validExts = [...imageExts, ...videoExts]
     if (!validExts.includes(ext)) {
-      return NextResponse.json({ error: '지원하지 않는 이미지 형식입니다' }, { status: 400 })
+      return NextResponse.json({ error: '지원하지 않는 파일 형식입니다' }, { status: 400 })
     }
 
     const timestamp = Date.now()
     const fileName = `${user.id}_${timestamp}.${ext}`
-    const contentType = `image/${ext === 'jpg' ? 'jpeg' : ext}`
+    const isVideo = videoExts.includes(ext)
+    const contentType = isVideo
+      ? `video/${ext === 'mov' ? 'quicktime' : ext}`
+      : `image/${ext === 'jpg' ? 'jpeg' : ext}`
 
     const result = await generatePresignedUrl({
       fileName,
