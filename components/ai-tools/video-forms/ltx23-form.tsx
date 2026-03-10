@@ -3,37 +3,37 @@
 import { useState, useMemo } from 'react'
 import { Sparkles } from 'lucide-react'
 import ImageDropzone from '../image-dropzone'
-import { GROK_VIDEO_CREDIT_PER_SECOND } from '@/lib/credits/constants'
+import { LTX23_CREDIT_PER_SECOND } from '@/lib/credits/constants'
 import { useLanguage } from '@/contexts/language-context'
 
-const RESOLUTIONS = ['480p', '720p'] as const
-const DURATIONS = [4, 6, 10, 15] as const
-const ASPECT_RATIOS = ['16:9', '9:16', '1:1'] as const
+const ASPECT_RATIOS = ['16:9', '9:16'] as const
+const RESOLUTIONS = ['1080p'] as const
+const DURATIONS = [6, 8, 10] as const
 
-interface GrokVideoFormProps {
+interface Ltx23FormProps {
   onSubmit: (data: {
-    model: 'grok-video'
+    model: 'ltx-2.3'
     prompt: string
     imageUrl?: string
     duration: number
     resolution: typeof RESOLUTIONS[number]
-    aspectRatio?: typeof ASPECT_RATIOS[number]
+    aspectRatio: typeof ASPECT_RATIOS[number]
   }) => void
   isGenerating: boolean
 }
 
-export default function GrokVideoForm({ onSubmit, isGenerating }: GrokVideoFormProps) {
+export default function Ltx23Form({ onSubmit, isGenerating }: Ltx23FormProps) {
   const { t } = useLanguage()
   const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
 
   const [prompt, setPrompt] = useState('')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
-  const [resolution, setResolution] = useState<typeof RESOLUTIONS[number]>('480p')
-  const [duration, setDuration] = useState<typeof DURATIONS[number]>(6)
   const [aspectRatio, setAspectRatio] = useState<typeof ASPECT_RATIOS[number]>('16:9')
+  const [resolution, setResolution] = useState<typeof RESOLUTIONS[number]>('1080p')
+  const [duration, setDuration] = useState<typeof DURATIONS[number]>(6)
 
   const estimatedCredits = useMemo(() => {
-    return GROK_VIDEO_CREDIT_PER_SECOND[resolution] * duration
+    return LTX23_CREDIT_PER_SECOND[resolution] * duration
   }, [resolution, duration])
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -41,7 +41,7 @@ export default function GrokVideoForm({ onSubmit, isGenerating }: GrokVideoFormP
     if (!prompt.trim()) return
 
     onSubmit({
-      model: 'grok-video',
+      model: 'ltx-2.3',
       prompt: prompt.trim(),
       ...(imageUrl && { imageUrl }),
       duration,
@@ -79,14 +79,14 @@ export default function GrokVideoForm({ onSubmit, isGenerating }: GrokVideoFormP
         <label className="text-sm font-medium text-foreground">
           {aiToolsT.aspectRatio || '화면 비율'}
         </label>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {ASPECT_RATIOS.map((ratio) => (
             <button
               key={ratio}
               type="button"
               onClick={() => setAspectRatio(ratio)}
               disabled={isGenerating}
-              className={`flex-1 px-3 py-1.5 text-sm rounded-lg transition-colors ${
+              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                 aspectRatio === ratio
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
@@ -127,14 +127,14 @@ export default function GrokVideoForm({ onSubmit, isGenerating }: GrokVideoFormP
           <label className="text-sm font-medium text-foreground">
             {aiToolsT.duration || '길이'}
           </label>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {DURATIONS.map((d) => (
               <button
                 key={d}
                 type="button"
                 onClick={() => setDuration(d)}
                 disabled={isGenerating}
-                className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors ${
+                className={`px-2.5 py-2 text-sm rounded-lg transition-colors ${
                   duration === d
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'

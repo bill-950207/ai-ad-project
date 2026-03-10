@@ -610,7 +610,7 @@ export type SeedanceAspectRatio = '21:9' | '16:9' | '4:3' | '1:1' | '3:4' | '9:1
 export type SeedanceResolution = '480p' | '720p'
 
 /** Seedance 영상 길이 타입 (초) - UI에서 제공하는 옵션 */
-export type SeedanceDuration = 5 | 8 | 12
+export type SeedanceDuration = 4 | 8 | 12
 
 /** Seedance 입력 타입 */
 export interface SeedanceInput {
@@ -1611,7 +1611,7 @@ const GROK_IMAGE_MODEL_ID = 'xai/grok-imagine-image'
 /** Grok Imagine Image 입력 타입 */
 export interface GrokImageInput {
   prompt: string
-  image_size?: { width: number; height: number }
+  aspect_ratio?: string // '1:1', '16:9', '9:16', '4:3', '3:4', etc.
   num_images?: number
 }
 
@@ -1626,7 +1626,7 @@ export interface GrokImageOutput {
 export async function submitGrokImageToQueue(input: GrokImageInput): Promise<FalQueueSubmitResponse> {
   const falInput = {
     prompt: input.prompt,
-    image_size: input.image_size || { width: 1024, height: 1024 },
+    aspect_ratio: input.aspect_ratio || '1:1',
     num_images: input.num_images || 1,
   }
 
@@ -1658,7 +1658,7 @@ const KLING3_PRO_T2V_MODEL_ID = 'fal-ai/kling-video/v3/pro/text-to-video'
 export interface Kling3Input {
   prompt: string
   image_url?: string
-  duration?: '5' | '10'
+  duration?: string // '3'-'15' (API accepts string enum)
   aspect_ratio?: '16:9' | '9:16' | '1:1'
   tier?: 'standard' | 'pro'
 }
@@ -1680,7 +1680,8 @@ export async function submitKling3ToQueue(input: Kling3Input): Promise<FalQueueS
 
   const falInput = {
     prompt: input.prompt,
-    ...(input.image_url && { image_url: input.image_url }),
+    // I2V uses start_image_url (not image_url)
+    ...(input.image_url && { start_image_url: input.image_url }),
     duration: input.duration || '5',
     aspect_ratio: input.aspect_ratio || '16:9',
   }
@@ -1704,6 +1705,54 @@ export const KLING3_PRO_I2V_MODEL = KLING3_PRO_I2V_MODEL_ID
 export const KLING3_PRO_T2V_MODEL = KLING3_PRO_T2V_MODEL_ID
 
 // ============================================================
+// Kling 3.0 Motion Control (Kuaishou - 모션 컨트롤 영상)
+// ============================================================
+
+const KLING3_MC_STD_MODEL_ID = 'fal-ai/kling-video/v3/standard/motion-control'
+const KLING3_MC_PRO_MODEL_ID = 'fal-ai/kling-video/v3/pro/motion-control'
+
+export interface Kling3McInput {
+  prompt: string
+  image_url: string  // Required — 캐릭터/배경 참조 이미지
+  video_url: string  // Required — 모션/동작 참조 영상
+  character_orientation?: 'image' | 'video'  // 출력 캐릭터 방향 기준
+  keep_original_sound?: boolean  // 원본 오디오 유지 (기본 true)
+  tier?: 'standard' | 'pro'
+}
+
+export interface Kling3McOutput {
+  video: { url: string; content_type?: string }
+}
+
+export async function submitKling3McToQueue(input: Kling3McInput): Promise<FalQueueSubmitResponse> {
+  const isPro = input.tier === 'pro'
+  const modelId = isPro ? KLING3_MC_PRO_MODEL_ID : KLING3_MC_STD_MODEL_ID
+
+  const falInput = {
+    prompt: input.prompt,
+    image_url: input.image_url,
+    video_url: input.video_url,
+    character_orientation: input.character_orientation || 'video',
+    keep_original_sound: input.keep_original_sound ?? true,
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(modelId as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${modelId}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${modelId}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${modelId}/requests/${request_id}/cancel`,
+  }
+}
+
+export const KLING3_MC_STD_MODEL = KLING3_MC_STD_MODEL_ID
+export const KLING3_MC_PRO_MODEL = KLING3_MC_PRO_MODEL_ID
+
+// ============================================================
 // Grok Imagine Video (xAI - 영상 생성)
 // ============================================================
 
@@ -1716,6 +1765,7 @@ export interface GrokVideoInput {
   image_url?: string
   duration?: number // 1-15초
   resolution?: '480p' | '720p'
+  aspect_ratio?: '16:9' | '9:16' | '1:1' | '4:3' | '3:4' | '3:2' | '2:3'
 }
 
 /** Grok Imagine Video 출력 타입 */
@@ -1735,6 +1785,7 @@ export async function submitGrokVideoToQueue(input: GrokVideoInput): Promise<Fal
     ...(input.image_url && { image_url: input.image_url }),
     duration: input.duration || 6,
     resolution: input.resolution || '480p',
+    ...(input.aspect_ratio && { aspect_ratio: input.aspect_ratio }),
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1784,9 +1835,10 @@ export async function submitWan26ToQueue(input: Wan26Input): Promise<FalQueueSub
   const falInput = {
     prompt: input.prompt,
     ...(input.image_url && { image_url: input.image_url }),
-    duration: input.duration || 5,
+    duration: String(input.duration || 5), // API expects string "5"/"10"/"15"
     resolution: input.resolution || '720p',
-    aspect_ratio: input.aspect_ratio || '16:9',
+    // aspect_ratio is only for T2V (I2V infers from input image)
+    ...(!input.image_url && { aspect_ratio: input.aspect_ratio || '16:9' }),
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1804,3 +1856,248 @@ export async function submitWan26ToQueue(input: Wan26Input): Promise<FalQueueSub
 
 export const WAN26_I2V_MODEL = WAN26_I2V_MODEL_ID
 export const WAN26_T2V_MODEL = WAN26_T2V_MODEL_ID
+
+// ============================================================
+// Veo 3.1 (Google - 영상 생성)
+// ============================================================
+
+const VEO31_MODEL_ID = 'fal-ai/veo3.1'
+const VEO31_FAST_MODEL_ID = 'fal-ai/veo3.1/fast'
+
+/** Veo 3.1 입력 타입 */
+export interface Veo31Input {
+  prompt: string
+  image_url?: string
+  duration?: number // 4, 6, 8 (API uses string "4s"/"6s"/"8s")
+  aspect_ratio?: '16:9' | '9:16'
+  resolution?: '720p' | '1080p'
+  generate_audio?: boolean
+}
+
+/** Veo 3.1 출력 타입 */
+export interface Veo31Output {
+  video: { url: string; content_type?: string }
+}
+
+/**
+ * Veo 3.1 영상 생성 요청을 fal.ai 큐에 제출
+ * image_url이 있으면 I2V, 없으면 T2V
+ */
+export async function submitVeo31ToQueue(input: Veo31Input): Promise<FalQueueSubmitResponse> {
+  const modelId = VEO31_MODEL_ID
+
+  const durationSec = input.duration || 4
+  const falInput = {
+    prompt: input.prompt,
+    ...(input.image_url && { image_url: input.image_url }),
+    duration: `${durationSec}s`, // API expects string "4s"/"6s"/"8s"
+    aspect_ratio: input.aspect_ratio || '16:9',
+    ...(input.resolution && { resolution: input.resolution }),
+    generate_audio: input.generate_audio ?? false,
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(modelId as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${modelId}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${modelId}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${modelId}/requests/${request_id}/cancel`,
+  }
+}
+
+export const VEO31_MODEL = VEO31_MODEL_ID
+export const VEO31_FAST_MODEL = VEO31_FAST_MODEL_ID
+
+// ============================================================
+// Hailuo-02 (MiniMax - 영상 생성)
+// ============================================================
+
+const HAILUO02_PRO_I2V_MODEL_ID = 'fal-ai/minimax/hailuo-02/pro/image-to-video'
+const HAILUO02_PRO_T2V_MODEL_ID = 'fal-ai/minimax/hailuo-02/pro/text-to-video'
+const HAILUO02_STD_I2V_MODEL_ID = 'fal-ai/minimax/hailuo-02/standard/image-to-video'
+const HAILUO02_STD_T2V_MODEL_ID = 'fal-ai/minimax/hailuo-02/standard/text-to-video'
+
+/** Hailuo-02 입력 타입 */
+export interface Hailuo02Input {
+  prompt: string
+  image_url?: string
+  duration?: number // Standard: 6 or 10, Pro: no duration param
+  tier?: 'standard' | 'pro'
+}
+
+/** Hailuo-02 출력 타입 */
+export interface Hailuo02Output {
+  video: { url: string; content_type?: string }
+}
+
+/**
+ * Hailuo-02 영상 생성 요청을 fal.ai 큐에 제출
+ * tier로 Standard(768p)/Pro(1080p) 선택, image_url로 I2V/T2V 자동 분기
+ */
+export async function submitHailuo02ToQueue(input: Hailuo02Input): Promise<FalQueueSubmitResponse> {
+  const tier = input.tier || 'standard'
+  const hasImage = !!input.image_url
+
+  let modelId: string
+  if (tier === 'pro') {
+    modelId = hasImage ? HAILUO02_PRO_I2V_MODEL_ID : HAILUO02_PRO_T2V_MODEL_ID
+  } else {
+    modelId = hasImage ? HAILUO02_STD_I2V_MODEL_ID : HAILUO02_STD_T2V_MODEL_ID
+  }
+
+  const falInput = {
+    prompt: input.prompt,
+    ...(input.image_url && { image_url: input.image_url }),
+    // Pro tier has no duration param; Standard accepts 6 or 10
+    ...(tier === 'standard' && { duration: input.duration || 6 }),
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(modelId as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${modelId}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${modelId}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${modelId}/requests/${request_id}/cancel`,
+  }
+}
+
+export const HAILUO02_PRO_I2V_MODEL = HAILUO02_PRO_I2V_MODEL_ID
+export const HAILUO02_PRO_T2V_MODEL = HAILUO02_PRO_T2V_MODEL_ID
+export const HAILUO02_STD_I2V_MODEL = HAILUO02_STD_I2V_MODEL_ID
+export const HAILUO02_STD_T2V_MODEL = HAILUO02_STD_T2V_MODEL_ID
+
+// ============================================================
+// LTX-2.3 (Lightricks - 영상 생성)
+// ============================================================
+
+const LTX23_T2V_MODEL_ID = 'fal-ai/ltx-2.3/text-to-video'
+const LTX23_I2V_MODEL_ID = 'fal-ai/ltx-2.3/image-to-video/fast'
+
+/** LTX-2.3 입력 타입 */
+export interface Ltx23Input {
+  prompt: string
+  image_url?: string
+  duration?: number // T2V: 6,8,10 / I2V: 6,8,10,12,14,16,18,20 (even)
+  resolution?: '1080p' | '1440p' | '2160p' // T2V only supports 1080p+
+  aspect_ratio?: '16:9' | '9:16'
+}
+
+/** LTX-2.3 출력 타입 */
+export interface Ltx23Output {
+  video: { url: string; content_type?: string }
+}
+
+/**
+ * LTX-2.3 영상 생성 요청을 fal.ai 큐에 제출
+ * image_url이 있으면 I2V, 없으면 T2V
+ */
+export async function submitLtx23ToQueue(input: Ltx23Input): Promise<FalQueueSubmitResponse> {
+  const modelId = input.image_url ? LTX23_I2V_MODEL_ID : LTX23_T2V_MODEL_ID
+
+  const falInput = {
+    prompt: input.prompt,
+    ...(input.image_url && { image_url: input.image_url }),
+    duration: input.duration || 6,
+    ...(input.resolution && { resolution: input.resolution }),
+    ...(input.aspect_ratio && { aspect_ratio: input.aspect_ratio }),
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(modelId as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${modelId}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${modelId}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${modelId}/requests/${request_id}/cancel`,
+  }
+}
+
+export const LTX23_T2V_MODEL = LTX23_T2V_MODEL_ID
+export const LTX23_I2V_MODEL = LTX23_I2V_MODEL_ID
+
+// ============================================================
+// Nano Banana 2 (Google - 이미지 생성)
+// ============================================================
+
+const NANO_BANANA2_MODEL_ID = 'fal-ai/nano-banana-2'
+const NANO_BANANA2_EDIT_MODEL_ID = 'fal-ai/nano-banana-2/edit'
+
+/** Nano Banana 2 입력 타입 */
+export interface NanoBanana2Input {
+  prompt: string
+  resolution?: '0.5K' | '1K' | '2K' | '4K'
+  aspect_ratio?: string // e.g. '1:1', '16:9', '9:16'
+}
+
+/** Nano Banana 2 Edit 입력 타입 */
+export interface NanoBanana2EditInput {
+  prompt: string
+  image_url: string
+  resolution?: '0.5K' | '1K' | '2K' | '4K'
+  aspect_ratio?: string
+}
+
+/**
+ * Nano Banana 2 텍스트→이미지 생성 요청을 fal.ai 큐에 제출
+ */
+export async function submitNanoBanana2ToQueue(input: NanoBanana2Input): Promise<FalQueueSubmitResponse> {
+  const modelId = NANO_BANANA2_MODEL_ID
+
+  const falInput = {
+    prompt: input.prompt,
+    ...(input.resolution && { resolution: input.resolution }),
+    ...(input.aspect_ratio && { aspect_ratio: input.aspect_ratio }),
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(modelId as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${modelId}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${modelId}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${modelId}/requests/${request_id}/cancel`,
+  }
+}
+
+/**
+ * Nano Banana 2 이미지 편집 요청을 fal.ai 큐에 제출
+ */
+export async function submitNanoBanana2EditToQueue(input: NanoBanana2EditInput): Promise<FalQueueSubmitResponse> {
+  const modelId = NANO_BANANA2_EDIT_MODEL_ID
+
+  const falInput = {
+    prompt: input.prompt,
+    image_urls: [input.image_url], // API expects array
+    ...(input.resolution && { resolution: input.resolution }),
+    ...(input.aspect_ratio && { aspect_ratio: input.aspect_ratio }),
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(modelId as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${modelId}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${modelId}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${modelId}/requests/${request_id}/cancel`,
+  }
+}
+
+export const NANO_BANANA2_MODEL = NANO_BANANA2_MODEL_ID
+export const NANO_BANANA2_EDIT_MODEL = NANO_BANANA2_EDIT_MODEL_ID

@@ -2818,6 +2818,10 @@
     "modelDescImageToVideo": "이미지 투 비디오",
     "modelDescKling3": "텍스트/이미지 투 비디오 (멀티샷)",
     "modelDescGrokVideo": "텍스트/이미지 투 비디오",
-    "modelDescWan26": "텍스트/이미지 투 비디오 (시네마)"
+    "modelDescWan26": "텍스트/이미지 투 비디오 (시네마)",
+    "modelDescVeo31": "Google AI 비디오 (오디오)",
+    "modelDescHailuo02": "MiniMax AI 비디오",
+    "modelDescLtx23": "Lightricks 오픈소스 비디오",
+    "modelDescNanoBanana2": "Google Gemini 이미지 (4K)"
   }
 }

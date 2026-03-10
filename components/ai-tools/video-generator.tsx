@@ -5,15 +5,23 @@ import ModelSelector from './model-selector'
 import SeedanceForm from './video-forms/seedance-form'
 import ViduQ3Form from './video-forms/vidu-q3-form'
 import Kling3Form from './video-forms/kling3-form'
+import Kling3McForm from './video-forms/kling3-mc-form'
 import GrokVideoForm from './video-forms/grok-video-form'
 import Wan26Form from './video-forms/wan26-form'
+import Veo31Form from './video-forms/veo31-form'
+import Hailuo02Form from './video-forms/hailuo02-form'
+import Ltx23Form from './video-forms/ltx23-form'
 import GenerationHistory from './generation-history'
 import type { ActiveGeneration } from './generation-history'
 import { useLanguage } from '@/contexts/language-context'
 import { useCredits } from '@/contexts/credit-context'
 
-export default function VideoGenerator() {
-  const { t } = useLanguage()
+interface VideoGeneratorProps {
+  initialModel?: string
+}
+
+export default function VideoGenerator({ initialModel }: VideoGeneratorProps) {
+  const { t, language } = useLanguage()
   const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
   const { refreshCredits } = useCredits()
 
@@ -22,30 +30,85 @@ export default function VideoGenerator() {
       id: 'seedance-1.5-pro',
       name: 'Seedance 1.5 Pro',
       description: aiToolsT.modelDescTextImageToVideo || 'Text/Image to Video',
+      creator: 'ByteDance',
+      creatorColor: '#0052FF',
+      href: `/dashboard/ai-tools/${language}/video/seedance-1.5-pro`,
     },
     {
       id: 'kling-3',
       name: 'Kling 3.0',
       description: aiToolsT.modelDescKling3 || 'Text/Image to Video (Multi-shot)',
+      creator: 'Kuaishou',
+      creatorColor: '#FF4906',
+      href: `/dashboard/ai-tools/${language}/video/kling-3`,
+    },
+    {
+      id: 'kling-3-mc',
+      name: 'Kling 3.0 MC',
+      description: aiToolsT.modelDescKling3Mc || 'Motion Control Video',
+      creator: 'Kuaishou',
+      creatorColor: '#FF4906',
+      href: `/dashboard/ai-tools/${language}/video/kling-3-mc`,
     },
     {
       id: 'grok-video',
       name: 'Grok Imagine',
       description: aiToolsT.modelDescGrokVideo || 'Text/Image to Video',
+      creator: 'xAI',
+      creatorColor: '#000000',
+      href: `/dashboard/ai-tools/${language}/video/grok-video`,
     },
     {
       id: 'wan-2.6',
       name: 'Wan 2.6',
       description: aiToolsT.modelDescWan26 || 'Text/Image to Video (Cinema)',
+      creator: 'Alibaba',
+      creatorColor: '#FF6A00',
+      href: `/dashboard/ai-tools/${language}/video/wan-2.6`,
     },
     {
       id: 'vidu-q3',
       name: 'Vidu Q3',
       description: aiToolsT.modelDescImageToVideo || 'Image to Video',
+      creator: 'Shengshu',
+      creatorColor: '#7C3AED',
+      href: `/dashboard/ai-tools/${language}/video/vidu-q3`,
     },
-  ], [aiToolsT.modelDescTextImageToVideo, aiToolsT.modelDescKling3, aiToolsT.modelDescGrokVideo, aiToolsT.modelDescWan26, aiToolsT.modelDescImageToVideo])
+    {
+      id: 'veo-3.1',
+      name: 'Veo 3.1',
+      description: aiToolsT.modelDescVeo31 || 'Google AI Video (Audio)',
+      creator: 'Google',
+      creatorColor: '#4285F4',
+      href: `/dashboard/ai-tools/${language}/video/veo-3.1`,
+    },
+    {
+      id: 'hailuo-02',
+      name: 'Hailuo-02',
+      description: aiToolsT.modelDescHailuo02 || 'MiniMax AI Video',
+      creator: 'MiniMax',
+      creatorColor: '#10B981',
+      href: `/dashboard/ai-tools/${language}/video/hailuo-02`,
+    },
+    {
+      id: 'ltx-2.3',
+      name: 'LTX 2.3',
+      description: aiToolsT.modelDescLtx23 || 'Lightricks Open Source Video',
+      creator: 'Lightricks',
+      creatorColor: '#F59E0B',
+      href: `/dashboard/ai-tools/${language}/video/ltx-2.3`,
+    },
+    {
+      id: 'seedance-2.0',
+      name: 'Seedance 2.0',
+      description: aiToolsT.modelDescSeedance2 || 'Multi-modal Audio+Video',
+      creator: 'ByteDance',
+      creatorColor: '#0052FF',
+      comingSoon: true,
+    },
+  ], [language, aiToolsT.modelDescTextImageToVideo, aiToolsT.modelDescKling3, aiToolsT.modelDescKling3Mc, aiToolsT.modelDescGrokVideo, aiToolsT.modelDescWan26, aiToolsT.modelDescImageToVideo, aiToolsT.modelDescVeo31, aiToolsT.modelDescHailuo02, aiToolsT.modelDescLtx23, aiToolsT.modelDescSeedance2])
 
-  const [selectedModel, setSelectedModel] = useState('seedance-1.5-pro')
+  const [selectedModel, setSelectedModel] = useState(initialModel || 'seedance-1.5-pro')
   const [isGenerating, setIsGenerating] = useState(false)
   const [activeGeneration, setActiveGeneration] = useState<ActiveGeneration | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
@@ -128,6 +191,11 @@ export default function VideoGenerator() {
                 onSubmit={handleSubmit}
                 isGenerating={isGenerating}
               />
+            ) : selectedModel === 'kling-3-mc' ? (
+              <Kling3McForm
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
             ) : selectedModel === 'grok-video' ? (
               <GrokVideoForm
                 onSubmit={handleSubmit}
@@ -135,6 +203,21 @@ export default function VideoGenerator() {
               />
             ) : selectedModel === 'wan-2.6' ? (
               <Wan26Form
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            ) : selectedModel === 'veo-3.1' ? (
+              <Veo31Form
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            ) : selectedModel === 'hailuo-02' ? (
+              <Hailuo02Form
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            ) : selectedModel === 'ltx-2.3' ? (
+              <Ltx23Form
                 onSubmit={handleSubmit}
                 isGenerating={isGenerating}
               />

@@ -134,6 +134,45 @@ export const REMBG_CREDIT_COST = 0
 export const PRODUCT_CREDIT_COST = 0
 
 // ============================================================
+// Veo 3.1 (Google) 영상 생성 해상도별 초당 크레딧
+// ============================================================
+
+/** Veo 3.1 영상 생성 해상도별 초당 크레딧 (FAL.ai) */
+export const VEO31_CREDIT_PER_SECOND = {
+  '720p': 4,   // $0.10/초 × 2.5 = $0.25 → 4cr
+  '1080p': 7,  // $0.20/초 × 2.5 = $0.50 → 7cr
+} as const
+
+// ============================================================
+// Hailuo-02 (MiniMax) 영상 생성 해상도별 초당 크레딧
+// ============================================================
+
+/** Hailuo-02 영상 생성 해상도별 초당 크레딧 (FAL.ai) */
+export const HAILUO02_CREDIT_PER_SECOND = {
+  '768p': 2,   // $0.045/초 (Standard)
+  '1080p': 3,  // $0.08/초 (Pro)
+} as const
+
+// ============================================================
+// LTX-2.3 (Lightricks) 영상 생성 해상도별 초당 크레딧
+// ============================================================
+
+/** LTX-2.3 영상 생성 해상도별 초당 크레딧 (FAL.ai) */
+export const LTX23_CREDIT_PER_SECOND = {
+  '1080p': 4,  // ~$0.10/초
+} as const
+
+// ============================================================
+// Nano Banana 2 (Google) 이미지 생성 크레딧
+// ============================================================
+
+/** Nano Banana 2 이미지 생성 품질별 크레딧 (FAL.ai) */
+export const NANO_BANANA2_CREDIT_COST = {
+  basic: 2,    // $0.06/img (1K)
+  high: 6,     // $0.16/img (4K)
+} as const
+
+// ============================================================
 // 회원가입 관련
 // ============================================================
 
@@ -148,7 +187,22 @@ export type ImageQuality = keyof typeof IMAGE_AD_CREDIT_COST
 export type Flux2ProQuality = keyof typeof FLUX2_PRO_CREDIT_COST
 export type ViduResolution = keyof typeof VIDU_CREDIT_COST_PER_SECOND
 export type SeedanceResolution = keyof typeof SEEDANCE_CREDIT_COST_PER_SECOND
+/** Kling 3.0 Motion Control Standard 영상 생성 초당 크레딧 */
+export const KLING3_MC_STD_CREDIT_PER_SECOND = {
+  '720p': 6,
+} as const
+
+/** Kling 3.0 Motion Control Pro 영상 생성 초당 크레딧 */
+export const KLING3_MC_PRO_CREDIT_PER_SECOND = {
+  '720p': 8,
+} as const
+
 export type Kling3Resolution = keyof typeof KLING3_PRO_CREDIT_PER_SECOND
+export type Kling3McResolution = keyof typeof KLING3_MC_PRO_CREDIT_PER_SECOND
 export type GrokVideoResolution = keyof typeof GROK_VIDEO_CREDIT_PER_SECOND
 export type Wan26Resolution = keyof typeof WAN26_CREDIT_PER_SECOND
 export type ProductDescriptionResolution = keyof typeof PRODUCT_DESCRIPTION_VIDEO_CREDIT_COST
+export type Veo31Resolution = keyof typeof VEO31_CREDIT_PER_SECOND
+export type Hailuo02Resolution = keyof typeof HAILUO02_CREDIT_PER_SECOND
+export type Ltx23Resolution = keyof typeof LTX23_CREDIT_PER_SECOND
+export type NanoBanana2Quality = keyof typeof NANO_BANANA2_CREDIT_COST

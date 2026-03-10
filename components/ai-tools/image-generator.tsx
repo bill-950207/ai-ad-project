@@ -6,13 +6,18 @@ import SeedreamForm from './image-forms/seedream-form'
 import ZImageForm from './image-forms/z-image-form'
 import Flux2ProForm from './image-forms/flux2-pro-form'
 import GrokImageForm from './image-forms/grok-image-form'
+import NanoBanana2Form from './image-forms/nano-banana2-form'
 import GenerationHistory from './generation-history'
 import type { ActiveGeneration } from './generation-history'
 import { useLanguage } from '@/contexts/language-context'
 import { useCredits } from '@/contexts/credit-context'
 
-export default function ImageGenerator() {
-  const { t } = useLanguage()
+interface ImageGeneratorProps {
+  initialModel?: string
+}
+
+export default function ImageGenerator({ initialModel }: ImageGeneratorProps) {
+  const { t, language } = useLanguage()
   const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
   const { refreshCredits } = useCredits()
 
@@ -21,25 +26,45 @@ export default function ImageGenerator() {
       id: 'seedream-5',
       name: 'Seedream 5',
       description: aiToolsT.modelDescImageEdit || 'Image Edit / Text to Image',
+      creator: 'ByteDance',
+      creatorColor: '#0052FF',
+      href: `/dashboard/ai-tools/${language}/image/seedream-5`,
     },
     {
       id: 'flux-2-pro',
       name: 'FLUX.2 Pro',
       description: aiToolsT.modelDescFlux2Pro || 'Text to Image (High Quality)',
+      creator: 'BFL',
+      creatorColor: '#1F2937',
+      href: `/dashboard/ai-tools/${language}/image/flux-2-pro`,
     },
     {
       id: 'grok-image',
       name: 'Grok Imagine',
       description: aiToolsT.modelDescGrokImage || 'Text to Image',
+      creator: 'xAI',
+      creatorColor: '#000000',
+      href: `/dashboard/ai-tools/${language}/image/grok-image`,
     },
     {
       id: 'z-image',
       name: 'Z-Image',
       description: aiToolsT.modelDescTextToImage || 'Text to Image',
+      creator: 'gwanggo',
+      creatorColor: '#8B5CF6',
+      href: `/dashboard/ai-tools/${language}/image/z-image`,
     },
-  ], [aiToolsT.modelDescImageEdit, aiToolsT.modelDescFlux2Pro, aiToolsT.modelDescGrokImage, aiToolsT.modelDescTextToImage])
+    {
+      id: 'nano-banana-2',
+      name: 'Nano Banana 2',
+      description: aiToolsT.modelDescNanoBanana2 || 'Google Gemini Image (4K)',
+      creator: 'Google',
+      creatorColor: '#4285F4',
+      href: `/dashboard/ai-tools/${language}/image/nano-banana-2`,
+    },
+  ], [language, aiToolsT.modelDescImageEdit, aiToolsT.modelDescFlux2Pro, aiToolsT.modelDescGrokImage, aiToolsT.modelDescTextToImage, aiToolsT.modelDescNanoBanana2])
 
-  const [selectedModel, setSelectedModel] = useState('seedream-5')
+  const [selectedModel, setSelectedModel] = useState(initialModel || 'seedream-5')
   const [isGenerating, setIsGenerating] = useState(false)
   const [activeGeneration, setActiveGeneration] = useState<ActiveGeneration | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
@@ -123,6 +148,11 @@ export default function ImageGenerator() {
               />
             ) : selectedModel === 'grok-image' ? (
               <GrokImageForm
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+              />
+            ) : selectedModel === 'nano-banana-2' ? (
+              <NanoBanana2Form
                 onSubmit={handleSubmit}
                 isGenerating={isGenerating}
               />

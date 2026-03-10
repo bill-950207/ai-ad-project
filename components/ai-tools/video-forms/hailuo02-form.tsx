@@ -3,50 +3,55 @@
 import { useState, useMemo } from 'react'
 import { Sparkles } from 'lucide-react'
 import ImageDropzone from '../image-dropzone'
-import { GROK_VIDEO_CREDIT_PER_SECOND } from '@/lib/credits/constants'
+import { HAILUO02_CREDIT_PER_SECOND } from '@/lib/credits/constants'
 import { useLanguage } from '@/contexts/language-context'
 
-const RESOLUTIONS = ['480p', '720p'] as const
-const DURATIONS = [4, 6, 10, 15] as const
-const ASPECT_RATIOS = ['16:9', '9:16', '1:1'] as const
+const TIERS = ['standard', 'pro'] as const
+const STANDARD_DURATIONS = [6, 10] as const
 
-interface GrokVideoFormProps {
+const TIER_RESOLUTION: Record<typeof TIERS[number], '768p' | '1080p'> = {
+  standard: '768p',
+  pro: '1080p',
+}
+
+interface Hailuo02FormProps {
   onSubmit: (data: {
-    model: 'grok-video'
+    model: 'hailuo-02'
     prompt: string
     imageUrl?: string
     duration: number
-    resolution: typeof RESOLUTIONS[number]
-    aspectRatio?: typeof ASPECT_RATIOS[number]
+    resolution: '768p' | '1080p'
   }) => void
   isGenerating: boolean
 }
 
-export default function GrokVideoForm({ onSubmit, isGenerating }: GrokVideoFormProps) {
+export default function Hailuo02Form({ onSubmit, isGenerating }: Hailuo02FormProps) {
   const { t } = useLanguage()
   const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
 
   const [prompt, setPrompt] = useState('')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
-  const [resolution, setResolution] = useState<typeof RESOLUTIONS[number]>('480p')
-  const [duration, setDuration] = useState<typeof DURATIONS[number]>(6)
-  const [aspectRatio, setAspectRatio] = useState<typeof ASPECT_RATIOS[number]>('16:9')
+  const [tier, setTier] = useState<typeof TIERS[number]>('standard')
+  const [duration, setDuration] = useState<typeof STANDARD_DURATIONS[number]>(6)
+
+  const resolution = TIER_RESOLUTION[tier]
 
   const estimatedCredits = useMemo(() => {
-    return GROK_VIDEO_CREDIT_PER_SECOND[resolution] * duration
-  }, [resolution, duration])
+    // Pro tier has no duration control, assume ~6s output
+    const dur = tier === 'pro' ? 6 : duration
+    return HAILUO02_CREDIT_PER_SECOND[resolution] * dur
+  }, [resolution, duration, tier])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!prompt.trim()) return
 
     onSubmit({
-      model: 'grok-video',
+      model: 'hailuo-02',
       prompt: prompt.trim(),
       ...(imageUrl && { imageUrl }),
-      duration,
+      duration: tier === 'pro' ? 6 : duration, // Pro has no duration control
       resolution,
-      aspectRatio,
     })
   }
 
@@ -74,61 +79,38 @@ export default function GrokVideoForm({ onSubmit, isGenerating }: GrokVideoFormP
         label={aiToolsT.referenceImage || '참조 이미지 (선택)'}
       />
 
-      {/* 화면 비율 */}
+      {/* 품질 티어 */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-foreground">
-          {aiToolsT.aspectRatio || '화면 비율'}
+          {aiToolsT.quality || '품질'}
         </label>
         <div className="flex gap-2">
-          {ASPECT_RATIOS.map((ratio) => (
+          {TIERS.map((t) => (
             <button
-              key={ratio}
+              key={t}
               type="button"
-              onClick={() => setAspectRatio(ratio)}
+              onClick={() => setTier(t)}
               disabled={isGenerating}
-              className={`flex-1 px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                aspectRatio === ratio
+              className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors ${
+                tier === t
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
               }`}
             >
-              {ratio}
+              {t === 'standard' ? `Standard (${TIER_RESOLUTION.standard})` : `Pro (${TIER_RESOLUTION.pro})`}
             </button>
           ))}
         </div>
       </div>
 
-      {/* 해상도 + 길이 */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">
-            {aiToolsT.resolution || '해상도'}
-          </label>
-          <div className="flex gap-2">
-            {RESOLUTIONS.map((res) => (
-              <button
-                key={res}
-                type="button"
-                onClick={() => setResolution(res)}
-                disabled={isGenerating}
-                className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors ${
-                  resolution === res
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
-                }`}
-              >
-                {res}
-              </button>
-            ))}
-          </div>
-        </div>
-
+      {/* 길이 (Standard only — Pro has no duration control) */}
+      {tier === 'standard' && (
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">
             {aiToolsT.duration || '길이'}
           </label>
           <div className="flex gap-2">
-            {DURATIONS.map((d) => (
+            {STANDARD_DURATIONS.map((d) => (
               <button
                 key={d}
                 type="button"
@@ -145,7 +127,7 @@ export default function GrokVideoForm({ onSubmit, isGenerating }: GrokVideoFormP
             ))}
           </div>
         </div>
-      </div>
+      )}
 
       {/* 생성 버튼 */}
       <button

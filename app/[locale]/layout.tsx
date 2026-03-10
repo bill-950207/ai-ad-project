@@ -8,6 +8,7 @@ import {
   getJsonLd,
   getFaqJsonLd,
   getBreadcrumbJsonLd,
+  getSiteNavigationJsonLd,
   type Locale,
 } from '@/lib/i18n/seo'
 
@@ -109,6 +110,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   const breadcrumbJsonLd = getBreadcrumbJsonLd(siteUrl, [
     { name: localeName, url: `${siteUrl}/${locale}` },
   ])
+  const siteNavJsonLd = getSiteNavigationJsonLd(validLocale, siteUrl)
 
   return (
     <>
@@ -123,6 +125,10 @@ export default async function LocaleLayout({ children, params }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(siteNavJsonLd) }}
       />
       {children}
     </>

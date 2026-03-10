@@ -107,76 +107,88 @@ export const videoToolSeoData: Record<Locale, {
   ogDescription: string
 }> = {
   ko: {
-    title: 'AI 영상 생성 - Seedance · Kling 3.0 · Wan 2.6 · Grok | Sora 대안 무료',
-    description: 'Seedance 1.5 Pro, Kling 3.0, Grok Imagine Video, Wan 2.6, Vidu Q3 등 5종 AI 영상 모델 지원. Sora, Runway 대안. Seedance 2.0 출시. 무료 크레딧으로 시작.',
+    title: 'AI 영상 생성 - Seedance · Kling 3.0 · Wan 2.6 · Veo 3.1 · Hailuo-02 · LTX 2.3 · Grok | Sora 대안 무료',
+    description: 'Seedance 1.5 Pro, Kling 3.0, Grok Imagine Video, Wan 2.6, Vidu Q3, Veo 3.1, Hailuo-02, LTX 2.3 등 8종 AI 영상 모델 지원. Sora, Runway 대안. Seedance 2.0 출시. 무료 크레딧으로 시작.',
     keywords: [
       'AI 영상 생성', 'AI 동영상 만들기', 'AI 비디오 생성기', 'Seedance', 'Seedance 1.5 Pro',
       'Seedance 2.0', 'ByteDance AI', 'ByteDance Seedance', 'Vidu Q3', 'Vidu AI',
       'Kling 3.0', 'Kling 3.0 Pro', 'Kling 3.0 Standard', 'Kling AI', '쿠아이쇼우 AI', '快手 AI',
       'Grok Imagine Video', 'Grok AI', 'xAI Grok', 'Grok 영상 생성',
       'Wan 2.6', 'Wan AI', '알리바바 AI', 'Alibaba Wan',
+      'Veo 3.1', 'Google Veo', 'Google Veo 3.1', 'Google AI 영상',
+      'Hailuo-02', 'MiniMax', 'MiniMax Hailuo', 'Hailuo AI',
+      'LTX 2.3', 'Lightricks', 'LTX Video', 'Lightricks LTX',
       'Text to Video', 'Image to Video', '텍스트 영상 변환', '이미지 영상 변환', '무료 AI 영상',
       'AI video generator', 'AI 숏폼 영상', 'AI 동영상 생성기', '바이트댄스 AI',
       'AI 영상 제작', 'AI 영상 편집', '무료 동영상 만들기', 'Seedance Pro',
       'Sora 대안', 'Runway 대안', 'Kling 대안', 'Sora 대체', 'Runway Gen-4 대안',
-      'Hailuo AI', 'Pika AI', 'Luma Dream Machine', 'Veo 대안',
-      'OpenAI Sora', 'Google Veo', '무료 AI 비디오', 'AI 광고 영상',
+      'Pika AI', 'Luma Dream Machine', 'Veo 대안',
+      'OpenAI Sora', '무료 AI 비디오', 'AI 광고 영상',
     ],
-    ogTitle: 'AI 영상 생성 - Seedance · Kling 3.0 · Grok · Wan 2.6 | gwanggo',
-    ogDescription: 'Seedance 1.5 Pro, Kling 3.0, Grok Imagine Video, Wan 2.6, Vidu Q3로 고품질 AI 영상 생성. Sora, Runway 대안.',
+    ogTitle: 'AI 영상 생성 - Seedance · Kling 3.0 · Grok · Wan 2.6 · Veo 3.1 · Hailuo-02 · LTX 2.3 | gwanggo',
+    ogDescription: 'Seedance 1.5 Pro, Kling 3.0, Grok Imagine Video, Wan 2.6, Vidu Q3, Veo 3.1, Hailuo-02, LTX 2.3로 고품질 AI 영상 생성. Sora, Runway 대안.',
   },
   en: {
-    title: 'AI Video Generator - Seedance · Kling 3.0 · Grok · Wan 2.6 | Sora Alternative',
-    description: 'Generate AI videos with Seedance 1.5 Pro, Kling 3.0, Grok Imagine Video, Wan 2.6, and Vidu Q3. Best Sora, Runway alternative. Seedance 2.0 available. Start free.',
+    title: 'AI Video Generator - Seedance · Kling 3.0 · Wan 2.6 · Veo 3.1 · Hailuo-02 · LTX 2.3 · Grok | Sora Alternative',
+    description: 'Generate AI videos with Seedance 1.5 Pro, Kling 3.0, Grok Imagine Video, Wan 2.6, Vidu Q3, Veo 3.1, Hailuo-02, and LTX 2.3. 8 AI video models. Best Sora, Runway alternative. Start free.',
     keywords: [
       'AI video generator', 'AI video maker', 'Seedance', 'Seedance 1.5 Pro', 'Seedance 2.0',
       'ByteDance AI', 'ByteDance Seedance', 'Vidu Q3', 'Vidu AI',
       'Kling 3.0', 'Kling 3.0 Pro', 'Kling 3.0 Standard', 'Kling AI', 'Kuaishou AI',
       'Grok Imagine Video', 'Grok AI', 'xAI Grok', 'Grok video generator',
       'Wan 2.6', 'Wan AI', 'Alibaba Wan', 'Alibaba AI video',
+      'Veo 3.1', 'Google Veo', 'Google Veo 3.1', 'Google AI video',
+      'Hailuo-02', 'MiniMax', 'MiniMax Hailuo', 'Hailuo AI',
+      'LTX 2.3', 'Lightricks', 'LTX Video', 'Lightricks LTX',
       'text to video', 'image to video', 'free AI video generator', 'AI short video',
       'AI video creation', 'AI video editing', 'text to video AI', 'image to video AI',
       'Sora alternative', 'Runway alternative', 'Kling alternative', 'Runway Gen-4 alternative',
-      'OpenAI Sora alternative', 'Hailuo AI', 'Pika alternative',
-      'Luma Dream Machine', 'Google Veo alternative', 'free AI video maker',
+      'OpenAI Sora alternative', 'Pika alternative',
+      'Luma Dream Machine', 'free AI video maker',
       'AI ad video', 'AI commercial video', 'best AI video generator 2026',
     ],
-    ogTitle: 'AI Video Generator - Seedance · Kling 3.0 · Grok · Wan 2.6 | gwanggo',
-    ogDescription: 'Generate AI videos with Seedance 1.5 Pro, Kling 3.0, Grok Imagine Video, Wan 2.6, and Vidu Q3. Best Sora & Runway alternative.',
+    ogTitle: 'AI Video Generator - Seedance · Kling 3.0 · Grok · Wan 2.6 · Veo 3.1 · Hailuo-02 · LTX 2.3 | gwanggo',
+    ogDescription: 'Generate AI videos with Seedance 1.5 Pro, Kling 3.0, Grok Imagine Video, Wan 2.6, Vidu Q3, Veo 3.1, Hailuo-02, and LTX 2.3. Best Sora & Runway alternative.',
   },
   ja: {
-    title: 'AI動画生成 - Seedance · Kling 3.0 · Grok · Wan 2.6 | Sora代替 無料',
-    description: 'Seedance 1.5 Pro、Kling 3.0、Grok Imagine Video、Wan 2.6、Vidu Q3の5つのAI動画モデル対応。Sora、Runway代替。Seedance 2.0リリース済み。無料クレジットで開始。',
+    title: 'AI動画生成 - Seedance · Kling 3.0 · Wan 2.6 · Veo 3.1 · Hailuo-02 · LTX 2.3 · Grok | Sora代替 無料',
+    description: 'Seedance 1.5 Pro、Kling 3.0、Grok Imagine Video、Wan 2.6、Vidu Q3、Veo 3.1、Hailuo-02、LTX 2.3の8つのAI動画モデル対応。Sora、Runway代替。無料クレジットで開始。',
     keywords: [
       'AI動画生成', 'AI動画メーカー', 'Seedance', 'Seedance 1.5 Pro', 'Seedance 2.0',
       'ByteDance AI', 'Vidu Q3', 'Vidu AI',
       'Kling 3.0', 'Kling 3.0 Pro', 'Kling AI', '快手AI',
       'Grok Imagine Video', 'Grok AI', 'xAI Grok',
       'Wan 2.6', 'Wan AI', 'アリババAI',
+      'Veo 3.1', 'Google Veo', 'Google Veo 3.1', 'Google AI動画',
+      'Hailuo-02', 'MiniMax', 'MiniMax Hailuo', 'Hailuo AI',
+      'LTX 2.3', 'Lightricks', 'LTX Video', 'Lightricks LTX',
       'テキストから動画', '画像から動画', '無料AI動画', 'AIショート動画',
       'AI動画制作', 'AI動画編集', 'バイトダンスAI',
-      'Sora代替', 'Runway代替', 'Kling代替', 'Hailuo AI',
-      'Pika代替', 'Luma Dream Machine', 'Google Veo', 'OpenAI Sora',
+      'Sora代替', 'Runway代替', 'Kling代替',
+      'Pika代替', 'Luma Dream Machine', 'OpenAI Sora',
     ],
-    ogTitle: 'AI動画生成 - Seedance · Kling 3.0 · Grok · Wan 2.6 | gwanggo',
-    ogDescription: 'Seedance 1.5 Pro、Kling 3.0、Grok Imagine Video、Wan 2.6、Vidu Q3で高品質AI動画を生成。Sora・Runway代替。',
+    ogTitle: 'AI動画生成 - Seedance · Kling 3.0 · Grok · Wan 2.6 · Veo 3.1 · Hailuo-02 · LTX 2.3 | gwanggo',
+    ogDescription: 'Seedance 1.5 Pro、Kling 3.0、Grok Imagine Video、Wan 2.6、Vidu Q3、Veo 3.1、Hailuo-02、LTX 2.3で高品質AI動画を生成。Sora・Runway代替。',
   },
   zh: {
-    title: 'AI视频生成 - Seedance · Kling 3.0 · Grok · Wan 2.6 | Sora替代 免费',
-    description: '支持Seedance 1.5 Pro、Kling 3.0、Grok Imagine Video、Wan 2.6、Vidu Q3等5种AI视频模型。Sora、Runway替代方案。Seedance 2.0已发布。免费积分立即开始。',
+    title: 'AI视频生成 - Seedance · Kling 3.0 · Wan 2.6 · Veo 3.1 · Hailuo-02 · LTX 2.3 · Grok | Sora替代 免费',
+    description: '支持Seedance 1.5 Pro、Kling 3.0、Grok Imagine Video、Wan 2.6、Vidu Q3、Veo 3.1、Hailuo-02、LTX 2.3等8种AI视频模型。Sora、Runway替代方案。免费积分立即开始。',
     keywords: [
       'AI视频生成', 'AI视频制作', 'Seedance', 'Seedance 1.5 Pro', 'Seedance 2.0',
       'ByteDance AI', '字节跳动AI', 'Vidu Q3', 'Vidu AI',
       'Kling 3.0', 'Kling 3.0 Pro', 'Kling AI', '快手AI',
       'Grok Imagine Video', 'Grok AI', 'xAI Grok',
       'Wan 2.6', 'Wan AI', '阿里巴巴AI',
+      'Veo 3.1', 'Google Veo', 'Google Veo 3.1', 'Google AI视频',
+      'Hailuo-02', 'MiniMax', 'MiniMax Hailuo', 'Hailuo AI',
+      'LTX 2.3', 'Lightricks', 'LTX Video', 'Lightricks LTX',
       '文字转视频', '图片转视频', '免费AI视频', 'AI短视频',
       'AI视频创作', 'AI视频编辑',
-      'Sora替代', 'Runway替代', 'Kling替代', 'Hailuo AI',
-      'Pika替代', 'Luma Dream Machine', 'Google Veo', 'OpenAI Sora',
+      'Sora替代', 'Runway替代', 'Kling替代',
+      'Pika替代', 'Luma Dream Machine', 'OpenAI Sora',
     ],
-    ogTitle: 'AI视频生成 - Seedance · Kling 3.0 · Grok · Wan 2.6 | gwanggo',
-    ogDescription: '使用Seedance 1.5 Pro、Kling 3.0、Grok Imagine Video、Wan 2.6、Vidu Q3生成高质量AI视频。Sora·Runway替代方案。',
+    ogTitle: 'AI视频生成 - Seedance · Kling 3.0 · Grok · Wan 2.6 · Veo 3.1 · Hailuo-02 · LTX 2.3 | gwanggo',
+    ogDescription: '使用Seedance 1.5 Pro、Kling 3.0、Grok Imagine Video、Wan 2.6、Vidu Q3、Veo 3.1、Hailuo-02、LTX 2.3生成高质量AI视频。Sora·Runway替代方案。',
   },
 }
 
@@ -189,13 +201,14 @@ export const imageToolSeoData: Record<Locale, {
   ogDescription: string
 }> = {
   ko: {
-    title: 'AI 이미지 생성 - Seedream 5 · FLUX.2 Pro · Grok Imagine | Midjourney 대안 무료',
-    description: 'Seedream 5, FLUX.2 Pro, Grok Imagine Image, Z-Image 등 4종 AI 이미지 모델 지원. Midjourney, DALL-E 대안. 다양한 비율과 화질 지원. 무료 크레딧으로 시작.',
+    title: 'AI 이미지 생성 - Seedream 5 · FLUX.2 Pro · Grok Imagine · Nano Banana 2 | Midjourney 대안 무료',
+    description: 'Seedream 5, FLUX.2 Pro, Grok Imagine Image, Z-Image, Nano Banana 2 등 5종 AI 이미지 모델 지원. Midjourney, DALL-E 대안. 다양한 비율과 화질 지원. 무료 크레딧으로 시작.',
     keywords: [
       'AI 이미지 생성', 'AI 그림 생성기', 'AI 이미지 편집', 'Seedream', 'Seedream 5',
       'ByteDance AI', 'ByteDance Seedream', 'Z-Image', 'Text to Image', 'Image Edit',
       'FLUX.2 Pro', 'FLUX 2 Pro', 'FLUX AI', 'Black Forest Labs', 'BFL FLUX',
       'Grok Imagine Image', 'Grok 이미지 생성', 'xAI Grok', 'Grok AI',
+      'Nano Banana 2', 'Google Gemini', 'Gemini Image', 'Google AI 이미지',
       '텍스트 이미지 생성', 'AI 사진 생성', '무료 AI 이미지', 'AI image generator',
       'AI 그림 그리기', 'AI 이미지 만들기', '무료 AI 그림', '바이트댄스 AI',
       'AI 이미지 제작', 'AI 사진 편집', 'Seedream Pro',
@@ -204,17 +217,18 @@ export const imageToolSeoData: Record<Locale, {
       'Leonardo AI 대안', 'Recraft 대안', 'Imagen 대안', 'SD4 대안',
       '무료 AI 그림 생성기', 'AI 광고 이미지', 'AI 제품 사진',
     ],
-    ogTitle: 'AI 이미지 생성 - Seedream 5 · FLUX.2 Pro · Grok Imagine | gwanggo',
-    ogDescription: 'Seedream 5, FLUX.2 Pro, Grok Imagine Image, Z-Image로 고품질 AI 이미지 생성. Midjourney, DALL-E 대안.',
+    ogTitle: 'AI 이미지 생성 - Seedream 5 · FLUX.2 Pro · Grok Imagine · Nano Banana 2 | gwanggo',
+    ogDescription: 'Seedream 5, FLUX.2 Pro, Grok Imagine Image, Z-Image, Nano Banana 2로 고품질 AI 이미지 생성. Midjourney, DALL-E 대안.',
   },
   en: {
-    title: 'AI Image Generator - Seedream 5 · FLUX.2 Pro · Grok Imagine | Midjourney Alternative',
-    description: 'Generate AI images with Seedream 5, FLUX.2 Pro, Grok Imagine Image, and Z-Image. Best Midjourney, DALL-E alternative. Multiple aspect ratios. Start free.',
+    title: 'AI Image Generator - Seedream 5 · FLUX.2 Pro · Grok Imagine · Nano Banana 2 | Midjourney Alternative',
+    description: 'Generate AI images with Seedream 5, FLUX.2 Pro, Grok Imagine Image, Z-Image, and Nano Banana 2. 5 AI image models. Best Midjourney, DALL-E alternative. Start free.',
     keywords: [
       'AI image generator', 'AI image maker', 'Seedream', 'Seedream 5',
       'ByteDance AI', 'ByteDance Seedream', 'Z-Image', 'text to image',
       'FLUX.2 Pro', 'FLUX 2 Pro', 'FLUX AI', 'Black Forest Labs',
       'Grok Imagine Image', 'Grok image generator', 'xAI Grok', 'Grok AI',
+      'Nano Banana 2', 'Google Gemini', 'Gemini Image', 'Google AI image',
       'AI image editing', 'free AI image generator', 'AI art generator',
       'AI photo generator', 'AI image creation', 'Seedream Pro',
       'Midjourney alternative', 'DALL-E alternative', 'Stable Diffusion alternative',
@@ -223,40 +237,42 @@ export const imageToolSeoData: Record<Locale, {
       'Imagen alternative', 'free AI art generator', 'AI ad image', 'AI product photo',
       'best AI image generator 2026',
     ],
-    ogTitle: 'AI Image Generator - Seedream 5 · FLUX.2 Pro · Grok Imagine | gwanggo',
-    ogDescription: 'Create AI images with Seedream 5, FLUX.2 Pro, Grok Imagine Image, and Z-Image. Best Midjourney & DALL-E alternative.',
+    ogTitle: 'AI Image Generator - Seedream 5 · FLUX.2 Pro · Grok Imagine · Nano Banana 2 | gwanggo',
+    ogDescription: 'Create AI images with Seedream 5, FLUX.2 Pro, Grok Imagine Image, Z-Image, and Nano Banana 2. Best Midjourney & DALL-E alternative.',
   },
   ja: {
-    title: 'AI画像生成 - Seedream 5 · FLUX.2 Pro · Grok Imagine | Midjourney代替 無料',
-    description: 'Seedream 5、FLUX.2 Pro、Grok Imagine Image、Z-Imageの4つのAI画像モデル対応。Midjourney、DALL-E代替。無料クレジットで開始。',
+    title: 'AI画像生成 - Seedream 5 · FLUX.2 Pro · Grok Imagine · Nano Banana 2 | Midjourney代替 無料',
+    description: 'Seedream 5、FLUX.2 Pro、Grok Imagine Image、Z-Image、Nano Banana 2の5つのAI画像モデル対応。Midjourney、DALL-E代替。無料クレジットで開始。',
     keywords: [
       'AI画像生成', 'AI画像メーカー', 'Seedream', 'Seedream 5',
       'ByteDance AI', 'Z-Image', 'テキストから画像', 'AI画像編集',
       'FLUX.2 Pro', 'FLUX AI', 'Black Forest Labs',
       'Grok Imagine Image', 'Grok AI', 'xAI Grok',
+      'Nano Banana 2', 'Google Gemini', 'Gemini Image', 'Google AI画像',
       '無料AI画像', 'AIアート', 'AI写真生成', 'AI画像制作', 'バイトダンスAI',
       'Midjourney代替', 'DALL-E代替', 'Stable Diffusion代替',
       'GPT Image', 'Flux代替', 'Ideogram代替', 'Adobe Firefly代替',
       'Leonardo AI代替', 'Recraft代替',
     ],
-    ogTitle: 'AI画像生成 - Seedream 5 · FLUX.2 Pro · Grok Imagine | gwanggo',
-    ogDescription: 'Seedream 5、FLUX.2 Pro、Grok Imagine Image、Z-Imageで高品質AI画像を生成。Midjourney・DALL-E代替。',
+    ogTitle: 'AI画像生成 - Seedream 5 · FLUX.2 Pro · Grok Imagine · Nano Banana 2 | gwanggo',
+    ogDescription: 'Seedream 5、FLUX.2 Pro、Grok Imagine Image、Z-Image、Nano Banana 2で高品質AI画像を生成。Midjourney・DALL-E代替。',
   },
   zh: {
-    title: 'AI图片生成 - Seedream 5 · FLUX.2 Pro · Grok Imagine | Midjourney替代 免费',
-    description: '支持Seedream 5、FLUX.2 Pro、Grok Imagine Image、Z-Image等4种AI图片模型。Midjourney、DALL-E替代方案。免费积分立即开始。',
+    title: 'AI图片生成 - Seedream 5 · FLUX.2 Pro · Grok Imagine · Nano Banana 2 | Midjourney替代 免费',
+    description: '支持Seedream 5、FLUX.2 Pro、Grok Imagine Image、Z-Image、Nano Banana 2等5种AI图片模型。Midjourney、DALL-E替代方案。免费积分立即开始。',
     keywords: [
       'AI图片生成', 'AI图片生成器', 'Seedream', 'Seedream 5',
       'ByteDance AI', '字节跳动AI', 'Z-Image', '文字转图片',
       'FLUX.2 Pro', 'FLUX AI', 'Black Forest Labs',
       'Grok Imagine Image', 'Grok AI', 'xAI Grok',
+      'Nano Banana 2', 'Google Gemini', 'Gemini Image', 'Google AI图片',
       'AI图片编辑', '免费AI图片', 'AI艺术', 'AI照片生成', 'AI图片制作',
       'Midjourney替代', 'DALL-E替代', 'Stable Diffusion替代',
       'GPT Image', 'Flux替代', 'Ideogram替代', 'Adobe Firefly替代',
       'Leonardo AI替代', 'Recraft替代',
     ],
-    ogTitle: 'AI图片生成 - Seedream 5 · FLUX.2 Pro · Grok Imagine | gwanggo',
-    ogDescription: '使用Seedream 5、FLUX.2 Pro、Grok Imagine Image、Z-Image生成高质量AI图片。Midjourney·DALL-E替代方案。',
+    ogTitle: 'AI图片生成 - Seedream 5 · FLUX.2 Pro · Grok Imagine · Nano Banana 2 | gwanggo',
+    ogDescription: '使用Seedream 5、FLUX.2 Pro、Grok Imagine Image、Z-Image、Nano Banana 2生成高质量AI图片。Midjourney·DALL-E替代方案。',
   },
 }
 
@@ -276,12 +292,16 @@ export function getToolJsonLd(
         { name: 'Kling 3.0', creator: 'Kuaishou', description: 'Text/Image to Video, 720p, Standard/Pro tier, 5-10s' },
         { name: 'Grok Imagine Video', creator: 'xAI', description: 'Text/Image to Video, 480p-720p, up to 15s' },
         { name: 'Wan 2.6', creator: 'Alibaba', description: 'Text/Image to Video, 720p-1080p, 5-15s' },
+        { name: 'Veo 3.1', creator: 'Google', description: 'Text/Image to Video, 720p-1080p, 1-8s, Audio generation' },
+        { name: 'Hailuo-02', creator: 'MiniMax', description: 'Text/Image to Video, 768p-1080p, Standard/Pro tier, 1-6s' },
+        { name: 'LTX 2.3', creator: 'Lightricks', description: 'Text/Image to Video, 720p-1080p, 1-20s' },
       ]
     : [
         { name: 'Seedream 5', creator: 'ByteDance', description: 'AI Image Edit, multiple aspect ratios' },
         { name: 'Z-Image', creator: 'gwanggo', description: 'Text to Image, multiple aspect ratios' },
         { name: 'FLUX.2 Pro', creator: 'Black Forest Labs', description: 'Text to Image, multiple aspect ratios, basic/high quality' },
         { name: 'Grok Imagine Image', creator: 'xAI', description: 'Text to Image, multiple aspect ratios' },
+        { name: 'Nano Banana 2', creator: 'Google', description: 'Text to Image / Image Edit, multiple aspect ratios, 1K/4K quality' },
       ]
 
   return [
@@ -325,7 +345,7 @@ export const faqData: Record<Locale, Array<{ question: string; answer: string }>
   ko: [
     {
       question: 'gwanggo는 무료인가요?',
-      answer: '네, 회원가입 시 15크레딧이 무료로 제공되어 바로 AI 광고 이미지와 영상을 생성해볼 수 있습니다. 추가 크레딧이 필요하면 Starter, Pro, Business 요금제를 선택할 수 있습니다.',
+      answer: '네, 회원가입 시 20크레딧이 무료로 제공되어 바로 AI 광고 이미지와 영상을 생성해볼 수 있습니다. 추가 크레딧이 필요하면 Starter, Pro, Business 요금제를 선택할 수 있습니다.',
     },
     {
       question: 'AI 광고 이미지는 어떻게 만드나요?',
@@ -343,7 +363,7 @@ export const faqData: Record<Locale, Array<{ question: string; answer: string }>
   en: [
     {
       question: 'Is gwanggo free to use?',
-      answer: 'Yes, you get 15 free credits when you sign up, allowing you to create AI ad images and videos right away. For more credits, you can choose from Starter, Pro, or Business plans.',
+      answer: 'Yes, you get 20 free credits when you sign up, allowing you to create AI ad images and videos right away. For more credits, you can choose from Starter, Pro, or Business plans.',
     },
     {
       question: 'How do I create AI ad images?',
@@ -361,7 +381,7 @@ export const faqData: Record<Locale, Array<{ question: string; answer: string }>
   ja: [
     {
       question: 'gwanggoは無料ですか？',
-      answer: 'はい、会員登録時に15クレジットが無料で提供され、すぐにAI広告画像と動画を作成できます。追加クレジットが必要な場合は、Starter、Pro、Businessプランを選択できます。',
+      answer: 'はい、会員登録時に20クレジットが無料で提供され、すぐにAI広告画像と動画を作成できます。追加クレジットが必要な場合は、Starter、Pro、Businessプランを選択できます。',
     },
     {
       question: 'AI広告画像はどのように作りますか？',
@@ -379,7 +399,7 @@ export const faqData: Record<Locale, Array<{ question: string; answer: string }>
   zh: [
     {
       question: 'gwanggo免费吗？',
-      answer: '是的，注册时免费获得15积分，可以立即创建AI广告图片和视频。需要更多积分可以选择Starter、Pro或Business套餐。',
+      answer: '是的，注册时免费获得20积分，可以立即创建AI广告图片和视频。需要更多积分可以选择Starter、Pro或Business套餐。',
     },
     {
       question: '如何制作AI广告图片？',
@@ -485,5 +505,72 @@ export function getOrganizationJsonLd(siteUrl: string) {
     name: 'gwanggo',
     url: siteUrl,
     logo: `${siteUrl}/og-image.png`,
+  }
+}
+
+/** WebSite JSON-LD 생성 (Google 사이트링크 핵심) */
+export function getWebSiteJsonLd(siteUrl: string) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'gwanggo',
+    alternateName: ['광고', 'gwanggo AI', 'AI 광고 생성기'],
+    url: siteUrl,
+    description: 'AI 광고 이미지·영상 자동 생성 플랫폼',
+    inLanguage: ['ko', 'en', 'ja', 'zh-CN'],
+    publisher: {
+      '@type': 'Organization',
+      name: 'gwanggo',
+      url: siteUrl,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${siteUrl}/og-image.png`,
+      },
+    },
+  }
+}
+
+/** SiteNavigationElement JSON-LD 생성 (사이트링크 후보 명시) */
+export function getSiteNavigationJsonLd(locale: Locale, siteUrl: string) {
+  const navItems: Record<Locale, Array<{ name: string; description: string; url: string }>> = {
+    ko: [
+      { name: 'AI 이미지 생성', description: 'Seedream 5, FLUX.2 Pro, Grok Imagine 등 AI 이미지 생성', url: `${siteUrl}/ko/tools/image` },
+      { name: 'AI 영상 생성', description: 'Seedance, Kling 3.0, Grok Video, Wan 2.6 등 AI 영상 생성', url: `${siteUrl}/ko/tools/video` },
+      { name: '요금제', description: 'Free, Starter, Pro, Business 요금제 비교', url: `${siteUrl}/pricing` },
+      { name: '무료 시작', description: '회원가입 후 무료 크레딧으로 AI 광고 생성', url: `${siteUrl}/signup` },
+      { name: '대시보드', description: 'AI 광고 이미지·영상 생성 대시보드', url: `${siteUrl}/dashboard` },
+    ],
+    en: [
+      { name: 'AI Image Generator', description: 'Generate images with Seedream 5, FLUX.2 Pro, Grok Imagine', url: `${siteUrl}/en/tools/image` },
+      { name: 'AI Video Generator', description: 'Create videos with Seedance, Kling 3.0, Grok Video, Wan 2.6', url: `${siteUrl}/en/tools/video` },
+      { name: 'Pricing', description: 'Compare Free, Starter, Pro, Business plans', url: `${siteUrl}/pricing` },
+      { name: 'Start Free', description: 'Sign up and get free credits for AI ad generation', url: `${siteUrl}/signup` },
+      { name: 'Dashboard', description: 'AI ad image & video generation dashboard', url: `${siteUrl}/dashboard` },
+    ],
+    ja: [
+      { name: 'AI画像生成', description: 'Seedream 5、FLUX.2 Pro、Grok ImagineでAI画像生成', url: `${siteUrl}/ja/tools/image` },
+      { name: 'AI動画生成', description: 'Seedance、Kling 3.0、Grok Video、Wan 2.6でAI動画生成', url: `${siteUrl}/ja/tools/video` },
+      { name: '料金プラン', description: 'Free、Starter、Pro、Businessプラン比較', url: `${siteUrl}/pricing` },
+      { name: '無料で始める', description: '登録して無料クレジットでAI広告を生成', url: `${siteUrl}/signup` },
+      { name: 'ダッシュボード', description: 'AI広告画像・動画生成ダッシュボード', url: `${siteUrl}/dashboard` },
+    ],
+    zh: [
+      { name: 'AI图片生成', description: '使用Seedream 5、FLUX.2 Pro、Grok Imagine生成AI图片', url: `${siteUrl}/zh/tools/image` },
+      { name: 'AI视频生成', description: '使用Seedance、Kling 3.0、Grok Video、Wan 2.6生成AI视频', url: `${siteUrl}/zh/tools/video` },
+      { name: '定价', description: '比较Free、Starter、Pro、Business套餐', url: `${siteUrl}/pricing` },
+      { name: '免费开始', description: '注册获取免费积分生成AI广告', url: `${siteUrl}/signup` },
+      { name: '控制台', description: 'AI广告图片·视频生成控制台', url: `${siteUrl}/dashboard` },
+    ],
+  }
+
+  // @graph 배열로 개별 SiteNavigationElement를 나열 (ItemList에 중첩하면 유효하지 않음)
+  return {
+    '@context': 'https://schema.org',
+    '@graph': navItems[locale].map((item) => ({
+      '@type': 'SiteNavigationElement',
+      name: item.name,
+      description: item.description,
+      url: item.url,
+    })),
   }
 }

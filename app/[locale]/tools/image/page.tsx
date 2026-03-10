@@ -14,6 +14,15 @@ import {
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gwanggo.jocoding.io'
 
+/** 모델명 → 상세 페이지 slug 매핑 */
+const modelSlugMap: Record<string, string> = {
+  'Seedream 5': 'seedream-5',
+  'Z-Image': 'z-image',
+  'FLUX.2 Pro': 'flux-2-pro',
+  'Grok Imagine Image': 'grok-imagine',
+  'Nano Banana 2': 'nano-banana-2',
+}
+
 interface Props {
   params: Promise<{ locale: string }>
 }
@@ -94,8 +103,8 @@ const i18n: Record<Locale, {
   useCasesTitle: string
   useCases: string[]
   comparisonTitle: string
-  comparisonHeaders: [string, string, string, string, string]
-  comparisonRows: [string, string, string, string, string][]
+  comparisonHeaders: string[]
+  comparisonRows: string[][]
   faqTitle: string
   faq: Array<{ q: string; a: string }>
   otherToolTitle: string
@@ -109,8 +118,8 @@ const i18n: Record<Locale, {
     breadcrumbHome: '홈',
     badge: 'AI 이미지 생성 도구',
     heading: 'AI 이미지 생성',
-    subheading: 'Seedream 5, FLUX.2 Pro, Grok Imagine Image, Z-Image로 고품질 AI 이미지 생성. Midjourney, DALL-E 대안.',
-    intro: 'gwanggo의 AI 이미지 생성 도구는 ByteDance(바이트댄스)의 Seedream 5 모델과 Z-Image 모델을 지원합니다. Seedream 5는 참조 이미지를 기반으로 AI가 이미지를 편집하는 Image Edit 모델이며, Z-Image는 텍스트 프롬프트만으로 이미지를 생성하는 Text-to-Image 모델입니다. Black Forest Labs의 FLUX.2 Pro와 xAI의 Grok Imagine Image도 지원합니다. FLUX.2 Pro는 초고품질 Text-to-Image 모델이며, Grok Imagine Image는 xAI(일론 머스크)가 개발한 이미지 생성 모델입니다. Midjourney V7, DALL-E 3, Stable Diffusion 4, GPT Image, Flux, Ideogram, Adobe Firefly 등 다양한 AI 이미지 모델의 대안으로, 광고 이미지 제작에 특화되어 있습니다. 다양한 화면 비율과 화질 옵션을 지원하며, 회원가입 시 무료 크레딧이 제공됩니다.',
+    subheading: 'Seedream 5, FLUX.2 Pro, Grok Imagine Image, Z-Image, Nano Banana 2로 고품질 AI 이미지 생성. Midjourney, DALL-E 대안.',
+    intro: 'gwanggo의 AI 이미지 생성 도구는 ByteDance(바이트댄스)의 Seedream 5 모델과 Z-Image 모델을 지원합니다. Seedream 5는 참조 이미지를 기반으로 AI가 이미지를 편집하는 Image Edit 모델이며, Z-Image는 텍스트 프롬프트만으로 이미지를 생성하는 Text-to-Image 모델입니다. Black Forest Labs의 FLUX.2 Pro와 xAI의 Grok Imagine Image도 지원합니다. FLUX.2 Pro는 초고품질 Text-to-Image 모델이며, Grok Imagine Image는 xAI(일론 머스크)가 개발한 이미지 생성 모델입니다. Google의 Nano Banana 2는 텍스트로 이미지를 생성하거나 참조 이미지를 편집할 수 있으며, 1K와 4K 품질을 지원합니다. Midjourney V7, DALL-E 3, Stable Diffusion 4, GPT Image, Flux, Ideogram, Adobe Firefly 등 다양한 AI 이미지 모델의 대안으로, 광고 이미지 제작에 특화되어 있습니다. 다양한 화면 비율과 화질 옵션을 지원하며, 회원가입 시 무료 크레딧이 제공됩니다.',
     cta: '무료로 시작하기',
     modelsTitle: '지원 모델',
     models: [
@@ -142,6 +151,13 @@ const i18n: Record<Locale, {
         features: ['텍스트 → 이미지 (Text to Image)', '참조 이미지 불필요', '5가지 화면 비율 지원', '빠른 생성 속도'],
         specs: '화면 비율: 1:1, 4:3, 3:4, 16:9, 9:16 | 비용: 1크레딧',
       },
+      {
+        name: 'Nano Banana 2',
+        badge: 'Google',
+        desc: 'Google이 개발한 Nano Banana 2 AI 이미지 생성 모델입니다. 텍스트 프롬프트만으로 이미지를 생성하거나, 참조 이미지를 활용하여 편집할 수 있습니다. 1K와 4K 품질 옵션을 지원합니다.',
+        features: ['텍스트 → 이미지 (Text to Image)', '이미지 편집 (Image Edit)', '5가지 화면 비율 지원', '1K(기본) / 4K(고화질) 선택 가능'],
+        specs: '화면 비율: 1:1, 4:3, 3:4, 16:9, 9:16 | 비용: 기본 2크레딧, 고화질 6크레딧',
+      },
     ],
     howItWorksTitle: '사용 방법',
     steps: [
@@ -158,13 +174,13 @@ const i18n: Record<Locale, {
       '콘텐츠 제작 · 블로그, 프레젠테이션 이미지',
     ],
     comparisonTitle: '모델 비교',
-    comparisonHeaders: ['항목', 'Seedream 5', 'Z-Image', 'FLUX.2 Pro', 'Grok Imagine'],
+    comparisonHeaders: ['항목', 'Seedream 5', 'Z-Image', 'FLUX.2 Pro', 'Grok Imagine', 'Nano Banana 2'],
     comparisonRows: [
-      ['개발사', 'ByteDance', 'gwanggo', 'Black Forest Labs', 'xAI'],
-      ['입력 방식', '텍스트 + 참조 이미지', '텍스트만', '텍스트만', '텍스트만'],
-      ['기능', 'Image Edit', 'Text to Image', 'Text to Image', 'Text to Image'],
-      ['화면 비율', '8가지 (1:1~21:9)', '5가지', '5가지', '5가지'],
-      ['비용', '2~3크레딧', '1크레딧', '1~2크레딧', '1크레딧'],
+      ['개발사', 'ByteDance', 'gwanggo', 'Black Forest Labs', 'xAI', 'Google'],
+      ['입력 방식', '텍스트 + 참조 이미지', '텍스트만', '텍스트만', '텍스트만', '텍스트 / 이미지'],
+      ['기능', 'Image Edit', 'Text to Image', 'Text to Image', 'Text to Image', 'Text to Image / Image Edit'],
+      ['화면 비율', '8가지 (1:1~21:9)', '5가지', '5가지', '5가지', '5가지'],
+      ['비용', '2~3크레딧', '1크레딧', '1~2크레딧', '1크레딧', '2~6크레딧'],
     ],
     faqTitle: '자주 묻는 질문',
     faq: [
@@ -173,23 +189,24 @@ const i18n: Record<Locale, {
       { q: 'FLUX.2 Pro는 어떤 모델인가요?', a: 'FLUX.2 Pro는 Black Forest Labs가 개발한 최신 Text-to-Image AI 모델입니다. 텍스트 프롬프트로 다양한 스타일의 고품질 이미지를 생성합니다. 기본 화질(1크레딧)과 고화질(2크레딧) 옵션을 지원합니다.' },
       { q: 'Grok Imagine Image는 어떤 모델인가요?', a: 'Grok Imagine Image는 xAI(일론 머스크)가 개발한 AI 이미지 생성 모델입니다. 텍스트 프롬프트만으로 고품질 이미지를 빠르게 생성하며, 1크레딧으로 이용할 수 있습니다.' },
       { q: 'Seedream 5와 Z-Image의 차이는 무엇인가요?', a: 'Seedream 5는 참조 이미지를 기반으로 편집하는 Image Edit 모델이고, Z-Image는 텍스트만으로 새 이미지를 생성하는 Text-to-Image 모델입니다. 기존 이미지를 수정하려면 Seedream 5를, 새 이미지를 만들려면 Z-Image를 선택하세요.' },
-      { q: 'AI 이미지 생성 비용은 얼마인가요?', a: '회원가입 시 15크레딧이 무료로 제공됩니다. Seedream 5는 기본 화질 2크레딧, 고화질 3크레딧, Z-Image는 1크레딧, FLUX.2 Pro는 기본 1크레딧/고화질 2크레딧, Grok Imagine Image는 1크레딧입니다.' },
+      { q: 'Nano Banana 2는 어떤 모델인가요?', a: 'Nano Banana 2는 Google이 개발한 AI 이미지 생성 모델입니다. 텍스트 프롬프트만으로 이미지를 생성하거나, 참조 이미지를 활용하여 편집할 수 있습니다. 1K 기본 품질(2크레딧)과 4K 고화질(6크레딧) 옵션을 지원합니다.' },
+      { q: 'AI 이미지 생성 비용은 얼마인가요?', a: '회원가입 시 20크레딧이 무료로 제공됩니다. Seedream 5는 기본 화질 2크레딧, 고화질 3크레딧, Z-Image는 1크레딧, FLUX.2 Pro는 기본 1크레딧/고화질 2크레딧, Grok Imagine Image는 1크레딧, Nano Banana 2는 기본 2크레딧/고화질 6크레딧입니다.' },
       { q: '생성된 이미지의 저작권은 누구에게 있나요?', a: 'gwanggo에서 생성한 모든 AI 이미지의 사용 권리는 사용자에게 있습니다. 광고, SNS, 쇼핑몰 등 상업적 용도로 자유롭게 사용하실 수 있습니다.' },
-      { q: 'Midjourney, DALL-E와 비교하면 어떤가요?', a: 'gwanggo는 Seedream 5, FLUX.2 Pro, Grok Imagine Image, Z-Image 등 4종 AI 모델을 지원합니다. Midjourney V7, DALL-E 3, Stable Diffusion 4, GPT Image, Ideogram 3.0, Adobe Firefly, Leonardo AI 등과 비교해 광고 이미지 제작에 특화되어 있습니다. 참조 이미지 기반의 정밀한 편집이 가능하고, 별도 앱 설치 없이 웹에서 바로 사용할 수 있으며, 상업적 이용이 자유롭습니다.' },
+      { q: 'Midjourney, DALL-E와 비교하면 어떤가요?', a: 'gwanggo는 Seedream 5, FLUX.2 Pro, Grok Imagine Image, Z-Image, Nano Banana 2 등 5종 AI 모델을 지원합니다. Midjourney V7, DALL-E 3, Stable Diffusion 4, GPT Image, Ideogram 3.0, Adobe Firefly, Leonardo AI 등과 비교해 광고 이미지 제작에 특화되어 있습니다. 참조 이미지 기반의 정밀한 편집이 가능하고, 별도 앱 설치 없이 웹에서 바로 사용할 수 있으며, 상업적 이용이 자유롭습니다.' },
     ],
     otherToolTitle: 'AI 영상 생성도 사용해보세요',
     otherToolDesc: 'Seedance 1.5 Pro, Kling 3.0, Grok Imagine Video, Wan 2.6, Vidu Q3로 고품질 AI 영상을 생성할 수 있습니다.',
     otherToolCta: 'AI 영상 생성 바로가기',
     pricingCta: '요금제 보기',
     bottomCta: '지금 바로 AI 이미지를 만들어보세요',
-    bottomCtaDesc: '회원가입 시 15크레딧 무료 제공. 4종 AI 모델로 고품질 이미지를 생성하세요.',
+    bottomCtaDesc: '회원가입 시 20크레딧 무료 제공. 5종 AI 모델로 고품질 이미지를 생성하세요.',
   },
   en: {
     breadcrumbHome: 'Home',
     badge: 'AI Image Generation Tool',
     heading: 'AI Image Generator',
-    subheading: 'Create AI images with Seedream 5, FLUX.2 Pro, Grok Imagine, and Z-Image. Best Midjourney & DALL-E alternative.',
-    intro: 'gwanggo\'s AI image generator supports ByteDance\'s Seedream 5, Z-Image, Black Forest Labs\' FLUX.2 Pro, and xAI\'s Grok Imagine Image models. Seedream 5 is an Image Edit model that transforms images using reference photos and text prompts. Z-Image is a Text-to-Image model that generates images from text alone. FLUX.2 Pro is a cutting-edge Text-to-Image model by Black Forest Labs, and Grok Imagine Image is an AI image generation model developed by xAI (Elon Musk). A powerful alternative to Midjourney V7, DALL-E 3, Stable Diffusion 4, GPT Image, Flux, Ideogram, and Adobe Firefly, optimized for commercial ad image creation. Multiple aspect ratios and quality options available. Free credits on sign up.',
+    subheading: 'Create AI images with Seedream 5, FLUX.2 Pro, Grok Imagine, Z-Image, and Nano Banana 2. Best Midjourney & DALL-E alternative.',
+    intro: 'gwanggo\'s AI image generator supports 5 models: ByteDance\'s Seedream 5, Z-Image, Black Forest Labs\' FLUX.2 Pro, xAI\'s Grok Imagine Image, and Google\'s Nano Banana 2. Seedream 5 is an Image Edit model that transforms images using reference photos and text prompts. Z-Image is a Text-to-Image model that generates images from text alone. FLUX.2 Pro is a cutting-edge Text-to-Image model by Black Forest Labs, Grok Imagine Image is developed by xAI (Elon Musk), and Nano Banana 2 by Google supports both text-to-image and image editing with 1K/4K quality options. A powerful alternative to Midjourney V7, DALL-E 3, Stable Diffusion 4, GPT Image, Flux, Ideogram, and Adobe Firefly, optimized for commercial ad image creation. Multiple aspect ratios and quality options available. Free credits on sign up.',
     cta: 'Start for Free',
     modelsTitle: 'Supported Models',
     models: [
@@ -221,6 +238,13 @@ const i18n: Record<Locale, {
         features: ['Text → Image (Text to Image)', 'No reference image required', '5 aspect ratios supported', 'Fast generation speed'],
         specs: 'Aspect ratios: 1:1, 4:3, 3:4, 16:9, 9:16 | Cost: 1 credit',
       },
+      {
+        name: 'Nano Banana 2',
+        badge: 'Google',
+        desc: 'AI image generation model developed by Google. Generate images from text prompts or edit existing images with reference photos. Supports 1K and 4K quality options.',
+        features: ['Text → Image (Text to Image)', 'Image editing (Image Edit)', '5 aspect ratios supported', '1K (basic) / 4K (high quality) options'],
+        specs: 'Aspect ratios: 1:1, 4:3, 3:4, 16:9, 9:16 | Cost: Basic 2 credits, High quality 6 credits',
+      },
     ],
     howItWorksTitle: 'How It Works',
     steps: [
@@ -237,13 +261,13 @@ const i18n: Record<Locale, {
       'Content creation — blog posts, presentations',
     ],
     comparisonTitle: 'Model Comparison',
-    comparisonHeaders: ['Feature', 'Seedream 5', 'Z-Image', 'FLUX.2 Pro', 'Grok Imagine'],
+    comparisonHeaders: ['Feature', 'Seedream 5', 'Z-Image', 'FLUX.2 Pro', 'Grok Imagine', 'Nano Banana 2'],
     comparisonRows: [
-      ['Developer', 'ByteDance', 'gwanggo', 'Black Forest Labs', 'xAI'],
-      ['Input', 'Text + Reference image', 'Text only', 'Text only', 'Text only'],
-      ['Function', 'Image Edit', 'Text to Image', 'Text to Image', 'Text to Image'],
-      ['Aspect Ratios', '8 options (1:1–21:9)', '5 options', '5 options', '5 options'],
-      ['Cost', '2–3 credits', '1 credit', '1–2 credits', '1 credit'],
+      ['Developer', 'ByteDance', 'gwanggo', 'Black Forest Labs', 'xAI', 'Google'],
+      ['Input', 'Text + Reference image', 'Text only', 'Text only', 'Text only', 'Text / Image'],
+      ['Function', 'Image Edit', 'Text to Image', 'Text to Image', 'Text to Image', 'Text to Image / Image Edit'],
+      ['Aspect Ratios', '8 options (1:1–21:9)', '5 options', '5 options', '5 options', '5 options'],
+      ['Cost', '2–3 credits', '1 credit', '1–2 credits', '1 credit', '2–6 credits'],
     ],
     faqTitle: 'Frequently Asked Questions',
     faq: [
@@ -252,23 +276,24 @@ const i18n: Record<Locale, {
       { q: 'What is FLUX.2 Pro?', a: 'FLUX.2 Pro is the latest Text-to-Image AI model developed by Black Forest Labs. It generates high-quality images in various styles from text prompts. Supports basic quality (1 credit) and high quality (2 credits) options.' },
       { q: 'What is Grok Imagine Image?', a: 'Grok Imagine Image is an AI image generation model developed by xAI (Elon Musk). It quickly generates high-quality images from text prompts alone, available for 1 credit per generation.' },
       { q: 'What is the difference between Seedream 5 and Z-Image?', a: 'Seedream 5 is an Image Edit model that modifies existing images based on a reference, while Z-Image is a Text-to-Image model that creates new images from text. Use Seedream 5 to modify existing images, Z-Image to create new ones.' },
-      { q: 'How much does AI image generation cost?', a: 'You get 15 free credits on sign up. Seedream 5 costs 2–3 credits, Z-Image costs 1 credit, FLUX.2 Pro costs 1–2 credits, and Grok Imagine Image costs 1 credit per generation.' },
+      { q: 'What is Nano Banana 2?', a: 'Nano Banana 2 is an AI image generation model developed by Google. It generates images from text prompts or edits existing images with reference photos. Supports 1K basic quality (2 credits) and 4K high quality (6 credits) options.' },
+      { q: 'How much does AI image generation cost?', a: 'You get 20 free credits on sign up. Seedream 5 costs 2–3 credits, Z-Image costs 1 credit, FLUX.2 Pro costs 1–2 credits, Grok Imagine Image costs 1 credit, and Nano Banana 2 costs 2–6 credits per generation.' },
       { q: 'Who owns the copyright of generated images?', a: 'You retain full usage rights to all AI images created on gwanggo. You can freely use them for commercial purposes including ads, social media, and e-commerce.' },
-      { q: 'How does gwanggo compare to Midjourney, DALL-E, and other AI image tools?', a: 'gwanggo supports 4 AI image models: Seedream 5, FLUX.2 Pro, Grok Imagine Image, and Z-Image. Compared to Midjourney V7, DALL-E 3, Stable Diffusion 4, GPT Image, Ideogram 3.0, Adobe Firefly, and Leonardo AI, gwanggo is optimized for commercial ad image creation. It features reference image-based precise editing, works directly in the browser without any app installation, and offers full commercial usage rights.' },
+      { q: 'How does gwanggo compare to Midjourney, DALL-E, and other AI image tools?', a: 'gwanggo supports 5 AI image models: Seedream 5, FLUX.2 Pro, Grok Imagine Image, Z-Image, and Nano Banana 2. Compared to Midjourney V7, DALL-E 3, Stable Diffusion 4, GPT Image, Ideogram 3.0, Adobe Firefly, and Leonardo AI, gwanggo is optimized for commercial ad image creation. It features reference image-based precise editing, works directly in the browser without any app installation, and offers full commercial usage rights.' },
     ],
     otherToolTitle: 'Also try AI Video Generation',
     otherToolDesc: 'Generate AI videos with Seedance 1.5 Pro, Kling 3.0, Grok Video, Wan 2.6 & Vidu Q3.',
     otherToolCta: 'Go to AI Video Generator',
     pricingCta: 'View Pricing',
     bottomCta: 'Create AI images now',
-    bottomCtaDesc: '15 free credits on sign up. Create images with 4 AI models.',
+    bottomCtaDesc: '20 free credits on sign up. Create images with 5 AI models.',
   },
   ja: {
     breadcrumbHome: 'ホーム',
     badge: 'AI画像生成ツール',
     heading: 'AI画像生成',
-    subheading: 'Seedream 5、FLUX.2 Pro、Grok Imagine Image、Z-Imageで高品質AI画像を生成。Midjourney・DALL-E代替。',
-    intro: 'gwanggoのAI画像生成ツールは、ByteDance（バイトダンス）のSeedream 5モデルとZ-Imageモデルに対応しています。Seedream 5は参照画像をベースにAIが画像を編集するImage Editモデル、Z-Imageはテキストプロンプトのみで画像を生成するText-to-Imageモデルです。Black Forest LabsのFLUX.2 ProとxAIのGrok Imagine Imageにも対応。FLUX.2 Proは超高品質Text-to-Imageモデル、Grok Imagine ImageはxAI（イーロン・マスク）が開発した画像生成モデルです。Midjourney V7、DALL-E 3、Stable Diffusion 4、GPT Image、Flux、Ideogram、Adobe Fireflyの代替として、広告画像制作に特化しています。多様なアスペクト比と画質オプションに対応。会員登録時に無料クレジット付与。',
+    subheading: 'Seedream 5、FLUX.2 Pro、Grok Imagine Image、Z-Image、Nano Banana 2で高品質AI画像を生成。Midjourney・DALL-E代替。',
+    intro: 'gwanggoのAI画像生成ツールは、ByteDance（バイトダンス）のSeedream 5モデルとZ-Imageモデルに対応しています。Seedream 5は参照画像をベースにAIが画像を編集するImage Editモデル、Z-Imageはテキストプロンプトのみで画像を生成するText-to-Imageモデルです。Black Forest LabsのFLUX.2 ProとxAIのGrok Imagine Imageにも対応。FLUX.2 Proは超高品質Text-to-Imageモデル、Grok Imagine ImageはxAI（イーロン・マスク）が開発した画像生成モデルです。GoogleのNano Banana 2はテキストから画像生成または参照画像の編集が可能で、1Kと4Kの画質オプションに対応。Midjourney V7、DALL-E 3、Stable Diffusion 4、GPT Image、Flux、Ideogram、Adobe Fireflyの代替として、広告画像制作に特化しています。多様なアスペクト比と画質オプションに対応。会員登録時に無料クレジット付与。',
     cta: '無料で始める',
     modelsTitle: '対応モデル',
     models: [
@@ -300,6 +325,13 @@ const i18n: Record<Locale, {
         features: ['テキスト→画像（Text to Image）', '参照画像不要', '5種類のアスペクト比対応', '高速生成'],
         specs: 'アスペクト比: 1:1, 4:3, 3:4, 16:9, 9:16 | 料金: 1クレジット',
       },
+      {
+        name: 'Nano Banana 2',
+        badge: 'Google',
+        desc: 'Googleが開発したNano Banana 2 AI画像生成モデル。テキストプロンプトで画像を生成、または参照画像を編集できます。1Kと4Kの画質オプションに対応。',
+        features: ['テキスト→画像（Text to Image）', '画像編集（Image Edit）', '5種類のアスペクト比対応', '1K（標準）/ 4K（高画質）選択可能'],
+        specs: 'アスペクト比: 1:1, 4:3, 3:4, 16:9, 9:16 | 料金: 標準2クレジット、高画質6クレジット',
+      },
     ],
     howItWorksTitle: '使い方',
     steps: [
@@ -316,13 +348,13 @@ const i18n: Record<Locale, {
       'コンテンツ制作・ブログ、プレゼンテーション',
     ],
     comparisonTitle: 'モデル比較',
-    comparisonHeaders: ['項目', 'Seedream 5', 'Z-Image', 'FLUX.2 Pro', 'Grok Imagine'],
+    comparisonHeaders: ['項目', 'Seedream 5', 'Z-Image', 'FLUX.2 Pro', 'Grok Imagine', 'Nano Banana 2'],
     comparisonRows: [
-      ['開発元', 'ByteDance', 'gwanggo', 'Black Forest Labs', 'xAI'],
-      ['入力方式', 'テキスト + 参照画像', 'テキストのみ', 'テキストのみ', 'テキストのみ'],
-      ['機能', 'Image Edit', 'Text to Image', 'Text to Image', 'Text to Image'],
-      ['アスペクト比', '8種類（1:1〜21:9）', '5種類', '5種類', '5種類'],
-      ['料金', '2〜3クレジット', '1クレジット', '1〜2クレジット', '1クレジット'],
+      ['開発元', 'ByteDance', 'gwanggo', 'Black Forest Labs', 'xAI', 'Google'],
+      ['入力方式', 'テキスト + 参照画像', 'テキストのみ', 'テキストのみ', 'テキストのみ', 'テキスト / 画像'],
+      ['機能', 'Image Edit', 'Text to Image', 'Text to Image', 'Text to Image', 'Text to Image / Image Edit'],
+      ['アスペクト比', '8種類（1:1〜21:9）', '5種類', '5種類', '5種類', '5種類'],
+      ['料金', '2〜3クレジット', '1クレジット', '1〜2クレジット', '1クレジット', '2〜6クレジット'],
     ],
     faqTitle: 'よくある質問',
     faq: [
@@ -331,23 +363,24 @@ const i18n: Record<Locale, {
       { q: 'FLUX.2 Proとは何ですか？', a: 'FLUX.2 ProはBlack Forest Labsが開発した最新Text-to-Image AIモデルです。テキストプロンプトで多様なスタイルの高品質画像を生成します。基本画質（1クレジット）と高画質（2クレジット）オプションに対応。' },
       { q: 'Grok Imagine Imageとは何ですか？', a: 'Grok Imagine ImageはxAI（イーロン・マスク）が開発したAI画像生成モデルです。テキストプロンプトのみで高品質画像を高速生成でき、1クレジットでご利用いただけます。' },
       { q: 'Seedream 5とZ-Imageの違いは？', a: 'Seedream 5は参照画像をベースに編集するImage Editモデル、Z-Imageはテキストから新しい画像を生成するText-to-Imageモデルです。既存の画像を修正するにはSeedream 5を、新しい画像を作るにはZ-Imageを選んでください。' },
-      { q: 'AI画像生成の料金はいくらですか？', a: '会員登録時に15クレジットが無料で付与されます。Seedream 5は2〜3クレジット、Z-Imageは1クレジット、FLUX.2 Proは基本1クレジット/高画質2クレジット、Grok Imagine Imageは1クレジットです。' },
+      { q: 'Nano Banana 2とは何ですか？', a: 'Nano Banana 2はGoogleが開発したAI画像生成モデルです。テキストプロンプトで画像を生成、または参照画像を編集できます。1K標準画質（2クレジット）と4K高画質（6クレジット）オプションに対応。' },
+      { q: 'AI画像生成の料金はいくらですか？', a: '会員登録時に20クレジットが無料で付与されます。Seedream 5は2〜3クレジット、Z-Imageは1クレジット、FLUX.2 Proは基本1クレジット/高画質2クレジット、Grok Imagine Imageは1クレジット、Nano Banana 2は標準2クレジット/高画質6クレジットです。' },
       { q: '生成された画像の著作権は誰にありますか？', a: 'gwanggoで生成したすべてのAI画像の使用権はユーザーにあります。広告、SNS、ECサイトなど商業目的で自由にご使用いただけます。' },
-      { q: 'Midjourney、DALL-Eなど他のAI画像ツールとの比較は？', a: 'gwanggoはSeedream 5、FLUX.2 Pro、Grok Imagine Image、Z-Imageの4種AIモデルに対応。Midjourney V7、DALL-E 3、Stable Diffusion 4、GPT Image、Ideogram 3.0、Adobe Firefly、Leonardo AIと比較して広告画像制作に特化しています。参照画像ベースの精密編集が可能で、アプリ不要でブラウザから直接使用でき、商用利用が自由です。' },
+      { q: 'Midjourney、DALL-Eなど他のAI画像ツールとの比較は？', a: 'gwanggoはSeedream 5、FLUX.2 Pro、Grok Imagine Image、Z-Image、Nano Banana 2の5種AIモデルに対応。Midjourney V7、DALL-E 3、Stable Diffusion 4、GPT Image、Ideogram 3.0、Adobe Firefly、Leonardo AIと比較して広告画像制作に特化しています。参照画像ベースの精密編集が可能で、アプリ不要でブラウザから直接使用でき、商用利用が自由です。' },
     ],
     otherToolTitle: 'AI動画生成もお試しください',
     otherToolDesc: 'Seedance 1.5 Pro、Kling 3.0、Grok Imagine Video、Wan 2.6、Vidu Q3で高品質AI動画を生成できます。',
     otherToolCta: 'AI動画生成へ',
     pricingCta: '料金プランを見る',
     bottomCta: '今すぐAI画像を作成しましょう',
-    bottomCtaDesc: '会員登録で15クレジット無料。4種AIモデルで高品質な画像を生成。',
+    bottomCtaDesc: '会員登録で20クレジット無料。5種AIモデルで高品質な画像を生成。',
   },
   zh: {
     breadcrumbHome: '首页',
     badge: 'AI图片生成工具',
     heading: 'AI图片生成',
-    subheading: '使用Seedream 5、FLUX.2 Pro、Grok Imagine Image、Z-Image生成高质量AI图片。Midjourney、DALL-E替代方案。',
-    intro: 'gwanggo的AI图片生成工具支持ByteDance（字节跳动）的Seedream 5模型和Z-Image模型。Seedream 5是基于参考图片进行AI编辑的Image Edit模型，Z-Image是仅通过文字提示生成图片的Text-to-Image模型。同时支持Black Forest Labs的FLUX.2 Pro和xAI的Grok Imagine Image。FLUX.2 Pro是超高质量Text-to-Image模型，Grok Imagine Image是xAI（埃隆·马斯克）开发的图片生成模型。作为Midjourney V7、DALL-E 3、Stable Diffusion 4、GPT Image、Flux、Ideogram、Adobe Firefly的替代方案，专为广告图片制作优化。支持多种画面比例和画质选项。注册即送免费积分。',
+    subheading: '使用Seedream 5、FLUX.2 Pro、Grok Imagine Image、Z-Image、Nano Banana 2生成高质量AI图片。Midjourney、DALL-E替代方案。',
+    intro: 'gwanggo的AI图片生成工具支持ByteDance（字节跳动）的Seedream 5模型和Z-Image模型。Seedream 5是基于参考图片进行AI编辑的Image Edit模型，Z-Image是仅通过文字提示生成图片的Text-to-Image模型。同时支持Black Forest Labs的FLUX.2 Pro和xAI的Grok Imagine Image。FLUX.2 Pro是超高质量Text-to-Image模型，Grok Imagine Image是xAI（埃隆·马斯克）开发的图片生成模型。Google的Nano Banana 2支持文字生成图片和参考图片编辑，提供1K和4K画质选项。作为Midjourney V7、DALL-E 3、Stable Diffusion 4、GPT Image、Flux、Ideogram、Adobe Firefly的替代方案，专为广告图片制作优化。支持多种画面比例和画质选项。注册即送免费积分。',
     cta: '免费开始',
     modelsTitle: '支持模型',
     models: [
@@ -379,6 +412,13 @@ const i18n: Record<Locale, {
         features: ['文字→图片（Text to Image）', '无需参考图片', '支持5种画面比例', '快速生成'],
         specs: '画面比例: 1:1, 4:3, 3:4, 16:9, 9:16 | 费用: 1积分',
       },
+      {
+        name: 'Nano Banana 2',
+        badge: 'Google',
+        desc: 'Google开发的Nano Banana 2 AI图片生成模型。可以通过文字提示生成图片，也可以利用参考图片进行编辑。支持1K和4K画质选项。',
+        features: ['文字→图片（Text to Image）', '图片编辑（Image Edit）', '支持5种画面比例', '1K（标准）/ 4K（高画质）可选'],
+        specs: '画面比例: 1:1, 4:3, 3:4, 16:9, 9:16 | 费用: 标准2积分，高画质6积分',
+      },
     ],
     howItWorksTitle: '使用方法',
     steps: [
@@ -395,13 +435,13 @@ const i18n: Record<Locale, {
       '内容创作·博客、演示文稿图片',
     ],
     comparisonTitle: '模型对比',
-    comparisonHeaders: ['项目', 'Seedream 5', 'Z-Image', 'FLUX.2 Pro', 'Grok Imagine'],
+    comparisonHeaders: ['项目', 'Seedream 5', 'Z-Image', 'FLUX.2 Pro', 'Grok Imagine', 'Nano Banana 2'],
     comparisonRows: [
-      ['开发商', 'ByteDance', 'gwanggo', 'Black Forest Labs', 'xAI'],
-      ['输入方式', '文字 + 参考图片', '仅文字', '仅文字', '仅文字'],
-      ['功能', 'Image Edit', 'Text to Image', 'Text to Image', 'Text to Image'],
-      ['画面比例', '8种（1:1~21:9）', '5种', '5种', '5种'],
-      ['费用', '2~3积分', '1积分', '1~2积分', '1积分'],
+      ['开发商', 'ByteDance', 'gwanggo', 'Black Forest Labs', 'xAI', 'Google'],
+      ['输入方式', '文字 + 参考图片', '仅文字', '仅文字', '仅文字', '文字 / 图片'],
+      ['功能', 'Image Edit', 'Text to Image', 'Text to Image', 'Text to Image', 'Text to Image / Image Edit'],
+      ['画面比例', '8种（1:1~21:9）', '5种', '5种', '5种', '5种'],
+      ['费用', '2~3积分', '1积分', '1~2积分', '1积分', '2~6积分'],
     ],
     faqTitle: '常见问题',
     faq: [
@@ -410,16 +450,17 @@ const i18n: Record<Locale, {
       { q: 'FLUX.2 Pro是什么模型？', a: 'FLUX.2 Pro是Black Forest Labs开发的最新Text-to-Image AI模型。通过文字提示生成多种风格的高质量图片。支持基础画质（1积分）和高画质（2积分）选项。' },
       { q: 'Grok Imagine Image是什么模型？', a: 'Grok Imagine Image是xAI（埃隆·马斯克）开发的AI图片生成模型。仅通过文字提示即可快速生成高质量图片，每次1积分。' },
       { q: 'Seedream 5和Z-Image有什么区别？', a: 'Seedream 5是基于参考图片进行编辑的Image Edit模型，Z-Image是从文字生成新图片的Text-to-Image模型。要修改现有图片用Seedream 5，要创建新图片用Z-Image。' },
-      { q: 'AI图片生成费用是多少？', a: '注册时免费获得15积分。Seedream 5为2~3积分，Z-Image为1积分，FLUX.2 Pro为基础1积分/高画质2积分，Grok Imagine Image为1积分。' },
+      { q: 'Nano Banana 2是什么模型？', a: 'Nano Banana 2是Google开发的AI图片生成模型。可以通过文字提示生成图片，也可以利用参考图片进行编辑。支持1K标准画质（2积分）和4K高画质（6积分）选项。' },
+      { q: 'AI图片生成费用是多少？', a: '注册时免费获得20积分。Seedream 5为2~3积分，Z-Image为1积分，FLUX.2 Pro为基础1积分/高画质2积分，Grok Imagine Image为1积分，Nano Banana 2为标准2积分/高画质6积分。' },
       { q: '生成图片的版权归谁？', a: '在gwanggo上生成的所有AI图片的使用权归用户所有。可以自由用于广告、社交媒体、电商等商业目的。' },
-      { q: '与Midjourney、DALL-E等其他AI图片工具相比如何？', a: 'gwanggo支持Seedream 5、FLUX.2 Pro、Grok Imagine Image、Z-Image共4种AI模型。与Midjourney V7、DALL-E 3、Stable Diffusion 4、GPT Image、Ideogram 3.0、Adobe Firefly、Leonardo AI相比，更专注于广告图片制作。支持参考图片精确编辑，无需安装应用程序，可直接在浏览器中使用，且商业使用完全自由。' },
+      { q: '与Midjourney、DALL-E等其他AI图片工具相比如何？', a: 'gwanggo支持Seedream 5、FLUX.2 Pro、Grok Imagine Image、Z-Image、Nano Banana 2共5种AI模型。与Midjourney V7、DALL-E 3、Stable Diffusion 4、GPT Image、Ideogram 3.0、Adobe Firefly、Leonardo AI相比，更专注于广告图片制作。支持参考图片精确编辑，无需安装应用程序，可直接在浏览器中使用，且商业使用完全自由。' },
     ],
     otherToolTitle: '也试试AI视频生成',
     otherToolDesc: '使用Seedance 1.5 Pro、Kling 3.0、Grok Imagine Video、Wan 2.6、Vidu Q3生成高质量AI视频。',
     otherToolCta: '前往AI视频生成',
     pricingCta: '查看价格',
     bottomCta: '立即制作AI图片',
-    bottomCtaDesc: '注册即送15免费积分。4种AI模型生成高质量图片。',
+    bottomCtaDesc: '注册即送20免费积分。5种AI模型生成高质量图片。',
   },
 }
 
@@ -516,6 +557,14 @@ export default async function ImageToolPage({ params }: Props) {
                   ))}
                 </ul>
                 <p className="text-xs text-muted-foreground border-t border-border/50 pt-3">{model.specs}</p>
+                {modelSlugMap[model.name] && (
+                  <Link
+                    href={`/${locale}/tools/image/${modelSlugMap[model.name]}`}
+                    className="inline-flex items-center gap-1 mt-3 text-sm text-primary hover:text-primary/80 transition-colors"
+                  >
+                    {model.name} {locale === 'ko' ? '자세히 보기' : locale === 'ja' ? '詳しく見る' : locale === 'zh' ? '了解更多' : 'Learn more'} <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                )}
               </article>
             ))}
           </div>

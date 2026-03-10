@@ -26,6 +26,18 @@
  * - fal-grok-vid-t2v:xxx → FAL.ai (Grok Imagine Video T2V)
  * - fal-wan26-i2v:xxx → FAL.ai (Wan 2.6 I2V)
  * - fal-wan26-t2v:xxx → FAL.ai (Wan 2.6 T2V)
+ * - fal-veo31-t2v:xxx → FAL.ai (Veo 3.1 T2V)
+ * - fal-veo31-i2v:xxx → FAL.ai (Veo 3.1 I2V)
+ * - fal-hailuo02s-t2v:xxx → FAL.ai (Hailuo-02 Standard T2V)
+ * - fal-hailuo02s-i2v:xxx → FAL.ai (Hailuo-02 Standard I2V)
+ * - fal-hailuo02p-t2v:xxx → FAL.ai (Hailuo-02 Pro T2V)
+ * - fal-hailuo02p-i2v:xxx → FAL.ai (Hailuo-02 Pro I2V)
+ * - fal-ltx23-t2v:xxx → FAL.ai (LTX-2.3 T2V)
+ * - fal-ltx23-i2v:xxx → FAL.ai (LTX-2.3 I2V)
+ * - fal-kling3mcs:xxx → FAL.ai (Kling 3.0 Motion Control Standard)
+ * - fal-kling3mcp:xxx → FAL.ai (Kling 3.0 Motion Control Pro)
+ * - fal-nanobanana2:xxx → FAL.ai (Nano Banana 2 T2I)
+ * - fal-nanobanana2-edit:xxx → FAL.ai (Nano Banana 2 Edit)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -45,8 +57,14 @@ import {
   FLUX2_PRO_MODEL, GROK_IMAGE_MODEL,
   KLING3_STD_I2V_MODEL, KLING3_STD_T2V_MODEL,
   KLING3_PRO_I2V_MODEL, KLING3_PRO_T2V_MODEL,
+  KLING3_MC_STD_MODEL, KLING3_MC_PRO_MODEL,
   GROK_VIDEO_I2V_MODEL, GROK_VIDEO_T2V_MODEL,
   WAN26_I2V_MODEL, WAN26_T2V_MODEL,
+  VEO31_MODEL,
+  HAILUO02_PRO_I2V_MODEL, HAILUO02_PRO_T2V_MODEL,
+  HAILUO02_STD_I2V_MODEL, HAILUO02_STD_T2V_MODEL,
+  LTX23_T2V_MODEL, LTX23_I2V_MODEL,
+  NANO_BANANA2_MODEL, NANO_BANANA2_EDIT_MODEL,
 } from '@/lib/fal/client'
 
 // ============================================================
@@ -245,6 +263,26 @@ async function getProviderStatus(providerTaskId: string): Promise<StatusResult> 
       return { status: statusResult.status }
     }
 
+    // Kling 3.0 Motion Control Standard
+    case 'fal-kling3mcs': {
+      const statusResult = await getFalQueueStatus(KLING3_MC_STD_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(KLING3_MC_STD_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.video?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    // Kling 3.0 Motion Control Pro
+    case 'fal-kling3mcp': {
+      const statusResult = await getFalQueueStatus(KLING3_MC_PRO_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(KLING3_MC_PRO_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.video?.url }
+      }
+      return { status: statusResult.status }
+    }
+
     // Grok Imagine Video (영상) - I2V/T2V 명시적 prefix
     case 'fal-grok-vid-i2v': {
       const statusResult = await getFalQueueStatus(GROK_VIDEO_I2V_MODEL, taskId)
@@ -279,6 +317,93 @@ async function getProviderStatus(providerTaskId: string): Promise<StatusResult> 
       if (statusResult.status === 'COMPLETED') {
         const response = await getFalQueueResult(WAN26_T2V_MODEL, taskId)
         return { status: 'COMPLETED', resultUrl: response.video?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    // Veo 3.1 (영상)
+    case 'fal-veo31-t2v':
+    case 'fal-veo31-i2v': {
+      const statusResult = await getFalQueueStatus(VEO31_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(VEO31_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.video?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    // Hailuo-02 Standard (영상)
+    case 'fal-hailuo02s-i2v': {
+      const statusResult = await getFalQueueStatus(HAILUO02_STD_I2V_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(HAILUO02_STD_I2V_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.video?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    case 'fal-hailuo02s-t2v': {
+      const statusResult = await getFalQueueStatus(HAILUO02_STD_T2V_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(HAILUO02_STD_T2V_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.video?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    // Hailuo-02 Pro (영상)
+    case 'fal-hailuo02p-i2v': {
+      const statusResult = await getFalQueueStatus(HAILUO02_PRO_I2V_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(HAILUO02_PRO_I2V_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.video?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    case 'fal-hailuo02p-t2v': {
+      const statusResult = await getFalQueueStatus(HAILUO02_PRO_T2V_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(HAILUO02_PRO_T2V_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.video?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    // LTX-2.3 (영상)
+    case 'fal-ltx23-t2v': {
+      const statusResult = await getFalQueueStatus(LTX23_T2V_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(LTX23_T2V_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.video?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    case 'fal-ltx23-i2v': {
+      const statusResult = await getFalQueueStatus(LTX23_I2V_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(LTX23_I2V_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.video?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    // Nano Banana 2 (이미지)
+    case 'fal-nanobanana2': {
+      const statusResult = await getFalQueueStatus(NANO_BANANA2_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(NANO_BANANA2_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.images?.[0]?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    case 'fal-nanobanana2-edit': {
+      const statusResult = await getFalQueueStatus(NANO_BANANA2_EDIT_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(NANO_BANANA2_EDIT_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.images?.[0]?.url }
       }
       return { status: statusResult.status }
     }

@@ -3,37 +3,39 @@
 import { useState, useMemo } from 'react'
 import { Sparkles } from 'lucide-react'
 import ImageDropzone from '../image-dropzone'
-import { GROK_VIDEO_CREDIT_PER_SECOND } from '@/lib/credits/constants'
+import { VEO31_CREDIT_PER_SECOND } from '@/lib/credits/constants'
 import { useLanguage } from '@/contexts/language-context'
 
-const RESOLUTIONS = ['480p', '720p'] as const
-const DURATIONS = [4, 6, 10, 15] as const
-const ASPECT_RATIOS = ['16:9', '9:16', '1:1'] as const
+const ASPECT_RATIOS = ['16:9', '9:16'] as const
+const RESOLUTIONS = ['720p', '1080p'] as const
+const DURATIONS = [4, 6, 8] as const
 
-interface GrokVideoFormProps {
+interface Veo31FormProps {
   onSubmit: (data: {
-    model: 'grok-video'
+    model: 'veo-3.1'
     prompt: string
     imageUrl?: string
     duration: number
     resolution: typeof RESOLUTIONS[number]
-    aspectRatio?: typeof ASPECT_RATIOS[number]
+    aspectRatio: typeof ASPECT_RATIOS[number]
+    generateAudio?: boolean
   }) => void
   isGenerating: boolean
 }
 
-export default function GrokVideoForm({ onSubmit, isGenerating }: GrokVideoFormProps) {
+export default function Veo31Form({ onSubmit, isGenerating }: Veo31FormProps) {
   const { t } = useLanguage()
   const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
 
   const [prompt, setPrompt] = useState('')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
-  const [resolution, setResolution] = useState<typeof RESOLUTIONS[number]>('480p')
-  const [duration, setDuration] = useState<typeof DURATIONS[number]>(6)
   const [aspectRatio, setAspectRatio] = useState<typeof ASPECT_RATIOS[number]>('16:9')
+  const [resolution, setResolution] = useState<typeof RESOLUTIONS[number]>('720p')
+  const [duration, setDuration] = useState<typeof DURATIONS[number]>(4)
+  const [generateAudio, setGenerateAudio] = useState(false)
 
   const estimatedCredits = useMemo(() => {
-    return GROK_VIDEO_CREDIT_PER_SECOND[resolution] * duration
+    return VEO31_CREDIT_PER_SECOND[resolution] * duration
   }, [resolution, duration])
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -41,12 +43,13 @@ export default function GrokVideoForm({ onSubmit, isGenerating }: GrokVideoFormP
     if (!prompt.trim()) return
 
     onSubmit({
-      model: 'grok-video',
+      model: 'veo-3.1',
       prompt: prompt.trim(),
       ...(imageUrl && { imageUrl }),
       duration,
       resolution,
       aspectRatio,
+      ...(generateAudio && { generateAudio }),
     })
   }
 
@@ -79,14 +82,14 @@ export default function GrokVideoForm({ onSubmit, isGenerating }: GrokVideoFormP
         <label className="text-sm font-medium text-foreground">
           {aiToolsT.aspectRatio || '화면 비율'}
         </label>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {ASPECT_RATIOS.map((ratio) => (
             <button
               key={ratio}
               type="button"
               onClick={() => setAspectRatio(ratio)}
               disabled={isGenerating}
-              className={`flex-1 px-3 py-1.5 text-sm rounded-lg transition-colors ${
+              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                 aspectRatio === ratio
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
@@ -145,6 +148,23 @@ export default function GrokVideoForm({ onSubmit, isGenerating }: GrokVideoFormP
             ))}
           </div>
         </div>
+      </div>
+
+      {/* 오디오 생성 옵션 */}
+      <div className="flex items-center gap-3">
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={generateAudio}
+            onChange={(e) => setGenerateAudio(e.target.checked)}
+            disabled={isGenerating}
+            className="sr-only peer"
+          />
+          <div className="w-9 h-5 bg-secondary/80 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/40 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+        </label>
+        <span className="text-sm text-muted-foreground">
+          {aiToolsT.generateAudio || '오디오 포함 생성'}
+        </span>
       </div>
 
       {/* 생성 버튼 */}

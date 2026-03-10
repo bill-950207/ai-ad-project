@@ -8,7 +8,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { ClarityScript } from "@/components/analytics/clarity";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { PostHogProvider } from "@/components/analytics/posthog-provider";
-import { getOrganizationJsonLd } from "@/lib/i18n/seo";
+import { getOrganizationJsonLd, getWebSiteJsonLd } from "@/lib/i18n/seo";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -43,6 +43,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const organizationJsonLd = getOrganizationJsonLd(siteUrl);
+  const webSiteJsonLd = getWebSiteJsonLd(siteUrl);
 
   return (
     <html lang="ko" suppressHydrationWarning>
@@ -50,6 +51,10 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteJsonLd) }}
         />
       </head>
       <body className={inter.className}>
