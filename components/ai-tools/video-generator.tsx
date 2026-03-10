@@ -106,7 +106,7 @@ export default function VideoGenerator({ initialModel }: VideoGeneratorProps) {
       creatorColor: '#0052FF',
       comingSoon: true,
     },
-  ], [language, aiToolsT.modelDescTextImageToVideo, aiToolsT.modelDescKling3, aiToolsT.modelDescKling3Mc, aiToolsT.modelDescGrokVideo, aiToolsT.modelDescWan26, aiToolsT.modelDescImageToVideo, aiToolsT.modelDescVeo31, aiToolsT.modelDescHailuo02, aiToolsT.modelDescLtx23])
+  ], [language, aiToolsT.modelDescTextImageToVideo, aiToolsT.modelDescKling3, aiToolsT.modelDescKling3Mc, aiToolsT.modelDescGrokVideo, aiToolsT.modelDescWan26, aiToolsT.modelDescImageToVideo, aiToolsT.modelDescVeo31, aiToolsT.modelDescHailuo02, aiToolsT.modelDescLtx23, aiToolsT.modelDescSeedance2])
 
   const [selectedModel, setSelectedModel] = useState(initialModel || 'seedance-1.5-pro')
   const [isGenerating, setIsGenerating] = useState(false)
