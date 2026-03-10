@@ -2822,6 +2822,9 @@
     "modelDescVeo31": "Google AI 비디오 (오디오)",
     "modelDescHailuo02": "MiniMax AI 비디오",
     "modelDescLtx23": "Lightricks 오픈소스 비디오",
-    "modelDescNanoBanana2": "Google Gemini 이미지 (4K)"
+    "modelDescNanoBanana2": "Google Gemini 이미지 (4K)",
+    "modelDescRecraftV4": "프로페셔널 디자인 이미지",
+    "modelDescQwenImage2": "Alibaba AI 이미지 (편집)",
+    "modelDescFluxKontext": "컨텍스트 기반 이미지 편집"
   }
 }

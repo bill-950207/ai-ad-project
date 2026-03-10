@@ -2101,3 +2101,136 @@ export async function submitNanoBanana2EditToQueue(input: NanoBanana2EditInput):
 
 export const NANO_BANANA2_MODEL = NANO_BANANA2_MODEL_ID
 export const NANO_BANANA2_EDIT_MODEL = NANO_BANANA2_EDIT_MODEL_ID
+
+// ============================================================
+// Recraft V4 (이미지 생성)
+// ============================================================
+
+const RECRAFT_V4_MODEL_ID = 'fal-ai/recraft/v4/pro/text-to-image'
+export const RECRAFT_V4_MODEL = RECRAFT_V4_MODEL_ID
+
+export interface RecraftV4Input {
+  prompt: string
+  image_size?: string | { width: number; height: number }
+}
+
+export async function submitRecraftV4ToQueue(input: RecraftV4Input) {
+  const modelId = RECRAFT_V4_MODEL_ID
+
+  const falInput = {
+    prompt: input.prompt,
+    ...(input.image_size && { image_size: input.image_size }),
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(modelId as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${modelId}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${modelId}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${modelId}/requests/${request_id}/cancel`,
+  }
+}
+
+// ============================================================
+// Qwen Image 2.0 (이미지 생성 / 편집)
+// ============================================================
+
+const QWEN_IMAGE2_T2I_MODEL_ID = 'fal-ai/qwen-image-2/text-to-image'
+const QWEN_IMAGE2_EDIT_MODEL_ID = 'fal-ai/qwen-image-2/edit'
+export const QWEN_IMAGE2_T2I_MODEL = QWEN_IMAGE2_T2I_MODEL_ID
+export const QWEN_IMAGE2_EDIT_MODEL = QWEN_IMAGE2_EDIT_MODEL_ID
+
+export interface QwenImage2Input {
+  prompt: string
+  image_size?: string | { width: number; height: number }
+  num_images?: number
+}
+
+export interface QwenImage2EditInput {
+  prompt: string
+  image_urls: string[]
+  image_size?: string | { width: number; height: number }
+}
+
+export async function submitQwenImage2ToQueue(input: QwenImage2Input) {
+  const modelId = QWEN_IMAGE2_T2I_MODEL_ID
+
+  const falInput = {
+    prompt: input.prompt,
+    ...(input.image_size && { image_size: input.image_size }),
+    ...(input.num_images && { num_images: input.num_images }),
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(modelId as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${modelId}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${modelId}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${modelId}/requests/${request_id}/cancel`,
+  }
+}
+
+export async function submitQwenImage2EditToQueue(input: QwenImage2EditInput) {
+  const modelId = QWEN_IMAGE2_EDIT_MODEL_ID
+
+  const falInput = {
+    prompt: input.prompt,
+    image_urls: input.image_urls,
+    ...(input.image_size && { image_size: input.image_size }),
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(modelId as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${modelId}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${modelId}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${modelId}/requests/${request_id}/cancel`,
+  }
+}
+
+// ============================================================
+// FLUX Kontext (이미지 편집 / 생성)
+// ============================================================
+
+const FLUX_KONTEXT_MODEL_ID = 'fal-ai/flux-pro/kontext'
+export const FLUX_KONTEXT_MODEL = FLUX_KONTEXT_MODEL_ID
+
+export interface FluxKontextInput {
+  prompt: string
+  image_url?: string
+  aspect_ratio?: string
+}
+
+export async function submitFluxKontextToQueue(input: FluxKontextInput) {
+  const modelId = FLUX_KONTEXT_MODEL_ID
+
+  const falInput = {
+    prompt: input.prompt,
+    ...(input.image_url && { image_url: input.image_url }),
+    ...(input.aspect_ratio && { aspect_ratio: input.aspect_ratio }),
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(modelId as any, {
+    input: falInput,
+  })
+
+  return {
+    request_id,
+    response_url: `https://queue.fal.run/${modelId}/requests/${request_id}`,
+    status_url: `https://queue.fal.run/${modelId}/requests/${request_id}/status`,
+    cancel_url: `https://queue.fal.run/${modelId}/requests/${request_id}/cancel`,
+  }
+}

@@ -38,6 +38,11 @@
  * - fal-kling3mcp:xxx → FAL.ai (Kling 3.0 Motion Control Pro)
  * - fal-nanobanana2:xxx → FAL.ai (Nano Banana 2 T2I)
  * - fal-nanobanana2-edit:xxx → FAL.ai (Nano Banana 2 Edit)
+ * - fal-recraft4:xxx → FAL.ai (Recraft V4)
+ * - fal-qwen2:xxx → FAL.ai (Qwen Image 2.0 T2I)
+ * - fal-qwen2-edit:xxx → FAL.ai (Qwen Image 2.0 Edit)
+ * - fal-fluxkontext:xxx → FAL.ai (FLUX Kontext T2I)
+ * - fal-fluxkontext-edit:xxx → FAL.ai (FLUX Kontext Edit)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -65,6 +70,9 @@ import {
   HAILUO02_STD_I2V_MODEL, HAILUO02_STD_T2V_MODEL,
   LTX23_T2V_MODEL, LTX23_I2V_MODEL,
   NANO_BANANA2_MODEL, NANO_BANANA2_EDIT_MODEL,
+  RECRAFT_V4_MODEL,
+  QWEN_IMAGE2_T2I_MODEL, QWEN_IMAGE2_EDIT_MODEL,
+  FLUX_KONTEXT_MODEL,
 } from '@/lib/fal/client'
 
 // ============================================================
@@ -403,6 +411,46 @@ async function getProviderStatus(providerTaskId: string): Promise<StatusResult> 
       const statusResult = await getFalQueueStatus(NANO_BANANA2_EDIT_MODEL, taskId)
       if (statusResult.status === 'COMPLETED') {
         const response = await getFalQueueResult(NANO_BANANA2_EDIT_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.images?.[0]?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    // Recraft V4 (이미지)
+    case 'fal-recraft4': {
+      const statusResult = await getFalQueueStatus(RECRAFT_V4_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(RECRAFT_V4_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.images?.[0]?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    // Qwen Image 2.0 (이미지)
+    case 'fal-qwen2': {
+      const statusResult = await getFalQueueStatus(QWEN_IMAGE2_T2I_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(QWEN_IMAGE2_T2I_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.images?.[0]?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    case 'fal-qwen2-edit': {
+      const statusResult = await getFalQueueStatus(QWEN_IMAGE2_EDIT_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(QWEN_IMAGE2_EDIT_MODEL, taskId)
+        return { status: 'COMPLETED', resultUrl: response.images?.[0]?.url }
+      }
+      return { status: statusResult.status }
+    }
+
+    // FLUX Kontext (이미지)
+    case 'fal-fluxkontext':
+    case 'fal-fluxkontext-edit': {
+      const statusResult = await getFalQueueStatus(FLUX_KONTEXT_MODEL, taskId)
+      if (statusResult.status === 'COMPLETED') {
+        const response = await getFalQueueResult(FLUX_KONTEXT_MODEL, taskId)
         return { status: 'COMPLETED', resultUrl: response.images?.[0]?.url }
       }
       return { status: statusResult.status }
