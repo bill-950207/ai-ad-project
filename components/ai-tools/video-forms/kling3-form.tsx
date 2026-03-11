@@ -97,7 +97,7 @@ export default function Kling3Form({ onSubmit, isGenerating }: Kling3FormProps) 
                   : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
               }`}
             >
-              {t === 'standard' ? 'Standard' : 'Pro'}
+              {t === 'standard' ? (aiToolsT.tierStandard || 'Standard') : (aiToolsT.tierPro || 'Pro')}
               <span className="ml-1 text-xs opacity-70">
                 ({t === 'pro'
                   ? `${KLING3_PRO_CREDIT_PER_SECOND['720p']}/${aiToolsT.perSecond || '초'}`

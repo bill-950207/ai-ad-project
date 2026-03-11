@@ -112,7 +112,7 @@ export default function NanoBanana2Form({ onSubmit, isGenerating }: NanoBanana2F
                     : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
                 }`}
               >
-                {q === 'basic' ? 'Basic (1K)' : 'High (4K)'}
+                {q === 'basic' ? (aiToolsT.qualityBasic1K || 'Basic (1K)') : (aiToolsT.qualityHigh4K || 'High (4K)')}
               </button>
             ))}
           </div>

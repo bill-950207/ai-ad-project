@@ -26,7 +26,7 @@ export default function GenerationResult({ generationId, type, onComplete, onErr
 
     try {
       const res = await fetch(`/api/ai-tools/status/${generationId}`)
-      if (!res.ok) throw new Error('상태 조회 실패')
+      if (!res.ok) throw new Error('Status check failed')
 
       const data = await res.json()
       setStatus(data.status)
@@ -35,7 +35,7 @@ export default function GenerationResult({ generationId, type, onComplete, onErr
         setResultUrl(data.resultUrl)
         onComplete?.()
       } else if (data.status === 'FAILED') {
-        setError(data.error || '생성에 실패했습니다')
+        setError(data.error || (aiToolsT.generationFailedRetry || '생성에 실패했습니다. 다시 시도해주세요.'))
         onError?.()
       }
     } catch {
@@ -106,7 +106,7 @@ export default function GenerationResult({ generationId, type, onComplete, onErr
           ) : (
             <img
               src={resultUrl}
-              alt="Generated"
+              alt={aiToolsT.generatedAlt || 'Generated'}
               className="w-full rounded-xl bg-black/20"
             />
           )}
@@ -131,7 +131,7 @@ export default function GenerationResult({ generationId, type, onComplete, onErr
         <div className="p-4">
           <div className="flex items-center gap-2 text-sm text-red-400">
             <RotateCcw className="w-4 h-4" />
-            <span>{error || '생성에 실패했습니다. 다시 시도해주세요.'}</span>
+            <span>{error || (aiToolsT.generationFailedRetry || '생성에 실패했습니다. 다시 시도해주세요.')}</span>
           </div>
         </div>
       )}

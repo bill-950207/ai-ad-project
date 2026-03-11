@@ -97,7 +97,7 @@ export default function Hailuo02Form({ onSubmit, isGenerating }: Hailuo02FormPro
                   : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
               }`}
             >
-              {t === 'standard' ? `Standard (${TIER_RESOLUTION.standard})` : `Pro (${TIER_RESOLUTION.pro})`}
+              {t === 'standard' ? `${aiToolsT.tierStandard || 'Standard'} (${TIER_RESOLUTION.standard})` : `${aiToolsT.tierPro || 'Pro'} (${TIER_RESOLUTION.pro})`}
             </button>
           ))}
         </div>

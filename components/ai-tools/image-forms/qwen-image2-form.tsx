@@ -112,7 +112,7 @@ export default function QwenImage2Form({ onSubmit, isGenerating }: QwenImage2For
                     : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
                 }`}
               >
-                {q === 'basic' ? 'Basic' : 'Pro'}
+                {q === 'basic' ? (aiToolsT.qualityBasic || 'Basic') : (aiToolsT.qualityPro || 'Pro')}
               </button>
             ))}
           </div>

@@ -109,7 +109,7 @@ export default function Flux2ProForm({ onSubmit, isGenerating }: Flux2ProFormPro
                   : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
               }`}
             >
-              {q === 'basic' ? (aiToolsT.qualityBasic || 'Basic') : (aiToolsT.qualityHigh || 'High')}
+              {q === 'basic' ? (aiToolsT.qualityBasic || '기본') : (aiToolsT.qualityHigh || '고화질')}
             </button>
           ))}
         </div>

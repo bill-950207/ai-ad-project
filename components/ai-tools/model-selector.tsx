@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useLanguage } from '@/contexts/language-context'
 
 interface Model {
   id: string
@@ -36,6 +37,9 @@ function CreatorLogo({ creator, color }: { creator: string; color: string }) {
 }
 
 export default function ModelSelector({ models, selectedModel, onSelect }: ModelSelectorProps) {
+  const { t } = useLanguage()
+  const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
+
   return (
     <div
       className="flex gap-3 px-1 py-1 overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
@@ -55,7 +59,7 @@ export default function ModelSelector({ models, selectedModel, onSelect }: Model
             <div className="text-[10px] opacity-50 leading-tight">{model.description}</div>
             {model.comingSoon && (
               <div className="mt-0.5 px-1.5 py-0.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[9px] font-semibold rounded-full leading-none">
-                COMING SOON
+                {aiToolsT.comingSoon || 'Coming Soon'}
               </div>
             )}
           </>
