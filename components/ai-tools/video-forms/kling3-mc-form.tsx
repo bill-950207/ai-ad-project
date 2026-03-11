@@ -140,7 +140,7 @@ export default function Kling3McForm({ onSubmit, isGenerating }: Kling3McFormPro
                     : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
                 }`}
               >
-                {t === 'standard' ? 'Standard' : 'Pro'}
+                {t === 'standard' ? (aiToolsT.tierStandard || 'Standard') : (aiToolsT.tierPro || 'Pro')}
               </button>
             ))}
           </div>

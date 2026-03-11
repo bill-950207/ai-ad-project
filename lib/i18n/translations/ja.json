@@ -2848,6 +2848,8 @@
     "qualityBasic1K": "標準 (1K)",
     "qualityHigh4K": "高画質 (4K)",
     "qualityPro": "プロ",
-    "generatedAlt": "生成された画像"
+    "generatedAlt": "生成された画像",
+    "tierStandard": "Standard",
+    "tierPro": "Pro"
   }
 }

@@ -2848,6 +2848,8 @@
     "qualityBasic1K": "标准 (1K)",
     "qualityHigh4K": "高清 (4K)",
     "qualityPro": "专业",
-    "generatedAlt": "生成的图片"
+    "generatedAlt": "生成的图片",
+    "tierStandard": "Standard",
+    "tierPro": "Pro"
   }
 }

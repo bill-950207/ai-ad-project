@@ -2848,6 +2848,8 @@
     "qualityBasic1K": "기본 (1K)",
     "qualityHigh4K": "고화질 (4K)",
     "qualityPro": "프로",
-    "generatedAlt": "생성된 이미지"
+    "generatedAlt": "생성된 이미지",
+    "tierStandard": "Standard",
+    "tierPro": "Pro"
   }
 }
