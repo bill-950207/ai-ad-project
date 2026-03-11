@@ -315,7 +315,9 @@ export default function GenerationHistory({
             }}
           >
             {/* Thumbnail / Progress */}
-            <div className="relative aspect-video bg-secondary/20">
+            <div className={`relative bg-secondary/20 ${
+              activeStatus === 'COMPLETED' && activeResultUrl ? 'aspect-video' : 'aspect-[4/3]'
+            }`}>
               {activeStatus === 'COMPLETED' && activeResultUrl ? (
                 type === 'video' ? (
                   <video
@@ -416,7 +418,9 @@ export default function GenerationHistory({
               }`}
             >
               {/* Thumbnail / Preview */}
-              <div className="relative aspect-video bg-secondary/20 overflow-hidden">
+              <div className={`relative bg-secondary/20 overflow-hidden ${
+                item.status === 'COMPLETED' && item.result_url ? 'aspect-video' : 'aspect-[4/3]'
+              }`}>
                 {item.status === 'COMPLETED' && item.result_url ? (
                   type === 'video' ? (
                     <video
