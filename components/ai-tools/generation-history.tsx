@@ -223,7 +223,7 @@ export default function GenerationHistory({
     'seedance-1.5-pro': 'Seedance 1.5 Pro',
     'vidu-q3': 'Vidu Q3',
     'kling-3': 'Kling 3.0',
-    'kling-3-mc': 'Kling 3.0 MC',
+    'kling-3-mc': 'Kling 3.0 Motion Control',
     'grok-video': 'Grok Video',
     'wan-2.6': 'Wan 2.6',
     'veo-3.1': 'Veo 3.1',
