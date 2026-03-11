@@ -2850,6 +2850,8 @@
     "qualityPro": "Pro",
     "generatedAlt": "Generated image",
     "tierStandard": "Standard",
-    "tierPro": "Pro"
+    "tierPro": "Pro",
+    "noHistoryImageHint": "Select a model and create your first image",
+    "noHistoryVideoHint": "Select a model and create your first video"
   }
 }

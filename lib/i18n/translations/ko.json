@@ -2850,6 +2850,8 @@
     "qualityPro": "프로",
     "generatedAlt": "생성된 이미지",
     "tierStandard": "Standard",
-    "tierPro": "Pro"
+    "tierPro": "Pro",
+    "noHistoryImageHint": "모델을 선택하고 이미지를 생성해보세요",
+    "noHistoryVideoHint": "모델을 선택하고 영상을 생성해보세요"
   }
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Loader2, CheckCircle, XCircle, Download, RotateCcw } from 'lucide-react'
+import { Loader2, CheckCircle, XCircle, Download, RotateCcw, Sparkles } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 
 interface GenerationResultProps {
@@ -50,10 +50,8 @@ export default function GenerationResult({ generationId, type, onComplete, onErr
     setResultUrl(null)
     setError(null)
 
-    // Initial poll
     pollStatus()
 
-    // Set up polling interval
     const interval = setInterval(() => {
       pollStatus()
     }, 3000)
@@ -61,7 +59,6 @@ export default function GenerationResult({ generationId, type, onComplete, onErr
     return () => clearInterval(interval)
   }, [generationId, pollStatus])
 
-  // Stop polling when complete or failed
   useEffect(() => {
     if (status === 'COMPLETED' || status === 'FAILED') {
       // Polling will stop as the effect cleanup runs
@@ -81,12 +78,24 @@ export default function GenerationResult({ generationId, type, onComplete, onErr
   const isProcessing = status === 'PENDING' || status === 'IN_QUEUE' || status === 'IN_PROGRESS'
 
   return (
-    <div className="bg-card border border-border/80 rounded-2xl overflow-hidden">
+    <div className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm">
       {/* Status Header */}
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-border/50">
-        {isProcessing && <Loader2 className="w-5 h-5 text-primary animate-spin" />}
-        {status === 'COMPLETED' && <CheckCircle className="w-5 h-5 text-green-500" />}
-        {status === 'FAILED' && <XCircle className="w-5 h-5 text-red-500" />}
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-border/40">
+        {isProcessing && (
+          <div className="relative">
+            <Loader2 className="w-5 h-5 text-primary animate-spin" />
+          </div>
+        )}
+        {status === 'COMPLETED' && (
+          <div className="w-5 h-5 rounded-full bg-green-500/10 flex items-center justify-center">
+            <CheckCircle className="w-4 h-4 text-green-500" />
+          </div>
+        )}
+        {status === 'FAILED' && (
+          <div className="w-5 h-5 rounded-full bg-red-500/10 flex items-center justify-center">
+            <XCircle className="w-4 h-4 text-red-500" />
+          </div>
+        )}
         <span className="text-sm font-medium text-foreground">
           {statusMessages[status]}
         </span>
@@ -101,13 +110,13 @@ export default function GenerationResult({ generationId, type, onComplete, onErr
               controls
               autoPlay
               loop
-              className="w-full rounded-xl bg-black/20"
+              className="w-full rounded-xl bg-black/10"
             />
           ) : (
             <img
               src={resultUrl}
               alt={aiToolsT.generatedAlt || 'Generated'}
-              className="w-full rounded-xl bg-black/20"
+              className="w-full rounded-xl bg-black/10"
             />
           )}
 
@@ -117,7 +126,7 @@ export default function GenerationResult({ generationId, type, onComplete, onErr
               download
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/80 text-foreground text-sm rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 bg-secondary/60 hover:bg-secondary text-foreground text-sm font-medium rounded-xl transition-colors"
             >
               <Download className="w-4 h-4" />
               {aiToolsT.download || '다운로드'}
@@ -129,8 +138,8 @@ export default function GenerationResult({ generationId, type, onComplete, onErr
       {/* Error */}
       {status === 'FAILED' && (
         <div className="p-4">
-          <div className="flex items-center gap-2 text-sm text-red-400">
-            <RotateCcw className="w-4 h-4" />
+          <div className="flex items-center gap-2.5 text-sm text-red-400">
+            <RotateCcw className="w-4 h-4 shrink-0" />
             <span>{error || (aiToolsT.generationFailedRetry || '생성에 실패했습니다. 다시 시도해주세요.')}</span>
           </div>
         </div>
@@ -139,8 +148,20 @@ export default function GenerationResult({ generationId, type, onComplete, onErr
       {/* Progress indicator */}
       {isProcessing && (
         <div className="px-5 py-4">
-          <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
-            <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
+          <div className="w-full h-1.5 bg-secondary/50 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-primary/80 via-primary to-primary/80"
+              style={{
+                width: status === 'IN_PROGRESS' ? '70%' : status === 'IN_QUEUE' ? '30%' : '10%',
+                transition: 'width 1s ease-in-out',
+              }}
+            />
+          </div>
+          <div className="flex items-center gap-1.5 mt-2">
+            <Sparkles className="w-3 h-3 text-primary/50" />
+            <span className="text-[10px] text-muted-foreground/60">
+              {type === 'image' ? 'AI is creating your image...' : 'AI is generating your video...'}
+            </span>
           </div>
         </div>
       )}

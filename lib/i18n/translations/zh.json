@@ -2850,6 +2850,8 @@
     "qualityPro": "专业",
     "generatedAlt": "生成的图片",
     "tierStandard": "Standard",
-    "tierPro": "Pro"
+    "tierPro": "Pro",
+    "noHistoryImageHint": "选择模型并创建你的第一张图片",
+    "noHistoryVideoHint": "选择模型并创建你的第一个视频"
   }
 }

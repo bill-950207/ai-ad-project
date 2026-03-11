@@ -162,7 +162,7 @@ export default function ImageGenerator({ initialModel }: ImageGeneratorProps) {
           />
 
           {/* Form */}
-          <div className="bg-card border border-border/80 rounded-2xl p-5">
+          <div className="bg-card border border-border/50 rounded-2xl p-5 shadow-sm">
             {selectedModel === 'seedream-5' ? (
               <SeedreamForm
                 onSubmit={handleSubmit}

@@ -180,7 +180,7 @@ export default function VideoGenerator({ initialModel }: VideoGeneratorProps) {
           />
 
           {/* Form */}
-          <div className="bg-card border border-border/80 rounded-2xl p-5">
+          <div className="bg-card border border-border/50 rounded-2xl p-5 shadow-sm">
             {selectedModel === 'seedance-1.5-pro' ? (
               <SeedanceForm
                 onSubmit={handleSubmit}
