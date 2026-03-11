@@ -44,7 +44,7 @@ export default function VideoGenerator({ initialModel }: VideoGeneratorProps) {
     },
     {
       id: 'kling-3-mc',
-      name: 'Kling 3.0 Motion Control',
+      name: 'Kling 3.0\nMotion Control',
       description: aiToolsT.modelDescKling3Mc || 'Motion Control Video',
       creator: 'Kuaishou',
       creatorColor: '#FF4906',

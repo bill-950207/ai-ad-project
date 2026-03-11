@@ -54,7 +54,7 @@ export default function ModelSelector({ models, selectedModel, onSelect }: Model
             {model.creator && model.creatorColor && (
               <CreatorLogo creator={model.creator} color={model.creatorColor} isSelected={isSelected} />
             )}
-            <div className={`font-semibold text-[11px] leading-tight tracking-tight transition-colors duration-200 ${
+            <div className={`font-semibold text-[11px] leading-tight tracking-tight whitespace-pre-line transition-colors duration-200 ${
               isSelected ? 'text-foreground' : ''
             }`}>
               {model.name}
