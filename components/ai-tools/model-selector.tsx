@@ -62,7 +62,7 @@ export default function ModelSelector({ models, selectedModel, onSelect }: Model
             {model.creator && (
               <div className="text-[10px] opacity-50 leading-tight">{model.creator}</div>
             )}
-            <div className={`text-[9px] leading-tight mt-auto transition-colors duration-200 ${
+            <div className={`text-[9px] leading-tight transition-colors duration-200 ${
               isSelected ? 'text-primary/70' : 'opacity-40'
             }`}>
               {model.description}
@@ -79,14 +79,14 @@ export default function ModelSelector({ models, selectedModel, onSelect }: Model
           return (
             <div
               key={model.id}
-              className="snap-start shrink-0 w-[116px] flex flex-col items-center gap-1.5 px-3 py-3.5 rounded-2xl text-center border border-dashed border-border/50 bg-secondary/10 text-muted-foreground opacity-60 cursor-default"
+              className="snap-start shrink-0 w-[116px] flex flex-col items-center gap-1 px-3 py-2.5 rounded-2xl text-center border border-dashed border-border/50 bg-secondary/10 text-muted-foreground opacity-60 cursor-default"
             >
               {cardContent}
             </div>
           )
         }
 
-        const cardClassName = `snap-start shrink-0 w-[116px] flex flex-col items-center gap-1.5 px-3 py-3.5 rounded-2xl text-center transition-all duration-300 cursor-pointer relative overflow-hidden ${
+        const cardClassName = `snap-start shrink-0 w-[116px] flex flex-col items-center gap-1 px-3 py-2.5 rounded-2xl text-center transition-all duration-300 cursor-pointer relative overflow-hidden ${
           isSelected
             ? 'bg-card text-foreground shadow-lg shadow-primary/10 border border-primary/50 scale-[1.02]'
             : 'bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground border border-transparent hover:border-border/50 hover:shadow-sm'
