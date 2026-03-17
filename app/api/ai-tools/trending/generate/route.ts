@@ -108,21 +108,11 @@ const COMPOSITE_PROMPT = 'Replace the person in @Image2 with the person from @Im
 
 async function detectCameraMotion(
   sourceFilePath: string,
-  sourceDuration: number,
 ): Promise<'video' | 'image'> {
   try {
-    // 시작, 중간, 끝 프레임 3장 추출
-    const times = [0, sourceDuration / 2, Math.max(0, sourceDuration - 0.5)]
-    const frames = await Promise.all(
-      times.map((t) => extractFrameFromFile(sourceFilePath, t))
-    )
-
-    const frameImages = await Promise.all(
-      frames.map(async (buf) => {
-        const b64 = buf.toString('base64')
-        return { inlineData: { mimeType: 'image/jpeg', data: b64 } }
-      })
-    )
+    // 영상 파일을 직접 Gemini에 입력
+    const videoBuffer = await fs.readFile(sourceFilePath)
+    const videoBase64 = videoBuffer.toString('base64')
 
     const genAI = getGenAI()
     const response = await genAI.models.generateContent({
@@ -130,8 +120,8 @@ async function detectCameraMotion(
       contents: [{
         role: 'user',
         parts: [
-          ...frameImages,
-          { text: 'These 3 images are frames from a video (start, middle, end). Determine if the CAMERA is moving (panning, tilting, zooming, tracking) or if the camera is FIXED and only the person/subject is moving. Reply ONLY "MOVING" if the camera moves, or "FIXED" if the camera stays still.' },
+          { inlineData: { mimeType: 'video/mp4', data: videoBase64 } },
+          { text: 'Watch this video. Determine if the CAMERA is moving (panning, tilting, zooming, tracking, dolly) or if the camera is FIXED/STATIC and only the person/subject is moving within the frame. Reply ONLY "MOVING" if the camera moves, or "FIXED" if the camera stays still.' },
         ],
       }],
     })
@@ -139,10 +129,10 @@ async function detectCameraMotion(
     const text = response.text?.trim().toUpperCase() || ''
     const isMoving = text.includes('MOVING')
     const orientation = isMoving ? 'video' : 'image'
-    console.log(`[Trending] Camera motion: ${text.substring(0, 20)} → character_orientation: ${orientation}`)
+    console.log(`[Trending] Camera motion: ${text.substring(0, 30)} → character_orientation: ${orientation}`)
     return orientation
   } catch (err) {
-    console.warn('[Trending] Camera motion detection failed, defaulting to video:', (err as Error).message?.substring(0, 50))
+    console.warn('[Trending] Camera motion detection failed, defaulting to video:', (err as Error).message?.substring(0, 80))
     return 'video'
   }
 }
@@ -332,9 +322,7 @@ export async function POST(request: NextRequest) {
       console.log(`[Trending] Source: ${sourceFilePath}, duration: ${sourceDuration.toFixed(1)}s`)
 
       // 카메라 움직임 분석 → character_orientation 자동 결정
-      const characterOrientation = sourceDuration > 0
-        ? await detectCameraMotion(sourceFilePath, sourceDuration)
-        : 'video'
+      const characterOrientation = await detectCameraMotion(sourceFilePath)
 
       // original 세그먼트는 즉시 등록
       for (let i = 0; i < body.segments.length; i++) {
