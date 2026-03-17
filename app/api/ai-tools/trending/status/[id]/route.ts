@@ -20,7 +20,7 @@ import {
   KLING3_MC_STD_MODEL,
   KLING3_MC_PRO_MODEL,
 } from '@/lib/fal/client'
-import { trimVideo, concatenateVideosWithReencode } from '@/lib/video/ffmpeg'
+import { trimVideo, concatenateVideosWithReencode, getVideoResolution } from '@/lib/video/ffmpeg'
 import { uploadBufferToR2 } from '@/lib/storage/r2'
 
 // ============================================================
@@ -233,10 +233,22 @@ export async function GET(
         }
       }
 
-      // FFmpeg로 모든 세그먼트 합치기 (재인코딩 — 코덱 호환)
+      // 원본 영상 해상도 감지 → 합성 시 동일 해상도 적용
+      let targetWidth = 720
+      let targetHeight = 1280
+      try {
+        const res = await getVideoResolution(inputParams.sourceVideoUrl)
+        targetWidth = res.width
+        targetHeight = res.height
+        console.log(`[Trending Composite] Source resolution: ${targetWidth}x${targetHeight}`)
+      } catch (e) {
+        console.warn('[Trending Composite] Failed to detect resolution, using default 720x1280:', e)
+      }
+
+      // FFmpeg로 모든 세그먼트 합치기 (재인코딩 — 원본 해상도에 맞춤)
       const finalBuffer = await concatenateVideosWithReencode(videoUrls, {
-        width: 720,
-        height: 1280,
+        width: targetWidth,
+        height: targetHeight,
         fps: 30,
         videoBitrate: '4000k',
       })

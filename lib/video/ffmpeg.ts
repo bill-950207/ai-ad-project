@@ -640,6 +640,44 @@ export async function normalizeAudioVolume(
 }
 
 /**
+ * 비디오 URL에서 해상도(width, height)를 감지합니다.
+ *
+ * @param videoUrl - 비디오 URL
+ * @returns { width, height }
+ */
+export async function getVideoResolution(videoUrl: string): Promise<{ width: number; height: number }> {
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'video-res-'))
+  const inputPath = path.join(tempDir, 'input.mp4')
+
+  try {
+    const response = await fetch(videoUrl)
+    if (!response.ok) throw new Error(`Failed to download video: ${response.status}`)
+    const arrayBuffer = await response.arrayBuffer()
+    await fs.writeFile(inputPath, Buffer.from(arrayBuffer))
+
+    return new Promise((resolve, reject) => {
+      execFile(
+        ffmpegInstaller.path,
+        ['-i', inputPath],
+        { timeout: 15000 },
+        (_err, _stdout, stderr) => {
+          const output = stderr || ''
+          // "Stream #0:0: Video: ... 1080x1920" 또는 "1920x1080" 패턴 매칭
+          const match = output.match(/Stream.*Video.*\s(\d{2,5})x(\d{2,5})/)
+          if (match) {
+            resolve({ width: parseInt(match[1], 10), height: parseInt(match[2], 10) })
+          } else {
+            reject(new Error('Could not determine video resolution'))
+          }
+        }
+      )
+    })
+  } finally {
+    try { await fs.rm(tempDir, { recursive: true, force: true }) } catch { /* 무시 */ }
+  }
+}
+
+/**
  * 미디어 파일의 길이(초)를 반환합니다.
  * ffmpeg를 사용하여 duration을 추출합니다 (ffprobe 불필요).
  */
