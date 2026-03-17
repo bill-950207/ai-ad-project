@@ -98,7 +98,7 @@ async function submitKlingI2IToQueue(input: {
 }
 
 // @Image1 = 인물 사진, @Image2 = 배경 프레임 (Kling O3 참조 문법)
-const COMPOSITE_PROMPT = 'Replace the person in @Image2 with the person from @Image1. Do not alter any other elements — keep the background, margins, spacing, and all surroundings exactly the same. If @Image2 has empty margins or borders, preserve them as-is. Match the output to the exact aspect ratio and composition of @Image2. Only swap the person, nothing else.'
+const COMPOSITE_PROMPT = 'Replace the person in @Image2 with the person from @Image1. The replacement must include the full appearance of the person from @Image1 — their face, body type, physique, clothing, and outfit. Do not keep the original person\'s body or clothes from @Image2. The person from @Image1 should appear exactly as they look in @Image1, placed in the same pose and position as the person in @Image2. Keep the background, margins, spacing, and all surroundings from @Image2 exactly the same. Match the output to the exact aspect ratio and composition of @Image2.'
 
 // ============================================================
 // LLM 이미지 검증 — 배경+인물이 올바르게 합성됐는지 확인
