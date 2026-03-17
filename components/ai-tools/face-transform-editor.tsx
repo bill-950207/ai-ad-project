@@ -518,54 +518,6 @@ export default function FaceTransformEditor() {
                     </div>
                   </div>
 
-                  {/* 세그먼트별 상태 카드 */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {segments.map((seg, i) => {
-                      const completed = (generationStatus?.completedSegments || 0) > i
-                      const current = (generationStatus?.completedSegments || 0) === i && generationStatus?.status === 'IN_PROGRESS'
-                      return (
-                        <div
-                          key={seg.id}
-                          className={cn(
-                            'p-2.5 rounded-xl border transition-all duration-500',
-                            completed
-                              ? 'border-emerald-500/30 bg-emerald-500/5'
-                              : current
-                              ? 'border-violet-500/40 bg-violet-500/5 animate-pulse'
-                              : 'border-white/[0.06] bg-white/[0.02]'
-                          )}
-                        >
-                          <div className="flex items-center gap-2 mb-1.5">
-                            {seg.targetImageUrl ? (
-                              <img src={seg.targetImageUrl} alt="" className="w-6 h-6 rounded object-cover" />
-                            ) : (
-                              <div className="w-6 h-6 rounded bg-white/10" />
-                            )}
-                            <div className="min-w-0 flex-1">
-                              <p className="text-[10px] font-medium text-white/70 truncate">{seg.targetPersonLabel || `대상 ${i + 1}`}</p>
-                              <p className="text-[9px] tabular-nums text-white/30">
-                                {Math.floor(seg.startTime)}s ~ {Math.floor(seg.endTime)}s
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {completed ? (
-                              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                            ) : current ? (
-                              <Loader2 className="w-3 h-3 text-violet-400 animate-spin" />
-                            ) : (
-                              <div className="w-3 h-3 rounded-full border border-white/20" />
-                            )}
-                            <span className={cn('text-[9px]',
-                              completed ? 'text-emerald-400/70' : current ? 'text-violet-400/70' : 'text-white/20'
-                            )}>
-                              {completed ? '완료' : current ? '진행 중' : '대기'}
-                            </span>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
                 </div>
               )}
             </div>
