@@ -129,7 +129,17 @@ async function verifyCompositeImage(
           { inlineData: { mimeType: personImg.mimeType, data: personImg.base64 } },
           { inlineData: { mimeType: frameImg.mimeType, data: frameImg.base64 } },
           { inlineData: { mimeType: resultImg.mimeType, data: resultImg.base64 } },
-          { text: 'Image 1 is the target person. Image 2 is the background frame. Image 3 is the result. Check if the result correctly shows the person from Image 1 placed in the background from Image 2. Reply ONLY "PASS" if the person and background are correctly composited, or "FAIL" if the person is wrong or the background is completely different.' },
+          { text: `Image 1 is the target person reference photo. Image 2 is the background frame from a video. Image 3 is the generated result.
+
+Strictly check ALL of the following:
+1. The person in Image 3 must look like a COMPLETE, NATURAL person — not just a face swap onto someone else's body. The body, clothing, skin tone, and proportions must belong to the person from Image 1, NOT the original person in Image 2.
+2. The background in Image 3 must match Image 2's background.
+3. There must be NO grotesque artifacts — no mismatched body parts, no face pasted onto a wrong body, no unnatural skin boundaries.
+
+Reply ONLY "PASS" or "FAIL".
+FAIL if: only the face was swapped but the body/clothing still belongs to the original person in Image 2. This is the most common failure mode.
+FAIL if: the result looks like a crude face-swap (face of person 1 on body of person 2).
+PASS only if: the entire person (face + body + clothing) naturally represents the person from Image 1.` },
         ],
       }],
     })
