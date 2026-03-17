@@ -201,9 +201,10 @@ export async function POST(request: NextRequest) {
           ),
         ])
 
-        // Seedream Edit: 대상 인물 사진 + 배경 프레임 → 합성 이미지
+        // Seedream Edit: 대상 인물 사진(image1) + 배경 프레임(image2) → 합성 이미지
+        // image_urls 순서: [0]=대상 인물, [1]=배경 프레임
         const editResult = await submitSeedreamEditToQueue({
-          prompt: '이 인물을 배경 장면에 자연스럽게 배치하세요. 배경의 조명과 원근감을 유지하세요. Place this person naturally in the background scene, maintaining the lighting and perspective of the background.',
+          prompt: 'Take the person from image 1 (the portrait/selfie photo) and place them into the scene shown in image 2 (the video frame background). Keep the exact background, lighting, and environment from image 2. The person from image 1 should appear naturally standing or posing in the scene of image 2. Do NOT change the background. Output a single photo of the person from image 1 in the environment of image 2.',
           image_urls: [seg.targetImageUrl!, frameUrl],
           aspect_ratio: '9:16',
           quality: 'basic',
