@@ -351,7 +351,8 @@
     "videoAd": "Video Ad",
     "aiTools": "AI Tools",
     "videoGeneration": "Video Generation",
-    "imageGeneration": "Image Generation"
+    "imageGeneration": "Image Generation",
+    "trendingTools": "Trending Tools"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -2852,6 +2853,32 @@
     "tierStandard": "Standard",
     "tierPro": "Pro",
     "noHistoryImageHint": "Select a model and create your first image",
-    "noHistoryVideoHint": "Select a model and create your first video"
+    "noHistoryVideoHint": "Select a model and create your first video",
+    "noHistoryTrendingHint": "Try out the trending tools",
+    "faceTransform": "Face Transform",
+    "modelDescFaceTransform": "AI Face Transform — Transform people in videos into someone else",
+    "faceTransformDesc1": "Upload a video and set transformation segments on the timeline.",
+    "faceTransformDesc2": "Assign different people's photos to each segment for multi-person transformation.",
+    "uploadSourceVideo": "Upload Source Video",
+    "uploadSourceVideoDesc": "Upload the video you want to transform",
+    "sourceVideo": "Source Video",
+    "targetPerson": "Target Person",
+    "targetImageRequired": "All transform segments need a target photo",
+    "addTransformSegment": "Add Transform Segment",
+    "transformSegments": "Transform Segments",
+    "segmentStart": "Start",
+    "segmentEnd": "End",
+    "segmentOverlap": "Overlaps with another segment. Please choose a different position.",
+    "minimumDuration": "Minimum 3 seconds of credits will be charged",
+    "compositing": "Compositing video...",
+    "segmentProgress": "Generating segments ({current}/{total})",
+    "openEditor": "Open Editor",
+    "backToList": "Go Back",
+    "optional": "Optional",
+    "faceTransformPromptPlaceholder": "Describe the transformation style...",
+    "generationComplete": "Generation Complete!",
+    "generationFailed": "Generation Failed",
+    "download": "Download",
+    "insufficientCredits": "Insufficient credits"
   }
 }

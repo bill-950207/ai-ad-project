@@ -351,7 +351,8 @@
     "videoAd": "영상 광고",
     "aiTools": "AI 도구",
     "videoGeneration": "영상 생성",
-    "imageGeneration": "이미지 생성"
+    "imageGeneration": "이미지 생성",
+    "trendingTools": "트렌딩 도구"
   },
   "dashboard": {
     "title": "대시보드",
@@ -2852,6 +2853,32 @@
     "tierStandard": "Standard",
     "tierPro": "Pro",
     "noHistoryImageHint": "모델을 선택하고 이미지를 생성해보세요",
-    "noHistoryVideoHint": "모델을 선택하고 영상을 생성해보세요"
+    "noHistoryVideoHint": "모델을 선택하고 영상을 생성해보세요",
+    "noHistoryTrendingHint": "트렌딩 도구를 사용해보세요",
+    "faceTransform": "얼굴 변환",
+    "modelDescFaceTransform": "AI 얼굴 변환 — 영상 속 인물을 다른 사람으로 변환",
+    "faceTransformDesc1": "원본 영상을 업로드하고, 타임라인에서 변환 구간을 설정하세요.",
+    "faceTransformDesc2": "각 구간마다 다른 사람의 사진을 지정하여 멀티 변환도 가능합니다.",
+    "uploadSourceVideo": "원본 영상 업로드",
+    "uploadSourceVideoDesc": "변환할 영상을 업로드하세요",
+    "sourceVideo": "원본 영상",
+    "targetPerson": "변환 대상",
+    "targetImageRequired": "모든 변환 구간에 대상 사진이 필요합니다",
+    "addTransformSegment": "변환 구간 추가",
+    "transformSegments": "변환 구간",
+    "segmentStart": "시작",
+    "segmentEnd": "종료",
+    "segmentOverlap": "다른 구간과 겹칩니다. 다른 위치를 선택하세요.",
+    "minimumDuration": "최소 3초 기준으로 크레딧이 소모됩니다",
+    "compositing": "영상 합성 중...",
+    "segmentProgress": "구간 생성 중 ({current}/{total})",
+    "openEditor": "에디터 열기",
+    "backToList": "돌아가기",
+    "optional": "선택",
+    "faceTransformPromptPlaceholder": "변환 스타일을 설명하세요...",
+    "generationComplete": "생성 완료!",
+    "generationFailed": "생성 실패",
+    "download": "다운로드",
+    "insufficientCredits": "크레딧이 부족합니다"
   }
 }

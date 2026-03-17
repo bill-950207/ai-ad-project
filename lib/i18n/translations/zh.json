@@ -351,7 +351,8 @@
     "videoAd": "视频广告",
     "aiTools": "AI工具",
     "videoGeneration": "视频生成",
-    "imageGeneration": "图片生成"
+    "imageGeneration": "图片生成",
+    "trendingTools": "热门工具"
   },
   "dashboard": {
     "title": "控制面板",
@@ -2852,6 +2853,32 @@
     "tierStandard": "Standard",
     "tierPro": "Pro",
     "noHistoryImageHint": "选择模型并创建你的第一张图片",
-    "noHistoryVideoHint": "选择模型并创建你的第一个视频"
+    "noHistoryVideoHint": "选择模型并创建你的第一个视频",
+    "noHistoryTrendingHint": "试试热门工具吧",
+    "faceTransform": "换脸",
+    "modelDescFaceTransform": "AI换脸 — 将视频中的人物转换为其他人",
+    "faceTransformDesc1": "上传视频并在时间线上设置转换区间。",
+    "faceTransformDesc2": "为每个区间指定不同人物的照片，支持多人转换。",
+    "uploadSourceVideo": "上传原始视频",
+    "uploadSourceVideoDesc": "上传你想要转换的视频",
+    "sourceVideo": "原始视频",
+    "targetPerson": "转换目标",
+    "targetImageRequired": "所有转换区间都需要目标照片",
+    "addTransformSegment": "添加转换区间",
+    "transformSegments": "转换区间",
+    "segmentStart": "开始",
+    "segmentEnd": "结束",
+    "segmentOverlap": "与其他区间重叠，请选择其他位置。",
+    "minimumDuration": "最低按3秒计算积分消耗",
+    "compositing": "视频合成中...",
+    "segmentProgress": "正在生成区间 ({current}/{total})",
+    "openEditor": "打开编辑器",
+    "backToList": "返回",
+    "optional": "可选",
+    "faceTransformPromptPlaceholder": "描述转换风格...",
+    "generationComplete": "生成完成！",
+    "generationFailed": "生成失败",
+    "download": "下载",
+    "insufficientCredits": "积分不足"
   }
 }

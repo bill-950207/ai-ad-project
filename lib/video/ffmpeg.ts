@@ -212,6 +212,72 @@ export async function concatenateVideosWithReencode(
 }
 
 /**
+ * 비디오 파일의 특정 구간을 트리밍합니다.
+ *
+ * @param videoUrl - 비디오 URL
+ * @param startTime - 시작 시간 (초)
+ * @param endTime - 끝 시간 (초)
+ * @returns 트리밍된 비디오 Buffer
+ */
+export async function trimVideo(
+  videoUrl: string,
+  startTime: number,
+  endTime: number
+): Promise<Buffer> {
+  console.log(`trimVideo: ${startTime}s ~ ${endTime}s from ${videoUrl.substring(0, 50)}...`)
+
+  if (startTime >= endTime) {
+    throw new Error('startTime must be less than endTime')
+  }
+
+  const duration = endTime - startTime
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'video-trim-'))
+  const inputPath = path.join(tempDir, 'input.mp4')
+  const outputPath = path.join(tempDir, 'output.mp4')
+
+  try {
+    // 1. 비디오 다운로드
+    const response = await fetch(videoUrl)
+    if (!response.ok) {
+      throw new Error(`Failed to download video: ${response.status}`)
+    }
+    const arrayBuffer = await response.arrayBuffer()
+    await fs.writeFile(inputPath, Buffer.from(arrayBuffer))
+
+    // 2. FFmpeg로 트리밍
+    await new Promise<void>((resolve, reject) => {
+      ffmpeg()
+        .input(inputPath)
+        .inputOptions([`-ss`, `${startTime}`])
+        .outputOptions([`-t`, `${duration}`, '-c', 'copy', '-movflags', '+faststart'])
+        .output(outputPath)
+        .on('start', (cmd: string) => {
+          console.log('FFmpeg video trim command:', cmd)
+        })
+        .on('end', () => {
+          console.log('Video trimming completed')
+          resolve()
+        })
+        .on('error', (err: Error) => {
+          console.error('FFmpeg video trim error:', err)
+          reject(err)
+        })
+        .run()
+    })
+
+    // 3. 결과 파일 읽기
+    const resultBuffer = await fs.readFile(outputPath)
+    return resultBuffer
+  } finally {
+    try {
+      await fs.rm(tempDir, { recursive: true, force: true })
+    } catch {
+      // 무시
+    }
+  }
+}
+
+/**
  * 오디오 파일의 특정 구간을 트리밍합니다.
  *
  * @param audioUrl - 오디오 URL

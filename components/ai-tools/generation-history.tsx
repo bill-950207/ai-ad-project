@@ -33,7 +33,7 @@ export interface ActiveGeneration {
 }
 
 interface GenerationHistoryProps {
-  type: 'video' | 'image'
+  type: 'video' | 'image' | 'trending'
   refreshTrigger?: number
   activeGeneration?: ActiveGeneration | null
   onActiveComplete?: () => void
@@ -115,7 +115,7 @@ export default function GenerationHistory({
 
   // Poll provider status for in-progress items, then refresh history
   const processingItemIds = items
-    .filter(item => ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(item.status))
+    .filter(item => ['PENDING', 'IN_QUEUE', 'IN_PROGRESS', 'COMPOSITING'].includes(item.status))
     .map(item => item.id)
 
   const processingIdsKey = processingItemIds.join(',')
@@ -125,10 +125,14 @@ export default function GenerationHistory({
 
     const ids = processingIdsKey.split(',')
 
+    const statusBaseUrl = type === 'trending'
+      ? '/api/ai-tools/trending/status'
+      : '/api/ai-tools/status'
+
     const pollAndRefresh = async () => {
       await Promise.all(
         ids.map(id =>
-          fetch(`/api/ai-tools/status/${id}`).catch(() => {})
+          fetch(`${statusBaseUrl}/${id}`).catch(() => {})
         )
       )
       fetchHistory()
@@ -157,7 +161,10 @@ export default function GenerationHistory({
     const poll = async () => {
       if (!active) return
       try {
-        const res = await fetch(`/api/ai-tools/status/${activeGeneration.id}`)
+        const activeStatusUrl = type === 'trending'
+          ? `/api/ai-tools/trending/status/${activeGeneration.id}`
+          : `/api/ai-tools/status/${activeGeneration.id}`
+        const res = await fetch(activeStatusUrl)
         if (!active) return
 
         if (!res.ok) {
@@ -238,6 +245,7 @@ export default function GenerationHistory({
     'recraft-v4': 'Recraft V4',
     'qwen-image-2': 'Qwen Image 2.0',
     'flux-kontext': 'FLUX Kontext',
+    'face-transform': '얼굴 변환',
   }
 
   const hasActiveGeneration = !!activeGeneration
@@ -272,6 +280,8 @@ export default function GenerationHistory({
         <p className="text-xs text-muted-foreground/60">
           {type === 'image'
             ? (aiToolsT.noHistoryImageHint || '모델을 선택하고 이미지를 생성해보세요')
+            : type === 'trending'
+            ? (aiToolsT.noHistoryTrendingHint || '트렌딩 도구를 사용해보세요')
             : (aiToolsT.noHistoryVideoHint || '모델을 선택하고 영상을 생성해보세요')}
         </p>
       </div>
@@ -404,7 +414,7 @@ export default function GenerationHistory({
         {/* History Items */}
         {items.filter(item => !activeGeneration || item.id !== activeGeneration.id).map((item) => {
           const refImgUrl = getReferenceImageUrl(item.input_params)
-          const isProcessing = ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(item.status)
+          const isProcessing = ['PENDING', 'IN_QUEUE', 'IN_PROGRESS', 'COMPOSITING'].includes(item.status)
           return (
             <div
               key={item.id}
