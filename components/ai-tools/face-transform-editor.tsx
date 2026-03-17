@@ -355,13 +355,10 @@ export default function FaceTransformEditor() {
   const isFailed = generationStatus?.status === 'FAILED'
   const isProcessing = isGenerating || isComplete || isFailed
 
-  // 완료 시 히스토리 페이지로 이동 (결과 팝업 자동 오픈)
+  // 완료 시 히스토리 페이지로 즉시 이동 (결과 팝업 자동 오픈)
   useEffect(() => {
     if (isComplete && generationStatus?.id) {
-      const timer = setTimeout(() => {
-        router.push(`/dashboard/ai-tools/${language}/trending?result=${generationStatus.id}`)
-      }, 1500) // 1.5초 딜레이 — "변환 완료!" 메시지 보여준 후 이동
-      return () => clearTimeout(timer)
+      router.push(`/dashboard/ai-tools/${language}/trending?result=${generationStatus.id}`)
     }
   }, [isComplete, generationStatus?.id, language, router])
 
