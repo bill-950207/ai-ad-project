@@ -78,22 +78,26 @@ const KLING_I2I_MODEL = 'fal-ai/kling-image/o3/image-to-image'
 
 async function submitKlingI2IToQueue(input: {
   prompt: string
-  image_url: string
-  image_size: { width: number; height: number }
+  image_urls: string[]  // [0]=인물 사진, [1]=배경 프레임
+  aspect_ratio?: string
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { request_id } = await fal.queue.submit(KLING_I2I_MODEL as any, {
     input: {
       prompt: input.prompt,
-      image_url: input.image_url,
-      image_size: input.image_size,
-      creativity: 0.5,
+      image_urls: input.image_urls,
+      resolution: '1K',
+      result_type: 'single',
+      num_images: 1,
+      aspect_ratio: input.aspect_ratio || 'auto',
+      output_format: 'png',
     },
   })
   return { request_id }
 }
 
-const COMPOSITE_PROMPT = 'Replace the person in image 2 with the person from image 1. Do not alter any other elements — keep the background, margins, spacing, and all surroundings exactly the same. If image 2 has empty margins or borders, preserve them as-is. Match the output to the exact aspect ratio and composition of image 2. Only swap the person, nothing else.'
+// @Image1 = 인물 사진, @Image2 = 배경 프레임 (Kling O3 참조 문법)
+const COMPOSITE_PROMPT = 'Replace the person in @Image2 with the person from @Image1. Do not alter any other elements — keep the background, margins, spacing, and all surroundings exactly the same. If @Image2 has empty margins or borders, preserve them as-is. Match the output to the exact aspect ratio and composition of @Image2. Only swap the person, nothing else.'
 
 // ============================================================
 // API 핸들러
@@ -278,11 +282,10 @@ export async function POST(request: NextRequest) {
       const editSubmissions = await Promise.all(
         prepResults.map(async ({ index, seg, frameUrl, trimmedUrl, frameWidth, frameHeight }) => {
           console.log(`[Trending] Kling I2I submit seg${index}:`, { targetPerson: seg.targetImageUrl, frameUrl: frameUrl.substring(0, 60), frameSize: `${frameWidth}x${frameHeight}` })
-          // 프레임을 base image로 전달 → 인물만 교체
+          // image_urls: [0]=인물 사진(@Image1), [1]=배경 프레임(@Image2)
           const editResult = await submitKlingI2IToQueue({
-            prompt: `${COMPOSITE_PROMPT} Image 1 (the person to use): ${seg.targetImageUrl}`,
-            image_url: frameUrl,
-            image_size: { width: frameWidth, height: frameHeight },
+            prompt: COMPOSITE_PROMPT,
+            image_urls: [seg.targetImageUrl!, frameUrl],
           })
           return { index, seg, trimmedUrl, editRequestId: editResult.request_id, frameWidth, frameHeight }
         })
