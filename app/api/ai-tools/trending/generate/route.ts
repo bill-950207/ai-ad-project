@@ -54,7 +54,7 @@ type TrendingGenerateRequest = FaceTransformRequest
 // 크레딧 계산
 // ============================================================
 
-const MIN_SEGMENT_DURATION = 3 // Kling MC 최소 3초
+const MIN_SEGMENT_DURATION = 3.3 // Kling MC 최소 3초 + 안전 마진
 
 function calculateCredits(req: FaceTransformRequest): number {
   const perSecond = req.tier === 'pro'
@@ -65,7 +65,7 @@ function calculateCredits(req: FaceTransformRequest): number {
 
   return transformSegments.reduce((total, seg) => {
     const duration = seg.endTime - seg.startTime
-    const klingCost = perSecond * Math.max(MIN_SEGMENT_DURATION, duration)
+    const klingCost = Math.ceil(perSecond * Math.max(MIN_SEGMENT_DURATION, duration))
     const editCost = IMAGE_EDIT_CREDIT_COST.medium // 배경 합성 비용 (세그먼트당)
     return total + klingCost + editCost
   }, 0)
@@ -248,7 +248,7 @@ export async function POST(request: NextRequest) {
 
           const [frameBuffer, trimmedBuffer] = await Promise.all([
             extractFrameFromFile(sourceFilePath!, seg.startTime),
-            trimVideoFromFile(sourceFilePath!, seg.startTime, klingEndTime),
+            trimVideoFromFile(sourceFilePath!, seg.startTime, klingEndTime, MIN_SEGMENT_DURATION),
           ])
 
           console.log(`[Trending] Trimmed seg${i} buffer size: ${trimmedBuffer.length} bytes`)

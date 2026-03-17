@@ -253,29 +253,54 @@ export async function extractFrameFromFile(
 
 /**
  * 로컬 파일에서 특정 구간을 트리밍합니다.
+ * minDuration이 지정되면, 결과가 짧을 경우 마지막 프레임을 반복하여 최소 길이를 보장합니다.
  */
 export async function trimVideoFromFile(
   inputPath: string,
   startTime: number,
-  endTime: number
+  endTime: number,
+  minDuration?: number
 ): Promise<Buffer> {
   const duration = endTime - startTime
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'trim-'))
   const outputPath = path.join(tempDir, 'output.mp4')
 
+  // 최소 길이가 필요하고 요청 길이가 부족한 경우 tpad 필터로 패딩
+  const needPad = minDuration && duration < minDuration
+  const padDuration = needPad ? minDuration - duration : 0
+
   try {
     await new Promise<void>((resolve, reject) => {
-      ffmpeg()
+      let cmd = ffmpeg()
         .input(inputPath)
         .inputOptions([`-ss`, `${startTime}`])
-        .outputOptions([
-          `-t`, `${duration}`,
-          '-c:v', 'libx264',   // 재인코딩 — 정확한 길이 보장
+
+      const outputOpts: string[] = [
+        `-t`, `${duration}`,
+        '-c:v', 'libx264',
+        '-preset', 'fast',
+        '-crf', '23',
+        '-c:a', 'aac',
+        '-movflags', '+faststart',
+      ]
+
+      if (needPad) {
+        // tpad: 마지막 프레임을 복제하여 패딩 (stop_mode=clone)
+        cmd = cmd.complexFilter([
+          `[0:v]tpad=stop_mode=clone:stop_duration=${padDuration}[vout]`,
+        ])
+        outputOpts.splice(0, outputOpts.length,
+          '-map', '[vout]',
+          '-c:v', 'libx264',
           '-preset', 'fast',
           '-crf', '23',
-          '-c:a', 'aac',
+          '-an',  // 패딩 시 오디오 제거 (길이 불일치 방지)
           '-movflags', '+faststart',
-        ])
+        )
+      }
+
+      cmd
+        .outputOptions(outputOpts)
         .output(outputPath)
         .on('end', () => resolve())
         .on('error', (err: Error) => reject(err))
