@@ -1,8 +1,185 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Clock, Download, ChevronLeft, ChevronRight, Loader2, XCircle, RotateCcw, X, Sparkles } from 'lucide-react'
+import { Clock, Download, ChevronLeft, ChevronRight, Loader2, XCircle, RotateCcw, X, Sparkles, Play, Pause } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
+
+// ============================================================
+// 트렌딩 비교 플레이어 (원본 vs 생성본 동시 재생)
+// ============================================================
+
+function TrendingComparisonPlayer({
+  resultUrl,
+  inputParams,
+}: {
+  resultUrl: string
+  inputParams: Record<string, unknown> | null
+}) {
+  const originalRef = useRef<HTMLVideoElement>(null)
+  const resultRef = useRef<HTMLVideoElement>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+
+  const sourceVideoUrl = (inputParams?.sourceVideoUrl as string) || ''
+  const segments = (inputParams?.segments as Array<{
+    type: string
+    startTime: number
+    endTime: number
+  }>) || []
+  const transformSegments = segments.filter((s) => s.type === 'transform')
+
+  // 동기 재생/정지
+  const togglePlay = useCallback(() => {
+    if (!originalRef.current || !resultRef.current) return
+    if (isPlaying) {
+      originalRef.current.pause()
+      resultRef.current.pause()
+    } else {
+      originalRef.current.play()
+      resultRef.current.play()
+    }
+    setIsPlaying(!isPlaying)
+  }, [isPlaying])
+
+  // 시간 동기화
+  const handleTimeUpdate = useCallback(() => {
+    if (originalRef.current) {
+      setCurrentTime(originalRef.current.currentTime)
+    }
+  }, [])
+
+  const handleLoaded = useCallback(() => {
+    if (resultRef.current) {
+      setDuration(resultRef.current.duration)
+    }
+  }, [])
+
+  // 시크 바 클릭
+  const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const pct = x / rect.width
+    const time = pct * duration
+    if (originalRef.current) originalRef.current.currentTime = time
+    if (resultRef.current) resultRef.current.currentTime = time
+    setCurrentTime(time)
+  }, [duration])
+
+  // 영상 끝 처리
+  const handleEnded = useCallback(() => {
+    setIsPlaying(false)
+  }, [])
+
+  const fmtTime = (s: number) => {
+    const m = Math.floor(s / 60)
+    const sec = Math.floor(s % 60)
+    return `${m}:${sec.toString().padStart(2, '0')}`
+  }
+
+  return (
+    <div className="space-y-0">
+      {/* 동영상 비교 영역 */}
+      <div className="grid grid-cols-2 gap-0.5 bg-black">
+        {/* 원본 */}
+        <div className="relative">
+          <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">
+            원본
+          </div>
+          {sourceVideoUrl ? (
+            <video
+              ref={originalRef}
+              src={sourceVideoUrl}
+              className="w-full aspect-[9/16] object-cover"
+              muted
+              playsInline
+              onTimeUpdate={handleTimeUpdate}
+              onEnded={handleEnded}
+            />
+          ) : (
+            <div className="w-full aspect-[9/16] bg-secondary/20 flex items-center justify-center text-xs text-muted-foreground">
+              원본 없음
+            </div>
+          )}
+        </div>
+
+        {/* 생성본 */}
+        <div className="relative">
+          <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-violet-500/80 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">
+            변환 결과
+          </div>
+          <video
+            ref={resultRef}
+            src={resultUrl}
+            className="w-full aspect-[9/16] object-cover"
+            muted
+            playsInline
+            onLoadedMetadata={handleLoaded}
+            onEnded={handleEnded}
+          />
+        </div>
+      </div>
+
+      {/* 재생 컨트롤 + 진행 바 */}
+      <div className="px-4 py-3 space-y-2 bg-card">
+        {/* 진행 바 (변환 구간 표시) */}
+        <div
+          className="relative h-3 bg-secondary/40 rounded-full cursor-pointer overflow-hidden"
+          onClick={handleSeek}
+        >
+          {/* 변환 구간 하이라이트 */}
+          {duration > 0 && transformSegments.map((seg, i) => (
+            <div
+              key={i}
+              className="absolute top-0 bottom-0 bg-violet-500/30 border-x border-violet-400/50"
+              style={{
+                left: `${(seg.startTime / duration) * 100}%`,
+                width: `${((seg.endTime - seg.startTime) / duration) * 100}%`,
+              }}
+            />
+          ))}
+
+          {/* 재생 위치 */}
+          <div
+            className="absolute top-0 bottom-0 left-0 bg-primary/60 rounded-full transition-[width] duration-100"
+            style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+          />
+
+          {/* 인디케이터 원 */}
+          {duration > 0 && (
+            <div
+              className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-md border-2 border-primary"
+              style={{ left: `calc(${(currentTime / duration) * 100}% - 7px)` }}
+            />
+          )}
+        </div>
+
+        {/* 컨트롤 행 */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={togglePlay}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+            >
+              {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
+            </button>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {fmtTime(currentTime)} / {fmtTime(duration)}
+            </span>
+          </div>
+
+          {/* 변환 구간 범례 */}
+          {transformSegments.length > 0 && (
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <div className="w-3 h-2 bg-violet-500/40 rounded-sm border border-violet-400/50" />
+              변환 구간 ({transformSegments.length}개)
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 interface HistoryItem {
   id: string
@@ -562,7 +739,9 @@ export default function GenerationHistory({
           onClick={() => setSelectedItem(null)}
         >
           <div
-            className="bg-card border border-border/60 rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl relative"
+            className={`bg-card border border-border/60 rounded-3xl overflow-hidden shadow-2xl relative ${
+              type === 'trending' ? 'max-w-5xl' : 'max-w-2xl'
+            } w-full`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
@@ -573,7 +752,12 @@ export default function GenerationHistory({
               <X className="w-4 h-4" />
             </button>
 
-            {(type === 'video' || type === 'trending') ? (
+            {type === 'trending' ? (
+              <TrendingComparisonPlayer
+                resultUrl={selectedItem.result_url}
+                inputParams={selectedItem.input_params}
+              />
+            ) : (type === 'video') ? (
               <video
                 src={selectedItem.result_url}
                 controls
