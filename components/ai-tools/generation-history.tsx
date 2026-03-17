@@ -124,17 +124,23 @@ function TrendingComparisonPlayer({
       </div>
 
       {/* 재생 컨트롤 + 진행 바 */}
-      <div className="px-4 py-3 space-y-2 bg-card">
+      <div className="px-4 py-3 space-y-2.5 bg-card">
         {/* 진행 바 (변환 구간 표시) */}
         <div
-          className="relative h-3 bg-secondary/40 rounded-full cursor-pointer overflow-hidden"
+          className="relative h-2 bg-secondary/30 rounded-full cursor-pointer"
           onClick={handleSeek}
         >
-          {/* 변환 구간 하이라이트 */}
+          {/* 재생 위치 (아래 레이어) */}
+          <div
+            className="absolute top-0 bottom-0 left-0 bg-white/15 rounded-full transition-[width] duration-100"
+            style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+          />
+
+          {/* 변환 구간 하이라이트 (위 레이어 — 항상 보임) */}
           {duration > 0 && transformSegments.map((seg, i) => (
             <div
               key={i}
-              className="absolute top-0 bottom-0 bg-violet-500/30 border-x border-violet-400/50"
+              className="absolute top-0 bottom-0 bg-violet-500/70 rounded-sm z-[1]"
               style={{
                 left: `${(seg.startTime / duration) * 100}%`,
                 width: `${((seg.endTime - seg.startTime) / duration) * 100}%`,
@@ -142,17 +148,11 @@ function TrendingComparisonPlayer({
             />
           ))}
 
-          {/* 재생 위치 */}
-          <div
-            className="absolute top-0 bottom-0 left-0 bg-primary/60 rounded-full transition-[width] duration-100"
-            style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
-          />
-
-          {/* 인디케이터 원 */}
+          {/* 인디케이터 원 (최상위) */}
           {duration > 0 && (
             <div
-              className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-md border-2 border-primary"
-              style={{ left: `calc(${(currentTime / duration) * 100}% - 7px)` }}
+              className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-md border-2 border-primary z-[2]"
+              style={{ left: `calc(${(currentTime / duration) * 100}% - 6px)` }}
             />
           )}
         </div>
@@ -174,11 +174,37 @@ function TrendingComparisonPlayer({
           {/* 변환 구간 범례 */}
           {transformSegments.length > 0 && (
             <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <div className="w-3 h-2 bg-violet-500/40 rounded-sm border border-violet-400/50" />
+              <div className="w-3 h-2 bg-violet-500/70 rounded-sm" />
               변환 구간 ({transformSegments.length}개)
             </div>
           )}
         </div>
+
+        {/* 변환 구간 상세 — 사용된 대상 이미지 표시 */}
+        {transformSegments.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-1 border-t border-border/30">
+            {transformSegments.map((seg, i) => {
+              const targetImg = (seg as Record<string, unknown>).targetImageUrl as string | undefined
+              return (
+                <div key={i} className="flex items-center gap-2 px-2 py-1.5 bg-secondary/30 rounded-lg">
+                  {targetImg && (
+                    <img
+                      src={targetImg}
+                      alt=""
+                      className="w-7 h-7 rounded-md object-cover border border-violet-400/30"
+                    />
+                  )}
+                  <div className="text-[10px]">
+                    <div className="text-violet-400 font-medium">구간 {i + 1}</div>
+                    <div className="text-muted-foreground tabular-nums">
+                      {fmtTime(seg.startTime)} ~ {fmtTime(seg.endTime)}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )
