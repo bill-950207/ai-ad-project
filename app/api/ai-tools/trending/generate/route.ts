@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
       })
     })
 
-    // 각 변환 세그먼트에 대해 Kling MC 호출
+    // 세그먼트 타입 분류
     const segmentTasks: Array<{
       index: number
       type: 'original' | 'transform'
@@ -164,85 +164,103 @@ export async function POST(request: NextRequest) {
     }> = []
 
     try {
+      // original 세그먼트는 즉시 등록
       for (let i = 0; i < body.segments.length; i++) {
-        const seg = body.segments[i]
-
-        if (seg.type === 'original') {
+        if (body.segments[i].type === 'original') {
           segmentTasks.push({
             index: i,
             type: 'original',
-            startTime: seg.startTime,
-            endTime: seg.endTime,
+            startTime: body.segments[i].startTime,
+            endTime: body.segments[i].endTime,
           })
-          continue
         }
+      }
 
-        // Transform 세그먼트:
-        // 1) 프레임 추출 + 영상 트리밍 (병렬)
-        // 2) Seedream Edit로 대상 인물을 영상 배경에 합성
-        // 3) 합성 이미지 + 트림 영상 → Kling MC 호출
-        const [frameBuffer, trimmedBuffer] = await Promise.all([
-          extractFrame(body.sourceVideoUrl, seg.startTime),
-          trimVideo(body.sourceVideoUrl, seg.startTime, seg.endTime),
-        ])
+      const transformSegs = body.segments
+        .map((seg, i) => ({ seg, i }))
+        .filter(({ seg }) => seg.type === 'transform')
 
-        // 프레임 + 트림 영상 R2 업로드 (병렬)
-        const timestamp = Date.now()
-        const [frameUrl, trimmedUrl] = await Promise.all([
-          uploadBufferToR2(
-            frameBuffer,
-            `trending/${user.id}/frame_${generation.id}_seg${i}_${timestamp}.jpg`,
-            'image/jpeg'
-          ),
-          uploadBufferToR2(
-            trimmedBuffer,
-            `trending/${user.id}/trim_${generation.id}_seg${i}_${timestamp}.mp4`,
-            'video/mp4'
-          ),
-        ])
+      // ============================================================
+      // Phase 1: 모든 세그먼트의 프레임 추출 + 영상 트리밍 + R2 업로드 (전체 병렬)
+      // ============================================================
+      const prepResults = await Promise.all(
+        transformSegs.map(async ({ seg, i }) => {
+          const [frameBuffer, trimmedBuffer] = await Promise.all([
+            extractFrame(body.sourceVideoUrl, seg.startTime),
+            trimVideo(body.sourceVideoUrl, seg.startTime, seg.endTime),
+          ])
 
-        // Seedream Edit: 대상 인물 사진(image1) + 배경 프레임(image2) → 합성 이미지
-        // image_urls 순서: [0]=대상 인물, [1]=배경 프레임
-        const editResult = await submitSeedreamEditToQueue({
-          prompt: 'Take the person from image 1 (the portrait/selfie photo) and place them into the scene shown in image 2 (the video frame background). Keep the exact background, lighting, and environment from image 2. The person from image 1 should appear naturally standing or posing in the scene of image 2. Do NOT change the background. Output a single photo of the person from image 1 in the environment of image 2.',
-          image_urls: [seg.targetImageUrl!, frameUrl],
-          aspect_ratio: '9:16',
-          quality: 'basic',
+          const ts = Date.now()
+          const [frameUrl, trimmedUrl] = await Promise.all([
+            uploadBufferToR2(frameBuffer, `trending/${user.id}/frame_${generation.id}_seg${i}_${ts}.jpg`, 'image/jpeg'),
+            uploadBufferToR2(trimmedBuffer, `trending/${user.id}/trim_${generation.id}_seg${i}_${ts}.mp4`, 'video/mp4'),
+          ])
+
+          return { index: i, seg, frameUrl, trimmedUrl }
         })
+      )
 
-        // Seedream Edit 완료 대기 (폴링)
-        let compositedImageUrl: string | undefined
-        for (let attempt = 0; attempt < 60; attempt++) { // 최대 3분 대기
-          await new Promise((resolve) => setTimeout(resolve, 3000))
-          const editStatus = await getSeedreamEditQueueStatus(editResult.request_id)
-          if (editStatus.status === 'COMPLETED') {
-            const editResponse = await getSeedreamEditQueueResponse(editResult.request_id)
-            compositedImageUrl = editResponse.images?.[0]?.url
-            break
+      // ============================================================
+      // Phase 2: 모든 Seedream Edit 제출 (병렬)
+      // ============================================================
+      const editSubmissions = await Promise.all(
+        prepResults.map(async ({ index, seg, frameUrl, trimmedUrl }) => {
+          const editResult = await submitSeedreamEditToQueue({
+            prompt: 'Take the person from image 1 (the portrait/selfie photo) and place them into the scene shown in image 2 (the video frame background). Keep the exact background, lighting, and environment from image 2. The person from image 1 should appear naturally standing or posing in the scene of image 2. Do NOT change the background. Output a single photo of the person from image 1 in the environment of image 2.',
+            image_urls: [seg.targetImageUrl!, frameUrl],
+            aspect_ratio: '9:16',
+            quality: 'basic',
+          })
+          return { index, seg, trimmedUrl, editRequestId: editResult.request_id }
+        })
+      )
+
+      // ============================================================
+      // Phase 3: 모든 Seedream Edit 완료 대기 (병렬 폴링)
+      // ============================================================
+      const editResults = await Promise.all(
+        editSubmissions.map(async ({ index, seg, trimmedUrl, editRequestId }) => {
+          for (let attempt = 0; attempt < 60; attempt++) {
+            await new Promise((resolve) => setTimeout(resolve, 3000))
+            const editStatus = await getSeedreamEditQueueStatus(editRequestId)
+            if (editStatus.status === 'COMPLETED') {
+              const editResponse = await getSeedreamEditQueueResponse(editRequestId)
+              const compositedImageUrl = editResponse.images?.[0]?.url
+              if (compositedImageUrl) {
+                return { index, seg, trimmedUrl, compositedImageUrl }
+              }
+            }
           }
-        }
-
-        if (!compositedImageUrl) {
-          throw new Error(`세그먼트 ${i}: 배경 합성에 실패했습니다`)
-        }
-
-        // Kling MC: 합성된 이미지 + 트림 영상 → 변환 영상
-        const result = await submitKling3McToQueue({
-          prompt: body.prompt || '영상 속 인물을 변환합니다',
-          image_url: compositedImageUrl,
-          video_url: trimmedUrl,
-          character_orientation: 'image',
-          keep_original_sound: true,
-          tier: body.tier,
+          throw new Error(`세그먼트 ${index}: 배경 합성에 실패했습니다`)
         })
+      )
 
-        const tierTag = body.tier === 'pro' ? 'kling3mcp' : 'kling3mcs'
+      // ============================================================
+      // Phase 4: 모든 Kling MC 제출 (병렬)
+      // ============================================================
+      const klingResults = await Promise.all(
+        editResults.map(async ({ index, seg, trimmedUrl, compositedImageUrl }) => {
+          const result = await submitKling3McToQueue({
+            prompt: body.prompt || '영상 속 인물을 변환합니다',
+            image_url: compositedImageUrl,
+            video_url: trimmedUrl,
+            character_orientation: 'image',
+            keep_original_sound: true,
+            tier: body.tier,
+          })
+          const tierTag = body.tier === 'pro' ? 'kling3mcp' : 'kling3mcs'
+          return { index, seg, providerTaskId: `fal-${tierTag}:${result.request_id}` }
+        })
+      )
+
+      // 결과를 segmentTasks에 추가
+      for (const { index, seg, providerTaskId } of klingResults) {
         segmentTasks.push({
-          index: i,
+          index,
           type: 'transform',
           startTime: seg.startTime,
           endTime: seg.endTime,
-          providerTaskId: `fal-${tierTag}:${result.request_id}`,
+          providerTaskId,
           targetImageUrl: seg.targetImageUrl,
         })
       }
