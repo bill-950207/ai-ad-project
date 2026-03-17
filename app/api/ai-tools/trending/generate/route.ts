@@ -245,17 +245,16 @@ export async function POST(request: NextRequest) {
       // ============================================================
       const prepResults = await Promise.all(
         transformSegs.map(async ({ seg, i }) => {
-          // Kling MC 최소 3초 → 3초 미만 구간은 3초로 확장하여 트리밍
+          // Kling MC 최소 3.3초 보장 — 항상 MIN_SEGMENT_DURATION 이상으로 트리밍
           const segDuration = seg.endTime - seg.startTime
-          const klingEndTime = segDuration < MIN_SEGMENT_DURATION
-            ? seg.startTime + MIN_SEGMENT_DURATION
-            : seg.endTime
+          const klingDuration = Math.max(MIN_SEGMENT_DURATION, segDuration)
+          const klingEndTime = seg.startTime + klingDuration
 
-          console.log(`[Trending] Trim seg${i}: ${seg.startTime}s ~ ${klingEndTime}s (original: ${segDuration}s, kling: ${klingEndTime - seg.startTime}s)`)
+          console.log(`[Trending] Trim seg${i}: ${seg.startTime}s ~ ${klingEndTime}s (user: ${segDuration.toFixed(1)}s, kling: ${klingDuration.toFixed(1)}s)`)
 
           const [frameBuffer, trimmedBuffer] = await Promise.all([
             extractFrameFromFile(sourceFilePath!, seg.startTime),
-            trimVideoFromFile(sourceFilePath!, seg.startTime, klingEndTime, MIN_SEGMENT_DURATION),
+            trimVideoFromFile(sourceFilePath!, seg.startTime, klingEndTime, klingDuration),
           ])
 
           console.log(`[Trending] Trimmed seg${i} buffer size: ${trimmedBuffer.length} bytes`)

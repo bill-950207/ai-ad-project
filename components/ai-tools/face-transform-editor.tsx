@@ -14,6 +14,7 @@ import {
   MousePointer2,
   ImagePlus,
   X,
+  User,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -295,9 +296,29 @@ export default function FaceTransformEditor() {
     a.click()
   }, [generationStatus?.resultUrl])
 
-  // 생성 완료/실패 시 폴링 정리
+  // 초기화 (새로 만들기)
+  const handleReset = useCallback(() => {
+    setSourceVideoUrl(null)
+    setVideoDuration(0)
+    setCurrentTime(0)
+    setSegments([])
+    setSelectedSegmentId(null)
+    setGenerationStatus(null)
+    setIsGenerating(false)
+    setShowGuide(true)
+    setPrompt('')
+    if (pollingRef.current) clearInterval(pollingRef.current)
+  }, [])
+
+  // 다시 시도 (에디터로 돌아가기)
+  const handleRetry = useCallback(() => {
+    setGenerationStatus(null)
+    setIsGenerating(false)
+  }, [])
+
   const isComplete = generationStatus?.status === 'COMPLETED'
   const isFailed = generationStatus?.status === 'FAILED'
+  const isProcessing = isGenerating || isComplete || isFailed
 
   return (
     <div className="flex flex-col h-full bg-[#0a0a0f]">
@@ -338,7 +359,7 @@ export default function FaceTransformEditor() {
       {/* 메인 컨텐츠 */}
       <div className="flex-1 overflow-auto">
         {!sourceVideoUrl ? (
-          // 영상 업로드 — 센터 카드
+          // ──── 업로드 화면 ────
           <div className="flex items-center justify-center h-full p-8">
             <div className="w-full max-w-md space-y-6">
               <div className="text-center space-y-3">
@@ -360,8 +381,197 @@ export default function FaceTransformEditor() {
               />
             </div>
           </div>
+        ) : isProcessing ? (
+          // ──── 생성 진행/완료/실패 화면 ────
+          <div className="flex items-center justify-center h-full p-6">
+            <div className="w-full max-w-lg space-y-8">
+              {/* 완료 */}
+              {isComplete && generationStatus?.resultUrl ? (
+                <div className="space-y-6">
+                  <div className="text-center space-y-2">
+                    <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center">
+                      <CheckCircle2 className="w-7 h-7 text-emerald-400" />
+                    </div>
+                    <h2 className="text-lg font-semibold text-white/90">{aiToolsT.generationComplete || '변환 완료!'}</h2>
+                  </div>
+                  <div className="rounded-xl overflow-hidden border border-white/[0.08] bg-black">
+                    <video src={generationStatus.resultUrl} controls autoPlay className="w-full" />
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleDownload}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl transition-colors"
+                    >
+                      <Download className="w-4 h-4" />
+                      {aiToolsT.download || '다운로드'}
+                    </button>
+                    <button
+                      onClick={handleReset}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white/[0.06] hover:bg-white/[0.1] text-white/70 text-sm font-medium rounded-xl border border-white/[0.08] transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      새로 만들기
+                    </button>
+                  </div>
+                </div>
+
+              ) : isFailed ? (
+                /* 실패 */
+                <div className="space-y-6">
+                  <div className="text-center space-y-2">
+                    <div className="w-14 h-14 mx-auto rounded-2xl bg-red-500/15 border border-red-500/20 flex items-center justify-center">
+                      <AlertCircle className="w-7 h-7 text-red-400" />
+                    </div>
+                    <h2 className="text-lg font-semibold text-white/90">{aiToolsT.generationFailed || '생성 실패'}</h2>
+                    <p className="text-sm text-red-400/70">{generationStatus?.error}</p>
+                  </div>
+                  <button
+                    onClick={handleRetry}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/[0.06] hover:bg-white/[0.1] text-white/70 text-sm font-medium rounded-xl border border-white/[0.08] transition-colors"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    에디터로 돌아가기
+                  </button>
+                </div>
+
+              ) : (
+                /* 진행 중 */
+                <div className="space-y-8">
+                  {/* 에셋 프리뷰 — 원본 → 대상 */}
+                  <div className="flex items-center justify-center gap-4">
+                    {/* 원본 영상 썸네일 */}
+                    <div className="relative shrink-0" style={{ animation: 'float 3s ease-in-out infinite' }}>
+                      <div className="w-20 h-28 rounded-xl overflow-hidden border-2 border-white/10 bg-black shadow-lg shadow-violet-500/10">
+                        <video src={sourceVideoUrl!} className="w-full h-full object-cover" muted />
+                      </div>
+                      <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] text-white/40 bg-black/60 px-1.5 py-0.5 rounded">원본</span>
+                    </div>
+
+                    {/* 화살표 */}
+                    <div className="flex flex-col items-center gap-1">
+                      <Sparkles className="w-5 h-5 text-violet-400" style={{ animation: 'pulse-glow 2s ease-in-out infinite' }} />
+                      <div className="flex gap-0.5">
+                        <div className="w-1 h-1 rounded-full bg-violet-400/60" style={{ animation: 'dot-flow 1.5s ease-in-out infinite' }} />
+                        <div className="w-1 h-1 rounded-full bg-violet-400/60" style={{ animation: 'dot-flow 1.5s ease-in-out infinite 0.3s' }} />
+                        <div className="w-1 h-1 rounded-full bg-violet-400/60" style={{ animation: 'dot-flow 1.5s ease-in-out infinite 0.6s' }} />
+                      </div>
+                    </div>
+
+                    {/* 대상 인물 사진들 */}
+                    <div className="flex -space-x-3">
+                      {segments.map((seg, i) => (
+                        <div
+                          key={seg.id}
+                          className="relative shrink-0"
+                          style={{ animation: `float 3s ease-in-out infinite ${i * 0.4}s`, zIndex: segments.length - i }}
+                        >
+                          <div className="w-20 h-28 rounded-xl overflow-hidden border-2 border-violet-400/30 bg-black shadow-lg shadow-violet-500/20">
+                            {seg.targetImageUrl ? (
+                              <img src={seg.targetImageUrl} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full bg-violet-500/10 flex items-center justify-center">
+                                <User className="w-6 h-6 text-violet-300/50" />
+                              </div>
+                            )}
+                          </div>
+                          <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] text-violet-300/70 bg-black/60 px-1.5 py-0.5 rounded whitespace-nowrap">
+                            {seg.targetPersonLabel || `대상 ${i + 1}`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 상태 텍스트 */}
+                  <div className="text-center space-y-1">
+                    <h2 className="text-base font-semibold text-white/90">
+                      {generationStatus?.status === 'COMPOSITING'
+                        ? '영상을 합성하고 있습니다'
+                        : generationStatus?.status === 'IN_PROGRESS'
+                        ? 'AI가 영상을 변환하고 있습니다'
+                        : '생성 준비 중...'}
+                    </h2>
+                    <p className="text-xs text-white/30">잠시만 기다려주세요. 변환이 완료되면 바로 알려드립니다.</p>
+                  </div>
+
+                  {/* 진행률 바 */}
+                  <div className="space-y-2">
+                    <div className="relative h-2 bg-white/[0.06] rounded-full overflow-hidden">
+                      <div
+                        className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-500 to-cyan-400 rounded-full transition-all duration-1000"
+                        style={{
+                          width: `${generationStatus?.status === 'COMPOSITING' ? 90
+                            : generationStatus?.totalSegments
+                            ? Math.max(5, ((generationStatus.completedSegments || 0) / generationStatus.totalSegments) * 80)
+                            : 5}%`,
+                        }}
+                      />
+                      {/* 쉬머 효과 */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent" style={{ animation: 'shimmer 2s linear infinite' }} />
+                    </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-white/40">
+                        {generationStatus?.status === 'COMPOSITING' ? '합성 중...'
+                          : `${generationStatus?.completedSegments || 0}/${generationStatus?.totalSegments || segments.length} 구간 완료`}
+                      </span>
+                      <span className="text-white/30">{tier === 'pro' ? 'Pro' : 'Standard'} · ~{estimatedCredits}cr</span>
+                    </div>
+                  </div>
+
+                  {/* 세그먼트별 상태 카드 */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {segments.map((seg, i) => {
+                      const completed = (generationStatus?.completedSegments || 0) > i
+                      const current = (generationStatus?.completedSegments || 0) === i && generationStatus?.status === 'IN_PROGRESS'
+                      return (
+                        <div
+                          key={seg.id}
+                          className={cn(
+                            'p-2.5 rounded-xl border transition-all duration-500',
+                            completed
+                              ? 'border-emerald-500/30 bg-emerald-500/5'
+                              : current
+                              ? 'border-violet-500/40 bg-violet-500/5 animate-pulse'
+                              : 'border-white/[0.06] bg-white/[0.02]'
+                          )}
+                        >
+                          <div className="flex items-center gap-2 mb-1.5">
+                            {seg.targetImageUrl ? (
+                              <img src={seg.targetImageUrl} alt="" className="w-6 h-6 rounded object-cover" />
+                            ) : (
+                              <div className="w-6 h-6 rounded bg-white/10" />
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[10px] font-medium text-white/70 truncate">{seg.targetPersonLabel || `대상 ${i + 1}`}</p>
+                              <p className="text-[9px] tabular-nums text-white/30">
+                                {Math.floor(seg.startTime)}s ~ {Math.floor(seg.endTime)}s
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {completed ? (
+                              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                            ) : current ? (
+                              <Loader2 className="w-3 h-3 text-violet-400 animate-spin" />
+                            ) : (
+                              <div className="w-3 h-3 rounded-full border border-white/20" />
+                            )}
+                            <span className={cn('text-[9px]',
+                              completed ? 'text-emerald-400/70' : current ? 'text-violet-400/70' : 'text-white/20'
+                            )}>
+                              {completed ? '완료' : current ? '진행 중' : '대기'}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         ) : (
-          /* 에디터 — 2단 레이아웃 */
+          /* ──── 에디터 — 2단 레이아웃 ──── */
           <div className="flex flex-col lg:flex-row h-full">
             {/* 좌측: 프리뷰 + 타임라인 */}
             <div className="flex-1 flex flex-col p-4 gap-4 min-w-0">
@@ -715,6 +925,26 @@ export default function FaceTransformEditor() {
           </div>
         )}
       </div>
+
+      {/* 애니메이션 */}
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-6px); }
+        }
+        @keyframes pulse-glow {
+          0%, 100% { opacity: 0.6; filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.3)); }
+          50% { opacity: 1; filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.6)); }
+        }
+        @keyframes dot-flow {
+          0%, 100% { opacity: 0.3; transform: scale(0.8); }
+          50% { opacity: 1; transform: scale(1.2); }
+        }
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(300%); }
+        }
+      `}</style>
     </div>
   )
 }
