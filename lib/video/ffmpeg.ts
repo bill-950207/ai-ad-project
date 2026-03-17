@@ -262,50 +262,54 @@ export async function trimVideoFromFile(
   minDuration?: number
 ): Promise<Buffer> {
   const duration = endTime - startTime
+  const targetDuration = minDuration ? Math.max(minDuration, duration) : duration
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'trim-'))
   const outputPath = path.join(tempDir, 'output.mp4')
 
-  // 최소 길이가 필요하고 요청 길이가 부족한 경우 tpad 필터로 패딩
-  const needPad = minDuration && duration < minDuration
-  const padDuration = needPad ? minDuration - duration : 0
-
   try {
-    await new Promise<void>((resolve, reject) => {
-      let cmd = ffmpeg()
-        .input(inputPath)
-        .inputOptions([`-ss`, `${startTime}`])
-
-      const outputOpts: string[] = [
-        `-t`, `${duration}`,
-        '-c:v', 'libx264',
-        '-preset', 'fast',
-        '-crf', '23',
-        '-c:a', 'aac',
-        '-movflags', '+faststart',
-      ]
-
-      if (needPad) {
-        // tpad: 마지막 프레임을 복제하여 패딩 (stop_mode=clone)
-        cmd = cmd.complexFilter([
-          `[0:v]tpad=stop_mode=clone:stop_duration=${padDuration}[vout]`,
-        ])
-        outputOpts.splice(0, outputOpts.length,
-          '-map', '[vout]',
-          '-c:v', 'libx264',
-          '-preset', 'fast',
-          '-crf', '23',
-          '-an',  // 패딩 시 오디오 제거 (길이 불일치 방지)
-          '-movflags', '+faststart',
-        )
-      }
-
-      cmd
-        .outputOptions(outputOpts)
-        .output(outputPath)
-        .on('end', () => resolve())
-        .on('error', (err: Error) => reject(err))
-        .run()
-    })
+    // minDuration이 있으면 항상 tpad로 최소 길이 보장
+    // (소스가 짧아서 실제 출력이 요청보다 짧을 수 있으므로)
+    if (minDuration) {
+      await new Promise<void>((resolve, reject) => {
+        ffmpeg()
+          .input(inputPath)
+          .inputOptions([`-ss`, `${startTime}`])
+          .complexFilter([
+            `[0:v]tpad=stop_mode=clone:stop_duration=${targetDuration}[padded]`,
+            `[padded]trim=duration=${targetDuration},setpts=PTS-STARTPTS[vout]`,
+          ])
+          .outputOptions([
+            '-map', '[vout]',
+            '-c:v', 'libx264',
+            '-preset', 'fast',
+            '-crf', '23',
+            '-an',
+            '-movflags', '+faststart',
+          ])
+          .output(outputPath)
+          .on('end', () => resolve())
+          .on('error', (err: Error) => reject(err))
+          .run()
+      })
+    } else {
+      await new Promise<void>((resolve, reject) => {
+        ffmpeg()
+          .input(inputPath)
+          .inputOptions([`-ss`, `${startTime}`])
+          .outputOptions([
+            `-t`, `${duration}`,
+            '-c:v', 'libx264',
+            '-preset', 'fast',
+            '-crf', '23',
+            '-c:a', 'aac',
+            '-movflags', '+faststart',
+          ])
+          .output(outputPath)
+          .on('end', () => resolve())
+          .on('error', (err: Error) => reject(err))
+          .run()
+      })
+    }
     return await fs.readFile(outputPath)
   } finally {
     try { await fs.rm(tempDir, { recursive: true, force: true }) } catch { /* 무시 */ }
