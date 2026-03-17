@@ -344,6 +344,11 @@ export async function POST(request: NextRequest) {
         transformSegments: transformSegments.length,
       })
     } catch (providerError) {
+      // 에러 body 상세 로깅
+      const err = providerError as Record<string, unknown>
+      if (err.body) {
+        console.error('[Trending Generate] Error body:', JSON.stringify(err.body, null, 2))
+      }
       console.error('[Trending Generate] Provider error:', providerError)
 
       // 크레딧 환불
