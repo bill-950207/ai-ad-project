@@ -437,48 +437,11 @@ export default function FaceTransformEditor() {
               ) : (
                 /* 진행 중 */
                 <div className="space-y-8">
-                  {/* 에셋 프리뷰 — 원본 → 대상 */}
-                  <div className="flex items-center justify-center gap-4">
-                    {/* 원본 영상 썸네일 */}
-                    <div className="relative shrink-0" style={{ animation: 'float 3s ease-in-out infinite' }}>
-                      <div className="w-20 h-28 rounded-xl overflow-hidden border-2 border-white/10 bg-black shadow-lg shadow-violet-500/10">
-                        <video src={sourceVideoUrl!} className="w-full h-full object-cover" muted />
-                      </div>
-                      <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] text-white/40 bg-black/60 px-1.5 py-0.5 rounded">원본</span>
-                    </div>
-
-                    {/* 화살표 */}
-                    <div className="flex flex-col items-center gap-1">
-                      <Sparkles className="w-5 h-5 text-violet-400" style={{ animation: 'pulse-glow 2s ease-in-out infinite' }} />
-                      <div className="flex gap-0.5">
-                        <div className="w-1 h-1 rounded-full bg-violet-400/60" style={{ animation: 'dot-flow 1.5s ease-in-out infinite' }} />
-                        <div className="w-1 h-1 rounded-full bg-violet-400/60" style={{ animation: 'dot-flow 1.5s ease-in-out infinite 0.3s' }} />
-                        <div className="w-1 h-1 rounded-full bg-violet-400/60" style={{ animation: 'dot-flow 1.5s ease-in-out infinite 0.6s' }} />
-                      </div>
-                    </div>
-
-                    {/* 대상 인물 사진들 */}
-                    <div className="flex -space-x-3">
-                      {segments.map((seg, i) => (
-                        <div
-                          key={seg.id}
-                          className="relative shrink-0"
-                          style={{ animation: `float 3s ease-in-out infinite ${i * 0.4}s`, zIndex: segments.length - i }}
-                        >
-                          <div className="w-20 h-28 rounded-xl overflow-hidden border-2 border-violet-400/30 bg-black shadow-lg shadow-violet-500/20">
-                            {seg.targetImageUrl ? (
-                              <img src={seg.targetImageUrl} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full bg-violet-500/10 flex items-center justify-center">
-                                <User className="w-6 h-6 text-violet-300/50" />
-                              </div>
-                            )}
-                          </div>
-                          <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] text-violet-300/70 bg-black/60 px-1.5 py-0.5 rounded whitespace-nowrap">
-                            {seg.targetPersonLabel || `대상 ${i + 1}`}
-                          </span>
-                        </div>
-                      ))}
+                  {/* 로딩 아이콘 */}
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative">
+                      <Loader2 className="w-10 h-10 text-violet-400 animate-spin" />
+                      <div className="absolute inset-0 bg-violet-400/20 rounded-full blur-xl" />
                     </div>
                   </div>
 

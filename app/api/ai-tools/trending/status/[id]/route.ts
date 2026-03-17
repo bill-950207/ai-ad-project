@@ -108,10 +108,15 @@ async function compositeSegments(
 
     // 시간순으로 URL 수집
     const videoUrls = segmentUrlResults
-      .filter((r): r is { index: number; url: string } => r !== null)
+      .filter((r): r is { index: number; url: string } => r !== null && !!r.url)
       .map(r => r.url)
 
-    // FFmpeg 합성 (비디오만 — 오디오는 원본에서 추출하여 합성)
+    console.log(`[Trending Composite] ${videoUrls.length} segments to concatenate`)
+    if (videoUrls.length === 0) {
+      throw new Error('합성할 세그먼트가 없습니다')
+    }
+
+    // FFmpeg 합성
     const finalBuffer = await concatenateVideosWithReencode(videoUrls, {
       width: targetWidth,
       height: targetHeight,

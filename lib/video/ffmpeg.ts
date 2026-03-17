@@ -152,17 +152,20 @@ export async function concatenateVideosWithReencode(
   const outputPath = path.join(tempDir, 'output.mp4')
 
   try {
-    // 1. 모든 비디오 다운로드
-    for (let i = 0; i < videoUrls.length; i++) {
-      const response = await fetch(videoUrls[i])
+    // 1. 모든 비디오 다운로드 (병렬)
+    await Promise.all(videoUrls.map(async (url, i) => {
+      const response = await fetch(url)
       if (!response.ok) {
-        throw new Error(`Failed to download video ${i + 1}`)
+        throw new Error(`Failed to download video ${i + 1}: ${response.status}`)
       }
       const arrayBuffer = await response.arrayBuffer()
+      if (arrayBuffer.byteLength < 100) {
+        throw new Error(`Video ${i + 1} is too small (${arrayBuffer.byteLength} bytes), possibly invalid`)
+      }
       const tempFilePath = path.join(tempDir, `video_${i}.mp4`)
       await fs.writeFile(tempFilePath, Buffer.from(arrayBuffer))
-      tempFiles.push(tempFilePath)
-    }
+      tempFiles[i] = tempFilePath
+    }))
 
     // 2. FFmpeg로 비디오 합치기 (재인코딩)
     await new Promise<void>((resolve, reject) => {
