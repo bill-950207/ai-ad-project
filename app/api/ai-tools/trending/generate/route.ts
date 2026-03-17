@@ -101,6 +101,51 @@ async function submitKlingI2IToQueue(input: {
 const COMPOSITE_PROMPT = 'Replace the person in @Image2 with the person from @Image1. The replacement must include the full appearance of the person from @Image1 — their face, body type, physique, clothing, and outfit. Do not keep the original person\'s body or clothes from @Image2. The person from @Image1 should appear exactly as they look in @Image1, placed in the same pose and position as the person in @Image2. Keep the background, margins, spacing, and all surroundings from @Image2 exactly the same. Match the output to the exact aspect ratio and composition of @Image2.'
 
 // ============================================================
+// LLM 카메라 움직임 분석 — character_orientation 자동 결정
+// ============================================================
+
+async function detectCameraMotion(
+  sourceFilePath: string,
+  sourceDuration: number,
+): Promise<'video' | 'image'> {
+  try {
+    // 시작, 중간, 끝 프레임 3장 추출
+    const times = [0, sourceDuration / 2, Math.max(0, sourceDuration - 0.5)]
+    const frames = await Promise.all(
+      times.map((t) => extractFrameFromFile(sourceFilePath, t))
+    )
+
+    const frameImages = await Promise.all(
+      frames.map(async (buf) => {
+        const b64 = buf.toString('base64')
+        return { inlineData: { mimeType: 'image/jpeg', data: b64 } }
+      })
+    )
+
+    const genAI = getGenAI()
+    const response = await genAI.models.generateContent({
+      model: MODEL_NAME,
+      contents: [{
+        role: 'user',
+        parts: [
+          ...frameImages,
+          { text: 'These 3 images are frames from a video (start, middle, end). Determine if the CAMERA is moving (panning, tilting, zooming, tracking) or if the camera is FIXED and only the person/subject is moving. Reply ONLY "MOVING" if the camera moves, or "FIXED" if the camera stays still.' },
+        ],
+      }],
+    })
+
+    const text = response.text?.trim().toUpperCase() || ''
+    const isMoving = text.includes('MOVING')
+    const orientation = isMoving ? 'video' : 'image'
+    console.log(`[Trending] Camera motion: ${text.substring(0, 20)} → character_orientation: ${orientation}`)
+    return orientation
+  } catch (err) {
+    console.warn('[Trending] Camera motion detection failed, defaulting to video:', (err as Error).message?.substring(0, 50))
+    return 'video'
+  }
+}
+
+// ============================================================
 // LLM 이미지 검증 — 배경+인물이 올바르게 합성됐는지 확인
 // ============================================================
 
@@ -284,6 +329,11 @@ export async function POST(request: NextRequest) {
       } catch { /* 감지 실패 시 0 */ }
       console.log(`[Trending] Source: ${sourceFilePath}, duration: ${sourceDuration.toFixed(1)}s`)
 
+      // 카메라 움직임 분석 → character_orientation 자동 결정
+      const characterOrientation = sourceDuration > 0
+        ? await detectCameraMotion(sourceFilePath, sourceDuration)
+        : 'video'
+
       // original 세그먼트는 즉시 등록
       for (let i = 0; i < body.segments.length; i++) {
         if (body.segments[i].type === 'original') {
@@ -431,7 +481,7 @@ export async function POST(request: NextRequest) {
             prompt: body.prompt || '영상 속 인물을 변환합니다',
             image_url: compositedImageUrl,
             video_url: trimmedUrl,
-            character_orientation: 'video',
+            character_orientation: characterOrientation,
             keep_original_sound: true,
             tier: body.tier,
           })
