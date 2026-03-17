@@ -350,7 +350,7 @@ export async function POST(request: NextRequest) {
             prompt: body.prompt || '영상 속 인물을 변환합니다',
             image_url: compositedImageUrl,
             video_url: trimmedUrl,
-            character_orientation: 'image',
+            character_orientation: 'video',
             keep_original_sound: true,
             tier: body.tier,
           })
