@@ -152,48 +152,86 @@ export async function concatenateVideosWithReencode(
   const outputPath = path.join(tempDir, 'output.mp4')
 
   try {
-    // 1. 모든 비디오 다운로드
+    // 1. 모든 비디오 다운로드 (순차 — 순서 보장)
     for (let i = 0; i < videoUrls.length; i++) {
+      console.log(`[concat-reencode] Downloading ${i + 1}/${videoUrls.length}: ${videoUrls[i].substring(0, 80)}...`)
       const response = await fetch(videoUrls[i])
       if (!response.ok) {
-        throw new Error(`Failed to download video ${i + 1}`)
+        throw new Error(`Failed to download video ${i + 1}: ${response.status}`)
       }
       const arrayBuffer = await response.arrayBuffer()
+      console.log(`[concat-reencode] Video ${i + 1} size: ${arrayBuffer.byteLength} bytes`)
+      if (arrayBuffer.byteLength < 100) {
+        throw new Error(`Video ${i + 1} is too small (${arrayBuffer.byteLength} bytes)`)
+      }
       const tempFilePath = path.join(tempDir, `video_${i}.mp4`)
       await fs.writeFile(tempFilePath, Buffer.from(arrayBuffer))
       tempFiles.push(tempFilePath)
     }
 
-    // 2. FFmpeg로 비디오 합치기 (재인코딩)
+    // 2. 각 파일을 개별적으로 동일 포맷으로 재인코딩 (실패 시 건너뜀)
+    const normalizedFiles: string[] = []
+    for (let i = 0; i < tempFiles.length; i++) {
+      // 너무 작은 파일은 건너뜀 (에러 응답/만료된 URL)
+      const stat = await fs.stat(tempFiles[i])
+      if (stat.size < 5000) {
+        console.warn(`[concat-reencode] Skipping video ${i + 1}: only ${stat.size} bytes (likely not a video)`)
+        continue
+      }
+
+      const normalizedPath = path.join(tempDir, `norm_${i}.ts`)
+      try {
+        await new Promise<void>((resolve, reject) => {
+          ffmpeg()
+            .input(tempFiles[i])
+            .outputOptions([
+              '-c:v', 'libx264',
+              '-preset', 'fast',
+              '-crf', '23',
+              '-vf', `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,fps=${fps}`,
+              '-an',
+              '-f', 'mpegts',
+            ])
+            .output(normalizedPath)
+            .on('end', () => {
+              console.log(`[concat-reencode] Normalized ${i + 1}/${tempFiles.length}`)
+              resolve()
+            })
+            .on('error', (err: Error) => reject(err))
+            .run()
+        })
+        normalizedFiles.push(normalizedPath)
+      } catch (err) {
+        console.warn(`[concat-reencode] Skipping video ${i + 1}: normalize failed -`, (err as Error).message?.substring(0, 100))
+      }
+    }
+
+    if (normalizedFiles.length === 0) {
+      throw new Error('No valid video segments to concatenate')
+    }
+    console.log(`[concat-reencode] ${normalizedFiles.length}/${tempFiles.length} normalized successfully`)
+
+    // 3. concat demuxer로 합치기 (재인코딩 불필요 — 이미 동일 포맷)
+    const concatListPath = path.join(tempDir, 'concat.txt')
+    const concatContent = normalizedFiles.map(f => `file '${f}'`).join('\n')
+    await fs.writeFile(concatListPath, concatContent)
+
     await new Promise<void>((resolve, reject) => {
-      let command = ffmpeg()
-
-      // 모든 입력 파일 추가
-      tempFiles.forEach((file) => {
-        command = command.input(file)
-      })
-
-      // 필터 복합체 생성 (각 비디오를 동일한 해상도/fps로 변환)
-      const filterInputs = tempFiles.map((_, i) => `[${i}:v]`)
-      const filterComplex = tempFiles
-        .map((_, i) => `[${i}:v]scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,fps=${fps}[v${i}]`)
-        .join(';') +
-        ';' +
-        tempFiles.map((_, i) => `[v${i}]`).join('') +
-        `concat=n=${tempFiles.length}:v=1:a=0[outv]`
-
-      command
-        .complexFilter(filterComplex)
+      ffmpeg()
+        .input(concatListPath)
+        .inputOptions(['-f', 'concat', '-safe', '0'])
         .outputOptions([
-          '-map', '[outv]',
           '-c:v', 'libx264',
-          '-preset', 'medium',
+          '-preset', 'fast',
           '-crf', '23',
           '-b:v', videoBitrate,
           '-movflags', '+faststart',
         ])
         .output(outputPath)
-        .on('end', () => resolve())
+        .on('end', () => {
+          console.log(`[concat-reencode] Concatenation completed`)
+          resolve()
+        })
         .on('error', (err: Error) => reject(err))
         .run()
     })
@@ -203,6 +241,230 @@ export async function concatenateVideosWithReencode(
     return resultBuffer
   } finally {
     // 임시 파일 정리
+    try {
+      await fs.rm(tempDir, { recursive: true, force: true })
+    } catch {
+      // 무시
+    }
+  }
+}
+
+/**
+ * URL에서 파일을 다운로드하여 임시 파일로 저장합니다.
+ * 반환된 경로는 사용 후 직접 정리해야 합니다.
+ */
+export async function downloadToTemp(url: string, ext: string = 'mp4'): Promise<{ filePath: string; tempDir: string }> {
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dl-'))
+  const filePath = path.join(tempDir, `input.${ext}`)
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`Failed to download: ${response.status}`)
+  const buffer = Buffer.from(await response.arrayBuffer())
+  await fs.writeFile(filePath, buffer)
+  return { filePath, tempDir }
+}
+
+/**
+ * 로컬 파일에서 특정 시간의 프레임을 이미지로 추출합니다.
+ */
+export async function extractFrameFromFile(
+  inputPath: string,
+  timeSeconds: number
+): Promise<Buffer> {
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'frame-'))
+  const outputPath = path.join(tempDir, 'frame.jpg')
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      ffmpeg()
+        .input(inputPath)
+        .inputOptions([`-ss`, `${timeSeconds}`])
+        .outputOptions(['-frames:v', '1', '-q:v', '2'])
+        .output(outputPath)
+        .on('end', () => resolve())
+        .on('error', (err: Error) => reject(err))
+        .run()
+    })
+    return await fs.readFile(outputPath)
+  } finally {
+    try { await fs.rm(tempDir, { recursive: true, force: true }) } catch { /* 무시 */ }
+  }
+}
+
+/**
+ * 로컬 파일에서 특정 구간을 트리밍합니다.
+ * minDuration이 지정되면, 결과가 짧을 경우 마지막 프레임을 반복하여 최소 길이를 보장합니다.
+ */
+export async function trimVideoFromFile(
+  inputPath: string,
+  startTime: number,
+  endTime: number,
+  minDuration?: number
+): Promise<Buffer> {
+  const duration = endTime - startTime
+  const targetDuration = minDuration ? Math.max(minDuration, duration) : duration
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'trim-'))
+  const outputPath = path.join(tempDir, 'output.mp4')
+
+  try {
+    // minDuration이 있으면 항상 tpad로 최소 길이 보장
+    // (소스가 짧아서 실제 출력이 요청보다 짧을 수 있으므로)
+    if (minDuration) {
+      await new Promise<void>((resolve, reject) => {
+        ffmpeg()
+          .input(inputPath)
+          .inputOptions([`-ss`, `${startTime}`])
+          .complexFilter([
+            `[0:v]tpad=stop_mode=clone:stop_duration=${targetDuration}[padded]`,
+            `[padded]trim=duration=${targetDuration},setpts=PTS-STARTPTS[vout]`,
+          ])
+          .outputOptions([
+            '-map', '[vout]',
+            '-c:v', 'libx264',
+            '-preset', 'fast',
+            '-crf', '23',
+            '-an',
+            '-movflags', '+faststart',
+          ])
+          .output(outputPath)
+          .on('end', () => resolve())
+          .on('error', (err: Error) => reject(err))
+          .run()
+      })
+    } else {
+      await new Promise<void>((resolve, reject) => {
+        ffmpeg()
+          .input(inputPath)
+          .inputOptions([`-ss`, `${startTime}`])
+          .outputOptions([
+            `-t`, `${duration}`,
+            '-c:v', 'libx264',
+            '-preset', 'fast',
+            '-crf', '23',
+            '-c:a', 'aac',
+            '-movflags', '+faststart',
+          ])
+          .output(outputPath)
+          .on('end', () => resolve())
+          .on('error', (err: Error) => reject(err))
+          .run()
+      })
+    }
+    return await fs.readFile(outputPath)
+  } finally {
+    try { await fs.rm(tempDir, { recursive: true, force: true }) } catch { /* 무시 */ }
+  }
+}
+
+/**
+ * 비디오에서 특정 시간의 프레임을 이미지로 추출합니다.
+ *
+ * @param videoUrl - 비디오 URL
+ * @param timeSeconds - 추출할 시간 (초)
+ * @returns 추출된 프레임 이미지 Buffer (JPEG)
+ */
+export async function extractFrame(
+  videoUrl: string,
+  timeSeconds: number
+): Promise<Buffer> {
+  console.log(`extractFrame: ${timeSeconds}s from ${videoUrl.substring(0, 50)}...`)
+
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'frame-extract-'))
+  const inputPath = path.join(tempDir, 'input.mp4')
+  const outputPath = path.join(tempDir, 'frame.jpg')
+
+  try {
+    const response = await fetch(videoUrl)
+    if (!response.ok) {
+      throw new Error(`Failed to download video: ${response.status}`)
+    }
+    const arrayBuffer = await response.arrayBuffer()
+    await fs.writeFile(inputPath, Buffer.from(arrayBuffer))
+
+    await new Promise<void>((resolve, reject) => {
+      ffmpeg()
+        .input(inputPath)
+        .inputOptions([`-ss`, `${timeSeconds}`])
+        .outputOptions(['-frames:v', '1', '-q:v', '2'])
+        .output(outputPath)
+        .on('end', () => {
+          console.log('Frame extraction completed')
+          resolve()
+        })
+        .on('error', (err: Error) => {
+          console.error('FFmpeg frame extract error:', err)
+          reject(err)
+        })
+        .run()
+    })
+
+    return await fs.readFile(outputPath)
+  } finally {
+    try {
+      await fs.rm(tempDir, { recursive: true, force: true })
+    } catch {
+      // 무시
+    }
+  }
+}
+
+/**
+ * 비디오 파일의 특정 구간을 트리밍합니다.
+ *
+ * @param videoUrl - 비디오 URL
+ * @param startTime - 시작 시간 (초)
+ * @param endTime - 끝 시간 (초)
+ * @returns 트리밍된 비디오 Buffer
+ */
+export async function trimVideo(
+  videoUrl: string,
+  startTime: number,
+  endTime: number
+): Promise<Buffer> {
+  console.log(`trimVideo: ${startTime}s ~ ${endTime}s from ${videoUrl.substring(0, 50)}...`)
+
+  if (startTime >= endTime) {
+    throw new Error('startTime must be less than endTime')
+  }
+
+  const duration = endTime - startTime
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'video-trim-'))
+  const inputPath = path.join(tempDir, 'input.mp4')
+  const outputPath = path.join(tempDir, 'output.mp4')
+
+  try {
+    // 1. 비디오 다운로드
+    const response = await fetch(videoUrl)
+    if (!response.ok) {
+      throw new Error(`Failed to download video: ${response.status}`)
+    }
+    const arrayBuffer = await response.arrayBuffer()
+    await fs.writeFile(inputPath, Buffer.from(arrayBuffer))
+
+    // 2. FFmpeg로 트리밍
+    await new Promise<void>((resolve, reject) => {
+      ffmpeg()
+        .input(inputPath)
+        .inputOptions([`-ss`, `${startTime}`])
+        .outputOptions([`-t`, `${duration}`, '-c', 'copy', '-movflags', '+faststart'])
+        .output(outputPath)
+        .on('start', (cmd: string) => {
+          console.log('FFmpeg video trim command:', cmd)
+        })
+        .on('end', () => {
+          console.log('Video trimming completed')
+          resolve()
+        })
+        .on('error', (err: Error) => {
+          console.error('FFmpeg video trim error:', err)
+          reject(err)
+        })
+        .run()
+    })
+
+    // 3. 결과 파일 읽기
+    const resultBuffer = await fs.readFile(outputPath)
+    return resultBuffer
+  } finally {
     try {
       await fs.rm(tempDir, { recursive: true, force: true })
     } catch {
@@ -522,10 +784,47 @@ export async function normalizeAudioVolume(
 }
 
 /**
+ * 비디오 URL에서 해상도(width, height)를 감지합니다.
+ *
+ * @param videoUrl - 비디오 URL
+ * @returns { width, height }
+ */
+export async function getVideoResolution(videoUrl: string): Promise<{ width: number; height: number }> {
+  const dl = await downloadToTemp(videoUrl, 'mp4')
+  try {
+    return await getVideoResolutionFromFile(dl.filePath)
+  } finally {
+    try { await fs.rm(dl.tempDir, { recursive: true, force: true }) } catch { /* 무시 */ }
+  }
+}
+
+/**
+ * 로컬 비디오 파일에서 해상도를 감지합니다.
+ */
+export async function getVideoResolutionFromFile(filePath: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    execFile(
+      ffmpegInstaller.path,
+      ['-i', filePath],
+      { timeout: 15000 },
+      (_err, _stdout, stderr) => {
+        const output = stderr || ''
+        const match = output.match(/Stream.*Video.*\s(\d{2,5})x(\d{2,5})/)
+        if (match) {
+          resolve({ width: parseInt(match[1], 10), height: parseInt(match[2], 10) })
+        } else {
+          reject(new Error('Could not determine video resolution'))
+        }
+      }
+    )
+  })
+}
+
+/**
  * 미디어 파일의 길이(초)를 반환합니다.
  * ffmpeg를 사용하여 duration을 추출합니다 (ffprobe 불필요).
  */
-async function getMediaDuration(filePath: string): Promise<number> {
+export async function getMediaDuration(filePath: string): Promise<number> {
   return new Promise((resolve, reject) => {
     execFile(
       ffmpegInstaller.path,

@@ -1,8 +1,217 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Clock, Download, ChevronLeft, ChevronRight, Loader2, XCircle, RotateCcw, X, Sparkles } from 'lucide-react'
+import { Clock, Download, ChevronLeft, ChevronRight, Loader2, XCircle, RotateCcw, X, Sparkles, Play, Pause } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
+
+// ============================================================
+// 트렌딩 비교 플레이어 (원본 vs 생성본 동시 재생)
+// ============================================================
+
+function TrendingComparisonPlayer({
+  resultUrl,
+  inputParams,
+}: {
+  resultUrl: string
+  inputParams: Record<string, unknown> | null
+}) {
+  const { t } = useLanguage()
+  const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
+
+  const originalRef = useRef<HTMLVideoElement>(null)
+  const resultRef = useRef<HTMLVideoElement>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+
+  const sourceVideoUrl = (inputParams?.sourceVideoUrl as string) || ''
+  const segments = (inputParams?.segments as Array<{
+    type: string
+    startTime: number
+    endTime: number
+  }>) || []
+  const transformSegments = segments.filter((s) => s.type === 'transform')
+
+  // 동기 재생/정지
+  const togglePlay = useCallback(() => {
+    if (!originalRef.current || !resultRef.current) return
+    if (isPlaying) {
+      originalRef.current.pause()
+      resultRef.current.pause()
+    } else {
+      originalRef.current.play()
+      resultRef.current.play()
+    }
+    setIsPlaying(!isPlaying)
+  }, [isPlaying])
+
+  // 시간 동기화
+  const handleTimeUpdate = useCallback(() => {
+    if (originalRef.current) {
+      setCurrentTime(originalRef.current.currentTime)
+    }
+  }, [])
+
+  const handleLoaded = useCallback(() => {
+    if (resultRef.current) {
+      setDuration(resultRef.current.duration)
+    }
+  }, [])
+
+  // 시크 바 클릭
+  const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const pct = x / rect.width
+    const time = pct * duration
+    if (originalRef.current) originalRef.current.currentTime = time
+    if (resultRef.current) resultRef.current.currentTime = time
+    setCurrentTime(time)
+  }, [duration])
+
+  // 영상 끝 처리
+  const handleEnded = useCallback(() => {
+    setIsPlaying(false)
+  }, [])
+
+  const fmtTime = (s: number) => {
+    const m = Math.floor(s / 60)
+    const sec = Math.floor(s % 60)
+    return `${m}:${sec.toString().padStart(2, '0')}`
+  }
+
+  return (
+    <div className="space-y-0">
+      {/* 동영상 비교 영역 — 동일 높이 강제 */}
+      <div className="flex bg-black" style={{ height: '60vh' }}>
+        {/* 원본 */}
+        <div className="relative flex-1 flex items-center justify-center overflow-hidden">
+          <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">
+            {aiToolsT.originalVideo || '원본'}
+          </div>
+          {sourceVideoUrl ? (
+            <video
+              ref={originalRef}
+              src={sourceVideoUrl}
+              className="h-full object-contain"
+              muted
+              playsInline
+              onTimeUpdate={handleTimeUpdate}
+              onEnded={handleEnded}
+            />
+          ) : (
+            <div className="h-full aspect-[9/16] bg-secondary/20 flex items-center justify-center text-xs text-muted-foreground">
+              {aiToolsT.noOriginal || '원본 없음'}
+            </div>
+          )}
+        </div>
+
+        {/* 구분선 */}
+        <div className="w-px bg-white/10" />
+
+        {/* 생성본 */}
+        <div className="relative flex-1 flex items-center justify-center overflow-hidden">
+          <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-violet-500/80 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">
+            {aiToolsT.transformResult || '변환 결과'}
+          </div>
+          <video
+            ref={resultRef}
+            src={resultUrl}
+            className="h-full object-contain"
+            muted
+            playsInline
+            onLoadedMetadata={handleLoaded}
+            onEnded={handleEnded}
+          />
+        </div>
+      </div>
+
+      {/* 재생 컨트롤 + 진행 바 */}
+      <div className="px-4 py-3 space-y-2.5 bg-card">
+        {/* 진행 바 (변환 구간 표시) */}
+        <div
+          className="relative h-2 bg-secondary/30 rounded-full cursor-pointer"
+          onClick={handleSeek}
+        >
+          {/* 재생 위치 (아래 레이어) */}
+          <div
+            className="absolute top-0 bottom-0 left-0 bg-white/15 rounded-full transition-[width] duration-100"
+            style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+          />
+
+          {/* 변환 구간 하이라이트 (위 레이어 — 항상 보임) */}
+          {duration > 0 && transformSegments.map((seg, i) => (
+            <div
+              key={i}
+              className="absolute top-0 bottom-0 bg-violet-500/70 rounded-sm z-[1]"
+              style={{
+                left: `${(seg.startTime / duration) * 100}%`,
+                width: `${((seg.endTime - seg.startTime) / duration) * 100}%`,
+              }}
+            />
+          ))}
+
+          {/* 인디케이터 원 (최상위) */}
+          {duration > 0 && (
+            <div
+              className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-md border-2 border-primary z-[2]"
+              style={{ left: `calc(${(currentTime / duration) * 100}% - 6px)` }}
+            />
+          )}
+        </div>
+
+        {/* 컨트롤 행 */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={togglePlay}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+            >
+              {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
+            </button>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {fmtTime(currentTime)} / {fmtTime(duration)}
+            </span>
+          </div>
+
+          {/* 변환 구간 범례 */}
+          {transformSegments.length > 0 && (
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <div className="w-3 h-2 bg-violet-500/70 rounded-sm" />
+              {aiToolsT.transformSegmentCount || '변환 구간'} ({transformSegments.length})
+            </div>
+          )}
+        </div>
+
+        {/* 변환 구간 상세 — 사용된 대상 이미지 표시 */}
+        {transformSegments.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-1 border-t border-border/30">
+            {transformSegments.map((seg, i) => {
+              const targetImg = (seg as Record<string, unknown>).targetImageUrl as string | undefined
+              return (
+                <div key={i} className="flex items-center gap-2 px-2 py-1.5 bg-secondary/30 rounded-lg">
+                  {targetImg && (
+                    <img
+                      src={targetImg}
+                      alt=""
+                      className="w-7 h-7 rounded-md object-cover border border-violet-400/30"
+                    />
+                  )}
+                  <div className="text-[10px]">
+                    <div className="text-violet-400 font-medium">{aiToolsT.segmentNumber || '구간'} {i + 1}</div>
+                    <div className="text-muted-foreground tabular-nums">
+                      {fmtTime(seg.startTime)} ~ {fmtTime(seg.endTime)}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 interface HistoryItem {
   id: string
@@ -33,7 +242,7 @@ export interface ActiveGeneration {
 }
 
 interface GenerationHistoryProps {
-  type: 'video' | 'image'
+  type: 'video' | 'image' | 'trending'
   refreshTrigger?: number
   activeGeneration?: ActiveGeneration | null
   onActiveComplete?: () => void
@@ -79,6 +288,10 @@ export default function GenerationHistory({
   const [pagination, setPagination] = useState<Pagination | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [page, setPage] = useState(1)
+  const [allItems, setAllItems] = useState<HistoryItem[]>([])
+  const [hasMore, setHasMore] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const scrollSentinelRef = useRef<HTMLDivElement>(null)
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null)
 
   // Active generation polling state
@@ -93,29 +306,69 @@ export default function GenerationHistory({
   useEffect(() => { onActiveErrorRef.current = onActiveError }, [onActiveError])
 
   // Fetch history
-  const fetchHistory = useCallback(async () => {
-    setIsLoading(true)
+  const fetchHistory = useCallback(async (targetPage?: number) => {
+    const p = targetPage ?? page
+    if (p === 1) setIsLoading(true)
+    else setIsLoadingMore(true)
+
     try {
-      const res = await fetch(`/api/ai-tools/${type}/history?page=${page}&pageSize=8`)
+      const res = await fetch(`/api/ai-tools/${type}/history?page=${p}&pageSize=12`)
       if (!res.ok) throw new Error('히스토리 조회 실패')
 
       const data = await res.json()
       setItems(data.items)
       setPagination(data.pagination)
+
+      if (p === 1) {
+        setAllItems(data.items)
+      } else {
+        setAllItems((prev) => {
+          const existingIds = new Set(prev.map((item: HistoryItem) => item.id))
+          const newItems = data.items.filter((item: HistoryItem) => !existingIds.has(item.id))
+          return [...prev, ...newItems]
+        })
+      }
+      setHasMore(data.pagination.hasMore)
     } catch (error) {
       console.error('History fetch error:', error)
     } finally {
       setIsLoading(false)
+      setIsLoadingMore(false)
     }
   }, [type, page])
 
   useEffect(() => {
-    fetchHistory()
-  }, [fetchHistory, refreshTrigger])
+    setPage(1)
+    setAllItems([])
+    setHasMore(true)
+    fetchHistory(1)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type, refreshTrigger])
+
+  // 페이지 변경 시 추가 로드
+  useEffect(() => {
+    if (page > 1) fetchHistory(page)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page])
+
+  // 무한 스크롤 — IntersectionObserver
+  useEffect(() => {
+    if (!scrollSentinelRef.current || !hasMore || isLoadingMore) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
+          setPage((p) => p + 1)
+        }
+      },
+      { threshold: 0.1 }
+    )
+    observer.observe(scrollSentinelRef.current)
+    return () => observer.disconnect()
+  }, [hasMore, isLoadingMore])
 
   // Poll provider status for in-progress items, then refresh history
   const processingItemIds = items
-    .filter(item => ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(item.status))
+    .filter(item => ['PENDING', 'IN_QUEUE', 'IN_PROGRESS', 'COMPOSITING'].includes(item.status))
     .map(item => item.id)
 
   const processingIdsKey = processingItemIds.join(',')
@@ -125,10 +378,14 @@ export default function GenerationHistory({
 
     const ids = processingIdsKey.split(',')
 
+    const statusBaseUrl = type === 'trending'
+      ? '/api/ai-tools/trending/status'
+      : '/api/ai-tools/status'
+
     const pollAndRefresh = async () => {
       await Promise.all(
         ids.map(id =>
-          fetch(`/api/ai-tools/status/${id}`).catch(() => {})
+          fetch(`${statusBaseUrl}/${id}`).catch(() => {})
         )
       )
       fetchHistory()
@@ -157,7 +414,10 @@ export default function GenerationHistory({
     const poll = async () => {
       if (!active) return
       try {
-        const res = await fetch(`/api/ai-tools/status/${activeGeneration.id}`)
+        const activeStatusUrl = type === 'trending'
+          ? `/api/ai-tools/trending/status/${activeGeneration.id}`
+          : `/api/ai-tools/status/${activeGeneration.id}`
+        const res = await fetch(activeStatusUrl)
         if (!active) return
 
         if (!res.ok) {
@@ -238,6 +498,7 @@ export default function GenerationHistory({
     'recraft-v4': 'Recraft V4',
     'qwen-image-2': 'Qwen Image 2.0',
     'flux-kontext': 'FLUX Kontext',
+    'face-transform': '모션 컨트롤',
   }
 
   const hasActiveGeneration = !!activeGeneration
@@ -272,6 +533,8 @@ export default function GenerationHistory({
         <p className="text-xs text-muted-foreground/60">
           {type === 'image'
             ? (aiToolsT.noHistoryImageHint || '모델을 선택하고 이미지를 생성해보세요')
+            : type === 'trending'
+            ? (aiToolsT.noHistoryTrendingHint || '트렌딩 도구를 사용해보세요')
             : (aiToolsT.noHistoryVideoHint || '모델을 선택하고 영상을 생성해보세요')}
         </p>
       </div>
@@ -402,9 +665,13 @@ export default function GenerationHistory({
         )}
 
         {/* History Items */}
-        {items.filter(item => !activeGeneration || item.id !== activeGeneration.id).map((item) => {
+        {allItems.filter(item => {
+          if (activeGeneration && item.id === activeGeneration.id) return false
+          if (type === 'trending' && item.status === 'FAILED') return false
+          return true
+        }).map((item) => {
           const refImgUrl = getReferenceImageUrl(item.input_params)
-          const isProcessing = ['PENDING', 'IN_QUEUE', 'IN_PROGRESS'].includes(item.status)
+          const isProcessing = ['PENDING', 'IN_QUEUE', 'IN_PROGRESS', 'COMPOSITING'].includes(item.status)
           return (
             <div
               key={item.id}
@@ -422,7 +689,7 @@ export default function GenerationHistory({
                 item.status === 'COMPLETED' && item.result_url ? 'aspect-video' : 'aspect-[4/3]'
               }`}>
                 {item.status === 'COMPLETED' && item.result_url ? (
-                  type === 'video' ? (
+                  (type === 'video' || type === 'trending') ? (
                     <video
                       src={item.result_url}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -517,83 +784,74 @@ export default function GenerationHistory({
         })}
       </div>
 
-      {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3 pt-3">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page <= 1}
-            className="p-2 rounded-xl bg-secondary/40 hover:bg-secondary/70 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="text-sm text-muted-foreground tabular-nums min-w-[3rem] text-center">
-            {page} / {pagination.totalPages}
-          </span>
-          <button
-            onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-            disabled={!pagination.hasMore}
-            className="p-2 rounded-xl bg-secondary/40 hover:bg-secondary/70 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+      {/* 무한 스크롤 센티넬 */}
+      {hasMore && (
+        <div ref={scrollSentinelRef} className="flex justify-center py-4">
+          {isLoadingMore && <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />}
         </div>
       )}
 
       {/* Detail Modal */}
       {selectedItem && selectedItem.status === 'COMPLETED' && selectedItem.result_url && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl p-4"
           onClick={() => setSelectedItem(null)}
         >
           <div
-            className="bg-card border border-border/60 rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl relative"
+            className={`bg-[#0a0a0f] border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl relative ${
+              type === 'trending' ? 'max-w-4xl max-h-[88vh]' : 'max-w-2xl'
+            } w-full flex flex-col`}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close button */}
+            {/* Close */}
             <button
               onClick={() => setSelectedItem(null)}
-              className="absolute top-3 right-3 z-10 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white/80 hover:text-white transition-colors backdrop-blur-sm"
+              className="absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.08] text-white/60 hover:text-white transition-all"
             >
               <X className="w-4 h-4" />
             </button>
 
-            {type === 'video' ? (
-              <video
-                src={selectedItem.result_url}
-                controls
-                autoPlay
-                className="w-full"
-              />
-            ) : (
-              <img
-                src={selectedItem.result_url}
-                alt=""
-                className="w-full"
-              />
-            )}
-            <div className="p-5 flex items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm text-foreground leading-relaxed">{selectedItem.prompt}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="px-2 py-0.5 bg-secondary/60 text-[10px] font-medium text-muted-foreground rounded-md">
-                    {modelLabels[selectedItem.model] || selectedItem.model}
-                  </span>
-                  <span className="text-xs text-muted-foreground/60">
-                    {formatDate(selectedItem.created_at)}
-                  </span>
+            {/* 컨텐츠 */}
+            <div className="flex-1 overflow-auto">
+              {type === 'trending' ? (
+                <TrendingComparisonPlayer
+                  resultUrl={selectedItem.result_url}
+                  inputParams={selectedItem.input_params}
+                />
+              ) : (type === 'video') ? (
+                <video src={selectedItem.result_url} controls autoPlay className="w-full" />
+              ) : (
+                <img src={selectedItem.result_url} alt="" className="w-full" />
+              )}
+            </div>
+
+            {/* 하단 정보 */}
+            <div className="p-4 border-t border-white/[0.06] bg-white/[0.02]">
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 bg-violet-500/15 border border-violet-500/20 text-[10px] font-medium text-violet-300 rounded-md">
+                      {modelLabels[selectedItem.model] || selectedItem.model}
+                    </span>
+                    <span className="text-[11px] text-white/30 tabular-nums">
+                      {formatDate(selectedItem.created_at)}
+                    </span>
+                    <span className="text-[11px] text-white/20">
+                      {selectedItem.credits_used}cr
+                    </span>
+                  </div>
                 </div>
+                <a
+                  href={selectedItem.result_url}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold rounded-lg transition-colors shrink-0"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  {aiToolsT.download || '다운로드'}
+                </a>
               </div>
-              <a
-                href={selectedItem.result_url}
-                download
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground text-sm font-medium rounded-xl hover:bg-primary/90 transition-colors shrink-0"
-              >
-                <Download className="w-4 h-4" />
-                {aiToolsT.download || '다운로드'}
-              </a>
             </div>
           </div>
         </div>

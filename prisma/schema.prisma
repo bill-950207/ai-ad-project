@@ -1151,6 +1151,7 @@ enum credit_feature_type {
   BACKGROUND            // 배경 생성
   TOOL_VIDEO            // AI 도구 영상 생성
   TOOL_IMAGE            // AI 도구 이미지 생성
+  TOOL_TRENDING         // AI 트렌딩 도구
 
   @@schema("public")
 }
@@ -1182,7 +1183,7 @@ model credit_history {
 model tool_generations {
   id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   user_id          String   @db.Uuid
-  type             String   // 'video' | 'image'
+  type             String   // 'video' | 'image' | 'trending'
   model            String   // 'seedance-1.5-pro' | 'vidu-q3' | 'seedream-4.5' | 'z-image'
   prompt           String?
   input_params     Json?    // 모델별 파라미터 (resolution, duration, aspectRatio 등)

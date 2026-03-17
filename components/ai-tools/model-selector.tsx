@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useLanguage } from '@/contexts/language-context'
 
-interface Model {
+export interface Model {
   id: string
   name: string
   description: string

@@ -39,6 +39,7 @@ import {
   Cpu,
   Film,
   ImagePlus,
+  TrendingUp,
 } from 'lucide-react'
 
 // ============================================================
@@ -55,7 +56,7 @@ interface NavItem {
 // 상수 정의
 // ============================================================
 
-const getNavItems = (lang: string): NavItem[] => [
+const getNavItems = (lang: string, admin: boolean): NavItem[] => [
   {
     labelKey: 'adCreationTools',
     icon: <Wand2 className="w-4 h-4" />,
@@ -79,6 +80,7 @@ const getNavItems = (lang: string): NavItem[] => [
     children: [
       { labelKey: 'videoGeneration', href: `/dashboard/ai-tools/${lang}/video`, icon: <Film className="w-4 h-4" /> },
       { labelKey: 'imageGeneration', href: `/dashboard/ai-tools/${lang}/image`, icon: <ImagePlus className="w-4 h-4" /> },
+      ...(admin ? [{ labelKey: 'trendingTools', href: `/dashboard/ai-tools/${lang}/trending`, icon: <TrendingUp className="w-4 h-4" /> }] : []),
     ]
   }
 ]
@@ -169,13 +171,13 @@ export function Sidebar() {
     router.push('/login')
   }
 
-  const navItems = useMemo(() => getNavItems(language), [language])
+  const navItems = useMemo(() => getNavItems(language, isAdmin), [language, isAdmin])
 
   const isChildActive = (href: string) => {
     if (!pathname) return false
     if (pathname === href || pathname.startsWith(href + '/')) return true
     // AI tools: match tool type regardless of language segment
-    const aiMatch = href.match(/\/ai-tools\/[^/]+\/(video|image)$/)
+    const aiMatch = href.match(/\/ai-tools\/[^/]+\/(video|image|trending)$/)
     if (aiMatch) {
       return new RegExp(`/ai-tools/[^/]+/${aiMatch[1]}$`).test(pathname)
     }
@@ -187,7 +189,7 @@ export function Sidebar() {
     setShowLanguageMenu(false)
     setShowProfileMenu(false)
     // Navigate to new language URL if on AI tools page
-    const aiToolsMatch = pathname?.match(/\/dashboard\/ai-tools\/[^/]+\/(video|image)/)
+    const aiToolsMatch = pathname?.match(/\/dashboard\/ai-tools\/[^/]+\/(video|image|trending)/)
     if (aiToolsMatch) {
       router.push(pathname!.replace(/\/ai-tools\/[^/]+\//, `/ai-tools/${code}/`))
     }

@@ -6,7 +6,7 @@ import { useLanguage } from '@/contexts/language-context'
 
 interface GenerationResultProps {
   generationId: string | null
-  type: 'video' | 'image'
+  type: 'video' | 'image' | 'trending'
   onComplete?: () => void
   onError?: () => void
 }
