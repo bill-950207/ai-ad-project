@@ -85,6 +85,26 @@ export default function FaceTransformEditor() {
   // UX: 온보딩 가이드 (세그먼트 0개 + 영상 업로드됨)
   const [showGuide, setShowGuide] = useState(true)
 
+  // UX: 시간 기반 프로그래스 (5분 = 300초 기준, 최대 99%)
+  const [generationStartTime, setGenerationStartTime] = useState<number | null>(null)
+  const [fakeProgress, setFakeProgress] = useState(0)
+
+  useEffect(() => {
+    if (!generationStartTime || !isGenerating) {
+      setFakeProgress(0)
+      return
+    }
+    const interval = setInterval(() => {
+      const elapsed = (Date.now() - generationStartTime) / 1000 // 초
+      const totalEstimate = 300 // 5분
+      // ease-out 곡선: 빠르게 시작 → 느려짐 → 99%에서 멈춤
+      const raw = Math.min(elapsed / totalEstimate, 1)
+      const eased = 1 - Math.pow(1 - raw, 2) // ease-out quadratic
+      setFakeProgress(Math.min(eased * 99, 99))
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [generationStartTime, isGenerating])
+
   // 폴링 클린업 (unmount 시)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -182,6 +202,7 @@ export default function FaceTransformEditor() {
     }
 
     setIsGenerating(true)
+    setGenerationStartTime(Date.now())
     setGenerationStatus({ id: '', status: 'PENDING' })
 
     try {
@@ -305,6 +326,7 @@ export default function FaceTransformEditor() {
     setSelectedSegmentId(null)
     setGenerationStatus(null)
     setIsGenerating(false)
+    setGenerationStartTime(null)
     setShowGuide(true)
     setPrompt('')
     if (pollingRef.current) clearInterval(pollingRef.current)
@@ -499,12 +521,7 @@ export default function FaceTransformEditor() {
                     <div className="relative h-2 bg-white/[0.06] rounded-full overflow-hidden">
                       <div
                         className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-500 to-cyan-400 rounded-full transition-all duration-1000"
-                        style={{
-                          width: `${generationStatus?.status === 'COMPOSITING' ? 90
-                            : generationStatus?.totalSegments
-                            ? Math.max(5, ((generationStatus.completedSegments || 0) / generationStatus.totalSegments) * 80)
-                            : 5}%`,
-                        }}
+                        style={{ width: `${Math.max(2, fakeProgress)}%` }}
                       />
                       {/* 쉬머 효과 */}
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent" style={{ animation: 'shimmer 2s linear infinite' }} />
