@@ -200,6 +200,7 @@ export async function POST(request: NextRequest) {
       type: 'original' | 'transform'
       startTime: number
       endTime: number
+      originalDuration?: number // 유저가 선택한 원래 구간 길이 (3초 미만일 때 트림용)
       providerTaskId?: string
       targetImageUrl?: string
     }> = []
@@ -237,9 +238,15 @@ export async function POST(request: NextRequest) {
       // ============================================================
       const prepResults = await Promise.all(
         transformSegs.map(async ({ seg, i }) => {
+          // Kling MC 최소 3초 → 3초 미만 구간은 3초로 확장하여 트리밍
+          const segDuration = seg.endTime - seg.startTime
+          const klingEndTime = segDuration < MIN_SEGMENT_DURATION
+            ? seg.startTime + MIN_SEGMENT_DURATION
+            : seg.endTime
+
           const [frameBuffer, trimmedBuffer] = await Promise.all([
             extractFrameFromFile(sourceFilePath!, seg.startTime),
-            trimVideoFromFile(sourceFilePath!, seg.startTime, seg.endTime),
+            trimVideoFromFile(sourceFilePath!, seg.startTime, klingEndTime),
           ])
 
           // aspect ratio 감지
@@ -313,11 +320,13 @@ export async function POST(request: NextRequest) {
 
       // 결과를 segmentTasks에 추가
       for (const { index, seg, providerTaskId } of klingResults) {
+        const segDuration = seg.endTime - seg.startTime
         segmentTasks.push({
           index,
           type: 'transform',
           startTime: seg.startTime,
           endTime: seg.endTime,
+          originalDuration: segDuration < MIN_SEGMENT_DURATION ? segDuration : undefined,
           providerTaskId,
           targetImageUrl: seg.targetImageUrl,
         })

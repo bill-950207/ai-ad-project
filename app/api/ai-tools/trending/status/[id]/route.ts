@@ -30,6 +30,7 @@ interface SegmentTask {
   type: 'original' | 'transform'
   startTime: number
   endTime: number
+  originalDuration?: number // 유저 원래 구간 길이 (3초 미만일 때 → Kling 결과를 이 길이로 트림)
   providerTaskId?: string
   targetImageUrl?: string
   resultUrl?: string
@@ -59,6 +60,7 @@ async function compositeSegments(
   creditsUsed: number
 ) {
   let sourceTempDir: string | null = null
+  const tempDirsToClean: string[] = []
 
   try {
     // 소스 영상 다운로드 (1회)
@@ -96,13 +98,30 @@ async function compositeSegments(
     const originalUrlMap = new Map<number, string>()
     originalTasks.forEach((task, i) => { originalUrlMap.set(task.index, originalUrls[i]) })
 
-    // 시간순으로 URL 수집
+    // 시간순으로 URL 수집 (3초 미만 구간은 Kling 결과를 원래 길이로 트림)
     for (const task of sortedTasks) {
       if (task.type === 'original') {
         const url = originalUrlMap.get(task.index)
         if (url) videoUrls.push(url)
       } else if (task.resultUrl) {
-        videoUrls.push(task.resultUrl)
+        if (task.originalDuration && task.originalDuration < 3) {
+          // Kling MC는 3초로 생성했으므로, 유저가 선택한 원래 길이로 트림
+          const trimmedBuffer = await trimVideoFromFile(
+            // Kling 결과는 URL이므로 다운로드 후 트림
+            await (async () => {
+              const dl = await downloadToTemp(task.resultUrl!, 'mp4')
+              tempDirsToClean.push(dl.tempDir)
+              return dl.filePath
+            })(),
+            0,
+            task.originalDuration
+          )
+          const trimmedKey = `trending/${userId}/klingtrim_${generationId}_seg${task.index}_${Date.now()}.mp4`
+          const trimmedUrl = await uploadBufferToR2(trimmedBuffer, trimmedKey, 'video/mp4')
+          videoUrls.push(trimmedUrl)
+        } else {
+          videoUrls.push(task.resultUrl)
+        }
       }
     }
 
@@ -152,8 +171,10 @@ async function compositeSegments(
       })
     }
   } finally {
-    if (sourceTempDir) {
-      try { await fs.rm(sourceTempDir, { recursive: true, force: true }) } catch { /* 무시 */ }
+    // 임시 디렉토리 정리
+    const allTempDirs = sourceTempDir ? [sourceTempDir, ...tempDirsToClean] : tempDirsToClean
+    for (const dir of allTempDirs) {
+      try { await fs.rm(dir, { recursive: true, force: true }) } catch { /* 무시 */ }
     }
   }
 }
