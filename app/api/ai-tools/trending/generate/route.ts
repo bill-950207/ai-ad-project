@@ -208,6 +208,7 @@ export async function POST(request: NextRequest) {
       startTime: number
       endTime: number
       originalDuration?: number // 유저가 선택한 원래 구간 길이 (3초 미만일 때 트림용)
+      trimOffset?: number       // Kling 결과에서 건너뛸 시간 (startTime 앞당김 시)
       providerTaskId?: string
       targetImageUrl?: string
     }> = []
@@ -283,7 +284,10 @@ export async function POST(request: NextRequest) {
           const frameWidth = frameMeta.width || 720
           const frameHeight = frameMeta.height || 1280
 
-          return { index: i, seg, frameUrl, trimmedUrl, frameWidth, frameHeight }
+          // 앞당긴 양 기록 (합성 시 Kling 결과에서 이만큼 건너뛰어야 함)
+          const trimOffset = seg.startTime - trimStart
+
+          return { index: i, seg, frameUrl, trimmedUrl, frameWidth, frameHeight, trimOffset }
         })
       )
 
@@ -292,14 +296,14 @@ export async function POST(request: NextRequest) {
       // 프레임(image2)을 base로, 인물(image1)로 교체 요청
       // ============================================================
       const editSubmissions = await Promise.all(
-        prepResults.map(async ({ index, seg, frameUrl, trimmedUrl, frameWidth, frameHeight }) => {
+        prepResults.map(async ({ index, seg, frameUrl, trimmedUrl, frameWidth, frameHeight, trimOffset }) => {
           console.log(`[Trending] Kling I2I submit seg${index}:`, { targetPerson: seg.targetImageUrl, frameUrl: frameUrl.substring(0, 60), frameSize: `${frameWidth}x${frameHeight}` })
           // image_urls: [0]=인물 사진(@Image1), [1]=배경 프레임(@Image2)
           const editResult = await submitKlingI2IToQueue({
             prompt: COMPOSITE_PROMPT,
             image_urls: [seg.targetImageUrl!, frameUrl],
           })
-          return { index, seg, trimmedUrl, editRequestId: editResult.request_id, frameWidth, frameHeight }
+          return { index, seg, trimmedUrl, editRequestId: editResult.request_id, frameWidth, frameHeight, trimOffset }
         })
       )
 
@@ -307,7 +311,7 @@ export async function POST(request: NextRequest) {
       // Phase 3: 모든 Kling I2I 완료 대기 (병렬 폴링)
       // ============================================================
       const editResults = await Promise.all(
-        editSubmissions.map(async ({ index, seg, trimmedUrl, editRequestId, frameWidth, frameHeight }) => {
+        editSubmissions.map(async ({ index, seg, trimmedUrl, editRequestId, frameWidth, frameHeight, trimOffset }) => {
           for (let attempt = 0; attempt < 60; attempt++) {
             await new Promise((resolve) => setTimeout(resolve, 3000))
             const editStatus = await getFalQueueStatus(KLING_I2I_MODEL, editRequestId)
@@ -328,7 +332,7 @@ export async function POST(request: NextRequest) {
                 const resizedKey = `trending/${user.id}/edited_${generation.id}_seg${index}_${Date.now()}.jpg`
                 const compositedImageUrl = await uploadBufferToR2(resizedBuffer, resizedKey, 'image/jpeg')
 
-                return { index, seg, trimmedUrl, compositedImageUrl }
+                return { index, seg, trimmedUrl, compositedImageUrl, trimOffset }
               }
             }
           }
@@ -340,7 +344,7 @@ export async function POST(request: NextRequest) {
       // Phase 4: 모든 Kling MC 제출 (병렬)
       // ============================================================
       const klingResults = await Promise.all(
-        editResults.map(async ({ index, seg, trimmedUrl, compositedImageUrl }) => {
+        editResults.map(async ({ index, seg, trimmedUrl, compositedImageUrl, trimOffset }) => {
           console.log(`[Trending] Kling MC submit seg${index}:`, { image_url: compositedImageUrl.substring(0, 80), video_url: trimmedUrl.substring(0, 80), tier: body.tier })
           const result = await submitKling3McToQueue({
             prompt: body.prompt || '영상 속 인물을 변환합니다',
@@ -351,12 +355,12 @@ export async function POST(request: NextRequest) {
             tier: body.tier,
           })
           const tierTag = body.tier === 'pro' ? 'kling3mcp' : 'kling3mcs'
-          return { index, seg, providerTaskId: `fal-${tierTag}:${result.request_id}` }
+          return { index, seg, providerTaskId: `fal-${tierTag}:${result.request_id}`, trimOffset }
         })
       )
 
       // 결과를 segmentTasks에 추가
-      for (const { index, seg, providerTaskId } of klingResults) {
+      for (const { index, seg, providerTaskId, trimOffset } of klingResults) {
         const segDuration = seg.endTime - seg.startTime
         segmentTasks.push({
           index,
@@ -364,6 +368,7 @@ export async function POST(request: NextRequest) {
           startTime: seg.startTime,
           endTime: seg.endTime,
           originalDuration: segDuration < MIN_SEGMENT_DURATION ? segDuration : undefined,
+          trimOffset: trimOffset > 0.01 ? trimOffset : undefined,
           providerTaskId,
           targetImageUrl: seg.targetImageUrl,
         })

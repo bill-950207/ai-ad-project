@@ -31,6 +31,7 @@ interface SegmentTask {
   startTime: number
   endTime: number
   originalDuration?: number // 유저 원래 구간 길이 (3초 미만일 때 → Kling 결과를 이 길이로 트림)
+  trimOffset?: number       // Kling 결과에서 건너뛸 시간 (startTime 앞당김 시)
   providerTaskId?: string
   targetImageUrl?: string
   resultUrl?: string
@@ -105,16 +106,17 @@ async function compositeSegments(
         if (url) videoUrls.push(url)
       } else if (task.resultUrl) {
         if (task.originalDuration && task.originalDuration < 3) {
-          // Kling MC는 3초로 생성했으므로, 유저가 선택한 원래 길이로 트림
+          // Kling MC는 3.3초로 생성, 유저 원래 길이로 트림
+          // trimOffset: startTime 앞당김 시 그만큼 건너뛰고 잘라야 함
+          const offset = task.trimOffset || 0
           const trimmedBuffer = await trimVideoFromFile(
-            // Kling 결과는 URL이므로 다운로드 후 트림
             await (async () => {
               const dl = await downloadToTemp(task.resultUrl!, 'mp4')
               tempDirsToClean.push(dl.tempDir)
               return dl.filePath
             })(),
-            0,
-            task.originalDuration
+            offset,
+            offset + task.originalDuration
           )
           const trimmedKey = `trending/${userId}/klingtrim_${generationId}_seg${task.index}_${Date.now()}.mp4`
           const trimmedUrl = await uploadBufferToR2(trimmedBuffer, trimmedKey, 'video/mp4')
