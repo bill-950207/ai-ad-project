@@ -152,37 +152,60 @@ export async function concatenateVideosWithReencode(
   const outputPath = path.join(tempDir, 'output.mp4')
 
   try {
-    // 1. 모든 비디오 다운로드 (병렬)
-    await Promise.all(videoUrls.map(async (url, i) => {
-      const response = await fetch(url)
+    // 1. 모든 비디오 다운로드 (순차 — 순서 보장)
+    for (let i = 0; i < videoUrls.length; i++) {
+      console.log(`[concat-reencode] Downloading ${i + 1}/${videoUrls.length}: ${videoUrls[i].substring(0, 80)}...`)
+      const response = await fetch(videoUrls[i])
       if (!response.ok) {
         throw new Error(`Failed to download video ${i + 1}: ${response.status}`)
       }
       const arrayBuffer = await response.arrayBuffer()
+      console.log(`[concat-reencode] Video ${i + 1} size: ${arrayBuffer.byteLength} bytes`)
       if (arrayBuffer.byteLength < 100) {
-        throw new Error(`Video ${i + 1} is too small (${arrayBuffer.byteLength} bytes), possibly invalid`)
+        throw new Error(`Video ${i + 1} is too small (${arrayBuffer.byteLength} bytes)`)
       }
       const tempFilePath = path.join(tempDir, `video_${i}.mp4`)
       await fs.writeFile(tempFilePath, Buffer.from(arrayBuffer))
-      tempFiles[i] = tempFilePath
-    }))
+      tempFiles.push(tempFilePath)
+    }
+
+    // 1.5. 각 파일이 유효한 비디오인지 검증
+    const validFiles: string[] = []
+    for (let i = 0; i < tempFiles.length; i++) {
+      try {
+        const stat = await fs.stat(tempFiles[i])
+        if (stat.size < 1000) {
+          console.warn(`[concat-reencode] Skipping video_${i}: too small (${stat.size} bytes)`)
+          continue
+        }
+        validFiles.push(tempFiles[i])
+      } catch {
+        console.warn(`[concat-reencode] Skipping video_${i}: file not found`)
+      }
+    }
+
+    if (validFiles.length === 0) {
+      throw new Error('No valid video files to concatenate')
+    }
+    console.log(`[concat-reencode] ${validFiles.length}/${tempFiles.length} valid files`)
 
     // 2. FFmpeg로 비디오 합치기 (재인코딩)
     await new Promise<void>((resolve, reject) => {
       let command = ffmpeg()
 
       // 모든 입력 파일 추가
-      tempFiles.forEach((file) => {
+      validFiles.forEach((file) => {
         command = command.input(file)
       })
 
       // 필터 복합체 생성 (각 비디오를 동일한 해상도/fps로 변환)
-      const filterComplex = tempFiles
-        .map((_, i) => `[${i}:v]scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,fps=${fps}[v${i}]`)
+      const filterComplex = validFiles
+        .map((_, i) => `[${i}:v:0]scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,fps=${fps}[v${i}]`)
         .join(';') +
         ';' +
-        tempFiles.map((_, i) => `[v${i}]`).join('') +
-        `concat=n=${tempFiles.length}:v=1:a=0[outv]`
+        validFiles.map((_, i) => `[v${i}]`).join('') +
+        `concat=n=${validFiles.length}:v=1:a=0[outv]`
+      console.log(`[concat-reencode] Filter: ${filterComplex.substring(0, 200)}...`)
 
       command
         .complexFilter(filterComplex)
