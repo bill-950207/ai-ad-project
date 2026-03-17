@@ -19,10 +19,10 @@ import {
 } from '@/lib/credits/constants'
 import {
   submitKling3McToQueue,
-  submitSeedreamEditToQueue,
-  getSeedreamEditQueueStatus,
-  getSeedreamEditQueueResponse,
-  type SeedreamAspectRatio,
+  submitQwenImage2EditToQueue,
+  getFalQueueStatus,
+  getFalQueueResult,
+  QWEN_IMAGE2_EDIT_MODEL,
 } from '@/lib/fal/client'
 import { downloadToTemp, extractFrameFromFile, trimVideoFromFile } from '@/lib/video/ffmpeg'
 import { uploadBufferToR2 } from '@/lib/storage/r2'
@@ -75,20 +75,15 @@ function calculateCredits(req: FaceTransformRequest): number {
 // 프레임에서 aspect ratio 추론
 // ============================================================
 
-async function detectAspectRatio(frameBuffer: Buffer): Promise<SeedreamAspectRatio> {
+async function detectImageSize(frameBuffer: Buffer): Promise<{ width: number; height: number }> {
   try {
     const metadata = await sharp(frameBuffer).metadata()
-    const w = metadata.width || 1
-    const h = metadata.height || 1
-    const ratio = w / h
-
-    if (ratio > 1.6) return '16:9'
-    if (ratio > 1.2) return '4:3'
-    if (ratio > 0.9) return '1:1'
-    if (ratio > 0.7) return '3:4'
-    return '9:16'
+    return {
+      width: metadata.width || 1024,
+      height: metadata.height || 1024,
+    }
   } catch {
-    return '9:16' // 감지 실패 시 기본값
+    return { width: 1024, height: 1024 }
   }
 }
 
@@ -242,8 +237,8 @@ export async function POST(request: NextRequest) {
             trimVideoFromFile(sourceFilePath!, seg.startTime, seg.endTime),
           ])
 
-          // aspect ratio 감지
-          const aspectRatio = await detectAspectRatio(frameBuffer)
+          // 이미지 크기 감지
+          const imageSize = await detectImageSize(frameBuffer)
 
           const ts = Date.now()
           const [frameUrl, trimmedUrl] = await Promise.all([
@@ -251,39 +246,38 @@ export async function POST(request: NextRequest) {
             uploadBufferToR2(trimmedBuffer, `trending/${user.id}/trim_${generation.id}_seg${i}_${ts}.mp4`, 'video/mp4'),
           ])
 
-          return { index: i, seg, frameUrl, trimmedUrl, aspectRatio }
+          return { index: i, seg, frameUrl, trimmedUrl, imageSize }
         })
       )
 
       // ============================================================
-      // Phase 2: 모든 Seedream Edit 제출 (병렬)
+      // Phase 2: 모든 Qwen Image 2 Edit 제출 (병렬)
       // ============================================================
       const editSubmissions = await Promise.all(
-        prepResults.map(async ({ index, seg, frameUrl, trimmedUrl, aspectRatio }) => {
-          console.log(`[Trending] Seedream Edit submit seg${index}:`, { targetImage: seg.targetImageUrl, frameUrl, aspectRatio })
-          const editResult = await submitSeedreamEditToQueue({
+        prepResults.map(async ({ index, seg, frameUrl, trimmedUrl, imageSize }) => {
+          console.log(`[Trending] Qwen Image 2 Edit submit seg${index}:`, { targetImage: seg.targetImageUrl, frameUrl, imageSize })
+          const editResult = await submitQwenImage2EditToQueue({
             prompt: 'Take the person from image 1 (the portrait/selfie photo) and place them into the scene shown in image 2 (the video frame background). Keep the exact background, lighting, and environment from image 2. The person from image 1 should appear naturally standing or posing in the scene of image 2. Do NOT change the background. Output a single photo of the person from image 1 in the environment of image 2.',
             image_urls: [seg.targetImageUrl!, frameUrl],
-            aspect_ratio: aspectRatio,
-            quality: 'basic',
+            image_size: imageSize,
           })
           return { index, seg, trimmedUrl, editRequestId: editResult.request_id }
         })
       )
 
       // ============================================================
-      // Phase 3: 모든 Seedream Edit 완료 대기 (병렬 폴링)
+      // Phase 3: 모든 Qwen Image 2 Edit 완료 대기 (병렬 폴링)
       // ============================================================
       const editResults = await Promise.all(
         editSubmissions.map(async ({ index, seg, trimmedUrl, editRequestId }) => {
           for (let attempt = 0; attempt < 60; attempt++) {
             await new Promise((resolve) => setTimeout(resolve, 3000))
-            const editStatus = await getSeedreamEditQueueStatus(editRequestId)
+            const editStatus = await getFalQueueStatus(QWEN_IMAGE2_EDIT_MODEL, editRequestId)
             if (editStatus.status === 'COMPLETED') {
-              const editResponse = await getSeedreamEditQueueResponse(editRequestId)
+              const editResponse = await getFalQueueResult(QWEN_IMAGE2_EDIT_MODEL, editRequestId)
               const compositedImageUrl = editResponse.images?.[0]?.url
               if (compositedImageUrl) {
-                console.log(`[Trending] Seedream Edit completed seg${index}:`, compositedImageUrl.substring(0, 80))
+                console.log(`[Trending] Qwen Edit completed seg${index}:`, compositedImageUrl.substring(0, 80))
                 return { index, seg, trimmedUrl, compositedImageUrl }
               }
             }
