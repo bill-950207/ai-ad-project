@@ -104,12 +104,12 @@ export default function FaceTransformEditor() {
       ? KLING3_MC_PRO_CREDIT_PER_SECOND['720p']
       : KLING3_MC_STD_CREDIT_PER_SECOND['720p']
 
-    return segments.reduce((total, seg) => {
+    return Math.ceil(segments.reduce((total, seg) => {
       const duration = seg.endTime - seg.startTime
       const klingCost = perSecond * Math.max(MIN_SEGMENT_DURATION, duration)
-      const editCost = IMAGE_EDIT_CREDIT_COST.medium // 배경 합성 비용
+      const editCost = IMAGE_EDIT_CREDIT_COST.medium
       return total + klingCost + editCost
-    }, 0)
+    }, 0))
   }, [segments, tier])
 
   // 영상 로드 핸들러
