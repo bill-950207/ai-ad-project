@@ -87,10 +87,13 @@ async function submitKlingI2IToQueue(input: {
       prompt: input.prompt,
       image_url: input.image_url,
       image_size: input.image_size,
+      creativity: 0.5,
     },
   })
   return { request_id }
 }
+
+const COMPOSITE_PROMPT = 'Replace the person in image 2 with the person from image 1. Do not alter any other elements — keep the background, margins, spacing, and all surroundings exactly the same. If image 2 has empty margins or borders, preserve them as-is. Match the output to the exact aspect ratio and composition of image 2. Only swap the person, nothing else.'
 
 // ============================================================
 // API 핸들러
@@ -270,24 +273,15 @@ export async function POST(request: NextRequest) {
 
       // ============================================================
       // Phase 2: 모든 Kling Image O3 I2I 제출 (병렬)
-      // 인물 사진을 프레임 비율로 resize 후, Kling I2I로 배경 합성
+      // 프레임(image2)을 base로, 인물(image1)로 교체 요청
       // ============================================================
       const editSubmissions = await Promise.all(
         prepResults.map(async ({ index, seg, frameUrl, trimmedUrl, frameWidth, frameHeight }) => {
-          // 원본 인물 사진을 프레임 비율에 맞게 resize → R2 업로드
-          const personImgRes = await fetch(seg.targetImageUrl!)
-          const personImgBuffer = Buffer.from(await personImgRes.arrayBuffer())
-          const resizedPersonBuffer = await sharp(personImgBuffer)
-            .resize(frameWidth, frameHeight, { fit: 'cover', position: 'centre' })
-            .jpeg({ quality: 90 })
-            .toBuffer()
-          const resizedPersonKey = `trending/${user.id}/person_${generation.id}_seg${index}_${Date.now()}.jpg`
-          const resizedPersonUrl = await uploadBufferToR2(resizedPersonBuffer, resizedPersonKey, 'image/jpeg')
-
-          console.log(`[Trending] Kling I2I submit seg${index}:`, { personUrl: resizedPersonUrl.substring(0, 60), frameSize: `${frameWidth}x${frameHeight}` })
+          console.log(`[Trending] Kling I2I submit seg${index}:`, { targetPerson: seg.targetImageUrl, frameUrl: frameUrl.substring(0, 60), frameSize: `${frameWidth}x${frameHeight}` })
+          // 프레임을 base image로 전달 → 인물만 교체
           const editResult = await submitKlingI2IToQueue({
-            prompt: `Transform this person's surroundings to match the background scene from the video frame. Keep the person's face, pose, and body exactly the same. Only change the background environment to match: ${frameUrl}`,
-            image_url: resizedPersonUrl,
+            prompt: `${COMPOSITE_PROMPT} Image 1 (the person to use): ${seg.targetImageUrl}`,
+            image_url: frameUrl,
             image_size: { width: frameWidth, height: frameHeight },
           })
           return { index, seg, trimmedUrl, editRequestId: editResult.request_id, frameWidth, frameHeight }
