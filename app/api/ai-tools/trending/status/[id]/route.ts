@@ -1,3 +1,5 @@
+export const maxDuration = 300 // 5분 (Vercel Pro — 합성에 시간 소요)
+
 /**
  * AI 트렌딩 도구 - 멀티 세그먼트 상태 확인 + 합성 API
  *
@@ -233,12 +235,21 @@ export async function GET(
       })
     }
 
-    // COMPOSITING 상태면 아직 합성 중
+    // COMPOSITING 상태 → 합성 실행 (서버리스에서 fire-and-forget 불가하므로 동기 실행)
     if (generation.status === 'COMPOSITING') {
-      return NextResponse.json({
-        status: 'COMPOSITING',
-        progress: '영상 합성 중...',
-      })
+      const inputParams = generation.input_params as unknown as InputParams
+      if (inputParams?.segmentTasks) {
+        await compositeSegments(generation.id, inputParams, inputParams.segmentTasks, user.id, generation.credits_used)
+        // 합성 완료 후 상태 다시 조회
+        const updated = await prisma.tool_generations.findUnique({ where: { id } })
+        if (updated?.status === 'COMPLETED') {
+          return NextResponse.json({ status: 'COMPLETED', resultUrl: updated.result_url })
+        }
+        if (updated?.status === 'FAILED') {
+          return NextResponse.json({ status: 'FAILED', error: updated.error_message })
+        }
+      }
+      return NextResponse.json({ status: 'COMPOSITING', progress: '영상 합성 중...' })
     }
 
     // PENDING 상태 (아직 제출 전)
@@ -360,9 +371,15 @@ export async function GET(
     })
 
     if (compositeUpdate.count > 0) {
-      // fire-and-forget: 합성 시작 (GET 요청은 즉시 반환)
-      compositeSegments(id, inputParams, updatedTasks, user.id, generation.credits_used)
-        .catch((err) => console.error('[Trending Composite] Unhandled:', err))
+      // 동기 실행 — 서버리스에서 fire-and-forget 불가
+      await compositeSegments(id, inputParams, updatedTasks, user.id, generation.credits_used)
+      const finalGen = await prisma.tool_generations.findUnique({ where: { id } })
+      if (finalGen?.status === 'COMPLETED') {
+        return NextResponse.json({ status: 'COMPLETED', resultUrl: finalGen.result_url })
+      }
+      if (finalGen?.status === 'FAILED') {
+        return NextResponse.json({ status: 'FAILED', error: finalGen.error_message })
+      }
     }
 
     return NextResponse.json({
