@@ -268,7 +268,14 @@ export async function trimVideoFromFile(
       ffmpeg()
         .input(inputPath)
         .inputOptions([`-ss`, `${startTime}`])
-        .outputOptions([`-t`, `${duration}`, '-c', 'copy', '-movflags', '+faststart'])
+        .outputOptions([
+          `-t`, `${duration}`,
+          '-c:v', 'libx264',   // 재인코딩 — 정확한 길이 보장
+          '-preset', 'fast',
+          '-crf', '23',
+          '-c:a', 'aac',
+          '-movflags', '+faststart',
+        ])
         .output(outputPath)
         .on('end', () => resolve())
         .on('error', (err: Error) => reject(err))
