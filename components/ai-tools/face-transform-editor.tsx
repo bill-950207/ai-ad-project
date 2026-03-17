@@ -472,11 +472,7 @@ export default function FaceTransformEditor() {
                       {/* 쉬머 효과 */}
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent" style={{ animation: 'shimmer 2s linear infinite' }} />
                     </div>
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-white/40">
-                        {generationStatus?.status === 'COMPOSITING' ? '합성 중...'
-                          : `${generationStatus?.completedSegments || 0}/${generationStatus?.totalSegments || segments.length} 구간 완료`}
-                      </span>
+                    <div className="flex justify-end text-[11px]">
                       <span className="text-white/30">{tier === 'pro' ? 'Pro' : 'Standard'} · ~{estimatedCredits}cr</span>
                     </div>
                   </div>

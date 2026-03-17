@@ -25,6 +25,7 @@ import {
 import { fal } from '@fal-ai/client'
 import { downloadToTemp, extractFrameFromFile, trimVideoFromFile, getMediaDuration } from '@/lib/video/ffmpeg'
 import { uploadBufferToR2 } from '@/lib/storage/r2'
+import { getGenAI, MODEL_NAME, fetchImageAsBase64 } from '@/lib/gemini/shared'
 import { promises as fs } from 'fs'
 import sharp from 'sharp'
 
@@ -98,6 +99,50 @@ async function submitKlingI2IToQueue(input: {
 
 // @Image1 = 인물 사진, @Image2 = 배경 프레임 (Kling O3 참조 문법)
 const COMPOSITE_PROMPT = 'Replace the person in @Image2 with the person from @Image1. Do not alter any other elements — keep the background, margins, spacing, and all surroundings exactly the same. If @Image2 has empty margins or borders, preserve them as-is. Match the output to the exact aspect ratio and composition of @Image2. Only swap the person, nothing else.'
+
+// ============================================================
+// LLM 이미지 검증 — 배경+인물이 올바르게 합성됐는지 확인
+// ============================================================
+
+const MAX_IMAGE_RETRIES = 2
+
+async function verifyCompositeImage(
+  personImageUrl: string,
+  frameUrl: string,
+  resultImageUrl: string,
+): Promise<boolean> {
+  try {
+    const [personImg, frameImg, resultImg] = await Promise.all([
+      fetchImageAsBase64(personImageUrl),
+      fetchImageAsBase64(frameUrl),
+      fetchImageAsBase64(resultImageUrl),
+    ])
+
+    if (!personImg || !frameImg || !resultImg) return true // 검증 불가 시 통과
+
+    const genAI = getGenAI()
+    const response = await genAI.models.generateContent({
+      model: MODEL_NAME,
+      contents: [{
+        role: 'user',
+        parts: [
+          { inlineData: { mimeType: personImg.mimeType, data: personImg.base64 } },
+          { inlineData: { mimeType: frameImg.mimeType, data: frameImg.base64 } },
+          { inlineData: { mimeType: resultImg.mimeType, data: resultImg.base64 } },
+          { text: 'Image 1 is the target person. Image 2 is the background frame. Image 3 is the result. Check if the result correctly shows the person from Image 1 placed in the background from Image 2. Reply ONLY "PASS" if the person and background are correctly composited, or "FAIL" if the person is wrong or the background is completely different.' },
+        ],
+      }],
+    })
+
+    const text = response.text?.trim().toUpperCase() || ''
+    const passed = text.includes('PASS')
+    console.log(`[Trending] LLM verify: ${passed ? 'PASS' : 'FAIL'} (${text.substring(0, 30)})`)
+    return passed
+  } catch (err) {
+    console.warn('[Trending] LLM verify failed, skipping:', (err as Error).message?.substring(0, 50))
+    return true // 검증 실패 시 통과
+  }
+}
 
 // ============================================================
 // API 핸들러
@@ -303,39 +348,65 @@ export async function POST(request: NextRequest) {
             prompt: COMPOSITE_PROMPT,
             image_urls: [seg.targetImageUrl!, frameUrl],
           })
-          return { index, seg, trimmedUrl, editRequestId: editResult.request_id, frameWidth, frameHeight, trimOffset }
+          return { index, seg, frameUrl, trimmedUrl, editRequestId: editResult.request_id, frameWidth, frameHeight, trimOffset }
         })
       )
 
       // ============================================================
-      // Phase 3: 모든 Kling I2I 완료 대기 (병렬 폴링)
+      // Phase 3: 모든 Kling I2I 완료 대기 + LLM 검증 + 재시도 (병렬)
       // ============================================================
       const editResults = await Promise.all(
-        editSubmissions.map(async ({ index, seg, trimmedUrl, editRequestId, frameWidth, frameHeight, trimOffset }) => {
-          for (let attempt = 0; attempt < 60; attempt++) {
-            await new Promise((resolve) => setTimeout(resolve, 3000))
-            const editStatus = await getFalQueueStatus(KLING_I2I_MODEL, editRequestId)
-            if (editStatus.status === 'COMPLETED') {
-              const editResponse = await getFalQueueResult(KLING_I2I_MODEL, editRequestId)
-              const rawImageUrl = editResponse.images?.[0]?.url
-              if (rawImageUrl) {
-                console.log(`[Trending] Seedream 4.5 Edit completed seg${index}:`, rawImageUrl.substring(0, 80))
+        editSubmissions.map(async ({ index, seg, frameUrl, trimmedUrl, editRequestId, frameWidth, frameHeight, trimOffset }) => {
+          let currentRequestId = editRequestId
+          let retryCount = 0
 
-                // 결과 이미지를 프레임과 동일 크기로 crop+resize (안전장치)
-                const imgRes = await fetch(rawImageUrl)
-                const imgBuffer = Buffer.from(await imgRes.arrayBuffer())
-                const resizedBuffer = await sharp(imgBuffer)
-                  .resize(frameWidth, frameHeight, { fit: 'cover', position: 'centre' })
-                  .jpeg({ quality: 90 })
-                  .toBuffer()
+          while (retryCount <= MAX_IMAGE_RETRIES) {
+            // 폴링 대기
+            for (let attempt = 0; attempt < 60; attempt++) {
+              await new Promise((resolve) => setTimeout(resolve, 3000))
+              const editStatus = await getFalQueueStatus(KLING_I2I_MODEL, currentRequestId)
+              if (editStatus.status === 'COMPLETED') {
+                const editResponse = await getFalQueueResult(KLING_I2I_MODEL, currentRequestId)
+                const rawImageUrl = editResponse.images?.[0]?.url
+                if (rawImageUrl) {
+                  console.log(`[Trending] I2I completed seg${index} (try ${retryCount + 1}):`, rawImageUrl.substring(0, 80))
 
-                const resizedKey = `trending/${user.id}/edited_${generation.id}_seg${index}_${Date.now()}.jpg`
-                const compositedImageUrl = await uploadBufferToR2(resizedBuffer, resizedKey, 'image/jpeg')
+                  // crop+resize
+                  const imgRes = await fetch(rawImageUrl)
+                  const imgBuffer = Buffer.from(await imgRes.arrayBuffer())
+                  const resizedBuffer = await sharp(imgBuffer)
+                    .resize(frameWidth, frameHeight, { fit: 'cover', position: 'centre' })
+                    .jpeg({ quality: 90 })
+                    .toBuffer()
 
-                return { index, seg, trimmedUrl, compositedImageUrl, trimOffset }
+                  const resizedKey = `trending/${user.id}/edited_${generation.id}_seg${index}_${Date.now()}.jpg`
+                  const compositedImageUrl = await uploadBufferToR2(resizedBuffer, resizedKey, 'image/jpeg')
+
+                  // LLM 검증
+                  if (retryCount < MAX_IMAGE_RETRIES) {
+                    const passed = await verifyCompositeImage(seg.targetImageUrl!, frameUrl, compositedImageUrl)
+                    if (!passed) {
+                      console.log(`[Trending] seg${index}: LLM 검증 실패, 재시도 ${retryCount + 1}/${MAX_IMAGE_RETRIES}`)
+                      retryCount++
+                      // 재제출
+                      const retryResult = await submitKlingI2IToQueue({
+                        prompt: COMPOSITE_PROMPT,
+                        image_urls: [seg.targetImageUrl!, frameUrl],
+                      })
+                      currentRequestId = retryResult.request_id
+                      break // 내부 폴링 루프 탈출 → 외부 while에서 다시 폴링
+                    }
+                  }
+
+                  return { index, seg, trimmedUrl, compositedImageUrl, trimOffset }
+                }
               }
             }
+
+            // 폴링 60회 초과 시
+            if (retryCount >= MAX_IMAGE_RETRIES) break
           }
+
           throw new Error(`세그먼트 ${index}: 배경 합성에 실패했습니다`)
         })
       )
