@@ -20,7 +20,7 @@ const i18n: Record<Lang, { title: string; description: string }> = {
   },
   zh: {
     title: '热门工具 - AI动作控制 | gwanggo',
-    description: '使用AI换脸工具将视频中的人物转换为其他人。基于Kling 3.0 Motion Control。',
+    description: '使用AI动作控制工具将视频中的人物转换为其他人。基于Kling 3.0 Motion Control。',
   },
 }
 

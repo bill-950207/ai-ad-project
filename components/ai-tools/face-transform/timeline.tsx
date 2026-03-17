@@ -3,6 +3,7 @@
 import { useRef, useCallback, useMemo, useState, useEffect } from 'react'
 import { X, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/contexts/language-context'
 
 // ============================================================
 // 타입
@@ -51,6 +52,9 @@ export default function Timeline({
   selectedSegmentId,
   onSelectSegment,
 }: TimelineProps) {
+  const { t } = useLanguage()
+  const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
+
   const trackRef = useRef<HTMLDivElement>(null)
   const [dragMode, setDragMode] = useState<DragMode>(null)
 
@@ -255,7 +259,7 @@ export default function Timeline({
                 {/* 라벨 */}
                 {width > 8 && (
                   <span className="text-[10px] font-medium text-white/90 truncate pointer-events-none">
-                    {seg.targetPersonLabel || `변환 ${i + 1}`}
+                    {seg.targetPersonLabel || `${aiToolsT.transformTarget || '변환'} ${i + 1}`}
                   </span>
                 )}
               </div>
@@ -297,7 +301,7 @@ export default function Timeline({
         <div className="flex items-center gap-1.5">
           {segments.length > 0 && (
             <span className="text-[10px] text-violet-400/80">
-              {segments.length}개 구간
+              {segments.length}{aiToolsT.segmentCount || '개 구간'}
             </span>
           )}
         </div>

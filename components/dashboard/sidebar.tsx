@@ -56,7 +56,7 @@ interface NavItem {
 // 상수 정의
 // ============================================================
 
-const getNavItems = (lang: string): NavItem[] => [
+const getNavItems = (lang: string, admin: boolean): NavItem[] => [
   {
     labelKey: 'adCreationTools',
     icon: <Wand2 className="w-4 h-4" />,
@@ -80,7 +80,7 @@ const getNavItems = (lang: string): NavItem[] => [
     children: [
       { labelKey: 'videoGeneration', href: `/dashboard/ai-tools/${lang}/video`, icon: <Film className="w-4 h-4" /> },
       { labelKey: 'imageGeneration', href: `/dashboard/ai-tools/${lang}/image`, icon: <ImagePlus className="w-4 h-4" /> },
-      { labelKey: 'trendingTools', href: `/dashboard/ai-tools/${lang}/trending`, icon: <TrendingUp className="w-4 h-4" /> },
+      ...(admin ? [{ labelKey: 'trendingTools', href: `/dashboard/ai-tools/${lang}/trending`, icon: <TrendingUp className="w-4 h-4" /> }] : []),
     ]
   }
 ]
@@ -171,7 +171,7 @@ export function Sidebar() {
     router.push('/login')
   }
 
-  const navItems = useMemo(() => getNavItems(language), [language])
+  const navItems = useMemo(() => getNavItems(language, isAdmin), [language, isAdmin])
 
   const isChildActive = (href: string) => {
     if (!pathname) return false

@@ -434,13 +434,13 @@ export default function FaceTransformEditor() {
                     <div className="flex bg-black" style={{ height: '60vh' }}>
                       {/* 원본 */}
                       <div className="relative flex-1 flex items-center justify-center overflow-hidden">
-                        <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">원본</div>
+                        <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">{aiToolsT.originalVideo || '원본'}</div>
                         <video src={sourceVideoUrl!} className="h-full object-contain" muted autoPlay loop playsInline />
                       </div>
                       <div className="w-px bg-white/10" />
                       {/* 결과 */}
                       <div className="relative flex-1 flex items-center justify-center overflow-hidden">
-                        <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-violet-500/80 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">변환 결과</div>
+                        <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-violet-500/80 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">{aiToolsT.transformResult || '변환 결과'}</div>
                         <video src={generationStatus.resultUrl} className="h-full object-contain" muted autoPlay loop playsInline />
                       </div>
                     </div>
@@ -466,7 +466,7 @@ export default function FaceTransformEditor() {
                             className="flex items-center gap-2 px-4 py-2 bg-white/[0.06] hover:bg-white/[0.1] text-white/60 text-xs font-medium rounded-lg border border-white/[0.08] transition-colors"
                           >
                             <Plus className="w-3.5 h-3.5" />
-                            새로 만들기
+                            {aiToolsT.createNew || '새로 만들기'}
                           </button>
                         </div>
                       </div>
@@ -489,7 +489,7 @@ export default function FaceTransformEditor() {
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/[0.06] hover:bg-white/[0.1] text-white/70 text-sm font-medium rounded-xl border border-white/[0.08] transition-colors"
                   >
                     <ArrowLeft className="w-4 h-4" />
-                    에디터로 돌아가기
+                    {aiToolsT.backToEditor || '에디터로 돌아가기'}
                   </button>
                 </div>
 
@@ -503,7 +503,7 @@ export default function FaceTransformEditor() {
                       <div className="w-28 h-40 rounded-2xl overflow-hidden border-2 border-white/10 bg-black shadow-xl shadow-violet-500/10">
                         <video src={sourceVideoUrl!} className="w-full h-full object-cover" muted />
                       </div>
-                      <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 text-[10px] text-white/50 bg-black/70 px-2 py-0.5 rounded-md">원본</span>
+                      <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 text-[10px] text-white/50 bg-black/70 px-2 py-0.5 rounded-md">{aiToolsT.originalVideo || '원본'}</span>
                     </div>
 
                     {/* 화살표 */}
@@ -534,7 +534,7 @@ export default function FaceTransformEditor() {
                             )}
                           </div>
                           <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 text-[10px] text-violet-300/80 bg-black/70 px-2 py-0.5 rounded-md whitespace-nowrap">
-                            {seg.targetPersonLabel || `변환 대상 ${i + 1}`}
+                            {seg.targetPersonLabel || `${aiToolsT.transformTarget || '변환 대상'} ${i + 1}`}
                           </span>
                         </div>
                       ))}
@@ -545,12 +545,12 @@ export default function FaceTransformEditor() {
                   <div className="text-center space-y-1">
                     <h2 className="text-base font-semibold text-white/90">
                       {generationStatus?.status === 'COMPOSITING'
-                        ? '영상을 합성하고 있습니다'
+                        ? (aiToolsT.compositingVideo || '영상을 합성하고 있습니다')
                         : generationStatus?.status === 'IN_PROGRESS'
-                        ? 'AI가 영상을 변환하고 있습니다'
-                        : '생성 준비 중...'}
+                        ? (aiToolsT.transformingVideo || 'AI가 영상을 변환하고 있습니다')
+                        : (aiToolsT.preparingGeneration || '생성 준비 중...')}
                     </h2>
-                    <p className="text-xs text-white/30">잠시만 기다려주세요. 변환이 완료되면 바로 알려드립니다.</p>
+                    <p className="text-xs text-white/30">{aiToolsT.pleaseWait || '잠시만 기다려주세요...'}</p>
                   </div>
 
                   {/* 진행률 바 */}
@@ -601,7 +601,7 @@ export default function FaceTransformEditor() {
               {showGuide && segments.length === 0 && videoDuration > 0 && !isComplete && (
                 <div className="p-4 bg-violet-500/5 border border-violet-500/15 rounded-xl space-y-3">
                   <div className="flex items-start justify-between">
-                    <h3 className="text-sm font-semibold text-white/80">사용 방법</h3>
+                    <h3 className="text-sm font-semibold text-white/80">{aiToolsT.howToUse || '사용 방법'}</h3>
                     <button onClick={() => setShowGuide(false)} className="p-0.5 text-white/30 hover:text-white/60 transition-colors">
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -612,8 +612,8 @@ export default function FaceTransformEditor() {
                         <MousePointer2 className="w-3 h-3 text-violet-400" />
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-white/70">영상에서 변환할 시점으로 이동</p>
-                        <p className="text-[11px] text-white/30">영상을 재생하거나 드래그하여 원하는 위치로 이동하세요</p>
+                        <p className="text-xs font-medium text-white/70">{aiToolsT.guideStep1Title || '영상에서 변환할 시점으로 이동'}</p>
+                        <p className="text-[11px] text-white/30">{aiToolsT.guideStep1Desc || '영상을 재생하거나 드래그하여 원하는 위치로 이동하세요'}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
@@ -622,7 +622,7 @@ export default function FaceTransformEditor() {
                       </div>
                       <div>
                         <p className="text-xs font-medium text-white/70">변환 구간 추가</p>
-                        <p className="text-[11px] text-white/30">아래 버튼을 클릭하면 현재 위치에 3초 구간이 추가됩니다</p>
+                        <p className="text-[11px] text-white/30">{aiToolsT.guideStep2Desc || '아래 버튼을 클릭하면 현재 위치에 3초 구간이 추가됩니다'}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
@@ -630,8 +630,8 @@ export default function FaceTransformEditor() {
                         <ImagePlus className="w-3 h-3 text-violet-400" />
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-white/70">변환할 사람 사진 업로드</p>
-                        <p className="text-[11px] text-white/30">우측 패널에서 각 구간에 대상 사진을 업로드하세요</p>
+                        <p className="text-xs font-medium text-white/70">{aiToolsT.guideStep3Title || '변환할 사람 사진 업로드'}</p>
+                        <p className="text-[11px] text-white/30">{aiToolsT.guideStep3Desc || '우측 패널에서 각 구간에 대상 사진을 업로드하세요'}</p>
                       </div>
                     </div>
                   </div>
@@ -665,7 +665,7 @@ export default function FaceTransformEditor() {
                           {aiToolsT.addTransformSegment || '변환 구간 추가'}
                         </p>
                         <p className="text-[11px] text-white/30 mt-0.5">
-                          현재 재생 위치에 3초 변환 구간이 추가됩니다
+                          {aiToolsT.segmentAddDesc || '현재 재생 위치에 3초 변환 구간이 추가됩니다'}
                         </p>
                       </div>
                     </button>
@@ -913,12 +913,12 @@ export default function FaceTransformEditor() {
                   {/* 생성 버튼 아래 안내 */}
                   {!isGenerating && segments.length === 0 && (
                     <p className="text-[11px] text-white/25 text-center">
-                      변환 구간을 먼저 추가해주세요
+                      {aiToolsT.addSegmentFirst || '변환 구간을 먼저 추가해주세요'}
                     </p>
                   )}
                   {!isGenerating && segments.length > 0 && segments.some((s) => !s.targetImageUrl) && (
                     <p className="text-[11px] text-amber-400/60 text-center">
-                      모든 구간에 변환할 사람의 사진을 업로드해주세요
+                      {aiToolsT.uploadAllPhotos || '모든 구간에 변환할 사람의 사진을 업로드해주세요'}
                     </p>
                   )}
                 </div>

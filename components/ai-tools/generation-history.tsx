@@ -15,6 +15,9 @@ function TrendingComparisonPlayer({
   resultUrl: string
   inputParams: Record<string, unknown> | null
 }) {
+  const { t } = useLanguage()
+  const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
+
   const originalRef = useRef<HTMLVideoElement>(null)
   const resultRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -84,7 +87,7 @@ function TrendingComparisonPlayer({
         {/* 원본 */}
         <div className="relative flex-1 flex items-center justify-center overflow-hidden">
           <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">
-            원본
+            {aiToolsT.originalVideo || '원본'}
           </div>
           {sourceVideoUrl ? (
             <video
@@ -98,7 +101,7 @@ function TrendingComparisonPlayer({
             />
           ) : (
             <div className="h-full aspect-[9/16] bg-secondary/20 flex items-center justify-center text-xs text-muted-foreground">
-              원본 없음
+              {aiToolsT.noOriginal || '원본 없음'}
             </div>
           )}
         </div>
@@ -109,7 +112,7 @@ function TrendingComparisonPlayer({
         {/* 생성본 */}
         <div className="relative flex-1 flex items-center justify-center overflow-hidden">
           <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-violet-500/80 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">
-            변환 결과
+            {aiToolsT.transformResult || '변환 결과'}
           </div>
           <video
             ref={resultRef}
@@ -175,7 +178,7 @@ function TrendingComparisonPlayer({
           {transformSegments.length > 0 && (
             <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
               <div className="w-3 h-2 bg-violet-500/70 rounded-sm" />
-              변환 구간 ({transformSegments.length}개)
+              {aiToolsT.transformSegmentCount || '변환 구간'} ({transformSegments.length})
             </div>
           )}
         </div>
@@ -195,7 +198,7 @@ function TrendingComparisonPlayer({
                     />
                   )}
                   <div className="text-[10px]">
-                    <div className="text-violet-400 font-medium">구간 {i + 1}</div>
+                    <div className="text-violet-400 font-medium">{aiToolsT.segmentNumber || '구간'} {i + 1}</div>
                     <div className="text-muted-foreground tabular-nums">
                       {fmtTime(seg.startTime)} ~ {fmtTime(seg.endTime)}
                     </div>
