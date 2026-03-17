@@ -212,6 +212,58 @@ export async function concatenateVideosWithReencode(
 }
 
 /**
+ * 비디오에서 특정 시간의 프레임을 이미지로 추출합니다.
+ *
+ * @param videoUrl - 비디오 URL
+ * @param timeSeconds - 추출할 시간 (초)
+ * @returns 추출된 프레임 이미지 Buffer (JPEG)
+ */
+export async function extractFrame(
+  videoUrl: string,
+  timeSeconds: number
+): Promise<Buffer> {
+  console.log(`extractFrame: ${timeSeconds}s from ${videoUrl.substring(0, 50)}...`)
+
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'frame-extract-'))
+  const inputPath = path.join(tempDir, 'input.mp4')
+  const outputPath = path.join(tempDir, 'frame.jpg')
+
+  try {
+    const response = await fetch(videoUrl)
+    if (!response.ok) {
+      throw new Error(`Failed to download video: ${response.status}`)
+    }
+    const arrayBuffer = await response.arrayBuffer()
+    await fs.writeFile(inputPath, Buffer.from(arrayBuffer))
+
+    await new Promise<void>((resolve, reject) => {
+      ffmpeg()
+        .input(inputPath)
+        .inputOptions([`-ss`, `${timeSeconds}`])
+        .outputOptions(['-frames:v', '1', '-q:v', '2'])
+        .output(outputPath)
+        .on('end', () => {
+          console.log('Frame extraction completed')
+          resolve()
+        })
+        .on('error', (err: Error) => {
+          console.error('FFmpeg frame extract error:', err)
+          reject(err)
+        })
+        .run()
+    })
+
+    return await fs.readFile(outputPath)
+  } finally {
+    try {
+      await fs.rm(tempDir, { recursive: true, force: true })
+    } catch {
+      // 무시
+    }
+  }
+}
+
+/**
  * 비디오 파일의 특정 구간을 트리밍합니다.
  *
  * @param videoUrl - 비디오 URL

@@ -15,9 +15,15 @@ import { recordCreditUse, recordCreditRefund } from '@/lib/credits/history'
 import {
   KLING3_MC_STD_CREDIT_PER_SECOND,
   KLING3_MC_PRO_CREDIT_PER_SECOND,
+  IMAGE_EDIT_CREDIT_COST,
 } from '@/lib/credits/constants'
-import { submitKling3McToQueue } from '@/lib/fal/client'
-import { trimVideo } from '@/lib/video/ffmpeg'
+import {
+  submitKling3McToQueue,
+  submitSeedreamEditToQueue,
+  getSeedreamEditQueueStatus,
+  getSeedreamEditQueueResponse,
+} from '@/lib/fal/client'
+import { trimVideo, extractFrame } from '@/lib/video/ffmpeg'
 import { uploadBufferToR2 } from '@/lib/storage/r2'
 
 // ============================================================
@@ -52,12 +58,14 @@ function calculateCredits(req: FaceTransformRequest): number {
     ? KLING3_MC_PRO_CREDIT_PER_SECOND['720p']
     : KLING3_MC_STD_CREDIT_PER_SECOND['720p']
 
-  return req.segments
-    .filter((s) => s.type === 'transform')
-    .reduce((total, seg) => {
-      const duration = seg.endTime - seg.startTime
-      return total + perSecond * Math.max(MIN_SEGMENT_DURATION, duration)
-    }, 0)
+  const transformSegments = req.segments.filter((s) => s.type === 'transform')
+
+  return transformSegments.reduce((total, seg) => {
+    const duration = seg.endTime - seg.startTime
+    const klingCost = perSecond * Math.max(MIN_SEGMENT_DURATION, duration)
+    const editCost = IMAGE_EDIT_CREDIT_COST.medium // 배경 합성 비용 (세그먼트당)
+    return total + klingCost + editCost
+  }, 0)
 }
 
 // ============================================================
@@ -169,16 +177,60 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // Transform 세그먼트: 영상 트리밍 → R2 업로드 → Kling MC 호출
-        const trimmedBuffer = await trimVideo(body.sourceVideoUrl, seg.startTime, seg.endTime)
-        const trimmedKey = `trending/${user.id}/trim_${generation.id}_seg${i}_${Date.now()}.mp4`
-        const trimmedUrl = await uploadBufferToR2(trimmedBuffer, trimmedKey, 'video/mp4')
+        // Transform 세그먼트:
+        // 1) 프레임 추출 + 영상 트리밍 (병렬)
+        // 2) Seedream Edit로 대상 인물을 영상 배경에 합성
+        // 3) 합성 이미지 + 트림 영상 → Kling MC 호출
+        const [frameBuffer, trimmedBuffer] = await Promise.all([
+          extractFrame(body.sourceVideoUrl, seg.startTime),
+          trimVideo(body.sourceVideoUrl, seg.startTime, seg.endTime),
+        ])
 
+        // 프레임 + 트림 영상 R2 업로드 (병렬)
+        const timestamp = Date.now()
+        const [frameUrl, trimmedUrl] = await Promise.all([
+          uploadBufferToR2(
+            frameBuffer,
+            `trending/${user.id}/frame_${generation.id}_seg${i}_${timestamp}.jpg`,
+            'image/jpeg'
+          ),
+          uploadBufferToR2(
+            trimmedBuffer,
+            `trending/${user.id}/trim_${generation.id}_seg${i}_${timestamp}.mp4`,
+            'video/mp4'
+          ),
+        ])
+
+        // Seedream Edit: 대상 인물 사진 + 배경 프레임 → 합성 이미지
+        const editResult = await submitSeedreamEditToQueue({
+          prompt: '이 인물을 배경 장면에 자연스럽게 배치하세요. 배경의 조명과 원근감을 유지하세요. Place this person naturally in the background scene, maintaining the lighting and perspective of the background.',
+          image_urls: [seg.targetImageUrl!, frameUrl],
+          aspect_ratio: '9:16',
+          quality: 'basic',
+        })
+
+        // Seedream Edit 완료 대기 (폴링)
+        let compositedImageUrl: string | undefined
+        for (let attempt = 0; attempt < 60; attempt++) { // 최대 3분 대기
+          await new Promise((resolve) => setTimeout(resolve, 3000))
+          const editStatus = await getSeedreamEditQueueStatus(editResult.request_id)
+          if (editStatus.status === 'COMPLETED') {
+            const editResponse = await getSeedreamEditQueueResponse(editResult.request_id)
+            compositedImageUrl = editResponse.images?.[0]?.url
+            break
+          }
+        }
+
+        if (!compositedImageUrl) {
+          throw new Error(`세그먼트 ${i}: 배경 합성에 실패했습니다`)
+        }
+
+        // Kling MC: 합성된 이미지 + 트림 영상 → 변환 영상
         const result = await submitKling3McToQueue({
           prompt: body.prompt || '영상 속 인물을 변환합니다',
-          image_url: seg.targetImageUrl!,
+          image_url: compositedImageUrl,
           video_url: trimmedUrl,
-          character_orientation: 'image', // 핵심: 출력이 target 사진 인물을 따름
+          character_orientation: 'image',
           keep_original_sound: true,
           tier: body.tier,
         })

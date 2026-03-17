@@ -19,6 +19,7 @@ import { useCredits } from '@/contexts/credit-context'
 import {
   KLING3_MC_STD_CREDIT_PER_SECOND,
   KLING3_MC_PRO_CREDIT_PER_SECOND,
+  IMAGE_EDIT_CREDIT_COST,
 } from '@/lib/credits/constants'
 import VideoDropzone from './video-dropzone'
 import ImageDropzone from './image-dropzone'
@@ -75,7 +76,7 @@ export default function FaceTransformEditor() {
     [segments, selectedSegmentId]
   )
 
-  // 크레딧 계산
+  // 크레딧 계산 (Kling MC + 배경 합성 Seedream Edit)
   const estimatedCredits = useMemo(() => {
     const perSecond = tier === 'pro'
       ? KLING3_MC_PRO_CREDIT_PER_SECOND['720p']
@@ -83,7 +84,9 @@ export default function FaceTransformEditor() {
 
     return segments.reduce((total, seg) => {
       const duration = seg.endTime - seg.startTime
-      return total + perSecond * Math.max(MIN_SEGMENT_DURATION, duration)
+      const klingCost = perSecond * Math.max(MIN_SEGMENT_DURATION, duration)
+      const editCost = IMAGE_EDIT_CREDIT_COST.medium // 배경 합성 비용
+      return total + klingCost + editCost
     }, 0)
   }, [segments, tier])
 
