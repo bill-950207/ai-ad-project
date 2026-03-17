@@ -74,20 +74,19 @@ function calculateCredits(req: FaceTransformRequest): number {
 // Seedream 4.5 Edit (FAL.ai) — 모델 ID + 제출 함수
 // ============================================================
 
-const SEEDREAM_45_EDIT_MODEL = 'fal-ai/bytedance/seedream/v4.5/edit'
+const KLING_I2I_MODEL = 'fal-ai/kling-image/o3/image-to-image'
 
-async function submitSeedream45EditToQueue(input: {
+async function submitKlingI2IToQueue(input: {
   prompt: string
-  image_urls: string[]
+  image_url: string
   image_size: { width: number; height: number }
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { request_id } = await fal.queue.submit(SEEDREAM_45_EDIT_MODEL as any, {
+  const { request_id } = await fal.queue.submit(KLING_I2I_MODEL as any, {
     input: {
       prompt: input.prompt,
-      image_urls: input.image_urls,
+      image_url: input.image_url,
       image_size: input.image_size,
-      enable_safety_checker: false,
     },
   })
   return { request_id }
@@ -270,8 +269,8 @@ export async function POST(request: NextRequest) {
       )
 
       // ============================================================
-      // Phase 2: 모든 FAL.ai Seedream 4.5 Edit 제출 (병렬)
-      // 원본 인물 사진을 프레임과 동일 비율로 resize 후 제출
+      // Phase 2: 모든 Kling Image O3 I2I 제출 (병렬)
+      // 인물 사진을 프레임 비율로 resize 후, Kling I2I로 배경 합성
       // ============================================================
       const editSubmissions = await Promise.all(
         prepResults.map(async ({ index, seg, frameUrl, trimmedUrl, frameWidth, frameHeight }) => {
@@ -285,10 +284,10 @@ export async function POST(request: NextRequest) {
           const resizedPersonKey = `trending/${user.id}/person_${generation.id}_seg${index}_${Date.now()}.jpg`
           const resizedPersonUrl = await uploadBufferToR2(resizedPersonBuffer, resizedPersonKey, 'image/jpeg')
 
-          console.log(`[Trending] Seedream 4.5 Edit submit seg${index}:`, { personUrl: resizedPersonUrl.substring(0, 60), frameUrl: frameUrl.substring(0, 60), frameSize: `${frameWidth}x${frameHeight}` })
-          const editResult = await submitSeedream45EditToQueue({
-            prompt: 'Take the person from image 1 (the portrait/selfie photo) and place them into the scene shown in image 2 (the video frame background). Keep the exact background, lighting, and environment from image 2. The person from image 1 should appear naturally standing or posing in the scene of image 2. Do NOT change the background. Output a single photo of the person from image 1 in the environment of image 2.',
-            image_urls: [resizedPersonUrl, frameUrl],
+          console.log(`[Trending] Kling I2I submit seg${index}:`, { personUrl: resizedPersonUrl.substring(0, 60), frameSize: `${frameWidth}x${frameHeight}` })
+          const editResult = await submitKlingI2IToQueue({
+            prompt: `Transform this person's surroundings to match the background scene from the video frame. Keep the person's face, pose, and body exactly the same. Only change the background environment to match: ${frameUrl}`,
+            image_url: resizedPersonUrl,
             image_size: { width: frameWidth, height: frameHeight },
           })
           return { index, seg, trimmedUrl, editRequestId: editResult.request_id, frameWidth, frameHeight }
@@ -296,15 +295,15 @@ export async function POST(request: NextRequest) {
       )
 
       // ============================================================
-      // Phase 3: 모든 FAL.ai Seedream 4.5 Edit 완료 대기 (병렬 폴링)
+      // Phase 3: 모든 Kling I2I 완료 대기 (병렬 폴링)
       // ============================================================
       const editResults = await Promise.all(
         editSubmissions.map(async ({ index, seg, trimmedUrl, editRequestId, frameWidth, frameHeight }) => {
           for (let attempt = 0; attempt < 60; attempt++) {
             await new Promise((resolve) => setTimeout(resolve, 3000))
-            const editStatus = await getFalQueueStatus(SEEDREAM_45_EDIT_MODEL, editRequestId)
+            const editStatus = await getFalQueueStatus(KLING_I2I_MODEL, editRequestId)
             if (editStatus.status === 'COMPLETED') {
-              const editResponse = await getFalQueueResult(SEEDREAM_45_EDIT_MODEL, editRequestId)
+              const editResponse = await getFalQueueResult(KLING_I2I_MODEL, editRequestId)
               const rawImageUrl = editResponse.images?.[0]?.url
               if (rawImageUrl) {
                 console.log(`[Trending] Seedream 4.5 Edit completed seg${index}:`, rawImageUrl.substring(0, 80))
