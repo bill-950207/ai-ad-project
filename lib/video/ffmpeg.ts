@@ -169,56 +169,56 @@ export async function concatenateVideosWithReencode(
       tempFiles.push(tempFilePath)
     }
 
-    // 1.5. 각 파일이 유효한 비디오인지 검증
-    const validFiles: string[] = []
+    // 2. 각 파일을 개별적으로 동일 포맷으로 재인코딩
+    const normalizedFiles: string[] = []
     for (let i = 0; i < tempFiles.length; i++) {
-      try {
-        const stat = await fs.stat(tempFiles[i])
-        if (stat.size < 1000) {
-          console.warn(`[concat-reencode] Skipping video_${i}: too small (${stat.size} bytes)`)
-          continue
-        }
-        validFiles.push(tempFiles[i])
-      } catch {
-        console.warn(`[concat-reencode] Skipping video_${i}: file not found`)
-      }
-    }
-
-    if (validFiles.length === 0) {
-      throw new Error('No valid video files to concatenate')
-    }
-    console.log(`[concat-reencode] ${validFiles.length}/${tempFiles.length} valid files`)
-
-    // 2. FFmpeg로 비디오 합치기 (재인코딩)
-    await new Promise<void>((resolve, reject) => {
-      let command = ffmpeg()
-
-      // 모든 입력 파일 추가
-      validFiles.forEach((file) => {
-        command = command.input(file)
+      const normalizedPath = path.join(tempDir, `norm_${i}.ts`) // MPEG-TS for concat
+      await new Promise<void>((resolve, reject) => {
+        ffmpeg()
+          .input(tempFiles[i])
+          .outputOptions([
+            '-c:v', 'libx264',
+            '-preset', 'fast',
+            '-crf', '23',
+            '-vf', `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,fps=${fps}`,
+            '-an', // 오디오 제거 (합성 시 별도 처리)
+            '-f', 'mpegts',
+          ])
+          .output(normalizedPath)
+          .on('end', () => {
+            console.log(`[concat-reencode] Normalized ${i + 1}/${tempFiles.length}`)
+            resolve()
+          })
+          .on('error', (err: Error) => {
+            console.error(`[concat-reencode] Failed to normalize video ${i + 1}:`, err.message)
+            reject(err)
+          })
+          .run()
       })
+      normalizedFiles.push(normalizedPath)
+    }
 
-      // 필터 복합체 생성 (각 비디오를 동일한 해상도/fps로 변환)
-      const filterComplex = validFiles
-        .map((_, i) => `[${i}:v:0]scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,fps=${fps}[v${i}]`)
-        .join(';') +
-        ';' +
-        validFiles.map((_, i) => `[v${i}]`).join('') +
-        `concat=n=${validFiles.length}:v=1:a=0[outv]`
-      console.log(`[concat-reencode] Filter: ${filterComplex.substring(0, 200)}...`)
+    // 3. concat demuxer로 합치기 (재인코딩 불필요 — 이미 동일 포맷)
+    const concatListPath = path.join(tempDir, 'concat.txt')
+    const concatContent = normalizedFiles.map(f => `file '${f}'`).join('\n')
+    await fs.writeFile(concatListPath, concatContent)
 
-      command
-        .complexFilter(filterComplex)
+    await new Promise<void>((resolve, reject) => {
+      ffmpeg()
+        .input(concatListPath)
+        .inputOptions(['-f', 'concat', '-safe', '0'])
         .outputOptions([
-          '-map', '[outv]',
           '-c:v', 'libx264',
-          '-preset', 'medium',
+          '-preset', 'fast',
           '-crf', '23',
           '-b:v', videoBitrate,
           '-movflags', '+faststart',
         ])
         .output(outputPath)
-        .on('end', () => resolve())
+        .on('end', () => {
+          console.log(`[concat-reencode] Concatenation completed`)
+          resolve()
+        })
         .on('error', (err: Error) => reject(err))
         .run()
     })
