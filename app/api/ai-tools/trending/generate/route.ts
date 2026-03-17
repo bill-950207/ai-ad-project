@@ -17,13 +17,13 @@ import {
   KLING3_MC_PRO_CREDIT_PER_SECOND,
   IMAGE_EDIT_CREDIT_COST,
 } from '@/lib/credits/constants'
+import { submitKling3McToQueue } from '@/lib/fal/client'
 import {
-  submitKling3McToQueue,
-  submitQwenImage2EditToQueue,
-  getFalQueueStatus,
-  getFalQueueResult,
-  QWEN_IMAGE2_EDIT_MODEL,
-} from '@/lib/fal/client'
+  createEditTask,
+  getEditQueueStatus,
+  getEditQueueResponse,
+  type EditAspectRatio,
+} from '@/lib/kie/client'
 import { downloadToTemp, extractFrameFromFile, trimVideoFromFile } from '@/lib/video/ffmpeg'
 import { uploadBufferToR2 } from '@/lib/storage/r2'
 import { promises as fs } from 'fs'
@@ -75,15 +75,20 @@ function calculateCredits(req: FaceTransformRequest): number {
 // 프레임에서 aspect ratio 추론
 // ============================================================
 
-async function detectImageSize(frameBuffer: Buffer): Promise<{ width: number; height: number }> {
+async function detectAspectRatio(frameBuffer: Buffer): Promise<EditAspectRatio> {
   try {
     const metadata = await sharp(frameBuffer).metadata()
-    return {
-      width: metadata.width || 1024,
-      height: metadata.height || 1024,
-    }
+    const w = metadata.width || 1
+    const h = metadata.height || 1
+    const ratio = w / h
+
+    if (ratio > 1.6) return '16:9'
+    if (ratio > 1.2) return '4:3'
+    if (ratio > 0.9) return '1:1'
+    if (ratio > 0.7) return '3:4'
+    return '9:16'
   } catch {
-    return { width: 1024, height: 1024 }
+    return '9:16'
   }
 }
 
@@ -237,8 +242,8 @@ export async function POST(request: NextRequest) {
             trimVideoFromFile(sourceFilePath!, seg.startTime, seg.endTime),
           ])
 
-          // 이미지 크기 감지
-          const imageSize = await detectImageSize(frameBuffer)
+          // aspect ratio 감지
+          const aspectRatio = await detectAspectRatio(frameBuffer)
 
           const ts = Date.now()
           const [frameUrl, trimmedUrl] = await Promise.all([
@@ -246,38 +251,39 @@ export async function POST(request: NextRequest) {
             uploadBufferToR2(trimmedBuffer, `trending/${user.id}/trim_${generation.id}_seg${i}_${ts}.mp4`, 'video/mp4'),
           ])
 
-          return { index: i, seg, frameUrl, trimmedUrl, imageSize }
+          return { index: i, seg, frameUrl, trimmedUrl, aspectRatio }
         })
       )
 
       // ============================================================
-      // Phase 2: 모든 Qwen Image 2 Edit 제출 (병렬)
+      // Phase 2: 모든 Kie.ai Seedream 4.5 Edit 제출 (병렬)
       // ============================================================
       const editSubmissions = await Promise.all(
-        prepResults.map(async ({ index, seg, frameUrl, trimmedUrl, imageSize }) => {
-          console.log(`[Trending] Qwen Image 2 Edit submit seg${index}:`, { targetImage: seg.targetImageUrl, frameUrl, imageSize })
-          const editResult = await submitQwenImage2EditToQueue({
+        prepResults.map(async ({ index, seg, frameUrl, trimmedUrl, aspectRatio }) => {
+          console.log(`[Trending] Kie Edit submit seg${index}:`, { targetImage: seg.targetImageUrl, frameUrl, aspectRatio })
+          const editResult = await createEditTask({
             prompt: 'Take the person from image 1 (the portrait/selfie photo) and place them into the scene shown in image 2 (the video frame background). Keep the exact background, lighting, and environment from image 2. The person from image 1 should appear naturally standing or posing in the scene of image 2. Do NOT change the background. Output a single photo of the person from image 1 in the environment of image 2.',
             image_urls: [seg.targetImageUrl!, frameUrl],
-            image_size: imageSize,
+            aspect_ratio: aspectRatio,
+            quality: 'basic',
           })
-          return { index, seg, trimmedUrl, editRequestId: editResult.request_id }
+          return { index, seg, trimmedUrl, editTaskId: editResult.taskId }
         })
       )
 
       // ============================================================
-      // Phase 3: 모든 Qwen Image 2 Edit 완료 대기 (병렬 폴링)
+      // Phase 3: 모든 Kie.ai Edit 완료 대기 (병렬 폴링)
       // ============================================================
       const editResults = await Promise.all(
-        editSubmissions.map(async ({ index, seg, trimmedUrl, editRequestId }) => {
+        editSubmissions.map(async ({ index, seg, trimmedUrl, editTaskId }) => {
           for (let attempt = 0; attempt < 60; attempt++) {
             await new Promise((resolve) => setTimeout(resolve, 3000))
-            const editStatus = await getFalQueueStatus(QWEN_IMAGE2_EDIT_MODEL, editRequestId)
+            const editStatus = await getEditQueueStatus(editTaskId)
             if (editStatus.status === 'COMPLETED') {
-              const editResponse = await getFalQueueResult(QWEN_IMAGE2_EDIT_MODEL, editRequestId)
+              const editResponse = await getEditQueueResponse(editTaskId)
               const compositedImageUrl = editResponse.images?.[0]?.url
               if (compositedImageUrl) {
-                console.log(`[Trending] Qwen Edit completed seg${index}:`, compositedImageUrl.substring(0, 80))
+                console.log(`[Trending] Kie Edit completed seg${index}:`, compositedImageUrl.substring(0, 80))
                 return { index, seg, trimmedUrl, compositedImageUrl }
               }
             }
