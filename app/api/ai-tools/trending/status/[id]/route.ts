@@ -81,51 +81,35 @@ async function compositeSegments(
       console.warn('[Trending Composite] Failed to detect resolution:', e)
     }
 
-    // 모든 세그먼트를 시간순으로 정렬하여 영상 URL 수집
+    // 모든 세그먼트를 시간순으로 정렬
     const sortedTasks = [...updatedTasks].sort((a, b) => a.startTime - b.startTime)
-    const videoUrls: string[] = []
 
-    // 원본 세그먼트 트리밍 (로컬 파일 기반, 병렬)
-    const originalTasks = sortedTasks.filter((t) => t.type === 'original')
-    const originalUrls = await Promise.all(
-      originalTasks.map(async (task) => {
-        const trimmedBuffer = await trimVideoFromFile(sourceFilePath, task.startTime, task.endTime)
-        const trimmedKey = `trending/${userId}/orig_${generationId}_seg${task.index}_${Date.now()}.mp4`
-        return uploadBufferToR2(trimmedBuffer, trimmedKey, 'video/mp4')
+    // 모든 세그먼트 URL을 병렬로 준비 (원본 트리밍 + transform 트리밍 동시)
+    const segmentUrlResults = await Promise.all(
+      sortedTasks.map(async (task): Promise<{ index: number; url: string } | null> => {
+        if (task.type === 'original') {
+          const trimmedBuffer = await trimVideoFromFile(sourceFilePath, task.startTime, task.endTime)
+          const key = `trending/${userId}/orig_${generationId}_seg${task.index}_${Date.now()}.mp4`
+          return { index: task.index, url: await uploadBufferToR2(trimmedBuffer, key, 'video/mp4') }
+        } else if (task.resultUrl && task.originalDuration) {
+          // Kling MC 결과를 유저 원래 길이로 트림
+          const offset = task.trimOffset || 0
+          const dl = await downloadToTemp(task.resultUrl, 'mp4')
+          tempDirsToClean.push(dl.tempDir)
+          const trimmedBuffer = await trimVideoFromFile(dl.filePath, offset, offset + task.originalDuration)
+          const key = `trending/${userId}/klingtrim_${generationId}_seg${task.index}_${Date.now()}.mp4`
+          return { index: task.index, url: await uploadBufferToR2(trimmedBuffer, key, 'video/mp4') }
+        } else if (task.resultUrl) {
+          return { index: task.index, url: task.resultUrl }
+        }
+        return null
       })
     )
 
-    // URL 매핑 생성
-    const originalUrlMap = new Map<number, string>()
-    originalTasks.forEach((task, i) => { originalUrlMap.set(task.index, originalUrls[i]) })
-
-    // 시간순으로 URL 수집 (3초 미만 구간은 Kling 결과를 원래 길이로 트림)
-    for (const task of sortedTasks) {
-      if (task.type === 'original') {
-        const url = originalUrlMap.get(task.index)
-        if (url) videoUrls.push(url)
-      } else if (task.resultUrl) {
-        if (task.originalDuration) {
-          // Kling MC는 3.3초로 생성, 유저 원래 길이로 트림
-          // trimOffset: startTime 앞당김 시 그만큼 건너뛰고 잘라야 함
-          const offset = task.trimOffset || 0
-          const trimmedBuffer = await trimVideoFromFile(
-            await (async () => {
-              const dl = await downloadToTemp(task.resultUrl!, 'mp4')
-              tempDirsToClean.push(dl.tempDir)
-              return dl.filePath
-            })(),
-            offset,
-            offset + task.originalDuration
-          )
-          const trimmedKey = `trending/${userId}/klingtrim_${generationId}_seg${task.index}_${Date.now()}.mp4`
-          const trimmedUrl = await uploadBufferToR2(trimmedBuffer, trimmedKey, 'video/mp4')
-          videoUrls.push(trimmedUrl)
-        } else {
-          videoUrls.push(task.resultUrl)
-        }
-      }
-    }
+    // 시간순으로 URL 수집
+    const videoUrls = segmentUrlResults
+      .filter((r): r is { index: number; url: string } => r !== null)
+      .map(r => r.url)
 
     // FFmpeg 합성 (비디오만 — 오디오는 원본에서 추출하여 합성)
     const finalBuffer = await concatenateVideosWithReencode(videoUrls, {
