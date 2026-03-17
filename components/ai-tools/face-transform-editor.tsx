@@ -11,6 +11,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Film,
+  MousePointer2,
+  ImagePlus,
+  X,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -69,6 +72,17 @@ export default function FaceTransformEditor() {
   const [generationStatus, setGenerationStatus] = useState<GenerationStatus | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
+
+  // UX: 인라인 에러 메시지 (alert 대체)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  useEffect(() => {
+    if (!errorMsg) return
+    const timer = setTimeout(() => setErrorMsg(null), 4000)
+    return () => clearTimeout(timer)
+  }, [errorMsg])
+
+  // UX: 온보딩 가이드 (세그먼트 0개 + 영상 업로드됨)
+  const [showGuide, setShowGuide] = useState(true)
 
   // 폴링 클린업 (unmount 시)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -132,7 +146,7 @@ export default function FaceTransformEditor() {
       (seg) => newStart < seg.endTime && newEnd > seg.startTime
     )
     if (overlaps) {
-      alert(aiToolsT.segmentOverlap || '다른 구간과 겹칩니다. 다른 위치를 선택하세요.')
+      setErrorMsg(aiToolsT.segmentOverlap || '다른 구간과 겹칩니다. 다른 위치를 선택하세요.')
       return
     }
 
@@ -162,7 +176,7 @@ export default function FaceTransformEditor() {
     // 모든 세그먼트에 대상 이미지가 있는지 확인
     const missingImage = segments.find((s) => !s.targetImageUrl)
     if (missingImage) {
-      alert(aiToolsT.targetImageRequired || '모든 변환 구간에 대상 사진이 필요합니다.')
+      setErrorMsg(aiToolsT.targetImageRequired || '모든 변환 구간에 대상 사진이 필요합니다.')
       return
     }
 
@@ -221,9 +235,9 @@ export default function FaceTransformEditor() {
       if (!res.ok) {
         const data = await res.json()
         if (res.status === 402) {
-          alert(aiToolsT.insufficientCredits || '크레딧이 부족합니다')
+          setErrorMsg(aiToolsT.insufficientCredits || '크레딧이 부족합니다')
         } else {
-          alert(data.error || '생성에 실패했습니다')
+          setErrorMsg(data.error || '생성에 실패했습니다')
         }
         setIsGenerating(false)
         setGenerationStatus(null)
@@ -310,6 +324,17 @@ export default function FaceTransformEditor() {
         </div>
       </header>
 
+      {/* 인라인 에러 토스트 */}
+      {errorMsg && (
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 bg-red-500/90 backdrop-blur-sm text-white text-xs font-medium rounded-xl shadow-lg shadow-red-500/20 animate-in fade-in slide-in-from-top-2">
+          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+          {errorMsg}
+          <button onClick={() => setErrorMsg(null)} className="ml-1 p-0.5 hover:bg-white/20 rounded transition-colors">
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
+
       {/* 메인 컨텐츠 */}
       <div className="flex-1 overflow-auto">
         {!sourceVideoUrl ? (
@@ -360,6 +385,47 @@ export default function FaceTransformEditor() {
                 )}
               </div>
 
+              {/* 온보딩 가이드 — 세그먼트 없을 때 */}
+              {showGuide && segments.length === 0 && videoDuration > 0 && !isComplete && (
+                <div className="p-4 bg-violet-500/5 border border-violet-500/15 rounded-xl space-y-3">
+                  <div className="flex items-start justify-between">
+                    <h3 className="text-sm font-semibold text-white/80">사용 방법</h3>
+                    <button onClick={() => setShowGuide(false)} className="p-0.5 text-white/30 hover:text-white/60 transition-colors">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="space-y-2.5">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-violet-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                        <MousePointer2 className="w-3 h-3 text-violet-400" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-white/70">영상에서 변환할 시점으로 이동</p>
+                        <p className="text-[11px] text-white/30">영상을 재생하거나 드래그하여 원하는 위치로 이동하세요</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-violet-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                        <Plus className="w-3 h-3 text-violet-400" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-white/70">변환 구간 추가</p>
+                        <p className="text-[11px] text-white/30">아래 버튼을 클릭하면 현재 위치에 5초 구간이 추가됩니다</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-violet-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                        <ImagePlus className="w-3 h-3 text-violet-400" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-white/70">변환할 사람 사진 업로드</p>
+                        <p className="text-[11px] text-white/30">우측 패널에서 각 구간에 대상 사진을 업로드하세요</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* 타임라인 */}
               {videoDuration > 0 && !isComplete && (
                 <div className="space-y-3 p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl">
@@ -373,10 +439,28 @@ export default function FaceTransformEditor() {
                     onSelectSegment={setSelectedSegmentId}
                   />
 
-                  {!isGenerating && (
+                  {!isGenerating && segments.length === 0 ? (
+                    /* 세그먼트 0개: 대형 CTA + 가이드 */
+                    <button
+                      onClick={() => { setShowGuide(false); handleAddSegment() }}
+                      className="w-full flex flex-col items-center gap-2 px-4 py-5 bg-violet-500/10 hover:bg-violet-500/15 border-2 border-dashed border-violet-500/30 hover:border-violet-500/50 rounded-xl transition-all group cursor-pointer"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-violet-500/20 group-hover:bg-violet-500/30 flex items-center justify-center transition-colors">
+                        <Plus className="w-5 h-5 text-violet-400" />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-violet-300">
+                          {aiToolsT.addTransformSegment || '변환 구간 추가'}
+                        </p>
+                        <p className="text-[11px] text-white/30 mt-0.5">
+                          현재 재생 위치에 5초 변환 구간이 추가됩니다
+                        </p>
+                      </div>
+                    </button>
+                  ) : !isGenerating && (
                     <button
                       onClick={handleAddSegment}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-violet-300 hover:text-violet-200 bg-violet-500/10 hover:bg-violet-500/15 border border-violet-500/20 rounded-lg transition-all"
+                      className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-medium text-violet-300 hover:text-violet-200 bg-violet-500/10 hover:bg-violet-500/15 border border-violet-500/20 rounded-lg transition-all"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       {aiToolsT.addTransformSegment || '변환 구간 추가'}
@@ -613,6 +697,18 @@ export default function FaceTransformEditor() {
                       </>
                     )}
                   </button>
+
+                  {/* 생성 버튼 아래 안내 */}
+                  {!isGenerating && segments.length === 0 && (
+                    <p className="text-[11px] text-white/25 text-center">
+                      변환 구간을 먼저 추가해주세요
+                    </p>
+                  )}
+                  {!isGenerating && segments.length > 0 && segments.some((s) => !s.targetImageUrl) && (
+                    <p className="text-[11px] text-amber-400/60 text-center">
+                      모든 구간에 변환할 사람의 사진을 업로드해주세요
+                    </p>
+                  )}
                 </div>
               )}
             </div>
