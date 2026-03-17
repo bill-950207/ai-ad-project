@@ -105,7 +105,7 @@ async function compositeSegments(
         const url = originalUrlMap.get(task.index)
         if (url) videoUrls.push(url)
       } else if (task.resultUrl) {
-        if (task.originalDuration && task.originalDuration < 3) {
+        if (task.originalDuration) {
           // Kling MC는 3.3초로 생성, 유저 원래 길이로 트림
           // trimOffset: startTime 앞당김 시 그만큼 건너뛰고 잘라야 함
           const offset = task.trimOffset || 0
