@@ -262,7 +262,12 @@ export async function POST(request: NextRequest) {
             uploadBufferToR2(trimmedBuffer, `trending/${user.id}/trim_${generation.id}_seg${i}_${ts}.mp4`, 'video/mp4'),
           ])
 
-          return { index: i, seg, frameUrl, trimmedUrl, aspectRatio }
+          // 프레임 실제 크기 저장 (후처리 crop용)
+          const frameMeta = await sharp(frameBuffer).metadata()
+          const frameWidth = frameMeta.width || 720
+          const frameHeight = frameMeta.height || 1280
+
+          return { index: i, seg, frameUrl, trimmedUrl, aspectRatio, frameWidth, frameHeight }
         })
       )
 
@@ -270,15 +275,15 @@ export async function POST(request: NextRequest) {
       // Phase 2: 모든 Kie.ai Seedream 4.5 Edit 제출 (병렬)
       // ============================================================
       const editSubmissions = await Promise.all(
-        prepResults.map(async ({ index, seg, frameUrl, trimmedUrl, aspectRatio }) => {
-          console.log(`[Trending] Kie Edit submit seg${index}:`, { targetImage: seg.targetImageUrl, frameUrl, aspectRatio })
+        prepResults.map(async ({ index, seg, frameUrl, trimmedUrl, aspectRatio, frameWidth, frameHeight }) => {
+          console.log(`[Trending] Kie Edit submit seg${index}:`, { targetImage: seg.targetImageUrl, frameUrl, aspectRatio, frameSize: `${frameWidth}x${frameHeight}` })
           const editResult = await createEditTask({
             prompt: 'Take the person from image 1 (the portrait/selfie photo) and place them into the scene shown in image 2 (the video frame background). Keep the exact background, lighting, and environment from image 2. The person from image 1 should appear naturally standing or posing in the scene of image 2. Do NOT change the background. Output a single photo of the person from image 1 in the environment of image 2.',
             image_urls: [seg.targetImageUrl!, frameUrl],
             aspect_ratio: aspectRatio,
             quality: 'basic',
           })
-          return { index, seg, trimmedUrl, editTaskId: editResult.taskId }
+          return { index, seg, trimmedUrl, editTaskId: editResult.taskId, frameWidth, frameHeight }
         })
       )
 
@@ -286,15 +291,28 @@ export async function POST(request: NextRequest) {
       // Phase 3: 모든 Kie.ai Edit 완료 대기 (병렬 폴링)
       // ============================================================
       const editResults = await Promise.all(
-        editSubmissions.map(async ({ index, seg, trimmedUrl, editTaskId }) => {
+        editSubmissions.map(async ({ index, seg, trimmedUrl, editTaskId, frameWidth, frameHeight }) => {
           for (let attempt = 0; attempt < 60; attempt++) {
             await new Promise((resolve) => setTimeout(resolve, 3000))
             const editStatus = await getEditQueueStatus(editTaskId)
             if (editStatus.status === 'COMPLETED') {
               const editResponse = await getEditQueueResponse(editTaskId)
-              const compositedImageUrl = editResponse.images?.[0]?.url
-              if (compositedImageUrl) {
-                console.log(`[Trending] Kie Edit completed seg${index}:`, compositedImageUrl.substring(0, 80))
+              const rawImageUrl = editResponse.images?.[0]?.url
+              if (rawImageUrl) {
+                console.log(`[Trending] Kie Edit completed seg${index}:`, rawImageUrl.substring(0, 80))
+
+                // 결과 이미지를 프레임과 동일 크기로 crop+resize
+                const imgRes = await fetch(rawImageUrl)
+                const imgBuffer = Buffer.from(await imgRes.arrayBuffer())
+                const resizedBuffer = await sharp(imgBuffer)
+                  .resize(frameWidth, frameHeight, { fit: 'cover', position: 'center' })
+                  .jpeg({ quality: 90 })
+                  .toBuffer()
+
+                const resizedKey = `trending/${user.id}/edited_${generation.id}_seg${index}_${Date.now()}.jpg`
+                const compositedImageUrl = await uploadBufferToR2(resizedBuffer, resizedKey, 'image/jpeg')
+                console.log(`[Trending] Resized to ${frameWidth}x${frameHeight}:`, compositedImageUrl.substring(0, 80))
+
                 return { index, seg, trimmedUrl, compositedImageUrl }
               }
             }
