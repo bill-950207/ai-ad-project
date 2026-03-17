@@ -7,19 +7,19 @@ type Lang = (typeof validLanguages)[number]
 
 const i18n: Record<Lang, { title: string; description: string }> = {
   ko: {
-    title: '트렌딩 도구 - AI 얼굴 변환 | gwanggo',
-    description: 'AI 얼굴 변환 도구로 영상 속 인물을 다른 사람으로 변환하세요. Kling 3.0 Motion Control 기반.',
+    title: '트렌딩 도구 - AI 모션 컨트롤 | gwanggo',
+    description: 'AI 모션 컨트롤 도구로 영상 속 인물을 다른 사람으로 변환하세요. Kling 3.0 Motion Control 기반.',
   },
   en: {
-    title: 'Trending Tools - AI Face Transform | gwanggo',
-    description: 'Transform faces in videos with AI Face Transform. Powered by Kling 3.0 Motion Control.',
+    title: 'Trending Tools - AI Motion Control | gwanggo',
+    description: 'Transform people in videos with AI Motion Control. Powered by Kling 3.0 Motion Control.',
   },
   ja: {
-    title: 'トレンドツール - AI顔変換 | gwanggo',
-    description: 'AI顔変換ツールで動画の人物を別の人に変換。Kling 3.0 Motion Control搭載。',
+    title: 'トレンドツール - AIモーションコントロール | gwanggo',
+    description: 'AIモーションコントロールで動画の人物を別の人に変換。Kling 3.0 Motion Control搭載。',
   },
   zh: {
-    title: '热门工具 - AI换脸 | gwanggo',
+    title: '热门工具 - AI动作控制 | gwanggo',
     description: '使用AI换脸工具将视频中的人物转换为其他人。基于Kling 3.0 Motion Control。',
   },
 }

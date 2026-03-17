@@ -495,7 +495,7 @@ export default function GenerationHistory({
     'recraft-v4': 'Recraft V4',
     'qwen-image-2': 'Qwen Image 2.0',
     'flux-kontext': 'FLUX Kontext',
-    'face-transform': '얼굴 변환',
+    'face-transform': '모션 컨트롤',
   }
 
   const hasActiveGeneration = !!activeGeneration

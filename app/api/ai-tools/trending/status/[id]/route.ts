@@ -179,7 +179,7 @@ async function compositeSegments(
         featureType: 'TOOL_TRENDING',
         amount: creditsUsed,
         balanceAfter: currentCredits + creditsUsed,
-        description: '얼굴 변환 합성 실패 환불',
+        description: '모션 컨트롤 합성 실패 환불',
       })
     }
   } finally {
@@ -333,7 +333,7 @@ export async function GET(
           featureType: 'TOOL_TRENDING',
           amount: generation.credits_used,
           balanceAfter: currentCredits + generation.credits_used,
-          description: '얼굴 변환 실패 환불',
+          description: '모션 컨트롤 실패 환불',
         })
       }
 

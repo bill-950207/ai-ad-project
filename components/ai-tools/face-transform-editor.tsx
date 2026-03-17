@@ -368,7 +368,7 @@ export default function FaceTransformEditor() {
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
           <h1 className="text-xs font-semibold tracking-wide text-white/80">
-            {aiToolsT.faceTransform || '얼굴 변환'}
+            {aiToolsT.faceTransform || '모션 컨트롤'}
           </h1>
         </div>
 
@@ -935,7 +935,7 @@ export default function FaceTransformEditor() {
         onClose={() => setShowInsufficientCreditsModal(false)}
         requiredCredits={estimatedCredits}
         availableCredits={credits ?? 0}
-        featureName={aiToolsT.faceTransform || '얼굴 변환'}
+        featureName={aiToolsT.faceTransform || '모션 컨트롤'}
       />
 
       <style jsx>{`

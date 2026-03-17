@@ -4,7 +4,7 @@
  * POST /api/ai-tools/trending/generate
  *
  * 지원 모델:
- * - face-transform: Kling 3.0 Motion Control 기반 얼굴 변환 (멀티 세그먼트)
+ * - face-transform: Kling 3.0 Motion Control 기반 모션 컨트롤 (멀티 세그먼트)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -236,7 +236,7 @@ export async function POST(request: NextRequest) {
         featureType: 'TOOL_TRENDING',
         amount: creditsRequired,
         balanceAfter: profile?.credits ?? 0,
-        description: `얼굴 변환 (${transformSegments.length}구간, ${body.tier})`,
+        description: `모션 컨트롤 (${transformSegments.length}구간, ${body.tier})`,
       }, tx)
 
       return tx.tool_generations.create({
@@ -244,7 +244,7 @@ export async function POST(request: NextRequest) {
           user_id: user.id,
           type: 'trending',
           model: 'face-transform',
-          prompt: body.prompt || '얼굴 변환',
+          prompt: body.prompt || '모션 컨트롤',
           input_params: {
             sourceVideoUrl: body.sourceVideoUrl,
             segments: body.segments as unknown as Record<string, unknown>[],
@@ -491,7 +491,7 @@ export async function POST(request: NextRequest) {
         featureType: 'TOOL_TRENDING',
         amount: creditsRequired,
         balanceAfter: currentCredits + creditsRequired,
-        description: `얼굴 변환 실패 환불`,
+        description: `모션 컨트롤 실패 환불`,
       })
 
       await prisma.tool_generations.update({

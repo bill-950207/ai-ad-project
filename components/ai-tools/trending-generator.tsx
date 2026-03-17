@@ -22,10 +22,10 @@ export default function TrendingGenerator() {
           <div className="space-y-3">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-500/15 border border-violet-500/20 rounded-full">
               <Wand2 className="w-3 h-3 text-violet-400" />
-              <span className="text-[11px] font-medium text-violet-300">AI Face Transform</span>
+              <span className="text-[11px] font-medium text-violet-300">AI Motion Control</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
-              {aiToolsT.faceTransform || '얼굴 변환'}
+              {aiToolsT.faceTransform || '모션 컨트롤'}
             </h2>
             <p className="text-sm text-muted-foreground max-w-md leading-relaxed">
               {aiToolsT.modelDescFaceTransform || '영상 속 인물을 다른 사람으로 변환합니다. 타임라인 에디터에서 변환 구간을 자유롭게 설정하세요.'}
