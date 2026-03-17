@@ -88,19 +88,40 @@ async function compositeSegments(
     const segmentUrlResults = await Promise.all(
       sortedTasks.map(async (task): Promise<{ index: number; url: string } | null> => {
         if (task.type === 'original') {
+          console.log(`[Composite] seg${task.index}: original ${task.startTime}s~${task.endTime}s`)
           const trimmedBuffer = await trimVideoFromFile(sourceFilePath, task.startTime, task.endTime)
           const key = `trending/${userId}/orig_${generationId}_seg${task.index}_${Date.now()}.mp4`
           return { index: task.index, url: await uploadBufferToR2(trimmedBuffer, key, 'video/mp4') }
-        } else if (task.resultUrl && task.originalDuration) {
-          // Kling MC 결과를 유저 원래 길이로 트림
-          const offset = task.trimOffset || 0
+        } else if (task.resultUrl) {
+          // Kling MC 결과 다운로드 → 필요 시 트림 → R2 업로드
+          console.log(`[Composite] seg${task.index}: transform, resultUrl=${task.resultUrl.substring(0, 60)}, originalDuration=${task.originalDuration}, trimOffset=${task.trimOffset}`)
           const dl = await downloadToTemp(task.resultUrl, 'mp4')
           tempDirsToClean.push(dl.tempDir)
-          const trimmedBuffer = await trimVideoFromFile(dl.filePath, offset, offset + task.originalDuration)
-          const key = `trending/${userId}/klingtrim_${generationId}_seg${task.index}_${Date.now()}.mp4`
-          return { index: task.index, url: await uploadBufferToR2(trimmedBuffer, key, 'video/mp4') }
-        } else if (task.resultUrl) {
-          return { index: task.index, url: task.resultUrl }
+
+          // 다운로드 검증
+          const stat = await fs.stat(dl.filePath)
+          if (stat.size < 5000) {
+            console.error(`[Composite] seg${task.index}: downloaded file too small (${stat.size} bytes), skipping`)
+            return null
+          }
+
+          if (task.originalDuration) {
+            // 유저 원래 길이로 트림
+            const offset = task.trimOffset || 0
+            const trimmedBuffer = await trimVideoFromFile(dl.filePath, offset, offset + task.originalDuration)
+            const key = `trending/${userId}/klingtrim_${generationId}_seg${task.index}_${Date.now()}.mp4`
+            return { index: task.index, url: await uploadBufferToR2(trimmedBuffer, key, 'video/mp4') }
+          } else {
+            // 트림 불필요 — 이미 R2에 있으면 그대로, 아니면 R2로 복사
+            if (task.resultUrl.includes('r2.dev')) {
+              return { index: task.index, url: task.resultUrl }
+            }
+            // FAL.ai URL → R2에 복사
+            const videoBuffer = await fs.readFile(dl.filePath)
+            const key = `trending/${userId}/kling_${generationId}_seg${task.index}_${Date.now()}.mp4`
+            const permanentUrl = await uploadBufferToR2(videoBuffer, key, 'video/mp4')
+            return { index: task.index, url: permanentUrl }
+          }
         }
         return null
       })
@@ -111,7 +132,7 @@ async function compositeSegments(
       .filter((r): r is { index: number; url: string } => r !== null && !!r.url)
       .map(r => r.url)
 
-    console.log(`[Trending Composite] ${videoUrls.length} segments to concatenate`)
+    console.log(`[Trending Composite] ${videoUrls.length} segments:`, videoUrls.map((u, i) => `${i}: ${u.substring(0, 80)}`))
     if (videoUrls.length === 0) {
       throw new Error('합성할 세그먼트가 없습니다')
     }
