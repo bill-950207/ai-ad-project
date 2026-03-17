@@ -17,13 +17,12 @@ import {
   KLING3_MC_PRO_CREDIT_PER_SECOND,
   IMAGE_EDIT_CREDIT_COST,
 } from '@/lib/credits/constants'
-import { submitKling3McToQueue } from '@/lib/fal/client'
 import {
-  createEditTask,
-  getEditQueueStatus,
-  getEditQueueResponse,
-  type EditAspectRatio,
-} from '@/lib/kie/client'
+  submitKling3McToQueue,
+  getFalQueueStatus,
+  getFalQueueResult,
+} from '@/lib/fal/client'
+import { fal } from '@fal-ai/client'
 import { downloadToTemp, extractFrameFromFile, trimVideoFromFile } from '@/lib/video/ffmpeg'
 import { uploadBufferToR2 } from '@/lib/storage/r2'
 import { promises as fs } from 'fs'
@@ -72,24 +71,26 @@ function calculateCredits(req: FaceTransformRequest): number {
 }
 
 // ============================================================
-// 프레임에서 aspect ratio 추론
+// Seedream 4.5 Edit (FAL.ai) — 모델 ID + 제출 함수
 // ============================================================
 
-async function detectAspectRatio(frameBuffer: Buffer): Promise<EditAspectRatio> {
-  try {
-    const metadata = await sharp(frameBuffer).metadata()
-    const w = metadata.width || 1
-    const h = metadata.height || 1
-    const ratio = w / h
+const SEEDREAM_45_EDIT_MODEL = 'fal-ai/bytedance/seedream/v4.5/edit'
 
-    if (ratio > 1.6) return '16:9'
-    if (ratio > 1.2) return '4:3'
-    if (ratio > 0.9) return '1:1'
-    if (ratio > 0.7) return '3:4'
-    return '9:16'
-  } catch {
-    return '9:16'
-  }
+async function submitSeedream45EditToQueue(input: {
+  prompt: string
+  image_urls: string[]
+  image_size: { width: number; height: number }
+}) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { request_id } = await fal.queue.submit(SEEDREAM_45_EDIT_MODEL as any, {
+    input: {
+      prompt: input.prompt,
+      image_urls: input.image_urls,
+      image_size: input.image_size,
+      enable_safety_checker: false,
+    },
+  })
+  return { request_id }
 }
 
 // ============================================================
@@ -253,9 +254,6 @@ export async function POST(request: NextRequest) {
 
           console.log(`[Trending] Trimmed seg${i} buffer size: ${trimmedBuffer.length} bytes`)
 
-          // aspect ratio 감지
-          const aspectRatio = await detectAspectRatio(frameBuffer)
-
           const ts = Date.now()
           const [frameUrl, trimmedUrl] = await Promise.all([
             uploadBufferToR2(frameBuffer, `trending/${user.id}/frame_${generation.id}_seg${i}_${ts}.jpg`, 'image/jpeg'),
@@ -267,51 +265,60 @@ export async function POST(request: NextRequest) {
           const frameWidth = frameMeta.width || 720
           const frameHeight = frameMeta.height || 1280
 
-          return { index: i, seg, frameUrl, trimmedUrl, aspectRatio, frameWidth, frameHeight }
+          return { index: i, seg, frameUrl, trimmedUrl, frameWidth, frameHeight }
         })
       )
 
       // ============================================================
-      // Phase 2: 모든 Kie.ai Seedream 4.5 Edit 제출 (병렬)
+      // Phase 2: 모든 FAL.ai Seedream 4.5 Edit 제출 (병렬)
+      // 원본 인물 사진을 프레임과 동일 비율로 resize 후 제출
       // ============================================================
       const editSubmissions = await Promise.all(
-        prepResults.map(async ({ index, seg, frameUrl, trimmedUrl, aspectRatio, frameWidth, frameHeight }) => {
-          console.log(`[Trending] Kie Edit submit seg${index}:`, { targetImage: seg.targetImageUrl, frameUrl, aspectRatio, frameSize: `${frameWidth}x${frameHeight}` })
-          const editResult = await createEditTask({
+        prepResults.map(async ({ index, seg, frameUrl, trimmedUrl, frameWidth, frameHeight }) => {
+          // 원본 인물 사진을 프레임 비율에 맞게 resize → R2 업로드
+          const personImgRes = await fetch(seg.targetImageUrl!)
+          const personImgBuffer = Buffer.from(await personImgRes.arrayBuffer())
+          const resizedPersonBuffer = await sharp(personImgBuffer)
+            .resize(frameWidth, frameHeight, { fit: 'cover', position: 'centre' })
+            .jpeg({ quality: 90 })
+            .toBuffer()
+          const resizedPersonKey = `trending/${user.id}/person_${generation.id}_seg${index}_${Date.now()}.jpg`
+          const resizedPersonUrl = await uploadBufferToR2(resizedPersonBuffer, resizedPersonKey, 'image/jpeg')
+
+          console.log(`[Trending] Seedream 4.5 Edit submit seg${index}:`, { personUrl: resizedPersonUrl.substring(0, 60), frameUrl: frameUrl.substring(0, 60), frameSize: `${frameWidth}x${frameHeight}` })
+          const editResult = await submitSeedream45EditToQueue({
             prompt: 'Take the person from image 1 (the portrait/selfie photo) and place them into the scene shown in image 2 (the video frame background). Keep the exact background, lighting, and environment from image 2. The person from image 1 should appear naturally standing or posing in the scene of image 2. Do NOT change the background. Output a single photo of the person from image 1 in the environment of image 2.',
-            image_urls: [seg.targetImageUrl!, frameUrl],
-            aspect_ratio: aspectRatio,
-            quality: 'basic',
+            image_urls: [resizedPersonUrl, frameUrl],
+            image_size: { width: frameWidth, height: frameHeight },
           })
-          return { index, seg, trimmedUrl, editTaskId: editResult.taskId, frameWidth, frameHeight }
+          return { index, seg, trimmedUrl, editRequestId: editResult.request_id, frameWidth, frameHeight }
         })
       )
 
       // ============================================================
-      // Phase 3: 모든 Kie.ai Edit 완료 대기 (병렬 폴링)
+      // Phase 3: 모든 FAL.ai Seedream 4.5 Edit 완료 대기 (병렬 폴링)
       // ============================================================
       const editResults = await Promise.all(
-        editSubmissions.map(async ({ index, seg, trimmedUrl, editTaskId, frameWidth, frameHeight }) => {
+        editSubmissions.map(async ({ index, seg, trimmedUrl, editRequestId, frameWidth, frameHeight }) => {
           for (let attempt = 0; attempt < 60; attempt++) {
             await new Promise((resolve) => setTimeout(resolve, 3000))
-            const editStatus = await getEditQueueStatus(editTaskId)
+            const editStatus = await getFalQueueStatus(SEEDREAM_45_EDIT_MODEL, editRequestId)
             if (editStatus.status === 'COMPLETED') {
-              const editResponse = await getEditQueueResponse(editTaskId)
+              const editResponse = await getFalQueueResult(SEEDREAM_45_EDIT_MODEL, editRequestId)
               const rawImageUrl = editResponse.images?.[0]?.url
               if (rawImageUrl) {
-                console.log(`[Trending] Kie Edit completed seg${index}:`, rawImageUrl.substring(0, 80))
+                console.log(`[Trending] Seedream 4.5 Edit completed seg${index}:`, rawImageUrl.substring(0, 80))
 
-                // 결과 이미지를 프레임과 동일 크기로 crop+resize
+                // 결과 이미지를 프레임과 동일 크기로 crop+resize (안전장치)
                 const imgRes = await fetch(rawImageUrl)
                 const imgBuffer = Buffer.from(await imgRes.arrayBuffer())
                 const resizedBuffer = await sharp(imgBuffer)
-                  .resize(frameWidth, frameHeight, { fit: 'cover', position: 'center' })
+                  .resize(frameWidth, frameHeight, { fit: 'cover', position: 'centre' })
                   .jpeg({ quality: 90 })
                   .toBuffer()
 
                 const resizedKey = `trending/${user.id}/edited_${generation.id}_seg${index}_${Date.now()}.jpg`
                 const compositedImageUrl = await uploadBufferToR2(resizedBuffer, resizedKey, 'image/jpeg')
-                console.log(`[Trending] Resized to ${frameWidth}x${frameHeight}:`, compositedImageUrl.substring(0, 80))
 
                 return { index, seg, trimmedUrl, compositedImageUrl }
               }
