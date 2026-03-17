@@ -28,6 +28,7 @@ import {
 import VideoDropzone from './video-dropzone'
 import ImageDropzone from './image-dropzone'
 import Timeline, { type Segment } from './face-transform/timeline'
+import { InsufficientCreditsModal } from '@/components/ui/insufficient-credits-modal'
 
 // ============================================================
 // 상수
@@ -73,6 +74,9 @@ export default function FaceTransformEditor() {
   const [generationStatus, setGenerationStatus] = useState<GenerationStatus | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
+
+  // 크레딧 부족 모달
+  const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false)
 
   // UX: 인라인 에러 메시지 (alert 대체)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -201,6 +205,13 @@ export default function FaceTransformEditor() {
       return
     }
 
+    // 크레딧 부족 확인 (클라이언트 사전 체크)
+    const availableCredits = credits ?? 0
+    if (availableCredits < estimatedCredits) {
+      setShowInsufficientCreditsModal(true)
+      return
+    }
+
     setIsGenerating(true)
     setGenerationStartTime(Date.now())
     setGenerationStatus({ id: '', status: 'PENDING' })
@@ -257,7 +268,7 @@ export default function FaceTransformEditor() {
       if (!res.ok) {
         const data = await res.json()
         if (res.status === 402) {
-          setErrorMsg(aiToolsT.insufficientCredits || '크레딧이 부족합니다')
+          setShowInsufficientCreditsModal(true)
         } else {
           setErrorMsg(data.error || '생성에 실패했습니다')
         }
@@ -918,6 +929,15 @@ export default function FaceTransformEditor() {
       </div>
 
       {/* 애니메이션 */}
+      {/* 크레딧 부족 모달 */}
+      <InsufficientCreditsModal
+        isOpen={showInsufficientCreditsModal}
+        onClose={() => setShowInsufficientCreditsModal(false)}
+        requiredCredits={estimatedCredits}
+        availableCredits={credits ?? 0}
+        featureName={aiToolsT.faceTransform || '얼굴 변환'}
+      />
+
       <style jsx>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
