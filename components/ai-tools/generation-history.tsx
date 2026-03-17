@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Clock, Download, ChevronLeft, ChevronRight, Loader2, XCircle, RotateCcw, X, Sparkles, Play, Pause } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 
@@ -293,6 +294,20 @@ export default function GenerationHistory({
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const scrollSentinelRef = useRef<HTMLDivElement>(null)
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null)
+  const searchParams = useSearchParams()
+  const [autoOpenHandled, setAutoOpenHandled] = useState(false)
+
+  // URL의 ?result=ID 파라미터로 자동 팝업 오픈
+  useEffect(() => {
+    if (autoOpenHandled || allItems.length === 0) return
+    const resultId = searchParams.get('result')
+    if (!resultId) return
+    const item = allItems.find((i) => i.id === resultId && i.status === 'COMPLETED' && i.result_url)
+    if (item) {
+      setSelectedItem(item)
+      setAutoOpenHandled(true)
+    }
+  }, [allItems, searchParams, autoOpenHandled])
 
   // Active generation polling state
   const [activeStatus, setActiveStatus] = useState<string>('PENDING')

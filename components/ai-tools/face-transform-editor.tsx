@@ -17,6 +17,7 @@ import {
   User,
 } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/contexts/language-context'
 import { useCredits } from '@/contexts/credit-context'
@@ -56,6 +57,7 @@ interface GenerationStatus {
 // ============================================================
 
 export default function FaceTransformEditor() {
+  const router = useRouter()
   const { t, language } = useLanguage()
   const { credits, refreshCredits } = useCredits()
   const aiToolsT = (t as Record<string, Record<string, string>>).aiTools || {}
@@ -353,6 +355,13 @@ export default function FaceTransformEditor() {
   const isFailed = generationStatus?.status === 'FAILED'
   const isProcessing = isGenerating || isComplete || isFailed
 
+  // 완료 시 히스토리 페이지로 즉시 이동 (결과 팝업 자동 오픈)
+  useEffect(() => {
+    if (isComplete && generationStatus?.id) {
+      router.push(`/dashboard/ai-tools/${language}/trending?result=${generationStatus.id}`)
+    }
+  }, [isComplete, generationStatus?.id, language, router])
+
   return (
     <div className="flex flex-col h-full bg-[#0a0a0f]">
       {/* 상단 바 — 글래스모피즘 */}
@@ -418,59 +427,15 @@ export default function FaceTransformEditor() {
           // ──── 생성 진행/완료/실패 화면 ────
           <div className="flex items-center justify-center h-full p-6">
             <div className="w-full max-w-lg space-y-8">
-              {/* 완료 — 비교 팝업 */}
-              {isComplete && generationStatus?.resultUrl ? (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl p-4">
-                  <div className="bg-[#0a0a0f] border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl max-w-4xl max-h-[88vh] w-full flex flex-col">
-                    {/* 닫기 */}
-                    <button
-                      onClick={handleReset}
-                      className="absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.08] text-white/60 hover:text-white transition-all"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-
-                    {/* 비교 영상 */}
-                    <div className="flex bg-black" style={{ height: '60vh' }}>
-                      {/* 원본 */}
-                      <div className="relative flex-1 flex items-center justify-center overflow-hidden">
-                        <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">{aiToolsT.originalVideo || '원본'}</div>
-                        <video src={sourceVideoUrl!} className="h-full object-contain" muted autoPlay loop playsInline />
-                      </div>
-                      <div className="w-px bg-white/10" />
-                      {/* 결과 */}
-                      <div className="relative flex-1 flex items-center justify-center overflow-hidden">
-                        <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-violet-500/80 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">{aiToolsT.transformResult || '변환 결과'}</div>
-                        <video src={generationStatus.resultUrl} className="h-full object-contain" muted autoPlay loop playsInline />
-                      </div>
+              {/* 완료 — useEffect에서 히스토리 페이지로 리다이렉트 */}
+              {isComplete ? (
+                <div className="space-y-6">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative">
+                      <CheckCircle2 className="w-10 h-10 text-emerald-400" />
                     </div>
-
-                    {/* 하단 */}
-                    <div className="p-4 border-t border-white/[0.06] bg-white/[0.02]">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                          <span className="text-sm font-medium text-white/80">{aiToolsT.generationComplete || '변환 완료!'}</span>
-                          <span className="text-[11px] text-white/30">{estimatedCredits}cr</span>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={handleDownload}
-                            className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold rounded-lg transition-colors"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            {aiToolsT.download || '다운로드'}
-                          </button>
-                          <button
-                            onClick={handleReset}
-                            className="flex items-center gap-2 px-4 py-2 bg-white/[0.06] hover:bg-white/[0.1] text-white/60 text-xs font-medium rounded-lg border border-white/[0.08] transition-colors"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            {aiToolsT.createNew || '새로 만들기'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                    <h2 className="text-base font-semibold text-white/90">{aiToolsT.generationComplete || '변환 완료!'}</h2>
+                    <p className="text-xs text-white/30">히스토리 페이지로 이동합니다...</p>
                   </div>
                 </div>
 
