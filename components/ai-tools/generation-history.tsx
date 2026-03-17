@@ -79,10 +79,10 @@ function TrendingComparisonPlayer({
 
   return (
     <div className="space-y-0">
-      {/* 동영상 비교 영역 */}
-      <div className="grid grid-cols-2 gap-0.5 bg-black">
+      {/* 동영상 비교 영역 — 화면 높이에 맞춤 */}
+      <div className="grid grid-cols-2 gap-px bg-black" style={{ maxHeight: '60vh' }}>
         {/* 원본 */}
-        <div className="relative">
+        <div className="relative flex items-center justify-center bg-black overflow-hidden" style={{ maxHeight: '60vh' }}>
           <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">
             원본
           </div>
@@ -90,28 +90,30 @@ function TrendingComparisonPlayer({
             <video
               ref={originalRef}
               src={sourceVideoUrl}
-              className="w-full aspect-[9/16] object-cover"
+              className="w-full h-full object-contain"
+              style={{ maxHeight: '60vh' }}
               muted
               playsInline
               onTimeUpdate={handleTimeUpdate}
               onEnded={handleEnded}
             />
           ) : (
-            <div className="w-full aspect-[9/16] bg-secondary/20 flex items-center justify-center text-xs text-muted-foreground">
+            <div className="w-full aspect-video bg-secondary/20 flex items-center justify-center text-xs text-muted-foreground">
               원본 없음
             </div>
           )}
         </div>
 
         {/* 생성본 */}
-        <div className="relative">
+        <div className="relative flex items-center justify-center bg-black overflow-hidden" style={{ maxHeight: '60vh' }}>
           <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-violet-500/80 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">
             변환 결과
           </div>
           <video
             ref={resultRef}
             src={resultUrl}
-            className="w-full aspect-[9/16] object-cover"
+            className="w-full h-full object-contain"
+            style={{ maxHeight: '60vh' }}
             muted
             playsInline
             onLoadedMetadata={handleLoaded}
@@ -740,8 +742,8 @@ export default function GenerationHistory({
         >
           <div
             className={`bg-card border border-border/60 rounded-3xl overflow-hidden shadow-2xl relative ${
-              type === 'trending' ? 'max-w-5xl' : 'max-w-2xl'
-            } w-full`}
+              type === 'trending' ? 'max-w-4xl max-h-[85vh]' : 'max-w-2xl'
+            } w-full flex flex-col`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
