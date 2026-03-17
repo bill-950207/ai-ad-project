@@ -17,7 +17,7 @@ import {
   KLING3_MC_STD_MODEL,
   KLING3_MC_PRO_MODEL,
 } from '@/lib/fal/client'
-import { downloadToTemp, trimVideoFromFile, concatenateVideosWithReencode, getVideoResolution } from '@/lib/video/ffmpeg'
+import { downloadToTemp, trimVideoFromFile, concatenateVideosWithReencode, getVideoResolutionFromFile } from '@/lib/video/ffmpeg'
 import { uploadBufferToR2 } from '@/lib/storage/r2'
 import { promises as fs } from 'fs'
 
@@ -68,11 +68,11 @@ async function compositeSegments(
     sourceTempDir = dl.tempDir
     const sourceFilePath = dl.filePath
 
-    // 원본 영상 해상도 감지
+    // 원본 영상 해상도 감지 (로컬 파일에서 직접)
     let targetWidth = 720
     let targetHeight = 1280
     try {
-      const res = await getVideoResolution(inputParams.sourceVideoUrl)
+      const res = await getVideoResolutionFromFile(sourceFilePath)
       targetWidth = res.width
       targetHeight = res.height
       console.log(`[Trending Composite] Source resolution: ${targetWidth}x${targetHeight}`)
