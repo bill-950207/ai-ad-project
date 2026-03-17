@@ -110,9 +110,10 @@ async function detectCameraMotion(
   sourceFilePath: string,
 ): Promise<'video' | 'image'> {
   try {
-    // 영상 파일을 직접 Gemini에 입력
-    const videoBuffer = await fs.readFile(sourceFilePath)
-    const videoBase64 = videoBuffer.toString('base64')
+    // 처음 5초만 잘라서 Gemini에 입력 (파일 크기 제한 방지)
+    const clipBuffer = await trimVideoFromFile(sourceFilePath, 0, 5)
+    const videoBase64 = clipBuffer.toString('base64')
+    console.log(`[Trending] Camera motion clip size: ${(clipBuffer.length / 1024).toFixed(0)}KB`)
 
     const genAI = getGenAI()
     const response = await genAI.models.generateContent({
@@ -121,7 +122,7 @@ async function detectCameraMotion(
         role: 'user',
         parts: [
           { inlineData: { mimeType: 'video/mp4', data: videoBase64 } },
-          { text: 'Watch this video. Determine if the CAMERA is moving (panning, tilting, zooming, tracking, dolly) or if the camera is FIXED/STATIC and only the person/subject is moving within the frame. Reply ONLY "MOVING" if the camera moves, or "FIXED" if the camera stays still.' },
+          { text: 'Watch this video clip. Is the CAMERA moving (panning, tilting, zooming, tracking, dolly) or is the camera FIXED/STATIC with only the person moving within the frame? Reply ONLY "MOVING" or "FIXED".' },
         ],
       }],
     })
@@ -129,11 +130,11 @@ async function detectCameraMotion(
     const text = response.text?.trim().toUpperCase() || ''
     const isMoving = text.includes('MOVING')
     const orientation = isMoving ? 'video' : 'image'
-    console.log(`[Trending] Camera motion: ${text.substring(0, 30)} → character_orientation: ${orientation}`)
+    console.log(`[Trending] Camera motion: "${text.substring(0, 30)}" → character_orientation: ${orientation}`)
     return orientation
   } catch (err) {
-    console.warn('[Trending] Camera motion detection failed, defaulting to video:', (err as Error).message?.substring(0, 80))
-    return 'video'
+    console.error('[Trending] Camera motion detection failed:', (err as Error).message)
+    return 'video' // 기본값
   }
 }
 
