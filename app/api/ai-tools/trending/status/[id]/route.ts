@@ -4,9 +4,6 @@
  * GET /api/ai-tools/trending/status/[id]
  *
  * 상태 흐름: PENDING → IN_PROGRESS → COMPOSITING → COMPLETED / FAILED
- * - IN_PROGRESS: 각 세그먼트의 Kling MC 작업 진행 중
- * - COMPOSITING: 모든 세그먼트 완료, FFmpeg 합성 진행 중
- * - COMPLETED: 최종 영상 생성 완료
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -20,8 +17,9 @@ import {
   KLING3_MC_STD_MODEL,
   KLING3_MC_PRO_MODEL,
 } from '@/lib/fal/client'
-import { trimVideo, concatenateVideosWithReencode, getVideoResolution } from '@/lib/video/ffmpeg'
+import { downloadToTemp, trimVideoFromFile, concatenateVideosWithReencode, getVideoResolution } from '@/lib/video/ffmpeg'
 import { uploadBufferToR2 } from '@/lib/storage/r2'
+import { promises as fs } from 'fs'
 
 // ============================================================
 // 타입
@@ -34,7 +32,7 @@ interface SegmentTask {
   endTime: number
   providerTaskId?: string
   targetImageUrl?: string
-  resultUrl?: string // 완료된 세그먼트의 결과 URL
+  resultUrl?: string
 }
 
 interface InputParams {
@@ -47,6 +45,117 @@ interface InputParams {
   }>
   tier: string
   segmentTasks: SegmentTask[]
+}
+
+// ============================================================
+// 합성 처리 (fire-and-forget)
+// ============================================================
+
+async function compositeSegments(
+  generationId: string,
+  inputParams: InputParams,
+  updatedTasks: SegmentTask[],
+  userId: string,
+  creditsUsed: number
+) {
+  let sourceTempDir: string | null = null
+
+  try {
+    // 소스 영상 다운로드 (1회)
+    const dl = await downloadToTemp(inputParams.sourceVideoUrl, 'mp4')
+    sourceTempDir = dl.tempDir
+    const sourceFilePath = dl.filePath
+
+    // 원본 영상 해상도 감지
+    let targetWidth = 720
+    let targetHeight = 1280
+    try {
+      const res = await getVideoResolution(inputParams.sourceVideoUrl)
+      targetWidth = res.width
+      targetHeight = res.height
+      console.log(`[Trending Composite] Source resolution: ${targetWidth}x${targetHeight}`)
+    } catch (e) {
+      console.warn('[Trending Composite] Failed to detect resolution:', e)
+    }
+
+    // 모든 세그먼트를 시간순으로 정렬하여 영상 URL 수집
+    const sortedTasks = [...updatedTasks].sort((a, b) => a.startTime - b.startTime)
+    const videoUrls: string[] = []
+
+    // 원본 세그먼트 트리밍 (로컬 파일 기반, 병렬)
+    const originalTasks = sortedTasks.filter((t) => t.type === 'original')
+    const originalUrls = await Promise.all(
+      originalTasks.map(async (task) => {
+        const trimmedBuffer = await trimVideoFromFile(sourceFilePath, task.startTime, task.endTime)
+        const trimmedKey = `trending/${userId}/orig_${generationId}_seg${task.index}_${Date.now()}.mp4`
+        return uploadBufferToR2(trimmedBuffer, trimmedKey, 'video/mp4')
+      })
+    )
+
+    // URL 매핑 생성
+    const originalUrlMap = new Map<number, string>()
+    originalTasks.forEach((task, i) => { originalUrlMap.set(task.index, originalUrls[i]) })
+
+    // 시간순으로 URL 수집
+    for (const task of sortedTasks) {
+      if (task.type === 'original') {
+        const url = originalUrlMap.get(task.index)
+        if (url) videoUrls.push(url)
+      } else if (task.resultUrl) {
+        videoUrls.push(task.resultUrl)
+      }
+    }
+
+    // FFmpeg 합성 (비디오만 — 오디오는 원본에서 추출하여 합성)
+    const finalBuffer = await concatenateVideosWithReencode(videoUrls, {
+      width: targetWidth,
+      height: targetHeight,
+      fps: 30,
+      videoBitrate: '4000k',
+    })
+
+    // R2에 최종 영상 업로드
+    const finalKey = `trending/${userId}/result_${generationId}_${Date.now()}.mp4`
+    const finalUrl = await uploadBufferToR2(finalBuffer, finalKey, 'video/mp4')
+
+    // 완료 처리
+    await prisma.tool_generations.update({
+      where: { id: generationId },
+      data: {
+        status: 'COMPLETED',
+        result_url: finalUrl,
+      },
+    })
+
+    console.log(`[Trending Composite] Completed: ${finalUrl}`)
+  } catch (compositeError) {
+    console.error('[Trending Composite] Error:', compositeError)
+
+    // 합성 실패 — atomic 상태 변경 + 크레딧 환불
+    const updated = await prisma.tool_generations.updateMany({
+      where: { id: generationId, status: { not: 'FAILED' } },
+      data: {
+        status: 'FAILED',
+        error_message: '영상 합성에 실패했습니다',
+      },
+    })
+
+    if (updated.count > 0) {
+      const currentCredits = await getUserCredits(userId)
+      await refundCredits(userId, creditsUsed)
+      await recordCreditRefund({
+        userId,
+        featureType: 'TOOL_TRENDING',
+        amount: creditsUsed,
+        balanceAfter: currentCredits + creditsUsed,
+        description: '얼굴 변환 합성 실패 환불',
+      })
+    }
+  } finally {
+    if (sourceTempDir) {
+      try { await fs.rm(sourceTempDir, { recursive: true, force: true }) } catch { /* 무시 */ }
+    }
+  }
 }
 
 // ============================================================
@@ -110,7 +219,7 @@ export async function GET(
       return NextResponse.json({ status: 'IN_PROGRESS' })
     }
 
-    const { segmentTasks, tier } = inputParams
+    const { segmentTasks } = inputParams
     const transformTasks = segmentTasks.filter((t) => t.type === 'transform')
 
     let completedCount = 0
@@ -120,7 +229,6 @@ export async function GET(
     for (const task of transformTasks) {
       if (!task.providerTaskId) continue
       if (task.resultUrl) {
-        // 이미 이전 폴링에서 완료 확인된 세그먼트
         completedCount++
         continue
       }
@@ -140,7 +248,6 @@ export async function GET(
           const response = await getFalQueueResult(model, taskId)
           const resultUrl = response.video?.url
           if (resultUrl) {
-            // 업데이트된 태스크에 resultUrl 기록
             const taskIndex = updatedTasks.findIndex((t) => t.index === task.index)
             if (taskIndex >= 0) {
               updatedTasks[taskIndex] = { ...updatedTasks[taskIndex], resultUrl }
@@ -148,9 +255,7 @@ export async function GET(
             completedCount++
           }
         }
-        // IN_QUEUE, IN_PROGRESS → 아직 진행 중 (무시)
       } catch (error) {
-        // FAL API 에러 → 해당 세그먼트 실패 처리
         console.error(`[Trending Status] Segment ${task.index} failed:`, error)
         failedCount++
       }
@@ -169,25 +274,28 @@ export async function GET(
       })
     }
 
-    // 실패한 세그먼트가 있으면 전체 실패 처리
+    // 실패한 세그먼트가 있으면 전체 실패 처리 (atomic — 이중 환불 방지)
     if (failedCount > 0) {
-      const currentCredits = await getUserCredits(user.id)
-      await refundCredits(user.id, generation.credits_used)
-      await recordCreditRefund({
-        userId: user.id,
-        featureType: 'TOOL_TRENDING',
-        amount: generation.credits_used,
-        balanceAfter: currentCredits + generation.credits_used,
-        description: '얼굴 변환 실패 환불',
-      })
-
-      await prisma.tool_generations.update({
-        where: { id },
+      const updated = await prisma.tool_generations.updateMany({
+        where: { id, status: { not: 'FAILED' } },
         data: {
           status: 'FAILED',
           error_message: `${failedCount}개 세그먼트 생성 실패`,
         },
       })
+
+      // 이미 FAILED면 환불 스킵
+      if (updated.count > 0) {
+        const currentCredits = await getUserCredits(user.id)
+        await refundCredits(user.id, generation.credits_used)
+        await recordCreditRefund({
+          userId: user.id,
+          featureType: 'TOOL_TRENDING',
+          amount: generation.credits_used,
+          balanceAfter: currentCredits + generation.credits_used,
+          description: '얼굴 변환 실패 환불',
+        })
+      }
 
       return NextResponse.json({
         status: 'FAILED',
@@ -205,98 +313,22 @@ export async function GET(
       })
     }
 
-    // 모든 세그먼트 완료 → 합성 시작
-    await prisma.tool_generations.update({
-      where: { id },
+    // 모든 세그먼트 완료 → COMPOSITING 전환 (atomic — 중복 합성 방지)
+    const compositeUpdate = await prisma.tool_generations.updateMany({
+      where: { id, status: 'IN_PROGRESS' },
       data: { status: 'COMPOSITING' },
     })
 
-    try {
-      // 모든 세그먼트를 시간순으로 정렬하여 영상 URL 수집
-      const sortedTasks = [...updatedTasks].sort((a, b) => a.startTime - b.startTime)
-      const videoUrls: string[] = []
-
-      for (const task of sortedTasks) {
-        if (task.type === 'original') {
-          // 원본 영상에서 해당 구간 트리밍
-          const trimmedBuffer = await trimVideo(
-            inputParams.sourceVideoUrl,
-            task.startTime,
-            task.endTime
-          )
-          const trimmedKey = `trending/${user.id}/orig_${id}_seg${task.index}_${Date.now()}.mp4`
-          const trimmedUrl = await uploadBufferToR2(trimmedBuffer, trimmedKey, 'video/mp4')
-          videoUrls.push(trimmedUrl)
-        } else if (task.resultUrl) {
-          // Kling MC 결과 영상
-          videoUrls.push(task.resultUrl)
-        }
-      }
-
-      // 원본 영상 해상도 감지 → 합성 시 동일 해상도 적용
-      let targetWidth = 720
-      let targetHeight = 1280
-      try {
-        const res = await getVideoResolution(inputParams.sourceVideoUrl)
-        targetWidth = res.width
-        targetHeight = res.height
-        console.log(`[Trending Composite] Source resolution: ${targetWidth}x${targetHeight}`)
-      } catch (e) {
-        console.warn('[Trending Composite] Failed to detect resolution, using default 720x1280:', e)
-      }
-
-      // FFmpeg로 모든 세그먼트 합치기 (재인코딩 — 원본 해상도에 맞춤)
-      const finalBuffer = await concatenateVideosWithReencode(videoUrls, {
-        width: targetWidth,
-        height: targetHeight,
-        fps: 30,
-        videoBitrate: '4000k',
-      })
-
-      // R2에 최종 영상 업로드
-      const finalKey = `trending/${user.id}/result_${id}_${Date.now()}.mp4`
-      const finalUrl = await uploadBufferToR2(finalBuffer, finalKey, 'video/mp4')
-
-      // 완료 처리
-      await prisma.tool_generations.update({
-        where: { id },
-        data: {
-          status: 'COMPLETED',
-          result_url: finalUrl,
-        },
-      })
-
-      return NextResponse.json({
-        status: 'COMPLETED',
-        resultUrl: finalUrl,
-      })
-    } catch (compositeError) {
-      console.error('[Trending Status] Composite error:', compositeError)
-
-      // 합성 실패 — 크레딧 환불
-      const currentCredits = await getUserCredits(user.id)
-      await refundCredits(user.id, generation.credits_used)
-      await recordCreditRefund({
-        userId: user.id,
-        featureType: 'TOOL_TRENDING',
-        amount: generation.credits_used,
-        balanceAfter: currentCredits + generation.credits_used,
-        description: '얼굴 변환 합성 실패 환불',
-      })
-
-      await prisma.tool_generations.update({
-        where: { id },
-        data: {
-          status: 'FAILED',
-          error_message: '영상 합성에 실패했습니다',
-        },
-      })
-
-      return NextResponse.json({
-        status: 'FAILED',
-        error: '영상 합성에 실패했습니다',
-      })
+    if (compositeUpdate.count > 0) {
+      // fire-and-forget: 합성 시작 (GET 요청은 즉시 반환)
+      compositeSegments(id, inputParams, updatedTasks, user.id, generation.credits_used)
+        .catch((err) => console.error('[Trending Composite] Unhandled:', err))
     }
+
+    return NextResponse.json({
+      status: 'COMPOSITING',
+      progress: '영상 합성 중...',
+    })
   } catch (error) {
     console.error('[Trending Status]', error)
     return NextResponse.json(

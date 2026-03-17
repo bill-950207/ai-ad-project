@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, useMemo } from 'react'
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react'
 import {
   ArrowLeft,
   Plus,
@@ -69,6 +69,14 @@ export default function FaceTransformEditor() {
   const [generationStatus, setGenerationStatus] = useState<GenerationStatus | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
+
+  // 폴링 클린업 (unmount 시)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current)
+    }
+  }, [])
 
   // 선택된 세그먼트
   const selectedSegment = useMemo(

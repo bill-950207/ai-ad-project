@@ -174,7 +174,6 @@ export async function concatenateVideosWithReencode(
       })
 
       // 필터 복합체 생성 (각 비디오를 동일한 해상도/fps로 변환)
-      const filterInputs = tempFiles.map((_, i) => `[${i}:v]`)
       const filterComplex = tempFiles
         .map((_, i) => `[${i}:v]scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,fps=${fps}[v${i}]`)
         .join(';') +
@@ -208,6 +207,76 @@ export async function concatenateVideosWithReencode(
     } catch {
       // 무시
     }
+  }
+}
+
+/**
+ * URL에서 파일을 다운로드하여 임시 파일로 저장합니다.
+ * 반환된 경로는 사용 후 직접 정리해야 합니다.
+ */
+export async function downloadToTemp(url: string, ext: string = 'mp4'): Promise<{ filePath: string; tempDir: string }> {
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dl-'))
+  const filePath = path.join(tempDir, `input.${ext}`)
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`Failed to download: ${response.status}`)
+  const buffer = Buffer.from(await response.arrayBuffer())
+  await fs.writeFile(filePath, buffer)
+  return { filePath, tempDir }
+}
+
+/**
+ * 로컬 파일에서 특정 시간의 프레임을 이미지로 추출합니다.
+ */
+export async function extractFrameFromFile(
+  inputPath: string,
+  timeSeconds: number
+): Promise<Buffer> {
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'frame-'))
+  const outputPath = path.join(tempDir, 'frame.jpg')
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      ffmpeg()
+        .input(inputPath)
+        .inputOptions([`-ss`, `${timeSeconds}`])
+        .outputOptions(['-frames:v', '1', '-q:v', '2'])
+        .output(outputPath)
+        .on('end', () => resolve())
+        .on('error', (err: Error) => reject(err))
+        .run()
+    })
+    return await fs.readFile(outputPath)
+  } finally {
+    try { await fs.rm(tempDir, { recursive: true, force: true }) } catch { /* 무시 */ }
+  }
+}
+
+/**
+ * 로컬 파일에서 특정 구간을 트리밍합니다.
+ */
+export async function trimVideoFromFile(
+  inputPath: string,
+  startTime: number,
+  endTime: number
+): Promise<Buffer> {
+  const duration = endTime - startTime
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'trim-'))
+  const outputPath = path.join(tempDir, 'output.mp4')
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      ffmpeg()
+        .input(inputPath)
+        .inputOptions([`-ss`, `${startTime}`])
+        .outputOptions([`-t`, `${duration}`, '-c', 'copy', '-movflags', '+faststart'])
+        .output(outputPath)
+        .on('end', () => resolve())
+        .on('error', (err: Error) => reject(err))
+        .run()
+    })
+    return await fs.readFile(outputPath)
+  } finally {
+    try { await fs.rm(tempDir, { recursive: true, force: true }) } catch { /* 무시 */ }
   }
 }
 
