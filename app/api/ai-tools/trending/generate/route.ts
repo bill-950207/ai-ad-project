@@ -244,10 +244,14 @@ export async function POST(request: NextRequest) {
             ? seg.startTime + MIN_SEGMENT_DURATION
             : seg.endTime
 
+          console.log(`[Trending] Trim seg${i}: ${seg.startTime}s ~ ${klingEndTime}s (original: ${segDuration}s, kling: ${klingEndTime - seg.startTime}s)`)
+
           const [frameBuffer, trimmedBuffer] = await Promise.all([
             extractFrameFromFile(sourceFilePath!, seg.startTime),
             trimVideoFromFile(sourceFilePath!, seg.startTime, klingEndTime),
           ])
+
+          console.log(`[Trending] Trimmed seg${i} buffer size: ${trimmedBuffer.length} bytes`)
 
           // aspect ratio 감지
           const aspectRatio = await detectAspectRatio(frameBuffer)
