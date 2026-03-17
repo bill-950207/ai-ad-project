@@ -407,33 +407,59 @@ export default function FaceTransformEditor() {
           // ──── 생성 진행/완료/실패 화면 ────
           <div className="flex items-center justify-center h-full p-6">
             <div className="w-full max-w-lg space-y-8">
-              {/* 완료 */}
+              {/* 완료 — 비교 팝업 */}
               {isComplete && generationStatus?.resultUrl ? (
-                <div className="space-y-6">
-                  <div className="text-center space-y-2">
-                    <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center">
-                      <CheckCircle2 className="w-7 h-7 text-emerald-400" />
-                    </div>
-                    <h2 className="text-lg font-semibold text-white/90">{aiToolsT.generationComplete || '변환 완료!'}</h2>
-                  </div>
-                  <div className="rounded-xl overflow-hidden border border-white/[0.08] bg-black">
-                    <video src={generationStatus.resultUrl} controls autoPlay className="w-full" />
-                  </div>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={handleDownload}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl transition-colors"
-                    >
-                      <Download className="w-4 h-4" />
-                      {aiToolsT.download || '다운로드'}
-                    </button>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl p-4">
+                  <div className="bg-[#0a0a0f] border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl max-w-4xl max-h-[88vh] w-full flex flex-col">
+                    {/* 닫기 */}
                     <button
                       onClick={handleReset}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white/[0.06] hover:bg-white/[0.1] text-white/70 text-sm font-medium rounded-xl border border-white/[0.08] transition-colors"
+                      className="absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.08] text-white/60 hover:text-white transition-all"
                     >
-                      <Plus className="w-4 h-4" />
-                      새로 만들기
+                      <X className="w-4 h-4" />
                     </button>
+
+                    {/* 비교 영상 */}
+                    <div className="flex bg-black" style={{ height: '60vh' }}>
+                      {/* 원본 */}
+                      <div className="relative flex-1 flex items-center justify-center overflow-hidden">
+                        <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">원본</div>
+                        <video src={sourceVideoUrl!} className="h-full object-contain" muted autoPlay loop playsInline />
+                      </div>
+                      <div className="w-px bg-white/10" />
+                      {/* 결과 */}
+                      <div className="relative flex-1 flex items-center justify-center overflow-hidden">
+                        <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-violet-500/80 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">변환 결과</div>
+                        <video src={generationStatus.resultUrl} className="h-full object-contain" muted autoPlay loop playsInline />
+                      </div>
+                    </div>
+
+                    {/* 하단 */}
+                    <div className="p-4 border-t border-white/[0.06] bg-white/[0.02]">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                          <span className="text-sm font-medium text-white/80">{aiToolsT.generationComplete || '변환 완료!'}</span>
+                          <span className="text-[11px] text-white/30">{estimatedCredits}cr</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleDownload}
+                            className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold rounded-lg transition-colors"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            {aiToolsT.download || '다운로드'}
+                          </button>
+                          <button
+                            onClick={handleReset}
+                            className="flex items-center gap-2 px-4 py-2 bg-white/[0.06] hover:bg-white/[0.1] text-white/60 text-xs font-medium rounded-lg border border-white/[0.08] transition-colors"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            새로 만들기
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
