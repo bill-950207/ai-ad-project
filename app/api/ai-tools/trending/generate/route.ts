@@ -23,7 +23,7 @@ import {
   getFalQueueResult,
 } from '@/lib/fal/client'
 import { fal } from '@fal-ai/client'
-import { downloadToTemp, extractFrameFromFile, trimVideoFromFile } from '@/lib/video/ffmpeg'
+import { downloadToTemp, extractFrameFromFile, trimVideoFromFile, getMediaDuration } from '@/lib/video/ffmpeg'
 import { uploadBufferToR2 } from '@/lib/storage/r2'
 import { promises as fs } from 'fs'
 import sharp from 'sharp'
@@ -217,11 +217,16 @@ export async function POST(request: NextRequest) {
     let sourceTempDir: string | null = null
 
     try {
-      // 소스 영상 다운로드 (1회)
+      // 소스 영상 다운로드 (1회) + 길이 감지
       const dl = await downloadToTemp(body.sourceVideoUrl, 'mp4')
       sourceFilePath = dl.filePath
       sourceTempDir = dl.tempDir
-      console.log(`[Trending] Source video downloaded: ${sourceFilePath}`)
+
+      let sourceDuration = 0
+      try {
+        sourceDuration = await getMediaDuration(sourceFilePath)
+      } catch { /* 감지 실패 시 0 */ }
+      console.log(`[Trending] Source: ${sourceFilePath}, duration: ${sourceDuration.toFixed(1)}s`)
 
       // original 세그먼트는 즉시 등록
       for (let i = 0; i < body.segments.length; i++) {
@@ -245,16 +250,24 @@ export async function POST(request: NextRequest) {
       // ============================================================
       const prepResults = await Promise.all(
         transformSegs.map(async ({ seg, i }) => {
-          // Kling MC 최소 3.3초 보장 — 항상 MIN_SEGMENT_DURATION 이상으로 트리밍
+          // Kling MC 최소 3.3초 보장
+          // 소스 끝 부분이면 startTime을 앞당겨서 3.3초 확보
           const segDuration = seg.endTime - seg.startTime
           const klingDuration = Math.max(MIN_SEGMENT_DURATION, segDuration)
-          const klingEndTime = seg.startTime + klingDuration
+          let trimStart = seg.startTime
+          let trimEnd = seg.startTime + klingDuration
 
-          console.log(`[Trending] Trim seg${i}: ${seg.startTime}s ~ ${klingEndTime}s (user: ${segDuration.toFixed(1)}s, kling: ${klingDuration.toFixed(1)}s)`)
+          if (sourceDuration > 0 && trimEnd > sourceDuration) {
+            // 소스 끝을 초과 → startTime을 앞당김
+            trimStart = Math.max(0, sourceDuration - klingDuration)
+            trimEnd = trimStart + klingDuration
+          }
+
+          console.log(`[Trending] Trim seg${i}: ${trimStart.toFixed(1)}s ~ ${trimEnd.toFixed(1)}s (user: ${segDuration.toFixed(1)}s, kling: ${klingDuration.toFixed(1)}s, src: ${sourceDuration.toFixed(1)}s)`)
 
           const [frameBuffer, trimmedBuffer] = await Promise.all([
             extractFrameFromFile(sourceFilePath!, seg.startTime),
-            trimVideoFromFile(sourceFilePath!, seg.startTime, klingEndTime, klingDuration),
+            trimVideoFromFile(sourceFilePath!, trimStart, trimEnd, klingDuration),
           ])
 
           console.log(`[Trending] Trimmed seg${i} buffer size: ${trimmedBuffer.length} bytes`)

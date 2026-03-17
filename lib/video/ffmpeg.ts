@@ -785,7 +785,7 @@ export async function getVideoResolutionFromFile(filePath: string): Promise<{ wi
  * 미디어 파일의 길이(초)를 반환합니다.
  * ffmpeg를 사용하여 duration을 추출합니다 (ffprobe 불필요).
  */
-async function getMediaDuration(filePath: string): Promise<number> {
+export async function getMediaDuration(filePath: string): Promise<number> {
   return new Promise((resolve, reject) => {
     execFile(
       ffmpegInstaller.path,
