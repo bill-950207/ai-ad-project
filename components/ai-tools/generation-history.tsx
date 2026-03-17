@@ -412,7 +412,12 @@ export default function GenerationHistory({
         )}
 
         {/* History Items */}
-        {items.filter(item => !activeGeneration || item.id !== activeGeneration.id).map((item) => {
+        {items.filter(item => {
+          if (activeGeneration && item.id === activeGeneration.id) return false
+          // trending 타입에서는 실패 항목 숨김
+          if (type === 'trending' && item.status === 'FAILED') return false
+          return true
+        }).map((item) => {
           const refImgUrl = getReferenceImageUrl(item.input_params)
           const isProcessing = ['PENDING', 'IN_QUEUE', 'IN_PROGRESS', 'COMPOSITING'].includes(item.status)
           return (
@@ -432,7 +437,7 @@ export default function GenerationHistory({
                 item.status === 'COMPLETED' && item.result_url ? 'aspect-video' : 'aspect-[4/3]'
               }`}>
                 {item.status === 'COMPLETED' && item.result_url ? (
-                  type === 'video' ? (
+                  (type === 'video' || type === 'trending') ? (
                     <video
                       src={item.result_url}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -568,7 +573,7 @@ export default function GenerationHistory({
               <X className="w-4 h-4" />
             </button>
 
-            {type === 'video' ? (
+            {(type === 'video' || type === 'trending') ? (
               <video
                 src={selectedItem.result_url}
                 controls
