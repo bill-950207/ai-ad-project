@@ -7,6 +7,8 @@
  * - face-transform: Kling 3.0 Motion Control 기반 모션 컨트롤 (멀티 세그먼트)
  */
 
+export const maxDuration = 300 // 5분 (Vercel Pro)
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
