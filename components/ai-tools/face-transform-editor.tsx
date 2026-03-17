@@ -137,7 +137,7 @@ export default function FaceTransformEditor() {
   // 세그먼트 추가
   const handleAddSegment = useCallback(() => {
     const newStart = currentTime
-    const newEnd = Math.min(currentTime + 5, videoDuration)
+    const newEnd = Math.min(currentTime + 3, videoDuration)
 
     if (newEnd - newStart < 1) return
 
@@ -410,7 +410,7 @@ export default function FaceTransformEditor() {
                       </div>
                       <div>
                         <p className="text-xs font-medium text-white/70">변환 구간 추가</p>
-                        <p className="text-[11px] text-white/30">아래 버튼을 클릭하면 현재 위치에 5초 구간이 추가됩니다</p>
+                        <p className="text-[11px] text-white/30">아래 버튼을 클릭하면 현재 위치에 3초 구간이 추가됩니다</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
@@ -453,7 +453,7 @@ export default function FaceTransformEditor() {
                           {aiToolsT.addTransformSegment || '변환 구간 추가'}
                         </p>
                         <p className="text-[11px] text-white/30 mt-0.5">
-                          현재 재생 위치에 5초 변환 구간이 추가됩니다
+                          현재 재생 위치에 3초 변환 구간이 추가됩니다
                         </p>
                       </div>
                     </button>
