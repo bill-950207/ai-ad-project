@@ -258,13 +258,20 @@ export async function GET(
 
         if (statusResult.status === 'COMPLETED') {
           const response = await getFalQueueResult(model, taskId)
-          const resultUrl = response.video?.url
-          if (resultUrl) {
-            const taskIndex = updatedTasks.findIndex((t) => t.index === task.index)
-            if (taskIndex >= 0) {
-              updatedTasks[taskIndex] = { ...updatedTasks[taskIndex], resultUrl }
+          const tempUrl = response.video?.url
+          if (tempUrl) {
+            // FAL.ai 임시 URL → R2에 복사하여 영구 URL 확보
+            const videoRes = await fetch(tempUrl)
+            if (videoRes.ok) {
+              const videoBuffer = Buffer.from(await videoRes.arrayBuffer())
+              const permanentKey = `trending/${user.id}/kling_${id}_seg${task.index}_${Date.now()}.mp4`
+              const resultUrl = await uploadBufferToR2(videoBuffer, permanentKey, 'video/mp4')
+              const taskIndex = updatedTasks.findIndex((t) => t.index === task.index)
+              if (taskIndex >= 0) {
+                updatedTasks[taskIndex] = { ...updatedTasks[taskIndex], resultUrl }
+              }
+              completedCount++
             }
-            completedCount++
           }
         }
       } catch (error) {

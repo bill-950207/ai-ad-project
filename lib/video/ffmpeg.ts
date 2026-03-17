@@ -169,34 +169,47 @@ export async function concatenateVideosWithReencode(
       tempFiles.push(tempFilePath)
     }
 
-    // 2. 각 파일을 개별적으로 동일 포맷으로 재인코딩
+    // 2. 각 파일을 개별적으로 동일 포맷으로 재인코딩 (실패 시 건너뜀)
     const normalizedFiles: string[] = []
     for (let i = 0; i < tempFiles.length; i++) {
-      const normalizedPath = path.join(tempDir, `norm_${i}.ts`) // MPEG-TS for concat
-      await new Promise<void>((resolve, reject) => {
-        ffmpeg()
-          .input(tempFiles[i])
-          .outputOptions([
-            '-c:v', 'libx264',
-            '-preset', 'fast',
-            '-crf', '23',
-            '-vf', `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,fps=${fps}`,
-            '-an', // 오디오 제거 (합성 시 별도 처리)
-            '-f', 'mpegts',
-          ])
-          .output(normalizedPath)
-          .on('end', () => {
-            console.log(`[concat-reencode] Normalized ${i + 1}/${tempFiles.length}`)
-            resolve()
-          })
-          .on('error', (err: Error) => {
-            console.error(`[concat-reencode] Failed to normalize video ${i + 1}:`, err.message)
-            reject(err)
-          })
-          .run()
-      })
-      normalizedFiles.push(normalizedPath)
+      // 너무 작은 파일은 건너뜀 (에러 응답/만료된 URL)
+      const stat = await fs.stat(tempFiles[i])
+      if (stat.size < 5000) {
+        console.warn(`[concat-reencode] Skipping video ${i + 1}: only ${stat.size} bytes (likely not a video)`)
+        continue
+      }
+
+      const normalizedPath = path.join(tempDir, `norm_${i}.ts`)
+      try {
+        await new Promise<void>((resolve, reject) => {
+          ffmpeg()
+            .input(tempFiles[i])
+            .outputOptions([
+              '-c:v', 'libx264',
+              '-preset', 'fast',
+              '-crf', '23',
+              '-vf', `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,fps=${fps}`,
+              '-an',
+              '-f', 'mpegts',
+            ])
+            .output(normalizedPath)
+            .on('end', () => {
+              console.log(`[concat-reencode] Normalized ${i + 1}/${tempFiles.length}`)
+              resolve()
+            })
+            .on('error', (err: Error) => reject(err))
+            .run()
+        })
+        normalizedFiles.push(normalizedPath)
+      } catch (err) {
+        console.warn(`[concat-reencode] Skipping video ${i + 1}: normalize failed -`, (err as Error).message?.substring(0, 100))
+      }
     }
+
+    if (normalizedFiles.length === 0) {
+      throw new Error('No valid video segments to concatenate')
+    }
+    console.log(`[concat-reencode] ${normalizedFiles.length}/${tempFiles.length} normalized successfully`)
 
     // 3. concat demuxer로 합치기 (재인코딩 불필요 — 이미 동일 포맷)
     const concatListPath = path.join(tempDir, 'concat.txt')
