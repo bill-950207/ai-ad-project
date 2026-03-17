@@ -286,39 +286,44 @@ export default function FaceTransformEditor() {
   const isFailed = generationStatus?.status === 'FAILED'
 
   return (
-    <div className="flex flex-col h-full">
-      {/* 상단 바 */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-border/40 bg-background/80 backdrop-blur-sm">
+    <div className="flex flex-col h-full bg-[#0a0a0f]">
+      {/* 상단 바 — 글래스모피즘 */}
+      <header className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06] bg-white/[0.02] backdrop-blur-xl">
         <Link
           href={`/dashboard/ai-tools/${language}/trending`}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-2 text-xs text-white/40 hover:text-white/70 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-3.5 h-3.5" />
           {aiToolsT.backToList || '돌아가기'}
         </Link>
 
-        <h1 className="text-sm font-semibold">
-          {aiToolsT.faceTransform || '얼굴 변환'}
-        </h1>
+        <div className="flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
+          <h1 className="text-xs font-semibold tracking-wide text-white/80">
+            {aiToolsT.faceTransform || '얼굴 변환'}
+          </h1>
+        </div>
 
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Sparkles className="w-3.5 h-3.5 text-primary" />
-          <span>{credits ?? 0}</span>
+        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/[0.04] border border-white/[0.06] rounded-lg">
+          <Sparkles className="w-3 h-3 text-violet-400" />
+          <span className="text-xs tabular-nums text-white/60">{credits ?? 0}</span>
         </div>
       </header>
 
       {/* 메인 컨텐츠 */}
       <div className="flex-1 overflow-auto">
         {!sourceVideoUrl ? (
-          /* 영상 업로드 화면 */
+          // 영상 업로드 — 센터 카드
           <div className="flex items-center justify-center h-full p-8">
-            <div className="w-full max-w-md space-y-4">
-              <div className="text-center space-y-2">
-                <Film className="w-12 h-12 text-muted-foreground mx-auto" />
-                <h2 className="text-lg font-semibold">
+            <div className="w-full max-w-md space-y-6">
+              <div className="text-center space-y-3">
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                  <Film className="w-7 h-7 text-violet-400" />
+                </div>
+                <h2 className="text-lg font-semibold text-white/90">
                   {aiToolsT.uploadSourceVideo || '원본 영상 업로드'}
                 </h2>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-white/40 leading-relaxed">
                   {aiToolsT.uploadSourceVideoDesc || '변환할 영상을 업로드하세요'}
                 </p>
               </div>
@@ -331,12 +336,12 @@ export default function FaceTransformEditor() {
             </div>
           </div>
         ) : (
-          /* 에디터 화면 */
+          /* 에디터 — 2단 레이아웃 */
           <div className="flex flex-col lg:flex-row h-full">
-            {/* 좌측: 영상 프리뷰 + 타임라인 */}
-            <div className="flex-1 flex flex-col p-4 min-w-0">
+            {/* 좌측: 프리뷰 + 타임라인 */}
+            <div className="flex-1 flex flex-col p-4 gap-4 min-w-0">
               {/* 영상 프리뷰 */}
-              <div className="flex-1 flex items-center justify-center bg-black/50 rounded-xl overflow-hidden mb-4 min-h-[200px]">
+              <div className="flex-1 flex items-center justify-center bg-black rounded-xl overflow-hidden border border-white/[0.04] min-h-[200px]">
                 {isComplete && generationStatus?.resultUrl ? (
                   <video
                     src={generationStatus.resultUrl}
@@ -357,7 +362,7 @@ export default function FaceTransformEditor() {
 
               {/* 타임라인 */}
               {videoDuration > 0 && !isComplete && (
-                <div className="space-y-3">
+                <div className="space-y-3 p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl">
                   <Timeline
                     duration={videoDuration}
                     segments={segments}
@@ -368,11 +373,10 @@ export default function FaceTransformEditor() {
                     onSelectSegment={setSelectedSegmentId}
                   />
 
-                  {/* 구간 추가 버튼 */}
                   {!isGenerating && (
                     <button
                       onClick={handleAddSegment}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/15 rounded-lg transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-violet-300 hover:text-violet-200 bg-violet-500/10 hover:bg-violet-500/15 border border-violet-500/20 rounded-lg transition-all"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       {aiToolsT.addTransformSegment || '변환 구간 추가'}
@@ -383,18 +387,24 @@ export default function FaceTransformEditor() {
             </div>
 
             {/* 우측: 설정 패널 */}
-            <div className="w-full lg:w-80 xl:w-96 border-t lg:border-t-0 lg:border-l border-border/40 p-4 overflow-y-auto space-y-4">
+            <div className="w-full lg:w-80 xl:w-[22rem] border-t lg:border-t-0 lg:border-l border-white/[0.06] bg-white/[0.01] p-4 overflow-y-auto space-y-4">
               {/* 생성 결과 */}
               {(isComplete || isFailed) && (
                 <div className={cn(
-                  'p-4 rounded-xl border',
-                  isComplete ? 'bg-green-500/5 border-green-500/20' : 'bg-red-500/5 border-red-500/20'
+                  'p-4 rounded-xl border backdrop-blur-sm',
+                  isComplete
+                    ? 'bg-emerald-500/5 border-emerald-500/20'
+                    : 'bg-red-500/5 border-red-500/20'
                 )}>
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-3">
                     {isComplete ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      </div>
                     ) : (
-                      <AlertCircle className="w-5 h-5 text-red-500" />
+                      <div className="w-8 h-8 rounded-lg bg-red-500/15 flex items-center justify-center">
+                        <AlertCircle className="w-4 h-4 text-red-400" />
+                      </div>
                     )}
                     <span className="text-sm font-medium">
                       {isComplete
@@ -405,46 +415,50 @@ export default function FaceTransformEditor() {
                   {isComplete && (
                     <button
                       onClick={handleDownload}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-sm rounded-lg hover:opacity-90 transition-opacity"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-lg transition-colors"
                     >
                       <Download className="w-4 h-4" />
                       {aiToolsT.download || '다운로드'}
                     </button>
                   )}
                   {isFailed && (
-                    <p className="text-xs text-red-400 mt-1">
-                      {generationStatus?.error}
-                    </p>
+                    <p className="text-xs text-red-400/80 mt-1">{generationStatus?.error}</p>
                   )}
                 </div>
               )}
 
               {/* 생성 진행 상태 */}
               {isGenerating && generationStatus && !isComplete && !isFailed && (
-                <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                    <span className="text-sm font-medium">
-                      {generationStatus.status === 'COMPOSITING'
-                        ? (aiToolsT.compositing || '영상 합성 중...')
-                        : (aiToolsT.generating || '생성 중...')}
-                    </span>
+                <div className="p-4 rounded-xl bg-violet-500/5 border border-violet-500/15 space-y-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="relative">
+                      <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
+                      <div className="absolute inset-0 bg-violet-400/20 rounded-full blur-md" />
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-white/90">
+                        {generationStatus.status === 'COMPOSITING'
+                          ? (aiToolsT.compositing || '영상 합성 중...')
+                          : (aiToolsT.generating || '생성 중...')}
+                      </span>
+                      {generationStatus.progress && generationStatus.status === 'IN_PROGRESS' && (
+                        <p className="text-[11px] text-white/40 mt-0.5">
+                          {`${generationStatus.completedSegments || 0}/${generationStatus.totalSegments || 0} 구간 완료`}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  {generationStatus.progress && generationStatus.status === 'IN_PROGRESS' && (
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{aiToolsT.segmentProgress?.replace('{current}', String(generationStatus.completedSegments || 0)).replace('{total}', String(generationStatus.totalSegments || 0)) || `${generationStatus.completedSegments || 0}/${generationStatus.totalSegments || 0}`}</span>
-                      </div>
-                      <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary rounded-full transition-all duration-500"
-                          style={{
-                            width: `${generationStatus.totalSegments
-                              ? ((generationStatus.completedSegments || 0) / generationStatus.totalSegments) * 100
+                  {generationStatus.totalSegments && (
+                    <div className="h-1 bg-white/[0.06] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-violet-500 to-cyan-500 rounded-full transition-all duration-700"
+                        style={{
+                          width: `${generationStatus.status === 'COMPOSITING' ? 90 :
+                            generationStatus.totalSegments
+                              ? ((generationStatus.completedSegments || 0) / generationStatus.totalSegments) * 80
                               : 10}%`,
-                          }}
-                        />
-                      </div>
+                        }}
+                      />
                     </div>
                   )}
                 </div>
@@ -453,24 +467,29 @@ export default function FaceTransformEditor() {
               {/* 세그먼트 목록 */}
               {!isComplete && segments.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest">
                     {aiToolsT.transformSegments || '변환 구간'}
                   </h3>
                   {segments.map((seg, i) => (
                     <div
                       key={seg.id}
                       className={cn(
-                        'p-3 rounded-xl border transition-colors cursor-pointer',
+                        'p-3 rounded-xl border transition-all duration-200 cursor-pointer',
                         selectedSegmentId === seg.id
-                          ? 'border-primary/50 bg-primary/5'
-                          : 'border-border/40 hover:border-border/60'
+                          ? 'border-violet-500/40 bg-violet-500/5 shadow-lg shadow-violet-500/5'
+                          : 'border-white/[0.06] hover:border-white/[0.12] bg-white/[0.02]'
                       )}
                       onClick={() => setSelectedSegmentId(seg.id)}
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium">
-                          {seg.targetPersonLabel || `${aiToolsT.targetPerson || '대상'} ${i + 1}`}
-                        </span>
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-5 h-5 rounded bg-violet-500/20 flex items-center justify-center text-[10px] font-bold text-violet-300">
+                            {i + 1}
+                          </div>
+                          <span className="text-xs font-medium text-white/80">
+                            {seg.targetPersonLabel || `${aiToolsT.targetPerson || '대상'} ${i + 1}`}
+                          </span>
+                        </div>
                         {!isGenerating && (
                           <button
                             onClick={(e) => {
@@ -478,19 +497,17 @@ export default function FaceTransformEditor() {
                               setSegments((prev) => prev.filter((s) => s.id !== seg.id))
                               if (selectedSegmentId === seg.id) setSelectedSegmentId(null)
                             }}
-                            className="p-1 text-muted-foreground hover:text-red-400 transition-colors"
+                            className="p-1 text-white/20 hover:text-red-400 transition-colors"
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         )}
                       </div>
 
                       {/* 시간 범위 */}
-                      <div className="grid grid-cols-2 gap-2 mb-2">
+                      <div className="grid grid-cols-2 gap-2 mb-2.5">
                         <div>
-                          <label className="text-[10px] text-muted-foreground">
-                            {aiToolsT.segmentStart || '시작'}
-                          </label>
+                          <label className="text-[10px] text-white/30 mb-0.5 block">{aiToolsT.segmentStart || '시작'}</label>
                           <input
                             type="number"
                             value={seg.startTime}
@@ -499,13 +516,11 @@ export default function FaceTransformEditor() {
                             min={0}
                             max={seg.endTime - 1}
                             disabled={isGenerating}
-                            className="w-full px-2 py-1 text-xs bg-secondary/50 border border-border/60 rounded-md"
+                            className="w-full px-2 py-1.5 text-xs tabular-nums bg-white/[0.03] border border-white/[0.08] rounded-lg text-white/80 focus:outline-none focus:border-violet-500/40"
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] text-muted-foreground">
-                            {aiToolsT.segmentEnd || '종료'}
-                          </label>
+                          <label className="text-[10px] text-white/30 mb-0.5 block">{aiToolsT.segmentEnd || '종료'}</label>
                           <input
                             type="number"
                             value={seg.endTime}
@@ -514,7 +529,7 @@ export default function FaceTransformEditor() {
                             min={seg.startTime + 1}
                             max={videoDuration}
                             disabled={isGenerating}
-                            className="w-full px-2 py-1 text-xs bg-secondary/50 border border-border/60 rounded-md"
+                            className="w-full px-2 py-1.5 text-xs tabular-nums bg-white/[0.03] border border-white/[0.08] rounded-lg text-white/80 focus:outline-none focus:border-violet-500/40"
                           />
                         </div>
                       </div>
@@ -527,9 +542,8 @@ export default function FaceTransformEditor() {
                         required
                       />
 
-                      {/* 최소 3초 안내 */}
                       {seg.endTime - seg.startTime < MIN_SEGMENT_DURATION && (
-                        <p className="text-[10px] text-amber-500 mt-1">
+                        <p className="text-[10px] text-amber-400/60 mt-1.5">
                           {aiToolsT.minimumDuration || `최소 ${MIN_SEGMENT_DURATION}초 기준으로 크레딧이 소모됩니다`}
                         </p>
                       )}
@@ -540,10 +554,10 @@ export default function FaceTransformEditor() {
 
               {/* 설정 */}
               {!isComplete && (
-                <div className="space-y-3">
+                <div className="space-y-3 pt-2 border-t border-white/[0.06]">
                   {/* 프롬프트 */}
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label className="text-[11px] font-medium text-white/30">
                       {aiToolsT.prompt || '프롬프트'} ({aiToolsT.optional || '선택'})
                     </label>
                     <textarea
@@ -552,16 +566,16 @@ export default function FaceTransformEditor() {
                       placeholder={aiToolsT.faceTransformPromptPlaceholder || '변환 스타일을 설명하세요...'}
                       rows={2}
                       disabled={isGenerating}
-                      className="w-full mt-1 px-3 py-2 text-xs bg-secondary/50 border border-border/60 rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-primary/40"
+                      className="w-full mt-1.5 px-3 py-2 text-xs bg-white/[0.03] border border-white/[0.08] rounded-lg resize-none text-white/80 placeholder:text-white/20 focus:outline-none focus:border-violet-500/40"
                     />
                   </div>
 
                   {/* 티어 선택 */}
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label className="text-[11px] font-medium text-white/30">
                       {aiToolsT.tier || '모델 등급'}
                     </label>
-                    <div className="flex gap-2 mt-1">
+                    <div className="flex gap-1.5 mt-1.5">
                       {TIERS.map((t) => (
                         <button
                           key={t}
@@ -569,10 +583,10 @@ export default function FaceTransformEditor() {
                           onClick={() => setTier(t)}
                           disabled={isGenerating}
                           className={cn(
-                            'flex-1 px-3 py-1.5 text-xs rounded-lg transition-colors',
+                            'flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200',
                             tier === t
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                              ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20'
+                              : 'bg-white/[0.04] text-white/40 border border-white/[0.06] hover:bg-white/[0.06]'
                           )}
                         >
                           {t === 'standard' ? (aiToolsT.tierStandard || 'Standard') : (aiToolsT.tierPro || 'Pro')}
@@ -585,7 +599,7 @@ export default function FaceTransformEditor() {
                   <button
                     onClick={handleGenerate}
                     disabled={isGenerating || segments.length === 0 || segments.some((s) => !s.targetImageUrl)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary to-purple-500 text-white text-sm font-medium rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
                   >
                     {isGenerating ? (
                       <>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useCallback, useMemo } from 'react'
-import { X } from 'lucide-react'
+import { X, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // ============================================================
@@ -26,13 +26,12 @@ interface TimelineProps {
   onSelectSegment: (id: string | null) => void
 }
 
-// 세그먼트 색상 팔레트
 const SEGMENT_COLORS = [
-  { bg: 'bg-violet-500/70', border: 'border-violet-400', text: 'text-violet-200' },
-  { bg: 'bg-rose-500/70', border: 'border-rose-400', text: 'text-rose-200' },
-  { bg: 'bg-amber-500/70', border: 'border-amber-400', text: 'text-amber-200' },
-  { bg: 'bg-emerald-500/70', border: 'border-emerald-400', text: 'text-emerald-200' },
-  { bg: 'bg-cyan-500/70', border: 'border-cyan-400', text: 'text-cyan-200' },
+  { bg: 'from-violet-500/80 to-violet-600/80', ring: 'ring-violet-400', glow: 'shadow-violet-500/30' },
+  { bg: 'from-rose-500/80 to-rose-600/80', ring: 'ring-rose-400', glow: 'shadow-rose-500/30' },
+  { bg: 'from-amber-500/80 to-amber-600/80', ring: 'ring-amber-400', glow: 'shadow-amber-500/30' },
+  { bg: 'from-emerald-500/80 to-emerald-600/80', ring: 'ring-emerald-400', glow: 'shadow-emerald-500/30' },
+  { bg: 'from-cyan-500/80 to-cyan-600/80', ring: 'ring-cyan-400', glow: 'shadow-cyan-500/30' },
 ]
 
 // ============================================================
@@ -50,13 +49,11 @@ export default function Timeline({
 }: TimelineProps) {
   const trackRef = useRef<HTMLDivElement>(null)
 
-  // 시간 → 퍼센트 변환
   const timeToPercent = useCallback(
     (time: number) => (duration > 0 ? (time / duration) * 100 : 0),
     [duration]
   )
 
-  // 클릭 위치 → 시간 변환
   const positionToTime = useCallback(
     (clientX: number) => {
       if (!trackRef.current || duration <= 0) return 0
@@ -67,16 +64,13 @@ export default function Timeline({
     [duration]
   )
 
-  // 트랙 클릭 → 재생 위치 이동
   const handleTrackClick = useCallback(
     (e: React.MouseEvent) => {
-      const time = positionToTime(e.clientX)
-      onSeek(time)
+      onSeek(positionToTime(e.clientX))
     },
     [positionToTime, onSeek]
   )
 
-  // 세그먼트 삭제
   const handleRemoveSegment = useCallback(
     (segId: string, e: React.MouseEvent) => {
       e.stopPropagation()
@@ -86,14 +80,11 @@ export default function Timeline({
     [segments, onSegmentChange, selectedSegmentId, onSelectSegment]
   )
 
-  // 시간 눈금 생성
   const ticks = useMemo(() => {
     if (duration <= 0) return []
     const step = duration <= 10 ? 1 : duration <= 30 ? 2 : duration <= 60 ? 5 : 10
     const result: number[] = []
-    for (let t = 0; t <= duration; t += step) {
-      result.push(t)
-    }
+    for (let t = 0; t <= duration; t += step) result.push(t)
     return result
   }, [duration])
 
@@ -106,16 +97,19 @@ export default function Timeline({
   if (duration <= 0) return null
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       {/* 시간 눈금 */}
-      <div className="relative h-4 select-none">
+      <div className="relative h-5 select-none">
         {ticks.map((t) => (
           <div
             key={t}
-            className="absolute text-[10px] text-muted-foreground -translate-x-1/2"
+            className="absolute flex flex-col items-center -translate-x-1/2"
             style={{ left: `${timeToPercent(t)}%` }}
           >
-            {formatTime(t)}
+            <div className="w-px h-1.5 bg-white/20" />
+            <span className="text-[9px] tabular-nums text-white/40 mt-0.5">
+              {formatTime(t)}
+            </span>
           </div>
         ))}
       </div>
@@ -123,9 +117,15 @@ export default function Timeline({
       {/* 타임라인 트랙 */}
       <div
         ref={trackRef}
-        className="relative h-14 bg-secondary/50 rounded-lg cursor-pointer overflow-hidden border border-border/40"
+        className="relative h-16 bg-white/[0.03] rounded-lg cursor-pointer border border-white/[0.06] backdrop-blur-sm"
         onClick={handleTrackClick}
       >
+        {/* 재생 진행 배경 */}
+        <div
+          className="absolute inset-y-0 left-0 bg-white/[0.04] rounded-l-lg transition-[width] duration-75"
+          style={{ width: `${timeToPercent(currentTime)}%` }}
+        />
+
         {/* 세그먼트 블록 */}
         {segments.map((seg, i) => {
           const color = SEGMENT_COLORS[i % SEGMENT_COLORS.length]
@@ -137,10 +137,12 @@ export default function Timeline({
             <div
               key={seg.id}
               className={cn(
-                'absolute top-1 bottom-1 rounded-md flex items-center justify-center transition-all',
-                color.bg,
-                isSelected && `ring-2 ring-white/80 ${color.border}`,
-                'hover:brightness-110'
+                'absolute top-1.5 bottom-1.5 rounded-md flex items-center gap-1 px-1.5 transition-all duration-200',
+                `bg-gradient-to-b ${color.bg}`,
+                'border border-white/20',
+                'backdrop-blur-sm',
+                isSelected && `ring-1 ${color.ring} shadow-lg ${color.glow}`,
+                'hover:brightness-110 hover:border-white/30'
               )}
               style={{ left: `${left}%`, width: `${width}%` }}
               onClick={(e) => {
@@ -148,20 +150,33 @@ export default function Timeline({
                 onSelectSegment(seg.id)
               }}
             >
-              {/* 세그먼트 라벨 */}
-              {width > 5 && (
-                <span className={cn('text-[10px] font-medium truncate px-1', color.text)}>
+              {/* 세그먼트 인물 썸네일 */}
+              {seg.targetImageUrl ? (
+                <img
+                  src={seg.targetImageUrl}
+                  alt=""
+                  className="w-7 h-7 rounded object-cover border border-white/20 shrink-0"
+                />
+              ) : (
+                <div className="w-7 h-7 rounded bg-white/10 flex items-center justify-center shrink-0">
+                  <User className="w-3.5 h-3.5 text-white/50" />
+                </div>
+              )}
+
+              {/* 라벨 */}
+              {width > 8 && (
+                <span className="text-[10px] font-medium text-white/90 truncate">
                   {seg.targetPersonLabel || `변환 ${i + 1}`}
                 </span>
               )}
 
-              {/* 삭제 버튼 */}
-              {width > 3 && (
+              {/* 삭제 */}
+              {width > 4 && (
                 <button
-                  className="absolute top-0.5 right-0.5 p-0.5 rounded-full bg-black/30 hover:bg-black/50 transition-colors"
+                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-black/60 border border-white/20 flex items-center justify-center hover:bg-red-500/80 transition-colors"
                   onClick={(e) => handleRemoveSegment(seg.id, e)}
                 >
-                  <X className="w-2.5 h-2.5 text-white/80" />
+                  <X className="w-2.5 h-2.5 text-white" />
                 </button>
               )}
             </div>
@@ -170,17 +185,27 @@ export default function Timeline({
 
         {/* 재생 위치 인디케이터 */}
         <div
-          className="absolute top-0 bottom-0 w-0.5 bg-white shadow-[0_0_4px_rgba(255,255,255,0.8)] z-10 pointer-events-none"
+          className="absolute top-0 bottom-0 w-0.5 z-10 pointer-events-none"
           style={{ left: `${timeToPercent(currentTime)}%` }}
         >
-          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white rounded-full" />
+          {/* 상단 핸들 */}
+          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-2 bg-white rounded-sm shadow-lg shadow-white/20" />
+          {/* 라인 */}
+          <div className="absolute inset-0 bg-white shadow-[0_0_6px_rgba(255,255,255,0.5)]" />
         </div>
       </div>
 
-      {/* 현재 시간 표시 */}
-      <div className="flex justify-between text-xs text-muted-foreground">
-        <span>{formatTime(currentTime)}</span>
-        <span>{formatTime(duration)}</span>
+      {/* 하단 시간 */}
+      <div className="flex justify-between items-center">
+        <span className="text-[10px] tabular-nums text-white/50">{formatTime(currentTime)}</span>
+        <div className="flex items-center gap-1.5">
+          {segments.length > 0 && (
+            <span className="text-[10px] text-violet-400/80">
+              {segments.length}개 구간
+            </span>
+          )}
+        </div>
+        <span className="text-[10px] tabular-nums text-white/50">{formatTime(duration)}</span>
       </div>
     </div>
   )
