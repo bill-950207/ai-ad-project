@@ -79,10 +79,10 @@ function TrendingComparisonPlayer({
 
   return (
     <div className="space-y-0">
-      {/* 동영상 비교 영역 — 화면 높이에 맞춤 */}
-      <div className="grid grid-cols-2 gap-px bg-black" style={{ maxHeight: '60vh' }}>
+      {/* 동영상 비교 영역 — 동일 높이 강제 */}
+      <div className="flex bg-black" style={{ height: '60vh' }}>
         {/* 원본 */}
-        <div className="relative flex items-center justify-center bg-black overflow-hidden" style={{ maxHeight: '60vh' }}>
+        <div className="relative flex-1 flex items-center justify-center overflow-hidden">
           <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">
             원본
           </div>
@@ -90,30 +90,31 @@ function TrendingComparisonPlayer({
             <video
               ref={originalRef}
               src={sourceVideoUrl}
-              className="w-full h-full object-contain"
-              style={{ maxHeight: '60vh' }}
+              className="h-full object-contain"
               muted
               playsInline
               onTimeUpdate={handleTimeUpdate}
               onEnded={handleEnded}
             />
           ) : (
-            <div className="w-full aspect-video bg-secondary/20 flex items-center justify-center text-xs text-muted-foreground">
+            <div className="h-full aspect-[9/16] bg-secondary/20 flex items-center justify-center text-xs text-muted-foreground">
               원본 없음
             </div>
           )}
         </div>
 
+        {/* 구분선 */}
+        <div className="w-px bg-white/10" />
+
         {/* 생성본 */}
-        <div className="relative flex items-center justify-center bg-black overflow-hidden" style={{ maxHeight: '60vh' }}>
+        <div className="relative flex-1 flex items-center justify-center overflow-hidden">
           <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-violet-500/80 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">
             변환 결과
           </div>
           <video
             ref={resultRef}
             src={resultUrl}
-            className="w-full h-full object-contain"
-            style={{ maxHeight: '60vh' }}
+            className="h-full object-contain"
             muted
             playsInline
             onLoadedMetadata={handleLoaded}
