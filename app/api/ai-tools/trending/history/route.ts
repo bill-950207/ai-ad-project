@@ -24,11 +24,13 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * pageSize
 
     // 조회
+    // FAILED 항목 제외 — 프론트에서도 필터링하지만 DB에서부터 제외하여 페이징 정확도 보장
     const [items, totalCount] = await Promise.all([
       prisma.tool_generations.findMany({
         where: {
           user_id: user.id,
           type: 'trending',
+          status: { not: 'FAILED' },
         },
         orderBy: { created_at: 'desc' },
         skip,
@@ -50,6 +52,7 @@ export async function GET(request: NextRequest) {
         where: {
           user_id: user.id,
           type: 'trending',
+          status: { not: 'FAILED' },
         },
       }),
     ])
